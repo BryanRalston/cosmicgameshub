@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pixle — Daily Gaming Wordle | CosmicGamesHub</title>
+<meta name="description" content="Guess the 5-letter gaming word in 6 tries. A daily word game for gamers — new puzzle every day." />
+<link rel="canonical" href="https://cosmicgameshub.com/games/pixle" />
+<link rel="stylesheet" href="/styles.css" />
+<style>
+/* ── Layout ── */
+.pixle-wrap {
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 0 1rem 3rem;
+}
+
+/* ── Header ── */
+.pixle-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0 0.5rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.6rem;
+}
+.pixle-title-block h1 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--text-hi);
+}
+.pixle-title-block .pixle-sub {
+  font-size: 0.72rem;
+  color: var(--text-lo);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.pixle-stats {
+  display: flex;
+  gap: 1.2rem;
+  align-items: center;
+}
+.pixle-stat {
+  text-align: center;
+}
+.pixle-stat__num {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+}
+.pixle-stat__label {
+  font-size: 0.62rem;
+  color: var(--text-lo);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.pixle-help-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-mid);
+  border-radius: 50%;
+  width: 30px; height: 30px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color 0.15s, color 0.15s;
+}
+.pixle-help-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── Board ── */
+.pixle-board {
+  display: grid;
+  grid-template-rows: repeat(6, 1fr);
+  gap: 5px;
+  margin: 0.75rem auto;
+  width: 100%;
+  max-width: 320px;
+  aspect-ratio: 5/6;
+}
+.pixle-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px;
+}
+.pixle-tile {
+  aspect-ratio: 1;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(1.1rem, 4vw, 1.5rem);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  color: var(--text-hi);
+  background: transparent;
+  transition: border-color 0.1s;
+  position: relative;
+  user-select: none;
+}
+.pixle-tile.filled {
+  border-color: rgba(255,255,255,0.3);
+  animation: tilePop 0.1s ease;
+}
+@keyframes tilePop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+.pixle-tile.correct {
+  background: #538d4e;
+  border-color: #538d4e;
+  color: #fff;
+  animation: tileFlip 0.4s ease forwards;
+}
+.pixle-tile.present {
+  background: #b59f3b;
+  border-color: #b59f3b;
+  color: #fff;
+  animation: tileFlip 0.4s ease forwards;
+}
+.pixle-tile.absent {
+  background: #3a3a3c;
+  border-color: #3a3a3c;
+  color: #fff;
+  animation: tileFlip 0.4s ease forwards;
+}
+@keyframes tileFlip {
+  0% { transform: rotateX(0deg); }
+  50% { transform: rotateX(-90deg); opacity: 0.5; }
+  100% { transform: rotateX(0deg); }
+}
+.pixle-row.shake {
+  animation: rowShake 0.4s ease;
+}
+@keyframes rowShake {
+  0%,100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+.pixle-row.bounce .pixle-tile {
+  animation: tileBounce 0.06s ease forwards;
+}
+.pixle-row.bounce .pixle-tile:nth-child(1) { animation-delay: 0s; }
+.pixle-row.bounce .pixle-tile:nth-child(2) { animation-delay: 0.06s; }
+.pixle-row.bounce .pixle-tile:nth-child(3) { animation-delay: 0.12s; }
+.pixle-row.bounce .pixle-tile:nth-child(4) { animation-delay: 0.18s; }
+.pixle-row.bounce .pixle-tile:nth-child(5) { animation-delay: 0.24s; }
+@keyframes tileBounce {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-16px); }
+}
+
+/* ── Toast ── */
+#pixle-toast {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text-hi);
+  color: var(--bg-void);
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  padding: 0.5rem 1.2rem;
+  border-radius: 8px;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  text-transform: uppercase;
+}
+#pixle-toast.show { opacity: 1; }
+
+/* ── Keyboard ── */
+.pixle-keyboard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 auto;
+  max-width: 480px;
+  padding: 0 4px;
+}
+.kb-row {
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+}
+.kb-key {
+  height: 52px;
+  min-width: 36px;
+  flex: 1;
+  max-width: 44px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-family: inherit;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  cursor: pointer;
+  background: #818384;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, transform 0.08s;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.kb-key:active { transform: scale(0.93); }
+.kb-key.wide {
+  min-width: 54px;
+  max-width: 64px;
+  font-size: 0.7rem;
+}
+.kb-key.correct { background: #538d4e; }
+.kb-key.present { background: #b59f3b; }
+.kb-key.absent  { background: #3a3a3c; }
+
+/* ── Modal ── */
+.pixle-modal-bg {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.75);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.25s;
+}
+.pixle-modal-bg.open { opacity: 1; pointer-events: auto; }
+.pixle-modal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 360px;
+  width: 90%;
+  text-align: center;
+  transform: scale(0.92);
+  transition: transform 0.25s;
+}
+.pixle-modal-bg.open .pixle-modal { transform: scale(1); }
+.pixle-modal h2 {
+  font-size: 1.4rem; font-weight: 800;
+  margin-bottom: 0.4rem;
+  color: var(--text-hi);
+}
+.pixle-modal .answer-reveal {
+  font-size: 1.6rem; font-weight: 900;
+  letter-spacing: 0.2em;
+  color: var(--accent);
+  margin: 0.6rem 0;
+  text-transform: uppercase;
+}
+.pixle-modal .answer-hint {
+  font-size: 0.8rem;
+  color: var(--text-lo);
+  margin-bottom: 1.2rem;
+}
+.share-grid {
+  font-size: 1.1rem;
+  line-height: 1.4;
+  margin: 1rem auto;
+  font-family: monospace;
+  letter-spacing: 1px;
+  color: var(--text-hi);
+  word-break: break-all;
+}
+.pixle-modal-stats {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin: 1rem 0;
+}
+.modal-stat { text-align: center; }
+.modal-stat__num { font-size: 2rem; font-weight: 800; color: var(--accent); }
+.modal-stat__label { font-size: 0.65rem; color: var(--text-lo); text-transform: uppercase; letter-spacing: 0.08em; }
+.share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--accent);
+  color: #000;
+  font-weight: 800;
+  font-size: 0.9rem;
+  letter-spacing: 0.06em;
+  padding: 0.7rem 1.6rem;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  text-transform: uppercase;
+  margin-top: 0.5rem;
+}
+.share-btn:hover { opacity: 0.85; }
+.next-timer {
+  font-size: 0.75rem;
+  color: var(--text-lo);
+  margin-top: 0.8rem;
+}
+#next-countdown { color: var(--text-mid); font-weight: 700; }
+
+/* ── How to Play modal ── */
+.how-example {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  margin: 0.5rem 0;
+}
+.how-tile {
+  width: 38px; height: 38px;
+  border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; font-weight: 800; text-transform: uppercase;
+  color: #fff;
+}
+.how-tile.c { background: #538d4e; }
+.how-tile.p { background: #b59f3b; }
+.how-tile.a { background: #3a3a3c; }
+.how-tile.e { border: 2px solid rgba(255,255,255,0.25); color: var(--text-hi); }
+.how-text { font-size: 0.8rem; color: var(--text-mid); line-height: 1.5; margin: 0.2rem 0 0.75rem; text-align: left; }
+.how-text strong { color: var(--text-hi); }
+
+@media (max-width: 400px) {
+  .kb-key { height: 46px; min-width: 30px; font-size: 0.72rem; }
+  .kb-key.wide { min-width: 46px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ─── Nav ─────────────────────────────────────── -->
+<nav class="nav" role="navigation" aria-label="Main navigation">
+  <div class="container">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo" aria-label="CosmicGamesHub home">
+        <span class="nav__logo-icon" aria-hidden="true">🎮</span>
+        <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
+      </a>
+      <ul class="nav__links" id="navLinks">
+        <li><a href="/games/gamerdle">Gamerdle</a></li>
+        <li><a href="/games/daily-challenge">Daily</a></li>
+        <li><a href="/games/sudoku">Sudoku</a></li>
+        <li><a href="/lab">⚗️ Lab</a></li>
+        <li><a href="/tools/aim-trainer" class="nav__cta btn">Free Tools</a></li>
+      </ul>
+      <button class="nav__hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<div id="pixle-toast"></div>
+
+<div class="pixle-wrap">
+
+  <!-- Header -->
+  <div class="pixle-header">
+    <div class="pixle-title-block">
+      <h1>PIXLE</h1>
+      <div class="pixle-sub">Gaming Word · Daily</div>
+    </div>
+    <div class="pixle-stats">
+      <div class="pixle-stat">
+        <div class="pixle-stat__num" id="stat-streak">0</div>
+        <div class="pixle-stat__label">Streak</div>
+      </div>
+      <div class="pixle-stat">
+        <div class="pixle-stat__num" id="stat-played">0</div>
+        <div class="pixle-stat__label">Played</div>
+      </div>
+      <button class="pixle-help-btn" id="help-btn" aria-label="How to play">?</button>
+    </div>
+  </div>
+
+  <!-- Board -->
+  <div class="pixle-board" id="board"></div>
+
+  <!-- Keyboard -->
+  <div class="pixle-keyboard" id="keyboard">
+    <div class="kb-row" id="kb-row-1"></div>
+    <div class="kb-row" id="kb-row-2"></div>
+    <div class="kb-row" id="kb-row-3"></div>
+  </div>
+
+</div>
+
+<!-- Result Modal -->
+<div class="pixle-modal-bg" id="result-modal">
+  <div class="pixle-modal">
+    <h2 id="modal-title">YOU GOT IT</h2>
+    <div class="answer-reveal" id="modal-answer"></div>
+    <div class="answer-hint" id="modal-hint"></div>
+    <div class="pixle-modal-stats">
+      <div class="modal-stat">
+        <div class="modal-stat__num" id="modal-streak">0</div>
+        <div class="modal-stat__label">Streak</div>
+      </div>
+      <div class="modal-stat">
+        <div class="modal-stat__num" id="modal-played">0</div>
+        <div class="modal-stat__label">Played</div>
+      </div>
+      <div class="modal-stat">
+        <div class="modal-stat__num" id="modal-winpct">0%</div>
+        <div class="modal-stat__label">Win%</div>
+      </div>
+    </div>
+    <div class="share-grid" id="share-grid"></div>
+    <button class="share-btn" id="share-btn">📋 Share Result</button>
+    <div class="next-timer">Next Pixle in <span id="next-countdown">00:00:00</span></div>
+  </div>
+</div>
+
+<!-- How To Play Modal -->
+<div class="pixle-modal-bg" id="help-modal">
+  <div class="pixle-modal" style="text-align:left;">
+    <h2 style="text-align:center;margin-bottom:1rem;">How to Play</h2>
+    <p class="how-text">Guess the <strong>5-letter gaming word</strong> in 6 tries. A new word drops every day. Only gaming vocabulary — spawn, dodge, grind, melee, and more.</p>
+    <p class="how-text" style="margin-bottom:0.4rem;">After each guess, tiles reveal how close you were:</p>
+
+    <div class="how-example">
+      <div class="how-tile c">S</div>
+      <div class="how-tile e">P</div>
+      <div class="how-tile e">A</div>
+      <div class="how-tile e">W</div>
+      <div class="how-tile e">N</div>
+    </div>
+    <p class="how-text"><strong style="color:#538d4e;">Green</strong> — right letter, right spot.</p>
+
+    <div class="how-example">
+      <div class="how-tile e">B</div>
+      <div class="how-tile p">L</div>
+      <div class="how-tile e">I</div>
+      <div class="how-tile e">T</div>
+      <div class="how-tile e">Z</div>
+    </div>
+    <p class="how-text"><strong style="color:#b59f3b;">Yellow</strong> — right letter, wrong spot.</p>
+
+    <div class="how-example">
+      <div class="how-tile e">C</div>
+      <div class="how-tile e">O</div>
+      <div class="how-tile a">M</div>
+      <div class="how-tile e">B</div>
+      <div class="how-tile e">O</div>
+    </div>
+    <p class="how-text"><strong style="color:#818384;">Gray</strong> — letter not in the word.</p>
+
+    <p class="how-text" style="border-top:1px solid var(--border);padding-top:0.75rem;">All answers are gaming terms. Guesses can be <em>any</em> 5-letter word.</p>
+    <div style="text-align:center;margin-top:1rem;">
+      <button class="share-btn" onclick="document.getElementById('help-modal').classList.remove('open')" style="background:var(--border);color:var(--text-hi);">Got it</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// WORD LISTS
+// ═══════════════════════════════════════════════════
+
+// Daily answer pool — curated gaming 5-letter words
+const ANSWERS = [
+  'SPAWN','QUEST','GRIND','PIXEL','SNIPE','COMBO','SQUAD','PATCH','SCORE',
+  'STAGE','SWORD','MAGIC','SKILL','POWER','RESET','BOOST','BLITZ','DODGE',
+  'PARRY','MELEE','ARMOR','ARENA','LOBBY','PARTY','GUILD','STAFF','SPELL',
+  'WRATH','FLAME','FROST','BLAST','BURST','SURGE','PULSE','STORM','FLARE',
+  'SPEAR','CLOAK','CHAOS','ORDER','LIGHT','NIGHT','FORGE','CRAFT','BUILD',
+  'SMASH','SLASH','CHAIN','ULTRA','FATAL','CURSE','PHASE','SHIFT','EVADE',
+  'BLOCK','SNEAK','FLANK','STACK','CARRY','STOMP','RUNES','SIEGE','MARCH',
+  'RALLY','NEXUS','TOWER','CREEP','TAUNT','MACRO','MICRO','SMURF','TOXIC',
+  'THROW','TROLL','TIMER','SPEED','ELITE','WORLD','REALM','RUINS','VAULT',
+  'CRYPT','SWAMP','GROVE','SPACE','ORBIT','VOXEL','ALPHA','BLADE','BOOTS',
+  'CHARM','RELIC','SHARD','EMBER','DRAKE','BARON','RANGE','QUEUE','FEINT',
+  'MOUNT','FETCH','EQUIP','HAVEN','LUNAR','SOLAR','STARS','OMEGA','CHOKE',
+  'PROXY','DELTA','GLOOM','BIOME','STEPP','SNARE','SCOUT','RADAR','LASER',
+  'GLYPH','LEASH','CREEP','STUNT','TEMPO','PIVOT','COVER','BONUS','LUNGE',
+  'PURGE','BLINK','GRAVE','CHAOS','CYCLE','LIMIT','GUARD','LANCE','BRAVE',
+  'CLASH','LODGE','SWIPE','FLAIR','VALOR','VIGOR','AGILE','HASTE','BLIND',
+  'STUN','RISKY','DREAD','GLARE','BLEED','BURNS','SHOCK','DECAY','DRAIN',
+];
+
+// Remove duplicates and ensure clean list
+const ANSWER_LIST = [...new Set(ANSWERS.filter(w => w.length === 5))];
+
+// Valid guess set — answer list + common 5-letter words (any 5-letter input accepted)
+// We accept any 5-letter alpha string as a valid guess
+
+// ═══════════════════════════════════════════════════
+// WORD HINTS — shown in result modal
+// ═══════════════════════════════════════════════════
+const HINTS = {
+  SPAWN:'Where you appear after respawning',
+  QUEST:'A mission or objective to complete',
+  GRIND:'Farming XP or resources repeatedly',
+  PIXEL:'The smallest unit on a screen',
+  SNIPE:'A long-range precision shot',
+  COMBO:'A chain of attacks for bonus damage',
+  SQUAD:'Your team or group of players',
+  PATCH:'An update that fixes bugs or balances',
+  SCORE:'Your points tally',
+  STAGE:'A level or round in a game',
+  SWORD:'Classic melee weapon',
+  MAGIC:'Spells and supernatural abilities',
+  SKILL:'An ability in your character\'s kit',
+  POWER:'Strength or a pickup that enhances you',
+  RESET:'Start over from the beginning',
+  BOOST:'A speed or power increase',
+  BLITZ:'A fast all-out aggressive push',
+  DODGE:'Move quickly to avoid damage',
+  PARRY:'Block an attack at the exact moment',
+  MELEE:'Close-range combat',
+  ARMOR:'Protective gear that absorbs damage',
+  ARENA:'A combat zone or competitive map',
+  LOBBY:'The waiting room before a match',
+  PARTY:'A group playing together',
+  GUILD:'A persistent player organization',
+  STAFF:'A magic weapon or support role',
+  SPELL:'A magical ability cast in combat',
+  WRATH:'Intense anger, often a boss mechanic',
+  FLAME:'Fire damage type',
+  FROST:'Ice/cold damage type',
+  BLAST:'Area-of-effect explosive damage',
+  BURST:'High spike damage in a short window',
+  SURGE:'A sudden increase in power or speed',
+  PULSE:'A wave of energy, often AOE',
+  STORM:'A powerful elemental ability',
+  FLARE:'A bright burst of light or fire',
+  SPEAR:'A thrusting weapon with long reach',
+  CLOAK:'Invisibility or stealth ability',
+  CHAOS:'A damage type or game mode',
+  ORDER:'Faction or alignment in game lore',
+  LIGHT:'A damage or element type',
+  NIGHT:'Time-based game mechanic or biome',
+  FORGE:'Where you craft or upgrade gear',
+  CRAFT:'Create items by combining materials',
+  BUILD:'Your character\'s stat and skill setup',
+  SMASH:'A powerful downward or close attack',
+  SLASH:'A wide sweeping melee attack',
+  CHAIN:'Linked attacks that extend combos',
+  ULTRA:'The most powerful version of a move',
+  FATAL:'Instant-kill or maximum damage',
+  CURSE:'A debuff applied to a character',
+  PHASE:'A stage of a boss fight',
+  SHIFT:'A blink or repositioning ability',
+  EVADE:'Avoid an attack with a movement skill',
+  BLOCK:'Reduce damage by defending',
+  SNEAK:'Move without being detected',
+  FLANK:'Attack from the side or rear',
+  STACK:'Accumulate buffs or debuffs over time',
+  CARRY:'The player who wins the game for the team',
+  STOMP:'To dominate opponents convincingly',
+  RUNES:'Magical symbols used for power or crafting',
+  SIEGE:'Attack on a fortified position',
+  MARCH:'Move your units forward in formation',
+  RALLY:'Recover or boost team morale/stats',
+  NEXUS:'The main structure to destroy to win',
+  TOWER:'A defensive structure that attacks enemies',
+  CREEP:'An NPC enemy unit in MOBAs',
+  TAUNT:'Force an enemy to attack you',
+  MACRO:'High-level game strategy decisions',
+  MICRO:'Fine-tuned control of individual units',
+  SMURF:'Playing on a low-level alt account',
+  TOXIC:'Unsportsmanlike or hostile behavior',
+  THROW:'Losing a winnable game',
+  TROLL:'Deliberately ruin the experience',
+  TIMER:'Countdown clock in competitive games',
+  SPEED:'Movement or run rate stat',
+  ELITE:'High-difficulty enemy or rank',
+  WORLD:'The game\'s universe or map',
+  REALM:'A server region or game dimension',
+  RUINS:'Ancient destroyed structures as a biome',
+  VAULT:'A treasure room or jump maneuver',
+  CRYPT:'An underground tomb dungeon',
+  SWAMP:'A wet murky biome with slow movement',
+  GROVE:'A forest clearing area',
+  SPACE:'Zero-gravity or cosmic game setting',
+  ORBIT:'Path around a planet, often in space games',
+  VOXEL:'3D pixel used in games like Minecraft',
+  ALPHA:'Early game testing phase',
+  BLADE:'Cutting weapon or character type',
+  BOOTS:'Footwear gear that often boosts speed',
+  CHARM:'An item that gives a passive bonus',
+  RELIC:'A rare ancient item with power',
+  SHARD:'A fragment, often a crafting material',
+  EMBER:'Glowing fire remnant or item',
+  DRAKE:'A dragon-type enemy or neutral objective',
+  BARON:'Powerful neutral objective (League of Legends)',
+  RANGE:'Attack distance stat',
+  QUEUE:'Waiting in line for a match',
+  FEINT:'A fake-out attack that baits a reaction',
+  MOUNT:'A rideable creature for travel',
+  FETCH:'A classic errand-type side quest',
+  EQUIP:'Put gear on your character',
+  HAVEN:'A safe zone or home base',
+  LUNAR:'Moon-themed event or skin line',
+  SOLAR:'Sun-themed event or ability',
+  STARS:'Progression currency or rank symbol',
+  OMEGA:'Final or ultimate form/boss',
+  CHOKE:'Fail under pressure near the win',
+  PROXY:'Alternate server or attack position',
+  DELTA:'Change between versions or values',
+  GLOOM:'A dark debilitating debuff',
+  BIOME:'A distinct environmental zone',
+  SCOUT:'Gather information about enemy position',
+  RADAR:'Map that shows enemy locations',
+  LASER:'Hitscan beam weapon',
+  GLYPH:'A magical symbol with an effect',
+  LEASH:'Helping the jungler get their first buff',
+  TEMPO:'Momentum and control of game pace',
+  COVER:'Use objects to block incoming fire',
+  BONUS:'Extra reward beyond the base amount',
+  LUNGE:'A forward dashing attack',
+  PURGE:'Clear all status effects',
+  BLINK:'Instant short-range teleport',
+  VALOR:'Courage stat or ranked mode name',
+  VIGOR:'Health or stamina regeneration stat',
+  AGILE:'High mobility character trait',
+  HASTE:'Speed buff applied to a character',
+  BLIND:'Debuff preventing accurate aiming',
+  DREAD:'Fear-inducing boss aura or debuff',
+  BLEED:'Damage-over-time physical effect',
+  SHOCK:'Electric stun debuff',
+  DECAY:'Gradual stat reduction over time',
+  DRAIN:'Steal HP or mana from an enemy',
+  GUARD:'Defensive stance or bodyguard role',
+  LANCE:'Long charging weapon on horseback',
+  CLASH:'A head-on collision or team fight',
+};
+
+// ═══════════════════════════════════════════════════
+// DAILY SEED
+// ═══════════════════════════════════════════════════
+function getDayIndex() {
+  const epoch = new Date('2026-01-01').getTime();
+  return Math.floor((Date.now() - epoch) / 86400000);
+}
+
+const DAY_INDEX = getDayIndex();
+const ANSWER = ANSWER_LIST[DAY_INDEX % ANSWER_LIST.length];
+
+// ═══════════════════════════════════════════════════
+// STORAGE
+// ═══════════════════════════════════════════════════
+const STORE_KEY = 'pixle-state-v1';
+const STATS_KEY = 'pixle-stats-v1';
+
+function loadState() {
+  try {
+    const s = JSON.parse(localStorage.getItem(STORE_KEY));
+    if (s && s.dayIndex === DAY_INDEX) return s;
+  } catch(e) {}
+  return { dayIndex: DAY_INDEX, guesses: [], status: 'playing' };
+}
+
+function saveState(state) {
+  localStorage.setItem(STORE_KEY, JSON.stringify(state));
+}
+
+function loadStats() {
+  try {
+    return JSON.parse(localStorage.getItem(STATS_KEY)) || { played: 0, wins: 0, streak: 0, maxStreak: 0 };
+  } catch(e) { return { played: 0, wins: 0, streak: 0, maxStreak: 0 }; }
+}
+
+function saveStats(stats) {
+  localStorage.setItem(STATS_KEY, JSON.stringify(stats));
+}
+
+// ═══════════════════════════════════════════════════
+// GAME STATE
+// ═══════════════════════════════════════════════════
+let state = loadState();
+let stats = loadStats();
+let currentRow = state.guesses.length;
+let currentInput = '';
+let isAnimating = false;
+let gameOver = state.status !== 'playing';
+
+// ═══════════════════════════════════════════════════
+// BUILD BOARD
+// ═══════════════════════════════════════════════════
+const board = document.getElementById('board');
+const rows = [];
+
+for (let r = 0; r < 6; r++) {
+  const row = document.createElement('div');
+  row.className = 'pixle-row';
+  row.id = 'row-' + r;
+  const tiles = [];
+  for (let c = 0; c < 5; c++) {
+    const tile = document.createElement('div');
+    tile.className = 'pixle-tile';
+    tile.id = `tile-${r}-${c}`;
+    row.appendChild(tile);
+    tiles.push(tile);
+  }
+  board.appendChild(row);
+  rows.push({ el: row, tiles });
+}
+
+// ═══════════════════════════════════════════════════
+// BUILD KEYBOARD
+// ═══════════════════════════════════════════════════
+const KB_ROWS = ['QWERTYUIOP', 'ASDFGHJKL', '↵ZXCVBNM⌫'];
+const keyEls = {};
+
+KB_ROWS.forEach((rowStr, ri) => {
+  const rowEl = document.getElementById(`kb-row-${ri + 1}`);
+  [...rowStr].forEach(ch => {
+    const btn = document.createElement('button');
+    btn.className = 'kb-key' + (ch === '↵' || ch === '⌫' ? ' wide' : '');
+    btn.textContent = ch === '↵' ? 'ENTER' : ch === '⌫' ? '⌫' : ch;
+    btn.dataset.key = ch;
+    btn.addEventListener('click', () => handleKey(ch));
+    rowEl.appendChild(btn);
+    if (ch !== '↵' && ch !== '⌫') keyEls[ch] = btn;
+  });
+});
+
+// ═══════════════════════════════════════════════════
+// KEYBOARD EVENTS
+// ═══════════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.altKey || e.metaKey) return;
+  if (e.key === 'Enter') handleKey('↵');
+  else if (e.key === 'Backspace') handleKey('⌫');
+  else if (/^[a-zA-Z]$/.test(e.key)) handleKey(e.key.toUpperCase());
+});
+
+// ═══════════════════════════════════════════════════
+// INPUT HANDLING
+// ═══════════════════════════════════════════════════
+function handleKey(key) {
+  if (gameOver || isAnimating) return;
+
+  if (key === '⌫') {
+    if (currentInput.length > 0) {
+      currentInput = currentInput.slice(0, -1);
+      renderInput();
+    }
+  } else if (key === '↵') {
+    submitGuess();
+  } else if (/^[A-Z]$/.test(key) && currentInput.length < 5) {
+    currentInput += key;
+    renderInput();
+  }
+}
+
+function renderInput() {
+  const { tiles } = rows[currentRow];
+  for (let i = 0; i < 5; i++) {
+    tiles[i].textContent = currentInput[i] || '';
+    tiles[i].className = 'pixle-tile' + (currentInput[i] ? ' filled' : '');
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// EVALUATE GUESS
+// ═══════════════════════════════════════════════════
+function evaluate(guess, answer) {
+  const result = Array(5).fill('absent');
+  const answerArr = answer.split('');
+  const guessArr = guess.split('');
+  const answerCount = {};
+
+  // First pass: mark corrects
+  for (let i = 0; i < 5; i++) {
+    if (guessArr[i] === answerArr[i]) {
+      result[i] = 'correct';
+      answerCount[answerArr[i]] = (answerCount[answerArr[i]] || 0) - 1;
+      answerArr[i] = null;
+    } else {
+      answerCount[answerArr[i]] = (answerCount[answerArr[i]] || 0) + 1;
+    }
+  }
+
+  // Second pass: mark presents
+  for (let i = 0; i < 5; i++) {
+    if (result[i] === 'correct') continue;
+    if (answerCount[guessArr[i]] > 0) {
+      result[i] = 'present';
+      answerCount[guessArr[i]]--;
+    }
+  }
+
+  return result;
+}
+
+// ═══════════════════════════════════════════════════
+// SUBMIT GUESS
+// ═══════════════════════════════════════════════════
+function submitGuess() {
+  if (currentInput.length < 5) {
+    shakeRow(currentRow);
+    showToast('Not enough letters');
+    return;
+  }
+
+  const guess = currentInput;
+  const result = evaluate(guess, ANSWER);
+  const isWin = result.every(r => r === 'correct');
+  const row = rows[currentRow];
+
+  isAnimating = true;
+
+  // Reveal tiles with staggered flip
+  result.forEach((res, i) => {
+    setTimeout(() => {
+      row.tiles[i].className = `pixle-tile ${res}`;
+      row.tiles[i].textContent = guess[i];
+    }, i * 80 + 200);
+  });
+
+  setTimeout(() => {
+    // Update keyboard
+    result.forEach((res, i) => {
+      const ch = guess[i];
+      const el = keyEls[ch];
+      if (!el) return;
+      const cur = el.className;
+      if (res === 'correct') el.className = 'kb-key correct';
+      else if (res === 'present' && !cur.includes('correct')) el.className = 'kb-key present';
+      else if (res === 'absent' && !cur.includes('correct') && !cur.includes('present')) el.className = 'kb-key absent';
+    });
+
+    state.guesses.push(guess);
+    currentRow++;
+    currentInput = '';
+    isAnimating = false;
+
+    if (isWin) {
+      state.status = 'won';
+      saveState(state);
+      stats.played++;
+      stats.wins++;
+      stats.streak++;
+      stats.maxStreak = Math.max(stats.maxStreak, stats.streak);
+      saveStats(stats);
+      updateStatDisplay();
+      gameOver = true;
+
+      // Bounce animation
+      setTimeout(() => {
+        rows[currentRow - 1].el.classList.add('bounce');
+        setTimeout(() => rows[currentRow - 1].el.classList.remove('bounce'), 1000);
+      }, 100);
+
+      const msgs = ['Flawless!', 'Outstanding!', 'Impressive!', 'Nice!', 'Phew!', 'That was close!'];
+      const msg = currentRow <= 6 ? msgs[currentRow - 2] || 'Nice!' : 'Nice!';
+      setTimeout(() => { showToast(msg); }, 400);
+      setTimeout(() => showResultModal(true), 1800);
+
+    } else if (currentRow >= 6) {
+      state.status = 'lost';
+      saveState(state);
+      stats.played++;
+      stats.streak = 0;
+      saveStats(stats);
+      updateStatDisplay();
+      gameOver = true;
+      setTimeout(() => showResultModal(false), 600);
+
+    } else {
+      saveState(state);
+    }
+  }, 5 * 80 + 400);
+}
+
+// ═══════════════════════════════════════════════════
+// RESTORE PREVIOUS GUESSES
+// ═══════════════════════════════════════════════════
+function restoreBoard() {
+  state.guesses.forEach((guess, ri) => {
+    const result = evaluate(guess, ANSWER);
+    const row = rows[ri];
+    result.forEach((res, ci) => {
+      row.tiles[ci].className = `pixle-tile ${res}`;
+      row.tiles[ci].textContent = guess[ci];
+    });
+    result.forEach((res, ci) => {
+      const ch = guess[ci];
+      const el = keyEls[ch];
+      if (!el) return;
+      if (res === 'correct') el.className = 'kb-key correct';
+      else if (res === 'present' && !el.className.includes('correct')) el.className = 'kb-key present';
+      else if (res === 'absent' && !el.className.includes('correct') && !el.className.includes('present')) el.className = 'kb-key absent';
+    });
+  });
+  if (gameOver) {
+    setTimeout(() => showResultModal(state.status === 'won'), 600);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// RESULT MODAL
+// ═══════════════════════════════════════════════════
+function buildShareGrid() {
+  const lines = state.guesses.map(guess => {
+    return evaluate(guess, ANSWER).map(r =>
+      r === 'correct' ? '🟩' : r === 'present' ? '🟨' : '⬛'
+    ).join('');
+  });
+  return lines.join('\n');
+}
+
+function showResultModal(won) {
+  const modal = document.getElementById('result-modal');
+  const guessCount = state.guesses.length;
+
+  document.getElementById('modal-title').textContent = won
+    ? (guessCount === 1 ? 'PERFECT' : guessCount <= 3 ? 'NICE GAME' : 'GOT IT')
+    : 'BETTER LUCK TOMORROW';
+
+  document.getElementById('modal-answer').textContent = ANSWER;
+  const hint = HINTS[ANSWER] || 'A gaming term';
+  document.getElementById('modal-hint').textContent = hint;
+
+  document.getElementById('modal-streak').textContent = stats.streak;
+  document.getElementById('modal-played').textContent = stats.played;
+  const wp = stats.played > 0 ? Math.round((stats.wins / stats.played) * 100) : 0;
+  document.getElementById('modal-winpct').textContent = wp + '%';
+
+  const grid = buildShareGrid();
+  const guessLine = won ? `${guessCount}/6` : 'X/6';
+  document.getElementById('share-grid').textContent = grid;
+
+  document.getElementById('share-btn').onclick = () => {
+    const text = `Pixle #${DAY_INDEX} ${guessLine}\n\n${grid}\n\ncosmicgameshub.com/games/pixle`;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(() => showToast('Copied!'));
+    } else {
+      showToast('Copy manually above');
+    }
+  };
+
+  modal.classList.add('open');
+  startCountdown();
+}
+
+function startCountdown() {
+  function tick() {
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    const diff = tomorrow - now;
+    const h = String(Math.floor(diff / 3600000)).padStart(2, '0');
+    const m = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
+    const s = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
+    const el = document.getElementById('next-countdown');
+    if (el) el.textContent = `${h}:${m}:${s}`;
+  }
+  tick();
+  setInterval(tick, 1000);
+}
+
+// ═══════════════════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════════════════
+function shakeRow(ri) {
+  const row = rows[ri].el;
+  row.classList.add('shake');
+  setTimeout(() => row.classList.remove('shake'), 400);
+}
+
+let toastTimer = null;
+function showToast(msg) {
+  const el = document.getElementById('pixle-toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 1400);
+}
+
+function updateStatDisplay() {
+  document.getElementById('stat-streak').textContent = stats.streak;
+  document.getElementById('stat-played').textContent = stats.played;
+}
+
+// ═══════════════════════════════════════════════════
+// MODALS
+// ═══════════════════════════════════════════════════
+document.getElementById('help-btn').addEventListener('click', () => {
+  document.getElementById('help-modal').classList.add('open');
+});
+
+document.querySelectorAll('.pixle-modal-bg').forEach(bg => {
+  bg.addEventListener('click', e => {
+    if (e.target === bg) bg.classList.remove('open');
+  });
+});
+
+// ═══════════════════════════════════════════════════
+// NAV
+// ═══════════════════════════════════════════════════
+document.getElementById('hamburger').addEventListener('click', () => {
+  const nav = document.getElementById('navLinks');
+  const open = nav.classList.toggle('open');
+  document.getElementById('hamburger').setAttribute('aria-expanded', open);
+});
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+updateStatDisplay();
+restoreBoard();
+
+// Show how-to on first visit
+if (!localStorage.getItem('pixle-seen-help')) {
+  setTimeout(() => {
+    document.getElementById('help-modal').classList.add('open');
+    localStorage.setItem('pixle-seen-help', '1');
+  }, 400);
+}
+</script>
+</body>
+</html>
