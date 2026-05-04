@@ -1,0 +1,1988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RIFT — Daily Word Game | CosmicGamesHub</title>
+  <meta name="description" content="RIFT: Three daily word zones — Chain, Grow, Decode. Change one letter at a time, grow words letter by letter, and crack hidden connections. Free daily puzzle."/>
+  <link rel="canonical" href="https://cosmicgameshub.com/games/rift"/>
+  <link rel="stylesheet" href="../styles.css"/>
+  <style>
+    /* ── RIFT-specific overrides ── */
+    body { background: var(--bg-void); }
+
+    /* Zone color tokens */
+    --zone1: #00d4ff;
+    --zone2: #4ade80;
+    --zone3: #a855f7;
+
+    /* ── Header strip ── */
+    .rift-header {
+      text-align: center;
+      padding: 2rem 0 1.25rem;
+      background: radial-gradient(ellipse 80% 60% at 50% -5%, rgba(0,212,255,0.07) 0%, transparent 70%);
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 2rem;
+    }
+    .rift-title {
+      font-size: clamp(2.2rem, 6vw, 3.5rem);
+      font-weight: 900;
+      letter-spacing: 0.18em;
+      color: var(--text-hi);
+      text-shadow: 0 0 40px rgba(0,212,255,0.35);
+      margin-bottom: 0.25rem;
+    }
+    .rift-sub {
+      color: var(--text-lo);
+      font-size: 0.85rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 1.25rem;
+    }
+
+    /* ── Zone progress dots ── */
+    .zone-dots {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .zone-dot {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.4rem;
+      cursor: default;
+    }
+    .zone-dot-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      transition: all 0.3s;
+      background: var(--bg-surface);
+    }
+    .zone-dot.active .zone-dot-icon { border-color: var(--accent); box-shadow: 0 0 12px rgba(0,212,255,0.4); }
+    .zone-dot.z1.done  .zone-dot-icon { border-color: #00d4ff; background: rgba(0,212,255,0.15); box-shadow: 0 0 10px rgba(0,212,255,0.3); }
+    .zone-dot.z2.done  .zone-dot-icon { border-color: #4ade80; background: rgba(74,222,128,0.15); box-shadow: 0 0 10px rgba(74,222,128,0.3); }
+    .zone-dot.z3.done  .zone-dot-icon { border-color: #a855f7; background: rgba(168,85,247,0.15); box-shadow: 0 0 10px rgba(168,85,247,0.3); }
+    .zone-dot-label { font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-lo); }
+
+    /* ── Stats row ── */
+    .rift-stats {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      font-size: 0.82rem;
+      color: var(--text-lo);
+    }
+    .rift-stats span { display: flex; align-items: center; gap: 0.35rem; }
+    .rift-stats strong { color: var(--text-hi); }
+
+    /* ── Main game container ── */
+    .rift-game {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 0 1rem 4rem;
+    }
+
+    /* ── Zone panel ── */
+    .zone-panel {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      display: none;
+    }
+    .zone-panel.active { display: block; }
+
+    .zone-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .zone-badge {
+      font-size: 0.65rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 0.3rem 0.75rem;
+      border-radius: 999px;
+      flex-shrink: 0;
+    }
+    .z1-badge { background: rgba(0,212,255,0.12); color: #00d4ff; border: 1px solid rgba(0,212,255,0.3); }
+    .z2-badge { background: rgba(74,222,128,0.12); color: #4ade80; border: 1px solid rgba(74,222,128,0.3); }
+    .z3-badge { background: rgba(168,85,247,0.12); color: #a855f7; border: 1px solid rgba(168,85,247,0.3); }
+
+    .zone-header-info h2 { font-size: 1.2rem; margin: 0 0 0.1rem; color: var(--text-hi); }
+    .zone-header-info p  { font-size: 0.8rem; color: var(--text-lo); margin: 0; }
+
+    .zone-body { padding: 1.5rem; }
+
+    /* ── Stars ── */
+    .star-row {
+      display: flex;
+      gap: 0.4rem;
+      align-items: center;
+    }
+    .star {
+      font-size: 1.2rem;
+      opacity: 0.25;
+      transition: all 0.3s;
+    }
+    .star.lit { opacity: 1; filter: drop-shadow(0 0 4px gold); }
+
+    /* ── CHAIN zone ── */
+    .chain-endpoints {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .chain-word-display {
+      font-size: 1.6rem;
+      font-weight: 900;
+      letter-spacing: 0.18em;
+      color: var(--text-hi);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-mid);
+      border-radius: var(--radius-sm);
+      padding: 0.5rem 1.1rem;
+      font-family: 'JetBrains Mono', 'Courier New', monospace;
+      text-transform: uppercase;
+    }
+    .chain-arrow { font-size: 1.4rem; color: var(--text-lo); }
+    .chain-meta {
+      text-align: center;
+      font-size: 0.82rem;
+      color: var(--text-lo);
+      margin-bottom: 1.5rem;
+    }
+    .chain-meta strong { color: var(--accent); }
+
+    .chain-ladder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      margin-bottom: 1.5rem;
+      min-height: 40px;
+    }
+    .chain-step {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      position: relative;
+    }
+    .chain-step-word {
+      font-size: 1.3rem;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      padding: 0.45rem 1rem;
+      border-radius: var(--radius-sm);
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      font-family: 'JetBrains Mono', 'Courier New', monospace;
+      text-transform: uppercase;
+      transition: all 0.3s;
+      color: var(--text-hi);
+      min-width: 110px;
+      text-align: center;
+    }
+    .chain-step-word.start { border-color: rgba(0,212,255,0.5); color: #00d4ff; }
+    .chain-step-word.end   { border-color: rgba(74,222,128,0.5); color: #4ade80; }
+    .chain-step-word.valid { border-color: rgba(0,212,255,0.4); box-shadow: 0 0 8px rgba(0,212,255,0.2); }
+    .chain-connector {
+      width: 2px;
+      height: 20px;
+      background: var(--border);
+      margin: 0 auto;
+    }
+    .chain-step-num {
+      font-size: 0.7rem;
+      color: var(--text-lo);
+      min-width: 18px;
+      text-align: right;
+    }
+    .chain-step-diff {
+      display: flex;
+      gap: 2px;
+    }
+    .chain-step-diff span { font-size: 1rem; }
+    .chain-step-diff .changed { color: #00d4ff; }
+
+    .chain-input-row {
+      display: flex;
+      gap: 0.75rem;
+      align-items: stretch;
+    }
+    .chain-input {
+      flex: 1;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-mid);
+      border-radius: var(--radius-sm);
+      color: var(--text-hi);
+      font-size: 1.2rem;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', 'Courier New', monospace;
+      padding: 0.6rem 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      text-align: center;
+    }
+    .chain-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,212,255,0.12); }
+
+    /* ── GROW zone ── */
+    .grow-seed-display {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+    .grow-current {
+      font-size: 2rem;
+      font-weight: 900;
+      letter-spacing: 0.2em;
+      color: #4ade80;
+      font-family: 'JetBrains Mono', 'Courier New', monospace;
+      text-transform: uppercase;
+      text-shadow: 0 0 20px rgba(74,222,128,0.3);
+      margin-bottom: 0.25rem;
+    }
+    .grow-score-label {
+      font-size: 0.8rem;
+      color: var(--text-lo);
+    }
+    .grow-score-label strong { color: #4ade80; }
+
+    .grow-chain-history {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      min-height: 32px;
+    }
+    .grow-word-tag {
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      background: rgba(74,222,128,0.08);
+      border: 1px solid rgba(74,222,128,0.25);
+      border-radius: 999px;
+      padding: 0.2rem 0.65rem;
+      color: #4ade80;
+      font-family: 'JetBrains Mono', 'Courier New', monospace;
+    }
+
+    .grow-input-row {
+      display: flex;
+      gap: 0.75rem;
+      align-items: stretch;
+      margin-bottom: 0.75rem;
+    }
+    .grow-hint {
+      font-size: 0.78rem;
+      color: var(--text-lo);
+      text-align: center;
+    }
+
+    /* ── DECODE zone ── */
+    .decode-progress {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+    }
+    .decode-clue-count {
+      font-size: 0.82rem;
+      color: var(--text-lo);
+    }
+    .decode-clue-count strong { color: #a855f7; }
+    .decode-score-stars { display: flex; gap: 0.3rem; }
+
+    .decode-clues-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      margin-bottom: 1.5rem;
+    }
+    .decode-clue {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem 1rem;
+      font-size: 0.9rem;
+      color: var(--text-mid);
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      transition: all 0.3s;
+    }
+    .decode-clue.hidden { opacity: 0.3; filter: blur(1px); pointer-events: none; }
+    .decode-clue.solved { border-color: rgba(168,85,247,0.4); background: rgba(168,85,247,0.06); }
+    .decode-clue-num {
+      min-width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: rgba(168,85,247,0.15);
+      border: 1px solid rgba(168,85,247,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 800;
+      color: #a855f7;
+      flex-shrink: 0;
+    }
+    .decode-clue-text { flex: 1; line-height: 1.4; }
+    .decode-clue-answer {
+      font-weight: 700;
+      color: #a855f7;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      letter-spacing: 0.08em;
+    }
+
+    .decode-reveal-btn {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 1.25rem;
+    }
+
+    .decode-connection-area {
+      background: rgba(168,85,247,0.06);
+      border: 1px solid rgba(168,85,247,0.2);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+    .decode-connection-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #a855f7;
+      margin-bottom: 0.75rem;
+    }
+    .decode-connection-input-row {
+      display: flex;
+      gap: 0.75rem;
+    }
+    .decode-guesses-log {
+      margin-top: 0.75rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    .decode-guess-tag {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255,71,87,0.3);
+      background: rgba(255,71,87,0.08);
+      color: var(--red);
+      font-family: monospace;
+    }
+
+    /* ── Generic input ── */
+    .rift-input {
+      flex: 1;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-mid);
+      border-radius: var(--radius-sm);
+      color: var(--text-hi);
+      font-size: 1rem;
+      padding: 0.65rem 1rem;
+      font-family: inherit;
+    }
+    .rift-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,212,255,0.1); }
+    .rift-input.violet:focus { border-color: #a855f7; box-shadow: 0 0 0 3px rgba(168,85,247,0.1); }
+
+    /* ── Buttons ── */
+    .btn-zone1 { background: #00d4ff; color: #050508; font-weight: 700; }
+    .btn-zone1:hover { background: #33dcff; box-shadow: 0 0 16px rgba(0,212,255,0.4); transform: translateY(-1px); color: #050508; text-decoration: none; }
+    .btn-zone2 { background: #4ade80; color: #050508; font-weight: 700; }
+    .btn-zone2:hover { background: #6ceba0; box-shadow: 0 0 16px rgba(74,222,128,0.4); transform: translateY(-1px); color: #050508; text-decoration: none; }
+    .btn-zone3 { background: #a855f7; color: #fff; font-weight: 700; }
+    .btn-zone3:hover { background: #b975f9; box-shadow: 0 0 16px rgba(168,85,247,0.4); transform: translateY(-1px); color: #fff; text-decoration: none; }
+
+    .btn--sm { padding: 0.5rem 1rem; font-size: 0.85rem; }
+    .btn--full { width: 100%; justify-content: center; margin-top: 1rem; }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      background: var(--bg-raised);
+      border: 1px solid var(--border-mid);
+      border-radius: var(--radius);
+      padding: 0.7rem 1.5rem;
+      font-size: 0.9rem;
+      color: var(--text-hi);
+      font-weight: 600;
+      z-index: 9999;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s;
+      white-space: nowrap;
+      box-shadow: var(--shadow);
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.error  { border-color: rgba(255,71,87,0.4); background: rgba(255,71,87,0.12); color: var(--red); }
+    .toast.success { border-color: rgba(0,230,118,0.4); background: rgba(0,230,118,0.1); color: var(--green); }
+
+    /* ── Zone transition overlay ── */
+    .zone-transition {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(5,5,8,0.92);
+      z-index: 5000;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 1rem;
+      text-align: center;
+    }
+    .zone-transition.show { display: flex; }
+    .zt-stars { font-size: 2rem; letter-spacing: 0.2em; }
+    .zt-label { font-size: 0.75rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-lo); }
+    .zt-title { font-size: 2.5rem; font-weight: 900; letter-spacing: 0.1em; color: var(--text-hi); }
+    .zt-sub   { color: var(--text-lo); font-size: 0.9rem; }
+
+    /* ── Result screen ── */
+    .result-screen {
+      display: none;
+      text-align: center;
+      padding: 2rem 0;
+    }
+    .result-screen.show { display: block; }
+    .result-big { font-size: 3rem; font-weight: 900; letter-spacing: 0.1em; color: var(--text-hi); margin-bottom: 0.25rem; }
+    .result-day { font-size: 0.85rem; color: var(--text-lo); margin-bottom: 2rem; letter-spacing: 0.08em; }
+    .result-zones {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      max-width: 380px;
+      margin: 0 auto 2rem;
+    }
+    .result-zone-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.85rem 1.25rem;
+    }
+    .result-zone-name {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 700;
+      color: var(--text-hi);
+      font-size: 0.95rem;
+    }
+    .result-zone-icon { font-size: 1.2rem; }
+    .result-zone-stars { display: flex; gap: 0.2rem; font-size: 1.1rem; }
+
+    .share-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.5rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--text-mid);
+      white-space: pre;
+      margin: 0 auto 1rem;
+      max-width: 380px;
+      text-align: left;
+      line-height: 1.8;
+    }
+
+    /* ── Done banner (already completed today) ── */
+    .done-banner {
+      display: none;
+      background: rgba(0,230,118,0.07);
+      border: 1px solid rgba(0,230,118,0.25);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      text-align: center;
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+      color: var(--green);
+    }
+    .done-banner.show { display: block; }
+
+    /* ── Animations ── */
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20% { transform: translateX(-6px); }
+      40% { transform: translateX(6px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+    .shake { animation: shake 0.4s ease; }
+
+    @keyframes pop-in {
+      0%   { transform: scale(0.7); opacity: 0; }
+      60%  { transform: scale(1.07); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .pop-in { animation: pop-in 0.35s ease forwards; }
+
+    @keyframes slide-down {
+      from { transform: translateY(-12px); opacity: 0; }
+      to   { transform: translateY(0);     opacity: 1; }
+    }
+    .slide-down { animation: slide-down 0.3s ease forwards; }
+
+    @keyframes glow-pulse {
+      0%,100% { box-shadow: 0 0 8px rgba(0,212,255,0.2); }
+      50%      { box-shadow: 0 0 20px rgba(0,212,255,0.5); }
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 480px) {
+      .rift-title { letter-spacing: 0.12em; }
+      .chain-word-display { font-size: 1.3rem; letter-spacing: 0.12em; }
+      .chain-step-word { font-size: 1.1rem; min-width: 90px; }
+      .grow-current { font-size: 1.6rem; }
+    }
+
+    /* mobile nav */
+    @media (max-width: 768px) {
+      .nav__links { display: none; flex-direction: column; position: absolute; top: 64px; left: 0; right: 0; background: rgba(5,5,8,0.97); padding: 1rem; gap: 0.25rem; border-bottom: 1px solid var(--border); }
+      .nav__links.open { display: flex; }
+      .nav__hamburger { display: flex; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─── NAV ─── -->
+<nav class="nav">
+  <div class="container">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo">
+        <span class="nav__logo-icon">🎮</span>
+        <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
+      </a>
+      <ul class="nav__links" id="navLinks">
+        <li><a href="/games/sudoku">Sudoku</a></li>
+        <li><a href="/games/minesweeper">Minesweeper</a></li>
+        <li><a href="/tools/aim-trainer">Aim Trainer</a></li>
+        <li><a href="/games/daily-challenge">Daily</a></li>
+        <li><a href="/games/rift" class="active nav__cta btn">RIFT</a></li>
+      </ul>
+      <button class="nav__hamburger" id="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</nav>
+
+<!-- ─── GAME HEADER ─── -->
+<header class="rift-header">
+  <div class="container">
+    <div class="rift-title">RIFT</div>
+    <div class="rift-sub">Daily Word Zones</div>
+    <div class="zone-dots" id="zoneDots">
+      <div class="zone-dot z1" id="dot0">
+        <div class="zone-dot-icon">⚡</div>
+        <div class="zone-dot-label">Chain</div>
+      </div>
+      <div class="zone-dot z2" id="dot1">
+        <div class="zone-dot-icon">🌱</div>
+        <div class="zone-dot-label">Grow</div>
+      </div>
+      <div class="zone-dot z3" id="dot2">
+        <div class="zone-dot-icon">🔮</div>
+        <div class="zone-dot-label">Decode</div>
+      </div>
+    </div>
+    <div class="rift-stats">
+      <span>🔥 Streak <strong id="statStreak">0</strong></span>
+      <span>📅 Played <strong id="statPlayed">0</strong></span>
+    </div>
+  </div>
+</header>
+
+<!-- ─── MAIN ─── -->
+<main>
+<div class="rift-game container--narrow">
+
+  <!-- ─── RESULT SCREEN ─── -->
+  <div class="result-screen" id="resultScreen">
+    <div class="result-big">RIFT COMPLETE</div>
+    <div class="result-day" id="resultDay"></div>
+    <div class="result-zones">
+      <div class="result-zone-row">
+        <div class="result-zone-name"><span class="result-zone-icon">⚡</span> CHAIN</div>
+        <div class="result-zone-stars" id="resStars0"></div>
+      </div>
+      <div class="result-zone-row">
+        <div class="result-zone-name"><span class="result-zone-icon">🌱</span> GROW</div>
+        <div class="result-zone-stars" id="resStars1"></div>
+      </div>
+      <div class="result-zone-row">
+        <div class="result-zone-name"><span class="result-zone-icon">🔮</span> DECODE</div>
+        <div class="result-zone-stars" id="resStars2"></div>
+      </div>
+    </div>
+    <div class="share-card" id="shareCard"></div>
+    <button class="btn btn-zone1" id="shareCopyBtn" onclick="copyShare()">📋 Copy Result</button>
+    <div style="margin-top:1rem;color:var(--text-lo);font-size:0.8rem;">Come back tomorrow for a new RIFT</div>
+  </div>
+
+  <!-- ─── ZONE 1: CHAIN ─── -->
+  <div class="zone-panel" id="zone0">
+    <div class="zone-header">
+      <div class="zone-badge z1-badge">Zone 1</div>
+      <div class="zone-header-info">
+        <h2>CHAIN</h2>
+        <p>Change one letter at a time to reach the end word</p>
+      </div>
+    </div>
+    <div class="zone-body">
+      <div class="chain-endpoints">
+        <div class="chain-word-display" id="chainStart">—</div>
+        <div class="chain-arrow">→</div>
+        <div class="chain-word-display" id="chainEnd">—</div>
+      </div>
+      <div class="chain-meta">Par: <strong id="chainPar">—</strong> &nbsp;|&nbsp; Steps: <strong id="chainSteps">0</strong></div>
+
+      <div class="chain-ladder" id="chainLadder"></div>
+
+      <div class="chain-input-row" id="chainInputRow">
+        <input type="text" class="chain-input rift-input" id="chainInput"
+               maxlength="6" placeholder="next word…"
+               autocomplete="off" autocorrect="off" spellcheck="false"
+               onkeydown="if(event.key==='Enter')submitChain()"/>
+        <button class="btn btn-zone1" onclick="submitChain()">Submit</button>
+      </div>
+      <div id="chainDone" style="display:none;">
+        <div class="done-banner show" id="chainDoneBanner"></div>
+        <button class="btn btn-zone2 btn--full" onclick="goZone(1)">Continue to GROW →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── ZONE 2: GROW ─── -->
+  <div class="zone-panel" id="zone1">
+    <div class="zone-header">
+      <div class="zone-badge z2-badge">Zone 2</div>
+      <div class="zone-header-info">
+        <h2>GROW</h2>
+        <p>Insert one letter anywhere to grow the word each turn</p>
+      </div>
+    </div>
+    <div class="zone-body">
+      <div class="grow-seed-display">
+        <div class="grow-current" id="growCurrent">—</div>
+        <div class="grow-score-label">Extensions: <strong id="growCount">0</strong></div>
+      </div>
+
+      <div class="grow-chain-history" id="growHistory"></div>
+
+      <div class="grow-input-row" id="growInputRow">
+        <input type="text" class="rift-input" id="growInput"
+               placeholder="new longer word…"
+               autocomplete="off" autocorrect="off" spellcheck="false"
+               style="text-transform:uppercase;font-family:'JetBrains Mono',monospace;font-weight:700;letter-spacing:0.1em;"
+               onkeydown="if(event.key==='Enter')submitGrow()"/>
+        <button class="btn btn-zone2" onclick="submitGrow()">Submit</button>
+      </div>
+      <div class="grow-hint" id="growHint">Type a word that contains <strong id="growHintWord">—</strong> with one extra letter inserted anywhere</div>
+
+      <div id="growDone" style="display:none;">
+        <div class="done-banner show" id="growDoneBanner"></div>
+        <button class="btn btn-zone3 btn--full" onclick="goZone(2)">Continue to DECODE →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── ZONE 3: DECODE ─── -->
+  <div class="zone-panel" id="zone2">
+    <div class="zone-header">
+      <div class="zone-badge z3-badge">Zone 3</div>
+      <div class="zone-header-info">
+        <h2>DECODE</h2>
+        <p>Find the hidden connection linking all 7 clues</p>
+      </div>
+    </div>
+    <div class="zone-body">
+      <div class="decode-progress">
+        <div class="decode-clue-count">Clues revealed: <strong id="decodeClueCount">1</strong>/7</div>
+        <div class="decode-score-stars" id="decodeStarRow">
+          <span class="star">⭐</span>
+          <span class="star">⭐</span>
+          <span class="star">⭐</span>
+        </div>
+      </div>
+
+      <div class="decode-clues-list" id="decodeCluesList"></div>
+
+      <div class="decode-reveal-btn" id="decodeRevealArea">
+        <button class="btn btn--outline btn--sm" id="decodeRevealBtn" onclick="revealNextClue()">Reveal next clue (+1 clue)</button>
+      </div>
+
+      <div class="decode-connection-area">
+        <div class="decode-connection-label">🔮 What's the connection?</div>
+        <div class="decode-connection-input-row">
+          <input type="text" class="rift-input violet" id="decodeInput"
+                 placeholder="Type your guess…"
+                 autocomplete="off"
+                 onkeydown="if(event.key==='Enter')submitDecode()"/>
+          <button class="btn btn-zone3" onclick="submitDecode()">Guess</button>
+        </div>
+        <div class="decode-guesses-log" id="decodeGuessLog"></div>
+      </div>
+
+      <div id="decodeDone" style="display:none;">
+        <div class="done-banner show" id="decodeDoneBanner"></div>
+        <button class="btn btn-zone1 btn--full" onclick="showResult()">See Final Results →</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end .rift-game -->
+</main>
+
+<!-- ─── ZONE TRANSITION OVERLAY ─── -->
+<div class="zone-transition" id="zoneTransition">
+  <div class="zt-label" id="ztLabel">Zone 1 Complete</div>
+  <div class="zt-stars" id="ztStars">⭐⭐⭐</div>
+  <div class="zt-title" id="ztTitle">ZONE 2 UNLOCKED</div>
+  <div class="zt-sub" id="ztSub">GROW — Insert one letter to grow the word</div>
+  <button class="btn btn-zone2 btn--sm" id="ztBtn" onclick="dismissTransition()" style="margin-top:0.5rem;">Let's go →</button>
+</div>
+
+<!-- ─── TOAST ─── -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  RIFT — Daily Word Game
+//  Three zones: Chain (word ladder), Grow (word inflate), Decode (7 clues)
+// ═══════════════════════════════════════════════════════════════
+
+// ── WORD LISTS ─────────────────────────────────────────────────
+
+// 3-letter words (for CAT→DOG puzzle)
+const WORDS3 = new Set([
+  'ACE','AGE','AID','AIM','APE','ARE','ATE',
+  'CAT','COG','COT','COW','COP','CUT',
+  'DOG','DOT','DIG','DUG',
+  'EAR','EEL','EGG',
+  'FAN','FAR','FIG','FIN','FIT','FLY','FOB','FOG','FOR','FUN',
+  'GAP','GAS','GEL','GEM','GET','GOB','GOD','GOT','GUM','GUN','GUT','GUY',
+  'HAD','HAM','HAS','HAT','HIM','HIP','HIT','HOG','HOP','HOT','HOW','HUB',
+  'ICE','ILL',
+  'JAB','JAM','JAR','JAW','JET','JIG','JOB','JOG','JOT','JOY',
+  'LAB','LAD','LAP','LAW','LAX','LAY','LEG','LET','LID','LIP','LIT','LOG','LOT','LOW',
+  'MAD','MAN','MAP','MAR','MAT','MAW','MAY','MEN','MET','MID','MOB','MOD','MOP',
+  'NAB','NAG','NAP','NAY','NET','NEW','NIB','NIT','NOB','NOD','NOR','NOT','NOW','NUB',
+  'OAK','OAR','OAT','ODD','ODE','ODD','OWE','OWL','OWN',
+  'PAD','PAL','PAN','PAP','PAR','PAT','PAW','PAY','PEA','PEG','PEW','PIE','PIN','PIT','PLY','POD','POP','POT','POW','PRY','PUB','PUG','PUN','PUS','PUT',
+  'RAG','RAM','RAN','RAP','RAT','RAW','RAY','RED','REF','REP','RIB','RID','RIG','RIM','RIP','ROB','ROD','ROT','ROW','RUB','RUG','RUM','RUN','RUT',
+  'SAC','SAD','SAG','SAP','SAT','SAW','SAY','SET','SEW','SHY','SIN','SIP','SIT','SIX','SKY','SLY','SOB','SOD','SON','SOP','SOR','SOT','SOW','SOY','SPA','SPY','STY','SUB','SUM','SUN','SUP',
+  'TAB','TAG','TAN','TAP','TAR','TAT','TAX','TEA','TEN','THE','TIE','TIN','TIP','TOE','TON','TOP','TOW','TOY','TUB','TUG','TUN','TUP','TWO',
+  'USE',
+  'VAN','VAR','VAT','VET','VIA','VIE',
+  'WAD','WAG','WAR','WAS','WAX','WAY','WEB','WED','WET','WHO','WHY','WIG','WIN','WIT','WOE','WOK','WON','WOO','WOW',
+  'YAK','YAM','YAP','YAW','YEA','YES','YEW','YIN',
+  'ZAP','ZEN','ZIG','ZIP','ZIT','ZOO'
+]);
+
+// 4-letter word set (~850 words)
+const WORDS4 = new Set([
+  'ABLE','ACHE','ACID','ACRE','AGED','ALSO','APEX','ARCH','AREA','ARMY','AWAY',
+  'BACK','BAIL','BAKE','BALL','BAND','BANE','BANK','BARE','BARK','BARN','BARS','BASE','BATH','BATS','BEAD','BEAN',
+  'BEAR','BEAT','BEER','BELL','BELT','BEST','BIKE','BILE','BILL','BIND','BITE','BLOW','BLUE','BLUR','BOAT','BODY',
+  'BOLD','BOLT','BOND','BONE','BOOK','BOOM','BOOT','BORE','BORN','BOUT','BROW','BULK','BULL','BURN','BURP',
+  'CAGE','CAKE','CALL','CALM','CAME','CAMP','CANE','CARD','CARE','CART','CASE','CAST','CAVE','CELL','CHIP',
+  'CHOP','CLAM','CLAN','CLAY','CLUE','COAL','COAT','COIN','COLD','COME','CONE','CORD','CORE','CORK','CORN',
+  'COST','CREW','CROP','CROW','CURE','CUTE',
+  'DAME','DARE','DARK','DARN','DART','DATE','DAWN','DEAD','DEAL','DEAR','DECK','DEEP','DENT','DESK','DIKE',
+  'DIME','DINE','DIRT','DOCK','DOME','DONE','DOOM','DOTS','DOVE','DOWN','DROP','DRUM','DUSK','DUST',
+  'EARL','EARN','EASE','EAST','EDGE','EMIT',
+  'FACE','FACT','FADE','FAIL','FAIR','FALL','FAME','FARE','FARM','FAST','FATE','FEAT','FEEL','FEET','FELL',
+  'FELT','FILE','FILL','FILM','FIND','FINE','FIRE','FIRM','FISH','FIST','FITS','FLAW','FLEW','FLOW','FOAM',
+  'FOND','FONT','FOOL','FORD','FORE','FORK','FORM','FORT','FOUR','FREE','FROG','FUEL','FULL','FUND','FUSE',
+  'GAME','GAPE','GATE','GAVE','GAZE','GEAR','GIVE','GLAD','GLEE','GLOW','GLUE','GOAL','GOAD','GOLD',
+  'GONE','GORE','GRIM','GRIN','GRIP','GROW','GULF','GUST',
+  'HACK','HAIL','HAIR','HALF','HALL','HALT','HAND','HANG','HARD','HARE','HARM','HASTE','HATE','HAVE',
+  'HEAD','HEAL','HEAP','HEAR','HEAT','HEEL','HELD','HELM','HERO','HIKE','HILL','HIRE','HITS','HIVE',
+  'HOLD','HOLE','HOME','HOOD','HOPE','HORN','HOST','HUGE','HULK','HULL','HUNT',
+  'IDLE','IRON',
+  'JADE','JAIL','JAKE','JAMS','JARS','JAWS','JEER','JEST','JOLT','JUMP','JUST',
+  'KEEN','KEEP','KILL','KIND','KING','KISS','KITE',
+  'LACE','LACK','LAID','LAMP','LAND','LANE','LARD','LASH','LAST','LAWN','LAZY','LEAD','LEAF','LEAN','LEAP',
+  'LEND','LESS','LIFT','LIKE','LIME','LINE','LINK','LIST','LIVE','LOAD','LOAN','LOCK','LOFT','LONE','LONG',
+  'LORE','LOSE','LOSS','LURE',
+  'MACE','MADE','MAIN','MAKE','MALL','MANE','MARE','MARK','MARS','MAST','MATE','MAZE','MEAL','MEAN',
+  'MELT','MEND','MESH','MIST','MITE','MOAN','MOLD','MOLE','MOOD','MOON','MORE','MOST','MOTH','MOVE','MUSE','MUTE',
+  'NAIL','NEAR','NECK','NEED','NEST','NICE','NINE','NODE','NONE','NOSE','NOTE','NUDE',
+  'ONCE','OPEN','OVER',
+  'PACE','PACT','PAGE','PALE','PALM','PARK','PART','PAST','PAVE','PAWN','PEAK','PEEL','PEST','PINE','PIPE',
+  'PLAN','PLOT','PLOW','POKE','POLE','POND','PORE','PORK','POST','POUR','PULL','PUMP','PURE','PUSH',
+  'RACE','RACK','RAGE','RAID','RAIL','RAIN','RAKE','RANK','RARE','RASH','RATE','RAVE','READ','REAL','REAP',
+  'REEL','RELY','RENT','REST','RICH','RIDE','RING','ROAD','ROAM','ROAR','ROBE','ROCK','RODE','ROLL','ROPE',
+  'ROSE','ROVE','RUDE','RUIN','RULE','RUSE','RUSH','RUST',
+  'SAGA','SAGE','SALE','SALT','SAME','SAND','SANE','SAVE','SEAL','SEAM','SELL','SHED','SHIN','SHIP',
+  'SHOE','SHOP','SHOT','SHOW','SICK','SIDE','SIGH','SIGN','SILK','SILL','SING','SIRE','SITE','SLAM',
+  'SLAP','SLIM','SLIP','SLOT','SLUG','SNAP','SOAP','SOAR','SOCK','SOFT','SOIL','SOLD','SOME','SORE',
+  'SORT','SOUL','SOUR','SPAR','SPIN','SPIT','SPOT','STAB','STAG','STAR','STAY','STEM','STEP','STEW',
+  'STIR','STOP','STUB','STUN','SUIT','SUNG','SUNK','SURE','SWIM','SYNC',
+  'TAIL','TALE','TALK','TALL','TANK','TAPE','TASK','TEAR','TELL','TENT','TERM','TIDE','TIER','TILL',
+  'TILT','TIPS','TIRE','TOIL','TOLL','TOMB','TONE','TORE','TORN','TOSS','TOWN','TRAP','TRAY','TREE',
+  'TREK','TRIM','TRIO','TRIP','TRUE','TUBE','TUCK','TURF','TURN',
+  'UGLY','UNIT',
+  'VAIN','VALE','VANE','VASE','VAST','VEIL','VEIN','VENT','VEST','VILE','VINE','VOID','VOLT',
+  'WADE','WAGE','WAIL','WAIT','WAKE','WALK','WALL','WAND','WANE','WARE','WARM','WARN','WARP','WART',
+  'WASH','WAVE','WEAR','WEED','WELL','WELT','WENT','WEPT','WICK','WILL','WILT','WIND','WINE','WING',
+  'WINK','WINS','WIRE','WISE','WISH','WOOD','WOOL','WORD','WORE','WORM','WORN','WRAP',
+  'YELL','YOKE','ZEAL','ZONE','ZOOM',
+  // Extra words to help ladders
+  'BOLD','DOLE','HOLE','MOLE','ROLE','SOLE','TOLL','VOLE',
+  'BAKE','FAKE','LAKE','MAKE','RAKE','SAKE','TAKE','WAKE',
+  'BALE','DALE','GALE','MALE','PALE','SALE','TALE','VALE',
+  'BANE','CANE','DANE','FANE','LANE','MANE','PANE','SANE','WANE',
+  'BARE','CARE','DARE','FARE','HARE','MARE','PARE','RARE','WARE',
+  'BORN','CORN','HORN','LORN','MORN','TORN','WORN',
+  'CORD','FORD','LORD','WORD',
+  'BORE','CORE','FORE','GORE','LORE','MORE','PORE','SORE','TORE','WORE',
+  'BONE','CONE','DONE','GONE','LONE','NONE','TONE','ZONE',
+  'BOLD','COLD','FOLD','GOLD','HOLD','MOLD','SOLD','TOLD',
+  'CAME','DAME','FAME','GAME','LAME','NAME','SAME','TAME',
+  'CAPE','GAPE','TAPE',
+  'HIRE','MIRE','SIRE','TIRE','WIRE',
+  'HIKE','BIKE','LIKE','MIKE',
+  'LIVE','GIVE','FIVE','HIVE',
+  'NICE','DICE','LICE','MICE','RICE','VICE',
+  'CLAY','PLAY','SLAY','STAY',
+  'CLAM','SLAM','TRAM',
+  'FIRE','HIRE','SIRE','TIRE','WIRE',
+  // Grow word list supplements
+  'RACE','BRACE','GRACE','TRACE','PLACE','SPACE','PRICE',
+  'PACES','RACES','LACES','FACES','MACES',
+  'LACE','MACE','PACE','FACE','RACE',
+  'ACES','BARES','CARES','DARES','FARES','HARES','MARES','PARES','WARES',
+  'HASTE','PASTE','TASTE','WASTE','BASTE',
+  'OARS','SOAR','SOARS','BOAR','BOARS',
+  'EARS','NEAR','SEAR','HEAR','FEAR','GEAR','DEAR','LEAR','PEAR','TEAR','WEAR','YEAR',
+  'SHARE','SHORE','SHONE','STONE','STORE',
+  'STARE','SPARE','SNARE','SCARE','FLARE',
+  'CRANE','CRAVE','BRAVE','GRAVE','GRAVEL',
+  'BLAST','BLASTS','MAST','LAST','CAST','FAST','PAST','VAST',
+  'COAST','COATS',
+  'HEART','HEARTS','HEARTH','EARTHS','EARTHY',
+  'EARTH',
+]);
+
+// 5-8 letter words for GROW validation
+const WORDSLONG = new Set([
+  'BRACE','GRACE','GRACED','GRACES','TRACE','TRACED','TRACES','PLACE','PLACED','PLACES',
+  'SPACE','SPACED','SPACES','GRACE','PRICE','PRICES','PACED','RACED','LACED','FACED',
+  'RACES','PACES','LACES','FACES','MACES',
+  'SHARE','SHARED','SHARES','SHORE','SHORES','STARE','STARED','STARES',
+  'SPARE','SPARED','SPARES','SNARE','SNARED','SNARES','SCARE','SCARED','SCARES',
+  'FLARE','FLARED','FLARES','CRANE','CRANES','CRAVE','CRAVED','CRAVES',
+  'BRAVE','BRAVED','BRAVES','GRAVE','GRAVED','GRAVES','GRAVEL','TRAVEL',
+  'TASTE','TASTED','TASTES','HASTE','HASTEN','PASTE','PASTED','PASTES','WASTE','WASTED','WASTES',
+  'BASTE','BASTED',
+  'BLAST','BLASTS','BLASTED',
+  'HEART','HEARTS','HEARTH','EARTHY','EARTHS',
+  'COAST','COASTS','COASTED','TOAST','TOASTS','ROAST','ROASTS','BOAST','BOASTS',
+  'STONE','STONES','STONED','STORE','STORES','STORED','SHORE','SHORES','SHORED',
+  'CLOSE','CLOSED','CLOSES','GLOSS','CROSS','DRESS','PRESS','BLESS','CHESS',
+  'CRANE','CRONE','PRONE','PRUNE','PRUNES',
+  'FLAME','FLAMES','BLAME','BLAMES','CLAME','FRAME','FRAMES','FRAMED',
+  'BREED','GREED','CREED','FREED','TREED',
+  'SPEED','BLEED','FREED',
+  'GROAN','GRAIN','DRAIN','BRAIN','BRAINS','TRAINS','TRAIN',
+  'PLAIN','PLAID','PLAIT','PLANT','SLANT','GLANT',
+  'BREAD','BRAID','BRAIN','BRAND','BLAND','BLEND','BLENDS',
+  'STAND','BANDS','LANDS','HANDS','SANDS','WANDS','WANTS',
+  'DANCE','LANCE','PRANCE','FRANCE','GLANCE',
+  'PRICE','PRICK','TRICK','TRACK','CRACK','CRANK','CRANE','CRANES',
+  'STOVE','DROVE','GROVE','PROVE','PROVE','TROVE',
+  'GLARE','GLARED','GLARES','BLARE','BLARED','BLARES',
+  'SWEAR','SWEARS','SPEAR','SPEARS','CLEAR','CLEARS',
+  'LEARN','EARNS','YEARNS','YEARN',
+  'CREAM','CREAK','CREEK','CREEP',
+  'ACRES','CARES','BARES','DARES','FARES','HARES','MARES','PARES','WARES',
+  'ORATE','IRATE','GRATE','CRATE','CRATES','GRATED','GRATER',
+  'OATER','EATER','HEATER','BEATER','NEATER','NEATEN',
+  'IDEAL','IDEAS',
+  'AIMED','AIRED','AILED',
+  'OWNED','OWES','AWES',
+  'ILLNESS','ILLS',
+  'ADDED','AIDED','AIDES',
+  'AIMER','AIMES',
+  'ARCED','ORCA','ORCAS',
+  'APING','APED','DRAPE','DRAPES','DRAPER','GRAPE','GRAPES','CRAPE',
+  'ORBED','BORED','BORES','CORES','SORES','LORES','MORES','PORES','TORES','WORES',
+  'AGED','AGES','CAGED','PAGES','WAGES','RAGES','SAGES','GAGES',
+  'ACES','MACES','RACES','LACES','FACES','PACES',
+  'EARED','EARS','FEARS','GEARS','HEARS','NEARS','PEARS','REARS','SEARS','TEARS','WEARS','YEARS',
+  'OARED','BOARD','BOARDS','HOARD','HOARDS',
+  'ICIER','ICING','ICINGS','SPICE','SPICED','SPICES','SLICE','SLICED','SLICES',
+  'APED','CAPED','GAPED','RAPED','TAPED','DRAPED',
+  'ORES','BORES','CORES','FORES','GORES','LORES','MORES','PORES','SORES','TORES','WORES',
+  'AGES','BAGES','CAGES','GAGES','PAGES','RAGES','SAGES','WAGES',
+  'USED','FUSED','MUSED','RUSED','ABUSED','AMUSED','CAUSED','MOUSED','HOUSED','LOUSED','ROUSED',
+  'AIMED','CLAIMED','MAIMED','FLAMED',
+  'ILLS','BILLS','DILLS','FILLS','GILLS','HILLS','KILLS','MILLS','PILLS','RILLS','SILLS','TILLS','WILLS',
+  'ODDS','BODES','CODES','MODES','NODES','RODES',
+  'OWED','AWED','COWED','MOWED','ROWED','SOWED','TOWED','VOWED',
+  'OWES','AWES','COWS','MOWS','ROWS','SOWS','TOWS','VOWS',
+  'AIMER','AIDES',
+]);
+
+function isValidWord(w) {
+  w = w.toUpperCase().trim();
+  if (w.length === 3) return WORDS3.has(w);
+  if (w.length === 4) return WORDS4.has(w);
+  return WORDSLONG.has(w);
+}
+
+// ── PUZZLE DATA ──────────────────────────────────────────────
+
+// CHAIN puzzles — verified word ladders
+const CHAIN_PUZZLES = [
+  { start:'COLD', end:'WARM', par:4, path:['COLD','CORD','WORD','WARD','WARM'] },
+  { start:'HATE', end:'LOVE', par:5, path:['HATE','HAVE','GAVE','GIVE','LIVE','LOVE'] },
+  { start:'LEAD', end:'GOLD', par:3, path:['LEAD','LOAD','GOAD','GOLD'] },
+  { start:'MORE', end:'LESS', par:4, path:['MORE','LORE','LOSE','LOSS','LESS'] },
+  { start:'CAT',  end:'DOG',  par:3, path:['CAT','COT','COG','DOG'] },          // day 4 — 3-letter
+  { start:'FIRE', end:'NICE', par:5, path:['FIRE','HIRE','HIKE','LIKE','LICE','NICE'] },
+  { start:'PLAY', end:'CLAN', par:3, path:['PLAY','CLAY','CLAM','CLAN'] },
+  { start:'FAME', end:'BORE', par:3, path:['FAME','FARE','BARE','BORE'] },
+  { start:'LANE', end:'SAME', par:3, path:['LANE','CANE','CAME','SAME'] },
+  { start:'BONE', end:'LIME', par:5, path:['BONE','CONE','CANE','LANE','LAME','LIME'] },
+  { start:'WORD', end:'DARE', par:4, path:['WORD','WORE','CORE','CARE','DARE'] },
+  { start:'LORE', end:'MUSE', par:5, path:['LORE','LURE','CURE','CUTE','MUTE','MUSE'] },
+  { start:'BARE', end:'GAZE', par:5, path:['BARE','DARE','DATE','MATE','GATE','GAZE'] },
+  { start:'CHIP', end:'CHOP', par:3, path:['CHIP','SHIP','SHOP','CHOP'] },
+  { start:'COLD', end:'BOLD', par:1, path:['COLD','BOLD'] },                     // day 14 — trivial bonus
+  { start:'BALE', end:'FINE', par:4, path:['BALE','TALE','TILE','FINE'] },
+  { start:'LOCK', end:'ROCK', par:1, path:['LOCK','ROCK'] },
+  { start:'SALE', end:'BILE', par:3, path:['SALE','TALE','TILE','BILE'] },
+  { start:'WINE', end:'MINE', par:1, path:['WINE','MINE'] },
+  { start:'KING', end:'RING', par:1, path:['KING','RING'] },
+  { start:'CORN', end:'HORN', par:1, path:['CORN','HORN'] },
+  { start:'FAST', end:'LAST', par:1, path:['FAST','LAST'] },
+  { start:'MALE', end:'TALE', par:1, path:['MALE','TALE'] },
+  { start:'CARE', end:'DARE', par:1, path:['CARE','DARE'] },
+  { start:'BONE', end:'BORE', par:2, path:['BONE','BORE'] },
+  { start:'HOLE', end:'MOLE', par:1, path:['HOLE','MOLE'] },
+  { start:'SELL', end:'BELL', par:1, path:['SELL','BELL'] },
+  { start:'LANE', end:'CANE', par:1, path:['LANE','CANE'] },
+  { start:'HIDE', end:'RIDE', par:1, path:['HIDE','RIDE'] },
+  { start:'TIDE', end:'SIDE', par:1, path:['TIDE','SIDE'] },
+  { start:'BOLD', end:'TOLD', par:1, path:['BOLD','TOLD'] },
+  { start:'MINE', end:'WINE', par:1, path:['MINE','WINE'] },
+  { start:'RING', end:'SING', par:1, path:['RING','SING'] },
+  { start:'FOLD', end:'GOLD', par:2, path:['FOLD','BOLD','GOLD'] },
+  { start:'WORE', end:'WORD', par:1, path:['WORE','WORD'] },
+  { start:'DARE', end:'CARE', par:1, path:['DARE','CARE'] },
+  { start:'WAKE','end':'CAKE', par:1, path:['WAKE','CAKE'] },
+  { start:'BARK', end:'DARK', par:1, path:['BARK','DARK'] },
+  { start:'LAME', end:'CAME', par:1, path:['LAME','CAME'] },
+  { start:'BARE', end:'BORE', par:2, path:['BARE','CORE','BORE'] },
+  { start:'CORE', end:'FORE', par:1, path:['CORE','FORE'] },
+  { start:'TIRE', end:'HIRE', par:1, path:['TIRE','HIRE'] },
+  { start:'LIME', end:'TIME', par:1, path:['LIME','TIME'] },
+  { start:'CANE', end:'LANE', par:1, path:['CANE','LANE'] },
+  { start:'DARE', end:'DATE', par:1, path:['DARE','DATE'] },
+  { start:'CAME', end:'FAME', par:1, path:['CAME','FAME'] },
+  { start:'LORE', end:'BORE', par:1, path:['LORE','BORE'] },
+  { start:'SAND', end:'BAND', par:1, path:['SAND','BAND'] },
+  { start:'WIRE', end:'FIRE', par:1, path:['WIRE','FIRE'] },
+  { start:'GATE', end:'MATE', par:1, path:['GATE','MATE'] },
+  { start:'SOLE', end:'ROLE', par:1, path:['SOLE','ROLE'] },
+  { start:'CAVE', end:'GAVE', par:1, path:['CAVE','GAVE'] },
+  { start:'MANE', end:'LANE', par:1, path:['MANE','LANE'] },
+  { start:'HIRE', end:'FIRE', par:1, path:['HIRE','FIRE'] },
+  { start:'LURE', end:'CURE', par:1, path:['LURE','CURE'] },
+  { start:'TOLD', end:'BOLD', par:1, path:['TOLD','BOLD'] },
+  { start:'MIST', end:'FIST', par:1, path:['MIST','FIST'] },
+  { start:'BONE', end:'TONE', par:1, path:['BONE','TONE'] },
+  { start:'CALL', end:'TALL', par:1, path:['CALL','TALL'] },
+  { start:'SAVE', end:'CAVE', par:1, path:['SAVE','CAVE'] },
+  { start:'LOAD', end:'ROAD', par:1, path:['LOAD','ROAD'] },
+];
+
+// GROW seeds — one per day
+const GROW_SEEDS = [
+  'ACE','EAR','ARE','ATE','OAR','ICE','APE','ORE','AGE','USE',
+  'AIM','ILL','ODD','AID','OWE','ACE','EAR','ARE','ATE','OAR',
+  'ICE','APE','ORE','AGE','USE','AIM','ILL','ODD','AID','OWE',
+  'ACE','EAR','ARE','ATE','OAR','ICE','APE','ORE','AGE','USE',
+  'AIM','ILL','ODD','AID','OWE','ACE','EAR','ARE','ATE','OAR',
+  'ICE','APE','ORE','AGE','USE','AIM','ILL','ODD','AID','OWE',
+];
+
+// DECODE sets — 20 distinct
+const DECODE_PUZZLES = [
+  {
+    connection: 'FIRE',
+    hint: 'Each word follows FIRE',
+    clues: [
+      { text: 'Explosions and sparkle in the sky', answer: 'WORKS' },
+      { text: 'Where flames burn in a home wall', answer: 'PLACE' },
+      { text: 'Just next to the flames', answer: 'SIDE' },
+      { text: 'You carry it for protection', answer: 'ARM' },
+      { text: 'Flicker in the dark, not a candle brand', answer: 'LIGHT' },
+      { text: 'One who fights blazes for a living', answer: 'MAN' },
+      { text: 'The big red vehicle with a siren', answer: 'TRUCK' },
+    ]
+  },
+  {
+    connection: 'BALL',
+    hint: 'Each word precedes BALL',
+    clues: [
+      { text: 'Eleven players, goalposts, and a pitch', answer: 'FOOT' },
+      { text: 'Nine innings, a diamond, and a pitcher', answer: 'BASE' },
+      { text: 'Hoops and a 10-foot rim', answer: 'BASKET' },
+      { text: 'Net in the middle, sets and spikes', answer: 'VOLLEY' },
+      { text: 'Like baseball but pitched underhand', answer: 'SOFT' },
+      { text: 'Fired from artillery', answer: 'CANNON' },
+      { text: 'Cold white sphere you throw in winter', answer: 'SNOW' },
+    ]
+  },
+  {
+    connection: 'TYPES OF CLOUD',
+    hint: 'All are types of cloud',
+    clues: [
+      { text: 'Thin, wispy, high-altitude streaks', answer: 'CIRRUS' },
+      { text: 'Flat, layered, covers the sky like a blanket', answer: 'STRATUS' },
+      { text: 'Puffy white cotton balls', answer: 'CUMULUS' },
+      { text: 'The massive storm tower', answer: 'CUMULONIMBUS' },
+      { text: 'Rain-bearing layer cloud', answer: 'NIMBOSTRATUS' },
+      { text: 'Mid-level, often gray patches', answer: 'ALTOCUMULUS' },
+      { text: 'Thin, layered at mid altitude', answer: 'ALTOSTRATUS' },
+    ]
+  },
+  {
+    connection: 'GAME',
+    hint: 'Each word precedes GAME',
+    clues: [
+      { text: 'Played on a table with paddles and a tiny ball', answer: 'TABLE' },
+      { text: 'Where players compete outdoors in sports', answer: 'BALL' },
+      { text: 'A big-stakes match or the final contest', answer: 'BIG' },
+      { text: 'What you call a rigged contest', answer: 'FAIR' },
+      { text: 'Classic hunting target animal category', answer: 'WILD' },
+      { text: 'Hosted at home for friends', answer: 'HOME' },
+      { text: 'No rules, anything goes', answer: 'FREE' },
+    ]
+  },
+  {
+    connection: 'CHESS PIECES',
+    hint: 'All are chess pieces',
+    clues: [
+      { text: 'Moves diagonally only, one color', answer: 'BISHOP' },
+      { text: 'Jumps over others in an L-shape', answer: 'KNIGHT' },
+      { text: 'Most powerful piece on the board', answer: 'QUEEN' },
+      { text: 'The piece you must protect at all costs', answer: 'KING' },
+      { text: 'Stands on the corners at the start', answer: 'ROOK' },
+      { text: 'The front row soldiers', answer: 'PAWN' },
+      { text: 'Can move any number of squares in a line', answer: 'ROOK' },
+    ]
+  },
+  {
+    connection: 'THINGS IN SPACE',
+    hint: 'All are things found in space',
+    clues: [
+      { text: 'Streaks across the sky and grants wishes', answer: 'METEOR' },
+      { text: 'Rocky body orbiting the sun, not a planet', answer: 'ASTEROID' },
+      { text: 'Dirty snowball with a glowing tail', answer: 'COMET' },
+      { text: 'Our galaxy type — a spinning arm structure', answer: 'SPIRAL' },
+      { text: 'Where gravity is so strong light cannot escape', answer: 'BLACKHOLE' },
+      { text: 'The dense remnant after a star explodes', answer: 'NEUTRON' },
+      { text: 'Giant cloud of gas and dust where stars form', answer: 'NEBULA' },
+    ]
+  },
+  {
+    connection: 'POKEMON TYPES',
+    hint: 'All are Pokémon battle types',
+    clues: [
+      { text: 'Pikachu\'s element', answer: 'ELECTRIC' },
+      { text: 'Bulbasaur\'s primary type', answer: 'GRASS' },
+      { text: 'Charmander\'s element', answer: 'FIRE' },
+      { text: 'Squirtle\'s element', answer: 'WATER' },
+      { text: 'Ghost Pokémon are this type too', answer: 'DARK' },
+      { text: 'Jigglypuff and Clefairy share this', answer: 'NORMAL' },
+      { text: 'Legendary type, hard to find', answer: 'PSYCHIC' },
+    ]
+  },
+  {
+    connection: 'PLANETS',
+    hint: 'All are planets in our solar system',
+    clues: [
+      { text: 'Closest to the sun, no moons', answer: 'MERCURY' },
+      { text: 'Hottest planet, covered in clouds', answer: 'VENUS' },
+      { text: 'The red planet', answer: 'MARS' },
+      { text: 'Largest planet, has a giant storm', answer: 'JUPITER' },
+      { text: 'Has iconic rings', answer: 'SATURN' },
+      { text: 'Rotates on its side', answer: 'URANUS' },
+      { text: 'Furthest from the sun, deep blue', answer: 'NEPTUNE' },
+    ]
+  },
+  {
+    connection: 'MUSICAL INSTRUMENTS',
+    hint: 'All are musical instruments',
+    clues: [
+      { text: 'You blow into it and press valves — brass', answer: 'TRUMPET' },
+      { text: 'Six strings and a fretboard', answer: 'GUITAR' },
+      { text: 'Eighty-eight keys, black and white', answer: 'PIANO' },
+      { text: 'You hit it with sticks in a kit', answer: 'DRUMS' },
+      { text: 'Bowed string instrument, under violin', answer: 'VIOLA' },
+      { text: 'Reed instrument, often jazz', answer: 'SAXOPHONE' },
+      { text: 'Large stringed instrument, played upright', answer: 'CELLO' },
+    ]
+  },
+  {
+    connection: 'WORDS BEFORE LIGHT',
+    hint: 'Each word precedes LIGHT',
+    clues: [
+      { text: 'What the sun provides at noon', answer: 'DAY' },
+      { text: 'Illumination from above the clouds', answer: 'SKY' },
+      { text: 'Comes before dawn', answer: 'MOON' },
+      { text: 'A car\'s front lamp', answer: 'HEAD' },
+      { text: 'What traffic uses to signal', answer: 'STOP' },
+      { text: 'Romantic dinner lamp style', answer: 'CANDLE' },
+      { text: 'Flash from the storm', answer: 'FLASH' },
+    ]
+  },
+  {
+    connection: 'CARD SUITS',
+    hint: 'Broader card and board game connection',
+    clues: [
+      { text: 'Highest-value suit in many games', answer: 'SPADES' },
+      { text: 'Red suit with a leaf shape', answer: 'CLUBS' },
+      { text: 'Red suit shaped like a gem', answer: 'DIAMONDS' },
+      { text: 'Red suit, love symbol', answer: 'HEARTS' },
+      { text: 'The joker card has no...' , answer: 'SUIT' },
+      { text: 'What a flush all share in poker', answer: 'SUIT' },
+      { text: 'Bridge players bid on these four', answer: 'SUIT' },
+    ]
+  },
+  {
+    connection: 'PROGRAMMING LANGUAGES',
+    hint: 'All are programming languages',
+    clues: [
+      { text: 'Snake mascot, very beginner-friendly', answer: 'PYTHON' },
+      { text: 'Runs in every browser natively', answer: 'JAVASCRIPT' },
+      { text: 'Coffee cup logo, write once run anywhere', answer: 'JAVA' },
+      { text: 'Low-level, close to the machine', answer: 'C' },
+      { text: 'Microsoft language, often enterprise', answer: 'CSHARP' },
+      { text: 'Apple\'s modern language, replaces Objective-C', answer: 'SWIFT' },
+      { text: 'Mozilla\'s memory-safe systems language', answer: 'RUST' },
+    ]
+  },
+  {
+    connection: 'TYPES OF PASTA',
+    hint: 'All are types of pasta',
+    clues: [
+      { text: 'Long, thin, classic Italian strand', answer: 'SPAGHETTI' },
+      { text: 'Tube-shaped, often baked with meat', answer: 'PENNE' },
+      { text: 'Bow-tie shape', answer: 'FARFALLE' },
+      { text: 'Corkscrew spiral', answer: 'FUSILLI' },
+      { text: 'Wide flat ribbons', answer: 'FETTUCCINE' },
+      { text: 'Tiny rice-shaped pasta', answer: 'ORZO' },
+      { text: 'Sheet-layered baked dish', answer: 'LASAGNE' },
+    ]
+  },
+  {
+    connection: 'WORDS AFTER SNOW',
+    hint: 'Each word follows SNOW',
+    clues: [
+      { text: 'White flake that falls from the sky', answer: 'FLAKE' },
+      { text: 'You pack and roll it in the yard', answer: 'BALL' },
+      { text: 'Built with a carrot nose', answer: 'MAN' },
+      { text: 'A sudden cold slide down a mountain', answer: 'SLIDE' },
+      { text: 'Strapped to your feet for winter terrain', answer: 'BOARD' },
+      { text: 'Clears the driveway after a storm', answer: 'PLOW' },
+      { text: 'A miniature winter scene in a glass sphere', answer: 'GLOBE' },
+    ]
+  },
+  {
+    connection: 'TYPES OF STAR',
+    hint: 'All are types of star',
+    clues: [
+      { text: 'Our sun is this common, stable type', answer: 'DWARF' },
+      { text: 'Cooler, expanded old star — reddish', answer: 'GIANT' },
+      { text: 'Tiny, ultra-dense spinning remnant', answer: 'NEUTRON' },
+      { text: 'Hot, very luminous and blue', answer: 'SUPERGIANT' },
+      { text: 'Star that pulsates in brightness', answer: 'VARIABLE' },
+      { text: 'Two stars orbiting each other', answer: 'BINARY' },
+      { text: 'Explodes in a massive supernova', answer: 'MASSIVE' },
+    ]
+  },
+  {
+    connection: 'WORDS BEFORE HOUSE',
+    hint: 'Each word precedes HOUSE',
+    clues: [
+      { text: 'Where the sick go for treatment', answer: 'POWER' },
+      { text: 'For your car', answer: 'CAR' },
+      { text: 'Trees and glass, growing plants inside', answer: 'GREEN' },
+      { text: 'Haunted — spooky attraction', answer: 'HAUNTED' },
+      { text: 'Restaurant-style premises', answer: 'STEAK' },
+      { text: 'A tiny home for dolls', answer: 'DOLL' },
+      { text: 'Storage for farm equipment', answer: 'WARE' },
+    ]
+  },
+  {
+    connection: 'OCEAN CREATURES',
+    hint: 'All live in the ocean',
+    clues: [
+      { text: 'Has eight arms and sprays ink', answer: 'OCTOPUS' },
+      { text: 'Largest mammal on Earth', answer: 'WHALE' },
+      { text: 'Bioluminescent, no brain or heart', answer: 'JELLYFISH' },
+      { text: 'Spiny bottom-dweller, edible roe', answer: 'SEAURCHIN' },
+      { text: 'Apex predator with rows of teeth', answer: 'SHARK' },
+      { text: 'Horse-shaped fish that swims upright', answer: 'SEAHORSE' },
+      { text: 'Star-shaped, can regenerate arms', answer: 'STARFISH' },
+    ]
+  },
+  {
+    connection: 'BOARD GAME BRANDS',
+    hint: 'All are classic board games',
+    clues: [
+      { text: 'Buy properties, build hotels, go broke', answer: 'MONOPOLY' },
+      { text: 'Black and white 64-square strategy', answer: 'CHESS' },
+      { text: 'Guess who did it, where, with what', answer: 'CLUEDO' },
+      { text: 'Tile-laying word scoring game', answer: 'SCRABBLE' },
+      { text: 'Risk everything to conquer the world', answer: 'RISK' },
+      { text: 'Connect four in a row', answer: 'CONNECT4' },
+      { text: 'Snakes and ladders cousin, luck-only', answer: 'SORRY' },
+    ]
+  },
+  {
+    connection: 'COLORS OF THE RAINBOW',
+    hint: 'All are rainbow colors (ROYGBIV)',
+    clues: [
+      { text: 'First color, warmest', answer: 'RED' },
+      { text: 'Second color, citrus fruit shade', answer: 'ORANGE' },
+      { text: 'Third, sunflower and caution', answer: 'YELLOW' },
+      { text: 'Fourth, nature and go', answer: 'GREEN' },
+      { text: 'Fifth, sky and ocean', answer: 'BLUE' },
+      { text: 'Sixth, between blue and violet', answer: 'INDIGO' },
+      { text: 'Seventh, last in the arc', answer: 'VIOLET' },
+    ]
+  },
+  {
+    connection: 'WORDS AFTER BLACK',
+    hint: 'Each word follows BLACK',
+    clues: [
+      { text: 'Board used to write on with chalk', answer: 'BOARD' },
+      { text: 'What a pirate flies', answer: 'FLAG' },
+      { text: 'Recorded audio device in a plane', answer: 'BOX' },
+      { text: 'What a smith works with hot metal', answer: 'SMITH' },
+      { text: 'To extinguish all lights in wartime', answer: 'OUT' },
+      { text: 'A dark Friday in shopping', answer: 'FRIDAY' },
+      { text: 'Small wild fruit — bramble berry', answer: 'BERRY' },
+    ]
+  },
+];
+
+// ── GAME STATE ───────────────────────────────────────────────
+
+const TODAY = new Date();
+const EPOCH = new Date('2026-01-01');
+const DAY_INDEX = Math.floor((TODAY - EPOCH) / 86400000);
+
+function getPuzzleIndex() {
+  return DAY_INDEX % CHAIN_PUZZLES.length;
+}
+
+function getDecodeIndex() {
+  return DAY_INDEX % DECODE_PUZZLES.length;
+}
+
+function getGrowSeed() {
+  return GROW_SEEDS[DAY_INDEX % GROW_SEEDS.length];
+}
+
+const STORAGE_KEY = `rift_state_${DAY_INDEX}`;
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return {
+    zone: 0,           // current zone (0,1,2) or 3 = done
+    stars: [0,0,0],    // stars per zone
+    chainSteps: [],    // words typed so far in chain
+    chainDone: false,
+    growWords: [],     // words in grow chain
+    growDone: false,
+    decodeCluesShown: 1,
+    decodeGuesses: [],
+    decodeDone: false,
+    decodeWrongPenalty: 0,
+  };
+}
+
+function saveState(st) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(st)); } catch(e) {}
+}
+
+// Persist streak/played separately (not day-keyed)
+function loadMeta() {
+  try { return JSON.parse(localStorage.getItem('rift_meta') || '{}'); } catch(e) { return {}; }
+}
+function saveMeta(m) {
+  try { localStorage.setItem('rift_meta', JSON.stringify(m)); } catch(e) {}
+}
+
+let STATE = loadState();
+
+// ── CHAIN LOGIC ──────────────────────────────────────────────
+
+function diffCount(a, b) {
+  if (a.length !== b.length) return 99;
+  let d = 0;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) d++;
+  return d;
+}
+
+function initChain() {
+  const p = CHAIN_PUZZLES[getPuzzleIndex()];
+  document.getElementById('chainStart').textContent = p.start;
+  document.getElementById('chainEnd').textContent   = p.end;
+  document.getElementById('chainPar').textContent   = p.par;
+
+  renderChainLadder(p);
+
+  if (STATE.chainDone) {
+    document.getElementById('chainInputRow').style.display = 'none';
+    document.getElementById('chainDone').style.display = 'block';
+    document.getElementById('chainDoneBanner').textContent =
+      `Done! ${STATE.chainSteps.length - 1} step${STATE.chainSteps.length-1===1?'':'s'} — ${'⭐'.repeat(STATE.stars[0])}`;
+    // grey out the continue button if already past zone 0
+    if (STATE.zone > 1) {
+      const btn = document.querySelector('#chainDone .btn');
+      if (btn) { btn.textContent = 'Completed'; btn.disabled = true; }
+    }
+  }
+  document.getElementById('chainSteps').textContent = Math.max(0, STATE.chainSteps.length - 1);
+}
+
+function renderChainLadder(p) {
+  const ladder = document.getElementById('chainLadder');
+  ladder.innerHTML = '';
+  const steps = STATE.chainSteps.length > 0 ? STATE.chainSteps : [p.start];
+
+  steps.forEach((word, i) => {
+    if (i > 0) {
+      const conn = document.createElement('div');
+      conn.className = 'chain-connector';
+      ladder.appendChild(conn);
+    }
+    const row = document.createElement('div');
+    row.className = 'chain-step slide-down';
+
+    const numEl = document.createElement('div');
+    numEl.className = 'chain-step-num';
+    numEl.textContent = i > 0 ? i : '';
+
+    const wordEl = document.createElement('div');
+    wordEl.className = 'chain-step-word' + (i === 0 ? ' start' : (word.toUpperCase() === p.end ? ' end' : ' valid'));
+
+    if (i > 0) {
+      // Highlight changed letter
+      const prev = steps[i-1].toUpperCase();
+      const curr = word.toUpperCase();
+      wordEl.innerHTML = '';
+      for (let c = 0; c < curr.length; c++) {
+        const s = document.createElement('span');
+        s.textContent = curr[c];
+        if (curr[c] !== prev[c]) s.className = 'changed';
+        wordEl.appendChild(s);
+      }
+    } else {
+      wordEl.textContent = word.toUpperCase();
+    }
+
+    row.appendChild(numEl);
+    row.appendChild(wordEl);
+    ladder.appendChild(row);
+  });
+}
+
+function submitChain() {
+  if (STATE.chainDone) return;
+  const p = CHAIN_PUZZLES[getPuzzleIndex()];
+  const input = document.getElementById('chainInput');
+  const raw = input.value.trim().toUpperCase();
+  input.value = '';
+
+  if (!raw) return;
+
+  const currentWord = STATE.chainSteps.length > 0 ? STATE.chainSteps[STATE.chainSteps.length-1] : p.start;
+  const expectedLen = p.start.length;
+
+  if (raw.length !== expectedLen) {
+    showToast(`Word must be ${expectedLen} letters`, 'error');
+    input.classList.add('shake');
+    setTimeout(() => input.classList.remove('shake'), 450);
+    return;
+  }
+
+  const diff = diffCount(raw, currentWord.toUpperCase());
+  if (diff === 0) { showToast('Same as current word', 'error'); return; }
+  if (diff > 1) {
+    showToast('Change exactly one letter', 'error');
+    input.classList.add('shake');
+    setTimeout(() => input.classList.remove('shake'), 450);
+    return;
+  }
+
+  if (!isValidWord(raw)) {
+    showToast('Not a valid word', 'error');
+    input.classList.add('shake');
+    setTimeout(() => input.classList.remove('shake'), 450);
+    return;
+  }
+
+  // Valid step
+  if (STATE.chainSteps.length === 0) STATE.chainSteps.push(p.start);
+  STATE.chainSteps.push(raw);
+  document.getElementById('chainSteps').textContent = STATE.chainSteps.length - 1;
+  renderChainLadder(p);
+
+  if (raw === p.end.toUpperCase()) {
+    // Reached the end!
+    const steps = STATE.chainSteps.length - 1;
+    let stars = 1;
+    if (steps <= p.par) stars = 3;
+    else if (steps === p.par + 1) stars = 2;
+
+    STATE.chainDone = true;
+    STATE.stars[0] = stars;
+    saveState(STATE);
+
+    document.getElementById('chainInputRow').style.display = 'none';
+    document.getElementById('chainDone').style.display = 'block';
+    document.getElementById('chainDoneBanner').textContent =
+      `${steps} step${steps===1?'':'s'} — ${'⭐'.repeat(stars)}`;
+    showToast('Zone 1 complete! ' + '⭐'.repeat(stars), 'success');
+  } else {
+    saveState(STATE);
+  }
+
+  input.focus();
+}
+
+// ── GROW LOGIC ───────────────────────────────────────────────
+
+function initGrow() {
+  const seed = getGrowSeed();
+  if (STATE.growWords.length === 0) STATE.growWords.push(seed);
+
+  updateGrowDisplay();
+
+  if (STATE.growDone) {
+    document.getElementById('growInputRow').style.display = 'none';
+    document.getElementById('growHint').style.display = 'none';
+    document.getElementById('growDone').style.display = 'block';
+    document.getElementById('growDoneBanner').textContent =
+      `${STATE.growWords.length - 1} extension${STATE.growWords.length-1===1?'':'s'} — ${'⭐'.repeat(STATE.stars[1])}`;
+    if (STATE.zone > 2) {
+      const btn = document.querySelector('#growDone .btn');
+      if (btn) { btn.textContent = 'Completed'; btn.disabled = true; }
+    }
+  }
+}
+
+function updateGrowDisplay() {
+  const words = STATE.growWords;
+  const current = words[words.length - 1].toUpperCase();
+  document.getElementById('growCurrent').textContent = current;
+  document.getElementById('growCount').textContent = Math.max(0, words.length - 1);
+  document.getElementById('growHintWord').textContent = current;
+
+  const hist = document.getElementById('growHistory');
+  hist.innerHTML = '';
+  words.slice(0, -1).forEach(w => {
+    const tag = document.createElement('div');
+    tag.className = 'grow-word-tag pop-in';
+    tag.textContent = w.toUpperCase();
+    hist.appendChild(tag);
+  });
+}
+
+function isOneLetterInserted(shorter, longer) {
+  if (longer.length !== shorter.length + 1) return false;
+  for (let i = 0; i <= shorter.length; i++) {
+    // try inserting at position i
+    const candidate = longer.slice(0, i) + shorter.slice(i - (i > 0 ? 1 : 0));
+    // Better: construct candidate by removing char at position i from longer
+    const removed = longer.slice(0, i) + longer.slice(i + 1);
+    if (removed === shorter) return true;
+  }
+  return false;
+}
+
+function submitGrow() {
+  if (STATE.growDone) return;
+  const input = document.getElementById('growInput');
+  const raw = input.value.trim().toUpperCase();
+  input.value = '';
+  if (!raw) return;
+
+  const current = STATE.growWords[STATE.growWords.length - 1].toUpperCase();
+
+  if (raw.length !== current.length + 1) {
+    showToast(`Must be ${current.length + 1} letters (insert one letter)`, 'error');
+    input.classList.add('shake');
+    setTimeout(() => input.classList.remove('shake'), 450);
+    return;
+  }
+
+  if (!isOneLetterInserted(current, raw)) {
+    showToast('Must be ' + current + ' with exactly one letter inserted', 'error');
+    input.classList.add('shake');
+    setTimeout(() => input.classList.remove('shake'), 450);
+    return;
+  }
+
+  if (!isValidWord(raw)) {
+    showToast('Not a valid word', 'error');
+    input.classList.add('shake');
+    setTimeout(() => input.classList.remove('shake'), 450);
+    return;
+  }
+
+  if (STATE.growWords.map(w=>w.toUpperCase()).includes(raw)) {
+    showToast('Already used that word', 'error');
+    return;
+  }
+
+  STATE.growWords.push(raw);
+  updateGrowDisplay();
+  saveState(STATE);
+  showToast('+1 extension!', 'success');
+  input.focus();
+}
+
+function finishGrow() {
+  if (STATE.growDone) return;
+  const extensions = STATE.growWords.length - 1;
+  let stars = 1;
+  if (extensions >= 5) stars = 3;
+  else if (extensions >= 3) stars = 2;
+
+  STATE.growDone = true;
+  STATE.stars[1] = stars;
+  saveState(STATE);
+
+  document.getElementById('growInputRow').style.display = 'none';
+  document.getElementById('growHint').style.display = 'none';
+  document.getElementById('growDone').style.display = 'block';
+  document.getElementById('growDoneBanner').textContent =
+    `${extensions} extension${extensions===1?'':'s'} — ${'⭐'.repeat(stars)}`;
+  showToast('Zone 2 complete! ' + '⭐'.repeat(stars), 'success');
+}
+
+// ── DECODE LOGIC ─────────────────────────────────────────────
+
+function initDecode() {
+  const dp = DECODE_PUZZLES[getDecodeIndex()];
+  renderDecodeClues(dp);
+  updateDecodeStars();
+
+  // Restore guesses
+  STATE.decodeGuesses.forEach(g => {
+    const tag = document.createElement('div');
+    tag.className = 'decode-guess-tag';
+    tag.textContent = g;
+    document.getElementById('decodeGuessLog').appendChild(tag);
+  });
+
+  if (STATE.decodeDone) {
+    document.getElementById('decodeRevealArea').style.display = 'none';
+    document.getElementById('decodeInput').disabled = true;
+    document.querySelector('#zone2 .btn-zone3').disabled = true;
+    document.getElementById('decodeDone').style.display = 'block';
+    document.getElementById('decodeDoneBanner').textContent =
+      `Connection found! ${'⭐'.repeat(STATE.stars[2])}`;
+    // Show all clues answered
+    document.querySelectorAll('.decode-clue').forEach(el => el.classList.remove('hidden'));
+  }
+}
+
+function renderDecodeClues(dp) {
+  const list = document.getElementById('decodeCluesList');
+  list.innerHTML = '';
+
+  dp.clues.forEach((clue, i) => {
+    const div = document.createElement('div');
+    div.className = 'decode-clue' + (i >= STATE.decodeCluesShown ? ' hidden' : '');
+    div.id = `clue${i}`;
+
+    const num = document.createElement('div');
+    num.className = 'decode-clue-num';
+    num.textContent = i + 1;
+
+    const text = document.createElement('div');
+    text.className = 'decode-clue-text';
+    text.textContent = clue.text;
+
+    div.appendChild(num);
+    div.appendChild(text);
+
+    if (STATE.decodeDone) {
+      const ans = document.createElement('div');
+      ans.className = 'decode-clue-answer';
+      ans.textContent = '→ ' + clue.answer;
+      div.appendChild(ans);
+      div.classList.add('solved');
+    }
+
+    list.appendChild(div);
+  });
+
+  document.getElementById('decodeClueCount').textContent = STATE.decodeCluesShown;
+
+  // Hide reveal button if all clues shown
+  if (STATE.decodeCluesShown >= 7) {
+    document.getElementById('decodeRevealArea').style.display = 'none';
+  }
+}
+
+function revealNextClue() {
+  if (STATE.decodeCluesShown >= 7) return;
+  STATE.decodeCluesShown++;
+  saveState(STATE);
+
+  const el = document.getElementById(`clue${STATE.decodeCluesShown - 1}`);
+  if (el) {
+    el.classList.remove('hidden');
+    el.classList.add('slide-down');
+  }
+  document.getElementById('decodeClueCount').textContent = STATE.decodeCluesShown;
+  updateDecodeStars();
+
+  if (STATE.decodeCluesShown >= 7) {
+    document.getElementById('decodeRevealArea').style.display = 'none';
+  }
+}
+
+function updateDecodeStars() {
+  const stars = document.querySelectorAll('#decodeStarRow .star');
+  const shown = STATE.decodeCluesShown;
+  const penalty = STATE.decodeWrongPenalty;
+
+  // 3 stars: solved with ≤3 clues and no/1 wrong guess
+  // 2 stars: 4-5 clues
+  // 1 star: 6-7 clues or many wrong guesses
+  let lit = 3;
+  if (shown >= 6 || penalty >= 3) lit = 1;
+  else if (shown >= 4 || penalty >= 1) lit = 2;
+
+  stars.forEach((s, i) => {
+    s.classList.toggle('lit', i < lit);
+  });
+}
+
+function submitDecode() {
+  if (STATE.decodeDone) return;
+  const dp = DECODE_PUZZLES[getDecodeIndex()];
+  const input = document.getElementById('decodeInput');
+  const raw = input.value.trim().toUpperCase();
+  input.value = '';
+  if (!raw) return;
+
+  const correct = dp.connection.toUpperCase();
+
+  // Flexible matching: check if guess contains the answer or vice versa
+  const match = raw === correct ||
+                raw.includes(correct) ||
+                correct.includes(raw) ||
+                levenshtein(raw, correct) <= 1;
+
+  if (match) {
+    // Win!
+    const shown = STATE.decodeCluesShown;
+    const penalty = STATE.decodeWrongPenalty;
+    let stars = 3;
+    if (shown >= 6 || penalty >= 3) stars = 1;
+    else if (shown >= 4 || penalty >= 1) stars = 2;
+
+    STATE.decodeDone = true;
+    STATE.stars[2] = stars;
+    saveState(STATE);
+
+    // Show all clue answers
+    dp.clues.forEach((clue, i) => {
+      const el = document.getElementById(`clue${i}`);
+      if (!el) return;
+      el.classList.remove('hidden');
+      el.classList.add('solved');
+      // Add answer
+      if (!el.querySelector('.decode-clue-answer')) {
+        const ans = document.createElement('div');
+        ans.className = 'decode-clue-answer pop-in';
+        ans.textContent = '→ ' + clue.answer;
+        el.appendChild(ans);
+      }
+    });
+
+    document.getElementById('decodeRevealArea').style.display = 'none';
+    document.getElementById('decodeDone').style.display = 'block';
+    document.getElementById('decodeDoneBanner').textContent =
+      `The connection: ${dp.connection} — ${'⭐'.repeat(stars)}`;
+    showToast('You got it! ' + '⭐'.repeat(stars), 'success');
+  } else {
+    // Wrong
+    STATE.decodeWrongPenalty++;
+    STATE.decodeGuesses.push(raw);
+    saveState(STATE);
+
+    const tag = document.createElement('div');
+    tag.className = 'decode-guess-tag';
+    tag.textContent = raw;
+    document.getElementById('decodeGuessLog').appendChild(tag);
+
+    updateDecodeStars();
+    showToast('Not quite — keep trying!', 'error');
+    input.classList.add('shake');
+    setTimeout(() => input.classList.remove('shake'), 450);
+  }
+
+  input.focus();
+}
+
+function levenshtein(a, b) {
+  const m = a.length, n = b.length;
+  const dp = Array.from({length: m+1}, (_, i) => Array.from({length: n+1}, (_, j) => i===0?j:j===0?i:0));
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++)
+      dp[i][j] = a[i-1]===b[j-1] ? dp[i-1][j-1] : 1+Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+  return dp[m][n];
+}
+
+// ── ZONE NAVIGATION ──────────────────────────────────────────
+
+function goZone(z) {
+  // Show transition overlay first
+  if (z === 1) {
+    triggerTransition(
+      'Zone 1 Complete', '⭐'.repeat(STATE.stars[0]) || '—',
+      'ZONE 2 UNLOCKED', 'GROW — Insert one letter to grow each word',
+      'btn-zone2', z
+    );
+  } else if (z === 2) {
+    triggerTransition(
+      'Zone 2 Complete', '⭐'.repeat(STATE.stars[1]) || '—',
+      'ZONE 3 UNLOCKED', 'DECODE — Find the hidden connection',
+      'btn-zone3', z
+    );
+  } else {
+    activateZone(z);
+  }
+}
+
+function triggerTransition(label, stars, title, sub, btnClass, nextZone) {
+  document.getElementById('ztLabel').textContent = label;
+  document.getElementById('ztStars').textContent = stars;
+  document.getElementById('ztTitle').textContent = title;
+  document.getElementById('ztSub').textContent   = sub;
+  const btn = document.getElementById('ztBtn');
+  btn.className = `btn ${btnClass} btn--sm`;
+  btn.onclick = () => { dismissTransition(); activateZone(nextZone); };
+  document.getElementById('zoneTransition').classList.add('show');
+}
+
+function dismissTransition() {
+  document.getElementById('zoneTransition').classList.remove('show');
+}
+
+function activateZone(z) {
+  STATE.zone = z;
+  saveState(STATE);
+
+  // Hide all panels
+  for (let i = 0; i < 3; i++) {
+    document.getElementById(`zone${i}`).classList.remove('active');
+  }
+  document.getElementById('resultScreen').classList.remove('show');
+
+  if (z >= 3) {
+    showResult();
+    return;
+  }
+
+  document.getElementById(`zone${z}`).classList.add('active');
+
+  // Update dots
+  for (let i = 0; i < 3; i++) {
+    const dot = document.getElementById(`dot${i}`);
+    dot.classList.remove('active','done');
+    if (i < z) dot.classList.add('done');
+    else if (i === z) dot.classList.add('active');
+  }
+
+  // Focus input
+  setTimeout(() => {
+    if (z === 0) document.getElementById('chainInput')?.focus();
+    else if (z === 1) document.getElementById('growInput')?.focus();
+    else if (z === 2) document.getElementById('decodeInput')?.focus();
+  }, 300);
+}
+
+// ── RESULT SCREEN ────────────────────────────────────────────
+
+function showResult() {
+  // Mark all dots done
+  for (let i = 0; i < 3; i++) {
+    const dot = document.getElementById(`dot${i}`);
+    dot.classList.remove('active');
+    dot.classList.add('done');
+  }
+
+  // Hide all zone panels
+  for (let i = 0; i < 3; i++) {
+    document.getElementById(`zone${i}`).classList.remove('active');
+  }
+
+  // Update meta (streak, played)
+  const meta = loadMeta();
+  const lastDay = meta.lastDay || -1;
+  if (lastDay !== DAY_INDEX) {
+    meta.played = (meta.played || 0) + 1;
+    meta.streak = (lastDay === DAY_INDEX - 1) ? (meta.streak || 0) + 1 : 1;
+    meta.lastDay = DAY_INDEX;
+    saveMeta(meta);
+    document.getElementById('statStreak').textContent = meta.streak;
+    document.getElementById('statPlayed').textContent = meta.played;
+  }
+
+  // Build result display
+  document.getElementById('resultDay').textContent =
+    `RIFT #${DAY_INDEX}  ·  ${TODAY.toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'})}`;
+
+  const starIcons = ['resStars0','resStars1','resStars2'];
+  starIcons.forEach((id, i) => {
+    const el = document.getElementById(id);
+    el.innerHTML = '';
+    for (let s = 0; s < 3; s++) {
+      const sp = document.createElement('span');
+      sp.textContent = '⭐';
+      sp.style.opacity = s < STATE.stars[i] ? '1' : '0.2';
+      el.appendChild(sp);
+    }
+  });
+
+  // Share card
+  const emojis = ['⭐','⭐⭐','⭐⭐⭐'];
+  const chain  = emojis[Math.max(0, STATE.stars[0] - 1)] || '—';
+  const grow   = emojis[Math.max(0, STATE.stars[1] - 1)] || '—';
+  const decode = emojis[Math.max(0, STATE.stars[2] - 1)] || '—';
+  const shareText =
+`RIFT #${DAY_INDEX}
+⚡ CHAIN   ${chain}
+🌱 GROW    ${grow}
+🔮 DECODE  ${decode}
+cosmicgameshub.com/games/rift`;
+
+  document.getElementById('shareCard').textContent = shareText;
+  window._shareText = shareText;
+
+  document.getElementById('resultScreen').classList.add('show');
+
+  STATE.zone = 3;
+  saveState(STATE);
+}
+
+function copyShare() {
+  navigator.clipboard.writeText(window._shareText || '').then(() => {
+    showToast('Copied to clipboard!', 'success');
+  }).catch(() => {
+    showToast('Copy failed — select manually', 'error');
+  });
+}
+
+// ── TOAST ────────────────────────────────────────────────────
+
+let toastTimer;
+function showToast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (type ? ' ' + type : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.className = 'toast'; }, 2600);
+}
+
+// ── HAMBURGER NAV ────────────────────────────────────────────
+
+document.getElementById('hamburger').addEventListener('click', () => {
+  document.getElementById('navLinks').classList.toggle('open');
+});
+
+// ── GROW STOP BUTTON — shown after 3+ extensions ─────────────
+// Injected dynamically below the grow input
+function checkGrowStopButton() {
+  if (STATE.growDone) return;
+  const ext = STATE.growWords.length - 1;
+  let stopBtn = document.getElementById('growStopBtn');
+  if (ext >= 2 && !stopBtn) {
+    stopBtn = document.createElement('button');
+    stopBtn.id = 'growStopBtn';
+    stopBtn.className = 'btn btn--outline btn--sm btn--full';
+    stopBtn.textContent = `Stop here (${ext} extension${ext===1?'':'s'})`;
+    stopBtn.style.marginTop = '0.5rem';
+    stopBtn.onclick = finishGrow;
+    document.getElementById('growHint').after(stopBtn);
+  } else if (stopBtn) {
+    stopBtn.textContent = `Stop here (${ext} extension${ext===1?'':'s'})`;
+  }
+}
+
+// Patch submitGrow to call this
+const _origSubmitGrow = submitGrow;
+function submitGrow() {
+  _origSubmitGrow();
+  checkGrowStopButton();
+}
+
+// ── INIT ─────────────────────────────────────────────────────
+
+function init() {
+  // Load meta for stats display
+  const meta = loadMeta();
+  document.getElementById('statStreak').textContent = meta.streak || 0;
+  document.getElementById('statPlayed').textContent = meta.played || 0;
+
+  // Initialize all zones
+  initChain();
+  initGrow();
+  initDecode();
+
+  // Restore zone
+  if (STATE.zone >= 3) {
+    showResult();
+  } else {
+    activateZone(STATE.zone);
+  }
+
+  // If grow already has extensions, show stop button
+  checkGrowStopButton();
+}
+
+init();
+</script>
+</body>
+</html>
