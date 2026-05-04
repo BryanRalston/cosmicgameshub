@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Daily Challenge — Today's Gaming Puzzle | CosmicGamesHub</title>
+  <meta name="description" content="A new gaming challenge every day. Aim trainer targets, reaction time goals, memory puzzles, and trivia. Track your streak and share your score."/>
+  <link rel="canonical" href="https://cosmicgameshub.com/games/daily-challenge"/>
+  <link rel="stylesheet" href="../styles.css"/>
+  <style>
+    .challenge-hero { text-align:center; padding:2rem 0 1.5rem; }
+    .streak-badge { display:inline-flex; align-items:center; gap:0.5rem; background:rgba(255,179,0,0.1); border:1px solid rgba(255,179,0,0.35); border-radius:999px; padding:0.35rem 1rem; font-size:0.85rem; font-weight:700; color:#ffb300; margin-bottom:1rem; }
+    .challenge-card { max-width:680px; margin:0 auto; background:var(--bg-card); border:1px solid var(--border-mid); border-radius:var(--radius-lg); overflow:hidden; }
+    .challenge-header { background:linear-gradient(135deg,rgba(0,212,255,0.08),rgba(0,100,255,0.08)); padding:2rem; border-bottom:1px solid var(--border); text-align:center; }
+    .challenge-type { display:inline-flex; align-items:center; gap:0.4rem; background:var(--accent-dim); border:1px solid var(--border-mid); border-radius:999px; padding:0.3rem 0.9rem; font-size:0.75rem; font-weight:700; color:var(--accent); letter-spacing:0.06em; text-transform:uppercase; margin-bottom:0.75rem; }
+    .challenge-title { font-size:1.6rem; font-weight:800; color:var(--text-hi); margin-bottom:0.5rem; }
+    .challenge-desc  { color:var(--text-mid); font-size:0.95rem; max-width:480px; margin:0 auto; }
+    .challenge-body  { padding:2rem; }
+    .objective-list  { list-style:none; padding:0; margin:0 0 1.5rem; display:flex; flex-direction:column; gap:0.6rem; }
+    .objective-list li { display:flex; align-items:center; gap:0.75rem; background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:0.65rem 1rem; font-size:0.9rem; color:var(--text-mid); }
+    .objective-list li .obj-icon { font-size:1.2rem; flex-shrink:0; }
+    .objective-list li.done { border-color:rgba(0,230,118,0.4); color:var(--text-hi); }
+    .objective-list li.done::after { content:'✓'; color:#00e676; font-weight:800; margin-left:auto; }
+
+    .score-input { display:flex; gap:0.75rem; margin-bottom:1.5rem; flex-wrap:wrap; }
+    .score-input input { flex:1; min-width:120px; background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text-hi); font-family:inherit; font-size:1rem; padding:0.65rem 1rem; }
+    .score-input input:focus { outline:none; border-color:var(--accent); }
+
+    .result-box { display:none; background:var(--bg-void); border:1px solid var(--border-mid); border-radius:var(--radius); padding:1.5rem; text-align:center; margin-top:1rem; }
+    .result-box.show { display:block; }
+    .result-grade-big { font-size:3.5rem; font-weight:900; color:var(--accent); line-height:1; }
+
+    .history-section { max-width:680px; margin:2rem auto 0; }
+    .history-row { display:flex; justify-content:space-between; align-items:center; padding:0.6rem 0; border-bottom:1px solid var(--border); font-size:0.85rem; }
+    .history-row:last-child { border-bottom:none; }
+    .history-row .date { color:var(--text-lo); }
+    .history-row .grade { font-weight:700; color:var(--accent); }
+
+    .share-box { background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:0.75rem 1rem; font-size:0.82rem; font-family:'JetBrains Mono',monospace; color:var(--text-mid); margin:1rem 0; white-space:pre-wrap; word-break:break-all; }
+
+    @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
+    .pulse { animation:pulse 1.5s ease-in-out infinite; }
+  </style>
+</head>
+<body>
+<nav class="nav">
+  <div class="container">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo"><span class="nav__logo-icon">🎮</span><span class="nav__logo-text">Cosmic<span>Games</span>Hub</span></a>
+      <ul class="nav__links" id="navLinks">
+        <li><a href="/games/sudoku">Sudoku</a></li>
+        <li><a href="/games/minesweeper">Minesweeper</a></li>
+        <li><a href="/tools/aim-trainer">Aim Trainer</a></li>
+        <li><a href="/tools/ambient-sounds">Ambient</a></li>
+        <li><a href="/games/daily-challenge" class="active nav__cta btn">Daily Challenge</a></li>
+      </ul>
+      <button class="nav__hamburger" id="hamburger"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</nav>
+
+<main>
+  <div class="container">
+    <div class="challenge-hero">
+      <div class="streak-badge" id="streakBadge">🔥 Streak: 0 days</div>
+      <h1 style="margin-bottom:0.25rem;">Daily Challenge</h1>
+      <p style="color:var(--text-mid);margin:0;" id="dateLabel"></p>
+    </div>
+
+    <div class="challenge-card" id="challengeCard">
+      <div class="challenge-header">
+        <div class="challenge-type" id="challengeType"></div>
+        <div class="challenge-title" id="challengeTitle"></div>
+        <div class="challenge-desc" id="challengeDesc"></div>
+      </div>
+      <div class="challenge-body">
+        <ul class="objective-list" id="objectiveList"></ul>
+
+        <div id="alreadyDone" style="display:none;background:rgba(0,230,118,0.08);border:1px solid rgba(0,230,118,0.3);border-radius:var(--radius-sm);padding:1rem;text-align:center;margin-bottom:1rem;">
+          <div style="font-size:1.5rem;">✅</div>
+          <div style="font-weight:700;color:#00e676;margin:0.25rem 0;">Already completed today!</div>
+          <div style="font-size:0.85rem;color:var(--text-mid);">Come back tomorrow for a new challenge.</div>
+        </div>
+
+        <div id="submitSection">
+          <p style="font-size:0.88rem;color:var(--text-mid);margin-bottom:0.75rem;">Complete the challenge above, then enter your result:</p>
+          <div class="score-input">
+            <input type="number" id="scoreInput" placeholder="Enter your score / time" min="0"/>
+            <button class="btn btn--primary" onclick="submitResult()">Submit Result</button>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+          <a id="challengeLink" href="#" class="btn btn--outline" target="_blank" style="flex:1;justify-content:center;">Open Challenge Tool →</a>
+        </div>
+
+        <div class="result-box" id="resultBox">
+          <div class="result-grade-big" id="resultGrade"></div>
+          <div id="resultTitle" style="font-size:1.2rem;font-weight:700;color:var(--text-hi);margin:0.5rem 0 0.25rem;"></div>
+          <div id="resultMsg" style="color:var(--text-mid);font-size:0.88rem;margin-bottom:1rem;"></div>
+          <div class="share-box" id="shareText"></div>
+          <button class="btn btn--outline" onclick="copyShare()" style="font-size:0.85rem;">📋 Copy to Share</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="history-section">
+      <h2 style="font-size:1.1rem;margin-bottom:0.75rem;">Your History</h2>
+      <div id="historyList">
+        <p style="color:var(--text-lo);font-size:0.85rem;">No completions yet — come back after your first challenge!</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="footer"><div class="container"><div class="footer__bottom">
+  <p class="footer__legal">© 2026 CosmicGamesHub.</p>
+</div></div></footer>
+
+<script>
+// ── Challenge definitions (rotate by day of year) ─────────────────────────────
+const CHALLENGES = [
+  {
+    type:'⚡ Aim Challenge', title:'Hit the Mark', tool:'/tools/aim-trainer',
+    desc:'Open the Aim Trainer and complete a full round on Medium difficulty.',
+    objectives:['Set difficulty to Medium','Complete a 30-second round','Score 500+ points'],
+    unit:'points', passMark:500,
+    grade(v){ if(v>=2000)return'S'; if(v>=1200)return'A'; if(v>=700)return'B'; if(v>=500)return'C'; return'D'; },
+    msg(v,g){ return g==='S'?'Aimbot confirmed. Terrifying.':g==='A'?'Pro-level score. Strong round.':g==='B'?'Solid aim. A few more sessions and you\'ll be in A territory.':'Challenge passed! Keep practicing.'; }
+  },
+  {
+    type:'⏱ Reaction Test', title:'Lightning Reflexes', tool:'/tools/reaction-time-test',
+    desc:'Run the Reaction Time Test and beat 250ms average across 5 rounds.',
+    objectives:['Complete all 5 rounds','Average reaction time under 250ms','No "Too Early" clicks'],
+    unit:'ms average', passMark:250, lowerBetter:true,
+    grade(v){ if(v<160)return'S'; if(v<200)return'A'; if(v<230)return'B'; if(v<250)return'C'; return'D'; },
+    msg(v,g){ return g==='S'?'Sub-160ms is inhuman. Respect.':g==='A'?'Pro gamer reflexes.':g==='B'?'Competitive level. You\'d do well in ranked.':'Challenge passed!'; }
+  },
+  {
+    type:'🃏 Memory Test', title:'Cosmic Memory', tool:'/games/memory-match',
+    desc:'Complete a 5×6 Memory Match grid in under 90 seconds.',
+    objectives:['Select 5×6 grid size','Find all pairs','Finish in under 90 seconds'],
+    unit:'seconds', passMark:90, lowerBetter:true,
+    grade(v){ if(v<45)return'S'; if(v<60)return'A'; if(v<75)return'B'; if(v<90)return'C'; return'D'; },
+    msg(v,g){ return g==='S'?'Under 45 seconds is elite memory.':g==='A'?'Quick and accurate.':g==='B'?'Good spatial memory.':'Challenge complete!'; }
+  },
+  {
+    type:'🔢 Sudoku Sprint', title:'Grid Master', tool:'/games/sudoku',
+    desc:'Complete a Medium Sudoku puzzle with zero mistakes.',
+    objectives:['Select Medium difficulty','Solve the full grid','0 mistakes (no hints)'],
+    unit:'minutes', passMark:15, lowerBetter:true,
+    grade(v){ if(v<5)return'S'; if(v<8)return'A'; if(v<12)return'B'; if(v<15)return'C'; return'D'; },
+    msg(v,g){ return g==='S'?'Under 5 minutes is elite level.':g==='A'?'Sharp logic. Fast solve.':g==='B'?'Solid Sudoku skills.':'Challenge passed!'; }
+  },
+  {
+    type:'🎯 Accuracy Run', title:'No Misses', tool:'/tools/aim-trainer',
+    desc:'Complete an Easy difficulty aim trainer round with 90%+ accuracy.',
+    objectives:['Set difficulty to Easy','Complete a 30-second round','Achieve 90%+ accuracy'],
+    unit:'% accuracy', passMark:90,
+    grade(v){ if(v>=99)return'S'; if(v>=96)return'A'; if(v>=93)return'B'; if(v>=90)return'C'; return'D'; },
+    msg(v,g){ return g==='S'?'99%+ accuracy is almost perfect. Machine-like.':g==='A'?'Excellent accuracy.':g==='B'?'Clean aim. Well done.':'Challenge passed!'; }
+  },
+  {
+    type:'☄️ Minesweeper', title:'Sweep the Field', tool:'/games/minesweeper',
+    desc:'Complete a Medium (16×16) Minesweeper game without hitting a mine.',
+    objectives:['Select Medium difficulty','Clear all safe cells','No mine detonations'],
+    unit:'seconds', passMark:120, lowerBetter:true,
+    grade(v){ if(v<40)return'S'; if(v<65)return'A'; if(v<90)return'B'; if(v<120)return'C'; return'D'; },
+    msg(v,g){ return g==='S'?'Under 40 seconds on Medium is near-perfect logic.':g==='A'?'Fast and precise.':g==='B'?'Solid sweep.':'Field cleared!'; }
+  },
+  {
+    type:'⚡ Speed Round', title:'Hard Mode', tool:'/tools/aim-trainer',
+    desc:'Complete a Hard difficulty aim trainer round and score 300+ points.',
+    objectives:['Set difficulty to Hard','Complete a 30-second round','Score 300+ points on Hard'],
+    unit:'points', passMark:300,
+    grade(v){ if(v>=1000)return'S'; if(v>=600)return'A'; if(v>=450)return'B'; if(v>=300)return'C'; return'D'; },
+    msg(v,g){ return g==='S'?'1000+ on Hard. Absolutely elite.':g==='A'?'Excellent on Hard difficulty.':g==='B'?'Solid Hard mode score.':'Challenge passed!'; }
+  },
+];
+
+// ── State ─────────────────────────────────────────────────────────────────────
+const today = new Date();
+const todayKey = `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
+const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 86400000);
+const challenge = CHALLENGES[dayOfYear % CHALLENGES.length];
+
+let history = JSON.parse(localStorage.getItem('cgx-dc-history') || '[]');
+let streak  = parseInt(localStorage.getItem('cgx-dc-streak') || '0');
+const alreadyDone = history.some(h => h.date === todayKey);
+
+// ── Render ─────────────────────────────────────────────────────────────────────
+document.getElementById('dateLabel').textContent = today.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+document.getElementById('streakBadge').textContent = `🔥 Streak: ${streak} day${streak!==1?'s':''}`;
+document.getElementById('challengeType').textContent  = challenge.type;
+document.getElementById('challengeTitle').textContent = challenge.title;
+document.getElementById('challengeDesc').textContent  = challenge.desc;
+document.getElementById('challengeLink').href = challenge.tool;
+document.getElementById('challengeLink').textContent  = `Open ${challenge.type.split(' ').slice(1).join(' ')} →`;
+
+const ol = document.getElementById('objectiveList');
+challenge.objectives.forEach(obj => {
+  const li = document.createElement('li');
+  li.innerHTML = `<span class="obj-icon">▸</span>${obj}`;
+  ol.appendChild(li);
+});
+
+if (alreadyDone) {
+  document.getElementById('alreadyDone').style.display = 'block';
+  document.getElementById('submitSection').style.display = 'none';
+  const done = history.find(h => h.date === todayKey);
+  if (done) showResult(done.score, done.grade, false);
+}
+
+renderHistory();
+
+// ── Submit ────────────────────────────────────────────────────────────────────
+function submitResult() {
+  const raw = parseFloat(document.getElementById('scoreInput').value);
+  if (isNaN(raw) || raw < 0) { alert('Enter a valid score.'); return; }
+  const grade = challenge.grade(raw);
+  // Update streak
+  const yesterday = new Date(today); yesterday.setDate(yesterday.getDate()-1);
+  const yesterdayKey = `${yesterday.getFullYear()}-${yesterday.getMonth()+1}-${yesterday.getDate()}`;
+  const hadYesterday = history.some(h => h.date === yesterdayKey);
+  streak = hadYesterday ? streak + 1 : 1;
+  localStorage.setItem('cgx-dc-streak', streak);
+  document.getElementById('streakBadge').textContent = `🔥 Streak: ${streak} day${streak!==1?'s':''}`;
+  // Save
+  history.unshift({ date: todayKey, title: challenge.title, score: raw, unit: challenge.unit, grade });
+  localStorage.setItem('cgx-dc-history', JSON.stringify(history.slice(0,30)));
+  document.getElementById('submitSection').style.display = 'none';
+  showResult(raw, grade, true);
+  renderHistory();
+}
+
+function showResult(score, grade, animate) {
+  const box = document.getElementById('resultBox');
+  box.classList.add('show');
+  document.getElementById('resultGrade').textContent = grade;
+  document.getElementById('resultTitle').textContent = challenge.msg(score, grade);
+  document.getElementById('resultMsg').textContent = `${score} ${challenge.unit}`;
+  const shareStr = buildShare(score, grade);
+  document.getElementById('shareText').textContent = shareStr;
+  if (animate) document.getElementById('resultGrade').classList.add('pulse');
+}
+
+function buildShare(score, grade) {
+  const bars = {'S':'██████','A':'█████░','B':'████░░','C':'███░░░','D':'██░░░░'};
+  return `CosmicGamesHub Daily Challenge\n${today.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}\n\n${challenge.type}: ${challenge.title}\nGrade: ${grade} ${bars[grade]}\nScore: ${score} ${challenge.unit}\nStreak: ${streak} day${streak!==1?'s':''} 🔥\n\ncosmicgameshub.com/games/daily-challenge`;
+}
+
+function copyShare() {
+  const text = document.getElementById('shareText').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('[onclick="copyShare()"]');
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => btn.textContent = '📋 Copy to Share', 2000);
+  });
+}
+
+function renderHistory() {
+  const el = document.getElementById('historyList');
+  if (!history.length) return;
+  el.innerHTML = '';
+  history.slice(0,7).forEach(h => {
+    const row = document.createElement('div'); row.className = 'history-row';
+    row.innerHTML = `<span class="date">${h.date}</span><span>${h.title}</span><span>${h.score} ${h.unit}</span><span class="grade">${h.grade}</span>`;
+    el.appendChild(row);
+  });
+}
+
+document.getElementById('hamburger').addEventListener('click', function() {
+  document.getElementById('navLinks').classList.toggle('open');
+  this.setAttribute('aria-expanded', document.getElementById('navLinks').classList.contains('open'));
+});
+</script>
+</body>
+</html>
