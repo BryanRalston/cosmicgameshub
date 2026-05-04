@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Gamerdle — Guess the Video Game Daily | CosmicGamesHub</title>
+  <meta name="description" content="Guess the mystery video game in 6 tries. Each guess reveals clues about genre, platform, year, and more. New game every day. Free to play."/>
+  <link rel="canonical" href="https://cosmicgameshub.com/games/gamerdle"/>
+  <link rel="stylesheet" href="../styles.css"/>
+  <style>
+    /* ── Layout ── */
+    .gamerdle-wrap { max-width:780px; margin:0 auto; padding:1rem 0 3rem; }
+
+    /* ── Header stats ── */
+    .gd-meta { display:flex; gap:0.75rem; justify-content:center; flex-wrap:wrap; margin-bottom:1.25rem; }
+    .gd-pill { background:var(--bg-card); border:1px solid var(--border); border-radius:999px; padding:0.3rem 0.9rem; font-size:0.78rem; font-weight:700; color:var(--text-mid); }
+    .gd-pill span { color:var(--accent); }
+
+    /* ── Guess input ── */
+    .guess-form { display:flex; gap:0.6rem; margin-bottom:1.5rem; position:relative; }
+    #guessInput { flex:1; background:var(--bg-surface); border:1.5px solid var(--border-mid); border-radius:var(--radius-sm); color:var(--text-hi); font-family:inherit; font-size:0.95rem; padding:0.7rem 1rem; transition:border-color 0.2s; }
+    #guessInput:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-dim); }
+    #guessInput:disabled { opacity:0.5; cursor:not-allowed; }
+    .autocomplete-list { position:absolute; top:calc(100% + 4px); left:0; right:80px; background:var(--bg-card); border:1px solid var(--border-mid); border-radius:var(--radius-sm); z-index:50; max-height:220px; overflow-y:auto; box-shadow:var(--shadow-lg); }
+    .autocomplete-item { padding:0.6rem 1rem; font-size:0.9rem; color:var(--text-mid); cursor:pointer; transition:background 0.12s; }
+    .autocomplete-item:hover, .autocomplete-item.focused { background:var(--bg-raised); color:var(--text-hi); }
+    .autocomplete-item em { color:var(--accent); font-style:normal; font-weight:600; }
+
+    /* ── Attribute columns header ── */
+    .attr-header { display:grid; grid-template-columns:1fr repeat(5,minmax(70px,1fr)); gap:3px; margin-bottom:3px; }
+    .attr-col { text-align:center; font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:var(--text-lo); padding:0.3rem 0; }
+    .attr-col:first-child { text-align:left; }
+
+    /* ── Guess rows ── */
+    .guess-rows { display:flex; flex-direction:column; gap:3px; }
+    .guess-row { display:grid; grid-template-columns:1fr repeat(5,minmax(70px,1fr)); gap:3px; }
+    .guess-empty { display:grid; grid-template-columns:1fr repeat(5,minmax(70px,1fr)); gap:3px; opacity:0.25; }
+    .cell { border-radius:6px; padding:0.45rem 0.35rem; text-align:center; font-size:0.75rem; font-weight:700; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:52px; transition:transform 0.3s; }
+    .cell.flip { animation:flip 0.5s ease forwards; }
+    @keyframes flip { 0%{transform:scaleY(1)} 50%{transform:scaleY(0)} 100%{transform:scaleY(1)} }
+    .cell-name { background:var(--bg-card); border:1px solid var(--border); text-align:left; align-items:flex-start; padding:0.45rem 0.6rem; font-size:0.78rem; color:var(--text-hi); }
+    .cell-empty { background:var(--bg-card); border:1px solid rgba(0,212,255,0.06); }
+    .cell .attr-val { font-size:0.7rem; font-weight:700; }
+    .cell .attr-arrow { font-size:0.9rem; line-height:1; }
+
+    /* ── Colors ── */
+    .c-green  { background:rgba(0,230,118,0.18); border:1px solid rgba(0,230,118,0.4); color:#00e676; }
+    .c-yellow { background:rgba(255,179,0,0.15); border:1px solid rgba(255,179,0,0.35); color:#ffb300; }
+    .c-gray   { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); color:var(--text-lo); }
+
+    /* ── Result panel ── */
+    .result-panel { display:none; background:var(--bg-card); border:1px solid var(--border-mid); border-radius:var(--radius-lg); padding:1.75rem; text-align:center; margin-top:1.5rem; }
+    .result-panel.show { display:block; }
+    .result-emoji-grid { font-size:1.3rem; line-height:1.6; letter-spacing:2px; margin:0.75rem 0; font-family:monospace; }
+    .share-box { background:var(--bg-void); border:1px solid var(--border); border-radius:var(--radius-sm); padding:0.75rem 1rem; font-size:0.8rem; color:var(--text-mid); text-align:left; white-space:pre; overflow-x:auto; margin:0.75rem 0; }
+
+    /* ── How to play ── */
+    .how-to { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); padding:1.25rem 1.5rem; margin-top:1.5rem; }
+    .legend { display:flex; gap:0.75rem; flex-wrap:wrap; margin-top:0.75rem; }
+    .legend-item { display:flex; align-items:center; gap:0.4rem; font-size:0.8rem; color:var(--text-mid); }
+    .legend-dot { width:14px; height:14px; border-radius:3px; flex-shrink:0; }
+
+    /* ── Confetti ── */
+    .confetti-piece { position:fixed; width:8px; height:8px; border-radius:2px; pointer-events:none; animation:fall linear forwards; z-index:999; }
+    @keyframes fall { 0%{transform:translateY(-20px) rotate(0deg);opacity:1} 100%{transform:translateY(100vh) rotate(720deg);opacity:0} }
+
+    @media(max-width:600px){
+      .attr-header,.guess-row,.guess-empty { grid-template-columns:1fr repeat(5,minmax(52px,1fr)); }
+      .cell { min-height:44px; font-size:0.68rem; }
+      .cell-name { font-size:0.68rem; }
+    }
+    @media(max-width:420px){
+      .attr-header,.guess-row,.guess-empty { grid-template-columns:1fr repeat(5,44px); }
+    }
+  </style>
+</head>
+<body>
+<nav class="nav">
+  <div class="container">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo"><span class="nav__logo-icon">🎮</span><span class="nav__logo-text">Cosmic<span>Games</span>Hub</span></a>
+      <ul class="nav__links" id="navLinks">
+        <li><a href="/games/gamerdle" class="active" style="color:var(--accent);">Gamerdle</a></li>
+        <li><a href="/games/sudoku">Sudoku</a></li>
+        <li><a href="/tools/aim-trainer">Aim Trainer</a></li>
+        <li><a href="/tools/ambient-sounds">Ambient</a></li>
+        <li><a href="/games/daily-challenge" class="nav__cta btn">Daily</a></li>
+      </ul>
+      <button class="nav__hamburger" id="hamburger"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</nav>
+
+<main>
+<div class="container">
+<div class="gamerdle-wrap">
+
+  <div style="text-align:center;padding:1.25rem 0 1rem;">
+    <span class="section__eyebrow">Daily Word Game</span>
+    <h1 style="margin:0.4rem 0 0.25rem;font-size:clamp(1.8rem,5vw,2.5rem);">🎮 Gamerdle</h1>
+    <p style="color:var(--text-mid);margin:0;font-size:0.9rem;">Guess today's mystery video game in 6 tries.</p>
+  </div>
+
+  <div class="gd-meta">
+    <div class="gd-pill">📅 Puzzle <span id="puzzleNum">#1</span></div>
+    <div class="gd-pill">🔥 Streak <span id="streakDisp">0</span></div>
+    <div class="gd-pill">✅ Solved <span id="solvedDisp">0</span></div>
+    <div class="gd-pill">🎯 Guesses <span id="guessDisp">0 / 6</span></div>
+  </div>
+
+  <!-- Input -->
+  <div class="guess-form">
+    <input id="guessInput" type="text" placeholder="Type a game name…" autocomplete="off" spellcheck="false"/>
+    <button class="btn btn--primary" id="guessBtn" onclick="submitGuess()" style="white-space:nowrap;">Guess</button>
+    <div class="autocomplete-list" id="acList" style="display:none;"></div>
+  </div>
+
+  <!-- Column headers -->
+  <div class="attr-header">
+    <div class="attr-col">Game</div>
+    <div class="attr-col">Genre</div>
+    <div class="attr-col">Platform</div>
+    <div class="attr-col">Year</div>
+    <div class="attr-col">Mode</div>
+    <div class="attr-col">Rating</div>
+  </div>
+
+  <!-- Guess rows -->
+  <div class="guess-rows" id="guessRows"></div>
+  <!-- Empty slots -->
+  <div id="emptySlots"></div>
+
+  <!-- Result -->
+  <div class="result-panel" id="resultPanel">
+    <div id="resultIcon" style="font-size:2.5rem;margin-bottom:0.5rem;"></div>
+    <h2 id="resultTitle" style="margin-bottom:0.25rem;"></h2>
+    <p id="resultMsg" style="color:var(--text-mid);font-size:0.9rem;margin-bottom:0.75rem;"></p>
+    <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.85rem 1rem;margin-bottom:1rem;">
+      <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-lo);margin-bottom:0.35rem;">The answer was</div>
+      <div id="answerReveal" style="font-size:1.2rem;font-weight:800;color:var(--accent);"></div>
+      <div id="answerMeta" style="font-size:0.8rem;color:var(--text-mid);margin-top:0.2rem;"></div>
+    </div>
+    <div class="result-emoji-grid" id="emojiGrid"></div>
+    <div class="share-box" id="shareBox"></div>
+    <button class="btn btn--primary" onclick="copyShare()" style="margin-bottom:0.75rem;">📋 Copy &amp; Share</button>
+    <br>
+    <p style="font-size:0.78rem;color:var(--text-lo);margin:0.5rem 0 0;">New puzzle tomorrow. Come back daily to keep your streak!</p>
+  </div>
+
+  <!-- How to play -->
+  <div class="how-to">
+    <strong style="color:var(--text-hi);font-size:0.9rem;">How to Play</strong>
+    <p style="font-size:0.83rem;color:var(--text-mid);margin:0.4rem 0 0.5rem;">Type any video game name and press Guess. Each attribute reveals how close you are to the mystery game.</p>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(0,230,118,0.5);border:1px solid #00e676;"></div>Exact match</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(255,179,0,0.4);border:1px solid #ffb300;"></div>Close / partial match</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);"></div>No match</div>
+      <div class="legend-item" style="margin-left:0.5rem;">↑ Year is higher &nbsp; ↓ Year is lower</div>
+    </div>
+  </div>
+
+</div>
+</div>
+</main>
+
+<footer class="footer"><div class="container"><div class="footer__bottom">
+  <p class="footer__disclosure"><strong>Affiliate Disclosure:</strong> As an Amazon Associate I earn from qualifying purchases.</p>
+  <p class="footer__legal">© 2026 CosmicGamesHub.</p>
+</div></div></footer>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// GAME DATABASE
+// Fields: name, genre, platform, year, mode, rating, dev
+// genre: Action|RPG|FPS|Strategy|Puzzle|Sports|Fighting|Horror|Racing|Adventure|MOBA|Survival|Platformer|Simulation
+// platform: PC|PlayStation|Xbox|Nintendo|Multi
+// mode: Solo|Co-op|Multiplayer|MMO
+// rating: E|T|M
+// ═══════════════════════════════════════════════════════════════════════════
+const GAMES = [
+  {name:"Minecraft",               genre:"Survival",    platform:"Multi",       year:2011, mode:"Co-op",       rating:"E", dev:"Mojang"},
+  {name:"Fortnite",                genre:"Action",      platform:"Multi",       year:2017, mode:"Multiplayer",  rating:"T", dev:"Epic Games"},
+  {name:"Among Us",                genre:"Strategy",    platform:"Multi",       year:2018, mode:"Multiplayer",  rating:"E", dev:"Innersloth"},
+  {name:"Elden Ring",              genre:"RPG",         platform:"Multi",       year:2022, mode:"Co-op",        rating:"M", dev:"FromSoftware"},
+  {name:"The Witcher 3",           genre:"RPG",         platform:"Multi",       year:2015, mode:"Solo",         rating:"M", dev:"CD Projekt Red"},
+  {name:"Red Dead Redemption 2",   genre:"Action",      platform:"Multi",       year:2018, mode:"Co-op",        rating:"M", dev:"Rockstar"},
+  {name:"Grand Theft Auto V",      genre:"Action",      platform:"Multi",       year:2013, mode:"Multiplayer",  rating:"M", dev:"Rockstar"},
+  {name:"God of War",              genre:"Action",      platform:"PlayStation", year:2018, mode:"Solo",         rating:"M", dev:"Santa Monica Studio"},
+  {name:"The Last of Us",          genre:"Adventure",   platform:"PlayStation", year:2013, mode:"Solo",         rating:"M", dev:"Naughty Dog"},
+  {name:"Dark Souls",              genre:"RPG",         platform:"Multi",       year:2011, mode:"Co-op",        rating:"M", dev:"FromSoftware"},
+  {name:"Bloodborne",              genre:"RPG",         platform:"PlayStation", year:2015, mode:"Co-op",        rating:"M", dev:"FromSoftware"},
+  {name:"Sekiro",                  genre:"Action",      platform:"Multi",       year:2019, mode:"Solo",         rating:"M", dev:"FromSoftware"},
+  {name:"Cyberpunk 2077",          genre:"RPG",         platform:"Multi",       year:2020, mode:"Solo",         rating:"M", dev:"CD Projekt Red"},
+  {name:"Baldur's Gate 3",         genre:"RPG",         platform:"Multi",       year:2023, mode:"Co-op",        rating:"M", dev:"Larian Studios"},
+  {name:"Hades",                   genre:"Action",      platform:"Multi",       year:2020, mode:"Solo",         rating:"T", dev:"Supergiant Games"},
+  {name:"Hollow Knight",           genre:"Action",      platform:"Multi",       year:2017, mode:"Solo",         rating:"E", dev:"Team Cherry"},
+  {name:"Celeste",                 genre:"Platformer",  platform:"Multi",       year:2018, mode:"Solo",         rating:"E", dev:"Maddy Makes Games"},
+  {name:"Undertale",               genre:"RPG",         platform:"Multi",       year:2015, mode:"Solo",         rating:"E", dev:"Toby Fox"},
+  {name:"Stardew Valley",          genre:"Simulation",  platform:"Multi",       year:2016, mode:"Co-op",        rating:"E", dev:"ConcernedApe"},
+  {name:"Terraria",                genre:"Survival",    platform:"Multi",       year:2011, mode:"Co-op",        rating:"E", dev:"Re-Logic"},
+  {name:"Portal 2",                genre:"Puzzle",      platform:"Multi",       year:2011, mode:"Co-op",        rating:"E", dev:"Valve"},
+  {name:"Half-Life 2",             genre:"FPS",         platform:"PC",          year:2004, mode:"Solo",         rating:"M", dev:"Valve"},
+  {name:"Counter-Strike 2",        genre:"FPS",         platform:"PC",          year:2023, mode:"Multiplayer",  rating:"M", dev:"Valve"},
+  {name:"Dota 2",                  genre:"MOBA",        platform:"PC",          year:2013, mode:"Multiplayer",  rating:"T", dev:"Valve"},
+  {name:"Team Fortress 2",         genre:"FPS",         platform:"PC",          year:2007, mode:"Multiplayer",  rating:"T", dev:"Valve"},
+  {name:"Left 4 Dead 2",           genre:"FPS",         platform:"Multi",       year:2009, mode:"Co-op",        rating:"M", dev:"Valve"},
+  {name:"Overwatch 2",             genre:"FPS",         platform:"Multi",       year:2022, mode:"Multiplayer",  rating:"T", dev:"Blizzard"},
+  {name:"Valorant",                genre:"FPS",         platform:"PC",          year:2020, mode:"Multiplayer",  rating:"T", dev:"Riot Games"},
+  {name:"Apex Legends",            genre:"FPS",         platform:"Multi",       year:2019, mode:"Multiplayer",  rating:"T", dev:"Respawn"},
+  {name:"League of Legends",       genre:"MOBA",        platform:"PC",          year:2009, mode:"Multiplayer",  rating:"T", dev:"Riot Games"},
+  {name:"World of Warcraft",       genre:"RPG",         platform:"PC",          year:2004, mode:"MMO",          rating:"T", dev:"Blizzard"},
+  {name:"Diablo IV",               genre:"RPG",         platform:"Multi",       year:2023, mode:"Co-op",        rating:"M", dev:"Blizzard"},
+  {name:"StarCraft II",            genre:"Strategy",    platform:"PC",          year:2010, mode:"Multiplayer",  rating:"T", dev:"Blizzard"},
+  {name:"Hearthstone",             genre:"Strategy",    platform:"Multi",       year:2014, mode:"Multiplayer",  rating:"T", dev:"Blizzard"},
+  {name:"Call of Duty: Modern Warfare", genre:"FPS",   platform:"Multi",       year:2019, mode:"Multiplayer",  rating:"M", dev:"Infinity Ward"},
+  {name:"Halo: Combat Evolved",    genre:"FPS",         platform:"Xbox",        year:2001, mode:"Co-op",        rating:"M", dev:"Bungie"},
+  {name:"Halo Infinite",           genre:"FPS",         platform:"Multi",       year:2021, mode:"Multiplayer",  rating:"T", dev:"343 Industries"},
+  {name:"Gears of War",            genre:"Action",      platform:"Xbox",        year:2006, mode:"Co-op",        rating:"M", dev:"Epic Games"},
+  {name:"Doom Eternal",            genre:"FPS",         platform:"Multi",       year:2020, mode:"Solo",         rating:"M", dev:"id Software"},
+  {name:"BioShock Infinite",       genre:"FPS",         platform:"Multi",       year:2013, mode:"Solo",         rating:"M", dev:"Irrational Games"},
+  {name:"The Elder Scrolls V: Skyrim", genre:"RPG",    platform:"Multi",       year:2011, mode:"Solo",         rating:"M", dev:"Bethesda"},
+  {name:"Fallout 4",               genre:"RPG",         platform:"Multi",       year:2015, mode:"Solo",         rating:"M", dev:"Bethesda"},
+  {name:"Mass Effect 2",           genre:"RPG",         platform:"Multi",       year:2010, mode:"Solo",         rating:"M", dev:"BioWare"},
+  {name:"Dragon Age: Inquisition", genre:"RPG",         platform:"Multi",       year:2014, mode:"Solo",         rating:"M", dev:"BioWare"},
+  {name:"Disco Elysium",           genre:"RPG",         platform:"Multi",       year:2019, mode:"Solo",         rating:"M", dev:"ZA/UM"},
+  {name:"Divinity: Original Sin 2",genre:"RPG",         platform:"Multi",       year:2017, mode:"Co-op",        rating:"M", dev:"Larian Studios"},
+  {name:"Resident Evil Village",   genre:"Horror",      platform:"Multi",       year:2021, mode:"Solo",         rating:"M", dev:"Capcom"},
+  {name:"Silent Hill 2",           genre:"Horror",      platform:"PlayStation", year:2001, mode:"Solo",         rating:"M", dev:"Konami"},
+  {name:"Dead Space",              genre:"Horror",      platform:"Multi",       year:2008, mode:"Solo",         rating:"M", dev:"Visceral Games"},
+  {name:"Outlast",                 genre:"Horror",      platform:"Multi",       year:2013, mode:"Solo",         rating:"M", dev:"Red Barrels"},
+  {name:"Super Mario Odyssey",     genre:"Platformer",  platform:"Nintendo",    year:2017, mode:"Co-op",        rating:"E", dev:"Nintendo"},
+  {name:"Super Mario Bros. Wonder",genre:"Platformer",  platform:"Nintendo",    year:2023, mode:"Co-op",        rating:"E", dev:"Nintendo"},
+  {name:"The Legend of Zelda: Breath of the Wild", genre:"Adventure", platform:"Nintendo", year:2017, mode:"Solo", rating:"E", dev:"Nintendo"},
+  {name:"The Legend of Zelda: Tears of the Kingdom", genre:"Adventure", platform:"Nintendo", year:2023, mode:"Solo", rating:"E", dev:"Nintendo"},
+  {name:"Animal Crossing: New Horizons", genre:"Simulation", platform:"Nintendo", year:2020, mode:"Co-op",    rating:"E", dev:"Nintendo"},
+  {name:"Mario Kart 8 Deluxe",     genre:"Racing",      platform:"Nintendo",    year:2017, mode:"Multiplayer",  rating:"E", dev:"Nintendo"},
+  {name:"Super Smash Bros. Ultimate", genre:"Fighting", platform:"Nintendo",   year:2018, mode:"Multiplayer",  rating:"E", dev:"Nintendo"},
+  {name:"Splatoon 3",              genre:"Action",      platform:"Nintendo",    year:2022, mode:"Multiplayer",  rating:"E", dev:"Nintendo"},
+  {name:"Metroid Dread",           genre:"Action",      platform:"Nintendo",    year:2021, mode:"Solo",         rating:"E", dev:"Nintendo"},
+  {name:"Pokemon Scarlet and Violet", genre:"RPG",      platform:"Nintendo",    year:2022, mode:"Co-op",        rating:"E", dev:"Game Freak"},
+  {name:"Kirby and the Forgotten Land", genre:"Platformer", platform:"Nintendo",year:2022, mode:"Co-op",       rating:"E", dev:"HAL Laboratory"},
+  {name:"Street Fighter 6",        genre:"Fighting",    platform:"Multi",       year:2023, mode:"Multiplayer",  rating:"T", dev:"Capcom"},
+  {name:"Mortal Kombat 11",        genre:"Fighting",    platform:"Multi",       year:2019, mode:"Multiplayer",  rating:"M", dev:"NetherRealm Studios"},
+  {name:"Tekken 8",                genre:"Fighting",    platform:"Multi",       year:2024, mode:"Multiplayer",  rating:"T", dev:"Bandai Namco"},
+  {name:"Rocket League",           genre:"Sports",      platform:"Multi",       year:2015, mode:"Multiplayer",  rating:"E", dev:"Psyonix"},
+  {name:"FIFA 23",                 genre:"Sports",      platform:"Multi",       year:2022, mode:"Multiplayer",  rating:"E", dev:"EA Sports"},
+  {name:"NBA 2K24",                genre:"Sports",      platform:"Multi",       year:2023, mode:"Multiplayer",  rating:"E", dev:"2K Sports"},
+  {name:"Ghost of Tsushima",       genre:"Action",      platform:"PlayStation", year:2020, mode:"Co-op",        rating:"M", dev:"Sucker Punch"},
+  {name:"Horizon Zero Dawn",       genre:"Action",      platform:"Multi",       year:2017, mode:"Solo",         rating:"T", dev:"Guerrilla Games"},
+  {name:"Spider-Man",              genre:"Action",      platform:"PlayStation", year:2018, mode:"Solo",         rating:"T", dev:"Insomniac Games"},
+  {name:"Spider-Man 2",            genre:"Action",      platform:"PlayStation", year:2023, mode:"Solo",         rating:"T", dev:"Insomniac Games"},
+  {name:"Death Stranding",         genre:"Adventure",   platform:"Multi",       year:2019, mode:"Co-op",        rating:"M", dev:"Kojima Productions"},
+  {name:"Metal Gear Solid V",      genre:"Action",      platform:"Multi",       year:2015, mode:"Solo",         rating:"M", dev:"Kojima Productions"},
+  {name:"Final Fantasy VII Remake",genre:"RPG",         platform:"Multi",       year:2020, mode:"Solo",         rating:"T", dev:"Square Enix"},
+  {name:"Final Fantasy XIV",       genre:"RPG",         platform:"Multi",       year:2013, mode:"MMO",          rating:"T", dev:"Square Enix"},
+  {name:"Genshin Impact",          genre:"RPG",         platform:"Multi",       year:2020, mode:"Co-op",        rating:"T", dev:"miHoYo"},
+  {name:"Destiny 2",               genre:"FPS",         platform:"Multi",       year:2017, mode:"Co-op",        rating:"T", dev:"Bungie"},
+  {name:"Warframe",                genre:"Action",      platform:"Multi",       year:2013, mode:"Co-op",        rating:"T", dev:"Digital Extremes"},
+  {name:"Path of Exile",           genre:"RPG",         platform:"Multi",       year:2013, mode:"Co-op",        rating:"M", dev:"Grinding Gear Games"},
+  {name:"Rust",                    genre:"Survival",    platform:"Multi",       year:2018, mode:"Multiplayer",  rating:"M", dev:"Facepunch Studios"},
+  {name:"PUBG",                    genre:"Action",      platform:"Multi",       year:2017, mode:"Multiplayer",  rating:"T", dev:"Krafton"},
+  {name:"Fall Guys",               genre:"Platformer",  platform:"Multi",       year:2020, mode:"Multiplayer",  rating:"E", dev:"Mediatonic"},
+  {name:"Among the Sleep",         genre:"Horror",      platform:"Multi",       year:2014, mode:"Solo",         rating:"M", dev:"Krillbite Studio"},
+  {name:"Outer Wilds",             genre:"Adventure",   platform:"Multi",       year:2019, mode:"Solo",         rating:"E", dev:"Mobius Digital"},
+  {name:"Disco Elysium: The Final Cut", genre:"RPG",   platform:"Multi",       year:2021, mode:"Solo",         rating:"M", dev:"ZA/UM"},
+  {name:"Cuphead",                 genre:"Action",      platform:"Multi",       year:2017, mode:"Co-op",        rating:"E", dev:"Studio MDHR"},
+  {name:"Ori and the Blind Forest",genre:"Platformer",  platform:"Multi",       year:2015, mode:"Solo",         rating:"E", dev:"Moon Studios"},
+  {name:"Dead Cells",              genre:"Action",      platform:"Multi",       year:2018, mode:"Solo",         rating:"T", dev:"Motion Twin"},
+  {name:"FTL: Faster Than Light",  genre:"Strategy",    platform:"PC",          year:2012, mode:"Solo",         rating:"E", dev:"Subset Games"},
+  {name:"Into the Breach",         genre:"Strategy",    platform:"Multi",       year:2018, mode:"Solo",         rating:"E", dev:"Subset Games"},
+  {name:"Civilization VI",         genre:"Strategy",    platform:"Multi",       year:2016, mode:"Multiplayer",  rating:"E", dev:"Firaxis"},
+  {name:"Age of Empires IV",       genre:"Strategy",    platform:"PC",          year:2021, mode:"Multiplayer",  rating:"T", dev:"World's Edge"},
+  {name:"RimWorld",                genre:"Simulation",  platform:"PC",          year:2018, mode:"Solo",         rating:"M", dev:"Ludeon Studios"},
+  {name:"Cities: Skylines",        genre:"Simulation",  platform:"Multi",       year:2015, mode:"Solo",         rating:"E", dev:"Colossal Order"},
+  {name:"Borderlands 2",           genre:"FPS",         platform:"Multi",       year:2012, mode:"Co-op",        rating:"M", dev:"Gearbox Software"},
+  {name:"No Man's Sky",            genre:"Survival",    platform:"Multi",       year:2016, mode:"Co-op",        rating:"T", dev:"Hello Games"},
+  {name:"Escape from Tarkov",      genre:"FPS",         platform:"PC",          year:2017, mode:"Multiplayer",  rating:"M", dev:"Battlestate Games"},
+  {name:"Uncharted 4",             genre:"Adventure",   platform:"PlayStation", year:2016, mode:"Co-op",        rating:"T", dev:"Naughty Dog"},
+  {name:"Batman: Arkham City",     genre:"Action",      platform:"Multi",       year:2011, mode:"Solo",         rating:"T", dev:"Rocksteady"},
+  {name:"Assassin's Creed Odyssey",genre:"RPG",         platform:"Multi",       year:2018, mode:"Solo",         rating:"M", dev:"Ubisoft"},
+  {name:"Far Cry 5",               genre:"FPS",         platform:"Multi",       year:2018, mode:"Co-op",        rating:"M", dev:"Ubisoft"},
+  {name:"Watch Dogs 2",            genre:"Action",      platform:"Multi",       year:2016, mode:"Co-op",        rating:"M", dev:"Ubisoft"},
+  {name:"Tom Clancy's Rainbow Six Siege", genre:"FPS", platform:"Multi",       year:2015, mode:"Multiplayer",  rating:"M", dev:"Ubisoft"},
+  {name:"It Takes Two",            genre:"Platformer",  platform:"Multi",       year:2021, mode:"Co-op",        rating:"T", dev:"Hazelight Studios"},
+  {name:"A Way Out",               genre:"Adventure",   platform:"Multi",       year:2018, mode:"Co-op",        rating:"M", dev:"Hazelight Studios"},
+  {name:"Sea of Thieves",          genre:"Adventure",   platform:"Multi",       year:2018, mode:"Co-op",        rating:"T", dev:"Rare"},
+  {name:"Subnautica",              genre:"Survival",    platform:"Multi",       year:2018, mode:"Solo",         rating:"E", dev:"Unknown Worlds"},
+  {name:"The Forest",              genre:"Survival",    platform:"Multi",       year:2018, mode:"Co-op",        rating:"M", dev:"Endnight Games"},
+  {name:"Valheim",                 genre:"Survival",    platform:"Multi",       year:2021, mode:"Co-op",        rating:"T", dev:"Iron Gate"},
+  {name:"Phasmophobia",            genre:"Horror",      platform:"PC",          year:2020, mode:"Co-op",        rating:"T", dev:"Kinetic Games"},
+  {name:"Lethal Company",          genre:"Horror",      platform:"PC",          year:2023, mode:"Co-op",        rating:"T", dev:"Zeekerss"},
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DAILY PUZZLE SELECTION
+// ═══════════════════════════════════════════════════════════════════════════
+const today = new Date();
+const todayKey = `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
+const dayNum = Math.floor((today - new Date(2026, 0, 1)) / 86400000) + 1;
+const TARGET = GAMES[Math.abs(dayNum) % GAMES.length];
+
+document.getElementById('puzzleNum').textContent = '#' + dayNum;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════════════════
+const MAX_GUESSES = 6;
+let guesses = [];
+let gameOver = false;
+
+const stats = JSON.parse(localStorage.getItem('gamerdle-stats') || '{"streak":0,"solved":0,"history":{}}');
+// Load today's progress
+if (stats.history[todayKey]) {
+  guesses = stats.history[todayKey].guesses || [];
+  gameOver = stats.history[todayKey].done || false;
+}
+
+document.getElementById('streakDisp').textContent = stats.streak;
+document.getElementById('solvedDisp').textContent = stats.solved;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// COMPARISON ENGINE
+// ═══════════════════════════════════════════════════════════════════════════
+const GENRE_GROUPS = {
+  Action:['Action','Adventure','FPS','Horror'],
+  RPG:['RPG','Action'],
+  FPS:['FPS','Action'],
+  Strategy:['Strategy','Simulation'],
+  Puzzle:['Puzzle'],
+  Sports:['Sports','Racing'],
+  Fighting:['Fighting','Action'],
+  Horror:['Horror','Adventure'],
+  Racing:['Racing','Sports'],
+  Adventure:['Adventure','Action','Horror'],
+  MOBA:['MOBA','Strategy'],
+  Survival:['Survival','Adventure'],
+  Platformer:['Platformer','Action'],
+  Simulation:['Simulation','Strategy'],
+};
+
+function compareGenre(g, t) {
+  if (g === t) return 'green';
+  if (GENRE_GROUPS[g] && GENRE_GROUPS[g].includes(t)) return 'yellow';
+  if (GENRE_GROUPS[t] && GENRE_GROUPS[t].includes(g)) return 'yellow';
+  return 'gray';
+}
+
+function comparePlatform(g, t) {
+  if (g === t) return 'green';
+  if (g === 'Multi' || t === 'Multi') return 'yellow';
+  return 'gray';
+}
+
+function compareYear(gy, ty) {
+  if (gy === ty) return {result:'green', arrow:''};
+  const diff = Math.abs(gy - ty);
+  const arrow = gy < ty ? '↑' : '↓';
+  if (diff <= 3) return {result:'yellow', arrow};
+  return {result:'gray', arrow};
+}
+
+function compareExact(g, t) { return g === t ? 'green' : 'gray'; }
+
+function buildComparison(guess) {
+  const t = TARGET;
+  return {
+    genre:    compareGenre(guess.genre, t.genre),
+    platform: comparePlatform(guess.platform, t.platform),
+    year:     compareYear(guess.year, t.year),
+    mode:     compareExact(guess.mode, t.mode),
+    rating:   compareExact(guess.rating, t.rating),
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════════════════════════════
+function renderAll() {
+  const rowsEl = document.getElementById('guessRows');
+  const emptyEl = document.getElementById('emptySlots');
+  rowsEl.innerHTML = ''; emptyEl.innerHTML = '';
+
+  guesses.forEach((g, i) => {
+    const cmp = buildComparison(g);
+    rowsEl.appendChild(buildRow(g, cmp, i));
+  });
+
+  const remaining = MAX_GUESSES - guesses.length;
+  for (let i = 0; i < remaining; i++) {
+    const row = document.createElement('div'); row.className = 'guess-empty';
+    for (let j = 0; j < 6; j++) { const c = document.createElement('div'); c.className = 'cell cell-empty'; row.appendChild(c); }
+    emptyEl.appendChild(row);
+  }
+
+  document.getElementById('guessDisp').textContent = `${guesses.length} / ${MAX_GUESSES}`;
+
+  if (gameOver) showResult();
+  if (gameOver || guesses.length >= MAX_GUESSES) {
+    document.getElementById('guessInput').disabled = true;
+    document.getElementById('guessBtn').disabled = true;
+  }
+}
+
+function buildRow(g, cmp, rowIdx) {
+  const row = document.createElement('div'); row.className = 'guess-row';
+
+  // Name cell
+  const nameCell = document.createElement('div');
+  nameCell.className = 'cell cell-name';
+  nameCell.style.animationDelay = '0ms';
+  nameCell.textContent = g.name;
+  row.appendChild(nameCell);
+
+  // Attribute cells
+  const attrs = [
+    { key:'genre',    val:g.genre,                    result:cmp.genre    },
+    { key:'platform', val:g.platform,                 result:cmp.platform },
+    { key:'year',     val:g.year, arrow:cmp.year.arrow, result:cmp.year.result },
+    { key:'mode',     val:g.mode,                     result:cmp.mode     },
+    { key:'rating',   val:g.rating,                   result:cmp.rating   },
+  ];
+
+  attrs.forEach((a, i) => {
+    const cell = document.createElement('div');
+    cell.className = `cell c-${a.result} flip`;
+    cell.style.animationDelay = `${(i+1)*80}ms`;
+    if (a.arrow) {
+      cell.innerHTML = `<div class="attr-arrow">${a.arrow}</div><div class="attr-val">${a.val}</div>`;
+    } else {
+      cell.innerHTML = `<div class="attr-val">${a.val}</div>`;
+    }
+    row.appendChild(cell);
+  });
+
+  return row;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AUTOCOMPLETE
+// ═══════════════════════════════════════════════════════════════════════════
+const guessedNames = new Set(guesses.map(g => g.name.toLowerCase()));
+let acFocused = -1;
+
+document.getElementById('guessInput').addEventListener('input', function() {
+  const q = this.value.trim().toLowerCase();
+  const list = document.getElementById('acList');
+  acFocused = -1;
+  if (!q) { list.style.display = 'none'; return; }
+  const matches = GAMES.filter(g => g.name.toLowerCase().includes(q) && !guessedNames.has(g.name.toLowerCase())).slice(0, 8);
+  if (!matches.length) { list.style.display = 'none'; return; }
+  list.innerHTML = matches.map((g,i) => `<div class="autocomplete-item" data-idx="${i}" onclick="selectGame('${g.name.replace(/'/g,"\\'")}')">
+    ${g.name.replace(new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'), m => `<em>${m}</em>`)}
+    <span style="float:right;font-size:0.7rem;color:var(--text-lo);">${g.year}</span>
+  </div>`).join('');
+  list.style.display = 'block';
+  list._matches = matches;
+});
+
+document.getElementById('guessInput').addEventListener('keydown', function(e) {
+  const list = document.getElementById('acList');
+  const items = list.querySelectorAll('.autocomplete-item');
+  if (e.key === 'ArrowDown') { acFocused = Math.min(acFocused+1, items.length-1); items.forEach((el,i)=>el.classList.toggle('focused',i===acFocused)); e.preventDefault(); }
+  else if (e.key === 'ArrowUp') { acFocused = Math.max(acFocused-1, -1); items.forEach((el,i)=>el.classList.toggle('focused',i===acFocused)); e.preventDefault(); }
+  else if (e.key === 'Enter') {
+    if (acFocused >= 0 && list._matches && list._matches[acFocused]) {
+      selectGame(list._matches[acFocused].name); e.preventDefault();
+    } else { submitGuess(); }
+  }
+  else if (e.key === 'Escape') { list.style.display = 'none'; acFocused = -1; }
+});
+
+document.addEventListener('click', e => { if (!e.target.closest('.guess-form')) document.getElementById('acList').style.display = 'none'; });
+
+function selectGame(name) {
+  document.getElementById('guessInput').value = name;
+  document.getElementById('acList').style.display = 'none';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SUBMIT
+// ═══════════════════════════════════════════════════════════════════════════
+function submitGuess() {
+  if (gameOver || guesses.length >= MAX_GUESSES) return;
+  const val = document.getElementById('guessInput').value.trim();
+  const match = GAMES.find(g => g.name.toLowerCase() === val.toLowerCase());
+  if (!match) {
+    document.getElementById('guessInput').style.borderColor = 'var(--red)';
+    setTimeout(() => document.getElementById('guessInput').style.borderColor = '', 600);
+    return;
+  }
+  if (guessedNames.has(match.name.toLowerCase())) {
+    document.getElementById('guessInput').style.borderColor = 'var(--amber)';
+    setTimeout(() => document.getElementById('guessInput').style.borderColor = '', 600);
+    return;
+  }
+
+  guesses.push(match);
+  guessedNames.add(match.name.toLowerCase());
+  document.getElementById('guessInput').value = '';
+  document.getElementById('acList').style.display = 'none';
+
+  const won = match.name.toLowerCase() === TARGET.name.toLowerCase();
+  if (won || guesses.length >= MAX_GUESSES) {
+    gameOver = true;
+    if (won) {
+      // Update stats
+      const yesterday = new Date(today); yesterday.setDate(yesterday.getDate()-1);
+      const yKey = `${yesterday.getFullYear()}-${yesterday.getMonth()+1}-${yesterday.getDate()}`;
+      stats.streak = stats.history[yKey]?.done ? stats.streak + 1 : 1;
+      stats.solved++;
+      document.getElementById('streakDisp').textContent = stats.streak;
+      document.getElementById('solvedDisp').textContent = stats.solved;
+    } else {
+      stats.streak = 0;
+      document.getElementById('streakDisp').textContent = 0;
+    }
+    stats.history[todayKey] = { done: true, won, guesses };
+    localStorage.setItem('gamerdle-stats', JSON.stringify(stats));
+    if (won) setTimeout(confetti, 300);
+  } else {
+    stats.history[todayKey] = { done: false, won: false, guesses };
+    localStorage.setItem('gamerdle-stats', JSON.stringify(stats));
+  }
+
+  renderAll();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RESULT
+// ═══════════════════════════════════════════════════════════════════════════
+const EMOJI = { green:'🟩', yellow:'🟨', gray:'⬛' };
+
+function showResult() {
+  const panel = document.getElementById('resultPanel');
+  panel.classList.add('show');
+  const won = guesses.some(g => g.name.toLowerCase() === TARGET.name.toLowerCase());
+  document.getElementById('resultIcon').textContent  = won ? '🏆' : '💀';
+  document.getElementById('resultTitle').textContent = won ? `Solved in ${guesses.length}/6!` : 'Better luck tomorrow';
+  document.getElementById('resultMsg').textContent   = won
+    ? (guesses.length===1?'First try! Legendary.':guesses.length<=2?'Incredible!':guesses.length<=4?'Well played!':'Cutting it close!')
+    : `The game was ${TARGET.name}. Try again tomorrow.`;
+  document.getElementById('answerReveal').textContent = TARGET.name;
+  document.getElementById('answerMeta').textContent = `${TARGET.genre} · ${TARGET.platform} · ${TARGET.year} · ${TARGET.mode} · Rated ${TARGET.rating}`;
+
+  // Emoji grid
+  let grid = '';
+  guesses.forEach(g => {
+    const c = buildComparison(g);
+    const won = g.name.toLowerCase() === TARGET.name.toLowerCase();
+    if (won) grid += '🟩🟩🟩🟩🟩\n';
+    else grid += `${EMOJI[c.genre]}${EMOJI[c.platform]}${EMOJI[c.year.result]}${EMOJI[c.mode]}${EMOJI[c.rating]}\n`;
+  });
+  document.getElementById('emojiGrid').textContent = grid.trim();
+
+  const shareText = `🎮 Gamerdle #${dayNum} — ${won?guesses.length+'/6':'X/6'}\n${grid.trim()}\n\ncosmicgameshub.com/games/gamerdle`;
+  document.getElementById('shareBox').textContent = shareText;
+}
+
+function copyShare() {
+  navigator.clipboard.writeText(document.getElementById('shareBox').textContent).then(() => {
+    const btn = document.querySelector('[onclick="copyShare()"]');
+    btn.textContent = '✅ Copied!'; setTimeout(()=>btn.textContent='📋 Copy & Share', 2000);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CONFETTI
+// ═══════════════════════════════════════════════════════════════════════════
+function confetti() {
+  const colors = ['#00d4ff','#00e676','#ffb300','#ff4757','#9c88ff'];
+  for (let i = 0; i < 60; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.cssText = `left:${Math.random()*100}vw;background:${colors[Math.floor(Math.random()*colors.length)]};animation-duration:${1.2+Math.random()*1.5}s;animation-delay:${Math.random()*0.5}s;width:${6+Math.random()*6}px;height:${6+Math.random()*6}px;border-radius:${Math.random()>0.5?'50%':'3px'};`;
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(), 3000);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════════════
+renderAll();
+document.getElementById('hamburger').addEventListener('click', function() {
+  document.getElementById('navLinks').classList.toggle('open');
+  this.setAttribute('aria-expanded', document.getElementById('navLinks').classList.contains('open'));
+});
+</script>
+</body>
+</html>
