@@ -3,20 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CosmicGamesHub — Best Gaming Gear Guides & Tools 2026</title>
-  <meta name="description" content="Expert gaming gear guides, honest reviews, and free tools. Find the best gaming headsets, mice, keyboards, chairs, and monitors for every budget." />
-  <meta name="keywords" content="best gaming gear, gaming headsets, gaming mice, gaming keyboards, gaming chairs, gaming monitors" />
-  <meta property="og:title" content="CosmicGamesHub — Best Gaming Gear Guides & Tools 2026" />
-  <meta property="og:description" content="Expert gaming gear guides, honest reviews, and free tools for every type of gamer." />
+  <title>CosmicGamesHub — Best Gaming Gear Guides & Free Games 2026</title>
+  <meta name="description" content="Expert gaming gear guides, honest reviews, and free original games. Find the best gaming headsets, mice, keyboards, chairs — and play RIFT, Gamerdle, Pixle and more." />
+  <meta name="keywords" content="best gaming gear, gaming headsets, gaming mice, gaming keyboards, gaming chairs, gaming monitors, free browser games" />
+  <meta property="og:title" content="CosmicGamesHub — Best Gaming Gear Guides & Free Games 2026" />
+  <meta property="og:description" content="Expert gear guides, honest reviews, and original free games for every type of gamer." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://cosmicgameshub.com/" />
   <link rel="canonical" href="https://cosmicgameshub.com/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
-<!-- ─── Navigation ─────────────────────────────── -->
-<nav class="nav" role="navigation" aria-label="Main navigation">
+<!-- ─── Navigation ─────────────────────────────────── -->
+<nav class="nav nav--hero" id="mainNav" role="navigation" aria-label="Main navigation">
   <div class="container">
     <div class="nav__inner">
       <a href="/" class="nav__logo" aria-label="CosmicGamesHub home">
@@ -24,14 +26,13 @@
         <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
       </a>
       <ul class="nav__links" id="navLinks">
-        <li><a href="/guides/best-gaming-headsets-2026" title="Best gaming headsets">Headsets</a></li>
-        <li><a href="/guides/best-gaming-mice-2026" title="Best gaming mice">Mice</a></li>
+        <li><a href="/guides/best-gaming-headsets-2026" title="Best gaming headsets 2026">Headsets</a></li>
+        <li><a href="/guides/best-gaming-mice-2026" title="Best gaming mice 2026">Mice</a></li>
         <li><a href="/guides/best-budget-gaming-chairs" title="Best budget gaming chairs">Chairs</a></li>
         <li><a href="/tools/gaming-fps-calculator" title="FPS calculator tool">FPS Calc</a></li>
         <li><a href="/tools/aim-trainer" title="Aim trainer">Aim Trainer</a></li>
-        <li><a href="/tools/reaction-time-test" title="Reaction time test">Reaction Test</a></li>
         <li><a href="/lab" title="From the Lab" style="color:var(--accent);">⚗️ The Lab</a></li>
-        <li><a href="/tools/aim-trainer" class="nav__cta btn">Free Tools</a></li>
+        <li><a href="/games/rift" class="nav__cta btn">▶ Play RIFT</a></li>
       </ul>
       <button class="nav__hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
         <span></span><span></span><span></span>
@@ -40,55 +41,83 @@
   </div>
 </nav>
 
-<!-- ─── Hero ────────────────────────────────────── -->
+<!-- ─── Hero ────────────────────────────────────────── -->
 <section class="hero" aria-label="Site introduction">
-  <div class="container">
-    <span class="hero__eyebrow">🚀 2026 Gear Guides</span>
-    <h1 class="hero__title">
+  <!-- Custom-generated hero background image -->
+  <div class="hero__bg" style="background-image: url('/images/hero-bg.jpg');"></div>
+
+  <div class="hero__content container" id="heroContent">
+    <span class="hero__eyebrow js-reveal">🚀 2026 Gaming Destination</span>
+
+    <h1 class="hero__title js-reveal" style="transition-delay:0.1s">
       Find Your Perfect<br>
-      <span class="highlight">Gaming Setup</span>
+      <em>Gaming Setup</em>
     </h1>
-    <p class="hero__sub">
-      Expert-tested gear guides, honest picks at every price tier, and free tools to level up your rig — no fluff, just the gear that actually performs.
+
+    <p class="hero__sub js-reveal" style="transition-delay:0.2s">
+      Expert-tested gear guides, original free games, and tools that actually help.
+      No sponsored opinions. No fluff. Just the picks and plays that matter.
     </p>
-    <div class="hero__actions">
-      <a href="/games/gamerdle" class="btn btn--primary">🎮 Play Gamerdle →</a>
-      <a href="/games/daily-challenge" class="btn btn--outline">🎯 Daily Challenge</a>
+
+    <div class="hero__actions js-reveal" style="transition-delay:0.3s">
+      <a href="/games/rift" class="btn btn--primary">⚡ Play RIFT — Free</a>
+      <a href="/guides/best-gaming-headsets-2026" class="btn btn--outline">Browse Gear Guides →</a>
     </div>
+
+    <div class="hero__stats js-reveal" style="transition-delay:0.45s">
+      <div class="hero__stat">
+        <span class="hero__stat-num">50+</span>
+        <span class="hero__stat-label">Gear guides</span>
+      </div>
+      <div class="hero__stat-sep"></div>
+      <div class="hero__stat">
+        <span class="hero__stat-num">6</span>
+        <span class="hero__stat-label">Original games</span>
+      </div>
+      <div class="hero__stat-sep"></div>
+      <div class="hero__stat">
+        <span class="hero__stat-num">100%</span>
+        <span class="hero__stat-label">Free forever</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero__scroll" aria-hidden="true">
+    <div class="hero__scroll-dot"></div>
   </div>
 </section>
 
-<!-- ─── Categories ──────────────────────────────── -->
+<!-- ─── Categories ───────────────────────────────────── -->
 <section class="section" aria-label="Gear categories">
   <div class="container">
-    <div class="section__header">
+    <div class="section__header js-reveal">
       <span class="section__eyebrow">Browse by Category</span>
       <h2 class="section__title">Best Gaming Gear Guides</h2>
       <p class="section__sub">Every guide researched, tested, and updated for 2026.</p>
     </div>
 
-    <div class="grid grid--5">
-      <a href="/guides/best-gaming-headsets-2026" class="cat-card" title="Best gaming headsets 2026">
+    <div class="grid grid--5 glow-grid" id="catGrid">
+      <a href="/guides/best-gaming-headsets-2026" class="cat-card js-reveal" title="Best gaming headsets 2026" style="transition-delay:0s">
         <span class="cat-card__icon">🎧</span>
         <div class="cat-card__name">Headsets</div>
         <div class="cat-card__meta">$50 – $300+</div>
       </a>
-      <a href="/guides/best-gaming-mice-2026" class="cat-card" title="Best gaming mice 2026">
+      <a href="/guides/best-gaming-mice-2026" class="cat-card js-reveal" title="Best gaming mice 2026" style="transition-delay:0.07s">
         <span class="cat-card__icon">🖱️</span>
         <div class="cat-card__name">Mice</div>
         <div class="cat-card__meta">$25 – $180+</div>
       </a>
-      <a href="#keyboards" class="cat-card" title="Best gaming keyboards (coming soon)">
+      <a href="#keyboards" class="cat-card js-reveal" title="Best gaming keyboards — coming soon" style="transition-delay:0.14s">
         <span class="cat-card__icon">⌨️</span>
         <div class="cat-card__name">Keyboards</div>
         <div class="cat-card__meta">Coming Soon</div>
       </a>
-      <a href="/guides/best-budget-gaming-chairs" class="cat-card" title="Best budget gaming chairs">
+      <a href="/guides/best-budget-gaming-chairs" class="cat-card js-reveal" title="Best budget gaming chairs" style="transition-delay:0.21s">
         <span class="cat-card__icon">🪑</span>
         <div class="cat-card__name">Chairs</div>
         <div class="cat-card__meta">Under $200</div>
       </a>
-      <a href="#monitors" class="cat-card" title="Best gaming monitors (coming soon)">
+      <a href="#monitors" class="cat-card js-reveal" title="Best gaming monitors — coming soon" style="transition-delay:0.28s">
         <span class="cat-card__icon">🖥️</span>
         <div class="cat-card__name">Monitors</div>
         <div class="cat-card__meta">Coming Soon</div>
@@ -97,139 +126,171 @@
   </div>
 </section>
 
-<!-- ─── Featured Guides ─────────────────────────── -->
-<section class="section section--alt" aria-label="Featured guides">
+<!-- ─── Games Section (with cinematic banner) ──────────── -->
+<section class="section section--alt" aria-label="Games and puzzles">
   <div class="container">
-    <div class="section__header">
+
+    <!-- AI-generated cosmic gaming banner -->
+    <div class="games-banner js-reveal" style="background-image:url('/images/games-section-bg.jpg')">
+      <div class="games-banner__overlay">
+        <div class="container">
+          <span class="section__eyebrow">Play Free · No Signup</span>
+          <h2 class="section__title">Games & Daily Puzzles</h2>
+          <p class="section__sub">Six original games, built here. New daily puzzles every 24 hours.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid--3 glow-grid" id="gamesGrid">
+
+      <!-- RIFT — featured with real image -->
+      <a href="/games/rift" class="img-card js-reveal" title="Play RIFT — three-zone daily word game" style="transition-delay:0s">
+        <img src="/images/rift-hero.jpg" alt="RIFT — three cosmic word zones: chain, grow, decode" class="img-card__hero" loading="lazy" />
+        <div class="img-card__body">
+          <div class="img-card__tag">Word Game · Daily · 3 Zones</div>
+          <div class="img-card__name">RIFT</div>
+          <div class="img-card__desc">Chain a word ladder ⚡ — Grow a word 🌱 — Decode the connection 🔮. Three zones. One daily score. New every 24 hours.</div>
+          <div class="img-card__play">▶ Play Today's RIFT</div>
+        </div>
+      </a>
+
+      <!-- Gamerdle -->
+      <a href="/games/gamerdle" class="card js-reveal" style="text-decoration:none;display:flex;gap:1rem;align-items:flex-start;transition-delay:0.08s">
+        <div style="font-size:2rem;flex-shrink:0;">🎮</div>
+        <div>
+          <h3 style="font-size:1rem;margin-bottom:0.35rem;color:var(--accent);">Gamerdle</h3>
+          <p style="font-size:0.83rem;color:var(--text-mid);margin:0;">Guess the mystery video game in 6 tries. Daily puzzle, sharable emoji results.</p>
+        </div>
+      </a>
+
+      <!-- Pixle -->
+      <a href="/games/pixle" class="card js-reveal" style="text-decoration:none;display:flex;gap:1rem;align-items:flex-start;transition-delay:0.16s">
+        <div style="font-size:2rem;flex-shrink:0;">🔤</div>
+        <div>
+          <h3 style="font-size:1rem;margin-bottom:0.35rem;color:var(--accent);">Pixle</h3>
+          <p style="font-size:0.83rem;color:var(--text-mid);margin:0;">Guess the 5-letter gaming word in 6 tries. All answers from gaming vocabulary. Daily.</p>
+        </div>
+      </a>
+
+      <!-- Daily Challenge -->
+      <a href="/games/daily-challenge" class="card js-reveal" style="text-decoration:none;display:flex;gap:1rem;align-items:flex-start;transition-delay:0.24s">
+        <div style="font-size:2rem;flex-shrink:0;">🎯</div>
+        <div>
+          <h3 style="font-size:1rem;margin-bottom:0.35rem;color:var(--accent);">Daily Challenge</h3>
+          <p style="font-size:0.83rem;color:var(--text-mid);margin:0;">New challenge every day — aim, reaction, memory, Sudoku. Build your streak.</p>
+        </div>
+      </a>
+
+      <!-- Ambient Sounds -->
+      <a href="/tools/ambient-sounds" class="card js-reveal" style="text-decoration:none;display:flex;gap:1rem;align-items:flex-start;transition-delay:0.32s">
+        <div style="font-size:2rem;flex-shrink:0;">🎧</div>
+        <div>
+          <h3 style="font-size:1rem;margin-bottom:0.35rem;">Ambient Sound Mixer</h3>
+          <p style="font-size:0.83rem;color:var(--text-mid);margin:0;">Mix rain, keyboard clicks, lo-fi beats, space drone. Runs all session.</p>
+        </div>
+      </a>
+
+      <!-- More in the Lab -->
+      <a href="/lab" class="card js-reveal" style="text-decoration:none;display:flex;gap:1rem;align-items:flex-start;border-color:rgba(0,212,255,0.18);transition-delay:0.4s">
+        <div style="font-size:2rem;flex-shrink:0;">⚗️</div>
+        <div>
+          <h3 style="font-size:1rem;margin-bottom:0.35rem;color:var(--accent);">From the Lab →</h3>
+          <p style="font-size:0.83rem;color:var(--text-mid);margin:0;">Void Keeper, Beat Lab, Dream Machine, ShelfBuilder, BuildPlan and more.</p>
+        </div>
+      </a>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─── Featured Gear Guides ──────────────────────────── -->
+<section class="section" aria-label="Featured guides">
+  <div class="container">
+    <div class="section__header js-reveal">
       <span class="section__eyebrow">Top Picks</span>
       <h2 class="section__title">Our Most Popular Guides</h2>
       <p class="section__sub">Curated for performance, value, and longevity — updated regularly.</p>
     </div>
 
-    <div class="grid grid--3">
+    <div class="grid grid--3 glow-grid" id="guidesGrid">
 
       <!-- Headsets -->
-      <article class="card">
+      <article class="card js-reveal" style="transition-delay:0s">
         <div style="font-size:2rem;margin-bottom:0.75rem;">🎧</div>
         <h3 style="margin-bottom:0.5rem;">Best Gaming Headsets 2026</h3>
         <p style="font-size:0.88rem;color:var(--text-mid);margin-bottom:1rem;">
-          From budget $50 picks to pro-grade wireless cans — our full breakdown covers every price tier and use case.
+          From budget $50 picks to pro-grade wireless — our full breakdown covers every price tier and use case.
         </p>
         <div class="tags">
           <span class="tag">Wireless</span>
           <span class="tag">7.1 Surround</span>
           <span class="tag">Noise Cancelling</span>
         </div>
-        <a href="/guides/best-gaming-headsets-2026" class="btn btn--outline" style="width:100%;justify-content:center;">Read Guide →</a>
+        <a href="/guides/best-gaming-headsets-2026" class="btn btn--outline" style="width:100%;justify-content:center;margin-top:0.5rem;">Read Guide →</a>
       </article>
 
       <!-- Mice -->
-      <article class="card">
+      <article class="card js-reveal" style="transition-delay:0.08s">
         <div style="font-size:2rem;margin-bottom:0.75rem;">🖱️</div>
-        <h3 style="margin-bottom:0.5rem;">Best Gaming Mouse 2026</h3>
+        <h3 style="margin-bottom:0.5rem;">Best Gaming Mice 2026</h3>
         <p style="font-size:0.88rem;color:var(--text-mid);margin-bottom:1rem;">
-          Sensor accuracy, click latency, and ergonomics — the real metrics that separate a great gaming mouse from a mediocre one.
+          Lightweight, wireless, high-DPI — we break down which sensors actually matter and which specs are marketing.
         </p>
         <div class="tags">
-          <span class="tag">High DPI</span>
+          <span class="tag">Optical Sensor</span>
           <span class="tag">Wireless</span>
-          <span class="tag">Lightweight</span>
+          <span class="tag">FPS Optimized</span>
         </div>
-        <a href="/guides/best-gaming-mice-2026" class="btn btn--outline" style="width:100%;justify-content:center;">Read Guide →</a>
+        <a href="/guides/best-gaming-mice-2026" class="btn btn--outline" style="width:100%;justify-content:center;margin-top:0.5rem;">Read Guide →</a>
       </article>
 
       <!-- Chairs -->
-      <article class="card">
+      <article class="card js-reveal" style="transition-delay:0.16s">
         <div style="font-size:2rem;margin-bottom:0.75rem;">🪑</div>
         <h3 style="margin-bottom:0.5rem;">Best Budget Gaming Chairs</h3>
         <p style="font-size:0.88rem;color:var(--text-mid);margin-bottom:1rem;">
-          Under $200 doesn't mean settling. Our picks balance lumbar support, build quality, and value that lasts.
+          The best chairs under $200. We cut through the cheap padding and racing aesthetics to find what's actually worth sitting in all day.
         </p>
         <div class="tags">
           <span class="tag">Under $200</span>
           <span class="tag">Lumbar Support</span>
           <span class="tag">Ergonomic</span>
         </div>
-        <a href="/guides/best-budget-gaming-chairs" class="btn btn--outline" style="width:100%;justify-content:center;">Read Guide →</a>
+        <a href="/guides/best-budget-gaming-chairs" class="btn btn--outline" style="width:100%;justify-content:center;margin-top:0.5rem;">Read Guide →</a>
       </article>
 
     </div>
   </div>
 </section>
 
-<!-- ─── Games Section ───────────────────────────── -->
-<section class="section" aria-label="Games">
+<!-- ─── Tools ─────────────────────────────────────────── -->
+<section class="section section--alt" aria-label="Gaming tools">
   <div class="container">
-    <div class="section__header">
-      <span class="section__eyebrow">Play Free</span>
-      <h2 class="section__title">Games & Puzzles</h2>
-      <p class="section__sub">No download, no signup. Just play.</p>
-    </div>
-    <div class="grid grid--3">
-      <a href="/games/rift" class="card" style="text-decoration:none;display:flex;gap:1rem;align-items:flex-start;border-color:rgba(168,85,247,0.5);box-shadow:0 0 28px rgba(168,85,247,0.1);">
-        <div style="font-size:2rem;flex-shrink:0;">⚡</div>
-        <div><h3 style="font-size:1rem;margin-bottom:0.35rem;color:#a855f7;">RIFT — NEW</h3><p style="font-size:0.83rem;color:var(--text-mid);margin:0;">Three daily word zones: Chain a ladder, Grow a word, Decode the connection. One game, three stars per zone.</p></div>
-      </a>
-      <a href="/games/pixle" class="card" style="text-decoration:none;display:flex;gap:1rem;align-items:flex-start;border-color:rgba(0,212,255,0.3);">
-        <div style="font-size:2rem;flex-shrink:0;">🔤</div>
-        <div><h3 style="font-size:1rem;margin-bottom:0.35rem;color:var(--accent);">Pixle</h3><p style="font-size:0.83rem;color:var(--text-mid);margin:0;">Guess the 5-letter gaming word in 6 tries. Daily puzzle for gamers.</p></div>
-      </a>
-      <a href="/games/gamerdle" class="card" style="text-decoration:none;display:flex;gap:1rem;align-items:flex-start;border-color:rgba(0,212,255,0.3);">
-        <div style="font-size:2rem;flex-shrink:0;">🎮</div>
-        <div><h3 style="font-size:1rem;margin-bottom:0.35rem;color:var(--accent);">Gamerdle</h3><p style="font-size:0.83rem;color:var(--text-mid);margin:0;">Guess the mystery video game in 6 tries. Daily puzzle, sharable results.</p></div>
-      </a>
-      <a href="/games/daily-challenge" class="card" style="text-decoration:none;display:flex;gap:1rem;align-items:flex-start;border-color:rgba(0,212,255,0.3);">
-        <div style="font-size:2rem;flex-shrink:0;">🎯</div>
-        <div><h3 style="font-size:1rem;margin-bottom:0.35rem;color:var(--accent);">Daily Challenge</h3><p style="font-size:0.83rem;color:var(--text-mid);margin:0;">New challenge every day. Aim, reaction, memory, Sudoku. Track your streak.</p></div>
-      </a>
-      <a href="/tools/ambient-sounds" class="card" style="text-decoration:none;display:flex;gap:1rem;align-items:flex-start;">
-        <div style="font-size:2rem;flex-shrink:0;">🎧</div>
-        <div><h3 style="font-size:1rem;margin-bottom:0.35rem;">Ambient Sound Mixer</h3><p style="font-size:0.83rem;color:var(--text-mid);margin:0;">Mix rain, keyboard clicks, lo-fi beats, space drone and more. Runs all session.</p></div>
-      </a>
-      <a href="/games/sudoku" class="card" style="text-decoration:none;display:flex;gap:1rem;align-items:flex-start;">
-        <div style="font-size:2rem;flex-shrink:0;">🔢</div>
-        <div><h3 style="font-size:1rem;margin-bottom:0.35rem;">Daily Sudoku</h3><p style="font-size:0.83rem;color:var(--text-mid);margin:0;">New puzzle every day. Easy to Expert difficulty. Timer, hints, notes mode.</p></div>
-      </a>
-      <a href="/games/minesweeper" class="card" style="text-decoration:none;display:flex;gap:1rem;align-items:flex-start;">
-        <div style="font-size:2rem;flex-shrink:0;">☄️</div>
-        <div><h3 style="font-size:1rem;margin-bottom:0.35rem;">Cosmic Minesweeper</h3><p style="font-size:0.83rem;color:var(--text-mid);margin:0;">Classic minesweeper with a space twist. Easy, Medium, and Hard grids.</p></div>
-      </a>
-      <a href="/games/memory-match" class="card" style="text-decoration:none;display:flex;gap:1rem;align-items:flex-start;">
-        <div style="font-size:2rem;flex-shrink:0;">🃏</div>
-        <div><h3 style="font-size:1rem;margin-bottom:0.35rem;">Memory Match</h3><p style="font-size:0.83rem;color:var(--text-mid);margin:0;">Flip cards to find pairs. Four themes, three grid sizes. Beat your best time.</p></div>
-      </a>
-    </div>
-  </div>
-</section>
-
-<!-- ─── Gaming Tools Section ────────────────────── -->
-<section class="section" aria-label="Gaming tools">
-  <div class="container">
-    <div class="section__header">
+    <div class="section__header js-reveal">
       <span class="section__eyebrow">Free Gaming Tools</span>
       <h2 class="section__title">Tools That Actually Help</h2>
-      <p class="section__sub">No signup. No ads. Just useful calculators and references for gamers.</p>
+      <p class="section__sub">No signup. No ads. Just useful calculators for gamers.</p>
     </div>
 
-    <div class="grid grid--2">
+    <div class="grid grid--2 glow-grid">
 
-      <article class="card" style="display:flex;gap:1.25rem;align-items:flex-start;">
+      <article class="card js-reveal" style="display:flex;gap:1.25rem;align-items:flex-start;transition-delay:0s">
         <div style="font-size:2.5rem;flex-shrink:0;">⚡</div>
         <div>
           <h3 style="margin-bottom:0.5rem;">FPS Calculator</h3>
           <p style="font-size:0.88rem;color:var(--text-mid);margin-bottom:1rem;">
-            Enter your GPU tier, CPU, resolution, and game settings to get an estimated FPS range. Instantly see if your rig can hit 60, 144, or 240 FPS.
+            Enter your GPU tier, CPU, resolution, and settings to get an estimated FPS range. Instantly see if your rig can hit 60, 144, or 240 FPS.
           </p>
           <a href="/tools/gaming-fps-calculator" class="btn btn--primary">Launch Calculator →</a>
         </div>
       </article>
 
-      <article class="card" style="display:flex;gap:1.25rem;align-items:flex-start;opacity:0.6;">
+      <article class="card js-reveal" style="display:flex;gap:1.25rem;align-items:flex-start;opacity:0.55;transition-delay:0.1s">
         <div style="font-size:2.5rem;flex-shrink:0;">🖥️</div>
         <div>
           <h3 style="margin-bottom:0.5rem;">Monitor Hz Calculator <span style="font-size:0.7rem;color:var(--text-lo);font-weight:400;">(Coming Soon)</span></h3>
           <p style="font-size:0.88rem;color:var(--text-mid);margin-bottom:1rem;">
-            Find the minimum refresh rate you need based on your GPU output and game type. Stop overpaying for 240Hz when 144Hz is your bottleneck.
+            Find the minimum refresh rate you need based on your GPU and game type. Stop overpaying for 240Hz when 144Hz is your bottleneck.
           </p>
           <span class="btn btn--outline" style="cursor:default;opacity:0.5;">Coming Soon</span>
         </div>
@@ -239,71 +300,35 @@
   </div>
 </section>
 
-<!-- ─── From the Lab ─────────────────────────────── -->
-<section class="section section--alt" aria-label="From the Lab">
+<!-- ─── Why Trust Us ───────────────────────────────────── -->
+<section class="section" aria-label="About CosmicGamesHub">
   <div class="container">
-    <div class="section__header">
-      <span class="section__eyebrow">⚗️ Experiments</span>
-      <h2 class="section__title">From the Lab</h2>
-      <p class="section__sub">Original games and tools built by the CosmicGamesHub team. All free, no installs.</p>
-    </div>
-    <div class="grid grid--3">
-      <a href="/games/rift" class="card" style="text-decoration:none;display:flex;gap:1rem;align-items:flex-start;border-color:rgba(168,85,247,0.4);box-shadow:0 0 20px rgba(168,85,247,0.07);">
-        <div style="font-size:2rem;flex-shrink:0;">⚡</div>
-        <div><h3 style="font-size:1rem;margin-bottom:0.35rem;color:#a855f7;">RIFT — Three Zones</h3><p style="font-size:0.83rem;color:var(--text-mid);margin:0;">Chain a word ladder, grow a word, decode the connection. Three daily challenges, one score.</p></div>
-      </a>
-      <a href="/games/pixle" class="card" style="text-decoration:none;display:flex;gap:1rem;align-items:flex-start;border-color:rgba(0,212,255,0.35);">
-        <div style="font-size:2rem;flex-shrink:0;">🔤</div>
-        <div><h3 style="font-size:1rem;margin-bottom:0.35rem;color:var(--accent);">Pixle — Daily Word</h3><p style="font-size:0.83rem;color:var(--text-mid);margin:0;">Guess the 5-letter gaming word in 6 tries. All gaming vocabulary. New word every day.</p></div>
-      </a>
-      <a href="/games/void-keeper" class="card" style="text-decoration:none;display:flex;gap:1rem;align-items:flex-start;">
-        <div style="font-size:2rem;flex-shrink:0;">🌑</div>
-        <div><h3 style="font-size:1rem;margin-bottom:0.35rem;">Void Keeper</h3><p style="font-size:0.83rem;color:var(--text-mid);margin:0;">Catch particles of light with your cursor. Avoid the noise. An ambient arcade experience.</p></div>
-      </a>
-      <a href="/games/beat-lab" class="card" style="text-decoration:none;display:flex;gap:1rem;align-items:flex-start;border-color:rgba(255,51,102,0.3);">
-        <div style="font-size:2rem;flex-shrink:0;">🎵</div>
-        <div><h3 style="font-size:1rem;margin-bottom:0.35rem;color:#ff6b9d;">Beat Lab</h3><p style="font-size:0.83rem;color:var(--text-mid);margin:0;">4-lane rhythm game with synthesized audio. Hit the beats on D/F/J/K or tap on mobile.</p></div>
-      </a>
-      <a href="/games/dream-machine" class="card" style="text-decoration:none;display:flex;gap:1rem;align-items:flex-start;">
-        <div style="font-size:2rem;flex-shrink:0;">🌀</div>
-        <div><h3 style="font-size:1rem;margin-bottom:0.35rem;">Dream Machine</h3><p style="font-size:0.83rem;color:var(--text-mid);margin:0;">2,500 particles driven by flow fields. Move your mouse to create swirls. Just experience it.</p></div>
-      </a>
-    </div>
-    <div style="text-align:center;margin-top:1.75rem;">
-      <a href="/lab" class="btn btn--outline">See Everything in the Lab →</a>
-    </div>
-  </div>
-</section>
-
-<!-- ─── Why Trust Us ─────────────────────────────── -->
-<section class="section section--alt" aria-label="About CosmicGamesHub">
-  <div class="container">
-    <div class="section__header">
+    <div class="section__header js-reveal">
       <span class="section__eyebrow">Why CosmicGamesHub</span>
       <h2 class="section__title">Gear Advice You Can Actually Trust</h2>
     </div>
 
-    <div class="grid grid--3">
-      <div class="card" style="text-align:center;">
+    <div class="grid grid--3 glow-grid">
+      <div class="card js-reveal" style="text-align:center;transition-delay:0s">
         <div style="font-size:2rem;margin-bottom:0.75rem;">🔬</div>
         <h3 style="font-size:1rem;margin-bottom:0.5rem;">Research-Backed</h3>
         <p style="font-size:0.85rem;">Every pick is backed by spec analysis, user reviews, and real-world benchmarks — not sponsored opinions.</p>
       </div>
-      <div class="card" style="text-align:center;">
+      <div class="card js-reveal" style="text-align:center;transition-delay:0.08s">
         <div style="font-size:2rem;margin-bottom:0.75rem;">💰</div>
         <h3 style="font-size:1rem;margin-bottom:0.5rem;">Every Budget Covered</h3>
-        <p style="font-size:0.85rem;">We cover gear from $25 to $350+. Whether you're building your first setup or upgrading, we have a pick for you.</p>
+        <p style="font-size:0.85rem;">$25 to $350+. Whether you're building your first setup or upgrading, we have a pick for you.</p>
       </div>
-      <div class="card" style="text-align:center;">
+      <div class="card js-reveal" style="text-align:center;transition-delay:0.16s">
         <div style="font-size:2rem;margin-bottom:0.75rem;">🔄</div>
         <h3 style="font-size:1rem;margin-bottom:0.5rem;">Updated Regularly</h3>
-        <p style="font-size:0.85rem;">Guides are refreshed when new products launch or prices shift significantly. No year-old picks presented as current.</p>
+        <p style="font-size:0.85rem;">Guides are refreshed when new products launch or prices shift. No year-old picks presented as current.</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ─── Footer ───────────────────────────────────── -->
+<!-- ─── Footer ─────────────────────────────────────────── -->
 <footer class="footer" role="contentinfo">
   <div class="container">
     <div class="footer__grid">
@@ -312,7 +337,7 @@
           <span class="nav__logo-icon" aria-hidden="true">🎮</span>
           <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
         </a>
-        <p>Expert gaming gear guides and tools for every type of gamer. No fluff, just the picks that matter.</p>
+        <p>Expert gaming gear guides, original free games, and tools for every type of gamer.</p>
       </div>
       <div class="footer__col">
         <h4>Guides</h4>
@@ -323,13 +348,15 @@
         </ul>
       </div>
       <div class="footer__col">
-        <h4>Tools</h4>
+        <h4>Play Free</h4>
         <ul>
-          <li><a href="/tools/gaming-fps-calculator">FPS Calculator</a></li>
+          <li><a href="/games/rift">RIFT</a></li>
+          <li><a href="/games/gamerdle">Gamerdle</a></li>
+          <li><a href="/games/pixle">Pixle</a></li>
+          <li><a href="/lab">From the Lab ⚗️</a></li>
         </ul>
       </div>
     </div>
-
     <div class="footer__bottom">
       <p class="footer__disclosure">
         <strong>Affiliate Disclosure:</strong> As an Amazon Associate I earn from qualifying purchases. When you click links on this site and make a purchase, we may receive a small commission at no extra cost to you. This helps keep our guides free. We only recommend products we believe are genuinely good picks.
@@ -339,14 +366,96 @@
   </div>
 </footer>
 
+<!-- ─── Scripts ─────────────────────────────────────────── -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
 <script>
-  // Mobile nav
-  const hamburger = document.getElementById('hamburger');
-  const navLinks  = document.getElementById('navLinks');
-  hamburger.addEventListener('click', () => {
-    const open = navLinks.classList.toggle('open');
-    hamburger.setAttribute('aria-expanded', open);
+// ── Mobile nav ─────────────────────────────
+const hamburger = document.getElementById('hamburger');
+const navLinks  = document.getElementById('navLinks');
+hamburger.addEventListener('click', () => {
+  const open = navLinks.classList.toggle('open');
+  hamburger.setAttribute('aria-expanded', open);
+});
+
+// ── Nav: transparent on hero, glass on scroll ──
+const mainNav = document.getElementById('mainNav');
+const onScroll = () => {
+  mainNav.classList.toggle('nav--scrolled', window.scrollY > 55);
+};
+window.addEventListener('scroll', onScroll, { passive: true });
+
+// ── Hero entrance (runs before GSAP loads) ─
+// JS-reveal elements get revealed via IntersectionObserver AND on load
+const revealEls = document.querySelectorAll('.js-reveal');
+
+// Immediately reveal hero elements (they are already in view)
+revealEls.forEach(el => {
+  const delay = parseFloat(el.style.transitionDelay) || 0;
+  setTimeout(() => el.classList.add('revealed'), delay * 1000 + 80);
+});
+
+// ── Scroll reveals via IntersectionObserver ─
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const el = entry.target;
+      const delay = parseFloat(el.style.transitionDelay) || 0;
+      setTimeout(() => el.classList.add('revealed'), delay * 1000);
+      io.unobserve(el);
+    }
   });
+}, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+document.querySelectorAll('.js-reveal').forEach(el => {
+  // Hero elements already handled above; skip if already revealed
+  if (!el.classList.contains('revealed')) io.observe(el);
+});
+
+// ── Flashlight card hover effect ───────────
+document.querySelectorAll('.glow-grid').forEach(grid => {
+  grid.addEventListener('mousemove', e => {
+    grid.querySelectorAll('.card, .cat-card, .img-card').forEach(card => {
+      const r = card.getBoundingClientRect();
+      card.style.setProperty('--cx', (e.clientX - r.left) + 'px');
+      card.style.setProperty('--cy', (e.clientY - r.top)  + 'px');
+    });
+  });
+});
+
+// Apply flashlight to cat-cards and img-cards too
+document.querySelectorAll('.cat-card, .img-card').forEach(card => {
+  const grid = card.closest('.glow-grid');
+  if (!grid) return;
+  // CSS vars already handled above; just ensure ::before pseudo is reachable
+});
+
+// ── GSAP enhanced animations (loads after page) ─
+window.addEventListener('load', () => {
+  if (typeof gsap === 'undefined') return;
+  gsap.registerPlugin(ScrollTrigger);
+
+  // Stagger card grids on scroll
+  document.querySelectorAll('.glow-grid').forEach(grid => {
+    const children = [...grid.children].filter(c => c.classList.contains('js-reveal') || c.classList.contains('card') || c.classList.contains('cat-card') || c.classList.contains('img-card'));
+    if (!children.length) return;
+    gsap.fromTo(children,
+      { y: 24, opacity: 0 },
+      {
+        y: 0, opacity: 1, duration: 0.6, ease: 'power2.out', stagger: 0.08,
+        scrollTrigger: { trigger: grid, start: 'top 82%', toggleActions: 'play none none none' }
+      }
+    );
+  });
+
+  // Section headers
+  document.querySelectorAll('.section__header').forEach(el => {
+    gsap.from(el, {
+      y: 30, opacity: 0, duration: 0.8, ease: 'power2.out',
+      scrollTrigger: { trigger: el, start: 'top 85%' }
+    });
+  });
+});
 </script>
 </body>
 </html>
