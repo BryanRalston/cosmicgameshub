@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gaming FPS Calculator — Estimate Your Frames Per Second | CosmicGamesHub</title>
+  <meta name="description" content="Free FPS calculator for PC gaming. Enter your GPU, CPU, resolution, and settings to get an estimated frames-per-second range for any game." />
+  <link rel="canonical" href="https://cosmicgameshub.com/tools/gaming-fps-calculator" />
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+<body>
+
+<nav class="nav" role="navigation" aria-label="Main navigation">
+  <div class="container">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo" aria-label="CosmicGamesHub home">
+        <span class="nav__logo-icon" aria-hidden="true">🎮</span>
+        <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
+      </a>
+      <ul class="nav__links" id="navLinks">
+        <li><a href="/guides/best-gaming-headsets-2026">Headsets</a></li>
+        <li><a href="/guides/best-gaming-mice-2026">Mice</a></li>
+        <li><a href="/guides/best-budget-gaming-chairs">Chairs</a></li>
+        <li><a href="/tools/gaming-fps-calculator" class="active">FPS Calculator</a></li>
+        <li><a href="/tools/gaming-fps-calculator" class="nav__cta btn">Free Tools</a></li>
+      </ul>
+      <button class="nav__hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<main>
+  <div class="container--narrow">
+    <div class="breadcrumbs">
+      <a href="/">Home</a>
+      <span class="sep">›</span>
+      <span class="current">FPS Calculator</span>
+    </div>
+
+    <section style="padding: 2.5rem 0 1rem;">
+      <span class="section__eyebrow">Free Tool</span>
+      <h1 style="margin-top:0.5rem;">Gaming FPS Calculator</h1>
+      <p style="max-width:600px;color:var(--text-mid);margin-bottom:0;">
+        Select your GPU tier, CPU class, target resolution, and game settings to get an estimated FPS range. Results are based on aggregated benchmark data across common hardware configurations.
+      </p>
+    </section>
+
+    <div class="tool-card">
+      <form class="tool-form" id="fpsForm" onsubmit="return false;">
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="gpu">GPU Tier</label>
+            <select id="gpu" name="gpu">
+              <optgroup label="NVIDIA">
+                <option value="rtx5090">RTX 5090 / 4090 (Flagship)</option>
+                <option value="rtx5080">RTX 5080 / 4080 Super (High-End)</option>
+                <option value="rtx5070ti">RTX 5070 Ti / 4070 Ti Super</option>
+                <option value="rtx5070" selected>RTX 5070 / 4070 Super (Upper-Mid)</option>
+                <option value="rtx4060ti">RTX 4060 Ti / 3070 (Mid-High)</option>
+                <option value="rtx4060">RTX 4060 / 3060 Ti (Mid)</option>
+                <option value="rtx3060">RTX 3060 / 2070 (Lower-Mid)</option>
+                <option value="rtx3050">RTX 3050 / 2060 (Budget)</option>
+                <option value="gtx1660">GTX 1660 Super / 1070 (Older Mid)</option>
+                <option value="gtx1060">GTX 1060 / RX 580 (Legacy)</option>
+              </optgroup>
+              <optgroup label="AMD">
+                <option value="rx9070xt">RX 9070 XT / 7900 XTX (High-End)</option>
+                <option value="rx9070">RX 9070 / 7800 XT (Upper-Mid)</option>
+                <option value="rx7700xt">RX 7700 XT / 6750 XT (Mid)</option>
+                <option value="rx7600">RX 7600 / 6650 XT (Lower-Mid)</option>
+                <option value="rx6600">RX 6600 / 5700 (Budget)</option>
+              </optgroup>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="cpu">CPU Class</label>
+            <select id="cpu" name="cpu">
+              <option value="top">Top-Tier (Core Ultra 9 / Ryzen 9 9950X)</option>
+              <option value="high" selected>High-End (i9-14900K / Ryzen 9 7950X)</option>
+              <option value="mid">Mid-Range (i7-14700 / Ryzen 7 7700X)</option>
+              <option value="budget">Budget (i5-12400 / Ryzen 5 7600)</option>
+              <option value="older">Older / Low-End (i5-9600K / Ryzen 5 3600)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="resolution">Resolution</label>
+            <select id="resolution" name="resolution">
+              <option value="1080p" selected>1080p (Full HD)</option>
+              <option value="1440p">1440p (QHD / 2K)</option>
+              <option value="4k">4K (Ultra HD)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="settings">Graphics Settings</label>
+            <select id="settings" name="settings">
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high" selected>High</option>
+              <option value="ultra">Ultra / Max</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="gameType">Game Type</label>
+          <select id="gameType" name="gameType">
+            <option value="esports">Esports / Competitive (Valorant, CS2, Apex, LoL)</option>
+            <option value="fps" selected>AAA FPS / Action (CoD, Battlefield, Halo)</option>
+            <option value="openworld">Open World / RPG (Cyberpunk, RDR2, Hogwarts Legacy)</option>
+            <option value="strategy">Strategy / MOBA (StarCraft, Dota 2)</option>
+            <option value="sim">Simulation (Flight Sim, Racing)</option>
+          </select>
+        </div>
+
+        <button type="button" class="btn btn--primary" onclick="calculateFPS()" style="width:100%;justify-content:center;padding:0.85rem;">
+          ⚡ Calculate FPS
+        </button>
+      </form>
+
+      <div class="tool-result" id="result" style="display:none;">
+        <div class="tool-result__fps" id="fpsValue">—</div>
+        <div class="tool-result__range" id="fpsRange"></div>
+        <div class="tool-result__tier" id="fpsTier"></div>
+        <p id="fpsNote" style="font-size:0.82rem;color:var(--text-lo);max-width:480px;text-align:center;margin:0;"></p>
+      </div>
+    </div>
+
+    <!-- Upgrade CTA -->
+    <section style="margin: 2rem 0 3rem;">
+      <h2 style="margin-top:0;">Not Hitting Your Target FPS?</h2>
+      <p>If your estimated FPS is below your monitor's refresh rate, the most impactful upgrade is almost always the GPU.</p>
+      <div class="grid grid--3" style="margin-top:1.25rem;">
+        <div class="card" style="text-align:center;">
+          <div style="font-size:1.75rem;margin-bottom:0.5rem;">🎯</div>
+          <h3 style="font-size:0.95rem;">Target 144 FPS</h3>
+          <p style="font-size:0.82rem;color:var(--text-mid);margin-bottom:1rem;">RTX 4070 or RX 7700 XT at 1080p/1440p</p>
+          <a href="https://www.amazon.com/s?k=RTX+4070+graphics+card&tag=cosmicgameshu-20" target="_blank" rel="noopener" class="btn btn--amazon-sm">Shop GPUs →</a>
+        </div>
+        <div class="card" style="text-align:center;">
+          <div style="font-size:1.75rem;margin-bottom:0.5rem;">🖥️</div>
+          <h3 style="font-size:0.95rem;">144Hz+ Monitors</h3>
+          <p style="font-size:0.82rem;color:var(--text-mid);margin-bottom:1rem;">No point hitting 144 FPS on a 60Hz screen</p>
+          <a href="https://www.amazon.com/s?k=144hz+gaming+monitor&tag=cosmicgameshu-20" target="_blank" rel="noopener" class="btn btn--amazon-sm">Shop Monitors →</a>
+        </div>
+        <div class="card" style="text-align:center;">
+          <div style="font-size:1.75rem;margin-bottom:0.5rem;">⚡</div>
+          <h3 style="font-size:0.95rem;">Upgrade RAM</h3>
+          <p style="font-size:0.82rem;color:var(--text-mid);margin-bottom:1rem;">16GB minimum; 32GB for modern AAA titles</p>
+          <a href="https://www.amazon.com/s?k=32gb+ddr5+gaming+ram&tag=cosmicgameshu-20" target="_blank" rel="noopener" class="btn btn--amazon-sm">Shop RAM →</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section style="margin-bottom:3rem;">
+      <h2>FPS Calculator FAQ</h2>
+      <div class="faq">
+        <div class="faq__item">
+          <button class="faq__question">How accurate is this calculator?</button>
+          <div class="faq__answer">It's a directional estimate based on aggregated benchmark data. Real-world FPS varies based on driver versions, background processes, RAM speed, and game-specific optimizations. Use this to understand the ballpark, not an exact number.</div>
+        </div>
+        <div class="faq__item">
+          <button class="faq__question">What FPS do I actually need?</button>
+          <div class="faq__answer">60 FPS is the baseline for playable gaming. 144 FPS is the sweet spot for competitive play — most high-refresh monitors target this. 240+ FPS is for professional-level esports where every millisecond counts.</div>
+        </div>
+        <div class="faq__item">
+          <button class="faq__question">Does CPU matter for FPS?</button>
+          <div class="faq__answer">Yes, especially in CPU-bound games like strategy and simulation titles. In GPU-bound games (most AAA titles at high settings), the GPU is the dominant factor and a mid-range CPU won't bottleneck a high-end GPU significantly.</div>
+        </div>
+        <div class="faq__item">
+          <button class="faq__question">Should I enable DLSS / FSR?</button>
+          <div class="faq__answer">DLSS (NVIDIA) and FSR (AMD) use upscaling to boost FPS with minimal visual quality loss. If your GPU supports it, enabling Quality mode can add 30–60% more FPS. Factor this in if you're on the edge of your target framerate.</div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<footer class="footer" role="contentinfo">
+  <div class="container">
+    <div class="footer__grid">
+      <div class="footer__brand">
+        <a href="/" class="nav__logo" style="justify-content:flex-start;">
+          <span class="nav__logo-icon" aria-hidden="true">🎮</span>
+          <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
+        </a>
+        <p>Expert gaming gear guides and tools for every type of gamer.</p>
+      </div>
+      <div class="footer__col">
+        <h4>Guides</h4>
+        <ul>
+          <li><a href="/guides/best-gaming-headsets-2026">Best Gaming Headsets</a></li>
+          <li><a href="/guides/best-gaming-mice-2026">Best Gaming Mice</a></li>
+          <li><a href="/guides/best-budget-gaming-chairs">Best Budget Chairs</a></li>
+        </ul>
+      </div>
+      <div class="footer__col">
+        <h4>Tools</h4>
+        <ul>
+          <li><a href="/tools/gaming-fps-calculator">FPS Calculator</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <p class="footer__disclosure"><strong>Affiliate Disclosure:</strong> As an Amazon Associate I earn from qualifying purchases. Clicking links and buying earns us a small commission at no extra cost to you.</p>
+      <p class="footer__legal">© 2026 CosmicGamesHub. All rights reserved.</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+  document.getElementById('hamburger').addEventListener('click', function() {
+    const nav = document.getElementById('navLinks');
+    const open = nav.classList.toggle('open');
+    this.setAttribute('aria-expanded', open);
+  });
+  document.querySelectorAll('.faq__question').forEach(btn => {
+    btn.addEventListener('click', () => btn.closest('.faq__item').classList.toggle('open'));
+  });
+
+  // FPS lookup table: [base_fps at 1080p high, gpu_tier]
+  const GPU = {
+    rtx5090:  { base: 280, tier: 'flagship'  },
+    rtx5080:  { base: 240, tier: 'high'      },
+    rtx5070ti:{ base: 200, tier: 'high'      },
+    rtx5070:  { base: 165, tier: 'upper-mid' },
+    rx9070xt: { base: 170, tier: 'high'      },
+    rx9070:   { base: 150, tier: 'upper-mid' },
+    rtx4060ti:{ base: 130, tier: 'mid-high'  },
+    rtx4060:  { base: 105, tier: 'mid'       },
+    rx7700xt: { base: 120, tier: 'mid'       },
+    rtx3060:  { base:  90, tier: 'lower-mid' },
+    rx7600:   { base:  95, tier: 'lower-mid' },
+    rtx3050:  { base:  72, tier: 'budget'    },
+    rx6600:   { base:  78, tier: 'budget'    },
+    gtx1660:  { base:  65, tier: 'older-mid' },
+    gtx1060:  { base:  45, tier: 'legacy'    },
+  };
+
+  const CPU_MULT  = { top: 1.05, high: 1.0, mid: 0.96, budget: 0.90, older: 0.80 };
+  const RES_MULT  = { '1080p': 1.0, '1440p': 0.62, '4k': 0.38 };
+  const SET_MULT  = { low: 1.65, medium: 1.25, high: 1.0, ultra: 0.72 };
+  const GAME_MULT = { esports: 1.8, fps: 1.0, openworld: 0.75, strategy: 1.3, sim: 0.65 };
+
+  function calculateFPS() {
+    const gpu      = document.getElementById('gpu').value;
+    const cpu      = document.getElementById('cpu').value;
+    const res      = document.getElementById('resolution').value;
+    const settings = document.getElementById('settings').value;
+    const game     = document.getElementById('gameType').value;
+
+    const base = GPU[gpu].base;
+    const est  = base * CPU_MULT[cpu] * RES_MULT[res] * SET_MULT[settings] * GAME_MULT[game];
+    const lo   = Math.round(est * 0.85);
+    const hi   = Math.round(est * 1.15);
+    const mid  = Math.round(est);
+
+    const resultEl = document.getElementById('result');
+    resultEl.style.display = 'flex';
+
+    document.getElementById('fpsValue').textContent = mid + ' FPS';
+    document.getElementById('fpsRange').textContent = `Estimated range: ${lo}–${hi} FPS`;
+
+    let tierLabel, tierStyle, noteText;
+    if (mid >= 200) {
+      tierLabel = '🟢 Excellent — 200+ FPS';
+      tierStyle = 'background:rgba(0,230,118,0.12);color:#00e676;border:1px solid rgba(0,230,118,0.3);';
+      resultEl.className = 'tool-result result--ultra';
+      noteText = 'Your setup is in excellent shape for high-refresh play. At this FPS, a 240Hz monitor would be worthwhile.';
+    } else if (mid >= 120) {
+      tierLabel = '🔵 Great — Smooth 144Hz+ play';
+      tierStyle = 'background:rgba(0,212,255,0.12);color:#00d4ff;border:1px solid rgba(0,212,255,0.3);';
+      resultEl.className = 'tool-result result--high';
+      noteText = 'You\'re in the ideal range for competitive play. A 144Hz or 165Hz monitor will make full use of these frames.';
+    } else if (mid >= 60) {
+      tierLabel = '🟡 Playable — 60–120 FPS';
+      tierStyle = 'background:rgba(255,179,0,0.12);color:#ffb300;border:1px solid rgba(255,179,0,0.3);';
+      resultEl.className = 'tool-result result--medium';
+      noteText = 'Playable and smooth for most genres. Lowering settings or resolution will push you toward 144 FPS if that\'s your target.';
+    } else {
+      tierLabel = '🔴 Struggling — Below 60 FPS';
+      tierStyle = 'background:rgba(255,71,87,0.12);color:#ff4757;border:1px solid rgba(255,71,87,0.3);';
+      resultEl.className = 'tool-result result--low';
+      noteText = 'Below 60 FPS will feel choppy. Lower your graphics settings or resolution first — if that\'s not enough, a GPU upgrade will make the biggest difference.';
+    }
+
+    document.getElementById('fpsTier').setAttribute('style', tierStyle);
+    document.getElementById('fpsTier').textContent = tierLabel;
+    document.getElementById('fpsNote').textContent = noteText;
+
+    resultEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+</script>
+</body>
+</html>
