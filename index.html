@@ -17,6 +17,25 @@
 </head>
 <body>
 
+<!-- ─── Ticker Bar ───────────────────────────────────── -->
+<div class="ticker-bar" role="note" aria-label="Today's live content">
+  <div class="ticker-bar__inner">
+    <span class="ticker-bar__live" aria-hidden="true">LIVE</span>
+    <div class="ticker-bar__track">
+      <span>Day #47 is live</span>
+      <span class="ticker-sep">·</span>
+      <span>RIFT: all three zones open</span>
+      <span class="ticker-sep">·</span>
+      <span>Gamerdle: mystery game #47</span>
+      <span class="ticker-sep">·</span>
+      <span>Pixle: daily gaming word</span>
+      <span class="ticker-sep">·</span>
+      <span>Daily Challenge: unlocked</span>
+    </div>
+    <a href="/games/rift" class="ticker-bar__cta">Play now →</a>
+  </div>
+</div>
+
 <!-- ─── Navigation ─────────────────────────────────── -->
 <nav class="nav nav--hero" id="mainNav" role="navigation" aria-label="Main navigation">
   <div class="container">
@@ -40,6 +59,29 @@
     </div>
   </div>
 </nav>
+
+<!-- ─── Category Sub-Nav ─────────────────────────────── -->
+<div class="cat-subnav" id="catSubnav" aria-label="Browse by category">
+  <nav class="cat-subnav__list">
+    <a href="/" class="cat-subnav__link cat-subnav__link--active">Home</a>
+    <div class="cat-subnav__divider"></div>
+    <a href="/guides/best-gaming-headsets-2026" class="cat-subnav__link">Headsets</a>
+    <a href="/guides/best-gaming-mice-2026" class="cat-subnav__link">Mice</a>
+    <a href="#keyboards" class="cat-subnav__link">Keyboards</a>
+    <a href="/guides/best-budget-gaming-chairs" class="cat-subnav__link">Chairs</a>
+    <a href="#monitors" class="cat-subnav__link">Monitors</a>
+    <div class="cat-subnav__divider"></div>
+    <a href="/games/rift" class="cat-subnav__link">RIFT</a>
+    <a href="/games/gamerdle" class="cat-subnav__link">Gamerdle</a>
+    <a href="/games/pixle" class="cat-subnav__link">Pixle</a>
+    <a href="/games/daily-challenge" class="cat-subnav__link">Daily Challenge</a>
+    <a href="/lab" class="cat-subnav__link">The Lab</a>
+    <div class="cat-subnav__divider"></div>
+    <a href="/tools/gaming-fps-calculator" class="cat-subnav__link">FPS Calc</a>
+    <a href="/tools/aim-trainer" class="cat-subnav__link">Aim Trainer</a>
+    <a href="/tools/reaction-time-test" class="cat-subnav__link">Reaction Test</a>
+  </nav>
+</div>
 
 <!-- ─── Hero ────────────────────────────────────────── -->
 <section class="hero" aria-label="Site introduction">
@@ -136,84 +178,83 @@
   </div>
 </section>
 
-<!-- ─── Games Section (with cinematic banner) ──────────── -->
+<!-- ─── Games Section ──────────────────────────────────── -->
 <section class="section section--alt" aria-label="Games and puzzles">
   <div class="container">
 
-    <!-- AI-generated cosmic gaming banner -->
-    <div class="games-banner js-reveal" style="background-image:url('/images/games-section-bg.jpg')">
-      <div class="games-banner__overlay">
-        <div class="container">
-          <span class="section__eyebrow">Play Free · No Signup</span>
-          <h2 class="section__title">Games & Daily Puzzles</h2>
-          <p class="section__sub">Six original games, built here. New daily puzzles every 24 hours.</p>
+    <div class="section__header js-reveal">
+      <span class="section__eyebrow">Play Free · No Signup · New Every 24 Hours</span>
+      <h2 class="section__title">Games & Daily Puzzles</h2>
+      <p class="section__sub">Six original games built here. Compete against yourself. Share your results.</p>
+    </div>
+
+    <!-- Editorial: RIFT featured left + sidebar right -->
+    <div class="games-feature">
+      <a href="/games/rift" class="games-feature__main js-reveal" title="Play RIFT — three-zone daily word game">
+        <img src="/images/rift-hero.jpg" alt="RIFT — three cosmic word zones: chain, grow, decode" class="games-feature__img" loading="lazy" />
+        <div class="games-feature__body">
+          <div class="img-card__tag" style="color:#a855f7;margin-bottom:0.6rem;">Word Game · Daily · 3 Zones</div>
+          <div class="games-feature__title">RIFT</div>
+          <div class="games-feature__desc">Chain a word ladder, grow a word, decode a mystery connection. Three zones, one daily score. Starts fresh every 24 hours.</div>
+          <div class="games-feature__meta">
+            <span class="games-feature__badge">NEW TODAY</span>
+            <span>Day #47 · Updated midnight UTC</span>
+          </div>
+          <div class="img-card__play" style="color:#a855f7;border-color:rgba(168,85,247,0.3);background:rgba(168,85,247,0.06);width:fit-content;">▶ Play Today's RIFT</div>
         </div>
+      </a>
+
+      <div class="games-feature__sidebar">
+        <a href="/games/gamerdle" class="games-feature__side-card js-reveal" title="Play Gamerdle" style="transition-delay:0.07s">
+          <img src="/images/game-gamerdle.jpg" alt="Gamerdle — cosmic question mark orbited by gaming icons" class="games-feature__side-img" loading="lazy" />
+          <div class="games-feature__side-body">
+            <div class="img-card__tag img-card__tag--cyan" style="font-size:0.65rem;">Trivia · Daily · 6 Tries</div>
+            <div class="games-feature__side-title">Gamerdle</div>
+            <div class="games-feature__side-desc">Guess the mystery video game in 6 tries. New puzzle every day.</div>
+            <div class="img-card__play img-card__play--cyan">▶ Play</div>
+          </div>
+        </a>
+        <a href="/games/pixle" class="games-feature__side-card js-reveal" title="Play Pixle" style="transition-delay:0.14s">
+          <img src="/images/game-pixle.jpg" alt="Pixle — 3D isometric letter tiles in cyan and amber neon" class="games-feature__side-img" loading="lazy" />
+          <div class="games-feature__side-body">
+            <div class="img-card__tag img-card__tag--amber" style="font-size:0.65rem;">Word · Daily · 6 Tries</div>
+            <div class="games-feature__side-title">Pixle</div>
+            <div class="games-feature__side-desc">5-letter gaming word, 6 tries. All answers from gaming vocabulary.</div>
+            <div class="img-card__play img-card__play--amber">▶ Play</div>
+          </div>
+        </a>
       </div>
     </div>
 
-    <div class="grid grid--3 glow-grid" id="gamesGrid">
-
-      <!-- RIFT — featured with real image -->
-      <a href="/games/rift" class="img-card js-reveal" title="Play RIFT — three-zone daily word game" style="transition-delay:0s">
-        <img src="/images/rift-hero.jpg" alt="RIFT — three cosmic word zones: chain, grow, decode" class="img-card__hero" loading="lazy" />
-        <div class="img-card__body">
-          <div class="img-card__tag">Word Game · Daily · 3 Zones</div>
-          <div class="img-card__name">RIFT</div>
-          <div class="img-card__desc">Chain a word ladder ⚡ — Grow a word 🌱 — Decode the connection 🔮. Three zones. One daily score. New every 24 hours.</div>
-          <div class="img-card__play">▶ Play Today's RIFT</div>
-        </div>
-      </a>
-
-      <!-- Gamerdle -->
-      <a href="/games/gamerdle" class="img-card js-reveal" title="Play Gamerdle — daily video game guessing game" style="transition-delay:0.08s">
-        <img src="/images/game-gamerdle.jpg" alt="Gamerdle — cosmic question mark orbited by gaming icons" class="img-card__hero" loading="lazy" />
-        <div class="img-card__body">
-          <div class="img-card__tag img-card__tag--cyan">Trivia · Daily · 6 Tries</div>
-          <div class="img-card__name">Gamerdle</div>
-          <div class="img-card__desc">Guess the mystery video game in 6 tries. New puzzle every day. Shareable emoji results.</div>
-          <div class="img-card__play img-card__play--cyan">▶ Play Today's Gamerdle</div>
-        </div>
-      </a>
-
-      <!-- Pixle -->
-      <a href="/games/pixle" class="img-card js-reveal" title="Play Pixle — daily gaming word puzzle" style="transition-delay:0.16s">
-        <img src="/images/game-pixle.jpg" alt="Pixle — 3D isometric letter tiles in cyan and amber neon glow" class="img-card__hero" loading="lazy" />
-        <div class="img-card__body">
-          <div class="img-card__tag img-card__tag--amber">Word · Daily · 6 Tries</div>
-          <div class="img-card__name">Pixle</div>
-          <div class="img-card__desc">Guess the 5-letter gaming word in 6 tries. All answers from gaming vocabulary. Daily.</div>
-          <div class="img-card__play img-card__play--amber">▶ Play Today's Pixle</div>
-        </div>
-      </a>
-
-      <!-- Daily Challenge -->
-      <a href="/games/daily-challenge" class="card js-reveal" style="text-decoration:none;display:flex;gap:1rem;align-items:flex-start;transition-delay:0.24s">
-        <div style="font-size:2rem;flex-shrink:0;">🎯</div>
-        <div>
-          <h3 style="font-size:1rem;margin-bottom:0.35rem;color:var(--accent);">Daily Challenge</h3>
-          <p style="font-size:0.83rem;color:var(--text-mid);margin:0;">New challenge every day — aim, reaction, memory, Sudoku. Build your streak.</p>
-        </div>
-      </a>
-
-      <!-- Ambient Sounds -->
-      <a href="/tools/ambient-sounds" class="card js-reveal" style="text-decoration:none;display:flex;gap:1rem;align-items:flex-start;transition-delay:0.32s">
-        <div style="font-size:2rem;flex-shrink:0;">🎧</div>
-        <div>
-          <h3 style="font-size:1rem;margin-bottom:0.35rem;">Ambient Sound Mixer</h3>
-          <p style="font-size:0.83rem;color:var(--text-mid);margin:0;">Mix rain, keyboard clicks, lo-fi beats, space drone. Runs all session.</p>
-        </div>
-      </a>
-
-      <!-- More in the Lab -->
-      <a href="/lab" class="card js-reveal" style="text-decoration:none;display:flex;gap:1rem;align-items:flex-start;border-color:rgba(0,212,255,0.18);transition-delay:0.4s">
-        <div style="font-size:2rem;flex-shrink:0;">⚗️</div>
-        <div>
-          <h3 style="font-size:1rem;margin-bottom:0.35rem;color:var(--accent);">From the Lab →</h3>
-          <p style="font-size:0.83rem;color:var(--text-mid);margin:0;">Void Keeper, Beat Lab, Dream Machine, ShelfBuilder, BuildPlan and more.</p>
-        </div>
-      </a>
-
+    <!-- Arcade strip: secondary content -->
+    <div class="arcade-strip js-reveal">
+      <span class="arcade-strip__label">More from the arcade</span>
+      <div class="arcade-strip__items">
+        <a href="/games/daily-challenge" class="arcade-strip__item">
+          <svg class="arcade-strip__icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/><path d="M10 7v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Daily Challenge
+          <span class="arcade-strip__badge">New today</span>
+        </a>
+        <a href="/tools/ambient-sounds" class="arcade-strip__item">
+          <svg class="arcade-strip__icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M8 5L4 8H2v4h2l4 3V5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M13 7a4 4 0 010 6M15.5 5a7 7 0 010 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Ambient Sounds
+        </a>
+        <a href="/tools/aim-trainer" class="arcade-strip__item">
+          <svg class="arcade-strip__icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="1" fill="currentColor"/></svg>
+          Aim Trainer
+        </a>
+        <a href="/tools/reaction-time-test" class="arcade-strip__item">
+          <svg class="arcade-strip__icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 3v3M10 14v3M3 10h3M14 10h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.5"/></svg>
+          Reaction Test
+        </a>
+        <a href="/lab" class="arcade-strip__item">
+          <svg class="arcade-strip__icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M8 3v6l-3 7h10l-3-7V3" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M6.5 3h7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          The Lab
+          <span class="arcade-strip__badge">6+ games</span>
+        </a>
+      </div>
     </div>
+
   </div>
 </section>
 
@@ -235,6 +276,13 @@
         </div>
         <div class="guide-card__body">
           <h3>Best Gaming Headsets 2026</h3>
+          <div class="guide-meta">
+            <span class="guide-stars">★★★★★</span>
+            <span class="guide-meta__sep">·</span>
+            <span class="guide-meta__item">Updated May 2026</span>
+            <span class="guide-meta__sep">·</span>
+            <span class="guide-meta__item">8 min read</span>
+          </div>
           <p>From budget $50 picks to pro-grade wireless — our full breakdown covers every price tier and use case.</p>
           <div class="tags">
             <span class="tag">Wireless</span>
@@ -252,6 +300,13 @@
         </div>
         <div class="guide-card__body">
           <h3>Best Gaming Mice 2026</h3>
+          <div class="guide-meta">
+            <span class="guide-stars">★★★★★</span>
+            <span class="guide-meta__sep">·</span>
+            <span class="guide-meta__item">Updated May 2026</span>
+            <span class="guide-meta__sep">·</span>
+            <span class="guide-meta__item">7 min read</span>
+          </div>
           <p>Lightweight, wireless, high-DPI — we break down which sensors actually matter and which specs are marketing.</p>
           <div class="tags">
             <span class="tag">Optical Sensor</span>
@@ -269,6 +324,13 @@
         </div>
         <div class="guide-card__body">
           <h3>Best Budget Gaming Chairs</h3>
+          <div class="guide-meta">
+            <span class="guide-stars">★★★★½</span>
+            <span class="guide-meta__sep">·</span>
+            <span class="guide-meta__item">Updated Apr 2026</span>
+            <span class="guide-meta__sep">·</span>
+            <span class="guide-meta__item">6 min read</span>
+          </div>
           <p>The best chairs under $200. We cut through cheap padding and racing aesthetics to find what's actually worth sitting in all day.</p>
           <div class="tags">
             <span class="tag">Under $200</span>
@@ -295,7 +357,11 @@
     <div class="grid grid--2 glow-grid">
 
       <article class="card js-reveal" style="display:flex;gap:1.25rem;align-items:flex-start;transition-delay:0s">
-        <div style="font-size:2.5rem;flex-shrink:0;">⚡</div>
+        <div class="trust-icon-wrap" style="margin:0;flex-shrink:0;">
+          <svg class="trust-icon" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+            <path d="M22 6L11 23H20L18 34L29 17H20L22 6Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>
+          </svg>
+        </div>
         <div>
           <h3 style="margin-bottom:0.5rem;">FPS Calculator</h3>
           <p style="font-size:0.88rem;color:var(--text-mid);margin-bottom:1rem;">
@@ -306,7 +372,13 @@
       </article>
 
       <article class="card js-reveal" style="display:flex;gap:1.25rem;align-items:flex-start;opacity:0.55;transition-delay:0.1s">
-        <div style="font-size:2.5rem;flex-shrink:0;">🖥️</div>
+        <div class="trust-icon-wrap" style="margin:0;flex-shrink:0;">
+          <svg class="trust-icon" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+            <rect x="5" y="8" width="30" height="20" rx="3" stroke="currentColor" stroke-width="2.2"/>
+            <path d="M14 34h12M20 28v6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M12 16h10M12 21h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.55"/>
+          </svg>
+        </div>
         <div>
           <h3 style="margin-bottom:0.5rem;">Monitor Hz Calculator <span style="font-size:0.7rem;color:var(--text-lo);font-weight:400;">(Coming Soon)</span></h3>
           <p style="font-size:0.88rem;color:var(--text-mid);margin-bottom:1rem;">
@@ -330,17 +402,33 @@
 
     <div class="grid grid--3 glow-grid">
       <div class="card js-reveal" style="text-align:center;transition-delay:0s">
-        <div style="font-size:2rem;margin-bottom:0.75rem;">🔬</div>
+        <div class="trust-icon-wrap">
+          <svg class="trust-icon" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+            <circle cx="17" cy="17" r="10" stroke="currentColor" stroke-width="2.2"/>
+            <path d="M14 17h6M17 14v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M24.5 24.5L33 33" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+        </div>
         <h3 style="font-size:1rem;margin-bottom:0.5rem;">Research-Backed</h3>
         <p style="font-size:0.85rem;">Every pick is backed by spec analysis, user reviews, and real-world benchmarks — not sponsored opinions.</p>
       </div>
       <div class="card js-reveal" style="text-align:center;transition-delay:0.08s">
-        <div style="font-size:2rem;margin-bottom:0.75rem;">💰</div>
+        <div class="trust-icon-wrap">
+          <svg class="trust-icon" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+            <path d="M20 6L32 14L28 34H12L8 14Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>
+            <path d="M14 14L20 6L26 14L20 34L14 14Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" opacity="0.45"/>
+          </svg>
+        </div>
         <h3 style="font-size:1rem;margin-bottom:0.5rem;">Every Budget Covered</h3>
         <p style="font-size:0.85rem;">$25 to $350+. Whether you're building your first setup or upgrading, we have a pick for you.</p>
       </div>
       <div class="card js-reveal" style="text-align:center;transition-delay:0.16s">
-        <div style="font-size:2rem;margin-bottom:0.75rem;">🔄</div>
+        <div class="trust-icon-wrap">
+          <svg class="trust-icon" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+            <path d="M32 20a12 12 0 1 1-9-11.6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M23 6v7h7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
         <h3 style="font-size:1rem;margin-bottom:0.5rem;">Updated Regularly</h3>
         <p style="font-size:0.85rem;">Guides are refreshed when new products launch or prices shift. No year-old picks presented as current.</p>
       </div>
