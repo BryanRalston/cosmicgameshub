@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dream Machine — CosmicGamesHub</title>
+<meta name="description" content="2,500 particles driven by flow fields and your mouse. A generative art experience that evolves on its own." />
+<style>
+  * { margin: 0; padding: 0; }
+  body { background: #000; overflow: hidden; cursor: none; }
+  canvas { display: block; }
+  #cursor {
+    position: fixed; pointer-events: none; z-index: 10;
+    width: 20px; height: 20px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.3s, height 0.3s, border-color 0.5s;
+  }
+  #cursor.active {
+    width: 40px; height: 40px;
+    border-color: rgba(255,255,255,0.6);
+  }
+  #info {
+    position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+    color: rgba(255,255,255,0.0); font-family: 'Courier New', monospace;
+    font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+    pointer-events: none; transition: color 4s;
+  }
+  #info.visible { color: rgba(255,255,255,0.25); }
+  #epoch {
+    position: fixed; top: 16px; right: 20px;
+    color: rgba(255,255,255,0.15); font-family: 'Courier New', monospace;
+    font-size: 10px; letter-spacing: 2px; pointer-events: none;
+  }
+
+  /* Floating nav */
+  #lab-nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    padding: 12px 16px;
+    display: flex; justify-content: space-between; align-items: center;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.5), transparent);
+    pointer-events: none;
+  }
+  #lab-nav a {
+    pointer-events: auto; text-decoration: none;
+    font-family: system-ui, sans-serif; font-size: 12px; letter-spacing: 0.06em;
+  }
+  #lab-nav .back-btn {
+    color: rgba(255,255,255,0.6);
+    padding: 5px 11px;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 6px;
+    transition: color 0.2s, background 0.2s;
+  }
+  #lab-nav .back-btn:hover { color: #fff; background: rgba(0,0,0,0.6); }
+  #lab-nav .site-link { color: rgba(255,255,255,0.25); letter-spacing: 0.1em; }
+  #lab-nav .site-link:hover { color: rgba(255,255,255,0.5); }
+</style>
+</head>
+<body>
+
+<div id="lab-nav">
+  <a href="/lab" class="back-btn">← From the Lab</a>
+  <a href="/" class="site-link">CosmicGamesHub</a>
+</div>
+
+<canvas id="c"></canvas>
+<div id="cursor"></div>
+<div id="info">nudge gently — it has its own ideas</div>
+<div id="epoch"></div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const cursorEl = document.getElementById('cursor');
+const infoEl = document.getElementById('info');
+const epochEl = document.getElementById('epoch');
+
+let W, H;
+function resize() {
+  W = canvas.width = innerWidth;
+  H = canvas.height = innerHeight;
+}
+resize();
+addEventListener('resize', resize);
+
+// --- Simplex-ish noise ---
+class Noise {
+  constructor() {
+    this.perm = new Uint8Array(512);
+    const p = new Uint8Array(256);
+    for (let i = 0; i < 256; i++) p[i] = i;
+    for (let i = 255; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [p[i], p[j]] = [p[j], p[i]];
+    }
+    for (let i = 0; i < 512; i++) this.perm[i] = p[i & 255];
+  }
+
+  fade(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
+  lerp(a, b, t) { return a + t * (b - a); }
+  grad(hash, x, y) {
+    const h = hash & 3;
+    const u = h < 2 ? x : y;
+    const v = h < 2 ? y : x;
+    return ((h & 1) ? -u : u) + ((h & 2) ? -v : v);
+  }
+
+  get(x, y) {
+    const X = Math.floor(x) & 255;
+    const Y = Math.floor(y) & 255;
+    x -= Math.floor(x);
+    y -= Math.floor(y);
+    const u = this.fade(x);
+    const v = this.fade(y);
+    const A = this.perm[X] + Y;
+    const B = this.perm[X + 1] + Y;
+    return this.lerp(
+      this.lerp(this.grad(this.perm[A], x, y), this.grad(this.perm[B], x - 1, y), u),
+      this.lerp(this.grad(this.perm[A + 1], x, y - 1), this.grad(this.perm[B + 1], x - 1, y - 1), u),
+      v
+    );
+  }
+
+  fbm(x, y, octaves = 4) {
+    let val = 0, amp = 0.5, freq = 1;
+    for (let i = 0; i < octaves; i++) {
+      val += amp * this.get(x * freq, y * freq);
+      amp *= 0.5;
+      freq *= 2.0;
+    }
+    return val;
+  }
+}
+
+const noise1 = new Noise();
+const noise2 = new Noise();
+
+// --- Dream State ---
+const dream = {
+  epoch: 0,
+  t: 0,
+  flowScale: 0.003,
+  flowSpeed: 0.00008,
+  flowComplexity: 3,
+  hue1: Math.random() * 360,
+  hue2: Math.random() * 360,
+  saturation: 40,
+  lightBase: 12,
+  hueTarget1: Math.random() * 360,
+  hueTarget2: Math.random() * 360,
+  satTarget: 30 + Math.random() * 40,
+  trailAlpha: 0.012,
+  particleAlpha: 0.6,
+  particleSize: 1.2,
+  particleSpeed: 0.8,
+  mutationTimer: 0,
+  mutationInterval: 600 + Math.random() * 1200,
+  blooms: [],
+  bloomTimer: 0,
+  bloomInterval: 400 + Math.random() * 600,
+  mouseX: W / 2,
+  mouseY: H / 2,
+  mouseActive: false,
+  mouseInfluence: 0,
+};
+
+// --- Particles ---
+const NUM_PARTICLES = 2500;
+const particles = [];
+
+function createParticle() {
+  return {
+    x: Math.random() * W,
+    y: Math.random() * H,
+    vx: 0,
+    vy: 0,
+    life: Math.random(),
+    hueOffset: (Math.random() - 0.5) * 30,
+    size: 0.5 + Math.random() * 1.5,
+    layer: Math.random(),
+  };
+}
+
+for (let i = 0; i < NUM_PARTICLES; i++) {
+  particles.push(createParticle());
+}
+
+function spawnBloom() {
+  dream.blooms.push({
+    x: Math.random() * W,
+    y: Math.random() * H,
+    radius: 30 + Math.random() * 80,
+    maxRadius: 60 + Math.random() * 150,
+    life: 0,
+    maxLife: 200 + Math.random() * 400,
+    hue: dream.hue1 + (Math.random() - 0.5) * 60,
+    growing: true,
+    drift: { x: (Math.random() - 0.5) * 0.3, y: (Math.random() - 0.5) * 0.3 },
+  });
+}
+
+function mutate() {
+  dream.epoch++;
+  dream.hueTarget1 = (dream.hueTarget1 + 20 + Math.random() * 60) % 360;
+  dream.hueTarget2 = (dream.hueTarget2 + 30 + Math.random() * 80) % 360;
+  dream.satTarget = 20 + Math.random() * 55;
+  if (Math.random() < 0.3) dream.flowScale = 0.001 + Math.random() * 0.005;
+  if (Math.random() < 0.3) dream.flowComplexity = 2 + Math.floor(Math.random() * 4);
+  if (Math.random() < 0.4) dream.trailAlpha = 0.005 + Math.random() * 0.025;
+  if (Math.random() < 0.3) dream.particleSpeed = 0.4 + Math.random() * 1.2;
+  if (Math.random() < 0.2) dream.particleSize = 0.8 + Math.random() * 2;
+  dream.mutationInterval = 500 + Math.random() * 1500;
+  dream.mutationTimer = 0;
+}
+
+function getFlow(x, y, t) {
+  const s = dream.flowScale;
+  const angle = noise1.fbm(x * s, y * s + t, dream.flowComplexity) * Math.PI * 4;
+  const magnitude = (noise2.fbm(x * s * 0.7 + 100, y * s * 0.7 + t * 0.7, 3) + 1) * 0.5;
+  return {
+    vx: Math.cos(angle) * magnitude * dream.particleSpeed,
+    vy: Math.sin(angle) * magnitude * dream.particleSpeed,
+  };
+}
+
+addEventListener('mousemove', e => {
+  dream.mouseX = e.clientX;
+  dream.mouseY = e.clientY;
+  dream.mouseActive = true;
+  cursorEl.style.left = e.clientX + 'px';
+  cursorEl.style.top = e.clientY + 'px';
+});
+
+addEventListener('mousedown', () => cursorEl.classList.add('active'));
+addEventListener('mouseup', () => cursorEl.classList.remove('active'));
+addEventListener('mouseleave', () => { dream.mouseActive = false; });
+
+addEventListener('touchmove', e => {
+  e.preventDefault();
+  const touch = e.touches[0];
+  dream.mouseX = touch.clientX;
+  dream.mouseY = touch.clientY;
+  dream.mouseActive = true;
+}, { passive: false });
+
+addEventListener('touchstart', e => {
+  const touch = e.touches[0];
+  dream.mouseX = touch.clientX;
+  dream.mouseY = touch.clientY;
+  dream.mouseActive = true;
+});
+
+addEventListener('touchend', () => { dream.mouseActive = false; });
+
+function hsl(h, s, l, a) {
+  return `hsla(${h % 360}, ${s}%, ${l}%, ${a})`;
+}
+
+function lerpAngle(a, b, t) {
+  let diff = b - a;
+  while (diff > 180) diff -= 360;
+  while (diff < -180) diff += 360;
+  return a + diff * t;
+}
+
+ctx.fillStyle = '#000';
+ctx.fillRect(0, 0, W, H);
+
+setTimeout(() => infoEl.classList.add('visible'), 2000);
+setTimeout(() => infoEl.classList.remove('visible'), 10000);
+
+function frame() {
+  dream.t += dream.flowSpeed;
+  dream.mutationTimer++;
+  dream.bloomTimer++;
+
+  dream.hue1 = lerpAngle(dream.hue1, dream.hueTarget1, 0.001);
+  dream.hue2 = lerpAngle(dream.hue2, dream.hueTarget2, 0.001);
+  dream.saturation += (dream.satTarget - dream.saturation) * 0.001;
+
+  if (dream.mouseActive) {
+    dream.mouseInfluence = Math.min(dream.mouseInfluence + 0.02, 1);
+  } else {
+    dream.mouseInfluence *= 0.98;
+  }
+
+  if (dream.mutationTimer > dream.mutationInterval) mutate();
+
+  if (dream.bloomTimer > dream.bloomInterval) {
+    spawnBloom();
+    dream.bloomTimer = 0;
+    dream.bloomInterval = 300 + Math.random() * 800;
+  }
+
+  ctx.fillStyle = `rgba(0, 0, 0, ${dream.trailAlpha})`;
+  ctx.fillRect(0, 0, W, H);
+
+  for (let i = dream.blooms.length - 1; i >= 0; i--) {
+    const b = dream.blooms[i];
+    b.life++;
+    b.x += b.drift.x;
+    b.y += b.drift.y;
+
+    const bf = getFlow(b.x, b.y, dream.t);
+    b.x += bf.vx * 0.1;
+    b.y += bf.vy * 0.1;
+
+    const lifeRatio = b.life / b.maxLife;
+    const fade = lifeRatio < 0.3 ? lifeRatio / 0.3 : lifeRatio > 0.7 ? (1 - lifeRatio) / 0.3 : 1;
+    const r = b.radius + (b.maxRadius - b.radius) * lifeRatio;
+
+    const grad = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, r);
+    grad.addColorStop(0, hsl(b.hue, dream.saturation * 0.8, dream.lightBase + 15, 0.06 * fade));
+    grad.addColorStop(0.5, hsl(b.hue + 20, dream.saturation * 0.5, dream.lightBase + 8, 0.03 * fade));
+    grad.addColorStop(1, 'transparent');
+    ctx.fillStyle = grad;
+    ctx.fillRect(b.x - r, b.y - r, r * 2, r * 2);
+
+    if (b.life > b.maxLife) dream.blooms.splice(i, 1);
+  }
+
+  for (const p of particles) {
+    const flow = getFlow(p.x, p.y, dream.t + p.layer * 0.5);
+
+    if (dream.mouseInfluence > 0.01) {
+      const dx = dream.mouseX - p.x;
+      const dy = dream.mouseY - p.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 200) {
+        const force = (1 - dist / 200) * dream.mouseInfluence * 0.3;
+        flow.vx += (-dy / dist) * force + dx / dist * force * 0.2;
+        flow.vy += (dx / dist) * force + dy / dist * force * 0.2;
+      }
+    }
+
+    p.vx = p.vx * 0.9 + flow.vx * 0.1;
+    p.vy = p.vy * 0.9 + flow.vy * 0.1;
+    p.x += p.vx;
+    p.y += p.vy;
+
+    if (p.x < -10) p.x = W + 10;
+    if (p.x > W + 10) p.x = -10;
+    if (p.y < -10) p.y = H + 10;
+    if (p.y > H + 10) p.y = -10;
+
+    const hue = lerpAngle(dream.hue1, dream.hue2, p.layer) + p.hueOffset;
+    const lightness = dream.lightBase + 30 + p.layer * 25;
+    const alpha = dream.particleAlpha * (0.3 + p.layer * 0.7);
+    const size = p.size * dream.particleSize * (0.5 + p.layer * 0.5);
+
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+    ctx.fillStyle = hsl(hue, dream.saturation, lightness, alpha);
+    ctx.fill();
+  }
+
+  const epochText = dream.epoch > 0 ? `epoch ${dream.epoch}` : '';
+  epochEl.textContent = epochText;
+
+  requestAnimationFrame(frame);
+}
+
+frame();
+</script>
+</body>
+</html>
