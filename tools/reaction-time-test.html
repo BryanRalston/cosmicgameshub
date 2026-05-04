@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reaction Time Test — How Fast Are Your Reflexes? | CosmicGamesHub</title>
+  <meta name="description" content="Test your reaction time for free. 5 rounds, instant results, global comparison. Find out if your reflexes are pro-gamer level or just average." />
+  <link rel="canonical" href="https://cosmicgameshub.com/tools/reaction-time-test" />
+  <link rel="stylesheet" href="../styles.css" />
+  <style>
+    #reactionBox {
+      width: 100%;
+      max-width: 700px;
+      height: 320px;
+      border-radius: var(--radius-lg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.12s, border-color 0.12s;
+      border: 2px solid var(--border);
+      background: var(--bg-card);
+      gap: 0.75rem;
+      position: relative;
+      overflow: hidden;
+    }
+    #reactionBox.waiting  { background: #0d1a2e; border-color: rgba(0,212,255,0.3); }
+    #reactionBox.ready    { background: #0d2e12; border-color: rgba(0,230,118,0.5); cursor: pointer; }
+    #reactionBox.too-early{ background: #2e0d0d; border-color: rgba(255,71,87,0.5); }
+    #boxIcon   { font-size: 3.5rem; transition: transform 0.15s; }
+    #boxTitle  { font-size: 1.5rem; font-weight: 800; color: var(--text-hi); }
+    #boxSub    { font-size: 0.9rem; color: var(--text-mid); }
+    #bigTime   { font-size: 4rem; font-weight: 900; color: var(--accent); line-height: 1; font-variant-numeric: tabular-nums; display: none; }
+    .round-dots {
+      display: flex; gap: 0.5rem; justify-content: center; margin-bottom: 0.5rem;
+    }
+    .dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--bg-raised); border: 1px solid var(--border);
+      transition: all 0.2s;
+    }
+    .dot.hit   { background: var(--accent); border-color: var(--accent); }
+    .dot.miss  { background: var(--red);    border-color: var(--red); }
+    .history-list {
+      display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center;
+      max-width: 700px; margin: 0.75rem 0;
+    }
+    .history-chip {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 999px; padding: 0.25rem 0.75rem;
+      font-size: 0.82rem; font-weight: 600; color: var(--text-mid);
+      font-variant-numeric: tabular-nums;
+    }
+    .result-panel {
+      display: none; max-width: 700px;
+      background: var(--bg-card); border: 1px solid var(--border-mid);
+      border-radius: var(--radius-lg); padding: 2.5rem; text-align: center;
+    }
+    .result-panel.show { display: block; }
+    .result-ms {
+      font-size: 4.5rem; font-weight: 900; color: var(--accent); line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .result-tier {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.35rem 1rem; border-radius: 999px;
+      font-size: 0.88rem; font-weight: 700; margin: 0.75rem 0 1.25rem;
+    }
+    .comparison-bar {
+      max-width: 460px; margin: 0 auto 1.5rem;
+    }
+    .bar-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.4rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.82rem;
+    }
+    .bar-row:last-child { border-bottom: none; }
+    .bar-row span:first-child { color: var(--text-mid); }
+    .bar-row span:last-child  { color: var(--text-hi); font-weight: 700; font-variant-numeric: tabular-nums; }
+    .you-marker { color: var(--accent) !important; }
+  </style>
+</head>
+<body>
+
+<nav class="nav" role="navigation">
+  <div class="container">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo">
+        <span class="nav__logo-icon" aria-hidden="true">🎮</span>
+        <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
+      </a>
+      <ul class="nav__links" id="navLinks">
+        <li><a href="/guides/best-gaming-headsets-2026">Headsets</a></li>
+        <li><a href="/guides/best-gaming-mice-2026">Mice</a></li>
+        <li><a href="/guides/best-budget-gaming-chairs">Chairs</a></li>
+        <li><a href="/tools/aim-trainer">Aim Trainer</a></li>
+        <li><a href="/tools/reaction-time-test" class="active">Reaction Test</a></li>
+      </ul>
+      <button class="nav__hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<main>
+  <div class="container" style="display:flex;flex-direction:column;align-items:center;">
+
+    <div style="width:100%;max-width:700px;padding:1.75rem 0 1rem;">
+      <span class="section__eyebrow">Free Tool</span>
+      <h1 style="margin-top:0.4rem;margin-bottom:0.4rem;">Reaction Time Test</h1>
+      <p style="color:var(--text-mid);margin:0;">Wait for green — then click as fast as you can. 5 rounds, then see how you rank.</p>
+    </div>
+
+    <!-- Round dots -->
+    <div class="round-dots" id="roundDots">
+      <div class="dot" id="d0"></div>
+      <div class="dot" id="d1"></div>
+      <div class="dot" id="d2"></div>
+      <div class="dot" id="d3"></div>
+      <div class="dot" id="d4"></div>
+    </div>
+
+    <!-- Main box -->
+    <div id="reactionBox">
+      <div id="boxIcon">⚡</div>
+      <div id="bigTime"></div>
+      <div id="boxTitle">Click to Start</div>
+      <div id="boxSub">Wait for green, then click as fast as you can</div>
+    </div>
+
+    <!-- Round history -->
+    <div class="history-list" id="historyList"></div>
+
+    <!-- Results panel -->
+    <div class="result-panel" id="resultPanel">
+      <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-lo);margin-bottom:0.5rem;">Your Average</div>
+      <div class="result-ms" id="resMs">—</div>
+      <div class="result-tier" id="resTier"></div>
+      <div id="resDesc" style="color:var(--text-mid);font-size:0.9rem;max-width:420px;margin:0 auto 1.5rem;"></div>
+
+      <div class="comparison-bar">
+        <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-lo);margin-bottom:0.5rem;">How You Compare</div>
+        <div class="bar-row"><span>Pro Esports Player</span><span>~150ms</span></div>
+        <div class="bar-row"><span>Top 1% Gamer</span><span>~180ms</span></div>
+        <div class="bar-row"><span>Competitive Gamer</span><span>~200ms</span></div>
+        <div class="bar-row"><span>Average Gamer</span><span>~250ms</span></div>
+        <div class="bar-row"><span>Average Person</span><span>~270ms</span></div>
+        <div class="bar-row you-marker" id="youRow"><span>You</span><span id="youMs">—</span></div>
+      </div>
+
+      <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;margin-bottom:1.5rem;">
+        <button class="btn btn--primary" onclick="resetGame()">▶ Try Again</button>
+        <a href="/tools/aim-trainer" class="btn btn--outline">Try Aim Trainer →</a>
+      </div>
+
+      <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem;font-size:0.82rem;color:var(--text-mid);">
+        <strong style="color:var(--text-hi);">Did you know?</strong> Monitor refresh rate affects perceived reaction time. A 60Hz display adds ~8ms of input lag vs 144Hz. If you're chasing sub-200ms, your monitor matters. See our <a href="/guides/best-gaming-headsets-2026" style="color:var(--accent);">gear guides</a> for upgrade picks.
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer__bottom">
+      <p class="footer__disclosure"><strong>Affiliate Disclosure:</strong> As an Amazon Associate I earn from qualifying purchases.</p>
+      <p class="footer__legal">© 2026 CosmicGamesHub. All rights reserved.</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+const ROUNDS    = 5;
+const MIN_DELAY = 1500;
+const MAX_DELAY = 5000;
+
+let state       = 'idle';   // idle | waiting | ready | result | done
+let round       = 0;
+let results     = [];
+let startTime   = 0;
+let waitTimeout = null;
+
+const box       = document.getElementById('reactionBox');
+const boxIcon   = document.getElementById('boxIcon');
+const bigTime   = document.getElementById('bigTime');
+const boxTitle  = document.getElementById('boxTitle');
+const boxSub    = document.getElementById('boxSub');
+const histList  = document.getElementById('historyList');
+const resPanel  = document.getElementById('resultPanel');
+
+function setBoxState(s) {
+  box.className = '';
+  if (s === 'waiting')   { box.classList.add('waiting');   boxIcon.textContent = '⏳'; boxTitle.textContent = 'Get Ready...'; boxSub.textContent = 'Wait for green'; bigTime.style.display = 'none'; }
+  if (s === 'ready')     { box.classList.add('ready');     boxIcon.textContent = '🟢'; boxTitle.textContent = 'CLICK NOW!';   boxSub.textContent = 'As fast as you can!'; bigTime.style.display = 'none'; }
+  if (s === 'too-early') { box.classList.add('too-early'); boxIcon.textContent = '❌'; boxTitle.textContent = 'Too Early!';   boxSub.textContent = 'Click to try this round again'; bigTime.style.display = 'none'; }
+  if (s === 'result')    { bigTime.style.display = 'block'; boxIcon.textContent = ''; boxTitle.textContent = ''; boxSub.textContent = 'Click for next round'; }
+  if (s === 'idle')      { boxIcon.textContent = '⚡'; boxTitle.textContent = 'Click to Start'; boxSub.textContent = 'Wait for green, then click as fast as you can'; bigTime.style.display = 'none'; }
+}
+
+function updateDots() {
+  for (let i = 0; i < ROUNDS; i++) {
+    const d = document.getElementById('d' + i);
+    if (i < results.length) d.classList.add('hit');
+    else d.classList.remove('hit', 'miss');
+  }
+}
+
+function addHistory(ms) {
+  const chip = document.createElement('div');
+  chip.className = 'history-chip';
+  chip.textContent = ms + 'ms';
+  histList.appendChild(chip);
+}
+
+function startRound() {
+  state = 'waiting';
+  setBoxState('waiting');
+  const delay = MIN_DELAY + Math.random() * (MAX_DELAY - MIN_DELAY);
+  waitTimeout = setTimeout(() => {
+    state = 'ready';
+    setBoxState('ready');
+    startTime = performance.now();
+  }, delay);
+}
+
+function resetGame() {
+  clearTimeout(waitTimeout);
+  state = 'idle'; round = 0; results = [];
+  histList.innerHTML = '';
+  resPanel.classList.remove('show');
+  updateDots();
+  setBoxState('idle');
+}
+
+box.addEventListener('click', () => {
+  if (state === 'idle') {
+    round = 0; results = []; histList.innerHTML = '';
+    resPanel.classList.remove('show');
+    updateDots();
+    startRound();
+    return;
+  }
+  if (state === 'waiting') {
+    clearTimeout(waitTimeout);
+    state = 'too-early';
+    setBoxState('too-early');
+    return;
+  }
+  if (state === 'too-early') {
+    startRound();
+    return;
+  }
+  if (state === 'ready') {
+    const ms = Math.round(performance.now() - startTime);
+    results.push(ms);
+    addHistory(ms);
+    bigTime.textContent = ms + 'ms';
+    bigTime.style.display = 'block';
+    state = 'result';
+    setBoxState('result');
+    updateDots();
+    return;
+  }
+  if (state === 'result') {
+    round++;
+    if (round >= ROUNDS) { showFinalResults(); return; }
+    startRound();
+    return;
+  }
+});
+
+function showFinalResults() {
+  state = 'done';
+  setBoxState('idle');
+  const avg = Math.round(results.reduce((a,b) => a+b, 0) / results.length);
+
+  let tier, tierStyle, desc;
+  if (avg < 160) {
+    tier = '🏆 Inhuman Reflexes'; tierStyle = 'background:rgba(0,212,255,0.12);color:#00d4ff;border:1px solid rgba(0,212,255,0.4);';
+    desc = 'Sub-160ms puts you in rare territory. Either you\'re incredibly gifted, or you\'ve put in serious hours training.';
+  } else if (avg < 200) {
+    tier = '⚡ Pro Gamer Level'; tierStyle = 'background:rgba(0,230,118,0.12);color:#00e676;border:1px solid rgba(0,230,118,0.4);';
+    desc = 'Faster than most competitive players. You\'d hold your own in any ranked lobby.';
+  } else if (avg < 230) {
+    tier = '🎮 Competitive Tier'; tierStyle = 'background:rgba(0,212,255,0.12);color:#00d4ff;border:1px solid rgba(0,212,255,0.3);';
+    desc = 'Above-average reflexes. Faster than the casual majority, and within reach of serious competitive play.';
+  } else if (avg < 270) {
+    tier = '👾 Average Gamer'; tierStyle = 'background:rgba(255,179,0,0.12);color:#ffb300;border:1px solid rgba(255,179,0,0.3);';
+    desc = 'Solidly average. The bulk of gamers sit in this range. Consistent practice can push you toward competitive tier.';
+  } else {
+    tier = '😴 Below Average'; tierStyle = 'background:rgba(255,71,87,0.12);color:#ff4757;border:1px solid rgba(255,71,87,0.3);';
+    desc = 'Everyone starts somewhere. Try our aim trainer daily for a week and retest — most people see 20–40ms improvement.';
+  }
+
+  document.getElementById('resMs').textContent = avg + 'ms';
+  const tierEl = document.getElementById('resTier');
+  tierEl.textContent = tier;
+  tierEl.setAttribute('style', tierStyle);
+  document.getElementById('resDesc').textContent  = desc;
+  document.getElementById('youMs').textContent = avg + 'ms';
+  resPanel.classList.add('show');
+  resPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+document.getElementById('hamburger').addEventListener('click', function() {
+  const nav = document.getElementById('navLinks');
+  const open = nav.classList.toggle('open');
+  this.setAttribute('aria-expanded', open);
+});
+</script>
+</body>
+</html>

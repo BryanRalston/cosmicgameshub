@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aim Trainer — Free Online Aim Practice Tool | CosmicGamesHub</title>
+  <meta name="description" content="Free browser aim trainer. Practice mouse accuracy for FPS games. Track your hits, misses, accuracy %, and average reaction time. No download required." />
+  <link rel="canonical" href="https://cosmicgameshub.com/tools/aim-trainer" />
+  <link rel="stylesheet" href="../styles.css" />
+  <style>
+    #gameCanvas {
+      display: block;
+      background: #07070f;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      cursor: crosshair;
+      width: 100%;
+      max-width: 800px;
+      touch-action: none;
+    }
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+      max-width: 800px;
+    }
+    .stat-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem 1rem;
+      text-align: center;
+    }
+    .stat-box__val {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--accent);
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .stat-box__label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-lo);
+      margin-top: 0.25rem;
+    }
+    .controls {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      align-items: center;
+      max-width: 800px;
+      margin-bottom: 1rem;
+    }
+    .difficulty-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-mid);
+      border-radius: var(--radius-sm);
+      padding: 0.4rem 0.9rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+    .difficulty-btn:hover { border-color: var(--border-mid); color: var(--text-hi); }
+    .difficulty-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+    .timer-bar-wrap {
+      max-width: 800px;
+      height: 4px;
+      background: var(--bg-surface);
+      border-radius: 2px;
+      margin-bottom: 0.75rem;
+      overflow: hidden;
+    }
+    .timer-bar {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      transition: width 0.1s linear;
+    }
+    .result-overlay {
+      display: none;
+      max-width: 800px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-mid);
+      border-radius: var(--radius);
+      padding: 2.5rem;
+      text-align: center;
+      margin-top: 1rem;
+    }
+    .result-overlay.show { display: block; }
+    .result-grade {
+      font-size: 3rem;
+      font-weight: 900;
+      color: var(--accent);
+      line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav" role="navigation">
+  <div class="container">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo">
+        <span class="nav__logo-icon" aria-hidden="true">🎮</span>
+        <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
+      </a>
+      <ul class="nav__links" id="navLinks">
+        <li><a href="/guides/best-gaming-headsets-2026">Headsets</a></li>
+        <li><a href="/guides/best-gaming-mice-2026">Mice</a></li>
+        <li><a href="/guides/best-budget-gaming-chairs">Chairs</a></li>
+        <li><a href="/tools/aim-trainer" class="active">Aim Trainer</a></li>
+        <li><a href="/tools/reaction-time-test">Reaction Test</a></li>
+      </ul>
+      <button class="nav__hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<main>
+  <div class="container">
+    <div style="padding: 1.75rem 0 1.25rem;">
+      <span class="section__eyebrow">Free Tool</span>
+      <h1 style="margin-top:0.4rem;margin-bottom:0.4rem;">Aim Trainer</h1>
+      <p style="color:var(--text-mid);max-width:600px;margin:0;">Click the targets as fast and accurately as you can. 30-second rounds. Track accuracy, speed, and score.</p>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <span style="font-size:0.82rem;color:var(--text-lo);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;">Difficulty:</span>
+      <button class="difficulty-btn active" data-diff="easy">Easy</button>
+      <button class="difficulty-btn" data-diff="medium">Medium</button>
+      <button class="difficulty-btn" data-diff="hard">Hard</button>
+      <button class="difficulty-btn" data-diff="nightmare">Nightmare</button>
+      <button class="btn btn--primary" id="startBtn" style="margin-left:auto;padding:0.5rem 1.25rem;">▶ Start</button>
+    </div>
+
+    <!-- Timer bar -->
+    <div class="timer-bar-wrap"><div class="timer-bar" id="timerBar" style="width:100%;"></div></div>
+
+    <!-- Stats -->
+    <div class="stats-bar">
+      <div class="stat-box"><div class="stat-box__val" id="statScore">0</div><div class="stat-box__label">Score</div></div>
+      <div class="stat-box"><div class="stat-box__val" id="statAcc">—</div><div class="stat-box__label">Accuracy</div></div>
+      <div class="stat-box"><div class="stat-box__val" id="statAvg">—</div><div class="stat-box__label">Avg ms</div></div>
+      <div class="stat-box"><div class="stat-box__val" id="statMisses">0</div><div class="stat-box__label">Misses</div></div>
+    </div>
+
+    <!-- Canvas -->
+    <canvas id="gameCanvas" width="800" height="480"></canvas>
+
+    <!-- Results overlay -->
+    <div class="result-overlay" id="resultOverlay">
+      <div class="result-grade" id="resultGrade">S</div>
+      <div id="resultTitle" style="font-size:1.3rem;font-weight:700;color:var(--text-hi);margin-bottom:0.25rem;"></div>
+      <div id="resultSub" style="font-size:0.9rem;color:var(--text-mid);"></div>
+      <div class="result-grid">
+        <div class="stat-box"><div class="stat-box__val" id="rScore">0</div><div class="stat-box__label">Score</div></div>
+        <div class="stat-box"><div class="stat-box__val" id="rAcc">0%</div><div class="stat-box__label">Accuracy</div></div>
+        <div class="stat-box"><div class="stat-box__val" id="rAvg">0ms</div><div class="stat-box__label">Avg Reaction</div></div>
+      </div>
+      <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;">
+        <button class="btn btn--primary" onclick="startGame()">▶ Play Again</button>
+        <a href="/guides/best-gaming-mice-2026" class="btn btn--outline">Upgrade Your Mouse →</a>
+      </div>
+      <p style="font-size:0.78rem;color:var(--text-lo);margin-top:1.25rem;margin-bottom:0;">
+        A better mouse won't fix bad aim — but it removes the hardware ceiling. If you're plateauing, check our <a href="/guides/best-gaming-mice-2026">gaming mice guide</a>.
+      </p>
+    </div>
+
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer__bottom">
+      <p class="footer__disclosure"><strong>Affiliate Disclosure:</strong> As an Amazon Associate I earn from qualifying purchases.</p>
+      <p class="footer__legal">© 2026 CosmicGamesHub. All rights reserved.</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx    = canvas.getContext('2d');
+
+// Resize canvas to CSS width maintaining aspect ratio
+function resizeCanvas() {
+  const w = Math.min(canvas.offsetWidth, 800);
+  canvas.width  = w;
+  canvas.height = Math.round(w * 0.6);
+}
+resizeCanvas();
+window.addEventListener('resize', () => { resizeCanvas(); if (!gameActive) drawIdle(); });
+
+const DIFFICULTIES = {
+  easy:      { minR: 32, maxR: 48, minLife: 2200, maxLife: 3000, maxTargets: 2 },
+  medium:    { minR: 22, maxR: 36, minLife: 1600, maxLife: 2200, maxTargets: 3 },
+  hard:      { minR: 14, maxR: 24, minLife: 1100, maxLife: 1600, maxTargets: 4 },
+  nightmare: { minR: 9,  maxR: 16, minLife: 700,  maxLife: 1100, maxTargets: 5 },
+};
+
+let diff       = 'easy';
+let gameActive = false;
+let targets    = [];
+let score      = 0;
+let hits       = 0;
+let misses     = 0;
+let reactionTimes = [];
+let timeLeft   = 30;
+let timerInterval, spawnInterval, rafId;
+
+document.querySelectorAll('.difficulty-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (gameActive) return;
+    document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    diff = btn.dataset.diff;
+    drawIdle();
+  });
+});
+
+document.getElementById('startBtn').addEventListener('click', startGame);
+
+function startGame() {
+  document.getElementById('resultOverlay').classList.remove('show');
+  targets = []; score = 0; hits = 0; misses = 0; reactionTimes = []; timeLeft = 30;
+  updateStats();
+  gameActive = true;
+  document.getElementById('startBtn').textContent = '⏹ Stop';
+  document.getElementById('startBtn').onclick = stopGame;
+
+  const cfg = DIFFICULTIES[diff];
+  spawnInterval = setInterval(() => {
+    if (targets.length < cfg.maxTargets) spawnTarget();
+  }, 400);
+
+  timerInterval = setInterval(() => {
+    timeLeft -= 0.1;
+    document.getElementById('timerBar').style.width = Math.max(0, (timeLeft / 30) * 100) + '%';
+    if (timeLeft <= 0) endGame();
+  }, 100);
+
+  cancelAnimationFrame(rafId);
+  loop();
+}
+
+function stopGame() { endGame(); }
+
+function endGame() {
+  gameActive = false;
+  clearInterval(timerInterval);
+  clearInterval(spawnInterval);
+  cancelAnimationFrame(rafId);
+  targets = [];
+  document.getElementById('timerBar').style.width = '100%';
+  document.getElementById('startBtn').textContent = '▶ Start';
+  document.getElementById('startBtn').onclick = startGame;
+  showResults();
+  drawIdle();
+}
+
+function spawnTarget() {
+  const cfg = DIFFICULTIES[diff];
+  const r   = cfg.minR + Math.random() * (cfg.maxR - cfg.minR);
+  const pad = r + 4;
+  targets.push({
+    x:       pad + Math.random() * (canvas.width  - pad * 2),
+    y:       pad + Math.random() * (canvas.height - pad * 2),
+    r,
+    born:    performance.now(),
+    life:    cfg.minLife + Math.random() * (cfg.maxLife - cfg.minLife),
+    opacity: 0,
+    shrink:  false,
+  });
+}
+
+function loop() {
+  if (!gameActive) return;
+  const now = performance.now();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawGrid();
+
+  targets = targets.filter(t => {
+    const age  = now - t.born;
+    const frac = age / t.life;
+    if (frac >= 1) { misses++; updateStats(); return false; }
+    t.opacity = frac < 0.1 ? frac / 0.1 : frac > 0.8 ? (1 - frac) / 0.2 : 1;
+    drawTarget(t, frac);
+    return true;
+  });
+
+  rafId = requestAnimationFrame(loop);
+}
+
+function drawGrid() {
+  ctx.strokeStyle = 'rgba(0,212,255,0.04)';
+  ctx.lineWidth   = 1;
+  const step = 40;
+  for (let x = 0; x < canvas.width; x += step) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+  }
+  for (let y = 0; y < canvas.height; y += step) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+  }
+}
+
+function drawTarget(t, frac) {
+  const pulse = 1 + Math.sin(performance.now() / 200) * 0.03;
+  const r     = t.r * pulse;
+  ctx.save();
+  ctx.globalAlpha = t.opacity;
+
+  // Outer ring
+  ctx.beginPath(); ctx.arc(t.x, t.y, r, 0, Math.PI * 2);
+  ctx.strokeStyle = `rgba(0,212,255,${0.9 - frac * 0.6})`;
+  ctx.lineWidth   = 2.5;
+  ctx.stroke();
+
+  // Inner ring
+  ctx.beginPath(); ctx.arc(t.x, t.y, r * 0.55, 0, Math.PI * 2);
+  ctx.strokeStyle = `rgba(0,212,255,${0.6 - frac * 0.3})`;
+  ctx.lineWidth   = 1.5;
+  ctx.stroke();
+
+  // Center dot
+  ctx.beginPath(); ctx.arc(t.x, t.y, r * 0.18, 0, Math.PI * 2);
+  ctx.fillStyle = `rgba(0,212,255,${0.95 - frac * 0.4})`;
+  ctx.fill();
+
+  // Countdown arc
+  ctx.beginPath();
+  ctx.arc(t.x, t.y, r + 5, -Math.PI / 2, -Math.PI / 2 + (1 - frac) * Math.PI * 2);
+  ctx.strokeStyle = `rgba(255,179,0,${0.7 - frac * 0.5})`;
+  ctx.lineWidth   = 2;
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function drawIdle() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawGrid();
+  ctx.fillStyle = 'rgba(0,212,255,0.35)';
+  ctx.font      = '600 1rem Inter, system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Click ▶ Start to begin', canvas.width / 2, canvas.height / 2);
+}
+
+canvas.addEventListener('click', e => {
+  if (!gameActive) return;
+  const rect    = canvas.getBoundingClientRect();
+  const scaleX  = canvas.width  / rect.width;
+  const scaleY  = canvas.height / rect.height;
+  const mx      = (e.clientX - rect.left)  * scaleX;
+  const my      = (e.clientY - rect.top)   * scaleY;
+  const now     = performance.now();
+  let hit = false;
+
+  for (let i = targets.length - 1; i >= 0; i--) {
+    const t  = targets[i];
+    const dx = mx - t.x, dy = my - t.y;
+    if (Math.sqrt(dx*dx + dy*dy) <= t.r) {
+      const rt = now - t.born;
+      reactionTimes.push(rt);
+      score += Math.round(1000 - rt * 0.3 + (1 / t.r) * 200);
+      hits++;
+      spawnHitEffect(t.x, t.y);
+      targets.splice(i, 1);
+      hit = true;
+      break;
+    }
+  }
+  if (!hit) { misses++; }
+  updateStats();
+});
+
+let effects = [];
+function spawnHitEffect(x, y) {
+  effects.push({ x, y, r: 0, maxR: 28, born: performance.now(), life: 300 });
+}
+
+const _origLoop = loop;
+(function patchLoop() {
+  const orig = loop;
+})();
+
+// Patch loop to draw effects
+const _loop = loop;
+function loopWithEffects() {
+  if (!gameActive) return;
+  const now = performance.now();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawGrid();
+
+  // Draw effects
+  effects = effects.filter(ef => {
+    const p = (now - ef.born) / ef.life;
+    if (p >= 1) return false;
+    ef.r = ef.maxR * p;
+    ctx.save();
+    ctx.globalAlpha = 1 - p;
+    ctx.beginPath(); ctx.arc(ef.x, ef.y, ef.r, 0, Math.PI * 2);
+    ctx.strokeStyle = '#00e676'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.restore();
+    return true;
+  });
+
+  targets = targets.filter(t => {
+    const age  = now - t.born;
+    const frac = age / t.life;
+    if (frac >= 1) { misses++; updateStats(); return false; }
+    t.opacity = frac < 0.1 ? frac / 0.1 : frac > 0.8 ? (1 - frac) / 0.2 : 1;
+    drawTarget(t, frac);
+    return true;
+  });
+
+  rafId = requestAnimationFrame(loopWithEffects);
+}
+
+// Override loop to use patched version
+function loop() {
+  loopWithEffects();
+}
+
+function updateStats() {
+  document.getElementById('statScore').textContent  = score;
+  document.getElementById('statMisses').textContent = misses;
+  const total = hits + misses;
+  document.getElementById('statAcc').textContent = total > 0 ? Math.round((hits / total) * 100) + '%' : '—';
+  const avg = reactionTimes.length > 0 ? Math.round(reactionTimes.reduce((a,b) => a+b,0) / reactionTimes.length) : null;
+  document.getElementById('statAvg').textContent = avg !== null ? avg + 'ms' : '—';
+}
+
+function showResults() {
+  const total   = hits + misses;
+  const acc     = total > 0 ? Math.round((hits / total) * 100) : 0;
+  const avg     = reactionTimes.length > 0 ? Math.round(reactionTimes.reduce((a,b)=>a+b,0) / reactionTimes.length) : 0;
+
+  let grade, title, sub;
+  if      (acc >= 90 && avg < 350) { grade = 'S'; title = 'Aimbot Tier'; sub = 'Incredible accuracy and speed. Are you sure you\'re human?'; }
+  else if (acc >= 80 && avg < 450) { grade = 'A'; title = 'Pro Gamer'; sub = 'Solid aim. You\'d be dangerous in a ranked lobby.'; }
+  else if (acc >= 70 && avg < 600) { grade = 'B'; title = 'Above Average'; sub = 'Good fundamentals. Consistent practice will take you higher.'; }
+  else if (acc >= 55)              { grade = 'C'; title = 'Getting There'; sub = 'Room to grow. Try medium difficulty and focus on accuracy first.'; }
+  else                             { grade = 'D'; title = 'Keep Practicing'; sub = 'Aim takes time. Focus on hitting, not speed — speed follows accuracy.'; }
+
+  document.getElementById('resultGrade').textContent = grade;
+  document.getElementById('resultTitle').textContent  = title;
+  document.getElementById('resultSub').textContent    = sub;
+  document.getElementById('rScore').textContent       = score;
+  document.getElementById('rAcc').textContent         = acc + '%';
+  document.getElementById('rAvg').textContent         = avg > 0 ? avg + 'ms' : '—';
+  document.getElementById('resultOverlay').classList.add('show');
+}
+
+drawIdle();
+
+document.getElementById('hamburger').addEventListener('click', function() {
+  const nav = document.getElementById('navLinks');
+  const open = nav.classList.toggle('open');
+  this.setAttribute('aria-expanded', open);
+});
+</script>
+</body>
+</html>
