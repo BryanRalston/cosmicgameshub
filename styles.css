@@ -616,6 +616,9 @@ tbody td:first-child { color: var(--text-hi); font-weight: 600; }
 .versus-buy__price { font-size: 1.2rem; font-weight: 800; color: var(--accent); }
 .versus-buy__best-for { font-size: 0.78rem; color: var(--text-lo); }
 
+.versus-link { display: block; font-size: 0.8rem; color: var(--accent); text-decoration: none; padding: 0.6rem 0 0; border-top: 1px solid var(--border); margin-top: 0.75rem; opacity: 0.8; transition: opacity 0.2s; }
+.versus-link:hover { opacity: 1; }
+
 @media (max-width: 600px) {
   .versus-hero { grid-template-columns: 1fr; text-align: center; }
   .versus-badge { display: none; }
