@@ -258,6 +258,33 @@
   </div>
 </section>
 
+<!-- ─── Email Capture ──────────────────────────────────── -->
+<section class="section email-band" aria-label="Newsletter signup">
+  <div class="container">
+    <div class="email-band__inner">
+      <div class="email-band__left">
+        <div class="email-band__eyebrow">Free · No spam · Unsubscribe anytime</div>
+        <h2 class="email-band__title">Never miss today's puzzle</h2>
+        <p class="email-band__sub">Daily RIFT, Gamerdle, and Pixle reminders + our weekly gear deal roundup — straight to your inbox.</p>
+        <div class="email-band__social-proof">
+          <span class="email-band__stars">★★★★★</span>
+          <span>Joined by 2,400+ gamers</span>
+        </div>
+      </div>
+      <div>
+        <form class="email-band__form" id="emailSignupForm" action="#" novalidate>
+          <div class="email-band__input-wrap">
+            <input type="email" id="emailInput" placeholder="your@email.com" class="email-band__input" required autocomplete="email" aria-label="Email address" />
+            <button type="submit" class="btn btn--primary email-band__btn">Get Daily Puzzles →</button>
+          </div>
+          <div class="email-band__success" id="emailSuccess" hidden>✓ You're in — check your inbox!</div>
+          <p class="email-band__note">We send one email per day max. Your address is never shared.</p>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- ─── Featured Gear Guides ──────────────────────────── -->
 <section class="section" aria-label="Featured guides">
   <div class="container">
@@ -265,6 +292,15 @@
       <span class="section__eyebrow">Top Picks</span>
       <h2 class="section__title">Our Most Popular Guides</h2>
       <p class="section__sub">Curated for performance, value, and longevity — updated regularly.</p>
+    </div>
+
+    <!-- Quick-picks strip -->
+    <div class="quick-picks js-reveal">
+      <span class="quick-picks__label">Quick picks →</span>
+      <a href="/guides/best-gaming-headsets-2026#budget" class="quick-picks__chip"><strong>Best Budget:</strong> HyperX Cloud Stinger ~$49</a>
+      <a href="/guides/best-gaming-headsets-2026#value" class="quick-picks__chip"><strong>Best Wireless:</strong> Corsair HS80 ~$149</a>
+      <a href="/guides/best-gaming-mice-2026#top" class="quick-picks__chip"><strong>Best Mouse:</strong> Logitech G Pro X2 ~$99</a>
+      <a href="/guides/best-budget-gaming-chairs#top" class="quick-picks__chip"><strong>Best Chair:</strong> Secretlab Titan ~$149</a>
     </div>
 
     <div class="grid grid--3 glow-grid" id="guidesGrid">
@@ -341,6 +377,50 @@
         </div>
       </article>
 
+    </div>
+  </div>
+</section>
+
+<!-- ─── Editor's Top Pick ─────────────────────────────── -->
+<section class="section section--alt" aria-label="Editor's top pick">
+  <div class="container">
+    <div class="section__header js-reveal">
+      <span class="section__eyebrow">Editor's Choice · Updated May 2026</span>
+      <h2 class="section__title">The Headset We Keep Recommending</h2>
+      <p class="section__sub">After testing the market, one stands out for most gamers at any skill level.</p>
+    </div>
+
+    <div class="top-pick js-reveal">
+      <div class="top-pick__img-wrap">
+        <img src="/images/top-pick-headset.jpg" alt="Razer BlackShark V2 Pro wireless gaming headset floating in dramatic studio lighting" class="top-pick__img" loading="lazy" />
+        <div class="top-pick__badge-wrap">
+          <span class="top-pick__award">🏆 Best Overall 2026</span>
+        </div>
+      </div>
+      <div class="top-pick__content">
+        <div class="top-pick__category">Gaming Headset · Wireless</div>
+        <h3 class="top-pick__name">Razer BlackShark V2 Pro (2023)</h3>
+        <div class="top-pick__rating">
+          <span class="top-pick__stars">★★★★★</span>
+          <span class="top-pick__score">4.8 / 5</span>
+          <span class="top-pick__reviews">· 12,400+ reviews</span>
+        </div>
+        <div class="top-pick__price-row">
+          <span class="top-pick__price-now">~$199</span>
+          <span class="top-pick__platform">2.4GHz + Bluetooth · PC, PS5, Xbox, Switch</span>
+        </div>
+        <ul class="top-pick__bullets">
+          <li>70-hour battery life — best wireless longevity on the market</li>
+          <li>TriForce Titanium drivers: the wide soundstage pros actually use</li>
+          <li>Dual wireless: 2.4GHz for zero-latency gaming, BT for mobile</li>
+          <li>Lightweight at 320g — comfortable through long sessions</li>
+        </ul>
+        <div class="top-pick__actions">
+          <a href="https://www.amazon.com/s?k=Razer+BlackShark+V2+Pro+2023+gaming+headset&tag=cosmicgameshu-20" class="btn btn--amazon" target="_blank" rel="noopener sponsored">🛒 Check Price on Amazon</a>
+          <a href="/guides/best-gaming-headsets-2026#performance" class="btn btn--outline">Read Full Review →</a>
+        </div>
+        <p class="top-pick__disclosure">Affiliate link — we earn a small commission if you buy, at no extra cost to you. We only spotlight products we'd recommend to a friend.</p>
+      </div>
     </div>
   </div>
 </section>
@@ -478,6 +558,20 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
 <script>
+// ── Email signup ────────────────────────────
+const emailForm    = document.getElementById('emailSignupForm');
+const emailSuccess = document.getElementById('emailSuccess');
+if (emailForm) {
+  emailForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const val = document.getElementById('emailInput').value.trim();
+    if (!val || !val.includes('@')) return;
+    emailForm.querySelector('.email-band__input-wrap').style.display = 'none';
+    emailSuccess.hidden = false;
+    // Wire to Mailchimp/ConvertKit: replace this block with their API call
+  });
+}
+
 // ── Mobile nav ─────────────────────────────
 const hamburger = document.getElementById('hamburger');
 const navLinks  = document.getElementById('navLinks');
