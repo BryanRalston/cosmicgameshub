@@ -1550,3 +1550,230 @@ tbody td:first-child { color: var(--text-hi); font-weight: 600; }
 }
 .guide-cards:hover .guide-card::before { opacity: 1; }
 ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* ═══════════════════════════════════════════════════════
+   VISUAL DRAMA — article, versus, and guide upgrades
+   ═══════════════════════════════════════════════════════ */
+
+/* ─── Article H1 — large hero headline ───────────────── */
+.article .container--narrow > h1 {
+  font-size: clamp(2rem, 4.5vw, 3.2rem);
+  font-family: 'Outfit', sans-serif;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+  color: #fff;
+  margin: 0.5rem 0 1.25rem;
+}
+
+/* ─── Article H2 — accent-bar section headers ────────── */
+.article h2 {
+  font-size: 1.35rem;
+  font-weight: 800;
+  padding-left: 1rem;
+  border-left: 3px solid var(--accent, #00d4ff);
+  margin: 3rem 0 1.25rem;
+  color: #fff;
+  line-height: 1.2;
+}
+
+/* First H2 after intro/disclosure gets less top margin */
+.article__intro + * + h2,
+.disclosure + h1 + * + h2 { margin-top: 2rem; }
+
+/* ─── Article ambient glow background ────────────────── */
+.article {
+  position: relative;
+}
+.article::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 900px; height: 500px;
+  background: radial-gradient(ellipse at 50% 0%, rgba(0,212,255,0.04) 0%, transparent 65%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ─── Product card — glowing left accent bar ─────────── */
+.product-card {
+  border-left: 3px solid rgba(0,212,255,0.3);
+  transition: border-color 0.3s, transform 0.25s ease, box-shadow 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+.product-card::after {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, var(--accent, #00d4ff) 0%, rgba(0,212,255,0.1) 100%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.product-card:hover {
+  border-left-color: var(--accent, #00d4ff);
+  box-shadow: 0 24px 64px rgba(0,0,0,0.6), -4px 0 20px rgba(0,212,255,0.12), var(--shadow);
+}
+.product-card:hover::after { opacity: 1; }
+
+/* Best-pick card gets a permanent green left bar */
+.product-card:has(.product-card__badge--best) {
+  border-left-color: rgba(0,230,118,0.4);
+}
+
+/* ─── Product card rank number ────────────────────────── */
+.product-card__badge--best::before   { content: '#1 '; opacity: 0.7; }
+.product-card__badge--budget::before { content: ''; }
+
+/* ─── Versus badge — neon VS sign ────────────────────── */
+.versus-badge {
+  font-size: 3.5rem !important;
+  font-weight: 900 !important;
+  color: #fff !important;
+  text-shadow:
+    0 0 8px rgba(0,212,255,0.9),
+    0 0 20px rgba(0,212,255,0.6),
+    0 0 45px rgba(0,212,255,0.3);
+  background: radial-gradient(circle, rgba(0,212,255,0.1) 0%, transparent 70%);
+  width: 80px; height: 80px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  border: 1px solid rgba(0,212,255,0.2);
+  flex-shrink: 0;
+  animation: versus-pulse 3s ease-in-out infinite;
+}
+@keyframes versus-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0,212,255,0); }
+  50% { box-shadow: 0 0 0 10px rgba(0,212,255,0.06); }
+}
+
+/* ─── Versus hero product images — colored glow ──────── */
+.versus-hero__product:first-child .versus-hero__img {
+  box-shadow: 0 0 30px rgba(0,212,255,0.15), 0 0 60px rgba(0,212,255,0.06);
+  border-color: rgba(0,212,255,0.25);
+}
+.versus-hero__product:last-child .versus-hero__img {
+  box-shadow: 0 0 30px rgba(255,179,0,0.15), 0 0 60px rgba(255,179,0,0.06);
+  border-color: rgba(255,179,0,0.25);
+}
+.versus-hero__product:first-child .versus-hero__price { color: var(--accent); }
+.versus-hero__product:last-child  .versus-hero__price { color: var(--amber); }
+
+/* ─── Versus verdict box — premium announcement card ─── */
+.versus-verdict-box {
+  background: linear-gradient(135deg, rgba(0,212,255,0.05) 0%, rgba(0,80,160,0.04) 100%);
+  border: 1px solid rgba(0,212,255,0.25);
+  border-top: 3px solid var(--accent, #00d4ff);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(0,212,255,0.05) inset;
+}
+.versus-verdict-box__winner {
+  font-size: 1.5rem !important;
+  background: linear-gradient(135deg, #fff 0%, rgba(0,212,255,0.9) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Versus category winner — badge style ───────────── */
+.versus-cat__winner {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem !important;
+  font-weight: 700;
+  padding: 0.2rem 0.65rem;
+  border-radius: 100px;
+  margin-top: 0.2rem;
+}
+.versus-cat__winner--a {
+  background: rgba(0,230,118,0.1);
+  border: 1px solid rgba(0,230,118,0.25);
+  color: var(--green) !important;
+}
+.versus-cat__winner--b {
+  background: rgba(255,179,0,0.1);
+  border: 1px solid rgba(255,179,0,0.25);
+  color: var(--amber) !important;
+}
+.versus-cat__winner--tie {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--text-lo) !important;
+}
+
+/* ─── Versus category row — hover glow ───────────────── */
+.versus-cat {
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.versus-cat:hover {
+  border-color: rgba(0,212,255,0.15);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+}
+
+/* ─── Guide page hero section ─────────────────────────── */
+.guides-hero h1,
+.guides-hero p {
+  position: relative;
+  z-index: 1;
+}
+.guides-hero {
+  position: relative;
+}
+.guides-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 100% at 50% 0%, rgba(0,212,255,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* ─── Pros/Cons — cleaner column boxes ───────────────── */
+.pros-cons__col {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 1rem;
+}
+.pros-cons__col--pros { border-color: rgba(0,230,118,0.1); }
+.pros-cons__col--cons { border-color: rgba(255,80,80,0.1); }
+
+/* ─── Versus link (inside product cards) ─────────────── */
+.versus-link {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.8rem;
+  color: var(--text-mid);
+  text-decoration: none;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: var(--radius-sm);
+  margin-bottom: 0.85rem;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+.versus-link:hover {
+  color: var(--accent);
+  border-color: rgba(0,212,255,0.25);
+  background: rgba(0,212,255,0.04);
+}
+
+/* ─── Table zebra striping + hover ───────────────────── */
+table tbody tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+table tbody tr:hover { background: rgba(0,212,255,0.04); }
+table th { border-bottom: 2px solid rgba(0,212,255,0.2); }
+
+/* ─── "Jump to Section" navigation card ──────────────── */
+.article .card {
+  background: linear-gradient(135deg, rgba(0,212,255,0.04) 0%, rgba(255,255,255,0.02) 100%);
+  border-color: rgba(0,212,255,0.15);
+}
+
+/* ─── Disclosure box — subtler, friendlier ───────────── */
+.disclosure {
+  border-radius: var(--radius);
+  background: rgba(255,153,0,0.03) !important;
+  font-size: 0.8rem !important;
+}
+
+/* ─── Breadcrumb — lighter ───────────────────────────── */
+.breadcrumbs { margin-bottom: 1.5rem; opacity: 0.7; }
