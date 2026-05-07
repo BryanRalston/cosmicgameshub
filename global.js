@@ -71,29 +71,29 @@
   });
 
   /* ── FAQ accordion (both patterns) ── */
-  function initFaq(questionSel, panelSel) {
+  function initFaq(questionSel, itemSel) {
     document.querySelectorAll(questionSel).forEach(function (btn) {
       btn.addEventListener('click', function () {
-        var expanded = btn.getAttribute('aria-expanded') === 'true';
+        var item = btn.closest(itemSel + ', .faq__item, .faq-item');
+        var expanded = item && item.classList.contains('open');
         /* collapse all siblings */
         var parent = btn.closest('.faq__list, .faq-list, .faq');
         if (parent) {
-          parent.querySelectorAll(questionSel).forEach(function (b) {
-            b.setAttribute('aria-expanded', 'false');
-            var p = b.nextElementSibling;
-            if (p) p.style.maxHeight = null;
+          parent.querySelectorAll(itemSel + ', .faq__item, .faq-item').forEach(function (i) {
+            i.classList.remove('open');
+            var b = i.querySelector(questionSel);
+            if (b) b.setAttribute('aria-expanded', 'false');
           });
         }
-        if (!expanded) {
+        if (!expanded && item) {
+          item.classList.add('open');
           btn.setAttribute('aria-expanded', 'true');
-          var panel = btn.nextElementSibling;
-          if (panel) panel.style.maxHeight = panel.scrollHeight + 'px';
         }
       });
     });
   }
-  initFaq('.faq__question', '.faq__answer');
-  initFaq('.faq-item h3', '.faq-item p');
+  initFaq('.faq__question', '.faq__item');
+  initFaq('.faq-item h3', '.faq-item');
 
   /* ── Active nav link highlight ── */
   var path = window.location.pathname.replace(/\/$/, '');
