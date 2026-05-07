@@ -52,15 +52,44 @@
     {"id": "nav-fix", "done": "2026-05-07", "notes": "Created guides/index.html and versus/index.html (both were 404). Fixed nav on 29 files to include Guides/Comparisons/Games links. Added both index pages to sitemap. Commit bce20d1."},
     {"id": "homepage-seo-update", "done": "2026-05-07", "notes": "Fixed cat-subnav dead links (daily-challenge→crossword, /tools/aim-trainer→/games/aim-trainer, reaction-time-test→reaction-trainer). Updated games count to 16. Refreshed arcade strip. Updated versus featured cards to newer comparisons + View All 18 CTA. Footer Compare+Play Free updated. Commit fb21d57."},
     {"id": "game-upgrade-remaining", "done": "2026-05-07", "notes": "Full audit: all 16 games have appropriate restart/reset flows for their game type. Daily-seeded games (crossword, word-scramble, rift, gamerdle, pixle, gaming-trivia) have result modals with share+close. Arcade games (asteroid-dodge, void-keeper, type-racer, aim-trainer, reaction-trainer, beat-lab, memory-match, minesweeper, sudoku, color-memory) all have restart/play-again flows. No fixes needed."},
-    {"id": "versus-mouse-4", "done": "2026-05-07", "notes": "G502 X (~$60, HERO 25K LIGHTFORCE, 89g, 13 buttons, B0B6KWMF3X) vs Basilisk V3 (~$70, Focus+ 26K optical, 101g, SmartReel 4-mode scroll, B09J6XCCGX). Full versus page. Commit 8ff0ad9."}
+    {"id": "versus-mouse-4", "done": "2026-05-07", "notes": "G502 X (~$60, HERO 25K LIGHTFORCE, 89g, 13 buttons, B0B6KWMF3X) vs Basilisk V3 (~$70, Focus+ 26K optical, 101g, SmartReel 4-mode scroll, B09J6XCCGX). Full versus page. Commit 8ff0ad9."},
+    {"id": "guide-best-gaming-setup-upgrade", "done": "2026-05-07", "notes": "Upgrade path table added (budget→upgrade per slot with cost+gain). Relevant Comparisons section with 4 versus cards. FAQ expanded 4→7 questions. Nav fixed from old site-header to site-nav. Footer updated. Commit d6042d2."}
   ],
   "queue": [
     {
-      "id": "guide-best-gaming-setup-upgrade",
-      "type": "content",
+      "id": "fps-guide-nav-fix",
+      "type": "fix",
+      "priority": 2,
+      "title": "Fix best-gear-for-competitive-fps nav + add versus links",
+      "description": "FPS guide still uses old site-header/header-nav pattern. Update to site-nav. Add relevant versus page cards (DeathAdder V3 vs Superlight 2, K100 vs Apex Pro TKL, VG279QM vs 27GP850-B)."
+    },
+    {
+      "id": "orphan-pages-audit",
+      "type": "fix",
+      "priority": 2,
+      "title": "Audit and fix orphan game pages",
+      "description": "games/dream-machine.html and games/daily-challenge.html exist but are not in games hub index or sitemap. Determine what they are, add to hub if worth keeping, or convert daily-challenge to redirect/hub page."
+    },
+    {
+      "id": "versus-keyboard-wireless",
+      "type": "new-page",
       "priority": 4,
-      "title": "Upgrade best-gaming-setup-under-500 guide",
-      "description": "Add upgrade path table, link to new versus pages relevant to the budget build picks, add FAQ."
+      "title": "Versus: Logitech G915 TKL vs Corsair K65 RGB Wireless",
+      "description": "Premium wireless keyboard showdown. Both ~$130-160. Low-profile GL switches vs AXON Cherry MX. Battle for the wireless keyboard crown."
+    },
+    {
+      "id": "guide-ps5-headsets",
+      "type": "new-page",
+      "priority": 3,
+      "title": "Guide: Best Gaming Headsets for PS5 2026",
+      "description": "PS5-specific headset guide. Sony Pulse 3D, Pulse Elite, Arctis Nova Pro Wireless, HyperX Cloud Alpha Wireless, Corsair HS80. 3D Audio compatibility, USB-A vs USB-C dongle, Tempest 3D AudioTech."
+    },
+    {
+      "id": "game-score-guesser",
+      "type": "new-game",
+      "priority": 3,
+      "title": "New Game: Gaming Gear Price Guesser",
+      "description": "Show a gaming peripheral (name + key specs), player guesses the Amazon price within a range. 5 rounds, Price is Right style scoring (closest without going over). Daily seeded picks. Share button."
     }
   ],
   "loop_log": [
