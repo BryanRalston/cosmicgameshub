@@ -38,16 +38,10 @@
     {"id": "versus-monitor-2", "done": "2026-05-07", "notes": "ASUS ROG Swift PG279QM (240Hz Fast IPS) vs Dell S2722DGM (165Hz VA curved). 6 category breakdown, spec table, 4 key diffs, FAQ. Sitemap updated."},
     {"id": "game-reaction-trainer", "done": "2026-05-07", "notes": "Reaction Time Trainer — 5-round click-when-green game. Grades S/A/B/C/D/F, personal best localStorage, share button, spacebar support, smooth CSS transitions."},
     {"id": "game-fps-aim-trainer", "done": "2026-05-07", "notes": "FPS Aim Trainer — canvas target clicking game with 30/60/90s modes. Timer arcs, accuracy %, hits/sec, personal best, share button. Games hub updated."},
-    {"id": "versus-headset-3", "done": "2026-05-07", "notes": "Arctis Nova 7 vs Cloud Alpha Wireless: dual wireless + BT vs 300hr battery. 6-category breakdown, spec table, 4 key diffs, 6-question FAQ."}
+    {"id": "versus-headset-3", "done": "2026-05-07", "notes": "Arctis Nova 7 vs Cloud Alpha Wireless: dual wireless + BT vs 300hr battery. 6-category breakdown, spec table, 4 key diffs, 6-question FAQ."},
+    {"id": "versus-mouse-3", "done": "2026-05-07", "notes": "Logitech G403 ($50, 87g, HERO 25K) vs Razer DeathAdder V3 ($70, 59g, Focus Pro 30K, optical switches). Budget ergonomic vs ultralight competitive. 6-category breakdown, 4 key diffs, 5-question FAQ."}
   ],
   "queue": [
-    {
-      "id": "versus-mouse-3",
-      "type": "new-page",
-      "priority": 3,
-      "title": "Versus: Logitech G403 vs Razer DeathAdder V3",
-      "description": "Mid-tier wired mouse comparison. Classic ergonomic shape battle."
-    },
     {
       "id": "guide-best-gaming-headsets-upgrade",
       "type": "content",
