@@ -721,6 +721,7 @@ hamburger.addEventListener('click', () => {
   const open = navLinks.classList.toggle('open');
   hamburger.setAttribute('aria-expanded', open);
 });
+hamburger.dataset.navInit = '1';
 
 // ── Nav: transparent on hero, glass on scroll ──
 const mainNav = document.getElementById('mainNav');

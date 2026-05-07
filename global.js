@@ -1,22 +1,22 @@
 (function () {
   'use strict';
 
-  /* ── Hamburger nav toggle ── */
+  /* ── Hamburger nav toggle (skip if page has own inline handler) ── */
   var hamburger = document.querySelector('.nav__hamburger');
   var navLinks = document.querySelector('.nav__links');
-  if (hamburger && navLinks) {
+  if (hamburger && navLinks && !hamburger.dataset.navInit) {
+    hamburger.dataset.navInit = '1';
     hamburger.addEventListener('click', function () {
       var open = navLinks.classList.toggle('open');
       hamburger.setAttribute('aria-expanded', String(open));
     });
     document.addEventListener('click', function (e) {
-      if (open && !hamburger.contains(e.target) && !navLinks.contains(e.target)) {
+      if (navLinks.classList.contains('open') && !hamburger.contains(e.target) && !navLinks.contains(e.target)) {
         navLinks.classList.remove('open');
         hamburger.setAttribute('aria-expanded', 'false');
       }
     });
   }
-
   /* ── Scroll reveal ── */
   if ('IntersectionObserver' in window) {
     var revealEls = document.querySelectorAll(
@@ -115,9 +115,9 @@
     });
   });
 
-  /* ── Nav scroll shadow ── */
+  /* ── Nav scroll shadow (skip if homepage handles its own scroll) ── */
   var nav = document.querySelector('.nav');
-  if (nav) {
+  if (nav && !document.getElementById('mainNav')) {
     var onScroll = function () {
       nav.classList.toggle('nav--scrolled', window.scrollY > 10);
     };
