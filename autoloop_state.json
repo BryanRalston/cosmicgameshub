@@ -51,16 +51,10 @@
     {"id": "game-crossword", "done": "2026-05-07", "notes": "Daily 5x5 gaming crossword. 7 validated puzzles (all rows + col0 + col4 = valid gaming words), check/reveal/clear, streak tracking, personal best, share. Commit 079c648."},
     {"id": "nav-fix", "done": "2026-05-07", "notes": "Created guides/index.html and versus/index.html (both were 404). Fixed nav on 29 files to include Guides/Comparisons/Games links. Added both index pages to sitemap. Commit bce20d1."},
     {"id": "homepage-seo-update", "done": "2026-05-07", "notes": "Fixed cat-subnav dead links (daily-challenge→crossword, /tools/aim-trainer→/games/aim-trainer, reaction-time-test→reaction-trainer). Updated games count to 16. Refreshed arcade strip. Updated versus featured cards to newer comparisons + View All 18 CTA. Footer Compare+Play Free updated. Commit fb21d57."},
-    {"id": "game-upgrade-remaining", "done": "2026-05-07", "notes": "Full audit: all 16 games have appropriate restart/reset flows for their game type. Daily-seeded games (crossword, word-scramble, rift, gamerdle, pixle, gaming-trivia) have result modals with share+close. Arcade games (asteroid-dodge, void-keeper, type-racer, aim-trainer, reaction-trainer, beat-lab, memory-match, minesweeper, sudoku, color-memory) all have restart/play-again flows. No fixes needed."}
+    {"id": "game-upgrade-remaining", "done": "2026-05-07", "notes": "Full audit: all 16 games have appropriate restart/reset flows for their game type. Daily-seeded games (crossword, word-scramble, rift, gamerdle, pixle, gaming-trivia) have result modals with share+close. Arcade games (asteroid-dodge, void-keeper, type-racer, aim-trainer, reaction-trainer, beat-lab, memory-match, minesweeper, sudoku, color-memory) all have restart/play-again flows. No fixes needed."},
+    {"id": "versus-mouse-4", "done": "2026-05-07", "notes": "G502 X (~$60, HERO 25K LIGHTFORCE, 89g, 13 buttons, B0B6KWMF3X) vs Basilisk V3 (~$70, Focus+ 26K optical, 101g, SmartReel 4-mode scroll, B09J6XCCGX). Full versus page. Commit 8ff0ad9."}
   ],
   "queue": [
-    {
-      "id": "versus-mouse-4",
-      "type": "new-page",
-      "priority": 4,
-      "title": "Versus: Logitech G502 X vs Razer Basilisk V3",
-      "description": "Wired feature-rich mouse comparison. Both heavy utility mice with side buttons. Target MMO/general gamers choosing between them."
-    },
     {
       "id": "guide-best-gaming-setup-upgrade",
       "type": "content",
@@ -77,6 +71,7 @@
     {"iteration": 5, "date": "2026-05-07", "tasks_completed": ["roundup-budget-setup-500","roundup-fps-setup","games-hub-page","games-minesweeper-upgrade","games-sudoku-upgrade","void-keeper-upgrade","memory-match-upgrade","beat-lab-share","versus-basilisk-v3-pro-vs-g502-x-plus","roundup-wireless-headsets","versus-corsair-k100-vs-apex-pro-tkl","guide-best-gaming-chairs-upgrade","sitemap-update-2"], "commits": [], "notes": "3 roundup guides, games hub, 5 game upgrades, 2 versus pages."},
     {"iteration": 6, "date": "2026-05-07", "tasks_completed": ["versus-monitor-2","game-reaction-trainer","game-fps-aim-trainer","versus-headset-3","versus-mouse-3","guide-best-gaming-headsets-upgrade","guide-best-gaming-mice-upgrade","guide-best-gaming-keyboards-upgrade","guide-best-gaming-monitors-upgrade","game-color-memory"], "commits": ["180c287","c7c39f2","27772a6","e1d1af2","93387d6","5a431f1","bfdb84b"], "notes": "Monitor-2, 2 new games, headset-3, mouse-3, quick-picks tables, color-memory."},
     {"iteration": 7, "date": "2026-05-07", "tasks_completed": ["versus-keyboard-budget","versus-headset-4","versus-monitor-3","game-crossword","nav-fix"], "commits": ["fb391a3","8be24be","03fc36c","079c648","bce20d1"], "notes": "3 versus pages (keyboard budget, headset-4, monitor-3). Daily crossword game (7 validated puzzles). Nav overhaul: guides/index.html, versus/index.html, consistent nav on 29 files."},
-    {"iteration": 8, "date": "2026-05-07", "tasks_completed": ["homepage-seo-update","game-upgrade-remaining"], "commits": ["fb21d57"], "notes": "Homepage: cat-subnav dead links fixed, games count updated to 16, arcade strip updated, versus section refreshed with newer comparisons + View All CTA, footer updated. Game audit: all 16 games confirmed to have appropriate restart flows."}
+    {"iteration": 8, "date": "2026-05-07", "tasks_completed": ["homepage-seo-update","game-upgrade-remaining"], "commits": ["fb21d57"], "notes": "Homepage: cat-subnav dead links fixed, games count updated to 16, arcade strip updated, versus section refreshed with newer comparisons + View All CTA, footer updated. Game audit: all 16 games confirmed to have appropriate restart flows."},
+    {"iteration": 9, "date": "2026-05-07", "tasks_completed": ["versus-mouse-4"], "commits": ["8ff0ad9"], "notes": "G502 X (~$60, HERO 25K LIGHTFORCE, 89g, 13 buttons) vs Basilisk V3 (~$70, Focus+ 26K optical, 101g, SmartReel 4-mode scroll). Full versus page. Verdict: G502 X for value+switches, Basilisk V3 for scroll+RGB. Homepage count updated to 19 comparisons."}
   ]
 }
