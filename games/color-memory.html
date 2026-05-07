@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-D272MF8NQP"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-D272MF8NQP');
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Color Memory — CosmicGamesHub</title>
+  <meta name="description" content="Simon Says color memory game. Watch the sequence, repeat it back. How long can your memory streak go?" />
+  <meta property="og:title" content="Color Memory — CosmicGamesHub" />
+  <meta property="og:description" content="Simon Says color memory game. Watch the sequence, repeat it back." />
+  <meta property="og:image" content="https://cosmicgameshub.com/images/game-color-memory.jpg" />
+  <link rel="canonical" href="https://cosmicgameshub.com/games/color-memory" />
+  <link rel="stylesheet" href="../styles.css" />
+  <style>
+    .cm-wrap {
+      max-width: 480px;
+      margin: 0 auto;
+      text-align: center;
+      padding: 0 1rem;
+    }
+    .cm-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      margin-bottom: 1.2rem;
+    }
+    .cm-back:hover { color: var(--accent); }
+    .cm-title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0 0 0.3rem;
+    }
+    .cm-subtitle {
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      margin: 0 0 1.5rem;
+    }
+    .cm-hud {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .cm-hud__stat {
+      text-align: center;
+    }
+    .cm-hud__val {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      font-family: 'JetBrains Mono', monospace;
+      line-height: 1;
+    }
+    .cm-hud__lbl {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-top: 0.15rem;
+    }
+    .cm-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      width: 280px;
+      margin: 0 auto 1.5rem;
+    }
+    .cm-btn {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 16px;
+      border: none;
+      cursor: pointer;
+      transition: filter 0.08s, transform 0.08s, box-shadow 0.08s;
+      position: relative;
+      overflow: hidden;
+    }
+    .cm-btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: rgba(255,255,255,0.15);
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .cm-btn:hover::after { opacity: 1; }
+    .cm-btn--red    { background: #c0392b; box-shadow: 0 4px 20px rgba(192,57,43,0.25); }
+    .cm-btn--green  { background: #27ae60; box-shadow: 0 4px 20px rgba(39,174,96,0.25); }
+    .cm-btn--blue   { background: #2980b9; box-shadow: 0 4px 20px rgba(41,128,185,0.25); }
+    .cm-btn--yellow { background: #f39c12; box-shadow: 0 4px 20px rgba(243,156,18,0.25); }
+    .cm-btn--lit.cm-btn--red    { filter: brightness(2.2); box-shadow: 0 0 40px rgba(255,80,60,0.7); transform: scale(1.04); }
+    .cm-btn--lit.cm-btn--green  { filter: brightness(2.2); box-shadow: 0 0 40px rgba(60,255,120,0.7); transform: scale(1.04); }
+    .cm-btn--lit.cm-btn--blue   { filter: brightness(2.2); box-shadow: 0 0 40px rgba(60,130,255,0.7); transform: scale(1.04); }
+    .cm-btn--lit.cm-btn--yellow { filter: brightness(2.2); box-shadow: 0 0 40px rgba(255,220,60,0.7); transform: scale(1.04); }
+    .cm-btn:active:not(:disabled) { transform: scale(0.96); }
+    .cm-btn:disabled { cursor: not-allowed; }
+    .cm-status {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      min-height: 1.5em;
+      margin-bottom: 1rem;
+      font-weight: 500;
+    }
+    .cm-status--watch { color: var(--accent); }
+    .cm-status--go { color: #22d36e; }
+    .cm-status--fail { color: #ef4444; }
+    .cm-sequence-viz {
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      min-height: 16px;
+    }
+    .cm-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.1);
+      transition: background 0.15s;
+    }
+    .cm-dot--active { background: var(--accent); border-color: var(--accent); }
+    .cm-dot--done   { background: rgba(34,211,238,0.4); border-color: rgba(34,211,238,0.3); }
+    .cm-start-btn {
+      padding: 0.7rem 2rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      background: var(--accent);
+      color: #000;
+      font-family: inherit;
+      transition: opacity 0.15s;
+      margin-bottom: 0.75rem;
+    }
+    .cm-start-btn:hover { opacity: 0.9; }
+    .cm-result {
+      display: none;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .cm-result.show { display: block; }
+    .cm-result__score {
+      font-size: 3rem;
+      font-weight: 900;
+      color: var(--accent);
+      font-family: 'JetBrains Mono', monospace;
+      line-height: 1;
+      margin-bottom: 0.25rem;
+    }
+    .cm-result__label { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.75rem; }
+    .cm-result__best {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+    .cm-result__best span { color: var(--accent); font-family: 'JetBrains Mono', monospace; }
+    .cm-new-best {
+      font-size: 0.85rem;
+      color: #ffd700;
+      margin-bottom: 0.5rem;
+    }
+    .cm-btns {
+      display: flex;
+      gap: 0.65rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .cm-btn-action {
+      padding: 0.55rem 1.2rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: opacity 0.15s;
+    }
+    .cm-btn-action--primary { background: var(--accent); color: #000; border: none; }
+    .cm-btn-action--secondary { background: transparent; border: 1px solid rgba(255,255,255,0.15); color: var(--text-secondary); }
+    .cm-alltime {
+      margin-top: 1rem;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+    .cm-alltime span { color: var(--accent); font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body>
+
+<nav class="nav" role="navigation" aria-label="Main navigation">
+  <div class="container">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo" aria-label="CosmicGamesHub home">
+        <span class="nav__logo-icon" aria-hidden="true">🎮</span>
+        <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
+      </a>
+      <ul class="nav__links" id="navLinks">
+        <li><a href="/guides/best-gaming-headsets-2026">Headsets</a></li>
+        <li><a href="/guides/best-gaming-mice-2026">Mice</a></li>
+        <li><a href="/guides/best-budget-gaming-chairs">Chairs</a></li>
+        <li><a href="/guides/best-gaming-keyboards-2026">Keyboards</a></li>
+        <li><a href="/guides/best-gaming-monitors-2026">Monitors</a></li>
+        <li><a href="/tools/gaming-fps-calculator" class="nav__cta btn">Free Tools</a></li>
+      </ul>
+      <button class="nav__hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<main style="padding: 2rem 0 4rem;">
+  <div class="cm-wrap">
+    <a href="/games" class="cm-back">← Back to Games</a>
+
+    <h1 class="cm-title">🎨 Color Memory</h1>
+    <p class="cm-subtitle">Watch the sequence — repeat it back. How far can you go?</p>
+
+    <!-- HUD -->
+    <div class="cm-hud">
+      <div class="cm-hud__stat">
+        <div class="cm-hud__val" id="hudRound">—</div>
+        <div class="cm-hud__lbl">Round</div>
+      </div>
+      <div class="cm-hud__stat">
+        <div class="cm-hud__val" id="hudLen">—</div>
+        <div class="cm-hud__lbl">Length</div>
+      </div>
+      <div class="cm-hud__stat">
+        <div class="cm-hud__val" id="hudProgress">—</div>
+        <div class="cm-hud__lbl">Progress</div>
+      </div>
+    </div>
+
+    <!-- Sequence dot visualizer -->
+    <div class="cm-sequence-viz" id="seqViz"></div>
+
+    <!-- Buttons -->
+    <div class="cm-grid">
+      <button class="cm-btn cm-btn--red"    id="btn-red"    disabled aria-label="Red">🔴</button>
+      <button class="cm-btn cm-btn--green"  id="btn-green"  disabled aria-label="Green">🟢</button>
+      <button class="cm-btn cm-btn--blue"   id="btn-blue"   disabled aria-label="Blue">🔵</button>
+      <button class="cm-btn cm-btn--yellow" id="btn-yellow" disabled aria-label="Yellow">🟡</button>
+    </div>
+
+    <!-- Status message -->
+    <div class="cm-status" id="cmStatus">Press Start to play</div>
+
+    <!-- Start button (visible before game starts) -->
+    <button class="cm-start-btn" id="cmStartBtn">Start</button>
+
+    <!-- Result panel -->
+    <div class="cm-result" id="cmResult">
+      <div id="cmNewBest" class="cm-new-best" style="display:none;">🥇 New personal best!</div>
+      <div class="cm-result__score" id="cmScore">0</div>
+      <div class="cm-result__label">sequence length reached</div>
+      <div class="cm-result__best" id="cmBestLine"></div>
+      <div class="cm-btns">
+        <button class="cm-btn-action cm-btn-action--primary" id="cmPlayAgain">Play Again</button>
+        <button class="cm-btn-action cm-btn-action--secondary" id="cmShare">📋 Share</button>
+      </div>
+    </div>
+
+    <div class="cm-alltime" id="cmAllTime"></div>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer__bottom">
+      <p>© 2026 CosmicGamesHub. <a href="/games">← More Games</a></p>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function() {
+  const BEST_KEY = 'cm_best';
+  const COLORS = ['red','green','blue','yellow'];
+  const FLASH_ON = 500;
+  const FLASH_OFF = 200;
+  const FLASH_PAUSE = 600;
+  const INPUT_TIMEOUT = 5000;
+
+  const btns = {};
+  COLORS.forEach(c => { btns[c] = document.getElementById('btn-' + c); });
+  const statusEl = document.getElementById('cmStatus');
+  const startBtn = document.getElementById('cmStartBtn');
+  const resultEl = document.getElementById('cmResult');
+  const hudRound = document.getElementById('hudRound');
+  const hudLen   = document.getElementById('hudLen');
+  const hudProg  = document.getElementById('hudProgress');
+  const seqViz   = document.getElementById('seqViz');
+
+  let sequence = [];
+  let playerIndex = 0;
+  let round = 0;
+  let playing = false;
+  let inputEnabled = false;
+  let inputTimer = null;
+
+  function setStatus(msg, cls) {
+    statusEl.textContent = msg;
+    statusEl.className = 'cm-status' + (cls ? ' cm-status--' + cls : '');
+  }
+
+  function setEnabled(on) {
+    inputEnabled = on;
+    COLORS.forEach(c => { btns[c].disabled = !on; });
+  }
+
+  function lightUp(color, ms) {
+    return new Promise(res => {
+      btns[color].classList.add('cm-btn--lit');
+      setTimeout(() => {
+        btns[color].classList.remove('cm-btn--lit');
+        setTimeout(res, FLASH_OFF);
+      }, ms);
+    });
+  }
+
+  function buildSeqViz() {
+    seqViz.innerHTML = '';
+    for (let i = 0; i < sequence.length; i++) {
+      const d = document.createElement('div');
+      d.className = 'cm-dot' + (i < playerIndex ? ' cm-dot--done' : i === playerIndex ? ' cm-dot--active' : '');
+      seqViz.appendChild(d);
+    }
+  }
+
+  async function playSequence() {
+    setEnabled(false);
+    setStatus('Watch the sequence…', 'watch');
+    await delay(FLASH_PAUSE);
+    for (const c of sequence) {
+      await lightUp(c, FLASH_ON);
+    }
+    await delay(200);
+    playerIndex = 0;
+    buildSeqViz();
+    setStatus('Your turn! Repeat the sequence.', 'go');
+    setEnabled(true);
+    startInputTimer();
+  }
+
+  function delay(ms) {
+    return new Promise(res => setTimeout(res, ms));
+  }
+
+  function startInputTimer() {
+    clearTimeout(inputTimer);
+    inputTimer = setTimeout(() => {
+      if (inputEnabled) {
+        gameOver('Time\'s up!');
+      }
+    }, INPUT_TIMEOUT);
+  }
+
+  function handleClick(color) {
+    if (!inputEnabled) return;
+    clearTimeout(inputTimer);
+    lightUp(color, 200);
+
+    if (color !== sequence[playerIndex]) {
+      gameOver('Wrong color!');
+      return;
+    }
+
+    playerIndex++;
+    buildSeqViz();
+    hudProg.textContent = playerIndex + '/' + sequence.length;
+
+    if (playerIndex === sequence.length) {
+      // Completed this round
+      setEnabled(false);
+      setStatus('Correct! ✓', 'go');
+      setTimeout(() => nextRound(), 800);
+    } else {
+      startInputTimer();
+    }
+  }
+
+  function nextRound() {
+    round++;
+    sequence.push(COLORS[Math.floor(Math.random() * COLORS.length)]);
+    hudRound.textContent = round;
+    hudLen.textContent = sequence.length;
+    hudProg.textContent = '0/' + sequence.length;
+    playSequence();
+  }
+
+  function gameOver(reason) {
+    setEnabled(false);
+    playing = false;
+    clearTimeout(inputTimer);
+
+    const score = sequence.length - 1;
+    setStatus(reason + ' You reached length ' + score + '.', 'fail');
+
+    const prev = parseInt(localStorage.getItem(BEST_KEY) || '0', 10);
+    document.getElementById('cmScore').textContent = score;
+    if (score > prev) {
+      localStorage.setItem(BEST_KEY, score);
+      document.getElementById('cmNewBest').style.display = '';
+    } else {
+      document.getElementById('cmNewBest').style.display = 'none';
+    }
+    updateBestLine();
+    resultEl.classList.add('show');
+  }
+
+  function updateBestLine() {
+    const best = localStorage.getItem(BEST_KEY);
+    if (best) {
+      document.getElementById('cmBestLine').innerHTML = 'Personal best: <span>' + best + '</span>';
+      document.getElementById('cmAllTime').innerHTML = 'All-time best: <span>' + best + '</span>';
+    }
+  }
+
+  function startGame() {
+    sequence = [];
+    playerIndex = 0;
+    round = 0;
+    playing = true;
+    resultEl.classList.remove('show');
+    startBtn.style.display = 'none';
+    hudRound.textContent = '1';
+    hudLen.textContent = '1';
+    hudProg.textContent = '0/1';
+    document.getElementById('cmNewBest').style.display = 'none';
+    nextRound();
+  }
+
+  COLORS.forEach(c => {
+    btns[c].addEventListener('click', () => handleClick(c));
+  });
+
+  startBtn.addEventListener('click', startGame);
+
+  document.getElementById('cmPlayAgain').addEventListener('click', () => {
+    resultEl.classList.remove('show');
+    startBtn.style.display = '';
+    setStatus('Press Start to play');
+    COLORS.forEach(c => { btns[c].disabled = true; });
+    seqViz.innerHTML = '';
+    hudRound.textContent = '—';
+    hudLen.textContent = '—';
+    hudProg.textContent = '—';
+  });
+
+  document.getElementById('cmShare').addEventListener('click', () => {
+    const score = parseInt(document.getElementById('cmScore').textContent, 10);
+    const grade = score >= 15 ? '🏆' : score >= 10 ? '⭐' : score >= 7 ? '👍' : '🎮';
+    const text = grade + ' Color Memory — reached sequence length ' + score + '\ncosmicgameshub.com/games/color-memory';
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('cmShare');
+      btn.textContent = '✓ Copied!';
+      setTimeout(() => { btn.textContent = '📋 Share'; }, 2000);
+    }).catch(() => {});
+  });
+
+  updateBestLine();
+})();
+</script>
+
+<script>
+  const hamburger = document.getElementById('hamburger');
+  const navLinks = document.getElementById('navLinks');
+  hamburger.addEventListener('click', () => {
+    const open = navLinks.classList.toggle('open');
+    hamburger.setAttribute('aria-expanded', open);
+  });
+</script>
+</body>
+</html>

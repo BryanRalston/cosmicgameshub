@@ -43,7 +43,8 @@
     {"id": "guide-best-gaming-headsets-upgrade", "done": "2026-05-07", "notes": "Added quick-picks summary table (5 tiers at a glance). Added Nova 7 vs Cloud Alpha Wireless and wireless headsets guide links to comparisons section."},
     {"id": "guide-best-gaming-mice-upgrade", "done": "2026-05-07", "notes": "Added quick-picks summary table with weight column. Added G403 vs DeathAdder V3 and Basilisk vs G502 X Plus links to comparisons section."},
     {"id": "guide-best-gaming-keyboards-upgrade", "done": "2026-05-07", "notes": "Added 5-tier quick-picks table (switch type column). Added K100 vs Apex Pro TKL link and FPS guide link to comparisons section."},
-    {"id": "guide-best-gaming-monitors-upgrade", "done": "2026-05-07", "notes": "Added 5-tier quick-picks table (panel/Hz column). Added PG279QM vs S2722DGM link and FPS guide link to comparisons section."}
+    {"id": "guide-best-gaming-monitors-upgrade", "done": "2026-05-07", "notes": "Added 5-tier quick-picks table (panel/Hz column). Added PG279QM vs S2722DGM link and FPS guide link to comparisons section."},
+    {"id": "game-color-memory", "done": "2026-05-07", "notes": "Simon Says color memory game. 4-color grid, sequence builds each round, dot progress visualizer, personal best, share. Games hub updated to 15 games."}
   ],
   "queue": [
     {
@@ -59,13 +60,6 @@
       "priority": 2,
       "title": "Versus: Razer Kraken V3 vs Corsair HS65 Wireless",
       "description": "Mid-tier wireless headset comparison under $100. High-volume search terms for budget wireless headset buyers."
-    },
-    {
-      "id": "game-color-memory",
-      "type": "new-game",
-      "priority": 2,
-      "title": "New Game: Color Sequence Memory",
-      "description": "Simon-says style color memory game. 4-color grid flashes a sequence, player must repeat it in order. Starts at length 3, increases each round. High score tracked."
     },
     {
       "id": "versus-monitor-3",
