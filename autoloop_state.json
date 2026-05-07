@@ -56,6 +56,7 @@
     {"id": "guide-best-gaming-setup-upgrade", "done": "2026-05-07", "notes": "Upgrade path table added (budget→upgrade per slot with cost+gain). Relevant Comparisons section with 4 versus cards. FAQ expanded 4→7 questions. Nav fixed from old site-header to site-nav. Footer updated. Commit d6042d2."}
   ],
   "queue": [
+    {"id": "guide-ps5-headsets", "done": "2026-05-07", "notes": "committed above"},
     {
       "id": "versus-keyboard-wireless",
       "type": "new-page",
@@ -88,6 +89,7 @@
     {"iteration": 7, "date": "2026-05-07", "tasks_completed": ["versus-keyboard-budget","versus-headset-4","versus-monitor-3","game-crossword","nav-fix"], "commits": ["fb391a3","8be24be","03fc36c","079c648","bce20d1"], "notes": "3 versus pages (keyboard budget, headset-4, monitor-3). Daily crossword game (7 validated puzzles). Nav overhaul: guides/index.html, versus/index.html, consistent nav on 29 files."},
     {"iteration": 8, "date": "2026-05-07", "tasks_completed": ["homepage-seo-update","game-upgrade-remaining"], "commits": ["fb21d57"], "notes": "Homepage: cat-subnav dead links fixed, games count updated to 16, arcade strip updated, versus section refreshed with newer comparisons + View All CTA, footer updated. Game audit: all 16 games confirmed to have appropriate restart flows."},
     {"iteration": 9, "date": "2026-05-07", "tasks_completed": ["versus-mouse-4"], "commits": ["8ff0ad9"], "notes": "G502 X (~$60, HERO 25K LIGHTFORCE, 89g, 13 buttons) vs Basilisk V3 (~$70, Focus+ 26K optical, 101g, SmartReel 4-mode scroll). Full versus page. Verdict: G502 X for value+switches, Basilisk V3 for scroll+RGB. Homepage count updated to 19 comparisons."},
-    {"iteration": 10, "date": "2026-05-07", "tasks_completed": ["fps-guide-nav-fix","orphan-pages-audit","guide-best-gaming-setup-upgrade"], "commits": ["d6042d2","c13aad4"], "notes": "FPS guide: nav fixed, related section + 3 versus cards. Budget guide: upgrade table, 4 versus links, FAQ 4→7, nav fixed. daily-challenge.html: nav fixed, added to games hub (17 games), added to sitemap. dream-machine: left in /lab, correct location."}
+    {"iteration": 10, "date": "2026-05-07", "tasks_completed": ["fps-guide-nav-fix","orphan-pages-audit","guide-best-gaming-setup-upgrade"], "commits": ["d6042d2","c13aad4"], "notes": "FPS guide: nav fixed, related section + 3 versus cards. Budget guide: upgrade table, 4 versus links, FAQ 4→7, nav fixed. daily-challenge.html: nav fixed, added to games hub (17 games), added to sitemap. dream-machine: left in /lab, correct location."},
+    {"iteration": 11, "date": "2026-05-07", "tasks_completed": ["guide-ps5-headsets"], "commits": ["f4d60d6"], "notes": "PS5 headset guide: 5 picks (Pulse 3D $99, Pulse Elite $149, Cloud Alpha Wireless $200, HS80 $149, Nova Pro Wireless $350). Connection hierarchy table (USB-native > 2.4GHz > BT > 3.5mm). Quick-picks table. 5-question FAQ. Added to guides index + sitemap."}
   ]
 }
