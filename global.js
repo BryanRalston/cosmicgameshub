@@ -125,4 +125,32 @@
     onScroll();
   }
 
+  /* ── Reading progress bar (article pages only) ── */
+  var article = document.querySelector('.article');
+  if (article) {
+    var bar = document.createElement('div');
+    bar.id = 'reading-progress';
+    document.body.appendChild(bar);
+    window.addEventListener('scroll', function () {
+      var scrollTop = window.scrollY;
+      var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      bar.style.width = (docHeight > 0 ? Math.min(100, (scrollTop / docHeight) * 100) : 0) + '%';
+    }, { passive: true });
+  }
+
+  /* ── Back-to-top button (article pages only) ── */
+  if (article) {
+    var btt = document.createElement('button');
+    btt.id = 'back-to-top';
+    btt.setAttribute('aria-label', 'Back to top');
+    btt.innerHTML = '↑';
+    document.body.appendChild(btt);
+    window.addEventListener('scroll', function () {
+      btt.classList.toggle('visible', window.scrollY > 600);
+    }, { passive: true });
+    btt.addEventListener('click', function () {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+
 })();

@@ -1799,3 +1799,60 @@ table th { border-bottom: 2px solid rgba(0,212,255,0.2); }
 
 /* ─── Breadcrumb — lighter ───────────────────────────── */
 .breadcrumbs { margin-bottom: 1.5rem; opacity: 0.7; }
+
+/* ─── ol-style breadcrumb (guides/index etc) ─────────── */
+nav.breadcrumb ol {
+  display: flex;
+  flex-wrap: wrap;
+  list-style: none;
+  padding: 0; margin: 0;
+  gap: 0;
+  font-size: 0.82rem;
+  color: var(--text-lo);
+}
+nav.breadcrumb ol li { display: flex; align-items: center; }
+nav.breadcrumb ol li a { color: var(--text-lo); text-decoration: none; transition: color 0.2s; }
+nav.breadcrumb ol li a:hover { color: var(--accent); }
+nav.breadcrumb ol li + li::before { content: ' › '; padding: 0 0.4rem; color: var(--text-lo); opacity: 0.5; }
+nav.breadcrumb ol li[aria-current="page"] { color: var(--text-mid); }
+
+/* ─── Reading progress bar ───────────────────────────── */
+#reading-progress {
+  position: fixed;
+  top: 0; left: 0;
+  height: 3px;
+  width: 0;
+  background: linear-gradient(90deg, var(--accent, #00d4ff) 0%, #0055ff 100%);
+  z-index: 9999;
+  transition: width 0.1s linear;
+  box-shadow: 0 0 8px rgba(0,212,255,0.6);
+}
+
+/* ─── Back-to-top button ─────────────────────────────── */
+#back-to-top {
+  position: fixed;
+  bottom: 2rem;
+  right: 1.5rem;
+  width: 44px; height: 44px;
+  background: rgba(0,212,255,0.12);
+  border: 1px solid rgba(0,212,255,0.25);
+  border-radius: 50%;
+  color: var(--accent, #00d4ff);
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.3s, transform 0.3s, background 0.2s;
+  z-index: 500;
+  pointer-events: none;
+}
+#back-to-top.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+#back-to-top:hover {
+  background: rgba(0,212,255,0.22);
+  box-shadow: 0 0 16px rgba(0,212,255,0.3);
+}
