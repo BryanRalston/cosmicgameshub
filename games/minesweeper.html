@@ -37,6 +37,10 @@
     .diff-row { display:flex; gap:0.5rem; margin-bottom:1rem; flex-wrap:wrap; justify-content:center; }
     .ms-result { display:none; background:var(--bg-card); border:1px solid var(--border-mid); border-radius:var(--radius); padding:1.5rem 2rem; text-align:center; margin-top:1rem; max-width:400px; }
     .ms-result.show { display:block; }
+    .ms-best { font-size:0.8rem; color:var(--text-lo); margin-bottom:0.75rem; }
+    .ms-best span { color:var(--accent); font-weight:700; }
+    .btn-share { background:transparent; border:1px solid rgba(255,255,255,0.15); color:var(--text-mid); border-radius:var(--radius-sm); padding:0.45rem 1rem; font-size:0.82rem; cursor:pointer; font-family:inherit; transition:all 0.15s; margin-left:0.5rem; }
+    .btn-share:hover { border-color:var(--accent); color:var(--accent); }
   </style>
 </head>
 <body>
@@ -82,8 +86,12 @@
       <div class="ms-result" id="msResult">
         <div id="resIcon" style="font-size:2.5rem;margin-bottom:0.5rem;"></div>
         <h2 id="resTitle" style="margin-bottom:0.5rem;"></h2>
-        <p id="resMsg" style="color:var(--text-mid);font-size:0.9rem;margin-bottom:1.25rem;"></p>
-        <button class="btn btn--primary" onclick="initGame()">Play Again</button>
+        <p id="resMsg" style="color:var(--text-mid);font-size:0.9rem;margin-bottom:0.5rem;"></p>
+        <p class="ms-best" id="resBest" style="display:none;"></p>
+        <div style="margin-top:1rem;">
+          <button class="btn btn--primary" onclick="initGame()">Play Again</button>
+          <button class="btn-share" id="shareBtn" onclick="shareResult()">📋 Share</button>
+        </div>
       </div>
     </div>
   </div>
@@ -213,9 +221,37 @@ function showResult(win){
   document.getElementById('resIcon').textContent  = win?'🏆':'☄️';
   document.getElementById('resTitle').textContent = win?'Field Cleared!':'Meteor Strike!';
   document.getElementById('resMsg').textContent   = win
-    ? `Cleared in ${timerSec} seconds. ${timerSec<60?'Impressive!':'Nice job!'}`
-    : 'You hit a meteor. Try again!';
+    ? `Cleared in ${timerSec}s on ${diff}.`
+    : `You hit a meteor on ${diff}. Try again!`;
+
+  const bestEl=document.getElementById('resBest');
+  if(win){
+    const key=`ms_best_${diff}`;
+    const prev=parseInt(localStorage.getItem(key)||'0',10);
+    if(!prev||timerSec<prev){
+      localStorage.setItem(key,timerSec);
+      bestEl.innerHTML=`🥇 New best for ${diff}: <span>${timerSec}s</span>`;
+    } else {
+      bestEl.innerHTML=`Best for ${diff}: <span>${prev}s</span>`;
+    }
+    bestEl.style.display='block';
+  } else {
+    const prev=parseInt(localStorage.getItem(`ms_best_${diff}`)||'0',10);
+    if(prev){ bestEl.innerHTML=`Your best for ${diff}: <span>${prev}s</span>`; bestEl.style.display='block'; }
+    else bestEl.style.display='none';
+  }
   panel.classList.add('show');
+}
+
+function shareResult(){
+  const won=document.getElementById('resTitle').textContent==='Field Cleared!';
+  const text=won
+    ?`☄️ Cosmic Minesweeper — Cleared ${diff} in ${timerSec}s!\ncosmicgameshub.com/games/minesweeper`
+    :`☄️ Cosmic Minesweeper — Hit a meteor on ${diff}!\ncosmicgameshub.com/games/minesweeper`;
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn=document.getElementById('shareBtn');
+    btn.textContent='✓ Copied!'; setTimeout(()=>btn.textContent='📋 Share',1800);
+  }).catch(()=>{ prompt('Copy this:',text); });
 }
 
 document.querySelectorAll('.difficulty-btn').forEach(btn=>{

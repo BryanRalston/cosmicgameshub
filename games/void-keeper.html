@@ -38,8 +38,13 @@
   }
   #overlay .final-label {
     font-size: 0.75rem; opacity: 0.4; letter-spacing: 0.12em;
-    text-transform: uppercase; margin-bottom: 2rem; display: none;
+    text-transform: uppercase; margin-bottom: 0.6rem; display: none;
   }
+  #overlay .best-score-line {
+    font-size: 0.72rem; opacity: 0; letter-spacing: 0.1em; color: #22D3EE;
+    margin-bottom: 1.8rem; transition: opacity 0.4s;
+  }
+  #overlay .best-score-line.show { opacity: 0.55; }
   #overlay .prompt {
     font-size: 0.7rem; opacity: 0.3; letter-spacing: 0.1em;
     animation: pulse 2.5s ease-in-out infinite;
@@ -74,7 +79,7 @@
 <body>
 
 <div id="lab-nav">
-  <a href="/lab" class="back-btn">← From the Lab</a>
+  <a href="/games" class="back-btn">← All Games</a>
   <a href="/" class="site-link">CosmicGamesHub</a>
 </div>
 
@@ -84,7 +89,8 @@
   <div class="sub">catch light, release noise</div>
   <div class="final-score" id="finalScore">0</div>
   <div class="final-label" id="finalLabel">thoughts kept</div>
-  <div class="prompt">click to begin</div>
+  <div class="best-score-line" id="bestScoreLine"></div>
+  <div class="prompt" id="overlayPrompt">click to begin</div>
 </div>
 <script>
 (() => {
@@ -93,6 +99,9 @@
   const overlay = document.getElementById('overlay');
   const finalScoreEl = document.getElementById('finalScore');
   const finalLabel = document.getElementById('finalLabel');
+  const bestScoreLine = document.getElementById('bestScoreLine');
+  const overlayPrompt = document.getElementById('overlayPrompt');
+  const VK_BEST_KEY = 'vk_best';
 
   // --- Audio ---
   let audioCtx = null;
@@ -231,6 +240,17 @@
     finalScoreEl.textContent = score;
     finalScoreEl.style.display = 'block';
     finalLabel.style.display = 'block';
+
+    const prev = parseInt(localStorage.getItem(VK_BEST_KEY) || '0', 10);
+    if (score > prev) {
+      localStorage.setItem(VK_BEST_KEY, score);
+      bestScoreLine.textContent = '✦ new best ✦';
+    } else if (prev > 0) {
+      bestScoreLine.textContent = `best: ${prev}`;
+    }
+    bestScoreLine.classList.add('show');
+    overlayPrompt.textContent = 'click to play again';
+
     setTimeout(() => {
       overlay.classList.remove('hidden');
     }, 600);
@@ -238,10 +258,10 @@
 
   function onClick() {
     if (!gameStarted || gameOver) {
-      if (!gameStarted) {
-        finalScoreEl.style.display = 'none';
-        finalLabel.style.display = 'none';
-      }
+      finalScoreEl.style.display = 'none';
+      finalLabel.style.display = 'none';
+      bestScoreLine.classList.remove('show');
+      overlayPrompt.textContent = 'click to begin';
       init();
     }
   }
@@ -426,6 +446,8 @@
       ctx.font = '13px "JetBrains Mono", "Fira Code", monospace';
       ctx.fillStyle = 'rgba(200,204,208,0.25)';
       ctx.textAlign = 'right';
+      const best = parseInt(localStorage.getItem(VK_BEST_KEY) || '0', 10);
+      if (best > 0) ctx.fillText(`best ${best}`, W - 24, H - 34);
       ctx.fillText(score, W - 24, H - 20);
 
       for (let i = 0; i < 5; i++) {

@@ -58,6 +58,13 @@
     .win-banner { display:none; background:linear-gradient(135deg,rgba(0,230,118,0.15),rgba(0,212,255,0.15)); border:1px solid rgba(0,230,118,0.4); border-radius:var(--radius); padding:1.5rem; text-align:center; margin-top:1rem; max-width:450px; }
     .win-banner.show { display:block; }
     .win-banner h2 { color:#00e676; margin-bottom:0.5rem; }
+    .fail-banner { display:none; background:linear-gradient(135deg,rgba(255,71,87,0.12),rgba(255,100,0,0.08)); border:1px solid rgba(255,71,87,0.35); border-radius:var(--radius); padding:1.5rem; text-align:center; margin-top:1rem; max-width:450px; }
+    .fail-banner.show { display:block; }
+    .fail-banner h2 { color:#ff4757; margin-bottom:0.5rem; }
+    .sdk-best { font-size:0.8rem; color:var(--text-lo); margin:0.4rem 0 1rem; }
+    .sdk-best span { color:var(--accent); font-weight:700; }
+    .btn-share { background:transparent; border:1px solid rgba(255,255,255,0.15); color:var(--text-mid); border-radius:var(--radius-sm); padding:0.45rem 1rem; font-size:0.82rem; cursor:pointer; font-family:inherit; transition:all 0.15s; margin-left:0.5rem; }
+    .btn-share:hover { border-color:var(--accent); color:var(--accent); }
   </style>
 </head>
 <body>
@@ -90,7 +97,14 @@
         <div id="board"></div>
         <div class="win-banner" id="winBanner">
           <h2>🎉 Puzzle Solved!</h2>
-          <p id="winMsg" style="color:var(--text-mid);margin-bottom:1rem;"></p>
+          <p id="winMsg" style="color:var(--text-mid);margin-bottom:0.25rem;"></p>
+          <p class="sdk-best" id="winBest"></p>
+          <button class="btn btn--primary" onclick="newGame()">New Puzzle</button>
+          <button class="btn-share" id="winShareBtn" onclick="shareWin()">📋 Share</button>
+        </div>
+        <div class="fail-banner" id="failBanner">
+          <h2>💥 Too Many Mistakes</h2>
+          <p style="color:var(--text-mid);margin-bottom:1rem;">3 mistakes made. Better luck next time!</p>
           <button class="btn btn--primary" onclick="newGame()">New Puzzle</button>
         </div>
       </div>
@@ -189,6 +203,7 @@ function newGame(forceDiff) {
   done=false; mistakes=0; hintsLeft=3; notesMode=false; selected=null;
   clearInterval(timerInt); timerSecs=0;
   document.getElementById('winBanner').classList.remove('show');
+  document.getElementById('failBanner').classList.remove('show');
   document.getElementById('noteBtn').textContent='✏️ Notes: OFF';
   document.getElementById('noteBtn').classList.remove('note-active');
   document.getElementById('hintBtn').textContent='💡 Hint (3 left)';
@@ -310,14 +325,35 @@ function checkWin(){
   for(let r=0;r<9;r++) for(let c=0;c<9;c++) if(userGrid[r][c]!==solved[r][c]) return;
   done=true; clearInterval(timerInt);
   const m=Math.floor(timerSecs/60), s=timerSecs%60;
-  document.getElementById('winMsg').textContent=`Solved in ${m}:${s.toString().padStart(2,'0')} with ${mistakes} mistake${mistakes!==1?'s':''}.`;
+  const timeStr=`${m}:${s.toString().padStart(2,'0')}`;
+  document.getElementById('winMsg').textContent=`Solved in ${timeStr} with ${mistakes} mistake${mistakes!==1?'s':''}.`;
+
+  const key=`sdk_best_${diff}`;
+  const prev=parseInt(localStorage.getItem(key)||'0',10);
+  const bestEl=document.getElementById('winBest');
+  if(!prev||timerSecs<prev){
+    localStorage.setItem(key,timerSecs);
+    bestEl.innerHTML=`🥇 New best for ${diff}: <span>${timeStr}</span>`;
+  } else {
+    const pm=Math.floor(prev/60), ps=prev%60;
+    bestEl.innerHTML=`Best for ${diff}: <span>${pm}:${ps.toString().padStart(2,'0')}</span>`;
+  }
   document.getElementById('winBanner').classList.add('show');
 }
 
 function gameover(){
   done=true; clearInterval(timerInt);
-  alert('Too many mistakes! Starting a new puzzle.');
-  newGame();
+  document.getElementById('failBanner').classList.add('show');
+}
+
+function shareWin(){
+  const m=Math.floor(timerSecs/60),s=timerSecs%60;
+  const timeStr=`${m}:${s.toString().padStart(2,'0')}`;
+  const text=`🧩 Sudoku (${diff}) — Solved in ${timeStr} with ${mistakes} mistake${mistakes!==1?'s':''}!\ncosmicgameshub.com/games/sudoku`;
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn=document.getElementById('winShareBtn');
+    btn.textContent='✓ Copied!'; setTimeout(()=>btn.textContent='📋 Share',1800);
+  }).catch(()=>{ prompt('Copy this:',text); });
 }
 
 function updateTimer(){
