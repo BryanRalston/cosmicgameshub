@@ -2041,6 +2041,109 @@ table th { border-bottom: 2px solid rgba(0,212,255,0.2); }
   font-size: 0.8rem !important;
 }
 
+/* ─── Quick-picks summary box ────────────────────────── */
+.quick-picks-box {
+  background: linear-gradient(135deg, rgba(0,212,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+  border: 1px solid rgba(0,212,255,0.15);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.quick-picks-box h2 {
+  font-size: 1rem !important;
+  border-left: none !important;
+  padding-left: 0 !important;
+  color: var(--accent) !important;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-size: 0.8rem !important;
+  margin: 0 0 1rem !important;
+}
+
+/* ─── FAQ item (h3+p pattern — not button toggle) ────── */
+.faq-list { display: flex; flex-direction: column; gap: 0.75rem; }
+.faq-item {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.faq-item h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-hi);
+  padding: 1rem 1.25rem;
+  margin: 0;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  transition: background 0.15s;
+  font-family: inherit;
+}
+.faq-item h3:hover { background: rgba(255,255,255,0.03); }
+.faq-item h3::after {
+  content: '+';
+  font-size: 1.2rem;
+  color: var(--accent);
+  flex-shrink: 0;
+  transition: transform 0.2s;
+  font-weight: 400;
+}
+.faq-item.open h3::after { transform: rotate(45deg); }
+.faq-item p {
+  max-height: 0;
+  overflow: hidden;
+  padding: 0 1.25rem;
+  color: var(--text-mid);
+  font-size: 0.88rem;
+  line-height: 1.7;
+  background: rgba(255,255,255,0.02);
+  border-top: 0 solid rgba(255,255,255,0.05);
+  transition: max-height 0.35s cubic-bezier(0.4,0,0.2,1), padding 0.3s ease, border-top-width 0.3s;
+  margin: 0;
+}
+.faq-item.open p {
+  max-height: 600px;
+  padding: 1rem 1.25rem;
+  border-top-width: 1px;
+}
+
+/* ─── Related guides grid ─────────────────────────────── */
+.related-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+.related-card {
+  display: block;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: var(--radius-sm);
+  padding: 0.9rem 1.1rem;
+  text-decoration: none;
+  transition: border-color 0.2s, background 0.2s, transform 0.2s;
+}
+.related-card:hover {
+  border-color: rgba(0,212,255,0.25);
+  background: rgba(0,212,255,0.04);
+  transform: translateY(-2px);
+  text-decoration: none;
+}
+.related-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 0.3rem;
+}
+.related-desc {
+  font-size: 0.78rem;
+  color: var(--text-lo);
+  line-height: 1.5;
+}
+
 /* ─── Breadcrumb — lighter ───────────────────────────── */
 .breadcrumbs { margin-bottom: 1.5rem; opacity: 0.7; }
 
