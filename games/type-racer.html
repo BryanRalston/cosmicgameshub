@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-D272MF8NQP"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-D272MF8NQP');
+  </script>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Type Racer — Typing Speed Test | CosmicGamesHub</title>
+  <meta name="description" content="Test your typing speed with gaming phrases. Real-time WPM, accuracy tracking, and grade system. Free browser typing game — no download needed."/>
+  <link rel="canonical" href="https://cosmicgameshub.com/games/type-racer"/>
+  <link rel="stylesheet" href="../styles.css"/>
+  <style>
+    /* ── Type Racer layout ───────────────────────────── */
+    .tr-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1.5rem 0 4rem;
+      gap: 1.25rem;
+    }
+
+    /* ── Mode selector ───────────────────────────────── */
+    .tr-modes {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    /* ── Stats bar ───────────────────────────────────── */
+    .tr-statsbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 760px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.75rem 1.5rem;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .tr-stat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.1rem;
+      min-width: 60px;
+    }
+    .tr-stat__val {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+      font-family: 'JetBrains Mono', 'Fira Mono', 'Courier New', monospace;
+      letter-spacing: -0.02em;
+    }
+    .tr-stat__val.wpm-live { color: var(--green); }
+    .tr-stat__val.acc-live { color: var(--amber); }
+    .tr-stat__val.timer-live { color: var(--accent); }
+    .tr-stat__label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-lo);
+    }
+    .tr-stat__pb {
+      font-size: 0.62rem;
+      color: var(--text-lo);
+      font-variant-numeric: tabular-nums;
+      margin-top: 0.1rem;
+    }
+
+    /* ── Phrase display ──────────────────────────────── */
+    .tr-phrase-wrap {
+      width: 100%;
+      max-width: 760px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-mid);
+      border-radius: var(--radius);
+      padding: 2rem 2rem 1.75rem;
+      position: relative;
+      overflow: hidden;
+    }
+    /* subtle scanline overlay */
+    .tr-phrase-wrap::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 3px,
+        rgba(0,212,255,0.018) 3px,
+        rgba(0,212,255,0.018) 4px
+      );
+      pointer-events: none;
+      border-radius: inherit;
+    }
+
+    .tr-phrase-text {
+      font-family: 'JetBrains Mono', 'Fira Mono', 'Courier New', monospace;
+      font-size: clamp(1rem, 2.5vw, 1.25rem);
+      line-height: 1.85;
+      letter-spacing: 0.02em;
+      color: var(--text-lo);
+      word-break: break-word;
+      user-select: none;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Character states */
+    .tr-char { transition: color 0.05s; }
+    .tr-char.correct { color: var(--green); }
+    .tr-char.error {
+      color: var(--red);
+      background: rgba(255,71,87,0.18);
+      border-radius: 2px;
+      animation: charShake 0.18s ease;
+    }
+    .tr-char.current {
+      color: var(--text-hi);
+      background: rgba(0,212,255,0.18);
+      border-radius: 3px;
+      outline: 1px solid rgba(0,212,255,0.5);
+      animation: cursorPulse 0.8s ease-in-out infinite;
+    }
+    .tr-char.current.error-hold {
+      background: rgba(255,71,87,0.22);
+      outline-color: var(--red);
+      animation: errorPulse 0.5s ease-in-out infinite;
+    }
+
+    @keyframes cursorPulse {
+      0%, 100% { background: rgba(0,212,255,0.18); }
+      50%       { background: rgba(0,212,255,0.32); }
+    }
+    @keyframes errorPulse {
+      0%, 100% { background: rgba(255,71,87,0.22); }
+      50%       { background: rgba(255,71,87,0.38); }
+    }
+    @keyframes charShake {
+      0%  { transform: translateX(0); }
+      25% { transform: translateX(-3px); }
+      75% { transform: translateX(3px); }
+      100%{ transform: translateX(0); }
+    }
+
+    /* Countdown overlay */
+    .tr-countdown {
+      position: absolute;
+      inset: 0;
+      background: rgba(6,6,10,0.82);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: inherit;
+      font-family: 'Outfit', sans-serif;
+      font-size: 5rem;
+      font-weight: 900;
+      color: var(--accent);
+      z-index: 10;
+      backdrop-filter: blur(4px);
+      animation: countFade 0.35s ease;
+    }
+    @keyframes countFade {
+      from { opacity: 0; transform: scale(1.3); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    .tr-countdown.hidden { display: none; }
+
+    /* ── Hidden input ────────────────────────────────── */
+    .tr-input-field {
+      position: absolute;
+      left: -9999px;
+      opacity: 0;
+      width: 1px;
+      height: 1px;
+    }
+
+    /* ── Click-to-focus hint ─────────────────────────── */
+    .tr-focus-hint {
+      text-align: center;
+      font-size: 0.82rem;
+      color: var(--text-lo);
+      letter-spacing: 0.04em;
+      transition: opacity 0.3s;
+    }
+    .tr-focus-hint.hidden { opacity: 0; pointer-events: none; }
+    .tr-focus-hint span { color: var(--accent); }
+
+    /* ── Controls row ────────────────────────────────── */
+    .tr-controls {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    /* ── Results card ────────────────────────────────── */
+    .tr-result {
+      display: none;
+      width: 100%;
+      max-width: 760px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-mid);
+      border-radius: var(--radius);
+      padding: 2.5rem 2rem 2rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .tr-result.show { display: block; animation: resultIn 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+    @keyframes resultIn {
+      from { opacity: 0; transform: scale(0.92) translateY(12px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    /* accent glow behind result card */
+    .tr-result::before {
+      content: '';
+      position: absolute;
+      top: -60px; left: 50%;
+      transform: translateX(-50%);
+      width: 300px; height: 300px;
+      background: radial-gradient(ellipse, rgba(0,212,255,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .tr-grade-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 88px;
+      height: 88px;
+      border-radius: 50%;
+      font-family: 'Outfit', sans-serif;
+      font-size: 3rem;
+      font-weight: 900;
+      margin-bottom: 1rem;
+      border: 3px solid currentColor;
+      position: relative;
+      animation: badgeSpin 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.1s both;
+    }
+    @keyframes badgeSpin {
+      from { opacity: 0; transform: scale(0.5) rotate(-15deg); }
+      to   { opacity: 1; transform: scale(1) rotate(0deg); }
+    }
+    .grade-S { color: #ffd700; background: rgba(255,215,0,0.1); box-shadow: 0 0 28px rgba(255,215,0,0.3); }
+    .grade-A { color: var(--green); background: rgba(0,230,118,0.08); box-shadow: 0 0 20px rgba(0,230,118,0.2); }
+    .grade-B { color: var(--accent); background: rgba(0,212,255,0.08); box-shadow: 0 0 16px rgba(0,212,255,0.18); }
+    .grade-C { color: var(--amber); background: rgba(255,179,0,0.08); box-shadow: 0 0 14px rgba(255,179,0,0.15); }
+    .grade-F { color: var(--red);   background: rgba(255,71,87,0.08);  box-shadow: 0 0 14px rgba(255,71,87,0.15);  }
+
+    .tr-result__stats {
+      display: flex;
+      justify-content: center;
+      gap: 2.5rem;
+      margin: 1.25rem 0 1.5rem;
+      flex-wrap: wrap;
+    }
+    .tr-result__stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.2rem;
+    }
+    .tr-result__stat-val {
+      font-family: 'JetBrains Mono', 'Fira Mono', monospace;
+      font-size: 2.2rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .tr-result__stat-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-lo);
+    }
+    .tr-result__pb-note {
+      font-size: 0.8rem;
+      color: var(--amber);
+      margin-bottom: 0.75rem;
+      display: none;
+    }
+    .tr-result__pb-note.show { display: block; }
+
+    .tr-result-btns {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    /* Share button success state */
+    .btn--share.copied { background: rgba(0,230,118,0.15) !important; border-color: var(--green) !important; color: var(--green) !important; }
+
+    /* ── Progress bar beneath phrase ────────────────── */
+    .tr-progress-wrap {
+      width: 100%;
+      max-width: 760px;
+    }
+    .tr-progress-bar {
+      width: 100%;
+      height: 3px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .tr-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--green));
+      border-radius: 99px;
+      width: 0%;
+      transition: width 0.15s ease;
+    }
+
+    /* ── Timer ring (compact) ────────────────────────── */
+    .tr-timer-ring {
+      position: relative;
+      width: 52px;
+      height: 52px;
+      flex-shrink: 0;
+    }
+    .tr-timer-ring svg {
+      transform: rotate(-90deg);
+    }
+    .tr-timer-ring__track {
+      fill: none;
+      stroke: rgba(255,255,255,0.06);
+      stroke-width: 3.5;
+    }
+    .tr-timer-ring__fill {
+      fill: none;
+      stroke: var(--accent);
+      stroke-width: 3.5;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 1s linear, stroke 0.3s;
+    }
+    .tr-timer-ring__label {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ── Responsive ──────────────────────────────────── */
+    @media (max-width: 600px) {
+      .tr-phrase-wrap { padding: 1.5rem 1.25rem; }
+      .tr-phrase-text { font-size: 0.9rem; line-height: 1.9; }
+      .tr-statsbar { padding: 0.6rem 1rem; gap: 0.5rem; }
+      .tr-stat__val { font-size: 1.4rem; }
+      .tr-result__stats { gap: 1.5rem; }
+      .tr-result__stat-val { font-size: 1.6rem; }
+      .tr-grade-badge { width: 72px; height: 72px; font-size: 2.4rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="container">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo"><span class="nav__logo-icon">🎮</span><span class="nav__logo-text">Cosmic<span>Games</span>Hub</span></a>
+      <ul class="nav__links" id="navLinks">
+        <li><a href="/games/sudoku">Sudoku</a></li>
+        <li><a href="/games/minesweeper">Minesweeper</a></li>
+        <li><a href="/games/memory-match">Memory Match</a></li>
+        <li><a href="/tools/aim-trainer">Aim Trainer</a></li>
+        <li><a href="/tools/reaction-time-test">Reaction Test</a></li>
+      </ul>
+      <button class="nav__hamburger" id="hamburger" aria-label="Open menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</nav>
+
+<main>
+  <div class="container">
+
+    <div style="padding:1.5rem 0 1rem; text-align:center;">
+      <span class="section__eyebrow">Typing Game</span>
+      <h1 style="margin-top:0.4rem; margin-bottom:0.25rem;">⌨️ Type Racer</h1>
+      <p style="color:var(--text-mid); font-size:0.9rem;">Type gaming phrases at full speed. Beat your best WPM.</p>
+    </div>
+
+    <div class="tr-wrap">
+
+      <!-- Mode selector -->
+      <div class="tr-modes">
+        <button class="difficulty-btn active" data-mode="30">30s</button>
+        <button class="difficulty-btn" data-mode="60">60s</button>
+        <button class="difficulty-btn" data-mode="90">90s</button>
+      </div>
+
+      <!-- Stats bar -->
+      <div class="tr-statsbar">
+        <div class="tr-stat">
+          <div class="tr-stat__val wpm-live" id="wpmDisplay">0</div>
+          <div class="tr-stat__label">⚡ WPM</div>
+          <div class="tr-stat__pb" id="pbDisplay">PB: —</div>
+        </div>
+
+        <!-- Timer ring in center -->
+        <div class="tr-timer-ring" id="timerRing">
+          <svg viewBox="0 0 52 52" width="52" height="52">
+            <circle class="tr-timer-ring__track" cx="26" cy="26" r="22"/>
+            <circle class="tr-timer-ring__fill" id="timerArc" cx="26" cy="26" r="22"
+              stroke-dasharray="138.23"
+              stroke-dashoffset="0"/>
+          </svg>
+          <div class="tr-timer-ring__label" id="timerLabel">—</div>
+        </div>
+
+        <div class="tr-stat">
+          <div class="tr-stat__val acc-live" id="accDisplay">—</div>
+          <div class="tr-stat__label">🎯 Accuracy</div>
+        </div>
+      </div>
+
+      <!-- Phrase display -->
+      <div class="tr-phrase-wrap" id="phraseWrap" tabindex="0" role="textbox" aria-label="Type the displayed phrase">
+        <div class="tr-phrase-text" id="phraseText" aria-live="polite"></div>
+        <div class="tr-countdown hidden" id="countdown"></div>
+        <input class="tr-input-field" id="hiddenInput" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-hidden="true"/>
+      </div>
+
+      <!-- Progress bar -->
+      <div class="tr-progress-wrap">
+        <div class="tr-progress-bar"><div class="tr-progress-fill" id="progressFill"></div></div>
+      </div>
+
+      <!-- Focus hint + restart -->
+      <div class="tr-controls">
+        <p class="tr-focus-hint" id="focusHint">Click the box above or press <span>any key</span> to start typing</p>
+        <button class="btn btn--ghost" id="restartBtn" style="display:none;" onclick="restartGame()">↺ Restart</button>
+      </div>
+
+      <!-- Results card -->
+      <div class="tr-result" id="resultCard">
+        <div class="tr-grade-badge" id="gradeBadge"></div>
+        <h2 id="resultTitle" style="margin-bottom:0.25rem; margin-top:0;"></h2>
+        <p id="resultMsg" style="color:var(--text-mid); font-size:0.9rem; margin-bottom:0;"></p>
+        <div class="tr-result__stats">
+          <div class="tr-result__stat-item">
+            <div class="tr-result__stat-val" id="resFinalWpm" style="color:var(--green);"></div>
+            <div class="tr-result__stat-label">WPM</div>
+          </div>
+          <div class="tr-result__stat-item">
+            <div class="tr-result__stat-val" id="resFinalAcc" style="color:var(--amber);"></div>
+            <div class="tr-result__stat-label">Accuracy</div>
+          </div>
+          <div class="tr-result__stat-item">
+            <div class="tr-result__stat-val" id="resFinalChars" style="color:var(--accent);"></div>
+            <div class="tr-result__stat-label">Chars Typed</div>
+          </div>
+        </div>
+        <p class="tr-result__pb-note" id="pbNote">🏆 New Personal Best!</p>
+        <div class="tr-result-btns">
+          <button class="btn btn--primary" onclick="restartGame()">Play Again</button>
+          <button class="btn btn--ghost btn--share" id="shareBtn" onclick="shareResult()">⌨️ Share</button>
+        </div>
+      </div>
+
+    </div><!-- /.tr-wrap -->
+  </div><!-- /.container -->
+</main>
+
+<footer class="footer"><div class="container"><div class="footer__bottom">
+  <p class="footer__legal">© 2026 CosmicGamesHub.</p>
+</div></div></footer>
+
+<script>
+// ─── Phrase bank ─────────────────────────────────────────────────────────────
+const PHRASES = [
+  "Press start to continue",
+  "You have died respawn in five four three two one",
+  "The cake is a lie",
+  "Stay a while and listen",
+  "A winner is you",
+  "It is dangerous to go alone take this",
+  "Do a barrel roll",
+  "The legend of zelda a link to the past",
+  "War never changes but technology does",
+  "The right man in the wrong place can make all the difference",
+  "Rise and shine mister Freeman rise and shine",
+  "Thank you mario but our princess is in another castle",
+  "You cannot simply walk into mordor",
+  "Get over here scorpion said",
+  "Finish him mortal kombat",
+  "Chosen undead to link the fire and save the realm",
+  "Praise the sun and light the bonfire",
+  "The floor is lava move quickly",
+  "Critical hit for massive damage",
+  "Build the wall destroy the nexus",
+  "Respawn incoming three seconds hold your position",
+  "Enemy spotted twelve oclock three hundred meters",
+  "Reload your weapon before entering the next room",
+  "Collect the coins and reach the flagpole",
+  "Game over insert coin to continue",
+  "New high score you are the champion",
+  "Player two has entered the game",
+  "Save your progress before you quit",
+  "Achievement unlocked one hundred percent complete",
+  "The boss is immune to conventional weapons",
+  "Equip better armor before the dungeon raid",
+  "Mana depleted unable to cast that spell",
+  "Health is critical find a potion fast",
+  "Combo multiplier times ten incredible",
+  "Quick save before the difficult section",
+  "Side quest completed bonus experience gained",
+  "Fast travel to the nearest waypoint",
+  "Unlock the skill tree upgrade before the next boss",
+  "Tactical retreat and heal up soldier",
+  "Ping is too high switching servers now",
+  "Clutch play in the final round outstanding",
+  "Headshot clean elimination well played",
+  "Tower defense wave incoming all units defend",
+  "Inventory full drop an item to proceed",
+  "Legendary item drop this is a great day",
+  "The map has been revealed explore the fog of war",
+  "Objective completed advance to the next checkpoint",
+  "Team eliminated better luck next match",
+  "Victory royale final player standing wins",
+  "Welcome back your save data has been loaded"
+];
+
+// ─── State ────────────────────────────────────────────────────────────────────
+let sessionPhrases = [];     // 10 shuffled phrases for this session
+let phraseIndex    = 0;
+let currentPhrase  = '';
+let charStates     = [];     // 'pending' | 'correct' | 'error' | 'error-hold'
+let cursorPos      = 0;
+let hasError       = false;  // cursor char is wrong
+let typedCount     = 0;      // total chars processed this game
+let errorCount     = 0;      // total errors committed
+let mode           = 30;     // seconds
+let timeLeft       = 30;
+let timerInt       = null;
+let wpmInt         = null;
+let gameState      = 'idle'; // 'idle' | 'running' | 'finished'
+let startTime      = 0;
+let correctChars   = 0;      // chars typed correctly (for WPM)
+let lastWpm        = 0;
+let lastAcc        = 0;
+let lastGrade      = '';
+
+// ─── DOM refs ────────────────────────────────────────────────────────────────
+const phraseTextEl  = document.getElementById('phraseText');
+const hiddenInput   = document.getElementById('hiddenInput');
+const wpmDisplay    = document.getElementById('wpmDisplay');
+const accDisplay    = document.getElementById('accDisplay');
+const timerLabel    = document.getElementById('timerLabel');
+const timerArc      = document.getElementById('timerArc');
+const progressFill  = document.getElementById('progressFill');
+const resultCard    = document.getElementById('resultCard');
+const focusHint     = document.getElementById('focusHint');
+const restartBtn    = document.getElementById('restartBtn');
+const pbDisplay     = document.getElementById('pbDisplay');
+const countdown     = document.getElementById('countdown');
+const phraseWrap    = document.getElementById('phraseWrap');
+
+// Ring circumference for r=22: 2π×22 ≈ 138.23
+const RING_CIRC = 138.23;
+
+// ─── Phrase helpers ───────────────────────────────────────────────────────────
+function shufflePhrases() {
+  const pool = [...PHRASES];
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, 10);
+}
+
+function loadPhrase() {
+  if (phraseIndex >= sessionPhrases.length) phraseIndex = 0;
+  currentPhrase = sessionPhrases[phraseIndex];
+  phraseIndex++;
+  charStates = Array(currentPhrase.length).fill('pending');
+  cursorPos  = 0;
+  hasError   = false;
+  renderPhrase();
+}
+
+// ─── Render ───────────────────────────────────────────────────────────────────
+function renderPhrase() {
+  const frags = currentPhrase.split('').map((ch, i) => {
+    let cls = 'tr-char ';
+    if (i === cursorPos) {
+      cls += 'current' + (hasError ? ' error-hold' : '');
+    } else {
+      cls += charStates[i] !== 'pending' ? charStates[i] : '';
+    }
+    const escaped = ch === ' ' ? '&nbsp;' : ch.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return `<span class="${cls.trim()}">${escaped}</span>`;
+  });
+  phraseTextEl.innerHTML = frags.join('');
+
+  // progress
+  const pct = currentPhrase.length > 0
+    ? Math.round((cursorPos / currentPhrase.length) * 100)
+    : 0;
+  progressFill.style.width = pct + '%';
+}
+
+// ─── Input handler ────────────────────────────────────────────────────────────
+hiddenInput.addEventListener('keydown', handleKeyDown);
+hiddenInput.addEventListener('input', handleInput);
+
+function handleKeyDown(e) {
+  // Backspace blocked — no correction allowed, must type through errors
+  if (e.key === 'Backspace') { e.preventDefault(); }
+}
+
+function handleInput(e) {
+  if (gameState === 'finished') return;
+  if (gameState === 'idle') startGame();
+  const typed = hiddenInput.value;
+  if (!typed) return;
+  const key = typed[typed.length - 1];
+  hiddenInput.value = '';
+  if (gameState !== 'running') return;
+  processChar(key);
+}
+
+function processChar(key) {
+  if (cursorPos >= currentPhrase.length) return;
+
+  typedCount++;
+  const expected = currentPhrase[cursorPos];
+
+  if (key === expected) {
+    // Correct key — clear any error state and advance
+    charStates[cursorPos] = 'correct';
+    correctChars++;
+    hasError = false;
+    cursorPos++;
+  } else {
+    // Wrong key — stay on current char, mark error; each wrong key costs accuracy
+    errorCount++;
+    hasError = true;
+    charStates[cursorPos] = 'error';
+  }
+
+  renderPhrase();
+
+  if (cursorPos >= currentPhrase.length) {
+    loadPhrase();
+  }
+}
+
+// ─── Start / timer ────────────────────────────────────────────────────────────
+function startGame() {
+  gameState  = 'running';
+  startTime  = Date.now();
+  timeLeft   = mode;
+  updateTimerDisplay();
+
+  timerInt = setInterval(() => {
+    timeLeft--;
+    updateTimerDisplay();
+    if (timeLeft <= 0) endGame();
+  }, 1000);
+
+  wpmInt = setInterval(() => {
+    updateLiveStats();
+  }, 500);
+
+  focusHint.classList.add('hidden');
+  restartBtn.style.display = 'inline-flex';
+}
+
+function updateTimerDisplay() {
+  timerLabel.textContent = timeLeft;
+  const pct = timeLeft / mode;
+  const offset = RING_CIRC * (1 - pct);
+  timerArc.style.strokeDashoffset = offset;
+  // Color shift: green → amber → red
+  if (pct > 0.5)      timerArc.style.stroke = 'var(--accent)';
+  else if (pct > 0.25) timerArc.style.stroke = 'var(--amber)';
+  else                  timerArc.style.stroke = 'var(--red)';
+}
+
+function updateLiveStats() {
+  if (gameState !== 'running') return;
+  const elapsed = (Date.now() - startTime) / 1000 / 60; // minutes
+  const wpm = elapsed > 0 ? Math.round(correctChars / 5 / elapsed) : 0;
+  const acc = typedCount > 0 ? Math.round(((typedCount - errorCount) / typedCount) * 100) : 100;
+  wpmDisplay.textContent = wpm;
+  accDisplay.textContent = acc + '%';
+  lastWpm = wpm;
+  lastAcc = acc;
+}
+
+// ─── End game ─────────────────────────────────────────────────────────────────
+function endGame() {
+  clearInterval(timerInt);
+  clearInterval(wpmInt);
+  gameState = 'finished';
+  timerLabel.textContent = '0';
+  timerArc.style.strokeDashoffset = RING_CIRC;
+
+  // Final stats
+  const elapsed = mode / 60; // minutes
+  const wpm = elapsed > 0 ? Math.round(correctChars / 5 / elapsed) : 0;
+  const acc = typedCount > 0 ? Math.round(((typedCount - errorCount) / typedCount) * 100) : 100;
+  lastWpm = wpm; lastAcc = acc;
+
+  wpmDisplay.textContent = wpm;
+  accDisplay.textContent = acc + '%';
+
+  // Grade
+  const grade = calcGrade(wpm, acc);
+  lastGrade = grade;
+
+  // Personal best
+  const pbKey = 'tr_pb_' + mode;
+  const prevPb = parseInt(localStorage.getItem(pbKey) || '0', 10);
+  const isNewPb = wpm > prevPb;
+  if (isNewPb) localStorage.setItem(pbKey, wpm);
+  updatePbDisplay();
+
+  // Show result
+  showResult(wpm, acc, grade, isNewPb);
+}
+
+function calcGrade(wpm, acc) {
+  if (wpm >= 90 && acc >= 95) return 'S';
+  if (wpm >= 70) return 'A';
+  if (wpm >= 50) return 'B';
+  if (wpm >= 30) return 'C';
+  return 'F';
+}
+
+function showResult(wpm, acc, grade, isNewPb) {
+  const badge = document.getElementById('gradeBadge');
+  badge.textContent = grade;
+  badge.className = 'tr-grade-badge grade-' + grade;
+
+  const titles = { S:'Legendary!', A:'Excellent!', B:'Nice Run!', C:'Keep Grinding', F:'Try Again!' };
+  const msgs   = {
+    S:'S-Rank speed. You are built different.',
+    A:'Sharp and fast. A-Rank performance.',
+    B:'Solid typing. B-Rank score.',
+    C:'C-Rank. Push the pace a little more.',
+    F:'F-Rank this round — warmup done, now go.'
+  };
+  document.getElementById('resultTitle').textContent = titles[grade];
+  document.getElementById('resultMsg').textContent   = msgs[grade];
+
+  document.getElementById('resFinalWpm').textContent  = wpm;
+  document.getElementById('resFinalAcc').textContent  = acc + '%';
+  document.getElementById('resFinalChars').textContent = typedCount;
+
+  const pbNote = document.getElementById('pbNote');
+  pbNote.classList.toggle('show', isNewPb);
+
+  resultCard.classList.add('show');
+}
+
+// ─── Restart ──────────────────────────────────────────────────────────────────
+function restartGame(newMode) {
+  clearInterval(timerInt);
+  clearInterval(wpmInt);
+
+  if (newMode) mode = newMode;
+
+  gameState    = 'idle';
+  typedCount   = 0;
+  errorCount   = 0;
+  correctChars = 0;
+  cursorPos    = 0;
+  hasError     = false;
+  timeLeft     = mode;
+  phraseIndex  = 0;
+
+  sessionPhrases = shufflePhrases();
+  loadPhrase();
+
+  wpmDisplay.textContent = '0';
+  accDisplay.textContent = '—';
+  timerLabel.textContent = '—';
+  timerArc.style.strokeDashoffset = '0';
+  timerArc.style.stroke = 'var(--accent)';
+  progressFill.style.width = '0%';
+
+  resultCard.classList.remove('show');
+  focusHint.classList.remove('hidden');
+  restartBtn.style.display = 'none';
+
+  updatePbDisplay();
+  hiddenInput.value = '';
+  hiddenInput.focus();
+}
+
+function updatePbDisplay() {
+  const pb = localStorage.getItem('tr_pb_' + mode);
+  pbDisplay.textContent = pb ? 'PB: ' + pb + ' wpm' : 'PB: —';
+}
+
+// ─── Share ────────────────────────────────────────────────────────────────────
+function shareResult() {
+  const text = `⌨️ Type Racer — ${lastWpm}wpm · ${lastAcc}% acc · Grade ${lastGrade}\ncosmicgameshub.com/games/type-racer`;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('shareBtn');
+      btn.textContent = '✓ Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = '⌨️ Share';
+        btn.classList.remove('copied');
+      }, 2200);
+    });
+  }
+}
+
+// ─── Focus management ─────────────────────────────────────────────────────────
+phraseWrap.addEventListener('click', () => hiddenInput.focus());
+document.addEventListener('keydown', (e) => {
+  if (gameState !== 'finished' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    hiddenInput.focus();
+  }
+});
+
+// ─── Mode selector ────────────────────────────────────────────────────────────
+document.querySelectorAll('[data-mode]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-mode]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    restartGame(parseInt(btn.dataset.mode, 10));
+  });
+});
+
+// ─── Hamburger ────────────────────────────────────────────────────────────────
+document.getElementById('hamburger').addEventListener('click', function () {
+  document.getElementById('navLinks').classList.toggle('open');
+  this.setAttribute('aria-expanded', document.getElementById('navLinks').classList.contains('open'));
+});
+
+// ─── Init ────────────────────────────────────────────────────────────────────
+sessionPhrases = shufflePhrases();
+loadPhrase();
+updatePbDisplay();
+hiddenInput.focus();
+</script>
+</body>
+</html>
