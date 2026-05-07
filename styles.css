@@ -1578,7 +1578,8 @@ tbody td:first-child { color: var(--text-hi); font-weight: 600; }
    ═══════════════════════════════════════════════════════ */
 
 /* ─── Article H1 — large hero headline ───────────────── */
-.article .container--narrow > h1 {
+.article .container--narrow > h1,
+.guide-main h1 {
   font-size: clamp(2rem, 4.5vw, 3.2rem);
   font-family: 'Outfit', sans-serif;
   font-weight: 900;
@@ -1589,7 +1590,8 @@ tbody td:first-child { color: var(--text-hi); font-weight: 600; }
 }
 
 /* ─── Article H2 — accent-bar section headers ────────── */
-.article h2 {
+.article h2,
+.guide-main h2 {
   font-size: 1.35rem;
   font-weight: 800;
   padding-left: 1rem;
@@ -1604,10 +1606,12 @@ tbody td:first-child { color: var(--text-hi); font-weight: 600; }
 .disclosure + h1 + * + h2 { margin-top: 2rem; }
 
 /* ─── Article ambient glow background ────────────────── */
-.article {
+.article,
+.guide-main {
   position: relative;
 }
-.article::before {
+.article::before,
+.guide-main::before {
   content: '';
   position: fixed;
   top: 0; left: 50%;

@@ -126,7 +126,7 @@
   }
 
   /* ── Reading progress bar (article pages only) ── */
-  var article = document.querySelector('.article');
+  var article = document.querySelector('.article, .guide-main');
   if (article) {
     var bar = document.createElement('div');
     bar.id = 'reading-progress';
@@ -138,7 +138,7 @@
     }, { passive: true });
   }
 
-  /* ── Back-to-top button (article pages only) ── */
+  /* ── Back-to-top button ── */
   if (article) {
     var btt = document.createElement('button');
     btt.id = 'back-to-top';
