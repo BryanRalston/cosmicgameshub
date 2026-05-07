@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-D272MF8NQP"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-D272MF8NQP');</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gaming Gear Price Guesser — How Well Do You Know Gear Prices? | CosmicGamesHub</title>
+  <meta name="description" content="Guess the price of gaming peripherals — 5 rounds, daily picks. The closer you are without going over, the more points you score. Free browser game." />
+  <link rel="canonical" href="https://cosmicgameshub.com/games/price-guesser" />
+  <link rel="stylesheet" href="../styles.css" />
+  <style>
+    :root { --g-a: #00d4ff; --g-b: #a855f7; --g-c: #4ade80; --g-w: #f87171; }
+    .pg-wrap { max-width: 620px; margin: 0 auto; padding: 0 1rem 3rem; }
+    .pg-header { text-align: center; padding: 2.5rem 1rem 1.5rem; }
+    .pg-header h1 { font-size: clamp(1.5rem, 4vw, 2.2rem); font-weight: 800; color: #fff; margin: 0 0 .4rem; }
+    .pg-header p { color: #aaa; font-size: .92rem; margin: 0; }
+    .pg-streak { display: inline-flex; align-items: center; gap: .4rem; background: rgba(255,179,0,.1); border: 1px solid rgba(255,179,0,.3); border-radius: 99px; font-size: .78rem; font-weight: 700; color: #ffb300; padding: .25rem .8rem; margin-top: .75rem; }
+
+    /* Progress */
+    .pg-progress { display: flex; justify-content: center; gap: .5rem; margin: 1.25rem 0; }
+    .pg-dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,.12); transition: background .3s; }
+    .pg-dot.done { background: var(--g-c); }
+    .pg-dot.active { background: var(--g-a); }
+
+    /* Score bar */
+    .pg-score-bar { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07); border-radius: 10px; padding: .75rem 1.25rem; margin-bottom: 1.5rem; font-size: .85rem; }
+    .pg-score-bar .label { color: #888; }
+    .pg-score-bar .value { font-weight: 700; color: var(--g-a); font-size: 1.1rem; }
+    .pg-round-label { font-size: .72rem; text-transform: uppercase; letter-spacing: .1em; color: #666; }
+
+    /* Product card */
+    .pg-product { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08); border-radius: 14px; padding: 1.5rem; margin-bottom: 1.25rem; }
+    .pg-product-category { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--g-a); margin-bottom: .4rem; }
+    .pg-product-name { font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0 0 .9rem; }
+    .pg-specs { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .5rem; }
+    .pg-spec { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); border-radius: 6px; font-size: .75rem; color: #bbb; padding: .22rem .65rem; }
+    .pg-hint { font-size: .78rem; color: #666; margin-top: .5rem; font-style: italic; }
+
+    /* Input */
+    .pg-input-row { display: flex; gap: .75rem; align-items: center; margin-bottom: .75rem; flex-wrap: wrap; }
+    .pg-price-input { flex: 1; min-width: 130px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12); border-radius: 8px; color: #fff; font-size: 1.3rem; font-weight: 700; padding: .65rem 1rem; font-family: inherit; }
+    .pg-price-input:focus { outline: none; border-color: var(--g-a); }
+    .pg-price-input::placeholder { color: #444; font-size: 1rem; font-weight: 400; }
+    .pg-submit { background: var(--g-a); color: #000; font-weight: 700; font-size: .95rem; padding: .7rem 1.6rem; border: none; border-radius: 8px; cursor: pointer; transition: background .2s, transform .1s; white-space: nowrap; }
+    .pg-submit:hover { background: #00b8db; }
+    .pg-submit:active { transform: scale(.97); }
+    .pg-submit:disabled { opacity: .4; cursor: default; }
+
+    /* Price range slider hint */
+    .pg-range-hint { font-size: .78rem; color: #666; text-align: center; margin-bottom: 1rem; }
+    .pg-range-hint span { color: #888; }
+
+    /* Result reveal */
+    .pg-result { display: none; border-radius: 12px; padding: 1.25rem; text-align: center; margin-bottom: 1.25rem; }
+    .pg-result.show { display: block; }
+    .pg-result--perfect { background: rgba(74,222,128,.1); border: 1px solid rgba(74,222,128,.3); }
+    .pg-result--close { background: rgba(0,212,255,.08); border: 1px solid rgba(0,212,255,.2); }
+    .pg-result--over { background: rgba(248,113,113,.08); border: 1px solid rgba(248,113,113,.2); }
+    .pg-result-amount { font-size: 1.8rem; font-weight: 900; margin: 0 0 .3rem; }
+    .pg-result--perfect .pg-result-amount { color: var(--g-c); }
+    .pg-result--close .pg-result-amount { color: var(--g-a); }
+    .pg-result--over .pg-result-amount { color: var(--g-w); }
+    .pg-result-message { font-size: .9rem; color: #ccc; margin: 0 0 .4rem; }
+    .pg-result-actual { font-size: .82rem; color: #888; }
+    .pg-result-pts { font-size: .78rem; font-weight: 700; color: #ffb300; margin-top: .3rem; }
+    .pg-next-btn { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12); color: #fff; font-weight: 700; font-size: .9rem; padding: .6rem 1.6rem; border-radius: 8px; cursor: pointer; transition: all .2s; margin-top: .75rem; }
+    .pg-next-btn:hover { background: rgba(255,255,255,.12); }
+
+    /* End screen */
+    .pg-end { display: none; text-align: center; }
+    .pg-end.show { display: block; }
+    .pg-end-score { font-size: 4rem; font-weight: 900; color: var(--g-a); line-height: 1; margin: 1rem 0 .25rem; }
+    .pg-end-label { font-size: .9rem; color: #888; margin-bottom: 1.5rem; }
+    .pg-grade-big { font-size: 2.5rem; font-weight: 900; margin: .5rem 0; }
+    .pg-grade-S { color: #ffd700; }
+    .pg-grade-A { color: var(--g-c); }
+    .pg-grade-B { color: var(--g-a); }
+    .pg-grade-C { color: #facc15; }
+    .pg-grade-D { color: #fb923c; }
+    .pg-grade-F { color: var(--g-w); }
+    .pg-grade-desc { font-size: .88rem; color: #aaa; margin: 0 0 1.5rem; }
+    .pg-share-box { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 10px; padding: 1rem; font-size: .82rem; color: #aaa; font-family: 'JetBrains Mono', monospace; white-space: pre-wrap; margin: 1rem 0; }
+    .pg-share-btn { background: var(--g-a); color: #000; font-weight: 700; padding: .65rem 1.6rem; border: none; border-radius: 8px; cursor: pointer; font-size: .9rem; transition: background .2s; }
+    .pg-share-btn:hover { background: #00b8db; }
+    .pg-share-copied { display: none; color: var(--g-c); font-size: .8rem; margin-top: .5rem; }
+    .pg-play-again { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); color: #ccc; font-weight: 700; padding: .6rem 1.4rem; border-radius: 8px; cursor: pointer; font-size: .88rem; transition: all .2s; margin-top: .5rem; }
+    .pg-play-again:hover { background: rgba(255,255,255,.1); color: #fff; }
+    .pg-tomorrow { font-size: .8rem; color: #666; margin-top: 1rem; }
+    .pg-countdown { color: var(--g-a); font-weight: 700; }
+    .pg-best-score { font-size: .82rem; color: #666; margin-top: .5rem; }
+
+    /* Round breakdown */
+    .pg-breakdown { margin: 1.5rem 0; text-align: left; }
+    .pg-breakdown-title { font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: #666; margin-bottom: .6rem; }
+    .pg-breakdown-row { display: flex; justify-content: space-between; align-items: center; padding: .45rem 0; border-bottom: 1px solid rgba(255,255,255,.05); font-size: .82rem; }
+    .pg-breakdown-row:last-child { border-bottom: none; }
+    .pg-breakdown-name { color: #ccc; flex: 1; padding-right: .5rem; }
+    .pg-breakdown-actual { color: #888; min-width: 55px; text-align: right; }
+    .pg-breakdown-pts { min-width: 55px; text-align: right; font-weight: 700; }
+    .pts-perfect { color: var(--g-c); }
+    .pts-close { color: var(--g-a); }
+    .pts-over { color: var(--g-w); }
+  </style>
+</head>
+<body>
+  <nav class="site-nav">
+    <a href="/" class="nav-logo">CosmicGamesHub</a>
+    <ul class="nav-links">
+      <li><a href="/guides">Guides</a></li>
+      <li><a href="/versus">Comparisons</a></li>
+      <li><a href="/games">Games</a></li>
+    </ul>
+  </nav>
+
+  <main>
+    <div class="pg-header">
+      <h1>Gaming Gear Price Guesser</h1>
+      <p>5 rounds · Guess the Amazon price · Closer = more points</p>
+      <div class="pg-streak" id="streakBadge">🔥 Streak: 0 days</div>
+    </div>
+
+    <div class="pg-wrap">
+      <div class="pg-progress" id="progressDots"></div>
+
+      <div class="pg-score-bar">
+        <div><div class="pg-round-label" id="roundLabel">Round 1 of 5</div></div>
+        <div style="text-align:right;"><span class="label">Score </span><span class="value" id="scoreDisplay">0</span></div>
+      </div>
+
+      <!-- Game area -->
+      <div id="gameArea">
+        <div class="pg-product" id="productCard">
+          <div class="pg-product-category" id="productCategory"></div>
+          <div class="pg-product-name" id="productName"></div>
+          <div class="pg-specs" id="productSpecs"></div>
+          <div class="pg-hint" id="productHint"></div>
+        </div>
+
+        <div class="pg-range-hint">Typical gaming gear range: <span>$25 – $400</span></div>
+
+        <div class="pg-input-row">
+          <input type="number" class="pg-price-input" id="priceInput" placeholder="Your price guess ($)" min="1" max="1000" step="1" />
+          <button class="pg-submit" id="submitBtn">Guess →</button>
+        </div>
+
+        <div class="pg-result" id="resultBox">
+          <div class="pg-result-amount" id="resultAmount"></div>
+          <div class="pg-result-message" id="resultMessage"></div>
+          <div class="pg-result-actual" id="resultActual"></div>
+          <div class="pg-result-pts" id="resultPts"></div>
+          <button class="pg-next-btn" id="nextBtn">Next Round →</button>
+        </div>
+      </div>
+
+      <!-- End screen -->
+      <div class="pg-end" id="endScreen">
+        <div style="font-size:1rem;color:#888;margin-bottom:.5rem;" id="endDateLabel"></div>
+        <div class="pg-end-score" id="endScore">0</div>
+        <div class="pg-end-label">out of 500 pts</div>
+        <div class="pg-grade-big" id="gradeDisplay"></div>
+        <div class="pg-grade-desc" id="gradeDesc"></div>
+
+        <div class="pg-breakdown" id="breakdown"></div>
+
+        <div class="pg-share-box" id="shareBox"></div>
+        <button class="pg-share-btn" id="shareBtn">📋 Copy Result</button>
+        <div class="pg-share-copied" id="shareCopied">Copied!</div>
+        <br/>
+        <button class="pg-play-again" id="playAgainBtn">Play Again (New Picks)</button>
+        <div class="pg-tomorrow">Daily picks reset at midnight · <span class="pg-countdown" id="countdown"></span></div>
+        <div class="pg-best-score" id="bestScoreDisplay"></div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>© 2026 CosmicGamesHub · <a href="/about">About</a> · <a href="/games">Games</a> · <a href="/">Home</a></p>
+    <p class="affiliate-disclosure">As an Amazon Associate we earn from qualifying purchases.</p>
+  </footer>
+
+  <script>
+  // ── Product database ──────────────────────────────────────
+  const PRODUCTS = [
+    // Headsets
+    { cat: "Headsets", name: "HyperX Cloud Stinger Gen 2", price: 49, specs: ["50mm drivers","3.5mm universal","Swivel-to-mute mic","275g"], hint: "Budget wired headset, works on all platforms" },
+    { cat: "Headsets", name: "Corsair HS65 Wireless", price: 99, specs: ["2.4GHz + BT 5.2","24hr battery","282g","Dolby Atmos"], hint: "Mid-range wireless, wired vs wireless toss-up at this tier" },
+    { cat: "Headsets", name: "Razer Kraken V3 (Wired)", price: 99, specs: ["USB wired","THX Spatial Audio","322g","HyperClear mic"], hint: "Wired USB-A, spatial audio, same price as many wireless headsets" },
+    { cat: "Headsets", name: "SteelSeries Arctis Nova 7", price: 149, specs: ["2.4GHz + BT 5.0","38hr battery","300g","ClearCast mic"], hint: "Popular dual-wireless mid-tier SteelSeries" },
+    { cat: "Headsets", name: "Corsair HS80 RGB Wireless", price: 149, specs: ["2.4GHz","20hr battery","354g","Dolby Atmos"], hint: "Corsair wireless flagship at mid-range price" },
+    { cat: "Headsets", name: "HyperX Cloud Alpha Wireless", price: 199, specs: ["2.4GHz","300hr battery","335g","Dual-chamber drivers"], hint: "Famous for extreme battery life, detachable mic" },
+    { cat: "Headsets", name: "SteelSeries Arctis Nova Pro Wireless", price: 350, specs: ["2.4GHz + BT 5.0","Swappable battery","ANC","ClearCast Gen 2"], hint: "Flagship with active noise cancellation and base station" },
+    { cat: "Headsets", name: "Sony Pulse 3D Wireless", price: 99, specs: ["USB-A dongle","12hr battery","Tempest 3D Audio","293g"], hint: "PS5-native wireless headset from Sony" },
+
+    // Mice
+    { cat: "Mice", name: "Logitech G203 LIGHTSYNC", price: 29, specs: ["8000 DPI","85g","USB wired","6 buttons"], hint: "Budget wired entry point, reliable Logitech tracking" },
+    { cat: "Mice", name: "Logitech G305 LIGHTSPEED", price: 49, specs: ["HERO 25K","99g","LIGHTSPEED wireless","250hr battery"], hint: "Wireless on a budget, AA battery" },
+    { cat: "Mice", name: "Razer DeathAdder V3", price: 69, specs: ["Focus Pro 30K","59g","USB wired","Optical switches"], hint: "Ultralight ergonomic, 59g is notably light for an ergonomic design" },
+    { cat: "Mice", name: "Logitech G502 X (Wired)", price: 59, specs: ["HERO 25K","89g","LIGHTFORCE switches","13 buttons"], hint: "Feature-rich wired flagship with hybrid switches" },
+    { cat: "Mice", name: "Razer Basilisk V3 (Wired)", price: 69, specs: ["Focus+ 26K","101g","4-mode scroll wheel","11 buttons"], hint: "Heavy feature mouse with customizable scroll resistance" },
+    { cat: "Mice", name: "Razer Basilisk V3 Pro (Wireless)", price: 159, specs: ["Focus Pro 30K","112g","2.4GHz + BT","11 buttons","HyperScroll"], hint: "Premium wireless version of the feature Basilisk line" },
+    { cat: "Mice", name: "Logitech G Pro X Superlight 2", price: 159, specs: ["HERO 25K","60g","LIGHTSPEED wireless","Symmetrical"], hint: "The lightest premium wireless — used by pro FPS players" },
+
+    // Keyboards
+    { cat: "Keyboards", name: "Redragon K552 KUMARA", price: 39, specs: ["Outemu Blue switches","TKL layout","Metal alloy","Red LED"], hint: "Budget mechanical, 22,000+ Amazon reviews" },
+    { cat: "Keyboards", name: "SteelSeries Apex 3 TKL", price: 44, specs: ["Whisper Quiet membrane","IP32 splash resist","10-zone RGB","TKL"], hint: "Budget quiet membrane, silent enough for offices" },
+    { cat: "Keyboards", name: "Corsair K100 RGB", price: 199, specs: ["8000Hz AXON","OPX optical","Full-size","iCUE"], hint: "Flagship wired Corsair with 8x polling rate" },
+    { cat: "Keyboards", name: "SteelSeries Apex Pro TKL", price: 179, specs: ["Hall Effect","0.2mm actuation","TKL","OLED display"], hint: "OmniPoint adjustable Hall Effect switches, miniature OLED" },
+    { cat: "Keyboards", name: "Logitech G915 TKL LIGHTSPEED", price: 159, specs: ["GL switches (low-profile)","LIGHTSPEED + BT","40hr battery","TKL"], hint: "Low-profile wireless TKL with Bluetooth" },
+    { cat: "Keyboards", name: "Corsair K65 RGB Wireless", price: 139, specs: ["Cherry MX Speed","2.4GHz AXON","75hr battery","Aircraft aluminum"], hint: "Standard-profile wireless TKL with extreme battery" },
+    { cat: "Keyboards", name: "Razer Huntsman V3 Pro", price: 199, specs: ["Analog optical","Full-size","8000Hz polling","SOCD detection"], hint: "Analog actuation flagship from Razer, full-size" },
+
+    // Monitors
+    { cat: "Monitors", name: "AOC 24G2 24\" Gaming Monitor", price: 129, specs: ["1080p IPS","144Hz","1ms GtG","FreeSync Premium"], hint: "Budget IPS gaming monitor, popular for 1080p 144Hz entry" },
+    { cat: "Monitors", name: "LG 27GP850-B", price: 249, specs: ["1440p Nano IPS","165Hz OC 180Hz","1ms GtG","27\""], hint: "The popular 1440p sweet-spot monitor from LG" },
+    { cat: "Monitors", name: "ASUS VG279QM", price: 279, specs: ["1080p IPS","280Hz","1ms GtG","G-Sync Compatible","27\""], hint: "Fastest 1080p IPS panel, used by competitive players" },
+    { cat: "Monitors", name: "ASUS ROG Swift PG279QM", price: 499, specs: ["1440p Fast IPS","240Hz","1ms GtG","G-Sync Compatible","27\""], hint: "Premium 1440p high-refresh, ROG Swift line" },
+    { cat: "Monitors", name: "Samsung Odyssey G7 27\"", price: 549, specs: ["1440p VA QLED","240Hz","1000R curve","DisplayHDR 400","27\""], hint: "Curved 1440p QLED, aggressive 1000R curvature" },
+    { cat: "Monitors", name: "LG 27GP950-B", price: 699, specs: ["4K Nano IPS","144Hz OC 160Hz","2× HDMI 2.1","HDR 600","27\""], hint: "4K gaming monitor with console-grade HDMI 2.1 for PS5/Xbox" },
+  ];
+
+  // ── Seeded PRNG (Mulberry32) ──────────────────────────────
+  function mulberry32(seed) {
+    return function() {
+      seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+      let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  function getDayOfYear() {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 0);
+    return Math.floor((now - start) / 86400000);
+  }
+
+  function getDailyProducts(count) {
+    const seed = getDayOfYear() * 13 + 7;
+    const rng = mulberry32(seed);
+    const shuffled = [...PRODUCTS].sort(() => rng() - 0.5);
+    return shuffled.slice(0, count);
+  }
+
+  // ── Scoring ───────────────────────────────────────────────
+  function calcScore(guess, actual) {
+    if (guess > actual) return { pts: 0, type: 'over' };
+    const diff = actual - guess;
+    const pct = diff / actual;
+    if (pct === 0) return { pts: 100, type: 'perfect' };
+    if (pct <= 0.05) return { pts: 95, type: 'close' };  // within 5%
+    if (pct <= 0.10) return { pts: 85, type: 'close' };  // within 10%
+    if (pct <= 0.20) return { pts: 70, type: 'close' };  // within 20%
+    if (pct <= 0.35) return { pts: 50, type: 'close' };  // within 35%
+    if (pct <= 0.50) return { pts: 30, type: 'close' };  // within 50%
+    return { pts: 10, type: 'close' };                   // under but far
+  }
+
+  function getGrade(score) {
+    if (score >= 480) return { grade: 'S', desc: 'Gear Oracle — you track prices obsessively.' };
+    if (score >= 420) return { grade: 'A', desc: 'Price Pro — you know your gear.' };
+    if (score >= 340) return { grade: 'B', desc: 'Solid knowledge — well informed gamer.' };
+    if (score >= 250) return { grade: 'C', desc: 'Decent — a few surprises caught you.' };
+    if (score >= 150) return { grade: 'D', desc: 'Some studying needed.' };
+    return { grade: 'F', desc: 'Time to start reading gear guides.' };
+  }
+
+  // ── State ─────────────────────────────────────────────────
+  const ROUNDS = 5;
+  let products = [];
+  let round = 0;
+  let totalScore = 0;
+  let roundResults = [];
+  let alreadyPlayed = false;
+
+  // Load streak and best
+  const STREAK_KEY = 'pg_streak';
+  const LAST_KEY = 'pg_last_day';
+  const BEST_KEY = 'pg_best';
+  let streak = parseInt(localStorage.getItem(STREAK_KEY) || '0');
+  let lastDay = parseInt(localStorage.getItem(LAST_KEY) || '-1');
+  let bestScore = parseInt(localStorage.getItem(BEST_KEY) || '0');
+  const today = getDayOfYear();
+
+  function updateStreakBadge() {
+    document.getElementById('streakBadge').textContent = `🔥 Streak: ${streak} day${streak === 1 ? '' : 's'}`;
+  }
+
+  // ── DOM helpers ───────────────────────────────────────────
+  function buildDots() {
+    const c = document.getElementById('progressDots');
+    c.innerHTML = '';
+    for (let i = 0; i < ROUNDS; i++) {
+      const d = document.createElement('div');
+      d.className = 'pg-dot' + (i < round ? ' done' : i === round ? ' active' : '');
+      c.appendChild(d);
+    }
+  }
+
+  function showProduct(p) {
+    document.getElementById('productCategory').textContent = p.cat;
+    document.getElementById('productName').textContent = p.name;
+    const specsEl = document.getElementById('productSpecs');
+    specsEl.innerHTML = p.specs.map(s => `<span class="pg-spec">${s}</span>`).join('');
+    document.getElementById('productHint').textContent = `💡 ${p.hint}`;
+    document.getElementById('priceInput').value = '';
+    document.getElementById('priceInput').focus();
+    document.getElementById('resultBox').className = 'pg-result';
+    document.getElementById('submitBtn').disabled = false;
+    document.getElementById('priceInput').disabled = false;
+    document.getElementById('roundLabel').textContent = `Round ${round + 1} of ${ROUNDS}`;
+    buildDots();
+  }
+
+  function showResult(guess, actual, pts, type) {
+    const rb = document.getElementById('resultBox');
+    rb.className = `pg-result show pg-result--${type}`;
+    const diff = actual - guess;
+    const msgs = {
+      perfect: ['💯 EXACT PRICE!', '🎯 Nailed it!', '👑 Perfect guess!'],
+      close: diff <= actual * 0.05 ? ['🔥 Super close!', '⚡ Almost exact!'] :
+             diff <= actual * 0.20 ? ['👍 Good guess!', '💪 Solid read!'] :
+             ['Not bad!', '🤔 Decent estimate'],
+      over: ['🔴 Too high — went over!', '❌ Over budget!', '💸 Priced too high!']
+    };
+    const pool = msgs[type];
+    document.getElementById('resultAmount').textContent = `$${guess}`;
+    document.getElementById('resultMessage').textContent = pool[Math.floor(Math.random() * pool.length)];
+    document.getElementById('resultActual').textContent = `Actual price: $${actual}`;
+    document.getElementById('resultPts').textContent = `+${pts} pts`;
+    document.getElementById('nextBtn').textContent = round + 1 >= ROUNDS ? 'See Final Score →' : 'Next Round →';
+  }
+
+  function showEndScreen() {
+    document.getElementById('gameArea').style.display = 'none';
+    document.getElementById('progressDots').style.display = 'none';
+
+    const endEl = document.getElementById('endScreen');
+    endEl.className = 'pg-end show';
+
+    const d = new Date();
+    document.getElementById('endDateLabel').textContent = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    document.getElementById('endScore').textContent = totalScore;
+
+    const { grade, desc } = getGrade(totalScore);
+    const gradeEl = document.getElementById('gradeDisplay');
+    gradeEl.textContent = grade;
+    gradeEl.className = `pg-grade-big pg-grade-${grade}`;
+    document.getElementById('gradeDesc').textContent = desc;
+
+    // Breakdown
+    const bk = document.getElementById('breakdown');
+    bk.innerHTML = `<div class="pg-breakdown-title">Round Breakdown</div>`;
+    roundResults.forEach((r, i) => {
+      const cls = r.type === 'perfect' ? 'pts-perfect' : r.type === 'over' ? 'pts-over' : 'pts-close';
+      bk.innerHTML += `<div class="pg-breakdown-row">
+        <span class="pg-breakdown-name">${r.name}</span>
+        <span class="pg-breakdown-actual">$${r.actual}</span>
+        <span class="pg-breakdown-pts ${cls}">+${r.pts}</span>
+      </div>`;
+    });
+
+    // Share text
+    const emoji = roundResults.map(r => r.type === 'perfect' ? '💯' : r.type === 'over' ? '🔴' : r.pts >= 85 ? '🟢' : r.pts >= 50 ? '🟡' : '🔵').join(' ');
+    const shareText = `Gaming Gear Price Guesser\n${d.toLocaleDateString()}\n${emoji}\nScore: ${totalScore}/500 (${grade})\n🎮 cosmicgameshub.com/games/price-guesser`;
+    document.getElementById('shareBox').textContent = shareText;
+    document.getElementById('shareBtn').addEventListener('click', () => {
+      navigator.clipboard.writeText(shareText).then(() => {
+        document.getElementById('shareCopied').style.display = 'block';
+        setTimeout(() => document.getElementById('shareCopied').style.display = 'none', 2000);
+      });
+    });
+
+    // Best score
+    if (totalScore > bestScore) {
+      bestScore = totalScore;
+      localStorage.setItem(BEST_KEY, bestScore);
+    }
+    document.getElementById('bestScoreDisplay').textContent = `Personal best: ${bestScore}/500`;
+
+    // Countdown
+    function updateCountdown() {
+      const now = new Date();
+      const midnight = new Date(now);
+      midnight.setHours(24, 0, 0, 0);
+      const diff = midnight - now;
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      document.getElementById('countdown').textContent = `Next set in ${h}h ${m}m ${s}s`;
+    }
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+
+    // Update streak
+    if (lastDay !== today) {
+      if (lastDay === today - 1) streak++;
+      else streak = 1;
+      localStorage.setItem(STREAK_KEY, streak);
+      localStorage.setItem(LAST_KEY, today);
+      updateStreakBadge();
+    }
+  }
+
+  // ── Init ──────────────────────────────────────────────────
+  function startGame(useDailyProducts) {
+    products = useDailyProducts ? getDailyProducts(ROUNDS) : [...PRODUCTS].sort(() => Math.random() - 0.5).slice(0, ROUNDS);
+    round = 0;
+    totalScore = 0;
+    roundResults = [];
+    document.getElementById('scoreDisplay').textContent = '0';
+    document.getElementById('endScreen').className = 'pg-end';
+    document.getElementById('gameArea').style.display = '';
+    document.getElementById('progressDots').style.display = '';
+    showProduct(products[0]);
+  }
+
+  // Submit guess
+  document.getElementById('submitBtn').addEventListener('click', handleGuess);
+  document.getElementById('priceInput').addEventListener('keydown', e => { if (e.key === 'Enter') handleGuess(); });
+
+  function handleGuess() {
+    const val = parseInt(document.getElementById('priceInput').value);
+    if (!val || val < 1) { document.getElementById('priceInput').focus(); return; }
+    document.getElementById('submitBtn').disabled = true;
+    document.getElementById('priceInput').disabled = true;
+
+    const p = products[round];
+    const { pts, type } = calcScore(val, p.price);
+    totalScore += pts;
+    roundResults.push({ name: p.name, actual: p.price, guess: val, pts, type });
+    document.getElementById('scoreDisplay').textContent = totalScore;
+    showResult(val, p.price, pts, type);
+  }
+
+  // Next round
+  document.getElementById('nextBtn').addEventListener('click', () => {
+    round++;
+    if (round >= ROUNDS) {
+      showEndScreen();
+    } else {
+      showProduct(products[round]);
+    }
+  });
+
+  // Play again with random picks
+  document.getElementById('playAgainBtn').addEventListener('click', () => startGame(false));
+
+  // Init
+  updateStreakBadge();
+  startGame(true);
+  </script>
+</body>
+</html>

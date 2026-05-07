@@ -53,32 +53,10 @@
     {"id": "homepage-seo-update", "done": "2026-05-07", "notes": "Fixed cat-subnav dead links (daily-challenge→crossword, /tools/aim-trainer→/games/aim-trainer, reaction-time-test→reaction-trainer). Updated games count to 16. Refreshed arcade strip. Updated versus featured cards to newer comparisons + View All 18 CTA. Footer Compare+Play Free updated. Commit fb21d57."},
     {"id": "game-upgrade-remaining", "done": "2026-05-07", "notes": "Full audit: all 16 games have appropriate restart/reset flows for their game type. Daily-seeded games (crossword, word-scramble, rift, gamerdle, pixle, gaming-trivia) have result modals with share+close. Arcade games (asteroid-dodge, void-keeper, type-racer, aim-trainer, reaction-trainer, beat-lab, memory-match, minesweeper, sudoku, color-memory) all have restart/play-again flows. No fixes needed."},
     {"id": "versus-mouse-4", "done": "2026-05-07", "notes": "G502 X (~$60, HERO 25K LIGHTFORCE, 89g, 13 buttons, B0B6KWMF3X) vs Basilisk V3 (~$70, Focus+ 26K optical, 101g, SmartReel 4-mode scroll, B09J6XCCGX). Full versus page. Commit 8ff0ad9."},
-    {"id": "guide-best-gaming-setup-upgrade", "done": "2026-05-07", "notes": "Upgrade path table added (budget→upgrade per slot with cost+gain). Relevant Comparisons section with 4 versus cards. FAQ expanded 4→7 questions. Nav fixed from old site-header to site-nav. Footer updated. Commit d6042d2."}
+    {"id": "guide-best-gaming-setup-upgrade", "done": "2026-05-07", "notes": "Upgrade path table added (budget→upgrade per slot with cost+gain). Relevant Comparisons section with 4 versus cards. FAQ expanded 4→7 questions. Nav fixed from old site-header to site-nav. Footer updated. Commit d6042d2."},
+    {"id": "game-score-guesser", "done": "2026-05-07", "notes": "Gaming Gear Price Guesser — 28 products (headsets/mice/keyboards/monitors), 5 daily rounds seeded by Mulberry32 PRNG, Price is Right scoring (over=0pts, exact=100pts, progressive tiers). S/A/B/C/D/F grades, streak tracking, personal best, share with emoji grid, play-again random mode. Games hub updated to 18, sitemap updated."}
   ],
-  "queue": [
-    {"id": "guide-ps5-headsets", "done": "2026-05-07", "notes": "committed above"},
-    {
-      "id": "versus-keyboard-wireless",
-      "type": "new-page",
-      "priority": 4,
-      "title": "Versus: Logitech G915 TKL vs Corsair K65 RGB Wireless",
-      "description": "Premium wireless keyboard showdown. Both ~$130-160. Low-profile GL switches vs AXON Cherry MX. Battle for the wireless keyboard crown."
-    },
-    {
-      "id": "guide-ps5-headsets",
-      "type": "new-page",
-      "priority": 3,
-      "title": "Guide: Best Gaming Headsets for PS5 2026",
-      "description": "PS5-specific headset guide. Sony Pulse 3D, Pulse Elite, Arctis Nova Pro Wireless, HyperX Cloud Alpha Wireless, Corsair HS80. 3D Audio compatibility, USB-A vs USB-C dongle, Tempest 3D AudioTech."
-    },
-    {
-      "id": "game-score-guesser",
-      "type": "new-game",
-      "priority": 3,
-      "title": "New Game: Gaming Gear Price Guesser",
-      "description": "Show a gaming peripheral (name + key specs), player guesses the Amazon price within a range. 5 rounds, Price is Right style scoring (closest without going over). Daily seeded picks. Share button."
-    }
-  ],
+  "queue": [],
   "loop_log": [
     {"iteration": 1, "date": "2026-05-07", "tasks_completed": ["schema-guide-headsets","schema-guide-mice","schema-guide-keyboards","schema-guide-chairs","schema-guide-monitors","schema-versus-all","og-images-all","about-page"], "commits": ["dcd862c"], "notes": "Schema markup and og:images on all 11 guide/versus pages. About page."},
     {"iteration": 2, "date": "2026-05-07", "tasks_completed": ["fix-amazon-links"], "commits": ["f9f0ba7"], "notes": "All 25 amazon.com/s?k= search URLs replaced with direct dp/ASIN links."},
@@ -90,6 +68,8 @@
     {"iteration": 8, "date": "2026-05-07", "tasks_completed": ["homepage-seo-update","game-upgrade-remaining"], "commits": ["fb21d57"], "notes": "Homepage: cat-subnav dead links fixed, games count updated to 16, arcade strip updated, versus section refreshed with newer comparisons + View All CTA, footer updated. Game audit: all 16 games confirmed to have appropriate restart flows."},
     {"iteration": 9, "date": "2026-05-07", "tasks_completed": ["versus-mouse-4"], "commits": ["8ff0ad9"], "notes": "G502 X (~$60, HERO 25K LIGHTFORCE, 89g, 13 buttons) vs Basilisk V3 (~$70, Focus+ 26K optical, 101g, SmartReel 4-mode scroll). Full versus page. Verdict: G502 X for value+switches, Basilisk V3 for scroll+RGB. Homepage count updated to 19 comparisons."},
     {"iteration": 10, "date": "2026-05-07", "tasks_completed": ["fps-guide-nav-fix","orphan-pages-audit","guide-best-gaming-setup-upgrade"], "commits": ["d6042d2","c13aad4"], "notes": "FPS guide: nav fixed, related section + 3 versus cards. Budget guide: upgrade table, 4 versus links, FAQ 4→7, nav fixed. daily-challenge.html: nav fixed, added to games hub (17 games), added to sitemap. dream-machine: left in /lab, correct location."},
-    {"iteration": 11, "date": "2026-05-07", "tasks_completed": ["guide-ps5-headsets"], "commits": ["f4d60d6"], "notes": "PS5 headset guide: 5 picks (Pulse 3D $99, Pulse Elite $149, Cloud Alpha Wireless $200, HS80 $149, Nova Pro Wireless $350). Connection hierarchy table (USB-native > 2.4GHz > BT > 3.5mm). Quick-picks table. 5-question FAQ. Added to guides index + sitemap."}
+    {"iteration": 11, "date": "2026-05-07", "tasks_completed": ["guide-ps5-headsets"], "commits": ["f4d60d6"], "notes": "PS5 headset guide: 5 picks (Pulse 3D $99, Pulse Elite $149, Cloud Alpha Wireless $200, HS80 $149, Nova Pro Wireless $350). Connection hierarchy table (USB-native > 2.4GHz > BT > 3.5mm). Quick-picks table. 5-question FAQ. Added to guides index + sitemap."},
+    {"iteration": 12, "date": "2026-05-07", "tasks_completed": ["versus-keyboard-wireless"], "commits": ["a46e4a4"], "notes": "G915 TKL (LIGHTSPEED+BT 5.1, GL low-profile, 40hr RGB, ~$160) vs K65 RGB Wireless (AXON, Cherry MX Speed, 75hr RGB, ~$140). Full versus page. Homepage count updated to 20 comparisons."},
+    {"iteration": 13, "date": "2026-05-07", "tasks_completed": ["game-score-guesser"], "commits": [], "notes": "Gaming Gear Price Guesser: 28-product database, daily seeded 5 rounds (Mulberry32 PRNG), Price is Right scoring, S-F grades, streak+PB tracking, share button with emoji grid. Games hub: 17→18. Homepage: 17→18. Sitemap updated."}
   ]
 }
