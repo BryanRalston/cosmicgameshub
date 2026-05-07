@@ -45,16 +45,10 @@
     {"id": "guide-best-gaming-keyboards-upgrade", "done": "2026-05-07", "notes": "Added 5-tier quick-picks table (switch type column). Added K100 vs Apex Pro TKL link and FPS guide link to comparisons section."},
     {"id": "guide-best-gaming-monitors-upgrade", "done": "2026-05-07", "notes": "Added 5-tier quick-picks table (panel/Hz column). Added PG279QM vs S2722DGM link and FPS guide link to comparisons section."},
     {"id": "game-color-memory", "done": "2026-05-07", "notes": "Simon Says color memory game. 4-color grid, sequence builds each round, dot progress visualizer, personal best, share. Games hub updated to 15 games."},
-    {"id": "versus-keyboard-budget", "done": "2026-05-07", "notes": "SteelSeries Apex 3 TKL ($45, Whisper Quiet Membrane, IP32, 10-zone RGB) vs Redragon K552 KUMARA ($40, Outemu Blue mechanical, metal alloy, red LED). Membrane vs mechanical entry-level showdown. Grok Imagine hero image. Sitemap updated."}
+    {"id": "versus-keyboard-budget", "done": "2026-05-07", "notes": "SteelSeries Apex 3 TKL ($45, Whisper Quiet Membrane, IP32, 10-zone RGB) vs Redragon K552 KUMARA ($40, Outemu Blue mechanical, metal alloy, red LED). Membrane vs mechanical entry-level showdown. Grok Imagine hero image. Commit fb391a3."},
+    {"id": "versus-headset-4", "done": "2026-05-07", "notes": "Razer Kraken V3 ($99.99, wired USB-A, 50mm TriForce Titanium, THX Spatial Audio, HyperClear Cardioid mic, 322g) vs Corsair HS65 Wireless ($99.99, 2.4GHz+BT, 50mm Neodymium, 24hr battery, 282g). Wired precision vs wireless freedom at same price. Grok Imagine hero image."}
   ],
   "queue": [
-    {
-      "id": "versus-headset-4",
-      "type": "new-page",
-      "priority": 2,
-      "title": "Versus: Razer Kraken V3 vs Corsair HS65 Wireless",
-      "description": "Mid-tier wireless headset comparison under $100. High-volume search terms for budget wireless headset buyers."
-    },
     {
       "id": "versus-monitor-3",
       "type": "new-page",
@@ -137,9 +131,9 @@
     {
       "iteration": 7,
       "date": "2026-05-07",
-      "tasks_completed": ["versus-keyboard-budget"],
-      "commits": [],
-      "notes": "SteelSeries Apex 3 TKL vs Redragon K552 KUMARA. Membrane vs mechanical entry-level showdown. Grok Imagine hero image. Sitemap updated."
+      "tasks_completed": ["versus-keyboard-budget","versus-headset-4"],
+      "commits": ["fb391a3"],
+      "notes": "SteelSeries Apex 3 TKL vs Redragon K552 (membrane vs mechanical budget). Razer Kraken V3 vs Corsair HS65 Wireless (wired THX vs wireless freedom at same $99.99 price). Grok Imagine images for both."
     }
   ]
 }
