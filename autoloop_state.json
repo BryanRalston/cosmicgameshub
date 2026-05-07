@@ -41,9 +41,67 @@
     {"id": "versus-headset-3", "done": "2026-05-07", "notes": "Arctis Nova 7 vs Cloud Alpha Wireless: dual wireless + BT vs 300hr battery. 6-category breakdown, spec table, 4 key diffs, 6-question FAQ."},
     {"id": "versus-mouse-3", "done": "2026-05-07", "notes": "Logitech G403 ($50, 87g, HERO 25K) vs Razer DeathAdder V3 ($70, 59g, Focus Pro 30K, optical switches). Budget ergonomic vs ultralight competitive. 6-category breakdown, 4 key diffs, 5-question FAQ."},
     {"id": "guide-best-gaming-headsets-upgrade", "done": "2026-05-07", "notes": "Added quick-picks summary table (5 tiers at a glance). Added Nova 7 vs Cloud Alpha Wireless and wireless headsets guide links to comparisons section."},
-    {"id": "guide-best-gaming-mice-upgrade", "done": "2026-05-07", "notes": "Added quick-picks summary table with weight column. Added G403 vs DeathAdder V3 and Basilisk vs G502 X Plus links to comparisons section."}
+    {"id": "guide-best-gaming-mice-upgrade", "done": "2026-05-07", "notes": "Added quick-picks summary table with weight column. Added G403 vs DeathAdder V3 and Basilisk vs G502 X Plus links to comparisons section."},
+    {"id": "guide-best-gaming-keyboards-upgrade", "done": "2026-05-07", "notes": "Added 5-tier quick-picks table (switch type column). Added K100 vs Apex Pro TKL link and FPS guide link to comparisons section."},
+    {"id": "guide-best-gaming-monitors-upgrade", "done": "2026-05-07", "notes": "Added 5-tier quick-picks table (panel/Hz column). Added PG279QM vs S2722DGM link and FPS guide link to comparisons section."}
   ],
   "queue": [
+    {
+      "id": "versus-keyboard-budget",
+      "type": "new-page",
+      "priority": 2,
+      "title": "Versus: SteelSeries Apex 3 TKL vs Redragon K552",
+      "description": "Budget keyboard comparison: entry-level membrane vs budget mechanical. Strong search volume from gamers choosing their first mechanical keyboard."
+    },
+    {
+      "id": "versus-headset-4",
+      "type": "new-page",
+      "priority": 2,
+      "title": "Versus: Razer Kraken V3 vs Corsair HS65 Wireless",
+      "description": "Mid-tier wireless headset comparison under $100. High-volume search terms for budget wireless headset buyers."
+    },
+    {
+      "id": "game-color-memory",
+      "type": "new-game",
+      "priority": 2,
+      "title": "New Game: Color Sequence Memory",
+      "description": "Simon-says style color memory game. 4-color grid flashes a sequence, player must repeat it in order. Starts at length 3, increases each round. High score tracked."
+    },
+    {
+      "id": "versus-monitor-3",
+      "type": "new-page",
+      "priority": 3,
+      "title": "Versus: LG 27GP950-B vs Samsung Odyssey G7",
+      "description": "4K/1440p high-end monitor comparison. LG Nano IPS 4K vs Samsung curved 1440p. Target enthusiast monitor buyers."
+    },
+    {
+      "id": "game-crossword",
+      "type": "new-game",
+      "priority": 3,
+      "title": "New Game: Gaming Crossword",
+      "description": "Daily mini-crossword with gaming-themed clues (game titles, characters, publishers, gaming terms). 5x5 or 7x7 grid. Seeded daily so everyone gets the same puzzle."
+    },
+    {
+      "id": "homepage-seo-update",
+      "type": "seo",
+      "priority": 3,
+      "title": "Homepage: add new content sections",
+      "description": "Add New Comparisons section to homepage listing the 4+ new versus pages built since last homepage update. Add Games section with top 3 game picks."
+    },
+    {
+      "id": "versus-mouse-4",
+      "type": "new-page",
+      "priority": 4,
+      "title": "Versus: Logitech G502 X vs Razer Basilisk V3",
+      "description": "Wired feature-rich mouse comparison. Both heavy utility mice with side buttons. Target MMO/general gamers choosing between them."
+    },
+    {
+      "id": "guide-best-gaming-setup-upgrade",
+      "type": "content",
+      "priority": 4,
+      "title": "Upgrade best-gaming-setup-under-500 guide",
+      "description": "Add upgrade path table, link to new versus pages relevant to the budget build picks, add FAQ."
+    }
   ],
   "loop_log": [
     {
