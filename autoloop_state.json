@@ -46,16 +46,10 @@
     {"id": "guide-best-gaming-monitors-upgrade", "done": "2026-05-07", "notes": "Added 5-tier quick-picks table (panel/Hz column). Added PG279QM vs S2722DGM link and FPS guide link to comparisons section."},
     {"id": "game-color-memory", "done": "2026-05-07", "notes": "Simon Says color memory game. 4-color grid, sequence builds each round, dot progress visualizer, personal best, share. Games hub updated to 15 games."},
     {"id": "versus-keyboard-budget", "done": "2026-05-07", "notes": "SteelSeries Apex 3 TKL ($45, Whisper Quiet Membrane, IP32, 10-zone RGB) vs Redragon K552 KUMARA ($40, Outemu Blue mechanical, metal alloy, red LED). Membrane vs mechanical entry-level showdown. Grok Imagine hero image. Commit fb391a3."},
-    {"id": "versus-headset-4", "done": "2026-05-07", "notes": "Razer Kraken V3 ($99.99, wired USB-A, 50mm TriForce Titanium, THX Spatial Audio, HyperClear Cardioid mic, 322g) vs Corsair HS65 Wireless ($99.99, 2.4GHz+BT, 50mm Neodymium, 24hr battery, 282g). Wired precision vs wireless freedom at same price. Grok Imagine hero image."}
+    {"id": "versus-headset-4", "done": "2026-05-07", "notes": "Razer Kraken V3 ($99.99, wired USB-A, 50mm TriForce Titanium, THX Spatial Audio, HyperClear Cardioid mic, 322g) vs Corsair HS65 Wireless ($99.99, 2.4GHz+BT, 50mm Neodymium, 24hr battery, 282g). Wired precision vs wireless freedom at same price. Commit 8be24be."},
+    {"id": "versus-monitor-3", "done": "2026-05-07", "notes": "LG 27GP950-B ($699, 4K Nano IPS, 144Hz OC 160Hz, DisplayHDR 600, 2x HDMI 2.1) vs Samsung Odyssey G7 ($549, 1440p VA QLED, 240Hz, 2500:1, 1000R curve). 4K fidelity + console ports vs competitive speed + immersive curve. Grok Imagine hero image."}
   ],
   "queue": [
-    {
-      "id": "versus-monitor-3",
-      "type": "new-page",
-      "priority": 3,
-      "title": "Versus: LG 27GP950-B vs Samsung Odyssey G7",
-      "description": "4K/1440p high-end monitor comparison. LG Nano IPS 4K vs Samsung curved 1440p. Target enthusiast monitor buyers."
-    },
     {
       "id": "game-crossword",
       "type": "new-game",
@@ -131,9 +125,9 @@
     {
       "iteration": 7,
       "date": "2026-05-07",
-      "tasks_completed": ["versus-keyboard-budget","versus-headset-4"],
-      "commits": ["fb391a3"],
-      "notes": "SteelSeries Apex 3 TKL vs Redragon K552 (membrane vs mechanical budget). Razer Kraken V3 vs Corsair HS65 Wireless (wired THX vs wireless freedom at same $99.99 price). Grok Imagine images for both."
+      "tasks_completed": ["versus-keyboard-budget","versus-headset-4","versus-monitor-3"],
+      "commits": ["fb391a3","8be24be"],
+      "notes": "Apex 3 TKL vs K552 (membrane vs mechanical budget). Kraken V3 vs HS65 Wireless (wired THX vs wireless freedom). LG 27GP950-B vs Odyssey G7 (4K Nano IPS vs 240Hz VA QLED). Grok Imagine images for all three."
     }
   ]
 }
