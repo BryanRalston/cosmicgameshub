@@ -37,16 +37,10 @@
     {"id": "sitemap-update-2", "done": "2026-05-07", "notes": "Added corsair-k100-rgb-vs-steelseries-apex-pro-tkl. All new pages now indexed."},
     {"id": "versus-monitor-2", "done": "2026-05-07", "notes": "ASUS ROG Swift PG279QM (240Hz Fast IPS) vs Dell S2722DGM (165Hz VA curved). 6 category breakdown, spec table, 4 key diffs, FAQ. Sitemap updated."},
     {"id": "game-reaction-trainer", "done": "2026-05-07", "notes": "Reaction Time Trainer — 5-round click-when-green game. Grades S/A/B/C/D/F, personal best localStorage, share button, spacebar support, smooth CSS transitions."},
-    {"id": "game-fps-aim-trainer", "done": "2026-05-07", "notes": "FPS Aim Trainer — canvas target clicking game with 30/60/90s modes. Timer arcs, accuracy %, hits/sec, personal best, share button. Games hub updated."}
+    {"id": "game-fps-aim-trainer", "done": "2026-05-07", "notes": "FPS Aim Trainer — canvas target clicking game with 30/60/90s modes. Timer arcs, accuracy %, hits/sec, personal best, share button. Games hub updated."},
+    {"id": "versus-headset-3", "done": "2026-05-07", "notes": "Arctis Nova 7 vs Cloud Alpha Wireless: dual wireless + BT vs 300hr battery. 6-category breakdown, spec table, 4 key diffs, 6-question FAQ."}
   ],
   "queue": [
-    {
-      "id": "versus-headset-3",
-      "type": "new-page",
-      "priority": 3,
-      "title": "Versus: SteelSeries Arctis Nova 7 vs HyperX Cloud Alpha Wireless",
-      "description": "Mid-tier wireless headset comparison — both under $150. Arctis Nova 7 (multi-platform, 360° spatial) vs Cloud Alpha Wireless (6-month battery, dual chamber). Strong search volume."
-    },
     {
       "id": "versus-mouse-3",
       "type": "new-page",
