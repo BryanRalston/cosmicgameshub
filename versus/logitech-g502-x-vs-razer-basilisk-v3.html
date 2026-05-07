@@ -162,14 +162,29 @@
   </style>
 </head>
 <body>
-  <nav class="site-nav">
-    <a href="/" class="nav-logo">CosmicGamesHub</a>
-    <ul class="nav-links">
-      <li><a href="/guides">Guides</a></li>
-      <li><a href="/versus">Comparisons</a></li>
-      <li><a href="/games">Games</a></li>
-    </ul>
-  </nav>
+  <nav class="nav" role="navigation" aria-label="Main navigation">
+  <div class="container">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo" aria-label="CosmicGamesHub home">
+        <span class="nav__logo-icon">🎮</span>
+        <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
+      </a>
+      <ul class="nav__links">
+        <li><a href="/guides/best-gaming-headsets-2026">Headsets</a></li>
+        <li><a href="/guides/best-gaming-mice-2026">Mice</a></li>
+        <li><a href="/guides/best-gaming-chairs">Chairs</a></li>
+        <li><a href="/guides/best-gaming-keyboards-2026">Keyboards</a></li>
+        <li><a href="/guides/best-gaming-monitors-2026">Monitors</a></li>
+        <li><a href="/games">Games</a></li>
+        <li><a href="/versus">Comparisons</a></li>
+        <li><a href="/tools/gaming-fps-calculator" class="nav__cta btn">Free Tools</a></li>
+      </ul>
+      <button class="nav__hamburger" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
 
   <main>
     <nav class="breadcrumb" aria-label="Breadcrumb" style="max-width:860px;margin:1rem auto;padding:0 1rem;">
@@ -411,5 +426,6 @@
     <p>© 2026 CosmicGamesHub · <a href="/about">About</a> · <a href="/games">Games</a> · <a href="/">Home</a></p>
     <p class="affiliate-disclosure">As an Amazon Associate we earn from qualifying purchases. Prices may vary.</p>
   </footer>
+<script src="/global.js" defer></script>
 </body>
 </html>

@@ -1424,4 +1424,129 @@ tbody td:first-child { color: var(--text-hi); font-weight: 600; }
 ::-webkit-scrollbar       { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg-void); }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
+/* ─── Nav scroll shadow ───────────────────────────── */
+.nav--scrolled {
+  background: rgba(5,5,8,0.96) !important;
+  box-shadow: 0 1px 0 rgba(0,212,255,0.1), 0 8px 32px rgba(0,0,0,0.5);
+  backdrop-filter: blur(18px);
+}
+
+/* ─── Active nav link ─────────────────────────────── */
+.nav__links a.active {
+  color: var(--accent, #00d4ff);
+}
+.nav__links a.active::after {
+  content: '';
+  display: block;
+  height: 2px;
+  background: var(--accent, #00d4ff);
+  border-radius: 2px;
+  margin-top: 2px;
+}
+
+/* ─── Universal scroll-reveal for auto-observed cards ─ */
+.product-card.js-reveal,
+.guide-card.js-reveal,
+.game-card.js-reveal,
+.cat-card.js-reveal,
+.versus-card.js-reveal,
+.feature-card.js-reveal,
+.stat-block.js-reveal,
+.faq__item.js-reveal,
+.faq-item.js-reveal,
+.disclosure.js-reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.65s ease, transform 0.65s ease;
+}
+.product-card.revealed,
+.guide-card.revealed,
+.game-card.revealed,
+.cat-card.revealed,
+.versus-card.revealed,
+.feature-card.revealed,
+.stat-block.revealed,
+.faq__item.revealed,
+.faq-item.revealed,
+.disclosure.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ─── Guide/versus/tools page hero polish ────────────── */
+.page-hero {
+  text-align: center;
+  padding: 3.5rem 1rem 2rem;
+  position: relative;
+}
+.page-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 70% 55% at 50% 0%, rgba(0,212,255,0.07) 0%, transparent 70%);
+  pointer-events: none;
+}
+.page-hero h1 {
+  font-size: clamp(1.9rem, 4.5vw, 3rem);
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #fff;
+  margin: 0 0 0.75rem;
+  position: relative;
+}
+.page-hero p {
+  color: #aaa;
+  max-width: 560px;
+  margin: 0 auto;
+  font-size: 1rem;
+  line-height: 1.6;
+  position: relative;
+}
+.page-hero__badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent, #00d4ff);
+  background: rgba(0,212,255,0.1);
+  border: 1px solid rgba(0,212,255,0.2);
+  border-radius: 20px;
+  padding: 0.25rem 0.85rem;
+  margin-bottom: 1rem;
+}
+
+/* ─── Staggered reveal delay for grid children ───────── */
+.guide-cards .guide-card:nth-child(1),
+.product-grid .product-card:nth-child(1) { transition-delay: 0ms; }
+.guide-cards .guide-card:nth-child(2),
+.product-grid .product-card:nth-child(2) { transition-delay: 80ms; }
+.guide-cards .guide-card:nth-child(3),
+.product-grid .product-card:nth-child(3) { transition-delay: 160ms; }
+.guide-cards .guide-card:nth-child(4),
+.product-grid .product-card:nth-child(4) { transition-delay: 240ms; }
+.guide-cards .guide-card:nth-child(5),
+.product-grid .product-card:nth-child(5) { transition-delay: 320ms; }
+.guide-cards .guide-card:nth-child(6),
+.product-grid .product-card:nth-child(6) { transition-delay: 80ms; }
+
+/* ─── Glow on guide-card flashlight ─────────────────── */
+.guide-card {
+  --cx: -200px;
+  --cy: -200px;
+}
+.guide-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(300px circle at var(--cx) var(--cy), rgba(0,212,255,0.1) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+  z-index: 0;
+}
+.guide-cards:hover .guide-card::before { opacity: 1; }
 ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
