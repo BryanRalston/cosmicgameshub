@@ -584,6 +584,7 @@ canvas#gameCanvas {
   <div class="results-buttons">
     <button class="results-btn primary" id="btn-play-again">PLAY AGAIN</button>
     <button class="results-btn" id="btn-back-menu">BACK TO MENU</button>
+    <button class="results-btn" id="btn-share-result" style="background:transparent;border-color:rgba(255,255,255,0.15);font-size:0.8rem;">📋 SHARE</button>
   </div>
 </div>
 
@@ -1610,6 +1611,17 @@ document.getElementById('btn-play-again').addEventListener('click', function() {
 
 document.getElementById('btn-back-menu').addEventListener('click', function() {
   showTitle();
+});
+
+document.getElementById('btn-share-result').addEventListener('click', function() {
+  var grade = document.getElementById('results-grade').textContent;
+  var score = document.getElementById('results-score').textContent;
+  var text = '🎵 Beat Lab — Grade ' + grade + ' · Score ' + score + '\ncosmicgameshub.com/games/beat-lab';
+  navigator.clipboard.writeText(text).then(function() {
+    var btn = document.getElementById('btn-share-result');
+    btn.textContent = '✓ COPIED!';
+    setTimeout(function() { btn.textContent = '📋 SHARE'; }, 1800);
+  }).catch(function() { prompt('Copy this:', text); });
 });
 
 

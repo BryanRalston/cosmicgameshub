@@ -35,6 +35,10 @@
 
     .win-panel { display:none; background:var(--bg-card); border:1px solid var(--border-mid); border-radius:var(--radius-lg); padding:2rem; text-align:center; max-width:400px; }
     .win-panel.show { display:block; }
+    .mm-best { font-size:0.8rem; color:var(--text-lo); margin:0.25rem 0 1rem; }
+    .mm-best span { color:var(--accent); font-weight:700; }
+    .btn-share { background:transparent; border:1px solid rgba(255,255,255,0.15); color:var(--text-mid); border-radius:var(--radius-sm); padding:0.45rem 1rem; font-size:0.82rem; cursor:pointer; font-family:inherit; transition:all 0.15s; margin-left:0.5rem; }
+    .btn-share:hover { border-color:var(--accent); color:var(--accent); }
     .theme-row { display:flex; gap:0.4rem; flex-wrap:wrap; justify-content:center; }
     .theme-btn { background:var(--bg-card); border:1px solid var(--border); border-radius:999px; padding:0.3rem 0.8rem; font-size:0.8rem; font-weight:600; cursor:pointer; font-family:inherit; color:var(--text-mid); transition:all 0.15s; }
     .theme-btn:hover { border-color:var(--border-mid); color:var(--text-hi); }
@@ -97,8 +101,10 @@
       <div class="win-panel" id="winPanel">
         <div style="font-size:2.5rem;margin-bottom:0.5rem;">🏆</div>
         <h2 style="color:#00e676;margin-bottom:0.5rem;">All Pairs Found!</h2>
-        <p id="winMsg" style="color:var(--text-mid);margin-bottom:1.25rem;"></p>
+        <p id="winMsg" style="color:var(--text-mid);margin-bottom:0.25rem;"></p>
+        <p class="mm-best" id="winBest"></p>
         <button class="btn btn--primary" onclick="startGame()">Play Again</button>
+        <button class="btn-share" id="mmShareBtn" onclick="mmShare()">📋 Share</button>
       </div>
     </div>
   </div>
@@ -179,9 +185,30 @@ function checkMatch(){
 function win(){
   clearInterval(timerInt);
   const m=Math.floor(timerSec/60),s=timerSec%60;
+  const timeStr=`${m}:${s.toString().padStart(2,'0')}`;
   const efficiency=Math.round((totalPairs/moves)*100);
-  document.getElementById('winMsg').textContent=`${totalPairs} pairs in ${moves} moves (${efficiency}% efficiency) — ${m}:${s.toString().padStart(2,'0')}`;
+  document.getElementById('winMsg').textContent=`${totalPairs} pairs · ${moves} moves · ${efficiency}% efficiency · ${timeStr}`;
+
+  const key=`mm_best_${gridSize}`;
+  const prev=parseInt(localStorage.getItem(key)||'0',10);
+  const bestEl=document.getElementById('winBest');
+  if(!prev||timerSec<prev){
+    localStorage.setItem(key,timerSec);
+    bestEl.innerHTML=`🥇 New best for ${gridSize}: <span>${timeStr}</span>`;
+  } else {
+    const pm=Math.floor(prev/60),ps=prev%60;
+    bestEl.innerHTML=`Best for ${gridSize}: <span>${pm}:${ps.toString().padStart(2,'0')}</span>`;
+  }
   document.getElementById('winPanel').classList.add('show');
+}
+
+function mmShare(){
+  const msg=document.getElementById('winMsg').textContent;
+  const text=`🃏 Memory Match — ${msg}\ncosmicgameshub.com/games/memory-match`;
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn=document.getElementById('mmShareBtn');
+    btn.textContent='✓ Copied!'; setTimeout(()=>btn.textContent='📋 Share',1800);
+  }).catch(()=>{ prompt('Copy this:',text); });
 }
 
 document.querySelectorAll('.theme-btn').forEach(btn=>{
