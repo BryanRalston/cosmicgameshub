@@ -1,0 +1,94 @@
+{
+  "version": 1,
+  "last_updated": "2026-05-07",
+  "completed": [
+    {"id": "schema-guide-headsets", "done": "2026-05-07", "notes": "BreadcrumbList + Article + ItemList with 5 products"},
+    {"id": "schema-guide-mice", "done": "2026-05-07", "notes": "BreadcrumbList + Article + ItemList with 5 products"},
+    {"id": "schema-guide-keyboards", "done": "2026-05-07", "notes": "BreadcrumbList + Article + ItemList with 5 products"},
+    {"id": "schema-guide-chairs", "done": "2026-05-07", "notes": "BreadcrumbList + Article + ItemList with 5 products"},
+    {"id": "schema-guide-monitors", "done": "2026-05-07", "notes": "BreadcrumbList + Article + ItemList with 5 products"},
+    {"id": "schema-versus-all", "done": "2026-05-07", "notes": "BreadcrumbList + Article + ItemList on all 6 versus pages"},
+    {"id": "og-images-all", "done": "2026-05-07", "notes": "og:image added to all 11 guide+versus pages; versus pages also got og:title+og:description"},
+    {"id": "about-page", "done": "2026-05-07", "notes": "about.html created with Grok Imagine hero, review process, editorial standards, contact"}
+  ],
+  "queue": [
+    {
+      "id": "fix-amazon-links",
+      "type": "content",
+      "priority": 2,
+      "title": "Fix Amazon links to direct ASIN product pages",
+      "description": "Replace all amazon.com/s?k=... search URLs with direct amazon.com/dp/ASIN links for each product across all guide pages. Use Grok to research correct ASINs."
+    },
+    {
+      "id": "versus-g502-vs-superlight2",
+      "type": "new-page",
+      "priority": 3,
+      "title": "New versus: Logitech G502 X vs G Pro X Superlight 2",
+      "description": "High purchase-intent query. Use Grok for research, Grok Imagine for versus card image.",
+      "file": "versus/logitech-g502-x-vs-g-pro-x-superlight-2.html"
+    },
+    {
+      "id": "versus-arctis-nova-pro-vs-sony-pulse-3d",
+      "type": "new-page",
+      "priority": 3,
+      "title": "New versus: SteelSeries Arctis Nova Pro vs Sony Pulse 3D",
+      "description": "High purchase-intent query for PS5 headset buyers. Use Grok for research, Grok Imagine for image.",
+      "file": "versus/steelseries-arctis-nova-pro-vs-sony-pulse-3d.html"
+    },
+    {
+      "id": "versus-razer-huntsman-v3-vs-wooting-60he",
+      "type": "new-page",
+      "priority": 3,
+      "title": "New versus: Razer Huntsman V3 Pro vs Wooting 60HE",
+      "description": "Analog/rapid trigger keyboard comparison — very high search volume in 2025-2026.",
+      "file": "versus/razer-huntsman-v3-pro-vs-wooting-60he.html"
+    },
+    {
+      "id": "versus-asus-vg279qm-vs-lg-27gp850",
+      "type": "new-page",
+      "priority": 3,
+      "title": "New versus: ASUS VG279QM vs LG 27GP850",
+      "description": "Top 1080p 280Hz vs 1440p 165Hz — common upgrade decision.",
+      "file": "versus/asus-vg279qm-vs-lg-27gp850-b.html"
+    },
+    {
+      "id": "roundup-budget-setup-500",
+      "type": "new-page",
+      "priority": 4,
+      "title": "Roundup: Best gaming setup under $500",
+      "description": "High-intent buying guide combining headset+mouse+keyboard+chair picks under $500 total. Use Grok for research, Grok Imagine for hero image.",
+      "file": "guides/best-gaming-setup-under-500.html"
+    },
+    {
+      "id": "roundup-fps-setup",
+      "type": "new-page",
+      "priority": 4,
+      "title": "Roundup: Best gear for competitive FPS",
+      "description": "Use-case roundup targeting competitive/FPS gamers — mice, headset, keyboard, monitor picks optimized for FPS. Grok research + Grok Imagine hero.",
+      "file": "guides/best-gear-for-competitive-fps.html"
+    },
+    {
+      "id": "internal-links-audit",
+      "type": "content",
+      "priority": 4,
+      "title": "Internal linking audit + improvements",
+      "description": "Add cross-links between related guide pages and versus pages. Every guide page should link to its relevant versus comparisons more prominently."
+    },
+    {
+      "id": "sitemap-update",
+      "type": "seo",
+      "priority": 4,
+      "title": "Update sitemap with all new pages",
+      "description": "Add all new pages created by the loop to sitemap.xml."
+    }
+  ],
+  "loop_log": [
+    {
+      "iteration": 1,
+      "date": "2026-05-07",
+      "tasks_completed": ["schema-guide-headsets","schema-guide-mice","schema-guide-keyboards","schema-guide-chairs","schema-guide-monitors","schema-versus-all","og-images-all","about-page"],
+      "commits": ["dcd862c (schema)", "pending (og:images + about)"],
+      "notes": "Completed all priority-1 schema tasks and priority-2 og:image + About page in one pass"
+    }
+  ]
+}
