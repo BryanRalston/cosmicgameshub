@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-D272MF8NQP"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-D272MF8NQP');
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scramble — Daily Gaming Word Unscramble | CosmicGamesHub</title>
+  <meta name="description" content="Unscramble the daily gaming word in 6 tries. Gaming terms, titles, and characters — new puzzle every day." />
+  <link rel="canonical" href="https://cosmicgameshub.com/games/word-scramble" />
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+/* ── Layout ── */
+.scramble-wrap {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 0 1rem 4rem;
+}
+
+/* ── Page Header ── */
+.scramble-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0 0.6rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.8rem;
+}
+.scramble-title-block h1 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: var(--text-hi);
+  font-family: 'Outfit', system-ui, sans-serif;
+}
+.scramble-title-block .scramble-sub {
+  font-size: 0.7rem;
+  color: var(--text-lo);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: 1px;
+}
+.scramble-stats {
+  display: flex;
+  gap: 1.25rem;
+  align-items: center;
+}
+.scramble-stat { text-align: center; }
+.scramble-stat__num {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+}
+.scramble-stat__label {
+  font-size: 0.6rem;
+  color: var(--text-lo);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-top: 2px;
+}
+.scramble-help-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-mid);
+  border-radius: 50%;
+  width: 30px; height: 30px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+.scramble-help-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── Scramble Display ── */
+.scramble-tiles-area {
+  margin: 1.4rem 0 0.5rem;
+  text-align: center;
+}
+.scramble-label {
+  font-size: 0.65rem;
+  color: var(--text-lo);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  margin-bottom: 0.7rem;
+}
+.scramble-tiles {
+  display: flex;
+  gap: 7px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.sc-tile {
+  width: 48px;
+  height: 52px;
+  border: 2px solid rgba(0, 212, 255, 0.25);
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  color: var(--accent);
+  background: rgba(0, 212, 255, 0.04);
+  font-family: 'Outfit', system-ui, sans-serif;
+  user-select: none;
+  position: relative;
+  transition: transform 0.15s, border-color 0.15s;
+}
+.sc-tile.jump {
+  animation: tileJump 0.35s ease;
+}
+@keyframes tileJump {
+  0%   { transform: translateY(0) scale(1); }
+  30%  { transform: translateY(-12px) scale(1.1); }
+  60%  { transform: translateY(3px) scale(0.97); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+/* Staggered jump on shuffle */
+.sc-tile:nth-child(1) { animation-delay: 0s; }
+.sc-tile:nth-child(2) { animation-delay: 0.04s; }
+.sc-tile:nth-child(3) { animation-delay: 0.08s; }
+.sc-tile:nth-child(4) { animation-delay: 0.12s; }
+.sc-tile:nth-child(5) { animation-delay: 0.16s; }
+.sc-tile:nth-child(6) { animation-delay: 0.20s; }
+.sc-tile:nth-child(7) { animation-delay: 0.24s; }
+.sc-tile:nth-child(8) { animation-delay: 0.28s; }
+.sc-tile:nth-child(9) { animation-delay: 0.32s; }
+.sc-tile:nth-child(10){ animation-delay: 0.36s; }
+.sc-tile:nth-child(11){ animation-delay: 0.40s; }
+.sc-tile:nth-child(12){ animation-delay: 0.44s; }
+
+/* ── Attempt Tracker ── */
+.attempt-track {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 1rem 0 0.5rem;
+}
+.attempt-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: transparent;
+  transition: background 0.25s, border-color 0.25s, transform 0.2s;
+}
+.attempt-dot.used-wrong {
+  background: rgba(255, 71, 87, 0.55);
+  border-color: var(--red);
+}
+.attempt-dot.used-win {
+  background: var(--green);
+  border-color: var(--green);
+  transform: scale(1.2);
+}
+.attempt-dot.active {
+  border-color: var(--accent);
+  background: rgba(0, 212, 255, 0.15);
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.4);
+}
+
+/* ── Hint ── */
+.scramble-hint {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text-lo);
+  min-height: 1.4rem;
+  transition: opacity 0.4s;
+  opacity: 0;
+  padding: 0 0.5rem;
+}
+.scramble-hint.visible {
+  opacity: 1;
+}
+.scramble-hint strong { color: var(--amber); }
+
+/* ── Input Area ── */
+.scramble-input-area {
+  margin: 1.1rem 0 0.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.65rem;
+}
+.scramble-input-wrap {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: 420px;
+}
+#scramble-input {
+  flex: 1;
+  background: rgba(255,255,255,0.04);
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-hi);
+  font-size: 1.1rem;
+  font-weight: 700;
+  font-family: 'Outfit', system-ui, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  padding: 0.65rem 1rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  caret-color: var(--accent);
+}
+#scramble-input:focus {
+  border-color: rgba(0, 212, 255, 0.4);
+  box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.08);
+}
+#scramble-input.shake {
+  animation: inputShake 0.35s ease;
+}
+@keyframes inputShake {
+  0%,100% { transform: translateX(0); }
+  18% { transform: translateX(-6px); }
+  36% { transform: translateX(6px); }
+  54% { transform: translateX(-4px); }
+  72% { transform: translateX(4px); }
+}
+#scramble-input.error {
+  border-color: rgba(255, 71, 87, 0.6);
+}
+
+.scramble-btn-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: 420px;
+}
+.btn-guess {
+  flex: 1;
+  background: var(--accent);
+  color: #000;
+  font-weight: 800;
+  font-size: 0.9rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 0.7rem 1rem;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: 'Outfit', system-ui, sans-serif;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.btn-guess:hover { opacity: 0.88; }
+.btn-guess:active { transform: scale(0.97); }
+.btn-guess:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  transform: none;
+}
+.btn-shuffle {
+  background: rgba(255,255,255,0.05);
+  color: var(--text-mid);
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.15s, color 0.15s, transform 0.1s;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.btn-shuffle:hover { border-color: rgba(0,212,255,0.3); color: var(--accent); }
+.btn-shuffle:active { transform: scale(0.97); }
+.btn-shuffle:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+
+/* ── Feedback message ── */
+.scramble-feedback {
+  text-align: center;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  min-height: 1.35rem;
+  color: var(--red);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.scramble-feedback.show { opacity: 1; }
+.scramble-feedback.neutral { color: var(--text-lo); }
+
+/* ── Toast ── */
+#scramble-toast {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text-hi);
+  color: var(--bg-void);
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.07em;
+  padding: 0.5rem 1.2rem;
+  border-radius: 8px;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+#scramble-toast.show { opacity: 1; }
+
+/* ── Modal ── */
+.sc-modal-bg {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.8);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.25s;
+  padding: 1rem;
+}
+.sc-modal-bg.open { opacity: 1; pointer-events: auto; }
+.sc-modal {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 2rem 1.75rem;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+  transform: scale(0.92) translateY(12px);
+  transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1), opacity 0.25s;
+  opacity: 0;
+}
+.sc-modal-bg.open .sc-modal {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+}
+
+/* Stars */
+.sc-stars {
+  font-size: 1.8rem;
+  letter-spacing: 3px;
+  margin-bottom: 0.4rem;
+  line-height: 1;
+}
+.sc-modal h2 {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--text-hi);
+  margin-bottom: 0.3rem;
+  font-family: 'Outfit', system-ui, sans-serif;
+  letter-spacing: 0.05em;
+}
+.sc-word-reveal {
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  color: var(--accent);
+  font-family: 'Outfit', system-ui, sans-serif;
+  margin: 0.4rem 0 0.2rem;
+  text-transform: uppercase;
+}
+.sc-word-cat {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-lo);
+  margin-bottom: 0.3rem;
+}
+.sc-word-hint {
+  font-size: 0.84rem;
+  color: var(--text-mid);
+  margin-bottom: 1.1rem;
+  font-style: italic;
+}
+.sc-modal-stats {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin: 0.9rem 0 1rem;
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.sc-mstat { text-align: center; }
+.sc-mstat__num { font-size: 1.85rem; font-weight: 800; color: var(--accent); line-height: 1; }
+.sc-mstat__label { font-size: 0.6rem; color: var(--text-lo); text-transform: uppercase; letter-spacing: 0.09em; margin-top: 3px; }
+
+.sc-share-grid {
+  font-size: 1.05rem;
+  line-height: 1.5;
+  margin: 0.7rem auto 0.3rem;
+  font-family: monospace;
+  letter-spacing: 2px;
+  color: var(--text-hi);
+  word-break: break-all;
+}
+.sc-share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--accent);
+  color: #000;
+  font-weight: 800;
+  font-size: 0.88rem;
+  letter-spacing: 0.07em;
+  padding: 0.7rem 1.5rem;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  text-transform: uppercase;
+  font-family: 'Outfit', system-ui, sans-serif;
+  margin-top: 0.5rem;
+}
+.sc-share-btn:hover { opacity: 0.85; }
+.sc-next-timer {
+  font-size: 0.72rem;
+  color: var(--text-lo);
+  margin-top: 0.75rem;
+}
+#sc-countdown { color: var(--text-mid); font-weight: 700; }
+.sc-modal-close {
+  margin-top: 0.6rem;
+  background: none;
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--text-lo);
+  border-radius: 8px;
+  padding: 0.45rem 1.1rem;
+  cursor: pointer;
+  font-size: 0.82rem;
+  width: 100%;
+  transition: border-color 0.15s, color 0.15s;
+}
+.sc-modal-close:hover { border-color: rgba(255,255,255,0.25); color: var(--text-mid); }
+
+/* How to play */
+.how-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.9rem;
+  text-align: left;
+}
+.how-icon {
+  font-size: 1.3rem;
+  flex-shrink: 0;
+  width: 28px;
+  text-align: center;
+  margin-top: 1px;
+}
+.how-text { font-size: 0.82rem; color: var(--text-mid); line-height: 1.5; }
+.how-text strong { color: var(--text-hi); }
+
+/* Responsive */
+@media (max-width: 420px) {
+  .sc-tile { width: 40px; height: 44px; font-size: 1.3rem; }
+  .sc-modal { padding: 1.5rem 1.25rem; }
+  .sc-mstat__num { font-size: 1.5rem; }
+}
+  </style>
+</head>
+<body>
+
+<!-- ─── Nav ─────────────────────────────────────── -->
+<nav class="nav" role="navigation" aria-label="Main navigation">
+  <div class="container">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo" aria-label="CosmicGamesHub home">
+        <span class="nav__logo-icon" aria-hidden="true">🎮</span>
+        <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
+      </a>
+      <ul class="nav__links" id="navLinks">
+        <li><a href="/games/gamerdle">Gamerdle</a></li>
+        <li><a href="/games/pixle">Pixle</a></li>
+        <li><a href="/games/daily-challenge">Daily</a></li>
+        <li><a href="/games/sudoku">Sudoku</a></li>
+        <li><a href="/lab">⚗️ Lab</a></li>
+        <li><a href="/tools/aim-trainer" class="nav__cta btn">Free Tools</a></li>
+      </ul>
+      <button class="nav__hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<div id="scramble-toast" role="status" aria-live="polite"></div>
+
+<div class="scramble-wrap">
+
+  <!-- Page Header -->
+  <div class="scramble-header">
+    <div class="scramble-title-block">
+      <h1>SCRAMBLE</h1>
+      <div class="scramble-sub">Gaming Word · Daily</div>
+    </div>
+    <div class="scramble-stats">
+      <div class="scramble-stat">
+        <div class="scramble-stat__num" id="stat-streak">0</div>
+        <div class="scramble-stat__label">Streak</div>
+      </div>
+      <div class="scramble-stat">
+        <div class="scramble-stat__num" id="stat-played">0</div>
+        <div class="scramble-stat__label">Played</div>
+      </div>
+      <button class="scramble-help-btn" id="help-btn" aria-label="How to play">?</button>
+    </div>
+  </div>
+
+  <!-- Scrambled Word Display -->
+  <div class="scramble-tiles-area">
+    <div class="scramble-label" id="tiles-label">Today's Scramble</div>
+    <div class="scramble-tiles" id="scramble-tiles" aria-label="Scrambled letters"></div>
+  </div>
+
+  <!-- Attempt Tracker -->
+  <div class="attempt-track" id="attempt-track" aria-label="Attempts remaining"></div>
+
+  <!-- Hint (appears after 3 wrong) -->
+  <div class="scramble-hint" id="scramble-hint" aria-live="polite"></div>
+
+  <!-- Input + Buttons -->
+  <div class="scramble-input-area">
+    <div class="scramble-input-wrap">
+      <input
+        id="scramble-input"
+        type="text"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="characters"
+        spellcheck="false"
+        maxlength="16"
+        placeholder="Type your answer…"
+        aria-label="Your guess"
+      />
+    </div>
+    <div class="scramble-btn-row">
+      <button class="btn-guess" id="btn-guess">Submit Guess</button>
+      <button class="btn-shuffle" id="btn-shuffle">
+        <span aria-hidden="true">🔀</span> Shuffle Again
+      </button>
+    </div>
+  </div>
+
+  <!-- Feedback text -->
+  <div class="scramble-feedback" id="scramble-feedback" aria-live="polite"></div>
+
+</div><!-- /scramble-wrap -->
+
+<!-- ─── Result Modal ───────────────────────────── -->
+<div class="sc-modal-bg" id="result-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="sc-modal">
+    <div class="sc-stars" id="modal-stars">⭐⭐⭐</div>
+    <h2 id="modal-title">YOU GOT IT</h2>
+    <div class="sc-word-reveal" id="modal-word"></div>
+    <div class="sc-word-cat" id="modal-cat"></div>
+    <div class="sc-word-hint" id="modal-hint-text"></div>
+    <div class="sc-modal-stats">
+      <div class="sc-mstat">
+        <div class="sc-mstat__num" id="modal-streak">0</div>
+        <div class="sc-mstat__label">Streak</div>
+      </div>
+      <div class="sc-mstat">
+        <div class="sc-mstat__num" id="modal-played">0</div>
+        <div class="sc-mstat__label">Played</div>
+      </div>
+      <div class="sc-mstat">
+        <div class="sc-mstat__num" id="modal-winpct">0%</div>
+        <div class="sc-mstat__label">Win%</div>
+      </div>
+    </div>
+    <div class="sc-share-grid" id="sc-share-grid" aria-label="Result grid"></div>
+    <button class="sc-share-btn" id="sc-share-btn">📋 Share Result</button>
+    <div class="sc-next-timer">Next Scramble in <span id="sc-countdown">00:00:00</span></div>
+    <button class="sc-modal-close" onclick="document.getElementById('result-modal').classList.remove('open')">✕ Close</button>
+  </div>
+</div>
+
+<!-- ─── How To Play Modal ──────────────────────── -->
+<div class="sc-modal-bg" id="help-modal" role="dialog" aria-modal="true" aria-labelledby="help-title">
+  <div class="sc-modal" style="text-align:left;max-width:380px;">
+    <h2 id="help-title" style="text-align:center;margin-bottom:1.1rem;">How to Play</h2>
+
+    <div class="how-row">
+      <div class="how-icon">🔀</div>
+      <div class="how-text">Each day a <strong>gaming word is scrambled</strong> — characters, titles, studios, and gaming terms.</div>
+    </div>
+    <div class="how-row">
+      <div class="how-icon">⌨️</div>
+      <div class="how-text">Type the <strong>unscrambled word</strong> and hit Submit. You have <strong>6 attempts</strong>.</div>
+    </div>
+    <div class="how-row">
+      <div class="how-icon">🔁</div>
+      <div class="how-text">Stuck? Hit <strong>Shuffle Again</strong> to rearrange the letters — same word, fresh order. Use it any time.</div>
+    </div>
+    <div class="how-row">
+      <div class="how-icon">💡</div>
+      <div class="how-text">After <strong>3 wrong guesses</strong>, a hint appears — the category and a clue for the word.</div>
+    </div>
+    <div class="how-row">
+      <div class="how-icon">⭐</div>
+      <div class="how-text">Win in <strong>1 try = 3 stars</strong>. In 2–3 tries = 2 stars. In 4–6 tries = 1 star. New puzzle at midnight.</div>
+    </div>
+
+    <div style="text-align:center;margin-top:0.5rem;">
+      <button class="sc-share-btn" onclick="document.getElementById('help-modal').classList.remove('open')" style="background:rgba(255,255,255,0.08);color:var(--text-hi);">Got it</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Footer ─────────────────────────────────── -->
+<footer class="footer" role="contentinfo">
+  <div class="container">
+    <div class="footer__grid">
+      <div class="footer__brand">
+        <a href="/" class="nav__logo" style="justify-content:flex-start;">
+          <span class="nav__logo-icon" aria-hidden="true">🎮</span>
+          <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
+        </a>
+        <p>Expert gaming gear guides, original free games, and tools for every type of gamer.</p>
+      </div>
+      <div class="footer__col">
+        <h4>Games</h4>
+        <ul>
+          <li><a href="/games/rift">RIFT</a></li>
+          <li><a href="/games/gamerdle">Gamerdle</a></li>
+          <li><a href="/games/pixle">Pixle</a></li>
+          <li><a href="/games/word-scramble">Scramble</a></li>
+          <li><a href="/games/sudoku">Sudoku</a></li>
+        </ul>
+      </div>
+      <div class="footer__col">
+        <h4>Guides</h4>
+        <ul>
+          <li><a href="/guides/best-gaming-headsets-2026">Best Gaming Headsets</a></li>
+          <li><a href="/guides/best-gaming-mice-2026">Best Gaming Mice</a></li>
+          <li><a href="/guides/best-gaming-keyboards-2026">Best Keyboards</a></li>
+          <li><a href="/guides/best-gaming-monitors-2026">Best Monitors</a></li>
+        </ul>
+      </div>
+      <div class="footer__col">
+        <h4>Tools</h4>
+        <ul>
+          <li><a href="/tools/aim-trainer">Aim Trainer</a></li>
+          <li><a href="/tools/reaction-time-test">Reaction Test</a></li>
+          <li><a href="/tools/gaming-fps-calculator">FPS Calculator</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <p class="footer__legal">© 2026 CosmicGamesHub. All rights reserved. · <a href="/about" style="color:var(--text-mid);">About</a></p>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ═══════════════════════════════════════════════════
+// WORD LIST
+// ═══════════════════════════════════════════════════
+const WORDS = [
+  {w:"HALO",cat:"Game Title",hint:"Bungie's iconic space shooter"},
+  {w:"DOOM",cat:"Game Title",hint:"The original demon slayer"},
+  {w:"MARIO",cat:"Character",hint:"Nintendo's famous plumber"},
+  {w:"ZELDA",cat:"Character",hint:"Princess of Hyrule"},
+  {w:"KIRBY",cat:"Character",hint:"Pink puffball from Dream Land"},
+  {w:"SAMUS",cat:"Character",hint:"Metroid bounty hunter"},
+  {w:"SONIC",cat:"Character",hint:"Sega's blue speedster"},
+  {w:"PIKACHU",cat:"Character",hint:"Electric Pokemon mascot"},
+  {w:"TETRIS",cat:"Game Title",hint:"Classic block-stacking puzzle"},
+  {w:"ROBLOX",cat:"Game Title",hint:"Build and play platform"},
+  {w:"FORTNITE",cat:"Game Title",hint:"Battle Royale with building"},
+  {w:"VALORANT",cat:"Game Title",hint:"Riot Games FPS with agents"},
+  {w:"OVERWATCH",cat:"Game Title",hint:"Blizzard's team hero shooter"},
+  {w:"SPAWN",cat:"Gaming Term",hint:"To appear in the game world"},
+  {w:"SNIPER",cat:"Gaming Term",hint:"Long-range precision shooter"},
+  {w:"COMBO",cat:"Gaming Term",hint:"Chain of consecutive moves"},
+  {w:"DODGE",cat:"Gaming Term",hint:"Move to avoid an attack"},
+  {w:"MELEE",cat:"Gaming Term",hint:"Close-range combat"},
+  {w:"LOOT",cat:"Gaming Term",hint:"Items dropped by enemies"},
+  {w:"GRIND",cat:"Gaming Term",hint:"Repetitive play for XP or items"},
+  {w:"QUEST",cat:"Gaming Term",hint:"In-game mission or task"},
+  {w:"BOSS",cat:"Gaming Term",hint:"Powerful end-of-level enemy"},
+  {w:"STEALTH",cat:"Gaming Term",hint:"Move unseen and unheard"},
+  {w:"PARRY",cat:"Gaming Term",hint:"Deflect an incoming attack"},
+  {w:"STUN",cat:"Gaming Term",hint:"Briefly disable an enemy"},
+  {w:"CRIT",cat:"Gaming Term",hint:"Critical hit for extra damage"},
+  {w:"HEALER",cat:"Gaming Term",hint:"Support role that restores HP"},
+  {w:"SHIELD",cat:"Gaming Term",hint:"Protective defensive item"},
+  {w:"WEAPON",cat:"Gaming Term",hint:"Item used to deal damage"},
+  {w:"POTION",cat:"Gaming Term",hint:"Consumable that restores stats"},
+  {w:"TALENT",cat:"Gaming Term",hint:"Earned character ability"},
+  {w:"DAMAGE",cat:"Gaming Term",hint:"Harm dealt to a target"},
+  {w:"HEALTH",cat:"Gaming Term",hint:"A character's life points"},
+  {w:"REVIVE",cat:"Gaming Term",hint:"Bring a fallen teammate back"},
+  {w:"CLUTCH",cat:"Gaming Term",hint:"Win when heavily outnumbered"},
+  {w:"RANKED",cat:"Gaming Term",hint:"Competitive matchmaking mode"},
+  {w:"BRONZE",cat:"Rank",hint:"Lowest competitive tier"},
+  {w:"SILVER",cat:"Rank",hint:"Second competitive tier"},
+  {w:"MASTER",cat:"Rank",hint:"Near-top competitive tier"},
+  {w:"LEGEND",cat:"Rank",hint:"Elite competitive status"},
+  {w:"RESPAWN",cat:"Gaming Term",hint:"Come back to life after dying"},
+  {w:"HITBOX",cat:"Gaming Term",hint:"Invisible area that registers hits"},
+  {w:"RECOIL",cat:"Gaming Term",hint:"Weapon kick after firing"},
+  {w:"FRAG",cat:"Gaming Term",hint:"A kill in FPS games"},
+  {w:"AIMBOT",cat:"Gaming Term",hint:"Cheat software for auto-aiming"},
+  {w:"JUNGLE",cat:"Gaming Term",hint:"Non-lane area in MOBA maps"},
+  {w:"GANK",cat:"Gaming Term",hint:"Ambush a player in their lane"},
+  {w:"CARRY",cat:"Gaming Term",hint:"Player who leads team to victory"},
+  {w:"TOWER",cat:"Gaming Term",hint:"Defensive structure in MOBA"},
+  {w:"NEXUS",cat:"Gaming Term",hint:"MOBA core structure to destroy"},
+  {w:"CREEP",cat:"Gaming Term",hint:"Neutral or lane minion"},
+  {w:"PATCH",cat:"Gaming Term",hint:"Game update that changes balance"},
+  {w:"LOBBY",cat:"Gaming Term",hint:"Pre-match waiting room"},
+  {w:"QUEUE",cat:"Gaming Term",hint:"Waiting for a match to start"},
+  {w:"MACRO",cat:"Gaming Term",hint:"Big-picture strategic thinking"},
+  {w:"MICRO",cat:"Gaming Term",hint:"Precise individual unit control"},
+  {w:"WARDING",cat:"Gaming Term",hint:"Placing vision items in MOBA"},
+  {w:"KITING",cat:"Gaming Term",hint:"Attack while moving away"},
+  {w:"ZONING",cat:"Gaming Term",hint:"Controlling space to deny enemy"},
+  {w:"NERF",cat:"Gaming Term",hint:"Weaken a character or weapon"},
+  {w:"BUFF",cat:"Gaming Term",hint:"Strengthen a character or weapon"},
+  {w:"ESPORT",cat:"Gaming Term",hint:"Competitive professional gaming"},
+  {w:"VALVE",cat:"Studio",hint:"Made Steam and Half-Life"},
+  {w:"BLIZZARD",cat:"Studio",hint:"Made World of Warcraft and Diablo"},
+  {w:"BUNGIE",cat:"Studio",hint:"Created the Halo series"},
+  {w:"UBISOFT",cat:"Studio",hint:"Made Assassin's Creed and Far Cry"},
+  {w:"CAPCOM",cat:"Studio",hint:"Made Street Fighter and Resident Evil"},
+  {w:"KONAMI",cat:"Studio",hint:"Made Metal Gear and Silent Hill"},
+  {w:"BANDAI",cat:"Studio",hint:"Made Dark Souls publisher (Namco)"},
+  {w:"FROMSOFTWARE",cat:"Studio",hint:"Made Dark Souls and Elden Ring"},
+  {w:"INSOMNIAC",cat:"Studio",hint:"Made Spider-Man and Ratchet & Clank"},
+  {w:"NAUGHTY",cat:"Studio",hint:"Made The Last of Us (Dog)"},
+  {w:"STEAM",cat:"Platform",hint:"Valve's PC game marketplace"},
+  {w:"BATTLE",cat:"Gaming Term",hint:"Combat encounter in a game"},
+  {w:"SNEAK",cat:"Gaming Term",hint:"Move quietly without detection"},
+  {w:"AGRO",cat:"Gaming Term",hint:"Enemy attention drawn to you"},
+  {w:"MANA",cat:"Gaming Term",hint:"Magic resource for spells"},
+  {w:"ARENA",cat:"Gaming Term",hint:"Enclosed combat space"},
+  {w:"SIEGE",cat:"Gaming Term",hint:"Assault on a fortified position"},
+  {w:"RAID",cat:"Gaming Term",hint:"Group attack on a dungeon"},
+  {w:"GUILD",cat:"Gaming Term",hint:"Player-organized team group"},
+  {w:"CLAN",cat:"Gaming Term",hint:"Competitive player group"},
+  {w:"HONOR",cat:"Gaming Term",hint:"In-game virtue or currency"},
+  {w:"VALOR",cat:"Gaming Term",hint:"Competitive currency (Valorant)"},
+  {w:"GLITCH",cat:"Gaming Term",hint:"Unintended game behavior"},
+  {w:"EXPLOIT",cat:"Gaming Term",hint:"Use a bug for advantage"},
+  {w:"SPEEDRUN",cat:"Gaming Term",hint:"Complete a game as fast as possible"},
+  {w:"LEGACY",cat:"Gaming Term",hint:"Content from a previous version"},
+  {w:"ENDGAME",cat:"Gaming Term",hint:"Content after main story completion"},
+  {w:"DUNGEON",cat:"Gaming Term",hint:"Underground level with monsters"},
+  {w:"DRAGON",cat:"Gaming Term",hint:"Classic fantasy game enemy"},
+  {w:"GOBLIN",cat:"Gaming Term",hint:"Small mischievous fantasy creature"},
+  {w:"AVATAR",cat:"Gaming Term",hint:"Player's in-game character"},
+  {w:"PORTAL",cat:"Game Title",hint:"Valve's spatial puzzle game"},
+  {w:"DIABLO",cat:"Game Title",hint:"Blizzard's dark action RPG"},
+  {w:"WITCHER",cat:"Game Title",hint:"CD Projekt's monster hunter RPG"},
+  {w:"SKYRIM",cat:"Game Title",hint:"Bethesda's open-world elder scrolls"},
+  {w:"FALLOUT",cat:"Game Title",hint:"Post-apocalyptic RPG series"},
+  {w:"BORDERLANDS",cat:"Game Title",hint:"Cel-shaded looter shooter"},
+  {w:"DESTINY",cat:"Game Title",hint:"Bungie's looter-shooter MMO"},
+  {w:"WARZONE",cat:"Game Title",hint:"Call of Duty battle royale"},
+  {w:"PUBG",cat:"Game Title",hint:"PlayerUnknown's Battlegrounds"},
+  {w:"LEAGUE",cat:"Game Title",hint:"League of Legends MOBA"},
+  {w:"DOTA",cat:"Game Title",hint:"Defense of the Ancients MOBA"},
+  {w:"STARCRAFT",cat:"Game Title",hint:"Blizzard's real-time strategy game"},
+  {w:"MINECRAFT",cat:"Game Title",hint:"Block-building sandbox world"}
+];
+
+// ═══════════════════════════════════════════════════
+// DAILY SEED
+// ═══════════════════════════════════════════════════
+const DAY_INDEX = Math.floor(Date.now() / 86400000) % WORDS.length;
+const TODAY = WORDS[DAY_INDEX];
+const ANSWER = TODAY.w.toUpperCase();
+
+// ═══════════════════════════════════════════════════
+// SCRAMBLE UTILITIES
+// ═══════════════════════════════════════════════════
+
+// Seeded PRNG — Mulberry32. Used to produce the *initial* shuffle so the
+// first scramble every player sees is identical for the same day.
+function mulberry32(seed) {
+  return function() {
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+function shuffleArray(arr, rng) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// Returns a scrambled version of ANSWER that is guaranteed to differ from ANSWER.
+// If rand is passed, use it; otherwise use Math.random.
+function scramble(word, rngFn) {
+  const letters = word.split('');
+  if (letters.length <= 1) return letters;
+  const rng = rngFn || Math.random.bind(Math);
+  let shuffled;
+  let tries = 0;
+  do {
+    shuffled = shuffleArray(letters, typeof rng === 'function' ? rng : () => Math.random());
+    tries++;
+  } while (shuffled.join('') === word && tries < 20);
+  return shuffled;
+}
+
+// Daily-seeded initial scramble
+const DAILY_SEED = DAY_INDEX * 131071 + 42;
+const dailyRng = mulberry32(DAILY_SEED);
+let currentScramble = scramble(ANSWER, dailyRng);
+
+// ═══════════════════════════════════════════════════
+// STORAGE
+// ═══════════════════════════════════════════════════
+const STATE_KEY  = 'scramble-state-v1';
+const STATS_KEY  = 'scramble-stats-v1';
+const LAST_DAY_KEY = 'scramble-last-day-v1';
+
+function loadState() {
+  try {
+    const s = JSON.parse(localStorage.getItem(STATE_KEY));
+    if (s && s.dayIndex === DAY_INDEX) return s;
+  } catch(e) {}
+  return { dayIndex: DAY_INDEX, attempts: [], status: 'playing' };
+}
+
+function saveState(s) {
+  localStorage.setItem(STATE_KEY, JSON.stringify(s));
+}
+
+function loadStats() {
+  try {
+    const s = JSON.parse(localStorage.getItem(STATS_KEY));
+    return s || { played: 0, wins: 0, streak: 0, maxStreak: 0, lastWinDay: -1 };
+  } catch(e) {
+    return { played: 0, wins: 0, streak: 0, maxStreak: 0, lastWinDay: -1 };
+  }
+}
+
+function saveStats(s) {
+  localStorage.setItem(STATS_KEY, JSON.stringify(s));
+}
+
+// ═══════════════════════════════════════════════════
+// GAME STATE
+// ═══════════════════════════════════════════════════
+let gameState = loadState();
+let stats = loadStats();
+let gameOver = gameState.status !== 'playing';
+const MAX_ATTEMPTS = 6;
+const HINT_AFTER = 3; // show hint after this many wrong guesses
+
+// ═══════════════════════════════════════════════════
+// DOM REFS
+// ═══════════════════════════════════════════════════
+const tilesEl      = document.getElementById('scramble-tiles');
+const trackEl      = document.getElementById('attempt-track');
+const hintEl       = document.getElementById('scramble-hint');
+const inputEl      = document.getElementById('scramble-input');
+const btnGuess     = document.getElementById('btn-guess');
+const btnShuffle   = document.getElementById('btn-shuffle');
+const feedbackEl   = document.getElementById('scramble-feedback');
+const tilesLabel   = document.getElementById('tiles-label');
+
+// ═══════════════════════════════════════════════════
+// RENDER SCRAMBLE TILES
+// ═══════════════════════════════════════════════════
+function renderTiles(letters, animate) {
+  tilesEl.innerHTML = '';
+  letters.forEach((ch, i) => {
+    const div = document.createElement('div');
+    div.className = 'sc-tile';
+    div.textContent = ch;
+    if (animate) {
+      div.style.animationDelay = (i * 0.04) + 's';
+      div.classList.add('jump');
+    }
+    tilesEl.appendChild(div);
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// RENDER ATTEMPT TRACKER
+// ═══════════════════════════════════════════════════
+function renderTracker() {
+  trackEl.innerHTML = '';
+  for (let i = 0; i < MAX_ATTEMPTS; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'attempt-dot';
+    if (i < gameState.attempts.length) {
+      dot.classList.add(gameState.attempts[i] === 'win' ? 'used-win' : 'used-wrong');
+    } else if (i === gameState.attempts.length && !gameOver) {
+      dot.classList.add('active');
+    }
+    trackEl.appendChild(dot);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// SHOW / HIDE HINT
+// ═══════════════════════════════════════════════════
+function updateHint() {
+  const wrongCount = gameState.attempts.filter(a => a === 'wrong').length;
+  if (wrongCount >= HINT_AFTER || gameOver) {
+    hintEl.innerHTML = `<strong>${TODAY.cat}</strong> — ${TODAY.hint}`;
+    hintEl.classList.add('visible');
+  } else {
+    hintEl.classList.remove('visible');
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// FEEDBACK LINE
+// ═══════════════════════════════════════════════════
+let feedbackTimer = null;
+function showFeedback(msg, type) {
+  // type: 'error' | 'neutral'
+  feedbackEl.textContent = msg;
+  feedbackEl.className = 'scramble-feedback show' + (type === 'neutral' ? ' neutral' : '');
+  clearTimeout(feedbackTimer);
+  if (type !== 'neutral') {
+    feedbackTimer = setTimeout(() => feedbackEl.classList.remove('show'), 2000);
+  }
+}
+function clearFeedback() {
+  clearTimeout(feedbackTimer);
+  feedbackEl.classList.remove('show');
+}
+
+// ═══════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════
+let toastTimer = null;
+function showToast(msg) {
+  const el = document.getElementById('scramble-toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 1600);
+}
+
+// ═══════════════════════════════════════════════════
+// STAT DISPLAY
+// ═══════════════════════════════════════════════════
+function updateStatDisplay() {
+  document.getElementById('stat-streak').textContent = stats.streak;
+  document.getElementById('stat-played').textContent  = stats.played;
+}
+
+// ═══════════════════════════════════════════════════
+// SUBMIT GUESS
+// ═══════════════════════════════════════════════════
+function submitGuess() {
+  if (gameOver) return;
+
+  const raw = inputEl.value.trim().toUpperCase().replace(/[^A-Z]/g, '');
+
+  if (!raw) {
+    inputEl.classList.add('shake', 'error');
+    setTimeout(() => inputEl.classList.remove('shake', 'error'), 400);
+    showFeedback('Type your answer first!');
+    return;
+  }
+
+  if (raw === ANSWER) {
+    // WIN
+    gameState.attempts.push('win');
+    gameState.status = 'won';
+    saveState(gameState);
+
+    const winIndex = gameState.attempts.length; // 1-6
+    const yesterday = DAY_INDEX - 1;
+
+    if (stats.lastWinDay === yesterday) {
+      stats.streak++;
+    } else if (stats.lastWinDay !== DAY_INDEX) {
+      stats.streak = 1;
+    }
+    stats.lastWinDay = DAY_INDEX;
+    stats.played++;
+    stats.wins++;
+    stats.maxStreak = Math.max(stats.maxStreak, stats.streak);
+    saveStats(stats);
+    updateStatDisplay();
+
+    gameOver = true;
+    inputEl.disabled = true;
+    btnGuess.disabled = true;
+    btnShuffle.disabled = true;
+
+    // Animate tiles green then show modal
+    const tiles = tilesEl.querySelectorAll('.sc-tile');
+    ANSWER.split('').forEach((ch, i) => {
+      setTimeout(() => {
+        if (tiles[i]) {
+          tiles[i].style.borderColor = 'var(--green)';
+          tiles[i].style.color = 'var(--green)';
+          tiles[i].style.background = 'rgba(0,230,118,0.08)';
+          tiles[i].textContent = ch;
+          tiles[i].classList.add('jump');
+        }
+      }, i * 60);
+    });
+
+    renderTracker();
+    updateHint();
+    clearFeedback();
+    setTimeout(() => showResultModal(true, winIndex), 1400);
+
+  } else {
+    // WRONG
+    gameState.attempts.push('wrong');
+    saveState(gameState);
+
+    inputEl.classList.add('shake', 'error');
+    setTimeout(() => inputEl.classList.remove('shake', 'error'), 400);
+
+    const wrongCount = gameState.attempts.filter(a => a === 'wrong').length;
+    const remaining = MAX_ATTEMPTS - gameState.attempts.length;
+
+    if (gameState.attempts.length >= MAX_ATTEMPTS) {
+      // GAME OVER
+      gameState.status = 'lost';
+      saveState(gameState);
+
+      if (stats.lastWinDay !== DAY_INDEX) {
+        stats.streak = 0;
+      }
+      stats.played++;
+      saveStats(stats);
+      updateStatDisplay();
+
+      gameOver = true;
+      inputEl.disabled = true;
+      btnGuess.disabled = true;
+      btnShuffle.disabled = true;
+
+      // Animate tiles red
+      const tiles = tilesEl.querySelectorAll('.sc-tile');
+      ANSWER.split('').forEach((ch, i) => {
+        setTimeout(() => {
+          if (tiles[i]) {
+            tiles[i].style.borderColor = 'var(--red)';
+            tiles[i].style.color = 'var(--red)';
+            tiles[i].style.background = 'rgba(255,71,87,0.07)';
+            tiles[i].textContent = ch;
+          }
+        }, i * 60);
+      });
+
+      renderTracker();
+      updateHint();
+      clearFeedback();
+      setTimeout(() => showResultModal(false, 0), 1400);
+
+    } else {
+      // Wrong but still going
+      const phrases = [
+        'Not quite — try again!',
+        'Almost! Rearrange those letters.',
+        'Nope — take another look.',
+        'Not yet — you have ' + remaining + ' left.',
+        'So close — one more chance!',
+      ];
+      showFeedback(phrases[Math.min(wrongCount - 1, phrases.length - 1)]);
+      renderTracker();
+      updateHint();
+    }
+  }
+
+  inputEl.value = '';
+  inputEl.focus();
+}
+
+// ═══════════════════════════════════════════════════
+// SHUFFLE
+// ═══════════════════════════════════════════════════
+function doShuffle() {
+  if (gameOver) return;
+  currentScramble = scramble(ANSWER, () => Math.random());
+  renderTiles(currentScramble, true);
+  showToast('Shuffled!');
+  clearFeedback();
+  inputEl.focus();
+}
+
+// ═══════════════════════════════════════════════════
+// RESULT MODAL
+// ═══════════════════════════════════════════════════
+function buildShareEmoji() {
+  return gameState.attempts.map(a => a === 'win' ? '🟩' : '🟥').join('');
+}
+
+function starsForAttempt(n) {
+  if (n === 1) return '⭐⭐⭐';
+  if (n <= 3)  return '⭐⭐';
+  return '⭐';
+}
+
+function showResultModal(won, attemptNum) {
+  const modal = document.getElementById('result-modal');
+
+  // Stars + title
+  if (won) {
+    document.getElementById('modal-stars').textContent = starsForAttempt(attemptNum);
+    document.getElementById('modal-title').textContent =
+      attemptNum === 1 ? 'PERFECT!' :
+      attemptNum <= 3  ? 'NICE GAME' : 'YOU GOT IT';
+  } else {
+    document.getElementById('modal-stars').textContent = '💀';
+    document.getElementById('modal-title').textContent = 'BETTER LUCK TOMORROW';
+  }
+
+  document.getElementById('modal-word').textContent = ANSWER;
+  document.getElementById('modal-cat').textContent = TODAY.cat;
+  document.getElementById('modal-hint-text').textContent = TODAY.hint;
+
+  document.getElementById('modal-streak').textContent = stats.streak;
+  document.getElementById('modal-played').textContent  = stats.played;
+  const wp = stats.played > 0 ? Math.round((stats.wins / stats.played) * 100) : 0;
+  document.getElementById('modal-winpct').textContent  = wp + '%';
+
+  const emojiLine = buildShareEmoji();
+  const guessLine = won ? `${attemptNum}/6` : 'X/6';
+  document.getElementById('sc-share-grid').textContent = emojiLine;
+
+  document.getElementById('sc-share-btn').onclick = () => {
+    const text = [
+      `🎮 Scramble #${DAY_INDEX} — ${guessLine}`,
+      emojiLine,
+      'cosmicgameshub.com/games/word-scramble'
+    ].join('\n');
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(() => showToast('Copied!'));
+    } else {
+      showToast('Copy manually above');
+    }
+  };
+
+  modal.classList.add('open');
+  startCountdown();
+}
+
+// ═══════════════════════════════════════════════════
+// COUNTDOWN
+// ═══════════════════════════════════════════════════
+function startCountdown() {
+  function tick() {
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    const diff = tomorrow - now;
+    const h = String(Math.floor(diff / 3600000)).padStart(2, '0');
+    const m = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
+    const s = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
+    const el = document.getElementById('sc-countdown');
+    if (el) el.textContent = `${h}:${m}:${s}`;
+  }
+  tick();
+  setInterval(tick, 1000);
+}
+
+// ═══════════════════════════════════════════════════
+// RESTORE FINISHED GAME
+// ═══════════════════════════════════════════════════
+function restoreGame() {
+  if (gameState.status === 'won') {
+    const winAt = gameState.attempts.length;
+    // Show the answer in tiles
+    const letters = ANSWER.split('');
+    letters.forEach((ch, i) => {
+      const div = document.createElement('div');
+      div.className = 'sc-tile';
+      div.textContent = ch;
+      div.style.borderColor = 'var(--green)';
+      div.style.color = 'var(--green)';
+      div.style.background = 'rgba(0,230,118,0.08)';
+      tilesEl.appendChild(div);
+    });
+    inputEl.disabled = true;
+    btnGuess.disabled = true;
+    btnShuffle.disabled = true;
+    renderTracker();
+    updateHint();
+    setTimeout(() => showResultModal(true, winAt), 500);
+
+  } else if (gameState.status === 'lost') {
+    const letters = ANSWER.split('');
+    letters.forEach((ch, i) => {
+      const div = document.createElement('div');
+      div.className = 'sc-tile';
+      div.textContent = ch;
+      div.style.borderColor = 'var(--red)';
+      div.style.color = 'var(--red)';
+      div.style.background = 'rgba(255,71,87,0.07)';
+      tilesEl.appendChild(div);
+    });
+    inputEl.disabled = true;
+    btnGuess.disabled = true;
+    btnShuffle.disabled = true;
+    renderTracker();
+    updateHint();
+    setTimeout(() => showResultModal(false, 0), 500);
+  } else {
+    renderTiles(currentScramble, false);
+    renderTracker();
+    updateHint();
+    inputEl.focus();
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// EVENT LISTENERS
+// ═══════════════════════════════════════════════════
+btnGuess.addEventListener('click', submitGuess);
+btnShuffle.addEventListener('click', doShuffle);
+
+inputEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    submitGuess();
+  }
+});
+
+// Keep input uppercase visually
+inputEl.addEventListener('input', () => {
+  const pos = inputEl.selectionStart;
+  inputEl.value = inputEl.value.toUpperCase().replace(/[^A-Z]/g, '');
+  inputEl.setSelectionRange(pos, pos);
+});
+
+document.getElementById('help-btn').addEventListener('click', () => {
+  document.getElementById('help-modal').classList.add('open');
+});
+
+// Close modals on backdrop click
+document.querySelectorAll('.sc-modal-bg').forEach(bg => {
+  bg.addEventListener('click', e => {
+    if (e.target === bg) bg.classList.remove('open');
+  });
+});
+
+// Hamburger nav
+document.getElementById('hamburger').addEventListener('click', () => {
+  const nav = document.getElementById('navLinks');
+  const open = nav.classList.toggle('open');
+  document.getElementById('hamburger').setAttribute('aria-expanded', open);
+});
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+updateStatDisplay();
+restoreGame();
+
+// Show how-to on first ever visit
+if (!localStorage.getItem('scramble-seen-help')) {
+  setTimeout(() => {
+    document.getElementById('help-modal').classList.add('open');
+    localStorage.setItem('scramble-seen-help', '1');
+  }, 500);
+}
+</script>
+</body>
+</html>

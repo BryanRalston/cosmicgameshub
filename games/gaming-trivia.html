@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-D272MF8NQP"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-D272MF8NQP');
+  </script>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Gaming Trivia — Daily Quiz | CosmicGamesHub</title>
+  <meta name="description" content="10 gaming trivia questions per day. Race the clock for bonus points. Multiple choice, daily rotation. Free to play on CosmicGamesHub."/>
+  <link rel="canonical" href="https://cosmicgameshub.com/games/gaming-trivia"/>
+  <link rel="stylesheet" href="../styles.css"/>
+  <style>
+    /* ── Layout ── */
+    .trivia-wrap { max-width:680px; margin:0 auto; padding:1rem 0 3rem; }
+
+    /* ── Header meta pills ── */
+    .tv-meta { display:flex; gap:0.75rem; justify-content:center; flex-wrap:wrap; margin-bottom:1.5rem; }
+    .tv-pill { background:var(--bg-card); border:1px solid var(--border); border-radius:999px; padding:0.3rem 0.9rem; font-size:0.78rem; font-weight:700; color:var(--text-mid); }
+    .tv-pill span { color:var(--accent); }
+
+    /* ── Question card ── */
+    .question-card {
+      background:var(--bg-card);
+      border:1px solid var(--border-mid);
+      border-radius:var(--radius-lg);
+      padding:1.75rem 1.75rem 1.5rem;
+      position:relative;
+      overflow:hidden;
+    }
+    .question-card::before {
+      content:'';
+      position:absolute;
+      inset:0;
+      background:radial-gradient(ellipse at top left, rgba(34,211,238,0.04) 0%, transparent 60%);
+      pointer-events:none;
+    }
+
+    /* ── Q counter & timer label ── */
+    .q-topbar {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:1.1rem;
+    }
+    .q-counter {
+      font-size:0.78rem;
+      font-weight:800;
+      text-transform:uppercase;
+      letter-spacing:0.07em;
+      color:var(--text-lo);
+    }
+    .q-counter span { color:var(--accent); }
+    .q-timer-label {
+      font-size:0.78rem;
+      font-weight:700;
+      color:var(--text-mid);
+      font-variant-numeric:tabular-nums;
+      min-width:3.5rem;
+      text-align:right;
+    }
+
+    /* ── Timer bar ── */
+    .timer-bar-track {
+      height:5px;
+      background:rgba(255,255,255,0.07);
+      border-radius:999px;
+      margin-bottom:1.5rem;
+      overflow:hidden;
+    }
+    .timer-bar-fill {
+      height:100%;
+      border-radius:999px;
+      transition:width 0.25s linear, background-color 0.5s ease;
+      background:var(--accent);
+      width:100%;
+    }
+
+    /* ── Question text ── */
+    .question-text {
+      font-size:clamp(1rem,3vw,1.2rem);
+      font-weight:700;
+      color:var(--text-hi);
+      line-height:1.5;
+      margin:0 0 1.5rem;
+    }
+
+    /* ── Answer grid ── */
+    .answer-grid {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:0.65rem;
+    }
+    .answer-btn {
+      background:var(--bg-surface, rgba(255,255,255,0.04));
+      border:1.5px solid var(--border-mid);
+      border-radius:var(--radius);
+      padding:0.75rem 1rem;
+      text-align:left;
+      cursor:pointer;
+      color:var(--text-hi);
+      font-family:inherit;
+      font-size:0.88rem;
+      font-weight:600;
+      line-height:1.35;
+      transition:border-color 0.15s, background 0.15s, transform 0.1s;
+      display:flex;
+      align-items:flex-start;
+      gap:0.6rem;
+    }
+    .answer-btn:hover:not(:disabled) {
+      border-color:var(--accent);
+      background:rgba(34,211,238,0.07);
+      transform:translateY(-1px);
+    }
+    .answer-btn:disabled { cursor:default; transform:none; }
+    .answer-btn .choice-label {
+      font-size:0.72rem;
+      font-weight:800;
+      color:var(--accent);
+      background:rgba(34,211,238,0.12);
+      border-radius:4px;
+      padding:0.1rem 0.35rem;
+      flex-shrink:0;
+      margin-top:1px;
+      letter-spacing:0.03em;
+      line-height:1.4;
+    }
+
+    /* ── Answer states ── */
+    .answer-btn.correct {
+      border-color:#00e676;
+      background:rgba(0,230,118,0.12);
+      color:#00e676;
+      animation:pulse-green 0.4s ease;
+    }
+    .answer-btn.correct .choice-label { background:rgba(0,230,118,0.2); color:#00e676; }
+    .answer-btn.wrong {
+      border-color:#ff4757;
+      background:rgba(255,71,87,0.1);
+      color:#ff4757;
+      animation:shake-red 0.4s ease;
+    }
+    .answer-btn.wrong .choice-label { background:rgba(255,71,87,0.2); color:#ff4757; }
+    .answer-btn.reveal-correct {
+      border-color:#00e676;
+      background:rgba(0,230,118,0.07);
+      color:#00e676;
+    }
+    .answer-btn.reveal-correct .choice-label { background:rgba(0,230,118,0.2); color:#00e676; }
+    .answer-btn.dimmed { opacity:0.4; }
+
+    @keyframes pulse-green {
+      0%   { box-shadow:0 0 0 0 rgba(0,230,118,0.5); }
+      50%  { box-shadow:0 0 0 8px rgba(0,230,118,0); transform:scale(1.02); }
+      100% { box-shadow:0 0 0 0 rgba(0,230,118,0); transform:scale(1); }
+    }
+    @keyframes shake-red {
+      0%,100% { transform:translateX(0); }
+      20%      { transform:translateX(-5px); }
+      40%      { transform:translateX(5px); }
+      60%      { transform:translateX(-4px); }
+      80%      { transform:translateX(4px); }
+    }
+
+    /* ── Explanation banner ── */
+    .explanation {
+      display:none;
+      margin-top:1rem;
+      background:rgba(34,211,238,0.06);
+      border:1px solid rgba(34,211,238,0.18);
+      border-radius:var(--radius-sm);
+      padding:0.7rem 1rem;
+      font-size:0.84rem;
+      color:var(--text-mid);
+      line-height:1.5;
+    }
+    .explanation.show { display:block; }
+    .explanation strong { color:var(--text-hi); }
+
+    /* ── Points flash ── */
+    .points-flash {
+      display:none;
+      text-align:center;
+      font-size:1.1rem;
+      font-weight:800;
+      margin-top:0.75rem;
+      animation:fade-up 0.5s ease forwards;
+    }
+    .points-flash.show { display:block; }
+    .points-flash.gain { color:#00e676; }
+    .points-flash.zero { color:var(--text-lo); }
+    @keyframes fade-up {
+      0%   { opacity:0; transform:translateY(6px); }
+      30%  { opacity:1; transform:translateY(0); }
+      80%  { opacity:1; }
+      100% { opacity:0; transform:translateY(-4px); }
+    }
+
+    /* ── Next button ── */
+    .next-row {
+      display:none;
+      margin-top:1.1rem;
+      text-align:right;
+    }
+    .next-row.show { display:block; }
+
+    /* ── Results screen ── */
+    .results-screen {
+      display:none;
+      background:var(--bg-card);
+      border:1px solid var(--border-mid);
+      border-radius:var(--radius-lg);
+      padding:2rem 1.75rem;
+      text-align:center;
+    }
+    .results-screen.show { display:block; }
+
+    .grade-badge {
+      width:80px;
+      height:80px;
+      border-radius:50%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:2.2rem;
+      font-weight:900;
+      margin:0 auto 1rem;
+      border:3px solid;
+    }
+    .grade-S { border-color:#ffd700; background:rgba(255,215,0,0.12); color:#ffd700; }
+    .grade-A { border-color:#00e676; background:rgba(0,230,118,0.1);  color:#00e676; }
+    .grade-B { border-color:var(--accent); background:rgba(34,211,238,0.1); color:var(--accent); }
+    .grade-C { border-color:#ffb300; background:rgba(255,179,0,0.1); color:#ffb300; }
+    .grade-F { border-color:#ff4757; background:rgba(255,71,87,0.1); color:#ff4757; }
+
+    .results-score {
+      font-size:clamp(1.4rem,5vw,2rem);
+      font-weight:800;
+      color:var(--text-hi);
+      margin-bottom:0.25rem;
+    }
+    .results-pts {
+      font-size:1rem;
+      color:var(--accent);
+      font-weight:700;
+      margin-bottom:1.25rem;
+    }
+
+    .result-emoji-row {
+      font-size:1.5rem;
+      letter-spacing:3px;
+      line-height:1.6;
+      margin:0.75rem 0;
+      font-family:monospace;
+    }
+
+    .results-stats {
+      display:flex;
+      gap:1rem;
+      justify-content:center;
+      flex-wrap:wrap;
+      margin:1rem 0 1.25rem;
+    }
+    .rs-stat {
+      background:var(--bg-surface, rgba(255,255,255,0.04));
+      border:1px solid var(--border);
+      border-radius:var(--radius-sm);
+      padding:0.5rem 1rem;
+      text-align:center;
+    }
+    .rs-stat-val { font-size:1.2rem; font-weight:800; color:var(--text-hi); }
+    .rs-stat-lbl { font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:var(--text-lo); margin-top:0.1rem; }
+
+    .share-box {
+      background:var(--bg-void);
+      border:1px solid var(--border);
+      border-radius:var(--radius-sm);
+      padding:0.75rem 1rem;
+      font-size:0.8rem;
+      color:var(--text-mid);
+      text-align:left;
+      white-space:pre;
+      overflow-x:auto;
+      margin:0.75rem 0 1rem;
+      font-family:monospace;
+    }
+
+    /* ── Confetti ── */
+    .confetti-piece {
+      position:fixed;
+      pointer-events:none;
+      animation:fall linear forwards;
+      z-index:999;
+    }
+    @keyframes fall {
+      0%   { transform:translateY(-20px) rotate(0deg);   opacity:1; }
+      100% { transform:translateY(100vh) rotate(720deg); opacity:0; }
+    }
+
+    /* ── Skeleton / loading state ── */
+    .tv-loading {
+      text-align:center;
+      padding:3rem 1rem;
+      color:var(--text-lo);
+      font-size:0.9rem;
+    }
+
+    @media(max-width:480px){
+      .answer-grid { grid-template-columns:1fr; }
+      .question-card { padding:1.25rem 1.1rem 1.1rem; }
+      .results-screen { padding:1.5rem 1.1rem; }
+    }
+  </style>
+</head>
+<body>
+<nav class="nav">
+  <div class="container">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo"><span class="nav__logo-icon">🎮</span><span class="nav__logo-text">Cosmic<span>Games</span>Hub</span></a>
+      <ul class="nav__links" id="navLinks">
+        <li><a href="/games/gamerdle">Gamerdle</a></li>
+        <li><a href="/games/gaming-trivia" class="active" style="color:var(--accent);">Trivia</a></li>
+        <li><a href="/tools/aim-trainer">Aim Trainer</a></li>
+        <li><a href="/tools/ambient-sounds">Ambient</a></li>
+        <li><a href="/games/daily-challenge" class="nav__cta btn">Daily</a></li>
+      </ul>
+      <button class="nav__hamburger" id="hamburger"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</nav>
+
+<main>
+<div class="container">
+<div class="trivia-wrap">
+
+  <div style="text-align:center;padding:1.25rem 0 1rem;">
+    <span class="section__eyebrow">Daily Trivia</span>
+    <h1 style="margin:0.4rem 0 0.25rem;font-size:clamp(1.8rem,5vw,2.5rem);">🧠 Gaming Trivia</h1>
+    <p style="color:var(--text-mid);margin:0;font-size:0.9rem;">10 questions · 15 seconds each · Answer fast for bonus points</p>
+  </div>
+
+  <div class="tv-meta">
+    <div class="tv-pill">📅 Quiz <span id="quizNum">#1</span></div>
+    <div class="tv-pill">🔥 Streak <span id="streakDisp">0</span></div>
+    <div class="tv-pill">🏆 Best <span id="hiScoreDisp">0</span> pts</div>
+    <div class="tv-pill">📊 Played <span id="playedDisp">0</span></div>
+  </div>
+
+  <!-- Question card (shown during quiz) -->
+  <div class="question-card" id="questionCard">
+    <div class="q-topbar">
+      <div class="q-counter">Q <span id="qNum">1</span><span style="color:var(--text-lo)">/10</span></div>
+      <div class="q-timer-label" id="timerLabel">15s</div>
+    </div>
+    <div class="timer-bar-track">
+      <div class="timer-bar-fill" id="timerBar"></div>
+    </div>
+    <p class="question-text" id="questionText">Loading question…</p>
+    <div class="answer-grid" id="answerGrid"></div>
+    <div class="explanation" id="explanation"></div>
+    <div class="points-flash" id="pointsFlash"></div>
+    <div class="next-row" id="nextRow">
+      <button class="btn btn--primary" id="nextBtn" onclick="nextQuestion()">Next →</button>
+    </div>
+  </div>
+
+  <!-- Results screen -->
+  <div class="results-screen" id="resultsScreen">
+    <div class="grade-badge" id="gradeBadge"></div>
+    <div class="results-score" id="resultsScore"></div>
+    <div class="results-pts" id="resultsPts"></div>
+    <div class="result-emoji-row" id="emojiRow"></div>
+    <div class="results-stats">
+      <div class="rs-stat">
+        <div class="rs-stat-val" id="rsStreak">0</div>
+        <div class="rs-stat-lbl">Streak</div>
+      </div>
+      <div class="rs-stat">
+        <div class="rs-stat-val" id="rsPlayed">0</div>
+        <div class="rs-stat-lbl">Played</div>
+      </div>
+      <div class="rs-stat">
+        <div class="rs-stat-val" id="rsHi">0</div>
+        <div class="rs-stat-lbl">Best Score</div>
+      </div>
+    </div>
+    <div class="share-box" id="shareBox"></div>
+    <button class="btn btn--primary" onclick="copyShare()" style="width:100%;margin-bottom:0.65rem;">📋 Copy &amp; Share</button>
+    <p style="font-size:0.78rem;color:var(--text-lo);margin:0.5rem 0 0;">New quiz every day. Come back tomorrow!</p>
+  </div>
+
+</div>
+</div>
+</main>
+
+<footer class="footer"><div class="container"><div class="footer__bottom">
+  <p class="footer__disclosure"><strong>Affiliate Disclosure:</strong> As an Amazon Associate I earn from qualifying purchases.</p>
+  <p class="footer__legal">© 2026 CosmicGamesHub.</p>
+</div></div></footer>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════════
+// QUESTION BANK — 50 questions
+// ═══════════════════════════════════════════════════════════════════════════════
+const QUESTIONS = [
+  {q:"Which game pioneered the modern FPS genre in 1993?",a:["Quake","Doom","Wolfenstein 3D","Half-Life"],c:1,
+   e:"Doom (1993) by id Software defined first-person shooters with its fast action, level design, and modding community."},
+  {q:"In Overwatch, who says 'It's High Noon'?",a:["Reaper","Cassidy","Soldier:76","Genji"],c:1,
+   e:"Cassidy (formerly McCree) delivers this iconic line when activating his Deadeye ultimate ability."},
+  {q:"What is the final rank in CS:GO competitive matchmaking?",a:["Global Elite","Legendary Eagle","Supreme","Diamond"],c:0,
+   e:"Global Elite is the highest rank in CS:GO's 18-tier matchmaking system, reached by the top fraction of players."},
+  {q:"Which game introduced the Battle Royale genre to mainstream in 2017?",a:["Fortnite","PUBG","Apex Legends","Warzone"],c:1,
+   e:"PUBG (PlayerUnknown's Battlegrounds) launched in March 2017 and sparked the Battle Royale explosion."},
+  {q:"In Half-Life 2, what is the alien regime called?",a:["The Flood","The Combine","The Covenant","The Strogg"],c:1,
+   e:"The Combine is the interdimensional empire that conquered Earth seven hours after the events of Half-Life 1."},
+  {q:"What company made the original Halo: Combat Evolved?",a:["343 Industries","Epic Games","Bungie","Raven Software"],c:2,
+   e:"Bungie developed Halo: Combat Evolved, releasing it as a launch title for the original Xbox in November 2001."},
+  {q:"Which FPS introduced wall-running mechanics to popularity?",a:["Titanfall","Doom","Black Ops III","Quake"],c:0,
+   e:"Titanfall (2014) by Respawn Entertainment made wall-running a signature movement mechanic in the FPS genre."},
+  {q:"In Apex Legends, Wraith is called the what?",a:["Skirmisher","Interdimensional Skirmisher","Ghost","Void Walker"],c:1,
+   e:"Wraith's official title is 'Interdimensional Skirmisher,' reflecting her ability to phase through the void."},
+  {q:"What map is most iconic to CS:GO competitive play?",a:["Inferno","Mirage","Dust II","Nuke"],c:2,
+   e:"Dust II has been in Counter-Strike since 2001 and remains the most played competitive map in the game's history."},
+  {q:"Which Call of Duty introduced killstreaks as rewards?",a:["CoD4: Modern Warfare","Medal of Honor","Battlefield 3","Counter-Strike"],c:0,
+   e:"Call of Duty 4: Modern Warfare (2007) introduced the killstreak reward system that transformed online FPS design."},
+  {q:"What is the name of Zelda's kingdom in most games?",a:["Termina","Lorule","Hyrule","Skyloft"],c:2,
+   e:"Hyrule is the primary kingdom in the Legend of Zelda series, named after the royal family that protects it."},
+  {q:"Which Pokemon is known as the 'Genetic Pokemon'?",a:["Mew","Mewtwo","Arceus","Ditto"],c:1,
+   e:"Mewtwo's Pokédex classification is 'Genetic Pokémon,' reflecting its creation from Mew's DNA by scientists."},
+  {q:"What is the max level in the original Dark Souls?",a:["99","150","700","Soul Level 802"],c:3,
+   e:"The maximum Soul Level in Dark Souls is 802, reached only by maxing every stat to 99."},
+  {q:"In Minecraft, what material is needed for the final portal?",a:["Diamond","Obsidian","Nether Brick","End Stone"],c:1,
+   e:"The End Portal is built using obsidian frames with Eyes of Ender, sending players to fight the Ender Dragon."},
+  {q:"Which studio developed The Last of Us?",a:["Insomniac Games","Naughty Dog","Santa Monica","Guerrilla Games"],c:1,
+   e:"Naughty Dog, known for Uncharted, released The Last of Us in 2013 to critical acclaim."},
+  {q:"What year was the original Doom released?",a:["1991","1992","1993","1994"],c:2,
+   e:"Doom was released on December 10, 1993 as shareware, going on to define the FPS genre for years to come."},
+  {q:"League of Legends is what type of game?",a:["FPS","MOBA","Battle Royale","MMORPG"],c:1,
+   e:"League of Legends is a Multiplayer Online Battle Arena (MOBA) developed and published by Riot Games."},
+  {q:"Who is the protagonist of the Witcher series?",a:["Ciri","Yennefer","Geralt","Dandelion"],c:2,
+   e:"Geralt of Rivia is the silver-haired Witcher and main playable character throughout CD Projekt Red's trilogy."},
+  {q:"What is the currency in The Elder Scrolls series?",a:["Coins","Rupees","Septims","Gold Pieces"],c:2,
+   e:"Septims are the gold coins used as currency throughout Tamriel in the Elder Scrolls universe."},
+  {q:"In Valorant, what is the objective item called?",a:["Bomb","Orb","Spike","Core"],c:2,
+   e:"The Spike is the bomb-like device that Attackers must plant and Defenders must defuse in Valorant."},
+  {q:"Which company makes the PlayStation console?",a:["Microsoft","Nintendo","Sega","Sony"],c:3,
+   e:"Sony Interactive Entertainment has produced the PlayStation line of consoles since the original launched in 1994."},
+  {q:"What does 'GG' stand for in gaming?",a:["Good Game","Great Gaming","Go Go","Get Good"],c:0,
+   e:"GG stands for 'Good Game,' used as sportsmanlike acknowledgment at the end of a match."},
+  {q:"In Fortnite, what is the rarest item tier?",a:["Epic","Legendary","Mythic","Exotic"],c:2,
+   e:"Mythic is the rarest tier in Fortnite, represented by gold color, typically earned by defeating a boss."},
+  {q:"Which game series features Master Chief?",a:["Gears of War","Destiny","Halo","Titanfall"],c:2,
+   e:"Master Chief (John-117) is the Spartan supersoldier protagonist of the Halo franchise by Bungie and 343 Industries."},
+  {q:"What does 'RPG' stand for?",a:["Rapid Play Game","Role Playing Game","Real Player Game","Random Puzzle Game"],c:1,
+   e:"RPG stands for Role-Playing Game, a genre where players assume the roles of characters in a fictional setting."},
+  {q:"Which year was Minecraft officially released?",a:["2009","2010","2011","2012"],c:2,
+   e:"Minecraft officially launched November 18, 2011, though it had been available in alpha and beta since 2009."},
+  {q:"What is a 'speedrun' in gaming?",a:["A race between players","Completing a game as fast as possible","A fast-paced game mode","An in-game speed boost"],c:1,
+   e:"A speedrun is an attempt to complete a video game as quickly as possible, often using glitches and precise routing."},
+  {q:"In StarCraft, what are the three playable races?",a:["Human, Alien, Robot","Terran, Zerg, Protoss","Marine, Drone, Stalker","Earth, Space, Void"],c:1,
+   e:"StarCraft's three distinct factions are the human Terran, the insectoid Zerg, and the advanced alien Protoss."},
+  {q:"Which game features the fictional city of Vice City?",a:["GTA: San Andreas","GTA III","GTA: Vice City","GTA V"],c:2,
+   e:"Grand Theft Auto: Vice City (2002) is set in the fictional, Miami-inspired city of Vice City in the 1980s."},
+  {q:"What is 'camping' in FPS games?",a:["Setting up base","Staying in one spot to kill enemies","Playing outdoors","Going AFK"],c:1,
+   e:"Camping means remaining stationary in a favorable position to ambush opponents, often considered unsporting."},
+  {q:"What year did Fortnite Battle Royale launch?",a:["2016","2017","2018","2019"],c:1,
+   e:"Fortnite Battle Royale launched as a free-to-play mode on September 26, 2017, quickly becoming a global phenomenon."},
+  {q:"Which iconic game requires players to 'catch em all'?",a:["Digimon","Monster Hunter","Pokemon","Temtem"],c:2,
+   e:"Pokémon's famous tagline 'Gotta catch 'em all!' has been its rallying cry since the original Game Boy games in 1996."},
+  {q:"What is the highest rank in Rocket League?",a:["Grand Champion","Supersonic Legend","Champion","Diamond"],c:1,
+   e:"Supersonic Legend is the highest rank in Rocket League, introduced in 2020 to sit above Grand Champion."},
+  {q:"In Among Us, what is the impostor's goal?",a:["Fix the ship","Eliminate crewmates","Escape the ship","Complete tasks"],c:1,
+   e:"Impostors must eliminate crewmates and sabotage the ship without being identified and voted out."},
+  {q:"What does 'DLC' stand for?",a:["Downloadable Content","Digital Level Content","Deluxe Level Collection","Download and Play"],c:0,
+   e:"DLC stands for Downloadable Content — additional game content delivered via internet after a game's release."},
+  {q:"Which console introduced the analog stick?",a:["PlayStation 1","N64","Dreamcast","Saturn"],c:1,
+   e:"The Nintendo 64 controller (1996) introduced the analog stick to mainstream console gaming with its central thumbstick."},
+  {q:"What is the name of Link's main weapon in Zelda?",a:["Triforce","Hylian Shield","Master Sword","Light Arrow"],c:2,
+   e:"The Master Sword is Link's legendary blade, forged to combat evil and often called the 'Blade of Evil's Bane.'"},
+  {q:"Which studio made the Diablo series?",a:["Activision","Blizzard Entertainment","Treyarch","Bungie"],c:1,
+   e:"Blizzard Entertainment created Diablo in 1996, pioneering the action RPG dungeon-crawler genre."},
+  {q:"In Dark Souls, what happens when you die?",a:["Lose all progress","Drop your souls where you died","Respawn at last bonfire only","Lose a life"],c:1,
+   e:"Death in Dark Souls drops all held souls at the point of death — you can recover them by reaching that spot again."},
+  {q:"What is the currency in World of Warcraft?",a:["Coins","Credits","Gold","Gems"],c:2,
+   e:"Gold is the primary currency in World of Warcraft, used for gear, mounts, crafting materials, and services."},
+  {q:"Which game is set on the planet Pandora (not the Avatar one)?",a:["Mass Effect","Destiny","Borderlands","No Man's Sky"],c:2,
+   e:"The Borderlands series is set on the planet Pandora, a wasteland filled with psychos, vaults, and alien creatures."},
+  {q:"What company developed Portal?",a:["Blizzard","EA","Valve","Epic"],c:2,
+   e:"Valve developed Portal (2007), a puzzle game using a portal gun to solve spatial challenges in the Aperture Science facility."},
+  {q:"In fighting games, what is an 'OTG'?",a:["Off-The-Ground combo","Over-Time Goal","Original Team Game","One-Touch Grab"],c:0,
+   e:"OTG (Off-The-Ground) refers to hitting an opponent while they're knocked down before they can recover."},
+  {q:"What is 'tilting' in competitive gaming?",a:["Changing your setup","Playing badly due to frustration","Winning streak","A camera angle"],c:1,
+   e:"Tilting describes the mental state of playing poorly due to frustration or anger, often leading to more mistakes."},
+  {q:"Which game pioneered open-world RPG on consoles in 2011?",a:["Fallout 3","The Witcher 3","Skyrim","Dragon Age Origins"],c:2,
+   e:"The Elder Scrolls V: Skyrim (2011) became the defining open-world RPG of its generation with its massive explorable world."},
+  {q:"What is the max level cap in most MMOs per expansion called?",a:["Prestige","Cap","Level ceiling","Level cap"],c:3,
+   e:"The level cap is the maximum level a character can reach in an MMO, typically raised with each major expansion."},
+  {q:"In Rocket League, how many players are on each team in standard mode?",a:["2","3","4","5"],c:1,
+   e:"Standard Rocket League is 3v3, with each team controlling three rocket-powered cars to hit a ball into a goal."},
+  {q:"What genre is 'Stardew Valley'?",a:["Action RPG","Farming Simulation","Battle Royale","Tower Defense"],c:1,
+   e:"Stardew Valley is a farming simulation RPG created solo by developer ConcernedApe and released in 2016."},
+  {q:"Which character is on the cover of the original Doom?",a:["A demon","The Doomguy","A space marine with a shotgun","Master Chief"],c:2,
+   e:"The iconic Doom cover art shows the Doomguy (space marine) holding a shotgun surrounded by monsters."},
+  {q:"What does 'meta' refer to in competitive gaming?",a:["The game's story","The current optimal strategy or picks","The final boss","A type of game mode"],c:1,
+   e:"'Meta' (Most Effective Tactics Available) describes the currently dominant strategies, characters, or builds in competitive play."}
+];
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DAILY SEED & QUESTION SELECTION
+// ═══════════════════════════════════════════════════════════════════════════════
+const today = new Date();
+const todayKey = `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
+const dayNum = Math.floor((today - new Date(2026, 0, 1)) / 86400000) + 1;
+
+document.getElementById('quizNum').textContent = '#' + dayNum;
+
+// Seeded shuffle using day index — deterministic 10 questions per day
+function seededRandom(seed) {
+  let s = seed;
+  return function() {
+    s = (s * 1664525 + 1013904223) & 0xffffffff;
+    return (s >>> 0) / 0x100000000;
+  };
+}
+
+function pickDailyQuestions() {
+  const rng = seededRandom(dayNum * 7919);
+  const pool = [...QUESTIONS];
+  const shuffled = [];
+  while (shuffled.length < pool.length) {
+    const idx = Math.floor(rng() * (pool.length - shuffled.length));
+    shuffled.push(pool.splice(idx, 1)[0]);
+  }
+  return shuffled.slice(0, 10);
+}
+
+const DAILY_QS = pickDailyQuestions();
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════════════════════
+const TIMER_MAX = 15;
+const LABELS = ['A', 'B', 'C', 'D'];
+
+let stats = JSON.parse(localStorage.getItem('trivia-stats') || '{"streak":0,"hiScore":0,"played":0,"lastDate":"","history":{}}');
+let currentQ   = 0;
+let scores     = [];       // array of points per question
+let results    = [];       // 'correct' | 'wrong' | 'timeout'
+let answered   = false;
+let timerVal   = TIMER_MAX;
+let timerTick  = null;
+let gameActive = false;
+
+// Check if already played today
+const todayDone = stats.history[todayKey];
+
+// Update header display
+document.getElementById('streakDisp').textContent = stats.streak;
+document.getElementById('hiScoreDisp').textContent = stats.hiScore;
+document.getElementById('playedDisp').textContent = stats.played;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TIMER
+// ═══════════════════════════════════════════════════════════════════════════════
+function startTimer() {
+  timerVal = TIMER_MAX;
+  updateTimerUI();
+  clearInterval(timerTick);
+  timerTick = setInterval(() => {
+    timerVal -= 0.25;
+    if (timerVal <= 0) {
+      timerVal = 0;
+      clearInterval(timerTick);
+      onTimeout();
+    }
+    updateTimerUI();
+  }, 250);
+}
+
+function updateTimerUI() {
+  const pct = timerVal / TIMER_MAX * 100;
+  const bar = document.getElementById('timerBar');
+  const lbl = document.getElementById('timerLabel');
+  bar.style.width = pct + '%';
+  lbl.textContent = Math.ceil(timerVal) + 's';
+  // Color: green → yellow → red
+  if (pct > 50)      bar.style.backgroundColor = 'var(--accent)';
+  else if (pct > 25) bar.style.backgroundColor = '#ffb300';
+  else               bar.style.backgroundColor = '#ff4757';
+}
+
+function stopTimer() {
+  clearInterval(timerTick);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// RENDER QUESTION
+// ═══════════════════════════════════════════════════════════════════════════════
+function renderQuestion(idx) {
+  answered = false;
+  const q = DAILY_QS[idx];
+
+  document.getElementById('qNum').textContent = idx + 1;
+  document.getElementById('questionText').textContent = q.q;
+
+  // Reset explanation & next
+  const expl = document.getElementById('explanation');
+  expl.className = 'explanation';
+  expl.innerHTML = '';
+
+  const pf = document.getElementById('pointsFlash');
+  pf.className = 'points-flash';
+
+  document.getElementById('nextRow').className = 'next-row';
+
+  // Build answer buttons
+  const grid = document.getElementById('answerGrid');
+  grid.innerHTML = '';
+  q.a.forEach((text, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'answer-btn';
+    btn.dataset.idx = i;
+    btn.innerHTML = `<span class="choice-label">${LABELS[i]}</span><span>${text}</span>`;
+    btn.addEventListener('click', () => onAnswer(i));
+    grid.appendChild(btn);
+  });
+
+  // Reset timer bar
+  const bar = document.getElementById('timerBar');
+  bar.style.width = '100%';
+  bar.style.backgroundColor = 'var(--accent)';
+  document.getElementById('timerLabel').textContent = TIMER_MAX + 's';
+
+  startTimer();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ANSWER HANDLER
+// ═══════════════════════════════════════════════════════════════════════════════
+function onAnswer(chosenIdx) {
+  if (answered) return;
+  answered = true;
+  stopTimer();
+
+  const elapsed = TIMER_MAX - timerVal;
+  const q = DAILY_QS[currentQ];
+  const correct = chosenIdx === q.c;
+
+  let pts = 0;
+  if (correct) {
+    if (elapsed <= 5)       pts = 100;
+    else if (elapsed <= 10) pts = 75;
+    else                    pts = 50;
+  }
+  scores.push(pts);
+  results.push(correct ? 'correct' : 'wrong');
+
+  revealAnswers(chosenIdx, q.c, correct);
+  showExplanation(q.e, correct);
+  showPointsFlash(pts, correct);
+  showNextBtn();
+}
+
+function onTimeout() {
+  if (answered) return;
+  answered = true;
+
+  scores.push(0);
+  results.push('timeout');
+
+  const q = DAILY_QS[currentQ];
+  revealAnswers(-1, q.c, false);
+  showExplanation(q.e, false, true);
+  showPointsFlash(0, false, true);
+  showNextBtn();
+}
+
+function revealAnswers(chosen, correct, wasCorrect) {
+  const btns = document.querySelectorAll('.answer-btn');
+  btns.forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === correct) {
+      btn.classList.add(chosen === i && wasCorrect ? 'correct' : 'reveal-correct');
+    } else if (i === chosen && !wasCorrect) {
+      btn.classList.add('wrong');
+    } else {
+      btn.classList.add('dimmed');
+    }
+  });
+}
+
+function showExplanation(text, correct, timeout) {
+  const el = document.getElementById('explanation');
+  const icon = timeout ? '⏰ Time!' : correct ? '✅ Correct!' : '❌ Wrong.';
+  el.innerHTML = `<strong>${icon}</strong> ${text}`;
+  el.classList.add('show');
+}
+
+function showPointsFlash(pts, correct, timeout) {
+  const el = document.getElementById('pointsFlash');
+  if (pts > 0) {
+    el.textContent = '+' + pts + ' pts';
+    el.className = 'points-flash gain show';
+  } else {
+    el.textContent = timeout ? '⏰ +0 pts' : '+0 pts';
+    el.className = 'points-flash zero show';
+  }
+}
+
+function showNextBtn() {
+  const row = document.getElementById('nextRow');
+  const btn = document.getElementById('nextBtn');
+  row.classList.add('show');
+  const isLast = currentQ === DAILY_QS.length - 1;
+  btn.textContent = isLast ? 'See Results 🏆' : 'Next →';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// NEXT QUESTION
+// ═══════════════════════════════════════════════════════════════════════════════
+function nextQuestion() {
+  currentQ++;
+  if (currentQ >= DAILY_QS.length) {
+    endGame();
+  } else {
+    renderQuestion(currentQ);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// END GAME
+// ═══════════════════════════════════════════════════════════════════════════════
+function endGame() {
+  stopTimer();
+  gameActive = false;
+
+  const totalPts  = scores.reduce((s, v) => s + v, 0);
+  const correctCt = results.filter(r => r === 'correct').length;
+
+  // Grade
+  let grade;
+  if (totalPts >= 900)      grade = 'S';
+  else if (totalPts >= 750) grade = 'A';
+  else if (totalPts >= 550) grade = 'B';
+  else if (totalPts >= 350) grade = 'C';
+  else                      grade = 'F';
+
+  // Emoji row
+  const emojiMap = { correct:'🟩', wrong:'🟥', timeout:'⬛' };
+  const emojiLine = results.map(r => emojiMap[r]).join('');
+
+  // Update stats
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yKey = `${yesterday.getFullYear()}-${yesterday.getMonth()+1}-${yesterday.getDate()}`;
+  const playedYesterday = !!stats.history[yKey];
+
+  stats.streak = playedYesterday ? stats.streak + 1 : 1;
+  if (totalPts > stats.hiScore) stats.hiScore = totalPts;
+  stats.played++;
+  stats.lastDate = todayKey;
+  stats.history[todayKey] = { done:true, correctCt, totalPts, grade, results };
+  localStorage.setItem('trivia-stats', JSON.stringify(stats));
+
+  // Share text
+  const shareText = `🎮 Trivia #${dayNum} — ${correctCt}/10 (${totalPts} pts)\n${emojiLine}\ncosmicgameshub.com/games/gaming-trivia`;
+
+  // Build results screen
+  document.getElementById('questionCard').style.display = 'none';
+
+  const rs = document.getElementById('resultsScreen');
+  rs.classList.add('show');
+
+  const badge = document.getElementById('gradeBadge');
+  badge.textContent = grade;
+  badge.className = `grade-badge grade-${grade}`;
+
+  document.getElementById('resultsScore').textContent = `${correctCt} / 10 Correct`;
+  document.getElementById('resultsPts').textContent = `${totalPts} points`;
+  document.getElementById('emojiRow').textContent = emojiLine;
+
+  document.getElementById('rsStreak').textContent = stats.streak;
+  document.getElementById('rsPlayed').textContent = stats.played;
+  document.getElementById('rsHi').textContent = stats.hiScore;
+
+  document.getElementById('shareBox').textContent = shareText;
+
+  // Update header pills
+  document.getElementById('streakDisp').textContent = stats.streak;
+  document.getElementById('hiScoreDisp').textContent = stats.hiScore;
+  document.getElementById('playedDisp').textContent = stats.played;
+
+  // Confetti for good grades
+  if (grade === 'S' || grade === 'A') setTimeout(confetti, 200);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ALREADY PLAYED TODAY
+// ═══════════════════════════════════════════════════════════════════════════════
+function showAlreadyPlayed(record) {
+  stopTimer();
+  document.getElementById('questionCard').style.display = 'none';
+  const rs = document.getElementById('resultsScreen');
+  rs.classList.add('show');
+
+  const emojiMap = { correct:'🟩', wrong:'🟥', timeout:'⬛' };
+  const emojiLine = record.results.map(r => emojiMap[r]).join('');
+  const shareText = `🎮 Trivia #${dayNum} — ${record.correctCt}/10 (${record.totalPts} pts)\n${emojiLine}\ncosmicgameshub.com/games/gaming-trivia`;
+
+  const badge = document.getElementById('gradeBadge');
+  badge.textContent = record.grade;
+  badge.className = `grade-badge grade-${record.grade}`;
+
+  document.getElementById('resultsScore').textContent = `${record.correctCt} / 10 Correct`;
+  document.getElementById('resultsPts').textContent = `${record.totalPts} points — already played today`;
+  document.getElementById('emojiRow').textContent = emojiLine;
+
+  document.getElementById('rsStreak').textContent = stats.streak;
+  document.getElementById('rsPlayed').textContent = stats.played;
+  document.getElementById('rsHi').textContent = stats.hiScore;
+
+  document.getElementById('shareBox').textContent = shareText;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SHARE
+// ═══════════════════════════════════════════════════════════════════════════════
+function copyShare() {
+  navigator.clipboard.writeText(document.getElementById('shareBox').textContent).then(() => {
+    const btn = document.querySelector('[onclick="copyShare()"]');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '✅ Copied!';
+    setTimeout(() => btn.innerHTML = orig, 2000);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CONFETTI
+// ═══════════════════════════════════════════════════════════════════════════════
+function confetti() {
+  const colors = ['#00d4ff','#00e676','#ffb300','#ff4757','#9c88ff','#ffd700'];
+  for (let i = 0; i < 70; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    const size = 6 + Math.random() * 7;
+    el.style.cssText = `left:${Math.random()*100}vw;top:-20px;width:${size}px;height:${size}px;background:${colors[Math.floor(Math.random()*colors.length)]};border-radius:${Math.random()>0.5?'50%':'3px'};animation-duration:${1.2+Math.random()*1.8}s;animation-delay:${Math.random()*0.6}s;`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3500);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════════════════
+if (todayDone) {
+  showAlreadyPlayed(todayDone);
+} else {
+  gameActive = true;
+  renderQuestion(0);
+}
+
+document.getElementById('hamburger').addEventListener('click', function() {
+  document.getElementById('navLinks').classList.toggle('open');
+  this.setAttribute('aria-expanded', document.getElementById('navLinks').classList.contains('open'));
+});
+</script>
+</body>
+</html>
