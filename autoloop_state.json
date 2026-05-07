@@ -9,16 +9,10 @@
     {"id": "schema-guide-monitors", "done": "2026-05-07", "notes": "BreadcrumbList + Article + ItemList with 5 products"},
     {"id": "schema-versus-all", "done": "2026-05-07", "notes": "BreadcrumbList + Article + ItemList on all 6 versus pages"},
     {"id": "og-images-all", "done": "2026-05-07", "notes": "og:image added to all 11 guide+versus pages; versus pages also got og:title+og:description"},
-    {"id": "about-page", "done": "2026-05-07", "notes": "about.html created with Grok Imagine hero, review process, editorial standards, contact"}
+    {"id": "about-page", "done": "2026-05-07", "notes": "about.html created with Grok Imagine hero, review process, editorial standards, contact"},
+    {"id": "fix-amazon-links", "done": "2026-05-07", "notes": "All 25 products across 5 guide pages + 6 versus pages now use amazon.com/dp/ASIN?tag=cosmicgameshu-20 direct links. Commit f9f0ba7."}
   ],
   "queue": [
-    {
-      "id": "fix-amazon-links",
-      "type": "content",
-      "priority": 2,
-      "title": "Fix Amazon links to direct ASIN product pages",
-      "description": "Replace all amazon.com/s?k=... search URLs with direct amazon.com/dp/ASIN links for each product across all guide pages. Use Grok to research correct ASINs."
-    },
     {
       "id": "versus-g502-vs-superlight2",
       "type": "new-page",
@@ -89,6 +83,13 @@
       "tasks_completed": ["schema-guide-headsets","schema-guide-mice","schema-guide-keyboards","schema-guide-chairs","schema-guide-monitors","schema-versus-all","og-images-all","about-page"],
       "commits": ["dcd862c (schema)", "pending (og:images + about)"],
       "notes": "Completed all priority-1 schema tasks and priority-2 og:image + About page in one pass"
+    },
+    {
+      "iteration": 2,
+      "date": "2026-05-07",
+      "tasks_completed": ["fix-amazon-links"],
+      "commits": ["f9f0ba7"],
+      "notes": "Replaced all 25 amazon.com/s?k= search URLs with direct dp/ASIN links. Used Grok to research all ASINs in one query. 11 files updated."
     }
   ]
 }
