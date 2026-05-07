@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gaming Crossword — Daily Mini Puzzle | CosmicGamesHub</title>
+  <meta name="description" content="Daily 5x5 gaming crossword puzzle. New puzzle every day with gaming terms, characters, and mechanics. Track your streak and share results.">
+  <link rel="stylesheet" href="../styles.css">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-D272MF8NQP"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-D272MF8NQP');</script>
+  <style>
+    .cw-wrap { max-width: 680px; margin: 0 auto; padding: 1rem; }
+    .cw-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: .75rem; font-size: .85rem; color: var(--text-muted, #aaa); }
+    .cw-streak { font-weight: 700; color: var(--accent, #22d3ee); }
+    .cw-active-clue { background: var(--bg-card, #1a1a2e); border: 1px solid var(--accent, #22d3ee); border-radius: 8px; padding: .6rem 1rem; margin-bottom: 1rem; font-size: .95rem; min-height: 2.2rem; color: #fff; }
+    .cw-active-clue strong { color: var(--accent, #22d3ee); margin-right: .4rem; }
+    .cw-layout { display: flex; gap: 1.5rem; flex-wrap: wrap; justify-content: center; }
+    .cw-grid { display: grid; grid-template-columns: repeat(5, 58px); grid-template-rows: repeat(5, 58px); gap: 3px; flex-shrink: 0; }
+    .cw-cell {
+      position: relative; width: 58px; height: 58px;
+      background: #1c1c2e; border: 2px solid #333;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; user-select: none; border-radius: 4px;
+      transition: background .12s;
+    }
+    .cw-cell.word-hl { background: #1a2a3a; border-color: #3a5a7a; }
+    .cw-cell.sel { background: #0e3a5c; border-color: var(--accent, #22d3ee); }
+    .cw-cell.correct { background: #0d3d1a; border-color: #2ecc71; }
+    .cw-cell.wrong { background: #3d0d0d; border-color: #e74c3c; }
+    .cw-cell.revealed { background: #2a1a0a; border-color: #f39c12; }
+    .cw-num { position: absolute; top: 3px; left: 4px; font-size: 10px; color: #888; line-height: 1; }
+    .cw-letter { font-size: 22px; font-weight: 700; color: #fff; letter-spacing: 0; }
+    .cw-clues { flex: 1; min-width: 200px; max-width: 280px; }
+    .cw-clues h3 { font-size: .8rem; letter-spacing: .12em; text-transform: uppercase; color: #888; margin: 0 0 .5rem; }
+    .cw-clue-list { list-style: none; padding: 0; margin: 0 0 1.2rem; }
+    .cw-clue-list li { font-size: .82rem; line-height: 1.45; padding: .25rem .4rem; border-radius: 4px; cursor: pointer; color: #ccc; }
+    .cw-clue-list li:hover { background: #1a2a3a; }
+    .cw-clue-list li.active { background: #0e3a5c; color: #fff; }
+    .cw-clue-list li.done { color: #2ecc71; }
+    .cw-clue-num { font-weight: 700; color: var(--accent, #22d3ee); margin-right: .3rem; min-width: 1.2rem; display: inline-block; }
+    .cw-controls { display: flex; gap: .5rem; margin-top: 1rem; flex-wrap: wrap; }
+    .cw-controls button { padding: .45rem 1rem; border-radius: 6px; border: 1px solid #444; background: #1a1a2e; color: #ccc; cursor: pointer; font-size: .85rem; transition: all .15s; }
+    .cw-controls button:hover { border-color: var(--accent, #22d3ee); color: #fff; }
+    .cw-controls button#btn-check { background: var(--accent, #22d3ee); color: #000; border-color: var(--accent, #22d3ee); font-weight: 700; }
+    .cw-controls button#btn-check:hover { opacity: .85; }
+    .cw-result { display: none; margin-top: 1.5rem; background: var(--bg-card, #1a1a2e); border-radius: 12px; padding: 1.5rem; text-align: center; }
+    .cw-result.show { display: block; }
+    .cw-result h2 { margin: 0 0 .5rem; font-size: 1.4rem; }
+    .cw-result p { color: #aaa; margin: .3rem 0; font-size: .9rem; }
+    .cw-emoji { font-size: 1.5rem; letter-spacing: 2px; margin: .8rem 0; }
+    .cw-share-btn { margin-top: .8rem; padding: .5rem 1.4rem; background: var(--accent, #22d3ee); color: #000; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: .95rem; }
+    .cw-checks-badge { display: inline-block; background: #0e3a5c; color: var(--accent, #22d3ee); border-radius: 20px; padding: .2rem .7rem; font-size: .8rem; font-weight: 700; margin-top: .5rem; }
+    @media (max-width: 500px) {
+      .cw-grid { grid-template-columns: repeat(5, 50px); grid-template-rows: repeat(5, 50px); gap: 2px; }
+      .cw-cell { width: 50px; height: 50px; }
+      .cw-letter { font-size: 18px; }
+      .cw-clues { max-width: 100%; }
+      .cw-layout { flex-direction: column; align-items: center; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="site-nav">
+    <a href="/" class="nav-logo">CosmicGamesHub</a>
+    <ul class="nav-links">
+      <li><a href="/games">Games</a></li>
+      <li><a href="/guides/best-gaming-headsets-2026">Headsets</a></li>
+      <li><a href="/guides/best-gaming-mice-2026">Mice</a></li>
+      <li><a href="/guides/best-gaming-keyboards-2026">Keyboards</a></li>
+    </ul>
+  </nav>
+
+  <main>
+    <nav class="breadcrumb" aria-label="Breadcrumb" style="max-width:680px;margin:1rem auto;padding:0 1rem;">
+      <ol><li><a href="/">Home</a></li><li><a href="/games">Games</a></li><li aria-current="page">Gaming Crossword</li></ol>
+    </nav>
+
+    <div class="cw-wrap">
+      <div style="text-align:center;margin-bottom:1rem;">
+        <h1 style="font-size:1.6rem;margin:0 0 .25rem;">Gaming Crossword</h1>
+        <p style="color:#aaa;font-size:.9rem;margin:0;">Daily 5×5 mini puzzle — new challenge every day</p>
+      </div>
+
+      <div class="cw-meta">
+        <span id="cw-date"></span>
+        <span class="cw-streak" id="cw-streak"></span>
+      </div>
+
+      <div class="cw-active-clue" id="cw-active-clue"><em style="color:#666">Click a cell to start</em></div>
+
+      <div class="cw-layout">
+        <div class="cw-grid" id="cw-grid"></div>
+        <div class="cw-clues" id="cw-clues-panel"></div>
+      </div>
+
+      <div class="cw-controls">
+        <button id="btn-check">✓ Check</button>
+        <button id="btn-reveal">💡 Reveal Letter</button>
+        <button id="btn-clear">↺ Clear All</button>
+      </div>
+
+      <div class="cw-result" id="cw-result">
+        <h2>🎉 Solved!</h2>
+        <div class="cw-emoji" id="cw-result-emoji"></div>
+        <p id="cw-result-checks"></p>
+        <p id="cw-result-best"></p>
+        <div class="cw-checks-badge" id="cw-result-badge"></div>
+        <button class="cw-share-btn" id="btn-share">Share Result</button>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>© 2026 CosmicGamesHub · <a href="/about">About</a> · <a href="/games">All Games</a> · <a href="/">Home</a></p>
+  </footer>
+
+<script>
+(function() {
+  'use strict';
+
+  const PUZZLES = [
+    {
+      rows: ['SPAWN','TURBO','ORBIT','MAGIC','PATCH'],
+      across: [
+        {num:1,clue:'Appear in the game world after dying'},
+        {num:3,clue:'Speed-boost power-up; Mario Kart staple'},
+        {num:4,clue:'Circle around a planet or enemy in space games'},
+        {num:5,clue:'Spell-casting stat powering wizards in RPGs'},
+        {num:6,clue:'Game update that fixes bugs and rebalances characters'}
+      ],
+      down: [
+        {num:1,col:0,clue:'Crush enemies underfoot by jumping on their heads'},
+        {num:2,col:4,clue:"Minecraft creator Markus Persson's nickname"}
+      ]
+    },
+    {
+      rows: ['GLIDE','ANVIL','MIXED','EVADE','RADAR'],
+      across: [
+        {num:1,clue:'Float through the air in a wingsuit or platformer'},
+        {num:3,clue:'Crafting station used to forge weapons in Minecraft'},
+        {num:4,clue:'Blended lobby of different skill levels'},
+        {num:5,clue:'Dodge an attack or slip past an enemy undetected'},
+        {num:6,clue:'Enemy detection system shown on your HUD'}
+      ],
+      down: [
+        {num:1,col:0,clue:'One who plays video games'},
+        {num:2,col:4,clue:'Ancient high-level NPC in fantasy RPGs'}
+      ]
+    },
+    {
+      rows: ['SHELL','LIMBO','AGAIN','SCENE','HUMOR'],
+      across: [
+        {num:1,clue:"Projectile from a cannon; also a turtle's defense"},
+        {num:3,clue:'Underground dance challenge; also a difficulty tier'},
+        {num:4,clue:'Press start to try once more'},
+        {num:5,clue:'In-engine cutscene; a dramatic story moment'},
+        {num:6,clue:'Trait affecting dialogue choices in RPGs like Fallout'}
+      ],
+      down: [
+        {num:1,col:0,clue:'Sword attack that cuts horizontally'},
+        {num:2,col:4,clue:'Player who prefers solo runs over party play'}
+      ]
+    },
+    {
+      rows: ['CHAOS','HEART','EMOTE','AGILE','TRIAL'],
+      across: [
+        {num:1,clue:'Total disorder in battle; god-tier difficulty level'},
+        {num:3,clue:'Extra life container in Zelda-style games'},
+        {num:4,clue:'Animated character expression triggered by command'},
+        {num:5,clue:'Quick and nimble; a key trait in stealth games'},
+        {num:6,clue:'Limited demo access or time-limited game test'}
+      ],
+      down: [
+        {num:1,col:0,clue:'Forbidden code unlocking god mode or infinite ammo'},
+        {num:2,col:4,clue:'Refined metal ore used for crafting weapons and armor'}
+      ]
+    },
+    {
+      rows: ['SCORE','NINJA','ICING','PIXEL','EVADE'],
+      across: [
+        {num:1,clue:'Your running tally of points or kills in a match'},
+        {num:3,clue:'Stealthy warrior class known for speed and silent kills'},
+        {num:4,clue:'Scoring a goal from behind center ice in hockey games'},
+        {num:5,clue:"The smallest unit on a display; retro games' building block"},
+        {num:6,clue:'Dodge incoming fire or slip out of detection range'}
+      ],
+      down: [
+        {num:1,col:0,clue:'Take out an enemy from extreme range with a rifle'},
+        {num:2,col:4,clue:'Achievement badge icon; also a golf score of minus two'}
+      ]
+    },
+    {
+      rows: ['GOALS','UPSET','AZURE','RUMBA','DREAM'],
+      across: [
+        {num:1,clue:'Objectives you complete to advance a quest or match'},
+        {num:3,clue:'Shocking tournament victory by the underdog'},
+        {num:4,clue:'Sky-blue color scheme popular in RPGs and sci-fi games'},
+        {num:5,clue:'Rhythm game dance pattern with hip-swing timing cues'},
+        {num:6,clue:'Narrative mode where you explore a character\'s inner world'}
+      ],
+      down: [
+        {num:1,col:0,clue:'Defensive role that protects teammates and absorbs damage'},
+        {num:2,col:4,clue:"Valve's PC gaming platform where you manage your library"}
+      ]
+    },
+    {
+      rows: ['POWER','RANGE','EXTRA','SKILL','STORM'],
+      across: [
+        {num:1,clue:'Core stat governing spell strength or melee force'},
+        {num:3,clue:'Maximum distance a weapon or ability can reach'},
+        {num:4,clue:'Bonus life awarded for hitting a score threshold'},
+        {num:5,clue:'Learned ability unlocked with XP in RPG skill trees'},
+        {num:6,clue:'Charge into battle; also the shrinking zone in battle royale'}
+      ],
+      down: [
+        {num:1,col:0,clue:'Input a button; also journalists who cover the industry'},
+        {num:2,col:4,clue:'Distinct game world or server zone in an MMO'}
+      ]
+    }
+  ];
+
+  // Cell number layout: (0,0)=1, (0,4)=2, (1,0)=3, (2,0)=4, (3,0)=5, (4,0)=6
+  const CELL_NUMS = {
+    '0,0': 1, '0,4': 2,
+    '1,0': 3, '2,0': 4, '3,0': 5, '4,0': 6
+  };
+
+  // Across clue numbers by row
+  const ACROSS_ROW_NUM = [1, 3, 4, 5, 6];
+
+  function getDayOfYear() {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 0);
+    return Math.floor((now - start) / 86400000);
+  }
+
+  const dayIndex = getDayOfYear();
+  const puzzleNum = dayIndex % 7;
+  const puzzle = PUZZLES[puzzleNum];
+
+  // Grid state
+  const userGrid = Array.from({length: 5}, () => Array(5).fill(''));
+  const cellState = Array.from({length: 5}, () => Array(5).fill('')); // '', 'correct', 'wrong', 'revealed'
+  let selRow = 0, selCol = 0, dir = 'across';
+  let checkCount = 0;
+  let solved = false;
+
+  // DOM
+  const gridEl = document.getElementById('cw-grid');
+  const activeClueEl = document.getElementById('cw-active-clue');
+  const resultEl = document.getElementById('cw-result');
+
+  function dateStr() {
+    const d = new Date();
+    return d.toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'});
+  }
+
+  document.getElementById('cw-date').textContent = 'Puzzle #' + (puzzleNum + 1) + ' · ' + dateStr();
+
+  // Streak
+  const SK = 'cw_streak', SLD = 'cw_last_day';
+  let streak = parseInt(localStorage.getItem(SK) || '0');
+  const lastDay = parseInt(localStorage.getItem(SLD) || '-1');
+  if (lastDay === dayIndex) {
+    // same day, keep streak
+  } else if (lastDay === dayIndex - 1) {
+    // consecutive, will increment on solve
+  } else if (lastDay < dayIndex - 1) {
+    streak = 0;
+  }
+  document.getElementById('cw-streak').textContent = streak > 0 ? '🔥 ' + streak + '-day streak' : '';
+
+  // Build grid
+  const cellEls = [];
+  for (let r = 0; r < 5; r++) {
+    cellEls[r] = [];
+    for (let c = 0; c < 5; c++) {
+      const el = document.createElement('div');
+      el.className = 'cw-cell';
+      el.dataset.r = r;
+      el.dataset.c = c;
+      const num = CELL_NUMS[r + ',' + c];
+      if (num) {
+        const nEl = document.createElement('span');
+        nEl.className = 'cw-num';
+        nEl.textContent = num;
+        el.appendChild(nEl);
+      }
+      const lEl = document.createElement('span');
+      lEl.className = 'cw-letter';
+      el.appendChild(lEl);
+      el.addEventListener('click', () => onCellClick(r, c));
+      gridEl.appendChild(el);
+      cellEls[r][c] = el;
+    }
+  }
+
+  function getCellLetter(el) {
+    return el.querySelector('.cw-letter');
+  }
+
+  // Render clues panel
+  function renderClues() {
+    const panel = document.getElementById('cw-clues-panel');
+    let html = '<h3>Across</h3><ul class="cw-clue-list" id="cl-across">';
+    puzzle.across.forEach(({num, clue}) => {
+      const wordComplete = isWordComplete('across', rowForAcrossNum(num));
+      html += `<li id="cla-${num}" data-dir="across" data-num="${num}" ${wordComplete ? 'class="done"' : ''}>
+        <span class="cw-clue-num">${num}.</span>${clue}
+      </li>`;
+    });
+    html += '</ul><h3>Down</h3><ul class="cw-clue-list" id="cl-down">';
+    puzzle.down.forEach(({num, col, clue}) => {
+      const wordComplete = isWordComplete('down', col);
+      html += `<li id="cld-${num}" data-dir="down" data-num="${num}" ${wordComplete ? 'class="done"' : ''}>
+        <span class="cw-clue-num">${num}.</span>${clue}
+      </li>`;
+    });
+    html += '</ul>';
+    panel.innerHTML = html;
+    panel.querySelectorAll('li').forEach(li => {
+      li.addEventListener('click', () => {
+        const d = li.dataset.dir;
+        const n = parseInt(li.dataset.num);
+        if (d === 'across') {
+          const row = rowForAcrossNum(n);
+          selectCell(row, 0, 'across');
+        } else {
+          const col = puzzle.down.find(x => x.num === n).col;
+          selectCell(0, col, 'down');
+        }
+      });
+    });
+  }
+
+  function rowForAcrossNum(num) {
+    return ACROSS_ROW_NUM.indexOf(num);
+  }
+
+  function isWordComplete(direction, rowOrCol) {
+    if (direction === 'across') {
+      const r = rowOrCol;
+      for (let c = 0; c < 5; c++) if (!userGrid[r][c]) return false;
+      return true;
+    } else {
+      const col = rowOrCol;
+      for (let r = 0; r < 5; r++) if (!userGrid[r][col]) return false;
+      return true;
+    }
+  }
+
+  function getActiveWord() {
+    // Returns {dir, row_or_col, num, clue}
+    if (dir === 'across') {
+      const num = ACROSS_ROW_NUM[selRow];
+      const clue = puzzle.across.find(a => a.num === num);
+      return {dir: 'across', row: selRow, num, clueText: clue ? clue.clue : ''};
+    } else {
+      const downEntry = puzzle.down.find(d => d.col === selCol);
+      if (downEntry) return {dir: 'down', col: selCol, num: downEntry.num, clueText: downEntry.clue};
+      // fallback to across
+      const num = ACROSS_ROW_NUM[selRow];
+      const clue = puzzle.across.find(a => a.num === num);
+      return {dir: 'across', row: selRow, num, clueText: clue ? clue.clue : ''};
+    }
+  }
+
+  function canDown(c) {
+    return puzzle.down.some(d => d.col === c);
+  }
+
+  function selectCell(r, c, newDir) {
+    selRow = r;
+    selCol = c;
+    if (newDir) dir = newDir;
+    if (dir === 'down' && !canDown(c)) dir = 'across';
+    renderHighlights();
+    updateActiveClue();
+    updateClueHighlight();
+  }
+
+  function onCellClick(r, c) {
+    if (solved) return;
+    if (r === selRow && c === selCol) {
+      // Toggle direction if down is available for this column
+      if (canDown(c)) dir = dir === 'across' ? 'down' : 'across';
+    } else {
+      selRow = r;
+      selCol = c;
+      if (dir === 'down' && !canDown(c)) dir = 'across';
+    }
+    renderHighlights();
+    updateActiveClue();
+    updateClueHighlight();
+  }
+
+  function renderHighlights() {
+    for (let r = 0; r < 5; r++) {
+      for (let c = 0; c < 5; c++) {
+        const el = cellEls[r][c];
+        el.classList.remove('sel', 'word-hl');
+        if (!cellState[r][c]) {
+          el.style.removeProperty('background');
+          el.style.removeProperty('border-color');
+        }
+      }
+    }
+    // Highlight active word
+    if (dir === 'across') {
+      for (let c = 0; c < 5; c++) {
+        if (!(c === selCol && selRow === selRow)) {
+          cellEls[selRow][c].classList.add('word-hl');
+        }
+      }
+    } else {
+      for (let r = 0; r < 5; r++) {
+        cellEls[r][selCol].classList.add('word-hl');
+      }
+    }
+    // Selected cell on top
+    cellEls[selRow][selCol].classList.remove('word-hl');
+    cellEls[selRow][selCol].classList.add('sel');
+    // Restore state colors
+    for (let r = 0; r < 5; r++) {
+      for (let c = 0; c < 5; c++) {
+        const st = cellState[r][c];
+        if (st === 'correct') cellEls[r][c].classList.add('correct');
+        else if (st === 'wrong') cellEls[r][c].classList.add('wrong');
+        else if (st === 'revealed') cellEls[r][c].classList.add('revealed');
+      }
+    }
+  }
+
+  function updateActiveClue() {
+    const w = getActiveWord();
+    const dirLabel = dir === 'across' ? 'Across' : 'Down';
+    activeClueEl.innerHTML = `<strong>${w.num}-${dirLabel}</strong>${w.clueText}`;
+  }
+
+  function updateClueHighlight() {
+    document.querySelectorAll('.cw-clue-list li').forEach(li => li.classList.remove('active'));
+    const w = getActiveWord();
+    const id = w.dir === 'across' ? 'cla-' + w.num : 'cld-' + w.num;
+    const el = document.getElementById(id);
+    if (el) {
+      el.classList.add('active');
+      el.scrollIntoView({block: 'nearest', behavior: 'smooth'});
+    }
+  }
+
+  function updateCellDisplay(r, c) {
+    getCellLetter(cellEls[r][c]).textContent = userGrid[r][c];
+  }
+
+  function advanceCursor() {
+    if (dir === 'across') {
+      if (selCol < 4) selectCell(selRow, selCol + 1, 'across');
+      else if (selRow < 4) selectCell(selRow + 1, 0, 'across');
+    } else {
+      if (selRow < 4) selectCell(selRow + 1, selCol, 'down');
+      else selectCell(0, selCol, 'down');
+    }
+  }
+
+  function retreatCursor() {
+    if (dir === 'across') {
+      if (selCol > 0) selectCell(selRow, selCol - 1, 'across');
+      else if (selRow > 0) selectCell(selRow - 1, 4, 'across');
+    } else {
+      if (selRow > 0) selectCell(selRow - 1, selCol, 'down');
+    }
+  }
+
+  document.addEventListener('keydown', e => {
+    if (solved) return;
+    const key = e.key;
+    if (key === 'Tab') { e.preventDefault(); return; }
+
+    if (key === 'ArrowRight') { e.preventDefault(); selectCell(selRow, Math.min(4, selCol + 1), 'across'); return; }
+    if (key === 'ArrowLeft')  { e.preventDefault(); selectCell(selRow, Math.max(0, selCol - 1), 'across'); return; }
+    if (key === 'ArrowDown')  {
+      e.preventDefault();
+      if (canDown(selCol)) selectCell(Math.min(4, selRow + 1), selCol, 'down');
+      else selectCell(Math.min(4, selRow + 1), selCol, 'across');
+      return;
+    }
+    if (key === 'ArrowUp') {
+      e.preventDefault();
+      if (canDown(selCol)) selectCell(Math.max(0, selRow - 1), selCol, 'down');
+      else selectCell(Math.max(0, selRow - 1), selCol, 'across');
+      return;
+    }
+
+    if (key === 'Backspace' || key === 'Delete') {
+      e.preventDefault();
+      if (cellState[selRow][selCol] === 'revealed') return;
+      if (userGrid[selRow][selCol]) {
+        userGrid[selRow][selCol] = '';
+        cellState[selRow][selCol] = '';
+        updateCellDisplay(selRow, selCol);
+        cellEls[selRow][selCol].classList.remove('correct','wrong','revealed');
+        renderClues();
+      } else {
+        retreatCursor();
+        const r = selRow, c = selCol;
+        if (cellState[r][c] !== 'revealed') {
+          userGrid[r][c] = '';
+          cellState[r][c] = '';
+          updateCellDisplay(r, c);
+          cellEls[r][c].classList.remove('correct','wrong','revealed');
+          renderClues();
+        }
+      }
+      return;
+    }
+
+    if (/^[a-zA-Z]$/.test(key)) {
+      e.preventDefault();
+      if (cellState[selRow][selCol] === 'revealed') { advanceCursor(); return; }
+      const ch = key.toUpperCase();
+      userGrid[selRow][selCol] = ch;
+      cellState[selRow][selCol] = '';
+      cellEls[selRow][selCol].classList.remove('correct','wrong');
+      updateCellDisplay(selRow, selCol);
+      renderClues();
+      advanceCursor();
+      checkAutoSolve();
+    }
+  });
+
+  function checkAutoSolve() {
+    for (let r = 0; r < 5; r++)
+      for (let c = 0; c < 5; c++)
+        if (userGrid[r][c] !== puzzle.rows[r][c]) return;
+    markSolved();
+  }
+
+  function checkPuzzle() {
+    if (solved) return;
+    checkCount++;
+    let allCorrect = true;
+    for (let r = 0; r < 5; r++) {
+      for (let c = 0; c < 5; c++) {
+        if (cellState[r][c] === 'revealed') continue;
+        if (!userGrid[r][c]) { allCorrect = false; continue; }
+        if (userGrid[r][c] === puzzle.rows[r][c]) {
+          cellState[r][c] = 'correct';
+          cellEls[r][c].classList.remove('wrong');
+          cellEls[r][c].classList.add('correct');
+        } else {
+          cellState[r][c] = 'wrong';
+          cellEls[r][c].classList.remove('correct');
+          cellEls[r][c].classList.add('wrong');
+          allCorrect = false;
+        }
+      }
+    }
+    document.getElementById('btn-check').textContent = '✓ Check (' + checkCount + ')';
+    if (allCorrect) markSolved();
+  }
+
+  function revealLetter() {
+    if (solved) return;
+    userGrid[selRow][selCol] = puzzle.rows[selRow][selCol];
+    cellState[selRow][selCol] = 'revealed';
+    cellEls[selRow][selCol].classList.remove('correct','wrong');
+    cellEls[selRow][selCol].classList.add('revealed');
+    updateCellDisplay(selRow, selCol);
+    renderClues();
+    advanceCursor();
+    checkAutoSolve();
+  }
+
+  function clearAll() {
+    if (solved) return;
+    for (let r = 0; r < 5; r++) {
+      for (let c = 0; c < 5; c++) {
+        if (cellState[r][c] === 'revealed') continue;
+        userGrid[r][c] = '';
+        cellState[r][c] = '';
+        updateCellDisplay(r, c);
+        cellEls[r][c].classList.remove('correct','wrong','revealed');
+      }
+    }
+    checkCount = 0;
+    document.getElementById('btn-check').textContent = '✓ Check';
+    renderClues();
+  }
+
+  function markSolved() {
+    solved = true;
+    // Mark all correct
+    for (let r = 0; r < 5; r++)
+      for (let c = 0; c < 5; c++)
+        if (cellState[r][c] !== 'revealed') {
+          cellState[r][c] = 'correct';
+          cellEls[r][c].classList.add('correct');
+          cellEls[r][c].classList.remove('wrong');
+        }
+    renderHighlights();
+
+    // Update streak
+    if (lastDay !== dayIndex) {
+      if (lastDay === dayIndex - 1) streak++;
+      else streak = 1;
+      localStorage.setItem(SK, streak);
+      localStorage.setItem(SLD, dayIndex);
+    }
+    document.getElementById('cw-streak').textContent = '🔥 ' + streak + '-day streak';
+
+    // Personal best
+    const BK = 'cw_best';
+    const prev = parseInt(localStorage.getItem(BK) || '999');
+    const isBest = checkCount < prev || prev === 999;
+    if (isBest) localStorage.setItem(BK, checkCount);
+
+    // Show result
+    const emojiGrid = buildEmojiGrid();
+    document.getElementById('cw-result-emoji').textContent = emojiGrid;
+    document.getElementById('cw-result-checks').textContent =
+      checkCount === 0 ? 'Solved without checking — impressive!' :
+      'Solved in ' + checkCount + ' check' + (checkCount === 1 ? '' : 's');
+    document.getElementById('cw-result-best').textContent =
+      isBest && prev !== 999 ? '🏆 New personal best!' : prev !== 999 ? 'Best: ' + prev + ' checks' : '';
+    document.getElementById('cw-result-badge').textContent =
+      getGrade(checkCount) + ' — ' + (checkCount === 0 ? 'Wordsmith' : checkCount === 1 ? 'Sharp' : checkCount <= 3 ? 'Solid' : 'Persistent');
+    resultEl.classList.add('show');
+    activeClueEl.innerHTML = '<strong style="color:#2ecc71">✓ Puzzle complete!</strong>';
+  }
+
+  function getGrade(n) {
+    if (n === 0) return 'S';
+    if (n <= 1) return 'A';
+    if (n <= 3) return 'B';
+    if (n <= 5) return 'C';
+    return 'D';
+  }
+
+  function buildEmojiGrid() {
+    let s = '';
+    for (let r = 0; r < 5; r++) {
+      for (let c = 0; c < 5; c++) {
+        s += cellState[r][c] === 'revealed' ? '🟨' : '🟩';
+      }
+      s += '\n';
+    }
+    return s.trim();
+  }
+
+  document.getElementById('btn-check').addEventListener('click', checkPuzzle);
+  document.getElementById('btn-reveal').addEventListener('click', revealLetter);
+  document.getElementById('btn-clear').addEventListener('click', clearAll);
+  document.getElementById('btn-share').addEventListener('click', () => {
+    const text = 'CosmicGamesHub Gaming Crossword #' + (puzzleNum + 1) + '\n' +
+      getGrade(checkCount) + ' | ' + checkCount + ' check' + (checkCount === 1 ? '' : 's') + '\n\n' +
+      buildEmojiGrid() + '\n\ncosmicgameshub.com/games/crossword';
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('btn-share');
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Share Result', 2000);
+    });
+  });
+
+  // Init
+  renderClues();
+  selectCell(0, 0, 'across');
+})();
+</script>
+</body>
+</html>
