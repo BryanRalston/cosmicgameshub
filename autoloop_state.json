@@ -44,16 +44,10 @@
     {"id": "guide-best-gaming-mice-upgrade", "done": "2026-05-07", "notes": "Added quick-picks summary table with weight column. Added G403 vs DeathAdder V3 and Basilisk vs G502 X Plus links to comparisons section."},
     {"id": "guide-best-gaming-keyboards-upgrade", "done": "2026-05-07", "notes": "Added 5-tier quick-picks table (switch type column). Added K100 vs Apex Pro TKL link and FPS guide link to comparisons section."},
     {"id": "guide-best-gaming-monitors-upgrade", "done": "2026-05-07", "notes": "Added 5-tier quick-picks table (panel/Hz column). Added PG279QM vs S2722DGM link and FPS guide link to comparisons section."},
-    {"id": "game-color-memory", "done": "2026-05-07", "notes": "Simon Says color memory game. 4-color grid, sequence builds each round, dot progress visualizer, personal best, share. Games hub updated to 15 games."}
+    {"id": "game-color-memory", "done": "2026-05-07", "notes": "Simon Says color memory game. 4-color grid, sequence builds each round, dot progress visualizer, personal best, share. Games hub updated to 15 games."},
+    {"id": "versus-keyboard-budget", "done": "2026-05-07", "notes": "SteelSeries Apex 3 TKL ($45, Whisper Quiet Membrane, IP32, 10-zone RGB) vs Redragon K552 KUMARA ($40, Outemu Blue mechanical, metal alloy, red LED). Membrane vs mechanical entry-level showdown. Grok Imagine hero image. Sitemap updated."}
   ],
   "queue": [
-    {
-      "id": "versus-keyboard-budget",
-      "type": "new-page",
-      "priority": 2,
-      "title": "Versus: SteelSeries Apex 3 TKL vs Redragon K552",
-      "description": "Budget keyboard comparison: entry-level membrane vs budget mechanical. Strong search volume from gamers choosing their first mechanical keyboard."
-    },
     {
       "id": "versus-headset-4",
       "type": "new-page",
@@ -136,9 +130,16 @@
     {
       "iteration": 6,
       "date": "2026-05-07",
-      "tasks_completed": ["versus-monitor-2"],
+      "tasks_completed": ["versus-monitor-2","game-reaction-trainer","game-fps-aim-trainer","versus-headset-3","versus-mouse-3","guide-best-gaming-headsets-upgrade","guide-best-gaming-mice-upgrade","guide-best-gaming-keyboards-upgrade","guide-best-gaming-monitors-upgrade","game-color-memory"],
+      "commits": ["180c287","c7c39f2","27772a6","e1d1af2","93387d6","5a431f1","bfdb84b"],
+      "notes": "Monitor-2 (PG279QM vs S2722DGM), 2 new games (Reaction Trainer, Aim Trainer), headset-3 (Nova 7 vs Cloud Alpha Wireless), mouse-3 (G403 vs DeathAdder V3), quick-picks tables in all 4 guide pages, new color-memory game. Games hub updated to 15 games."
+    },
+    {
+      "iteration": 7,
+      "date": "2026-05-07",
+      "tasks_completed": ["versus-keyboard-budget"],
       "commits": [],
-      "notes": "New versus page: ASUS ROG Swift PG279QM (240Hz Fast IPS) vs Dell S2722DGM (165Hz VA curved). 2 new games: Reaction Time Trainer + FPS Aim Trainer (canvas). Games hub updated to 14 games. Sitemap updated with 3 new pages."
+      "notes": "SteelSeries Apex 3 TKL vs Redragon K552 KUMARA. Membrane vs mechanical entry-level showdown. Grok Imagine hero image. Sitemap updated."
     }
   ]
 }
