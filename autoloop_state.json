@@ -15,47 +15,21 @@
     {"id": "versus-arctis-nova-pro-vs-sony-pulse-3d", "done": "2026-05-07", "notes": "Nova Pro vs Pulse 3D, PS5 focus vs multi-platform. Commit 9b55738."},
     {"id": "versus-razer-huntsman-v3-vs-wooting-60he", "done": "2026-05-07", "notes": "Analog keyboard showdown. SOCD vs wireless. Commit 9b55738."},
     {"id": "versus-asus-vg279qm-vs-lg-27gp850", "done": "2026-05-07", "notes": "280Hz 1080p vs 165Hz 1440p. Commit 9b55738."},
-    {"id": "games-ux-fixes", "done": "2026-05-07", "notes": "RIFT restart+help, Gamerdle back button, Pixle close button, Beat Lab help modal. Commit 76ac9d3."}
+    {"id": "games-ux-fixes", "done": "2026-05-07", "notes": "RIFT restart+help, Gamerdle back button, Pixle close button, Beat Lab help modal. Commit 76ac9d3."},
+    {"id": "game-word-scramble", "done": "2026-05-07", "notes": "Daily gaming word scramble. 100+ word bank, 6 attempts, seeded PRNG, share button, streak tracking."},
+    {"id": "game-gaming-trivia", "done": "2026-05-07", "notes": "10Q daily trivia, 15s timer, speed scoring, S-F grades, confetti, share button."},
+    {"id": "game-type-racer", "done": "2026-05-07", "notes": "50 gaming phrases, 30/60/90s modes, character-level highlighting, WPM+accuracy, personal best."},
+    {"id": "game-asteroid-dodge", "done": "2026-05-07", "notes": "Canvas arcade: mouse/touch/WASD ship, wave system, score orbs, shield power-up, high score."},
+    {"id": "internal-links-audit", "done": "2026-05-07", "notes": "All versus pages updated with guide parent links + relevant cross-links. Guides updated with versus card links."},
+    {"id": "sitemap-update", "done": "2026-05-07", "notes": "Added 4 new versus + 12 game pages, updated all lastmod to 2026-05-07. Commit 667323f."}
   ],
   "queue": [
-    {
-      "id": "game-word-scramble",
-      "type": "new-game",
-      "priority": 2,
-      "title": "New Game: Gaming Word Scramble",
-      "description": "Daily game: unscramble a gaming-related word (game titles, characters, studios). Simple, fast, shareable. Fits the competitive daily-game pattern alongside Pixle/RIFT/Gamerdle.",
-      "file": "games/word-scramble.html"
-    },
-    {
-      "id": "game-gaming-trivia",
-      "type": "new-game",
-      "priority": 2,
-      "title": "New Game: Gaming Trivia Quiz",
-      "description": "10-question daily gaming trivia quiz. Multiple choice. Timer per question. Score sharing. Categories: FPS, RPG, Retro, Esports. Grok for question bank.",
-      "file": "games/gaming-trivia.html"
-    },
-    {
-      "id": "game-type-racer",
-      "type": "new-game",
-      "priority": 3,
-      "title": "New Game: Typing Speed Test (Gaming Edition)",
-      "description": "Type gaming-related phrases, quotes, and terms as fast as possible. WPM score, accuracy, shareable result. No install needed. High replay value.",
-      "file": "games/type-racer.html"
-    },
-    {
-      "id": "game-asteroid-dodge",
-      "type": "new-game",
-      "priority": 3,
-      "title": "New Game: Asteroid Dodge (arcade)",
-      "description": "Mouse/touch-controlled ship that dodges incoming asteroids. Score increases over time. Leaderboard via localStorage. Fast, addictive, mobile-friendly.",
-      "file": "games/asteroid-dodge.html"
-    },
     {
       "id": "roundup-budget-setup-500",
       "type": "new-page",
       "priority": 3,
       "title": "Roundup: Best gaming setup under $500",
-      "description": "High-intent buying guide combining headset+mouse+keyboard+chair picks under $500 total.",
+      "description": "High-intent buying guide combining headset+mouse+keyboard+chair picks under $500 total. Use Grok for research, Grok Imagine for hero image.",
       "file": "guides/best-gaming-setup-under-500.html"
     },
     {
@@ -63,30 +37,58 @@
       "type": "new-page",
       "priority": 3,
       "title": "Roundup: Best gear for competitive FPS",
-      "description": "Use-case roundup: mice, headset, keyboard, monitor picks optimized for FPS.",
+      "description": "Use-case roundup targeting competitive/FPS gamers — mice, headset, keyboard, monitor picks optimized for FPS. Grok research + Grok Imagine hero.",
       "file": "guides/best-gear-for-competitive-fps.html"
-    },
-    {
-      "id": "internal-links-audit",
-      "type": "content",
-      "priority": 4,
-      "title": "Internal linking audit + improvements",
-      "description": "Add cross-links between guide pages and versus pages. Every guide should link to its relevant versus comparisons."
-    },
-    {
-      "id": "sitemap-update",
-      "type": "seo",
-      "priority": 4,
-      "title": "Update sitemap with all new pages",
-      "description": "Add all new pages (4 new versus, 2 new roundups, new games) to sitemap.xml."
     },
     {
       "id": "games-hub-page",
       "type": "new-page",
-      "priority": 4,
+      "priority": 3,
       "title": "Create /games index page",
-      "description": "Standalone games hub page listing all games with descriptions, screenshots, and quick-play links. Currently there is no games directory page.",
+      "description": "Standalone games hub page listing all games with descriptions and quick-play links. Currently there is no games directory page.",
       "file": "games/index.html"
+    },
+    {
+      "id": "guide-best-gaming-chairs-upgrade",
+      "type": "content",
+      "priority": 4,
+      "title": "Upgrade best-budget-gaming-chairs guide",
+      "description": "Add more chairs, upgrade Amazon links with direct ASINs, add hero image with Grok Imagine, improve schema markup."
+    },
+    {
+      "id": "versus-monitor-2",
+      "type": "new-page",
+      "priority": 4,
+      "title": "New Versus: ASUS ROG Swift PG279QM vs Dell S2722DGM",
+      "description": "1440p monitor comparison: high-refresh IPS vs budget VA. Target budget-conscious monitor buyers."
+    },
+    {
+      "id": "games-minesweeper-upgrade",
+      "type": "game-improvement",
+      "priority": 4,
+      "title": "Minesweeper: difficulty selector + reset + timer",
+      "description": "Audit minesweeper.html — add Easy/Medium/Hard presets, visible reset button, countdown or elapsed timer, and best-time tracking per difficulty."
+    },
+    {
+      "id": "games-sudoku-upgrade",
+      "type": "game-improvement",
+      "priority": 4,
+      "title": "Sudoku: difficulty selector + reset + timer",
+      "description": "Audit sudoku.html — add difficulty levels, reset button, elapsed timer, and best-time tracking."
+    },
+    {
+      "id": "void-keeper-upgrade",
+      "type": "game-improvement",
+      "priority": 4,
+      "title": "Void Keeper: full audit and competitive polish",
+      "description": "Audit void-keeper.html — add high score, restart button, how-to-play, wave indicators, mobile touch support."
+    },
+    {
+      "id": "sitemap-update-2",
+      "type": "seo",
+      "priority": 5,
+      "title": "Sitemap update pass 2",
+      "description": "Add roundup guides and games hub page once built."
     }
   ],
   "loop_log": [
@@ -110,6 +112,13 @@
       "tasks_completed": ["versus-g502-vs-superlight2","versus-arctis-nova-pro-vs-sony-pulse-3d","versus-razer-huntsman-v3-vs-wooting-60he","versus-asus-vg279qm-vs-lg-27gp850","games-ux-fixes"],
       "commits": ["0800793","9b55738","76ac9d3"],
       "notes": "4 new versus pages (mice/headset/keyboard/monitor). Games: RIFT restart+help, Gamerdle back button, Pixle close, Beat Lab help modal."
+    },
+    {
+      "iteration": 4,
+      "date": "2026-05-07",
+      "tasks_completed": ["game-word-scramble","game-gaming-trivia","game-type-racer","game-asteroid-dodge","internal-links-audit","sitemap-update"],
+      "commits": ["b27e79d","667323f"],
+      "notes": "4 new games (Word Scramble, Gaming Trivia, Type Racer, Asteroid Dodge). Internal links audit complete. Sitemap updated with all 12 games + 4 new versus pages."
     }
   ]
 }

@@ -103,6 +103,20 @@
     <priority>0.7</priority>
   </url>
 
+  <!-- Roundup Guides -->
+  <url>
+    <loc>https://cosmicgameshub.com/guides/best-gaming-setup-under-500</loc>
+    <lastmod>2026-05-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://cosmicgameshub.com/guides/best-gear-for-competitive-fps</loc>
+    <lastmod>2026-05-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
   <!-- About -->
   <url>
     <loc>https://cosmicgameshub.com/about</loc>
@@ -117,6 +131,14 @@
     <lastmod>2026-05-07</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.6</priority>
+  </url>
+
+  <!-- Games Hub -->
+  <url>
+    <loc>https://cosmicgameshub.com/games</loc>
+    <lastmod>2026-05-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
   </url>
 
   <!-- Games -->

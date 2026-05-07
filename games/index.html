@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-D272MF8NQP"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-D272MF8NQP');
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Free Browser Games — CosmicGamesHub</title>
+  <meta name="description" content="12 free games you can play right now in your browser. Daily puzzles, arcade games, trivia, typing challenges, and more. No download, no install." />
+  <meta name="keywords" content="free browser games, online games, daily puzzle games, gaming trivia, type racer, word scramble, asteroid dodge" />
+  <meta property="og:title" content="Free Browser Games — CosmicGamesHub" />
+  <meta property="og:description" content="12 free games playable right now in your browser. Daily puzzles, arcade, trivia, and more." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://cosmicgameshub.com/games" />
+  <link rel="canonical" href="https://cosmicgameshub.com/games" />
+  <link rel="stylesheet" href="../styles.css" />
+  <style>
+    .games-hub-hero {
+      background: linear-gradient(135deg, #0d0d1a 0%, #0a0a14 50%, #0d0d1a 100%);
+      padding: 64px 24px 40px;
+      text-align: center;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .games-hub-hero h1 {
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 800;
+      color: #fff;
+      margin: 0 0 12px;
+    }
+    .games-hub-hero p {
+      color: rgba(255,255,255,0.55);
+      font-size: 1.1rem;
+      max-width: 540px;
+      margin: 0 auto 28px;
+      line-height: 1.6;
+    }
+    .games-filter-tabs {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+    .filter-tab {
+      padding: 6px 16px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: transparent;
+      color: rgba(255,255,255,0.55);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .filter-tab.active, .filter-tab:hover {
+      background: rgba(99,102,241,0.2);
+      border-color: rgba(99,102,241,0.5);
+      color: #fff;
+    }
+    .games-hub-main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+    .games-section-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.35);
+      margin: 0 0 16px;
+      padding-top: 8px;
+    }
+    .games-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+      margin-bottom: 48px;
+    }
+    .game-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s, transform 0.15s;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+    }
+    .game-card:hover {
+      border-color: rgba(99,102,241,0.45);
+      transform: translateY(-2px);
+    }
+    .game-card-art {
+      height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .game-card-art::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: inherit;
+      filter: blur(40px);
+      opacity: 0.3;
+    }
+    .game-card-body {
+      padding: 16px 18px 18px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .game-card-tags {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+    .game-tag {
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+    .tag-daily { background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.25); }
+    .tag-arcade { background: rgba(245,158,11,0.15); color: #f59e0b; border: 1px solid rgba(245,158,11,0.25); }
+    .tag-puzzle { background: rgba(99,102,241,0.15); color: #818cf8; border: 1px solid rgba(99,102,241,0.25); }
+    .tag-trivia { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.25); }
+    .tag-typing { background: rgba(14,165,233,0.15); color: #38bdf8; border: 1px solid rgba(14,165,233,0.25); }
+    .tag-music { background: rgba(168,85,247,0.15); color: #c084fc; border: 1px solid rgba(168,85,247,0.25); }
+    .game-card-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #fff;
+      margin: 0 0 6px;
+    }
+    .game-card-desc {
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.5);
+      line-height: 1.5;
+      flex: 1;
+      margin: 0 0 14px;
+    }
+    .game-card-play {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #818cf8;
+      transition: color 0.15s;
+    }
+    .game-card:hover .game-card-play { color: #a5b4fc; }
+    .game-card-streak {
+      font-size: 0.72rem;
+      color: rgba(255,255,255,0.3);
+      margin-top: 4px;
+    }
+    /* art backgrounds */
+    .art-rift { background: linear-gradient(135deg, #1e1b4b, #312e81); }
+    .art-gamerdle { background: linear-gradient(135deg, #14532d, #166534); }
+    .art-pixle { background: linear-gradient(135deg, #1e3a5f, #1d4ed8); }
+    .art-scramble { background: linear-gradient(135deg, #44403c, #57534e); }
+    .art-trivia { background: linear-gradient(135deg, #7f1d1d, #991b1b); }
+    .art-typeracer { background: linear-gradient(135deg, #164e63, #0369a1); }
+    .art-asteroid { background: linear-gradient(135deg, #0f172a, #1e293b); }
+    .art-minesweeper { background: linear-gradient(135deg, #1c1917, #44403c); }
+    .art-sudoku { background: linear-gradient(135deg, #1e1b4b, #4338ca); }
+    .art-memory { background: linear-gradient(135deg, #0d1a0d, #14532d); }
+    .art-beatlab { background: linear-gradient(135deg, #2d1b69, #7c3aed); }
+    .art-voidkeeper { background: linear-gradient(135deg, #0a0a0a, #1a1a2e); }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="/" class="site-logo">⚡ CosmicGamesHub</a>
+      <nav class="header-nav">
+        <a href="/guides/best-gaming-headsets-2026">Headsets</a>
+        <a href="/guides/best-gaming-mice-2026">Mice</a>
+        <a href="/guides/best-gaming-keyboards-2026">Keyboards</a>
+        <a href="/guides/best-gaming-monitors-2026">Monitors</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="games-hub-hero">
+    <h1>Free Browser Games</h1>
+    <p>12 games playable right now — no download, no login. Daily puzzles refresh every midnight.</p>
+    <div class="games-filter-tabs">
+      <button class="filter-tab active">All Games</button>
+      <button class="filter-tab">Daily Puzzles</button>
+      <button class="filter-tab">Arcade</button>
+      <button class="filter-tab">Puzzle</button>
+    </div>
+  </div>
+
+  <main class="games-hub-main">
+
+    <!-- Daily Puzzles -->
+    <div class="games-section-label">Daily Puzzles — New Every Day</div>
+    <div class="games-grid">
+
+      <a href="/games/rift" class="game-card">
+        <div class="game-card-art art-rift">🔤</div>
+        <div class="game-card-body">
+          <div class="game-card-tags">
+            <span class="game-tag tag-daily">Daily</span>
+            <span class="game-tag tag-puzzle">Word Puzzle</span>
+          </div>
+          <div class="game-card-title">RIFT</div>
+          <div class="game-card-desc">Three daily word challenges in one: Chain (change a letter), Grow (add a letter), and Decode (guess from clues). Each day's puzzle is the same for everyone.</div>
+          <div class="game-card-play">Play today's puzzle →</div>
+        </div>
+      </a>
+
+      <a href="/games/gamerdle" class="game-card">
+        <div class="game-card-art art-gamerdle">🎮</div>
+        <div class="game-card-body">
+          <div class="game-card-tags">
+            <span class="game-tag tag-daily">Daily</span>
+            <span class="game-tag tag-trivia">Gaming</span>
+          </div>
+          <div class="game-card-title">Gamerdle</div>
+          <div class="game-card-desc">Guess the mystery video game in 6 tries. Each guess reveals which game attributes match — genre, platform, year, publisher. A new game every day.</div>
+          <div class="game-card-play">Guess today's game →</div>
+        </div>
+      </a>
+
+      <a href="/games/pixle" class="game-card">
+        <div class="game-card-art art-pixle">🖼️</div>
+        <div class="game-card-body">
+          <div class="game-card-tags">
+            <span class="game-tag tag-daily">Daily</span>
+            <span class="game-tag tag-puzzle">Image</span>
+          </div>
+          <div class="game-card-title">Pixle</div>
+          <div class="game-card-desc">Identify the video game from a pixelated screenshot that gets clearer with each wrong guess. 6 attempts to name the game before the image is fully revealed.</div>
+          <div class="game-card-play">Try today's Pixle →</div>
+        </div>
+      </a>
+
+      <a href="/games/word-scramble" class="game-card">
+        <div class="game-card-art art-scramble">🔀</div>
+        <div class="game-card-body">
+          <div class="game-card-tags">
+            <span class="game-tag tag-daily">Daily</span>
+            <span class="game-tag tag-puzzle">Word</span>
+          </div>
+          <div class="game-card-title">Word Scramble</div>
+          <div class="game-card-desc">Unscramble a gaming word — game titles, characters, studios, gaming terms. 6 attempts with a hint after 3 wrong guesses. Daily word + streak tracking.</div>
+          <div class="game-card-play">Unscramble today's word →</div>
+        </div>
+      </a>
+
+      <a href="/games/gaming-trivia" class="game-card">
+        <div class="game-card-art art-trivia">❓</div>
+        <div class="game-card-body">
+          <div class="game-card-tags">
+            <span class="game-tag tag-daily">Daily</span>
+            <span class="game-tag tag-trivia">Trivia</span>
+          </div>
+          <div class="game-card-title">Gaming Trivia</div>
+          <div class="game-card-desc">10 gaming questions per day — FPS, RPG, retro, esports. Answer fast: you score more points with time left on the 15-second timer. Aim for an S grade.</div>
+          <div class="game-card-play">Start today's quiz →</div>
+        </div>
+      </a>
+
+    </div>
+
+    <!-- Skill Games -->
+    <div class="games-section-label">Skill &amp; Arcade</div>
+    <div class="games-grid">
+
+      <a href="/games/type-racer" class="game-card">
+        <div class="game-card-art art-typeracer">⌨️</div>
+        <div class="game-card-body">
+          <div class="game-card-tags">
+            <span class="game-tag tag-typing">Typing</span>
+            <span class="game-tag tag-arcade">Speed</span>
+          </div>
+          <div class="game-card-title">Type Racer</div>
+          <div class="game-card-desc">Type gaming quotes and phrases as fast as you can. 30/60/90 second modes with WPM tracking, accuracy score, and personal bests. Terminal aesthetic.</div>
+          <div class="game-card-play">Test your WPM →</div>
+        </div>
+      </a>
+
+      <a href="/games/asteroid-dodge" class="game-card">
+        <div class="game-card-art art-asteroid">☄️</div>
+        <div class="game-card-body">
+          <div class="game-card-tags">
+            <span class="game-tag tag-arcade">Arcade</span>
+          </div>
+          <div class="game-card-title">Asteroid Dodge</div>
+          <div class="game-card-desc">Pilot a ship through an asteroid field that gets faster and denser every 5 seconds. Grab score orbs, activate shields, and beat your high score. Mouse, touch, or WASD.</div>
+          <div class="game-card-play">Launch ship →</div>
+        </div>
+      </a>
+
+      <a href="/games/beat-lab" class="game-card">
+        <div class="game-card-art art-beatlab">🎵</div>
+        <div class="game-card-body">
+          <div class="game-card-tags">
+            <span class="game-tag tag-music">Music</span>
+            <span class="game-tag tag-arcade">Rhythm</span>
+          </div>
+          <div class="game-card-title">Beat Lab</div>
+          <div class="game-card-desc">4-lane rhythm game. Hit notes as they reach the target using D/F/J/K keys. Perfect hits score more than good hits — chain combos for multipliers.</div>
+          <div class="game-card-play">Hit the beat →</div>
+        </div>
+      </a>
+
+      <a href="/games/void-keeper" class="game-card">
+        <div class="game-card-art art-voidkeeper">🛸</div>
+        <div class="game-card-body">
+          <div class="game-card-tags">
+            <span class="game-tag tag-arcade">Arcade</span>
+          </div>
+          <div class="game-card-title">Void Keeper</div>
+          <div class="game-card-desc">Defend your position against waves of incoming threats. Fast reflexes, escalating difficulty. High score survival arcade game.</div>
+          <div class="game-card-play">Defend the void →</div>
+        </div>
+      </a>
+
+    </div>
+
+    <!-- Classic Puzzle -->
+    <div class="games-section-label">Classic Puzzles</div>
+    <div class="games-grid">
+
+      <a href="/games/minesweeper" class="game-card">
+        <div class="game-card-art art-minesweeper">💣</div>
+        <div class="game-card-body">
+          <div class="game-card-tags">
+            <span class="game-tag tag-puzzle">Puzzle</span>
+            <span class="game-tag tag-puzzle">Classic</span>
+          </div>
+          <div class="game-card-title">Minesweeper</div>
+          <div class="game-card-desc">The timeless grid logic game. Flag all the mines without detonating. Clear the board as fast as possible and chase your best times.</div>
+          <div class="game-card-play">Clear the minefield →</div>
+        </div>
+      </a>
+
+      <a href="/games/sudoku" class="game-card">
+        <div class="game-card-art art-sudoku">🔢</div>
+        <div class="game-card-body">
+          <div class="game-card-tags">
+            <span class="game-tag tag-puzzle">Puzzle</span>
+            <span class="game-tag tag-puzzle">Logic</span>
+          </div>
+          <div class="game-card-title">Sudoku</div>
+          <div class="game-card-desc">Fill the 9×9 grid so every row, column, and box contains 1–9. A focused logic puzzle that never gets old. Multiple difficulty levels.</div>
+          <div class="game-card-play">Solve the grid →</div>
+        </div>
+      </a>
+
+      <a href="/games/memory-match" class="game-card">
+        <div class="game-card-art art-memory">🃏</div>
+        <div class="game-card-body">
+          <div class="game-card-tags">
+            <span class="game-tag tag-puzzle">Memory</span>
+          </div>
+          <div class="game-card-title">Memory Match</div>
+          <div class="game-card-desc">Flip cards to find matching pairs. Sharp memory and focus win. Works on any device — simple but addictive.</div>
+          <div class="game-card-play">Start matching →</div>
+        </div>
+      </a>
+
+    </div>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <p>© 2026 CosmicGamesHub · <a href="/about">About</a> · <a href="/">Gear Guides</a> · As an Amazon Associate we earn from qualifying purchases.</p>
+    </div>
+  </footer>
+</body>
+</html>
