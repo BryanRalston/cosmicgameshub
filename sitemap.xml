@@ -171,6 +171,14 @@
     <priority>0.7</priority>
   </url>
 
+  <!-- PS5 Guide -->
+  <url>
+    <loc>https://cosmicgameshub.com/guides/best-gaming-headsets-for-ps5-2026</loc>
+    <lastmod>2026-05-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
   <!-- Roundup Guides -->
   <url>
     <loc>https://cosmicgameshub.com/guides/best-wireless-gaming-headsets-2026</loc>

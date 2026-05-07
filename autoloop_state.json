@@ -57,20 +57,6 @@
   ],
   "queue": [
     {
-      "id": "fps-guide-nav-fix",
-      "type": "fix",
-      "priority": 2,
-      "title": "Fix best-gear-for-competitive-fps nav + add versus links",
-      "description": "FPS guide still uses old site-header/header-nav pattern. Update to site-nav. Add relevant versus page cards (DeathAdder V3 vs Superlight 2, K100 vs Apex Pro TKL, VG279QM vs 27GP850-B)."
-    },
-    {
-      "id": "orphan-pages-audit",
-      "type": "fix",
-      "priority": 2,
-      "title": "Audit and fix orphan game pages",
-      "description": "games/dream-machine.html and games/daily-challenge.html exist but are not in games hub index or sitemap. Determine what they are, add to hub if worth keeping, or convert daily-challenge to redirect/hub page."
-    },
-    {
       "id": "versus-keyboard-wireless",
       "type": "new-page",
       "priority": 4,
@@ -101,6 +87,7 @@
     {"iteration": 6, "date": "2026-05-07", "tasks_completed": ["versus-monitor-2","game-reaction-trainer","game-fps-aim-trainer","versus-headset-3","versus-mouse-3","guide-best-gaming-headsets-upgrade","guide-best-gaming-mice-upgrade","guide-best-gaming-keyboards-upgrade","guide-best-gaming-monitors-upgrade","game-color-memory"], "commits": ["180c287","c7c39f2","27772a6","e1d1af2","93387d6","5a431f1","bfdb84b"], "notes": "Monitor-2, 2 new games, headset-3, mouse-3, quick-picks tables, color-memory."},
     {"iteration": 7, "date": "2026-05-07", "tasks_completed": ["versus-keyboard-budget","versus-headset-4","versus-monitor-3","game-crossword","nav-fix"], "commits": ["fb391a3","8be24be","03fc36c","079c648","bce20d1"], "notes": "3 versus pages (keyboard budget, headset-4, monitor-3). Daily crossword game (7 validated puzzles). Nav overhaul: guides/index.html, versus/index.html, consistent nav on 29 files."},
     {"iteration": 8, "date": "2026-05-07", "tasks_completed": ["homepage-seo-update","game-upgrade-remaining"], "commits": ["fb21d57"], "notes": "Homepage: cat-subnav dead links fixed, games count updated to 16, arcade strip updated, versus section refreshed with newer comparisons + View All CTA, footer updated. Game audit: all 16 games confirmed to have appropriate restart flows."},
-    {"iteration": 9, "date": "2026-05-07", "tasks_completed": ["versus-mouse-4"], "commits": ["8ff0ad9"], "notes": "G502 X (~$60, HERO 25K LIGHTFORCE, 89g, 13 buttons) vs Basilisk V3 (~$70, Focus+ 26K optical, 101g, SmartReel 4-mode scroll). Full versus page. Verdict: G502 X for value+switches, Basilisk V3 for scroll+RGB. Homepage count updated to 19 comparisons."}
+    {"iteration": 9, "date": "2026-05-07", "tasks_completed": ["versus-mouse-4"], "commits": ["8ff0ad9"], "notes": "G502 X (~$60, HERO 25K LIGHTFORCE, 89g, 13 buttons) vs Basilisk V3 (~$70, Focus+ 26K optical, 101g, SmartReel 4-mode scroll). Full versus page. Verdict: G502 X for value+switches, Basilisk V3 for scroll+RGB. Homepage count updated to 19 comparisons."},
+    {"iteration": 10, "date": "2026-05-07", "tasks_completed": ["fps-guide-nav-fix","orphan-pages-audit","guide-best-gaming-setup-upgrade"], "commits": ["d6042d2","c13aad4"], "notes": "FPS guide: nav fixed, related section + 3 versus cards. Budget guide: upgrade table, 4 versus links, FAQ 4→7, nav fixed. daily-challenge.html: nav fixed, added to games hub (17 games), added to sitemap. dream-machine: left in /lab, correct location."}
   ]
 }
