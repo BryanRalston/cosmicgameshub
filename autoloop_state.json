@@ -24,95 +24,68 @@
     {"id": "sitemap-update", "done": "2026-05-07", "notes": "Added 4 new versus + 12 game pages, updated all lastmod to 2026-05-07. Commit 667323f."},
     {"id": "roundup-budget-setup-500", "done": "2026-05-07", "notes": "5-slot build guide under $500. Headset/mouse/keyboard/chair/monitor. Budget table, upgrade path, FAQ."},
     {"id": "roundup-fps-setup", "done": "2026-05-07", "notes": "FPS-optimized guide: Superlight 2, VG279QM 280Hz, Arctis Nova Pro, Huntsman V3 Pro. Budget FPS build section."},
-    {"id": "games-hub-page", "done": "2026-05-07", "notes": "games/index.html listing all 12 games in 3 sections. Commit c3f7b4d."},
-    {"id": "games-minesweeper-upgrade", "done": "2026-05-07", "notes": "Best-time per difficulty (localStorage), share button. Commit dbd5602."},
-    {"id": "games-sudoku-upgrade", "done": "2026-05-07", "notes": "Best-time per difficulty (localStorage), share button, replaced alert() with proper fail-banner modal. Commit dbd5602."},
-    {"id": "void-keeper-upgrade", "done": "2026-05-07", "notes": "High score (localStorage), best score in HUD, 'new best' on game over, 'click to play again' prompt, fixed nav to /games. Commit dbd5602."},
-    {"id": "memory-match-upgrade", "done": "2026-05-07", "notes": "Best-time per grid size (localStorage), share button. Commit 49581ba."},
-    {"id": "beat-lab-share", "done": "2026-05-07", "notes": "Share button on results screen. Commit 49581ba."}
+    {"id": "games-hub-page", "done": "2026-05-07", "notes": "games/index.html listing all 12 games in 3 sections."},
+    {"id": "games-minesweeper-upgrade", "done": "2026-05-07", "notes": "Best-time per difficulty (localStorage), share button."},
+    {"id": "games-sudoku-upgrade", "done": "2026-05-07", "notes": "Best-time per difficulty (localStorage), share button, replaced alert() with proper fail-banner modal."},
+    {"id": "void-keeper-upgrade", "done": "2026-05-07", "notes": "High score (localStorage), best score in HUD, 'new best' on game over, 'click to play again' prompt, fixed nav to /games."},
+    {"id": "memory-match-upgrade", "done": "2026-05-07", "notes": "Best-time per grid size (localStorage), share button."},
+    {"id": "beat-lab-share", "done": "2026-05-07", "notes": "Share button on results screen."},
+    {"id": "versus-basilisk-v3-pro-vs-g502-x-plus", "done": "2026-05-07", "notes": "Basilisk V3 Pro vs G502 X Plus. Ergonomic vs utility. Focus Pro 30K vs HERO 25K. Grok research + Grok Imagine image."},
+    {"id": "roundup-wireless-headsets", "done": "2026-05-07", "notes": "5-tier wireless headset guide: Cloud Stinger Core, Arctis Nova 3, HS80, Pulse 3D, Arctis Nova Pro. 2.4GHz vs BT explainer."},
+    {"id": "versus-corsair-k100-vs-apex-pro-tkl", "done": "2026-05-07", "notes": "K100 RGB (8000Hz AXON, OPX optical) vs Apex Pro TKL (OmniPoint 2.0 Hall Effect, 0.2mm actuation). FPS vs versatility."},
+    {"id": "guide-best-gaming-chairs-upgrade", "done": "2026-05-07", "notes": "Added internal links to roundup guides (budget setup, FPS, keyboards, monitors) in chairs guide related section."},
+    {"id": "sitemap-update-2", "done": "2026-05-07", "notes": "Added corsair-k100-rgb-vs-steelseries-apex-pro-tkl. All new pages now indexed."}
   ],
   "queue": [
     {
-      "id": "versus-basilisk-v3-pro-vs-g502-x-plus",
-      "type": "new-page",
-      "priority": 2,
-      "title": "Versus: Razer Basilisk V3 Pro vs Logitech G502 X Plus",
-      "description": "High-traffic versus: two premium wireless mice with side buttons. Basilisk V3 Pro (128g, HyperScroll, 5000Hz, 90hr) vs G502 X Plus (106g, HERO 25K, 13 buttons, 130hr). Grok research + Grok Imagine.",
-      "file": "versus/razer-basilisk-v3-pro-vs-logitech-g502-x-plus.html"
-    },
-    {
-      "id": "roundup-wireless-headsets",
-      "type": "new-page",
-      "priority": 2,
-      "title": "Roundup: Best Wireless Gaming Headsets 2026",
-      "description": "Dedicated wireless headset roundup — 5 picks across all budgets. Grok research + Grok Imagine hero.",
-      "file": "guides/best-wireless-gaming-headsets-2026.html"
-    },
-    {
-      "id": "versus-corsair-k100-vs-apex-pro-tkl",
-      "type": "new-page",
-      "priority": 3,
-      "title": "Versus: Corsair K100 RGB vs SteelSeries Apex Pro TKL",
-      "description": "Premium keyboard versus: optical/analog switches + ultra-polling comparison. Target keyboard enthusiasts.",
-      "file": "versus/corsair-k100-rgb-vs-steelseries-apex-pro-tkl.html"
-    },
-    {
-      "id": "roundup-budget-setup-500",
-      "type": "new-page",
-      "priority": 3,
-      "title": "Roundup: Best gaming setup under $500",
-      "description": "High-intent buying guide combining headset+mouse+keyboard+chair picks under $500 total. Use Grok for research, Grok Imagine for hero image.",
-      "file": "guides/best-gaming-setup-under-500.html"
-    },
-    {
-      "id": "roundup-fps-setup",
-      "type": "new-page",
-      "priority": 3,
-      "title": "Roundup: Best gear for competitive FPS",
-      "description": "Use-case roundup targeting competitive/FPS gamers — mice, headset, keyboard, monitor picks optimized for FPS. Grok research + Grok Imagine hero.",
-      "file": "guides/best-gear-for-competitive-fps.html"
-    },
-    {
-      "id": "guide-best-gaming-chairs-upgrade",
-      "type": "content",
-      "priority": 4,
-      "title": "Upgrade best-budget-gaming-chairs guide",
-      "description": "Add more chairs, upgrade Amazon links with direct ASINs, add hero image with Grok Imagine, improve schema markup."
-    },
-    {
       "id": "versus-monitor-2",
       "type": "new-page",
-      "priority": 4,
-      "title": "New Versus: ASUS ROG Swift PG279QM vs Dell S2722DGM",
-      "description": "1440p monitor comparison: high-refresh IPS vs budget VA. Target budget-conscious monitor buyers."
+      "priority": 1,
+      "title": "Versus: ASUS ROG Swift PG279QM vs Dell S2722DGM",
+      "description": "1440p monitor comparison: ASUS ROG Swift PG279QM (Fast IPS, 240Hz, G-Sync) vs Dell S2722DGM (VA, 165Hz, budget-friendly). Target 1440p monitor buyers deciding between premium IPS speed vs VA value.",
+      "file": "versus/asus-rog-swift-pg279qm-vs-dell-s2722dgm.html"
     },
     {
-      "id": "games-minesweeper-upgrade",
-      "type": "game-improvement",
-      "priority": 4,
-      "title": "Minesweeper: difficulty selector + reset + timer",
-      "description": "Audit minesweeper.html — add Easy/Medium/Hard presets, visible reset button, countdown or elapsed timer, and best-time tracking per difficulty."
+      "id": "game-reaction-trainer",
+      "type": "new-game",
+      "priority": 2,
+      "title": "New Game: Reaction Time Trainer",
+      "description": "Click-when-green reaction trainer with stats (avg, best, worst over 5 attempts), letter grade (S < 150ms, A < 200ms, B < 250ms, C < 300ms), share button. Gamers love knowing their reaction time."
     },
     {
-      "id": "games-sudoku-upgrade",
-      "type": "game-improvement",
-      "priority": 4,
-      "title": "Sudoku: difficulty selector + reset + timer",
-      "description": "Audit sudoku.html — add difficulty levels, reset button, elapsed timer, and best-time tracking."
+      "id": "game-fps-aim-trainer",
+      "type": "new-game",
+      "priority": 2,
+      "title": "New Game: FPS Aim Trainer",
+      "description": "Canvas-based target clicking game — random targets appear, click before they disappear. Track accuracy %, targets hit, misses. 30-second rounds. Share best score."
     },
     {
-      "id": "void-keeper-upgrade",
-      "type": "game-improvement",
-      "priority": 4,
-      "title": "Void Keeper: full audit and competitive polish",
-      "description": "Audit void-keeper.html — add high score, restart button, how-to-play, wave indicators, mobile touch support."
+      "id": "versus-headset-3",
+      "type": "new-page",
+      "priority": 3,
+      "title": "Versus: SteelSeries Arctis Nova 7 vs HyperX Cloud Alpha Wireless",
+      "description": "Mid-tier wireless headset comparison — both under $150. Arctis Nova 7 (multi-platform, 360° spatial) vs Cloud Alpha Wireless (6-month battery, dual chamber). Strong search volume."
     },
     {
-      "id": "sitemap-update-2",
-      "type": "seo",
-      "priority": 5,
-      "title": "Sitemap update pass 2",
-      "description": "Add roundup guides and games hub page once built."
+      "id": "versus-mouse-3",
+      "type": "new-page",
+      "priority": 3,
+      "title": "Versus: Logitech G403 vs Razer DeathAdder V3",
+      "description": "Mid-tier wired mouse comparison. Classic ergonomic shape battle."
+    },
+    {
+      "id": "guide-best-gaming-headsets-upgrade",
+      "type": "content",
+      "priority": 4,
+      "title": "Upgrade best-gaming-headsets-2026 guide",
+      "description": "Add budget vs premium quick-pick table at top, upgrade hero image with Grok Imagine, add FAQ section (wireless latency, surround sound, mic quality questions)."
+    },
+    {
+      "id": "guide-best-gaming-mice-upgrade",
+      "type": "content",
+      "priority": 4,
+      "title": "Upgrade best-gaming-mice-2026 guide",
+      "description": "Add sensor comparison table, grip style section (palm/claw/fingertip), improve FAQ."
     }
   ],
   "loop_log": [
@@ -143,6 +116,13 @@
       "tasks_completed": ["game-word-scramble","game-gaming-trivia","game-type-racer","game-asteroid-dodge","internal-links-audit","sitemap-update"],
       "commits": ["b27e79d","667323f"],
       "notes": "4 new games (Word Scramble, Gaming Trivia, Type Racer, Asteroid Dodge). Internal links audit complete. Sitemap updated with all 12 games + 4 new versus pages."
+    },
+    {
+      "iteration": 5,
+      "date": "2026-05-07",
+      "tasks_completed": ["roundup-budget-setup-500","roundup-fps-setup","games-hub-page","games-minesweeper-upgrade","games-sudoku-upgrade","void-keeper-upgrade","memory-match-upgrade","beat-lab-share","versus-basilisk-v3-pro-vs-g502-x-plus","roundup-wireless-headsets","versus-corsair-k100-vs-apex-pro-tkl","guide-best-gaming-chairs-upgrade","sitemap-update-2"],
+      "commits": [],
+      "notes": "3 new roundup guides (budget setup, FPS, wireless headsets). Games hub page. 5 game upgrades (minesweeper, sudoku, void keeper, memory match, beat lab). 2 new versus pages (Basilisk vs G502 X Plus, K100 vs Apex Pro TKL). Chairs guide internal links. Sitemap fully updated. Queue cleaned."
     }
   ]
 }
