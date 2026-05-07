@@ -45,24 +45,19 @@
     {"id": "guide-best-gaming-keyboards-upgrade", "done": "2026-05-07", "notes": "Added 5-tier quick-picks table (switch type column). Added K100 vs Apex Pro TKL link and FPS guide link to comparisons section."},
     {"id": "guide-best-gaming-monitors-upgrade", "done": "2026-05-07", "notes": "Added 5-tier quick-picks table (panel/Hz column). Added PG279QM vs S2722DGM link and FPS guide link to comparisons section."},
     {"id": "game-color-memory", "done": "2026-05-07", "notes": "Simon Says color memory game. 4-color grid, sequence builds each round, dot progress visualizer, personal best, share. Games hub updated to 15 games."},
-    {"id": "versus-keyboard-budget", "done": "2026-05-07", "notes": "SteelSeries Apex 3 TKL ($45, Whisper Quiet Membrane, IP32, 10-zone RGB) vs Redragon K552 KUMARA ($40, Outemu Blue mechanical, metal alloy, red LED). Membrane vs mechanical entry-level showdown. Grok Imagine hero image. Commit fb391a3."},
-    {"id": "versus-headset-4", "done": "2026-05-07", "notes": "Razer Kraken V3 ($99.99, wired USB-A, 50mm TriForce Titanium, THX Spatial Audio, HyperClear Cardioid mic, 322g) vs Corsair HS65 Wireless ($99.99, 2.4GHz+BT, 50mm Neodymium, 24hr battery, 282g). Wired precision vs wireless freedom at same price. Commit 8be24be."},
-    {"id": "versus-monitor-3", "done": "2026-05-07", "notes": "LG 27GP950-B ($699, 4K Nano IPS, 144Hz OC 160Hz, DisplayHDR 600, 2x HDMI 2.1) vs Samsung Odyssey G7 ($549, 1440p VA QLED, 240Hz, 2500:1, 1000R curve). 4K fidelity + console ports vs competitive speed + immersive curve. Grok Imagine hero image."}
+    {"id": "versus-keyboard-budget", "done": "2026-05-07", "notes": "SteelSeries Apex 3 TKL ($45, Whisper Quiet Membrane, IP32, 10-zone RGB) vs Redragon K552 KUMARA ($40, Outemu Blue mechanical, metal alloy, red LED). Commit fb391a3."},
+    {"id": "versus-headset-4", "done": "2026-05-07", "notes": "Razer Kraken V3 ($99.99, wired, THX Spatial Audio, HyperClear Cardioid mic) vs Corsair HS65 Wireless ($99.99, 2.4GHz+BT, 24hr). Commit 8be24be."},
+    {"id": "versus-monitor-3", "done": "2026-05-07", "notes": "LG 27GP950-B ($699, 4K Nano IPS, 144Hz, 2x HDMI 2.1) vs Samsung Odyssey G7 ($549, 1440p 240Hz VA QLED, 1000R). Commit 03fc36c."},
+    {"id": "game-crossword", "done": "2026-05-07", "notes": "Daily 5x5 gaming crossword. 7 validated puzzles (all rows + col0 + col4 = valid gaming words), check/reveal/clear, streak tracking, personal best, share. Commit 079c648."},
+    {"id": "nav-fix", "done": "2026-05-07", "notes": "Created guides/index.html and versus/index.html (both were 404). Fixed nav on 29 files to include Guides/Comparisons/Games links. Added both index pages to sitemap. Commit bce20d1."}
   ],
   "queue": [
-    {
-      "id": "game-crossword",
-      "type": "new-game",
-      "priority": 3,
-      "title": "New Game: Gaming Crossword",
-      "description": "Daily mini-crossword with gaming-themed clues (game titles, characters, publishers, gaming terms). 5x5 or 7x7 grid. Seeded daily so everyone gets the same puzzle."
-    },
     {
       "id": "homepage-seo-update",
       "type": "seo",
       "priority": 3,
       "title": "Homepage: add new content sections",
-      "description": "Add New Comparisons section to homepage listing the 4+ new versus pages built since last homepage update. Add Games section with top 3 game picks."
+      "description": "Add New Comparisons section to homepage listing the new versus pages. Add Games section with games hub link. Update the cat-subnav to remove dead daily-challenge link."
     },
     {
       "id": "versus-mouse-4",
@@ -77,57 +72,22 @@
       "priority": 4,
       "title": "Upgrade best-gaming-setup-under-500 guide",
       "description": "Add upgrade path table, link to new versus pages relevant to the budget build picks, add FAQ."
+    },
+    {
+      "id": "game-upgrade-remaining",
+      "type": "game-fix",
+      "priority": 2,
+      "title": "Audit remaining games for missing reset/restart buttons",
+      "description": "Bryan noticed missing reset buttons. Check: asteroid-dodge, type-racer, beat-lab, void-keeper, memory-match for reset/restart UX. Fix any missing."
     }
   ],
   "loop_log": [
-    {
-      "iteration": 1,
-      "date": "2026-05-07",
-      "tasks_completed": ["schema-guide-headsets","schema-guide-mice","schema-guide-keyboards","schema-guide-chairs","schema-guide-monitors","schema-versus-all","og-images-all","about-page"],
-      "commits": ["dcd862c"],
-      "notes": "Schema markup and og:images on all 11 guide/versus pages. About page."
-    },
-    {
-      "iteration": 2,
-      "date": "2026-05-07",
-      "tasks_completed": ["fix-amazon-links"],
-      "commits": ["f9f0ba7"],
-      "notes": "All 25 amazon.com/s?k= search URLs replaced with direct dp/ASIN links."
-    },
-    {
-      "iteration": 3,
-      "date": "2026-05-07",
-      "tasks_completed": ["versus-g502-vs-superlight2","versus-arctis-nova-pro-vs-sony-pulse-3d","versus-razer-huntsman-v3-vs-wooting-60he","versus-asus-vg279qm-vs-lg-27gp850","games-ux-fixes"],
-      "commits": ["0800793","9b55738","76ac9d3"],
-      "notes": "4 new versus pages (mice/headset/keyboard/monitor). Games: RIFT restart+help, Gamerdle back button, Pixle close, Beat Lab help modal."
-    },
-    {
-      "iteration": 4,
-      "date": "2026-05-07",
-      "tasks_completed": ["game-word-scramble","game-gaming-trivia","game-type-racer","game-asteroid-dodge","internal-links-audit","sitemap-update"],
-      "commits": ["b27e79d","667323f"],
-      "notes": "4 new games (Word Scramble, Gaming Trivia, Type Racer, Asteroid Dodge). Internal links audit complete. Sitemap updated with all 12 games + 4 new versus pages."
-    },
-    {
-      "iteration": 5,
-      "date": "2026-05-07",
-      "tasks_completed": ["roundup-budget-setup-500","roundup-fps-setup","games-hub-page","games-minesweeper-upgrade","games-sudoku-upgrade","void-keeper-upgrade","memory-match-upgrade","beat-lab-share","versus-basilisk-v3-pro-vs-g502-x-plus","roundup-wireless-headsets","versus-corsair-k100-vs-apex-pro-tkl","guide-best-gaming-chairs-upgrade","sitemap-update-2"],
-      "commits": [],
-      "notes": "3 new roundup guides (budget setup, FPS, wireless headsets). Games hub page. 5 game upgrades (minesweeper, sudoku, void keeper, memory match, beat lab). 2 new versus pages (Basilisk vs G502 X Plus, K100 vs Apex Pro TKL). Chairs guide internal links. Sitemap fully updated. Queue cleaned."
-    },
-    {
-      "iteration": 6,
-      "date": "2026-05-07",
-      "tasks_completed": ["versus-monitor-2","game-reaction-trainer","game-fps-aim-trainer","versus-headset-3","versus-mouse-3","guide-best-gaming-headsets-upgrade","guide-best-gaming-mice-upgrade","guide-best-gaming-keyboards-upgrade","guide-best-gaming-monitors-upgrade","game-color-memory"],
-      "commits": ["180c287","c7c39f2","27772a6","e1d1af2","93387d6","5a431f1","bfdb84b"],
-      "notes": "Monitor-2 (PG279QM vs S2722DGM), 2 new games (Reaction Trainer, Aim Trainer), headset-3 (Nova 7 vs Cloud Alpha Wireless), mouse-3 (G403 vs DeathAdder V3), quick-picks tables in all 4 guide pages, new color-memory game. Games hub updated to 15 games."
-    },
-    {
-      "iteration": 7,
-      "date": "2026-05-07",
-      "tasks_completed": ["versus-keyboard-budget","versus-headset-4","versus-monitor-3"],
-      "commits": ["fb391a3","8be24be"],
-      "notes": "Apex 3 TKL vs K552 (membrane vs mechanical budget). Kraken V3 vs HS65 Wireless (wired THX vs wireless freedom). LG 27GP950-B vs Odyssey G7 (4K Nano IPS vs 240Hz VA QLED). Grok Imagine images for all three."
-    }
+    {"iteration": 1, "date": "2026-05-07", "tasks_completed": ["schema-guide-headsets","schema-guide-mice","schema-guide-keyboards","schema-guide-chairs","schema-guide-monitors","schema-versus-all","og-images-all","about-page"], "commits": ["dcd862c"], "notes": "Schema markup and og:images on all 11 guide/versus pages. About page."},
+    {"iteration": 2, "date": "2026-05-07", "tasks_completed": ["fix-amazon-links"], "commits": ["f9f0ba7"], "notes": "All 25 amazon.com/s?k= search URLs replaced with direct dp/ASIN links."},
+    {"iteration": 3, "date": "2026-05-07", "tasks_completed": ["versus-g502-vs-superlight2","versus-arctis-nova-pro-vs-sony-pulse-3d","versus-razer-huntsman-v3-vs-wooting-60he","versus-asus-vg279qm-vs-lg-27gp850","games-ux-fixes"], "commits": ["0800793","9b55738","76ac9d3"], "notes": "4 new versus pages. Games UX fixes."},
+    {"iteration": 4, "date": "2026-05-07", "tasks_completed": ["game-word-scramble","game-gaming-trivia","game-type-racer","game-asteroid-dodge","internal-links-audit","sitemap-update"], "commits": ["b27e79d","667323f"], "notes": "4 new games. Internal links. Sitemap updated."},
+    {"iteration": 5, "date": "2026-05-07", "tasks_completed": ["roundup-budget-setup-500","roundup-fps-setup","games-hub-page","games-minesweeper-upgrade","games-sudoku-upgrade","void-keeper-upgrade","memory-match-upgrade","beat-lab-share","versus-basilisk-v3-pro-vs-g502-x-plus","roundup-wireless-headsets","versus-corsair-k100-vs-apex-pro-tkl","guide-best-gaming-chairs-upgrade","sitemap-update-2"], "commits": [], "notes": "3 roundup guides, games hub, 5 game upgrades, 2 versus pages."},
+    {"iteration": 6, "date": "2026-05-07", "tasks_completed": ["versus-monitor-2","game-reaction-trainer","game-fps-aim-trainer","versus-headset-3","versus-mouse-3","guide-best-gaming-headsets-upgrade","guide-best-gaming-mice-upgrade","guide-best-gaming-keyboards-upgrade","guide-best-gaming-monitors-upgrade","game-color-memory"], "commits": ["180c287","c7c39f2","27772a6","e1d1af2","93387d6","5a431f1","bfdb84b"], "notes": "Monitor-2, 2 new games, headset-3, mouse-3, quick-picks tables, color-memory."},
+    {"iteration": 7, "date": "2026-05-07", "tasks_completed": ["versus-keyboard-budget","versus-headset-4","versus-monitor-3","game-crossword","nav-fix"], "commits": ["fb391a3","8be24be","03fc36c","079c648","bce20d1"], "notes": "3 versus pages (keyboard budget, headset-4, monitor-3). Daily crossword game (7 validated puzzles). Nav overhaul: guides/index.html, versus/index.html, consistent nav on 29 files."}
   ]
 }
