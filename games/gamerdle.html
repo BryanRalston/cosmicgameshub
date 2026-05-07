@@ -152,7 +152,8 @@
     <div class="share-box" id="shareBox"></div>
     <button class="btn btn--primary" onclick="copyShare()" style="margin-bottom:0.75rem;">📋 Copy &amp; Share</button>
     <br>
-    <p style="font-size:0.78rem;color:var(--text-lo);margin:0.5rem 0 0;">New puzzle tomorrow. Come back daily to keep your streak!</p>
+    <button class="btn" style="margin-top:0.5rem;width:100%;background:var(--bg-surface);border:1px solid var(--border-mid);color:var(--text-hi);" onclick="this.closest('.result-panel').classList.remove('show');window.scrollTo(0,0);">↑ Back to Guesses</button>
+    <p style="font-size:0.78rem;color:var(--text-lo);margin:0.75rem 0 0;">New puzzle tomorrow. Come back daily to keep your streak!</p>
   </div>
 
   <!-- How to play -->

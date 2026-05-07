@@ -491,10 +491,28 @@ canvas#gameCanvas {
   <a href="/" class="site-link">CosmicGamesHub</a>
 </div>
 
+<!-- How to Play Modal -->
+<div id="beatHelp" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
+  <div style="background:#09090B;border:1px solid rgba(34,211,238,0.3);border-radius:16px;padding:1.75rem;max-width:400px;width:100%;position:relative;">
+    <button onclick="document.getElementById('beatHelp').style.display='none'" style="position:absolute;top:0.75rem;right:0.75rem;background:none;border:none;color:#888;font-size:1.4rem;cursor:pointer;">✕</button>
+    <h2 style="margin:0 0 1rem;color:#22d3ee;text-transform:uppercase;letter-spacing:0.1em;">How to Play</h2>
+    <p style="color:#aaa;font-size:0.9rem;margin-bottom:0.75rem;">BEAT LAB is a rhythm tap game. Hit notes as they land on the target line.</p>
+    <ul style="color:#aaa;font-size:0.85rem;line-height:1.8;padding-left:1.25rem;margin-bottom:0.75rem;">
+      <li>Notes scroll down the lanes — tap when they hit the glow line</li>
+      <li>On desktop: press <kbd style="background:#222;padding:2px 6px;border-radius:4px;">D</kbd> <kbd style="background:#222;padding:2px 6px;border-radius:4px;">F</kbd> <kbd style="background:#222;padding:2px 6px;border-radius:4px;">J</kbd> <kbd style="background:#222;padding:2px 6px;border-radius:4px;">K</kbd> for each lane</li>
+      <li>On mobile: tap the lane buttons at the bottom</li>
+      <li>Perfect = 100 pts, Good = 50 pts, OK = 10 pts</li>
+      <li>Build combos for bonus multipliers</li>
+      <li>Unlock Pro Mode by completing songs</li>
+    </ul>
+    <button onclick="document.getElementById('beatHelp').style.display='none'" style="width:100%;padding:0.65rem;background:#22d3ee;color:#000;border:none;border-radius:8px;font-weight:700;cursor:pointer;">Let's Play!</button>
+  </div>
+</div>
+
 <!-- Title Screen -->
 <div id="title-screen">
   <h1>BEAT LAB</h1>
-  <div class="subtitle">choose your fighter</div>
+  <div class="subtitle">choose your fighter &nbsp;<button onclick="document.getElementById('beatHelp').style.display='flex'" style="background:none;border:1px solid rgba(34,211,238,0.4);color:#22d3ee;border-radius:50%;width:22px;height:22px;font-size:0.75rem;cursor:pointer;padding:0;line-height:1;vertical-align:middle;" title="How to Play">?</button></div>
 
   <div class="player-select" id="player-select">
     <button class="player-btn p1" data-player="Blaze">Blaze</button>
