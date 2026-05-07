@@ -35,23 +35,11 @@
     {"id": "versus-corsair-k100-vs-apex-pro-tkl", "done": "2026-05-07", "notes": "K100 RGB (8000Hz AXON, OPX optical) vs Apex Pro TKL (OmniPoint 2.0 Hall Effect, 0.2mm actuation). FPS vs versatility."},
     {"id": "guide-best-gaming-chairs-upgrade", "done": "2026-05-07", "notes": "Added internal links to roundup guides (budget setup, FPS, keyboards, monitors) in chairs guide related section."},
     {"id": "sitemap-update-2", "done": "2026-05-07", "notes": "Added corsair-k100-rgb-vs-steelseries-apex-pro-tkl. All new pages now indexed."},
-    {"id": "versus-monitor-2", "done": "2026-05-07", "notes": "ASUS ROG Swift PG279QM (240Hz Fast IPS) vs Dell S2722DGM (165Hz VA curved). 6 category breakdown, spec table, 4 key diffs, FAQ. Sitemap updated."}
+    {"id": "versus-monitor-2", "done": "2026-05-07", "notes": "ASUS ROG Swift PG279QM (240Hz Fast IPS) vs Dell S2722DGM (165Hz VA curved). 6 category breakdown, spec table, 4 key diffs, FAQ. Sitemap updated."},
+    {"id": "game-reaction-trainer", "done": "2026-05-07", "notes": "Reaction Time Trainer — 5-round click-when-green game. Grades S/A/B/C/D/F, personal best localStorage, share button, spacebar support, smooth CSS transitions."},
+    {"id": "game-fps-aim-trainer", "done": "2026-05-07", "notes": "FPS Aim Trainer — canvas target clicking game with 30/60/90s modes. Timer arcs, accuracy %, hits/sec, personal best, share button. Games hub updated."}
   ],
   "queue": [
-    {
-      "id": "game-reaction-trainer",
-      "type": "new-game",
-      "priority": 2,
-      "title": "New Game: Reaction Time Trainer",
-      "description": "Click-when-green reaction trainer with stats (avg, best, worst over 5 attempts), letter grade (S < 150ms, A < 200ms, B < 250ms, C < 300ms), share button. Gamers love knowing their reaction time."
-    },
-    {
-      "id": "game-fps-aim-trainer",
-      "type": "new-game",
-      "priority": 2,
-      "title": "New Game: FPS Aim Trainer",
-      "description": "Canvas-based target clicking game — random targets appear, click before they disappear. Track accuracy %, targets hit, misses. 30-second rounds. Share best score."
-    },
     {
       "id": "versus-headset-3",
       "type": "new-page",
@@ -122,7 +110,7 @@
       "date": "2026-05-07",
       "tasks_completed": ["versus-monitor-2"],
       "commits": [],
-      "notes": "New versus page: ASUS ROG Swift PG279QM (240Hz Fast IPS) vs Dell S2722DGM (165Hz VA curved). 6-category breakdown (refresh rate, contrast, response time, color, form factor, value). Spec table, 4 key differences, 6-question FAQ, Grok Imagine hero image. Sitemap updated. autoloop_state queue cleaned and new tasks generated."
+      "notes": "New versus page: ASUS ROG Swift PG279QM (240Hz Fast IPS) vs Dell S2722DGM (165Hz VA curved). 2 new games: Reaction Time Trainer + FPS Aim Trainer (canvas). Games hub updated to 14 games. Sitemap updated with 3 new pages."
     }
   ]
 }

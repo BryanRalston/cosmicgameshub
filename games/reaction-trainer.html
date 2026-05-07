@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-D272MF8NQP"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-D272MF8NQP');
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reaction Time Trainer — CosmicGamesHub</title>
+  <meta name="description" content="Test your gaming reaction time. Click when it turns green. Get your average, grade (S/A/B/C/D), and compare your score." />
+  <meta property="og:title" content="Reaction Time Trainer — CosmicGamesHub" />
+  <meta property="og:description" content="Test your gaming reaction time. How fast are you really?" />
+  <meta property="og:image" content="https://cosmicgameshub.com/images/game-reaction-trainer.jpg" />
+  <link rel="canonical" href="https://cosmicgameshub.com/games/reaction-trainer" />
+  <link rel="stylesheet" href="../styles.css" />
+  <style>
+    .rt-wrap {
+      max-width: 560px;
+      margin: 0 auto;
+      text-align: center;
+      padding: 0 1rem;
+    }
+    .rt-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      margin-bottom: 1.5rem;
+    }
+    .rt-back:hover { color: var(--accent); }
+    .rt-title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0 0 0.35rem;
+    }
+    .rt-subtitle {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin: 0 0 2rem;
+    }
+    .rt-target-wrap {
+      position: relative;
+      width: 220px;
+      height: 220px;
+      margin: 0 auto 2rem;
+    }
+    .rt-target {
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.08s, box-shadow 0.08s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .rt-target--idle {
+      background: #1a1a2e;
+      border: 2px solid rgba(255,255,255,0.08);
+      box-shadow: none;
+    }
+    .rt-target--waiting {
+      background: #2d1a0a;
+      border: 2px solid rgba(255,120,0,0.3);
+      box-shadow: 0 0 40px rgba(255,100,0,0.15);
+      animation: rt-pulse-wait 1.2s ease-in-out infinite;
+    }
+    .rt-target--go {
+      background: #0a2d0a;
+      border: 2px solid rgba(0,230,100,0.6);
+      box-shadow: 0 0 60px rgba(0,230,100,0.35), 0 0 120px rgba(0,230,100,0.12);
+    }
+    .rt-target--early {
+      background: #2d0a0a;
+      border: 2px solid rgba(230,50,50,0.6);
+      box-shadow: 0 0 40px rgba(230,50,50,0.25);
+    }
+    .rt-target--done {
+      background: #0d1a2d;
+      border: 2px solid rgba(34,211,238,0.3);
+    }
+    @keyframes rt-pulse-wait {
+      0%, 100% { box-shadow: 0 0 30px rgba(255,100,0,0.1); }
+      50% { box-shadow: 0 0 60px rgba(255,100,0,0.25); }
+    }
+    .rt-label {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: 0.02em;
+    }
+    .rt-label-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+    .rt-label--go { color: #22d36e; font-size: 1.2rem; }
+    .rt-label--early { color: #e84040; }
+    .rt-label--time { font-size: 1.6rem; color: var(--accent); font-weight: 700; }
+    .rt-rounds {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .rt-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.12);
+      transition: background 0.2s;
+    }
+    .rt-dot--done { background: var(--accent); border-color: var(--accent); }
+    .rt-dot--current { background: rgba(34,211,238,0.35); border-color: var(--accent); }
+    .rt-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+    .rt-stat {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.75rem 0.5rem;
+    }
+    .rt-stat__val {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .rt-stat__lbl {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-top: 0.2rem;
+    }
+    .rt-results {
+      display: none;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .rt-results.show { display: block; }
+    .rt-grade {
+      font-size: 4rem;
+      font-weight: 900;
+      line-height: 1;
+      margin-bottom: 0.25rem;
+    }
+    .rt-grade--S { color: #ffd700; text-shadow: 0 0 20px rgba(255,215,0,0.5); }
+    .rt-grade--A { color: #22d36e; text-shadow: 0 0 20px rgba(34,211,110,0.4); }
+    .rt-grade--B { color: var(--accent); text-shadow: 0 0 20px rgba(34,211,238,0.4); }
+    .rt-grade--C { color: #a78bfa; }
+    .rt-grade--D { color: #f97316; }
+    .rt-grade--F { color: #ef4444; }
+    .rt-results__avg {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .rt-results__desc {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin: 0.5rem 0 1rem;
+    }
+    .rt-results__row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      padding: 0.3rem 0;
+      border-top: 1px solid rgba(255,255,255,0.04);
+    }
+    .rt-results__row span:last-child {
+      color: var(--text-primary);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .rt-best-banner {
+      display: none;
+      background: linear-gradient(135deg, rgba(255,215,0,0.1), rgba(255,215,0,0.05));
+      border: 1px solid rgba(255,215,0,0.25);
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-size: 0.85rem;
+      color: #ffd700;
+      margin-bottom: 1rem;
+    }
+    .rt-best-banner.show { display: block; }
+    .rt-btns {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .rt-btn {
+      padding: 0.65rem 1.4rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .rt-btn:active { transform: scale(0.97); }
+    .rt-btn--primary {
+      background: var(--accent);
+      color: #000;
+    }
+    .rt-btn--secondary {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.15);
+      color: var(--text-secondary);
+    }
+    .rt-hint {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 1rem;
+      min-height: 1.2em;
+    }
+    .rt-alltime {
+      margin-top: 1.5rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .rt-alltime span { color: var(--accent); font-family: 'JetBrains Mono', monospace; font-weight: 700; }
+  </style>
+</head>
+<body>
+
+<nav class="nav" role="navigation" aria-label="Main navigation">
+  <div class="container">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo" aria-label="CosmicGamesHub home">
+        <span class="nav__logo-icon" aria-hidden="true">🎮</span>
+        <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
+      </a>
+      <ul class="nav__links" id="navLinks">
+        <li><a href="/guides/best-gaming-headsets-2026">Headsets</a></li>
+        <li><a href="/guides/best-gaming-mice-2026">Mice</a></li>
+        <li><a href="/guides/best-budget-gaming-chairs">Chairs</a></li>
+        <li><a href="/guides/best-gaming-keyboards-2026">Keyboards</a></li>
+        <li><a href="/guides/best-gaming-monitors-2026">Monitors</a></li>
+        <li><a href="/tools/gaming-fps-calculator" class="nav__cta btn">Free Tools</a></li>
+      </ul>
+      <button class="nav__hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<main style="padding: 2rem 0 4rem;">
+  <div class="rt-wrap">
+    <a href="/games" class="rt-back">← Back to Games</a>
+
+    <h1 class="rt-title">⚡ Reaction Time</h1>
+    <p class="rt-subtitle">Wait for green — then click as fast as you can</p>
+
+    <!-- Round progress -->
+    <div class="rt-rounds" id="rtRounds">
+      <div class="rt-dot rt-dot--current" id="dot0"></div>
+      <div class="rt-dot" id="dot1"></div>
+      <div class="rt-dot" id="dot2"></div>
+      <div class="rt-dot" id="dot3"></div>
+      <div class="rt-dot" id="dot4"></div>
+    </div>
+
+    <!-- Target circle -->
+    <div class="rt-target-wrap">
+      <div class="rt-target rt-target--idle" id="rtTarget" tabindex="0" role="button" aria-label="Click when green">
+        <div class="rt-label" id="rtLabel">Click to Start</div>
+        <div class="rt-label-sub" id="rtSub"></div>
+      </div>
+    </div>
+
+    <!-- Live stats (3 cols) -->
+    <div class="rt-stats" id="rtStats" style="display:none;">
+      <div class="rt-stat">
+        <div class="rt-stat__val" id="statLast">—</div>
+        <div class="rt-stat__lbl">Last</div>
+      </div>
+      <div class="rt-stat">
+        <div class="rt-stat__val" id="statBest">—</div>
+        <div class="rt-stat__lbl">Best</div>
+      </div>
+      <div class="rt-stat">
+        <div class="rt-stat__val" id="statAvg">—</div>
+        <div class="rt-stat__lbl">Average</div>
+      </div>
+    </div>
+
+    <!-- Results panel -->
+    <div class="rt-results" id="rtResults">
+      <div class="rt-grade" id="resGrade">A</div>
+      <div class="rt-results__avg" id="resAvg">—</div>
+      <div class="rt-results__desc" id="resDesc"></div>
+      <div class="rt-best-banner" id="resBestBanner">🥇 New all-time personal best!</div>
+      <div class="rt-results__row"><span>Best round</span><span id="resBestRound">—</span></div>
+      <div class="rt-results__row"><span>Worst round</span><span id="resWorstRound">—</span></div>
+      <div class="rt-results__row"><span>Rounds completed</span><span id="resRounds">5</span></div>
+    </div>
+
+    <div class="rt-btns" id="rtBtns" style="display:none;">
+      <button class="rt-btn rt-btn--primary" id="btnAgain">Try Again</button>
+      <button class="rt-btn rt-btn--secondary" id="btnShare">📋 Share</button>
+    </div>
+
+    <div class="rt-hint" id="rtHint"></div>
+
+    <div class="rt-alltime" id="rtAllTime"></div>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer__bottom">
+      <p>© 2026 CosmicGamesHub. <a href="/games">← More Games</a></p>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function() {
+  const ROUNDS = 5;
+  const BEST_KEY = 'rt_best_avg';
+  const MIN_DELAY = 1500;
+  const MAX_DELAY = 4500;
+
+  const target = document.getElementById('rtTarget');
+  const lbl = document.getElementById('rtLabel');
+  const sub = document.getElementById('rtSub');
+  const statsEl = document.getElementById('rtStats');
+  const resultsEl = document.getElementById('rtResults');
+  const btnsEl = document.getElementById('rtBtns');
+  const hintEl = document.getElementById('rtHint');
+  const allTimeEl = document.getElementById('rtAllTime');
+  const statLast = document.getElementById('statLast');
+  const statBest = document.getElementById('statBest');
+  const statAvg = document.getElementById('statAvg');
+  const dots = [0,1,2,3,4].map(i => document.getElementById('dot' + i));
+
+  let state = 'idle'; // idle | waiting | go | early | result | done
+  let goTime = 0;
+  let waitTimer = null;
+  let round = 0;
+  let times = [];
+  let sessionBest = Infinity;
+  let sessionWorst = 0;
+
+  function setTargetState(s) {
+    target.className = 'rt-target rt-target--' + s;
+  }
+
+  function updateDots() {
+    dots.forEach((d, i) => {
+      d.className = 'rt-dot';
+      if (i < round) d.classList.add('rt-dot--done');
+      else if (i === round) d.classList.add('rt-dot--current');
+    });
+  }
+
+  function gradeFromMs(ms) {
+    if (ms < 150) return 'S';
+    if (ms < 200) return 'A';
+    if (ms < 250) return 'B';
+    if (ms < 300) return 'C';
+    if (ms < 350) return 'D';
+    return 'F';
+  }
+
+  function gradeDesc(g) {
+    return {
+      S: 'Pro-level reflexes. You\'re in the top 1% of gamers.',
+      A: 'Excellent. Competitive FPS ready.',
+      B: 'Above average. Solid for most games.',
+      C: 'Average. Plenty of room to improve.',
+      D: 'Below average. Keep practicing!',
+      F: 'Needs work — or you clicked too early.'
+    }[g];
+  }
+
+  function showAllTime() {
+    const prev = localStorage.getItem(BEST_KEY);
+    if (prev) {
+      allTimeEl.innerHTML = 'All-time best: <span>' + prev + 'ms</span>';
+    }
+  }
+
+  function startRound() {
+    state = 'waiting';
+    setTargetState('waiting');
+    lbl.className = 'rt-label';
+    lbl.textContent = 'Get Ready...';
+    sub.textContent = '';
+    hintEl.textContent = 'Don\'t click yet!';
+
+    const delay = MIN_DELAY + Math.random() * (MAX_DELAY - MIN_DELAY);
+    waitTimer = setTimeout(() => {
+      state = 'go';
+      setTargetState('go');
+      lbl.className = 'rt-label rt-label--go';
+      lbl.textContent = 'CLICK!';
+      hintEl.textContent = '';
+      goTime = performance.now();
+    }, delay);
+  }
+
+  function recordTime(ms) {
+    times.push(ms);
+    if (ms < sessionBest) sessionBest = ms;
+    if (ms > sessionWorst) sessionWorst = ms;
+
+    statsEl.style.display = 'grid';
+    statLast.textContent = ms + 'ms';
+    statBest.textContent = sessionBest + 'ms';
+    const avg = Math.round(times.reduce((a, b) => a + b, 0) / times.length);
+    statAvg.textContent = avg + 'ms';
+
+    round++;
+    updateDots();
+
+    if (round >= ROUNDS) {
+      showResults(avg);
+    } else {
+      state = 'result';
+      setTargetState('done');
+      lbl.className = 'rt-label';
+      lbl.textContent = ms + 'ms';
+      sub.textContent = 'Click to continue';
+      hintEl.textContent = 'Round ' + round + ' of ' + ROUNDS;
+    }
+  }
+
+  function showResults(avg) {
+    state = 'done';
+    setTargetState('done');
+    lbl.textContent = '';
+    sub.textContent = '';
+    hintEl.textContent = '';
+
+    const grade = gradeFromMs(avg);
+    document.getElementById('resGrade').textContent = grade;
+    document.getElementById('resGrade').className = 'rt-grade rt-grade--' + grade;
+    document.getElementById('resAvg').textContent = avg + 'ms average';
+    document.getElementById('resDesc').textContent = gradeDesc(grade);
+    document.getElementById('resBestRound').textContent = sessionBest + 'ms';
+    document.getElementById('resWorstRound').textContent = sessionWorst + 'ms';
+    document.getElementById('resRounds').textContent = ROUNDS;
+
+    const prev = parseInt(localStorage.getItem(BEST_KEY) || '9999', 10);
+    if (avg < prev) {
+      localStorage.setItem(BEST_KEY, avg);
+      document.getElementById('resBestBanner').classList.add('show');
+    }
+
+    resultsEl.classList.add('show');
+    btnsEl.style.display = 'flex';
+    showAllTime();
+  }
+
+  function reset() {
+    clearTimeout(waitTimer);
+    state = 'idle';
+    round = 0;
+    times = [];
+    sessionBest = Infinity;
+    sessionWorst = 0;
+    goTime = 0;
+
+    setTargetState('idle');
+    lbl.className = 'rt-label';
+    lbl.textContent = 'Click to Start';
+    sub.textContent = '';
+    hintEl.textContent = '';
+    statsEl.style.display = 'none';
+    statLast.textContent = '—';
+    statBest.textContent = '—';
+    statAvg.textContent = '—';
+    resultsEl.classList.remove('show');
+    document.getElementById('resBestBanner').classList.remove('show');
+    btnsEl.style.display = 'none';
+    updateDots();
+    showAllTime();
+  }
+
+  function handleClick() {
+    if (state === 'idle' || state === 'result') {
+      startRound();
+    } else if (state === 'waiting') {
+      clearTimeout(waitTimer);
+      state = 'early';
+      setTargetState('early');
+      lbl.className = 'rt-label rt-label--early';
+      lbl.textContent = 'Too Early!';
+      sub.textContent = 'Click to try again';
+      hintEl.textContent = 'Wait for green before clicking.';
+    } else if (state === 'early') {
+      startRound();
+    } else if (state === 'go') {
+      const ms = Math.round(performance.now() - goTime);
+      recordTime(ms);
+    }
+  }
+
+  target.addEventListener('click', handleClick);
+  target.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick(); }
+  });
+
+  document.getElementById('btnAgain').addEventListener('click', reset);
+
+  document.getElementById('btnShare').addEventListener('click', () => {
+    const avg = Math.round(times.reduce((a, b) => a + b, 0) / times.length);
+    const grade = gradeFromMs(avg);
+    const text = '⚡ Reaction Time Trainer — ' + avg + 'ms average · Grade ' + grade + '\ncosmicgameshub.com/games/reaction-trainer';
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('btnShare');
+      btn.textContent = '✓ Copied!';
+      setTimeout(() => { btn.textContent = '📋 Share'; }, 2000);
+    }).catch(() => {});
+  });
+
+  // Support keyboard spacebar globally while game is active
+  document.addEventListener('keydown', e => {
+    if (e.key === ' ' && e.target !== target && state !== 'idle' && state !== 'done') {
+      e.preventDefault();
+      handleClick();
+    }
+  });
+
+  updateDots();
+  showAllTime();
+})();
+</script>
+
+<script>
+  const hamburger = document.getElementById('hamburger');
+  const navLinks = document.getElementById('navLinks');
+  hamburger.addEventListener('click', () => {
+    const open = navLinks.classList.toggle('open');
+    hamburger.setAttribute('aria-expanded', open);
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-D272MF8NQP"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-D272MF8NQP');
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FPS Aim Trainer — CosmicGamesHub</title>
+  <meta name="description" content="Train your FPS aim. Click targets before they disappear. Track accuracy, hits per second, and personal best." />
+  <meta property="og:title" content="FPS Aim Trainer — CosmicGamesHub" />
+  <meta property="og:description" content="Train your FPS aim. How accurate are you?" />
+  <meta property="og:image" content="https://cosmicgameshub.com/images/game-aim-trainer.jpg" />
+  <link rel="canonical" href="https://cosmicgameshub.com/games/aim-trainer" />
+  <link rel="stylesheet" href="../styles.css" />
+  <style>
+    .at-wrap {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 0 1rem;
+    }
+    .at-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+    }
+    .at-back:hover { color: var(--accent); }
+    .at-header {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+    .at-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0 0 0.25rem;
+    }
+    .at-subtitle {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin: 0;
+    }
+    .at-hud {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0.75rem;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 10px 10px 0 0;
+      border-bottom: none;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .at-hud__stat {
+      text-align: center;
+      min-width: 60px;
+    }
+    .at-hud__val {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .at-hud__val--timer { color: var(--accent); }
+    .at-hud__val--acc { color: #22d36e; }
+    .at-hud__lbl {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+    .at-canvas-wrap {
+      position: relative;
+      border: 1px solid var(--border);
+      border-radius: 0 0 10px 10px;
+      overflow: hidden;
+      background: #07070f;
+      cursor: crosshair;
+    }
+    #atCanvas {
+      display: block;
+      width: 100%;
+    }
+    .at-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(7,7,15,0.92);
+      backdrop-filter: blur(4px);
+    }
+    .at-overlay.hidden { display: none; }
+    .at-overlay__title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+    .at-overlay__sub {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+      margin-bottom: 1.5rem;
+      text-align: center;
+      max-width: 280px;
+    }
+    .at-overlay__mode {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .at-mode-btn {
+      padding: 0.45rem 1rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: transparent;
+      color: var(--text-secondary);
+      font-family: inherit;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .at-mode-btn.active, .at-mode-btn:hover {
+      background: rgba(34,211,238,0.12);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .at-btn {
+      padding: 0.7rem 1.8rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+      background: var(--accent);
+      color: #000;
+      transition: opacity 0.15s;
+    }
+    .at-btn:hover { opacity: 0.9; }
+    .at-result-panel {
+      text-align: center;
+      padding: 1rem;
+      width: 100%;
+      max-width: 320px;
+    }
+    .at-grade {
+      font-size: 3.5rem;
+      font-weight: 900;
+      line-height: 1;
+      margin-bottom: 0.25rem;
+    }
+    .at-grade--S { color: #ffd700; text-shadow: 0 0 20px rgba(255,215,0,0.5); }
+    .at-grade--A { color: #22d36e; }
+    .at-grade--B { color: var(--accent); }
+    .at-grade--C { color: #a78bfa; }
+    .at-grade--D { color: #f97316; }
+    .at-grade--F { color: #ef4444; }
+    .at-result-avg {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.15rem;
+    }
+    .at-result-desc {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+    .at-result-rows {
+      border-top: 1px solid rgba(255,255,255,0.06);
+      margin-bottom: 1rem;
+    }
+    .at-result-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      padding: 0.3rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .at-result-row span:last-child { color: var(--text-primary); font-family: 'JetBrains Mono', monospace; }
+    .at-result-btns { display: flex; gap: 0.6rem; justify-content: center; flex-wrap: wrap; }
+    .at-result-btn-sec {
+      padding: 0.55rem 1.2rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.14);
+      color: var(--text-secondary);
+      font-family: inherit;
+    }
+    .at-best-line {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.75rem;
+      text-align: center;
+    }
+    .at-best-line span { color: var(--accent); font-family: 'JetBrains Mono', monospace; }
+    .at-new-best {
+      font-size: 0.8rem;
+      color: #ffd700;
+      margin-bottom: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav" role="navigation" aria-label="Main navigation">
+  <div class="container">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo" aria-label="CosmicGamesHub home">
+        <span class="nav__logo-icon" aria-hidden="true">🎮</span>
+        <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
+      </a>
+      <ul class="nav__links" id="navLinks">
+        <li><a href="/guides/best-gaming-headsets-2026">Headsets</a></li>
+        <li><a href="/guides/best-gaming-mice-2026">Mice</a></li>
+        <li><a href="/guides/best-budget-gaming-chairs">Chairs</a></li>
+        <li><a href="/guides/best-gaming-keyboards-2026">Keyboards</a></li>
+        <li><a href="/guides/best-gaming-monitors-2026">Monitors</a></li>
+        <li><a href="/tools/gaming-fps-calculator" class="nav__cta btn">Free Tools</a></li>
+      </ul>
+      <button class="nav__hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<main style="padding: 1.5rem 0 4rem;">
+  <div class="at-wrap">
+    <a href="/games" class="at-back">← Back to Games</a>
+    <div class="at-header">
+      <h1 class="at-title">🎯 FPS Aim Trainer</h1>
+      <p class="at-subtitle">Click targets before they disappear · Track your accuracy</p>
+    </div>
+
+    <!-- HUD -->
+    <div class="at-hud">
+      <div class="at-hud__stat">
+        <div class="at-hud__val at-hud__val--timer" id="hudTimer">30</div>
+        <div class="at-hud__lbl">Time</div>
+      </div>
+      <div class="at-hud__stat">
+        <div class="at-hud__val" id="hudHits">0</div>
+        <div class="at-hud__lbl">Hits</div>
+      </div>
+      <div class="at-hud__stat">
+        <div class="at-hud__val" id="hudMisses">0</div>
+        <div class="at-hud__lbl">Misses</div>
+      </div>
+      <div class="at-hud__stat">
+        <div class="at-hud__val at-hud__val--acc" id="hudAcc">—</div>
+        <div class="at-hud__lbl">Accuracy</div>
+      </div>
+    </div>
+
+    <!-- Canvas -->
+    <div class="at-canvas-wrap" id="atCanvasWrap">
+      <canvas id="atCanvas"></canvas>
+
+      <!-- Start overlay -->
+      <div class="at-overlay" id="startOverlay">
+        <div class="at-overlay__title">🎯 Aim Trainer</div>
+        <div class="at-overlay__sub">Click every target before it disappears. How many can you hit in time?</div>
+        <div class="at-overlay__mode">
+          <button class="at-mode-btn active" data-dur="30" id="mode30">30s</button>
+          <button class="at-mode-btn" data-dur="60" id="mode60">60s</button>
+          <button class="at-mode-btn" data-dur="90" id="mode90">90s</button>
+        </div>
+        <button class="at-btn" id="btnStart">Start</button>
+        <div class="at-best-line" id="startBestLine"></div>
+      </div>
+
+      <!-- Results overlay -->
+      <div class="at-overlay hidden" id="resultOverlay">
+        <div class="at-result-panel">
+          <div class="at-new-best" id="resNewBest" style="display:none;">🥇 New personal best!</div>
+          <div class="at-grade" id="resGrade">A</div>
+          <div class="at-result-avg" id="resHits">— hits</div>
+          <div class="at-result-desc" id="resDesc"></div>
+          <div class="at-result-rows">
+            <div class="at-result-row"><span>Accuracy</span><span id="resAcc">—</span></div>
+            <div class="at-result-row"><span>Misses</span><span id="resMisses">—</span></div>
+            <div class="at-result-row"><span>Hits/sec</span><span id="resHPS">—</span></div>
+          </div>
+          <div class="at-result-btns">
+            <button class="at-btn" id="btnPlayAgain">Play Again</button>
+            <button class="at-result-btn-sec" id="btnShare">📋 Share</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="at-best-line" id="bottomBestLine" style="margin-top:0.5rem;"></div>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer__bottom">
+      <p>© 2026 CosmicGamesHub. <a href="/games">← More Games</a></p>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function() {
+  const BEST_KEY_PREFIX = 'at_best_';
+  const canvas = document.getElementById('atCanvas');
+  const ctx = canvas.getContext('2d');
+  const wrap = document.getElementById('atCanvasWrap');
+  const startOverlay = document.getElementById('startOverlay');
+  const resultOverlay = document.getElementById('resultOverlay');
+  const hudTimer = document.getElementById('hudTimer');
+  const hudHits = document.getElementById('hudHits');
+  const hudMisses = document.getElementById('hudMisses');
+  const hudAcc = document.getElementById('hudAcc');
+
+  const CANVAS_H = 420;
+  const TARGET_R_MIN = 22;
+  const TARGET_R_MAX = 42;
+  const TARGET_LIFE_MIN = 1200;
+  const TARGET_LIFE_MAX = 2400;
+  const MAX_TARGETS = 3;
+
+  let duration = 30;
+  let timeLeft = 30;
+  let hits = 0;
+  let misses = 0;
+  let targets = [];
+  let running = false;
+  let gameTimer = null;
+  let spawnTimer = null;
+  let animFrame = null;
+  let lastTs = 0;
+
+  function initCanvas() {
+    const w = wrap.clientWidth;
+    canvas.width = w * devicePixelRatio;
+    canvas.height = CANVAS_H * devicePixelRatio;
+    canvas.style.height = CANVAS_H + 'px';
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+  }
+
+  function cw() { return wrap.clientWidth; }
+  function ch() { return CANVAS_H; }
+
+  function spawnTarget() {
+    if (!running) return;
+    if (targets.length >= MAX_TARGETS) return;
+    const r = TARGET_R_MIN + Math.random() * (TARGET_R_MAX - TARGET_R_MIN);
+    const x = r + 10 + Math.random() * (cw() - 2 * r - 20);
+    const y = r + 10 + Math.random() * (ch() - 2 * r - 20);
+    const life = TARGET_LIFE_MIN + Math.random() * (TARGET_LIFE_MAX - TARGET_LIFE_MIN);
+    targets.push({ x, y, r, born: performance.now(), life, hit: false, hitAt: 0 });
+  }
+
+  function scheduleSpawn() {
+    if (!running) return;
+    const delay = 300 + Math.random() * 500;
+    spawnTimer = setTimeout(() => {
+      spawnTarget();
+      scheduleSpawn();
+    }, delay);
+  }
+
+  function draw(ts) {
+    if (!running) return;
+    animFrame = requestAnimationFrame(draw);
+    const now = performance.now();
+
+    ctx.clearRect(0, 0, cw(), ch());
+
+    // Draw grid lines (subtle)
+    ctx.strokeStyle = 'rgba(255,255,255,0.025)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < cw(); x += 60) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, ch()); ctx.stroke();
+    }
+    for (let y = 0; y < ch(); y += 60) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(cw(), y); ctx.stroke();
+    }
+
+    targets = targets.filter(t => {
+      if (t.hit) {
+        const age = now - t.hitAt;
+        if (age > 300) return false;
+        const alpha = 1 - age / 300;
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.strokeStyle = 'rgba(34,211,238,' + alpha + ')';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(t.x, t.y, t.r * (1 + age / 300 * 0.5), 0, Math.PI * 2);
+        ctx.stroke();
+        // hit marker cross
+        ctx.strokeStyle = 'rgba(34,211,238,' + alpha * 0.6 + ')';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(t.x - 8, t.y); ctx.lineTo(t.x + 8, t.y);
+        ctx.moveTo(t.x, t.y - 8); ctx.lineTo(t.x, t.y + 8);
+        ctx.stroke();
+        ctx.restore();
+        return true;
+      }
+
+      const age = now - t.born;
+      if (age > t.life) {
+        // expired
+        return false;
+      }
+
+      const pct = age / t.life;
+      const urgency = pct > 0.7 ? (pct - 0.7) / 0.3 : 0;
+
+      // ring that shrinks as time runs out
+      const ringAlpha = 0.15 + 0.1 * Math.sin(now / 200);
+      ctx.save();
+
+      // outer glow
+      const grad = ctx.createRadialGradient(t.x, t.y, 0, t.x, t.y, t.r + 8);
+      const baseColor = urgency > 0 ? `rgba(255,${Math.round(100 - urgency * 100)},0` : 'rgba(220,50,50';
+      grad.addColorStop(0, baseColor + ',0)');
+      grad.addColorStop(1, baseColor + ',' + (0.08 + urgency * 0.15) + ')');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, t.r + 8, 0, Math.PI * 2);
+      ctx.fill();
+
+      // target fill
+      ctx.fillStyle = urgency > 0
+        ? `rgba(${Math.round(60 + urgency * 40)},${Math.round(10 - urgency * 5)},10,0.9)`
+        : 'rgba(50,8,8,0.9)';
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, t.r, 0, Math.PI * 2);
+      ctx.fill();
+
+      // outer ring
+      ctx.strokeStyle = urgency > 0
+        ? `rgba(255,${Math.round(60 - urgency * 60)},0,0.9)`
+        : 'rgba(220,50,50,0.85)';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, t.r, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // inner rings (classic target look)
+      ctx.strokeStyle = urgency > 0
+        ? `rgba(255,${Math.round(120 - urgency * 100)},0,0.5)`
+        : 'rgba(255,80,80,0.5)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, t.r * 0.6, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, t.r * 0.25, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // center dot
+      ctx.fillStyle = urgency > 0 ? 'rgba(255,160,0,0.95)' : 'rgba(255,80,80,0.95)';
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // timer arc (shrinks as time runs out)
+      ctx.strokeStyle = urgency > 0 ? 'rgba(255,180,0,0.6)' : 'rgba(255,100,100,0.4)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, t.r + 5, -Math.PI / 2, -Math.PI / 2 + (1 - pct) * Math.PI * 2);
+      ctx.stroke();
+
+      ctx.restore();
+      return true;
+    });
+  }
+
+  function startGame() {
+    hits = 0; misses = 0; targets = [];
+    timeLeft = duration;
+    running = true;
+    hudTimer.textContent = timeLeft;
+    hudHits.textContent = '0';
+    hudMisses.textContent = '0';
+    hudAcc.textContent = '—';
+
+    startOverlay.classList.add('hidden');
+    resultOverlay.classList.add('hidden');
+
+    initCanvas();
+    spawnTarget(); spawnTarget();
+    scheduleSpawn();
+
+    gameTimer = setInterval(() => {
+      timeLeft--;
+      hudTimer.textContent = timeLeft;
+      if (timeLeft <= 0) endGame();
+    }, 1000);
+
+    animFrame = requestAnimationFrame(draw);
+  }
+
+  function endGame() {
+    running = false;
+    clearInterval(gameTimer);
+    clearTimeout(spawnTimer);
+    cancelAnimationFrame(animFrame);
+    ctx.clearRect(0, 0, cw(), ch());
+
+    const total = hits + misses;
+    const acc = total > 0 ? Math.round(hits / total * 100) : 0;
+    const hps = (hits / duration).toFixed(2);
+
+    hudAcc.textContent = acc + '%';
+
+    const grade = hits >= 40 ? 'S' : hits >= 30 ? 'A' : hits >= 22 ? 'B' : hits >= 14 ? 'C' : hits >= 8 ? 'D' : 'F';
+    const descs = {
+      S: 'Insane accuracy. Pro-level aim.',
+      A: 'Excellent. Top-tier FPS aim.',
+      B: 'Solid aim. Competitive ready.',
+      C: 'Average. Keep practicing.',
+      D: 'Below average. More reps needed.',
+      F: 'Keep practicing — you\'ll improve!'
+    };
+
+    document.getElementById('resGrade').textContent = grade;
+    document.getElementById('resGrade').className = 'at-grade at-grade--' + grade;
+    document.getElementById('resHits').textContent = hits + ' hits in ' + duration + 's';
+    document.getElementById('resDesc').textContent = descs[grade];
+    document.getElementById('resAcc').textContent = acc + '%';
+    document.getElementById('resMisses').textContent = misses;
+    document.getElementById('resHPS').textContent = hps;
+
+    const bestKey = BEST_KEY_PREFIX + duration;
+    const prev = parseInt(localStorage.getItem(bestKey) || '0', 10);
+    if (hits > prev) {
+      localStorage.setItem(bestKey, hits);
+      document.getElementById('resNewBest').style.display = '';
+    } else {
+      document.getElementById('resNewBest').style.display = 'none';
+    }
+
+    resultOverlay.classList.remove('hidden');
+    updateBestLines();
+  }
+
+  function updateBestLines() {
+    const best = localStorage.getItem(BEST_KEY_PREFIX + duration);
+    const txt = best ? 'Personal best (' + duration + 's): <span>' + best + ' hits</span>' : '';
+    document.getElementById('startBestLine').innerHTML = txt;
+    document.getElementById('bottomBestLine').innerHTML = txt;
+  }
+
+  // Click on canvas
+  canvas.addEventListener('click', e => {
+    if (!running) return;
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left);
+    const my = (e.clientY - rect.top);
+
+    let hit = false;
+    for (let i = targets.length - 1; i >= 0; i--) {
+      const t = targets[i];
+      if (t.hit) continue;
+      const dx = mx - t.x, dy = my - t.y;
+      if (dx * dx + dy * dy <= t.r * t.r) {
+        t.hit = true;
+        t.hitAt = performance.now();
+        hits++;
+        hudHits.textContent = hits;
+        const total = hits + misses;
+        hudAcc.textContent = Math.round(hits / total * 100) + '%';
+        hit = true;
+        break;
+      }
+    }
+    if (!hit) {
+      misses++;
+      hudMisses.textContent = misses;
+      const total = hits + misses;
+      hudAcc.textContent = Math.round(hits / total * 100) + '%';
+    }
+  });
+
+  // Mode buttons
+  document.querySelectorAll('.at-mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.at-mode-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      duration = parseInt(btn.dataset.dur, 10);
+      hudTimer.textContent = duration;
+      updateBestLines();
+    });
+  });
+
+  document.getElementById('btnStart').addEventListener('click', startGame);
+  document.getElementById('btnPlayAgain').addEventListener('click', () => {
+    resultOverlay.classList.add('hidden');
+    startOverlay.classList.remove('hidden');
+    hudTimer.textContent = duration;
+    hudHits.textContent = '0';
+    hudMisses.textContent = '0';
+    hudAcc.textContent = '—';
+    ctx.clearRect(0, 0, cw(), ch());
+  });
+
+  document.getElementById('btnShare').addEventListener('click', () => {
+    const acc = hits + misses > 0 ? Math.round(hits / (hits + misses) * 100) : 0;
+    const grade = hits >= 40 ? 'S' : hits >= 30 ? 'A' : hits >= 22 ? 'B' : hits >= 14 ? 'C' : hits >= 8 ? 'D' : 'F';
+    const text = '🎯 FPS Aim Trainer — ' + hits + ' hits · ' + acc + '% accuracy · Grade ' + grade + ' (' + duration + 's)\ncosmicgameshub.com/games/aim-trainer';
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('btnShare');
+      btn.textContent = '✓ Copied!';
+      setTimeout(() => { btn.textContent = '📋 Share'; }, 2000);
+    }).catch(() => {});
+  });
+
+  window.addEventListener('resize', () => {
+    if (!running) initCanvas();
+  });
+
+  initCanvas();
+  updateBestLines();
+})();
+</script>
+
+<script>
+  const hamburger = document.getElementById('hamburger');
+  const navLinks = document.getElementById('navLinks');
+  hamburger.addEventListener('click', () => {
+    const open = navLinks.classList.toggle('open');
+    hamburger.setAttribute('aria-expanded', open);
+  });
+</script>
+</body>
+</html>
