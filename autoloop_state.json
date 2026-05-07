@@ -54,9 +54,67 @@
     {"id": "game-upgrade-remaining", "done": "2026-05-07", "notes": "Full audit: all 16 games have appropriate restart/reset flows for their game type. Daily-seeded games (crossword, word-scramble, rift, gamerdle, pixle, gaming-trivia) have result modals with share+close. Arcade games (asteroid-dodge, void-keeper, type-racer, aim-trainer, reaction-trainer, beat-lab, memory-match, minesweeper, sudoku, color-memory) all have restart/play-again flows. No fixes needed."},
     {"id": "versus-mouse-4", "done": "2026-05-07", "notes": "G502 X (~$60, HERO 25K LIGHTFORCE, 89g, 13 buttons, B0B6KWMF3X) vs Basilisk V3 (~$70, Focus+ 26K optical, 101g, SmartReel 4-mode scroll, B09J6XCCGX). Full versus page. Commit 8ff0ad9."},
     {"id": "guide-best-gaming-setup-upgrade", "done": "2026-05-07", "notes": "Upgrade path table added (budget→upgrade per slot with cost+gain). Relevant Comparisons section with 4 versus cards. FAQ expanded 4→7 questions. Nav fixed from old site-header to site-nav. Footer updated. Commit d6042d2."},
-    {"id": "game-score-guesser", "done": "2026-05-07", "notes": "Gaming Gear Price Guesser — 28 products (headsets/mice/keyboards/monitors), 5 daily rounds seeded by Mulberry32 PRNG, Price is Right scoring (over=0pts, exact=100pts, progressive tiers). S/A/B/C/D/F grades, streak tracking, personal best, share with emoji grid, play-again random mode. Games hub updated to 18, sitemap updated."}
+    {"id": "game-score-guesser", "done": "2026-05-07", "notes": "Gaming Gear Price Guesser — 28 products (headsets/mice/keyboards/monitors), 5 daily rounds seeded by Mulberry32 PRNG, Price is Right scoring (over=0pts, exact=100pts, progressive tiers). S/A/B/C/D/F grades, streak tracking, personal best, share with emoji grid, play-again random mode. Games hub updated to 18, sitemap updated."},
+    {"id": "guide-xbox-headsets", "done": "2026-05-07", "notes": "Xbox Series X/S headset guide: 5 picks (Stealth 600 Gen 3 $79 Xbox Wireless 80hr, Kaira Pro $149 Xbox Wireless+BT, Cloud II Wireless $149 2.4GHz multi-platform, Nova Pro X $349 hot-swap+ANC, HS35 $40 wired). Xbox Wireless vs BT vs 2.4GHz explainer table. Microsoft Spatial Sound FAQ. Added to guides index + sitemap."}
   ],
-  "queue": [],
+  "queue": [
+    {
+      "id": "guide-xbox-headsets",
+      "type": "new-page",
+      "priority": 1,
+      "title": "Guide: Best Gaming Headsets for Xbox Series X/S 2026",
+      "description": "Xbox-specific headset guide. Xbox Wireless protocol (SteelSeries Nova Pro X, Razer Kaira Pro), 3.5mm pass-through via controller, USB-C direct. 5 picks: Nova Pro X, Razer Kaira Pro, HyperX Cloud II Wireless, Corsair HS35 Stereo, Turtle Beach Stealth 600 Gen 3. Microsoft Spatial Sound vs Dolby Atmos."
+    },
+    {
+      "id": "versus-budget-monitor",
+      "type": "new-page",
+      "priority": 1,
+      "title": "Versus: AOC 27G2 vs Gigabyte G27Q",
+      "description": "Budget monitor face-off: AOC 27G2 (27in 1080p 144Hz IPS, ~$180) vs Gigabyte G27Q (27in 1440p 165Hz IPS, ~$230). Resolution vs price argument at the $200 sweet spot. 6-category breakdown, spec table, 4 key diffs, 5-question FAQ."
+    },
+    {
+      "id": "schema-faq-versus",
+      "type": "seo",
+      "priority": 2,
+      "title": "SEO: Add FAQ JSON-LD to all 20 versus pages",
+      "description": "All versus pages have FAQ sections in HTML but no FAQPage structured data schema. Add JSON-LD FAQPage schema to all 20 versus pages. Matches the format used in guide pages."
+    },
+    {
+      "id": "homepage-arcade-strip-update",
+      "type": "homepage",
+      "priority": 2,
+      "title": "Homepage: Add Price Guesser to arcade strip and footer",
+      "description": "Add price-guesser to homepage arcade strip (replace or add alongside current entries). Update footer Play Free section to include price-guesser link. Update og:description game count references."
+    },
+    {
+      "id": "internal-links-pass2",
+      "type": "seo",
+      "priority": 2,
+      "title": "Internal Links Pass 2: PS5 guide, G915/K65, price-guesser",
+      "description": "1) PS5 headsets guide → add link to Nova Pro vs Pulse 3D versus page in comparisons section. 2) Arctis Nova Pro vs Pulse 3D page → add link back to PS5 headsets guide. 3) G915 vs K65 page → link to keyboard guide. 4) Keyboard guide → link to G915 vs K65. 5) Games hub → verify price-guesser card is in good position."
+    },
+    {
+      "id": "versus-gaming-chairs",
+      "type": "new-page",
+      "priority": 3,
+      "title": "Versus: Secretlab Titan Evo vs DXRacer Formula Series",
+      "description": "Chair comparison: Secretlab Titan Evo 2022 (~$429, cold foam, 4-way lumbar, 5yr warranty) vs DXRacer Formula ($299, moldable foam, racing style). Premium ergonomics vs budget entry. 6-category breakdown, spec table, verdict."
+    },
+    {
+      "id": "game-gear-quiz",
+      "type": "new-game",
+      "priority": 3,
+      "title": "New Game: Gaming Gear Knowledge Quiz",
+      "description": "10-question multiple choice quiz about gaming gear specs and brands. Questions like 'Which mouse uses the HERO 25K sensor?', 'What is the polling rate of the Corsair K100?', 'Which headset has 300-hour battery life?'. Daily seeded, 15s per question, speed bonus scoring, S-F grade, share button."
+    },
+    {
+      "id": "og-image-games",
+      "type": "seo",
+      "priority": 3,
+      "title": "SEO: Add og:image meta tags to all game pages",
+      "description": "Most game pages are missing og:image tags. Add og:image pointing to a generic games hub image or generate per-game hero images with Grok Imagine. Improves social sharing previews."
+    }
+  ],
   "loop_log": [
     {"iteration": 1, "date": "2026-05-07", "tasks_completed": ["schema-guide-headsets","schema-guide-mice","schema-guide-keyboards","schema-guide-chairs","schema-guide-monitors","schema-versus-all","og-images-all","about-page"], "commits": ["dcd862c"], "notes": "Schema markup and og:images on all 11 guide/versus pages. About page."},
     {"iteration": 2, "date": "2026-05-07", "tasks_completed": ["fix-amazon-links"], "commits": ["f9f0ba7"], "notes": "All 25 amazon.com/s?k= search URLs replaced with direct dp/ASIN links."},
@@ -70,6 +128,7 @@
     {"iteration": 10, "date": "2026-05-07", "tasks_completed": ["fps-guide-nav-fix","orphan-pages-audit","guide-best-gaming-setup-upgrade"], "commits": ["d6042d2","c13aad4"], "notes": "FPS guide: nav fixed, related section + 3 versus cards. Budget guide: upgrade table, 4 versus links, FAQ 4→7, nav fixed. daily-challenge.html: nav fixed, added to games hub (17 games), added to sitemap. dream-machine: left in /lab, correct location."},
     {"iteration": 11, "date": "2026-05-07", "tasks_completed": ["guide-ps5-headsets"], "commits": ["f4d60d6"], "notes": "PS5 headset guide: 5 picks (Pulse 3D $99, Pulse Elite $149, Cloud Alpha Wireless $200, HS80 $149, Nova Pro Wireless $350). Connection hierarchy table (USB-native > 2.4GHz > BT > 3.5mm). Quick-picks table. 5-question FAQ. Added to guides index + sitemap."},
     {"iteration": 12, "date": "2026-05-07", "tasks_completed": ["versus-keyboard-wireless"], "commits": ["a46e4a4"], "notes": "G915 TKL (LIGHTSPEED+BT 5.1, GL low-profile, 40hr RGB, ~$160) vs K65 RGB Wireless (AXON, Cherry MX Speed, 75hr RGB, ~$140). Full versus page. Homepage count updated to 20 comparisons."},
-    {"iteration": 13, "date": "2026-05-07", "tasks_completed": ["game-score-guesser"], "commits": [], "notes": "Gaming Gear Price Guesser: 28-product database, daily seeded 5 rounds (Mulberry32 PRNG), Price is Right scoring, S-F grades, streak+PB tracking, share button with emoji grid. Games hub: 17→18. Homepage: 17→18. Sitemap updated."}
+    {"iteration": 13, "date": "2026-05-07", "tasks_completed": ["game-score-guesser"], "commits": ["d8cdca1"], "notes": "Gaming Gear Price Guesser: 28-product database, daily seeded 5 rounds (Mulberry32 PRNG), Price is Right scoring, S-F grades, streak+PB tracking, share button with emoji grid. Games hub: 17→18. Homepage: 17→18. Sitemap updated."},
+    {"iteration": 14, "date": "2026-05-07", "tasks_completed": ["guide-xbox-headsets"], "commits": [], "notes": "Xbox Series X/S headset guide: Stealth 600 Gen 3 (#1 value), Kaira Pro (#2 mid-range), Cloud II Wireless (#3 multi-platform), Nova Pro X (#4 premium), HS35 (#5 budget wired). Xbox Wireless protocol explainer. FAQPage JSON-LD schema included. Added to guides index + sitemap."}
   ]
 }
