@@ -412,6 +412,16 @@
       "priority": 3,
       "title": "SEO: Internal links audit pass 3 — link new pages to relevant existing content",
       "description": "Pages added since pass 2: mouse-shape-guide, 1440p-monitors-guide, keychron-vs-apex7, hs65-vs-g435, fps-mice-guide. Add cross-links to/from: mice guide, keyboards guide, monitors guide, related versus pages."
+    },
+    {
+      "id": "game-spec-match",
+      "done": "2026-05-08",
+      "notes": "30-product DB (mice/headsets/keyboards/monitors), 5 rounds Mulberry32 seeded, speed scoring -2pts/sec, streak bonus +25pts, S-F grades, share emoji grid, KB shortcuts 1-4, PB localStorage. Games hub updated to 21. Commit 5691a77."
+    },
+    {
+      "id": "guide-gaming-keyboard-switches",
+      "done": "2026-05-08",
+      "notes": "Membrane/mechanical/optical/Hall Effect explainer. Brand table (Cherry MX vs Gateron vs Outemu vs Kailh). Linear/tactile/clicky cards. Rapid trigger section. Playstyle picker table. 4 affiliate picks (G Pro X TKL, Apex 3 TKL, Apex Pro TKL 2023, K552). BreadcrumbList+Article+FAQPage schema. Commit 5691a77."
     }
   ],
   "loop_log": [
@@ -712,29 +722,27 @@
         "e51f7e2"
       ],
       "notes": "PS5 monitors guide: 5 picks with HDMI 2.1/VRR/HDR explainers, added to guides index. Nova Pro Wireless vs G Pro X 2 LIGHTSPEED versus: $350 audiophile vs $250 esports mic. Count 28 comparisons. Queue has 3 tasks remaining."
+    },
+    {
+      "iteration": 21,
+      "date": "2026-05-08",
+      "tasks_completed": [
+        "game-spec-match",
+        "guide-gaming-keyboard-switches"
+      ],
+      "commits": [
+        "5691a77"
+      ],
+      "notes": "Spec Match daily game (30-product DB, speed scoring, streak bonus). Keyboard switches guide (full explainer: membrane/optical/HE, brand table, rapid trigger, playstyle picker). Games count 20→21. Queue has 4 tasks remaining."
     }
   ],
   "queue": [
-    {
-      "id": "game-spec-match",
-      "type": "new-page",
-      "priority": 1,
-      "title": "Game: Spec Match - daily hardware identification game",
-      "description": "Show specs, pick the matching product from 4 options. 5 rounds daily seeded Mulberry32. Speed scoring, streak bonus, S-F grades, share button, PB. Games hub + sitemap. VideoGame schema."
-    },
     {
       "id": "versus-keyboard-premium",
       "type": "new-page",
       "priority": 1,
       "title": "Versus: Wooting 60HE+ vs Razer Huntsman V3 Pro TKL",
       "description": "Hall Effect rapid-trigger vs optical analog: Wooting 60HE+ ($175, 60%, SOCD) vs Huntsman V3 Pro TKL ($200, TKL, media keys). Compact vs full-featured analog."
-    },
-    {
-      "id": "guide-gaming-keyboard-switches",
-      "type": "new-page",
-      "priority": 2,
-      "title": "Guide: Gaming Keyboard Switches Explained 2026",
-      "description": "Membrane vs mechanical vs optical vs Hall Effect. Cherry MX vs Gateron vs Outemu vs Kailh. Linear vs tactile vs clicky. Rapid trigger explained. Affiliate picks per category."
     },
     {
       "id": "versus-monitor-4k-battle",
