@@ -452,6 +452,14 @@
       "id": "versus-headset-console",
       "done": "2026-05-08",
       "notes": "Pulse 3D ($99, over-ear, 12hr, USB dongle) vs Pulse Explore ($199, IEM, 22hr total, BT LE Audio). Both Tempest 3D. 6-category + FAQPage. Count→32. Commit a5df81f."
+    },
+    {
+      "id": "seo-datemodified-versus",
+      "type": "seo",
+      "priority": 3,
+      "title": "SEO: Update dateModified on all versus pages to 2026-05-08",
+      "description": "All 30 versus pages JSON-LD Article schema has a dateModified field. Update any that are stale (older than 2026-05-08) to keep content freshness signals strong.",
+      "completedAt": "2026-05-08T13:28:30.027Z"
     }
   ],
   "loop_log": [
@@ -800,30 +808,16 @@
         "a5df81f"
       ],
       "notes": "Viper V2 Pro vs G502 X Plus (ultralight vs button-loaded). Pulse 3D vs Pulse Explore (PS5 over-ear vs IEM). Count now 32 comparisons. Queue: 4 tasks remaining."
+    },
+    {
+      "iteration": 25,
+      "task": "seo-datemodified-versus",
+      "completedAt": "2026-05-08T13:28:30.027Z",
+      "summary": "Updated dateModified to 2026-05-08 on 18 versus pages — commit 0a87bd1",
+      "commit": "0a87bd1"
     }
   ],
   "queue": [
-    {
-      "id": "guide-gaming-monitor-buying-guide",
-      "type": "new-page",
-      "priority": 2,
-      "title": "Guide: Gaming Monitor Buying Guide 2026",
-      "description": "Explainer guide: resolution tiers (1080p/1440p/4K), panel types (IPS/VA/OLED), refresh rate (144/165/240/360Hz), response time, HDR ratings, sync tech (G-Sync vs FreeSync). Help the reader pick resolution+Hz combo for their GPU. Budget guidance."
-    },
-    {
-      "id": "game-hardware-timeline",
-      "type": "new-page",
-      "priority": 2,
-      "title": "Game: Hardware Timeline — guess the release year",
-      "description": "Show a gaming product name, player picks the year it was released from 4 options. 5 rounds daily seeded. Products span 2015-2024. Educational + fun. Speed scoring, share button, streak tracking."
-    },
-    {
-      "id": "seo-datemodified-versus",
-      "type": "seo",
-      "priority": 3,
-      "title": "SEO: Update dateModified on all versus pages to 2026-05-08",
-      "description": "All 30 versus pages JSON-LD Article schema has a dateModified field. Update any that are stale (older than 2026-05-08) to keep content freshness signals strong."
-    },
     {
       "id": "guide-best-gaming-chairs-2026",
       "type": "new-page",

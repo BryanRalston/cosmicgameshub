@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-D272MF8NQP"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-D272MF8NQP');
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hardware Timeline — Guess the Release Year | CosmicGamesHub</title>
+  <meta name="description" content="Can you remember when your favorite gaming gear launched? Guess the release year of iconic mice, keyboards, headsets, and monitors. 5 rounds daily, seeded by date." />
+  <meta property="og:title" content="Hardware Timeline — Guess the Release Year | CosmicGamesHub" />
+  <meta property="og:description" content="Guess the release year of iconic gaming hardware — mice, keyboards, headsets, monitors. 5 daily rounds, seeded by date." />
+  <meta property="og:image" content="https://cosmicgameshub.com/images/game-hardware-timeline.jpg" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://cosmicgameshub.com/games/hardware-timeline" />
+  <meta property="og:site_name" content="CosmicGamesHub" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@CosmicGamesHub" />
+  <meta name="twitter:title" content="Hardware Timeline — Guess the Release Year | CosmicGamesHub" />
+  <meta name="twitter:description" content="Guess the release year of iconic gaming hardware. 5 daily rounds, streak bonus, S–F grade." />
+  <meta name="twitter:image" content="https://cosmicgameshub.com/images/game-hardware-timeline.jpg" />
+  <link rel="canonical" href="https://cosmicgameshub.com/games/hardware-timeline" />
+  <link rel="stylesheet" href="../styles.css" />
+  <style>
+    .ht-wrap {
+      max-width: 620px;
+      margin: 0 auto;
+      padding: 0 1rem;
+    }
+    .ht-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      margin-bottom: 1.5rem;
+    }
+    .ht-back:hover { color: var(--accent); }
+    .ht-title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0 0 0.3rem;
+    }
+    .ht-subtitle {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin: 0 0 1.75rem;
+    }
+
+    /* Progress */
+    .ht-progress-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 0.6rem;
+    }
+    .ht-progress-bar-wrap {
+      flex: 1;
+      height: 6px;
+      background: rgba(255,255,255,0.07);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .ht-progress-bar {
+      height: 100%;
+      background: var(--accent, #00d4ff);
+      border-radius: 3px;
+      transition: width 0.35s ease;
+      width: 0%;
+    }
+    .ht-q-label {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Streak badge */
+    .ht-streak-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      background: rgba(249,115,22,0.12);
+      border: 1px solid rgba(249,115,22,0.3);
+      border-radius: 6px;
+      padding: 0.2rem 0.55rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #f97316;
+      font-family: 'JetBrains Mono', monospace;
+      transition: opacity 0.2s;
+    }
+    .ht-streak-badge.hidden { opacity: 0; pointer-events: none; }
+
+    /* Product card */
+    .ht-card {
+      background: var(--bg-surface, rgba(255,255,255,0.025));
+      border: 1px solid var(--border, rgba(255,255,255,0.08));
+      border-radius: 16px;
+      padding: 2rem 1.5rem 1.75rem;
+      margin-bottom: 1.25rem;
+      text-align: center;
+    }
+    .ht-category-hint {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      line-height: 1;
+    }
+    .ht-category-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent, #00d4ff);
+      margin-bottom: 1rem;
+    }
+    .ht-product-name {
+      font-size: 1.45rem;
+      font-weight: 800;
+      color: var(--text-primary, #fff);
+      line-height: 1.25;
+      margin: 0;
+    }
+    .ht-prompt {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      margin-top: 0.75rem;
+    }
+
+    /* Year choices */
+    .ht-choices {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.65rem;
+      margin-bottom: 1rem;
+    }
+    .ht-choice {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 0.85rem 1rem;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary, #fff);
+      font-family: 'JetBrains Mono', monospace;
+      justify-content: center;
+      transition: background 0.13s, border-color 0.13s, transform 0.1s;
+    }
+    .ht-choice:hover:not(:disabled) {
+      background: rgba(0,212,255,0.08);
+      border-color: rgba(0,212,255,0.35);
+    }
+    .ht-choice:active:not(:disabled) { transform: scale(0.98); }
+    .ht-choice__key {
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
+      background: rgba(255,255,255,0.07);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .ht-choice--correct {
+      background: rgba(34,211,110,0.12) !important;
+      border-color: rgba(34,211,110,0.5) !important;
+    }
+    .ht-choice--correct .ht-choice__key {
+      background: rgba(34,211,110,0.25);
+      color: #22d36e;
+    }
+    .ht-choice--wrong {
+      background: rgba(239,68,68,0.1) !important;
+      border-color: rgba(239,68,68,0.4) !important;
+    }
+    .ht-choice--wrong .ht-choice__key {
+      background: rgba(239,68,68,0.2);
+      color: #ef4444;
+    }
+    .ht-choice--dim { opacity: 0.3; }
+
+    /* Feedback + fun fact */
+    .ht-feedback {
+      min-height: 2.2rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-align: center;
+      padding: 0.45rem 0 0.25rem;
+      border-radius: 8px;
+    }
+    .ht-feedback--correct { color: #22d36e; }
+    .ht-feedback--wrong   { color: #ef4444; }
+
+    .ht-fact {
+      display: none;
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 10px;
+      padding: 0.7rem 1rem;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+      margin-bottom: 0.75rem;
+      text-align: center;
+    }
+    .ht-fact.show { display: block; }
+    .ht-fact strong { color: var(--accent, #00d4ff); }
+
+    /* Streak notification */
+    .ht-streak-toast {
+      display: none;
+      background: linear-gradient(135deg, rgba(249,115,22,0.15), rgba(249,115,22,0.07));
+      border: 1px solid rgba(249,115,22,0.3);
+      border-radius: 10px;
+      padding: 0.55rem 1rem;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #f97316;
+      text-align: center;
+      margin-bottom: 0.75rem;
+    }
+    .ht-streak-toast.show { display: block; }
+
+    /* Next button */
+    .ht-next-wrap {
+      display: none;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+    .ht-next-wrap.show { display: flex; }
+
+    /* Stats row */
+    .ht-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.65rem;
+      margin-bottom: 1.5rem;
+    }
+    .ht-stat {
+      background: var(--bg-surface, rgba(255,255,255,0.025));
+      border: 1px solid var(--border, rgba(255,255,255,0.08));
+      border-radius: 10px;
+      padding: 0.7rem 0.5rem;
+      text-align: center;
+    }
+    .ht-stat__val {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--text-primary, #fff);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .ht-stat__lbl {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-top: 0.2rem;
+    }
+
+    /* Results panel */
+    .ht-results {
+      display: none;
+      background: var(--bg-surface, rgba(255,255,255,0.025));
+      border: 1px solid var(--border, rgba(255,255,255,0.08));
+      border-radius: 16px;
+      padding: 2rem 1.5rem 1.5rem;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+    .ht-results.show { display: block; }
+    .ht-grade {
+      font-size: 4.5rem;
+      font-weight: 900;
+      line-height: 1;
+      margin-bottom: 0.2rem;
+    }
+    .ht-grade--S { color: #ffd700; text-shadow: 0 0 24px rgba(255,215,0,0.5); }
+    .ht-grade--A { color: #22d36e; text-shadow: 0 0 24px rgba(34,211,110,0.45); }
+    .ht-grade--B { color: var(--accent, #00d4ff); text-shadow: 0 0 24px rgba(0,212,255,0.4); }
+    .ht-grade--C { color: #a78bfa; }
+    .ht-grade--D { color: #f97316; }
+    .ht-grade--F { color: #ef4444; }
+    .ht-results__score {
+      font-size: 1.55rem;
+      font-weight: 700;
+      color: var(--text-primary, #fff);
+      font-family: 'JetBrains Mono', monospace;
+      margin-bottom: 0.25rem;
+    }
+    .ht-results__desc {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      margin-bottom: 1.25rem;
+    }
+    .ht-best-banner {
+      display: none;
+      background: linear-gradient(135deg, rgba(255,215,0,0.1), rgba(255,215,0,0.05));
+      border: 1px solid rgba(255,215,0,0.25);
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-size: 0.85rem;
+      color: #ffd700;
+      margin-bottom: 1rem;
+    }
+    .ht-best-banner.show { display: block; }
+    .ht-results__row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      padding: 0.32rem 0;
+      border-top: 1px solid rgba(255,255,255,0.04);
+      text-align: left;
+    }
+    .ht-results__row span:last-child {
+      color: var(--text-primary, #fff);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .ht-emoji-grid {
+      font-size: 1.25rem;
+      letter-spacing: 0.12em;
+      margin: 0.75rem 0 0;
+    }
+
+    /* Bottom meta */
+    .ht-meta-row {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .ht-meta-row span { color: var(--accent, #00d4ff); font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+
+    /* Buttons */
+    .ht-btns {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .ht-btn {
+      padding: 0.65rem 1.4rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .ht-btn:active { transform: scale(0.97); }
+    .ht-btn--primary {
+      background: var(--accent, #00d4ff);
+      color: #000;
+    }
+    .ht-btn--secondary {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.15);
+      color: var(--text-secondary, #ccc);
+    }
+
+    /* Start screen */
+    .ht-start {
+      text-align: center;
+      padding: 1rem 0 0.5rem;
+    }
+    .ht-start__icon { font-size: 3.5rem; margin-bottom: 0.75rem; }
+    .ht-start__title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-primary, #fff);
+      margin-bottom: 0.5rem;
+    }
+    .ht-start__sub {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.55;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .ht-rules {
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      text-align: left;
+      margin-bottom: 1.5rem;
+      font-size: 0.83rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .ht-rules li { list-style: none; padding-left: 0; }
+    .ht-rules li::before { content: '▸ '; color: var(--accent, #00d4ff); }
+
+    .ht-played-today {
+      display: none;
+      background: rgba(0,212,255,0.05);
+      border: 1px solid rgba(0,212,255,0.2);
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      font-size: 0.83rem;
+      color: var(--text-muted);
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+    .ht-played-today.show { display: block; }
+
+    @media (max-width: 480px) {
+      .ht-choices { grid-template-columns: 1fr; }
+      .ht-title { font-size: 1.35rem; }
+      .ht-product-name { font-size: 1.2rem; }
+    }
+  </style>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "Hardware Timeline",
+  "description": "Guess the release year of iconic gaming hardware — mice, keyboards, headsets, and monitors. 5 daily rounds seeded by date, with streak bonus and S–F grading.",
+  "url": "https://cosmicgameshub.com/games/hardware-timeline",
+  "image": "https://cosmicgameshub.com/images/game-hardware-timeline.jpg",
+  "genre": "Trivia",
+  "gamePlatform": "Web Browser",
+  "applicationCategory": "Game",
+  "operatingSystem": "Any",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD",
+    "availability": "https://schema.org/InStock"
+  },
+  "author": {
+    "@type": "Organization",
+    "name": "CosmicGamesHub",
+    "url": "https://cosmicgameshub.com"
+  }
+}
+  </script>
+</head>
+<body>
+
+<nav class="nav" role="navigation" aria-label="Main navigation">
+  <div class="container">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo" aria-label="CosmicGamesHub home">
+        <span class="nav__logo-icon" aria-hidden="true">🎮</span>
+        <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
+      </a>
+      <ul class="nav__links" id="navLinks">
+        <li><a href="/games">← All Games</a></li>
+        <li><a href="/games/gaming-trivia">Gaming Trivia</a></li>
+        <li><a href="/games/gear-quiz">Gear Quiz</a></li>
+        <li><a href="/games/spec-match">Spec Match</a></li>
+        <li><a href="/games/price-guesser">Price Guesser</a></li>
+        <li><a href="/ai-gaming" class="nav__cta btn">AI Gaming</a></li>
+      </ul>
+      <button class="nav__hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<main style="padding: 2rem 0 4rem;">
+  <div class="ht-wrap">
+    <a href="/games" class="ht-back">← Back to Games</a>
+    <h1 class="ht-title">📅 Hardware Timeline</h1>
+    <p class="ht-subtitle">Guess the year iconic gaming hardware was released — 5 rounds daily</p>
+
+    <!-- Start screen -->
+    <div id="htStart" class="ht-start">
+      <div class="ht-start__icon">🖱️</div>
+      <div class="ht-start__title">Hardware Timeline</div>
+      <p class="ht-start__sub">A legendary product name — 4 year options. Which year did it actually launch? 5 daily rounds, same set for everyone. Come back tomorrow for new hardware.</p>
+      <ul class="ht-rules">
+        <li>100 pts for a correct year — 0 for wrong</li>
+        <li>Streak bonus: +20 pts after 3+ consecutive correct answers</li>
+        <li>Grade: S (480+) · A (380+) · B (280+) · C (180+) · D (80+) · F (below)</li>
+        <li>Keyboard shortcuts: press 1 / 2 / 3 / 4 to answer</li>
+        <li>A "Did you know?" fact reveals after every answer</li>
+      </ul>
+      <div class="ht-played-today" id="htPlayedToday">
+        You already played today's Hardware Timeline. Play again to beat your score — or come back tomorrow for new hardware.
+      </div>
+      <div class="ht-btns">
+        <button class="ht-btn ht-btn--primary" id="btnStart">▶ Start Game</button>
+      </div>
+      <div class="ht-meta-row" id="htStartMeta" style="margin-top:1.25rem;"></div>
+    </div>
+
+    <!-- In-game UI -->
+    <div id="htGame" style="display:none;">
+      <!-- Progress row -->
+      <div class="ht-progress-row">
+        <div class="ht-q-label" id="htRoundLabel">Round 1 of 5</div>
+        <div class="ht-progress-bar-wrap">
+          <div class="ht-progress-bar" id="htProgressBar"></div>
+        </div>
+        <div class="ht-streak-badge hidden" id="htStreakBadge">🔥 0</div>
+      </div>
+
+      <!-- Product card -->
+      <div class="ht-card" id="htCard">
+        <div class="ht-category-hint" id="htCategoryIcon">🖱️</div>
+        <div class="ht-category-label" id="htCategoryLabel">Gaming Mouse</div>
+        <p class="ht-product-name" id="htProductName">Loading…</p>
+        <p class="ht-prompt">What year was this released?</p>
+      </div>
+
+      <!-- Year choices -->
+      <div class="ht-choices" id="htChoices">
+        <button class="ht-choice" id="choice1">
+          <span class="ht-choice__key">1</span><span class="ht-choice__year"></span>
+        </button>
+        <button class="ht-choice" id="choice2">
+          <span class="ht-choice__key">2</span><span class="ht-choice__year"></span>
+        </button>
+        <button class="ht-choice" id="choice3">
+          <span class="ht-choice__key">3</span><span class="ht-choice__year"></span>
+        </button>
+        <button class="ht-choice" id="choice4">
+          <span class="ht-choice__key">4</span><span class="ht-choice__year"></span>
+        </button>
+      </div>
+
+      <!-- Feedback -->
+      <div class="ht-feedback" id="htFeedback"></div>
+
+      <!-- Fun fact (hidden until answer) -->
+      <div class="ht-fact" id="htFact"></div>
+
+      <!-- Streak toast -->
+      <div class="ht-streak-toast" id="htStreakToast"></div>
+
+      <!-- Next round button -->
+      <div class="ht-next-wrap" id="htNextWrap">
+        <button class="ht-btn ht-btn--primary" id="btnNext">Next Round →</button>
+      </div>
+
+      <!-- Live stats -->
+      <div class="ht-stats">
+        <div class="ht-stat">
+          <div class="ht-stat__val" id="statCorrect">0</div>
+          <div class="ht-stat__lbl">Correct</div>
+        </div>
+        <div class="ht-stat">
+          <div class="ht-stat__val" id="statPts">0</div>
+          <div class="ht-stat__lbl">Points</div>
+        </div>
+        <div class="ht-stat">
+          <div class="ht-stat__val" id="statStreak">0</div>
+          <div class="ht-stat__lbl">Streak 🔥</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results panel -->
+    <div class="ht-results" id="htResults">
+      <div class="ht-grade" id="resGrade">A</div>
+      <div class="ht-results__score" id="resScore">0 / 500</div>
+      <div class="ht-results__desc" id="resDesc"></div>
+      <div class="ht-best-banner" id="resBestBanner">🥇 New personal best!</div>
+      <div class="ht-results__row"><span>Correct answers</span><span id="resCorrect">—</span></div>
+      <div class="ht-results__row"><span>Streak bonus pts</span><span id="resBonus">—</span></div>
+      <div class="ht-results__row"><span>All-time best</span><span id="resAllBest">—</span></div>
+      <div class="ht-results__row"><span>Daily streak</span><span id="resDayStreak">—</span></div>
+      <div class="ht-emoji-grid" id="resEmojiGrid"></div>
+    </div>
+
+    <div class="ht-btns" id="htEndBtns" style="display:none;">
+      <button class="ht-btn ht-btn--primary" id="btnAgain">↺ Play Again</button>
+      <button class="ht-btn ht-btn--secondary" id="btnShare">📋 Share</button>
+    </div>
+
+    <div class="ht-meta-row" id="htBottomMeta" style="display:none; margin-top:1rem;"></div>
+  </div>
+</main>
+
+
+<section class="rg-section">
+  <div class="container">
+    <h3 class="rg-heading">More Games</h3>
+    <div class="rg-grid">
+      <a href="/games/gear-quiz" class="rg-card">
+        <img src="/images/game-gear-quiz.jpg" alt="Gear Quiz" loading="lazy" width="200" height="86">
+        <div class="rg-info">
+          <div class="rg-tags"><span class="rg-tag">Daily</span><span class="rg-tag">Gear</span></div>
+          <div class="rg-name">Gear Knowledge Quiz</div>
+          <div class="rg-desc">10 daily questions about real gaming gear specs</div>
+        </div>
+      </a>
+      <a href="/games/spec-match" class="rg-card">
+        <img src="/images/game-spec-match.jpg" alt="Spec Match" loading="lazy" width="200" height="86">
+        <div class="rg-info">
+          <div class="rg-tags"><span class="rg-tag">Daily</span><span class="rg-tag">Gear</span></div>
+          <div class="rg-name">Spec Match</div>
+          <div class="rg-desc">Identify the product from raw specs — 5 rounds</div>
+        </div>
+      </a>
+      <a href="/games/price-guesser" class="rg-card">
+        <img src="/images/game-priceguesser.jpg" alt="Price Guesser" loading="lazy" width="200" height="86">
+        <div class="rg-info">
+          <div class="rg-tags"><span class="rg-tag">Daily</span><span class="rg-tag">Gear</span></div>
+          <div class="rg-name">Price Guesser</div>
+          <div class="rg-desc">Guess gaming gear prices — closest wins</div>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+<style>
+.rg-section { padding: 2.5rem 0 3rem; border-top: 1px solid var(--border, rgba(255,255,255,0.08)); margin-top: 2rem; }
+.rg-heading { font-size: 0.75rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-lo, #666); margin: 0 0 1.25rem; }
+.rg-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+.rg-card { display: flex; gap: 0.75rem; background: var(--bg-card, #111); border: 1px solid var(--border, rgba(255,255,255,0.08)); border-radius: 10px; padding: 0.75rem; text-decoration: none; color: inherit; transition: border-color 0.15s, transform 0.15s; }
+.rg-card:hover { border-color: var(--accent, #22d3ee); transform: translateY(-2px); }
+.rg-card img { width: 100px; height: 43px; object-fit: cover; border-radius: 6px; flex-shrink: 0; }
+.rg-info { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+.rg-tags { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+.rg-tag { font-size: 0.65rem; font-weight: 700; color: var(--accent, #22d3ee); background: rgba(34,211,238,0.1); border-radius: 4px; padding: 0.1rem 0.35rem; letter-spacing: 0.04em; }
+.rg-name { font-size: 0.88rem; font-weight: 700; color: var(--text-hi, #fff); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rg-desc { font-size: 0.75rem; color: var(--text-lo, #888); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+@media (max-width: 640px) {
+  .rg-grid { grid-template-columns: 1fr; }
+  .rg-card img { width: 80px; height: 35px; }
+}
+</style>
+<footer class="footer">
+  <div class="container">
+    <div class="footer__bottom">
+      <p>© 2026 CosmicGamesHub. <a href="/games">← More Games</a></p>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  // ─── Mulberry32 PRNG — seeded by date ─────────────────────────────────
+  function mulberry32(seed) {
+    return function () {
+      seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+      var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  function dateSeed() {
+    var d = new Date();
+    return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+  }
+
+  function shuffleWithRng(arr, rng) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(rng() * (i + 1));
+      var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+    }
+    return a;
+  }
+
+  function todayStr() {
+    var d = new Date();
+    return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+  }
+
+  // ─── Product database ─────────────────────────────────────────────────
+  var PRODUCTS = [
+    // Mice
+    { name: 'Logitech MX518',            year: 2005, category: 'Gaming Mouse',          icon: '🖱️',
+      fact: 'The MX518 is so beloved it was re-released in 2019 with a modern sensor, 14 years after its debut.' },
+    { name: 'Razer DeathAdder',          year: 2006, category: 'Gaming Mouse',          icon: '🖱️',
+      fact: 'The DeathAdder\'s ergonomic shape has remained nearly unchanged for nearly 20 years — a true icon.' },
+    { name: 'Logitech G9x',              year: 2009, category: 'Gaming Mouse',          icon: '🖱️',
+      fact: 'The G9x featured a swappable grip system, letting players switch between wide and narrow shells.' },
+    { name: 'Razer Naga',                year: 2009, category: 'Gaming Mouse',          icon: '🖱️',
+      fact: 'The Razer Naga\'s 12-button side panel became the go-to mouse for MMO players the moment it launched.' },
+    { name: 'Logitech G400',             year: 2011, category: 'Gaming Mouse',          icon: '🖱️',
+      fact: 'The G400 was widely praised as the most accurate wired mouse of its era among competitive FPS players.' },
+    { name: 'Corsair M65',               year: 2012, category: 'Gaming Mouse',          icon: '🖱️',
+      fact: 'The M65\'s sniper button — which temporarily drops DPI — remains a feature on Corsair mice today.' },
+    { name: 'Logitech G502',             year: 2014, category: 'Gaming Mouse',          icon: '🖱️',
+      fact: 'The G502 became the best-selling gaming mouse ever, with over 15 million units sold.' },
+    { name: 'Razer DeathAdder Elite',    year: 2016, category: 'Gaming Mouse',          icon: '🖱️',
+      fact: 'The DeathAdder Elite was Razer\'s first mouse with a 16,000 DPI optical sensor, a major leap at the time.' },
+    { name: 'Logitech G Pro Wireless',   year: 2019, category: 'Gaming Mouse',          icon: '🖱️',
+      fact: 'At 80g it was the lightest wireless gaming mouse when released, defying the "wireless = heavy" myth.' },
+    { name: 'Razer Viper',               year: 2019, category: 'Gaming Mouse',          icon: '🖱️',
+      fact: 'The Razer Viper popularized optical switches in gaming mice, eliminating the debounce delay of mechanical switches.' },
+    { name: 'Logitech G Pro X Superlight', year: 2020, category: 'Gaming Mouse',        icon: '🖱️',
+      fact: 'The G Pro X Superlight weighed just 61g, making it one of the lightest performance wireless mice ever built.' },
+    { name: 'Razer DeathAdder V3',       year: 2022, category: 'Gaming Mouse',          icon: '🖱️',
+      fact: 'The DeathAdder V3 cut weight to 59g while keeping the iconic right-hand ergonomic shape gamers loved.' },
+    { name: 'Logitech G Pro X Superlight 2', year: 2023, category: 'Gaming Mouse',      icon: '🖱️',
+      fact: 'The Superlight 2 hit 60g wireless with a 32,000 DPI HERO 2 sensor — setting a new performance benchmark.' },
+
+    // Keyboards
+    { name: 'Razer BlackWidow',          year: 2010, category: 'Gaming Keyboard',       icon: '⌨️',
+      fact: 'The original Razer BlackWidow helped mainstream mechanical keyboards for gaming after years of membrane dominance.' },
+    { name: 'Corsair K70',               year: 2012, category: 'Gaming Keyboard',       icon: '⌨️',
+      fact: 'The Corsair K70 introduced per-key RGB backlighting to mainstream gaming keyboards, sparking an LED arms race.' },
+    { name: 'Das Keyboard 4',            year: 2014, category: 'Gaming Keyboard',       icon: '⌨️',
+      fact: 'Das Keyboard 4 included a physical volume knob — a luxury feature that typists and gamers praised equally.' },
+    { name: 'Corsair K95 RGB',           year: 2015, category: 'Gaming Keyboard',       icon: '⌨️',
+      fact: 'The K95 RGB packed 6 dedicated macro keys alongside full RGB, becoming a staple of heavy customizers.' },
+    { name: 'Logitech G Pro Keyboard',   year: 2016, category: 'Gaming Keyboard',       icon: '⌨️',
+      fact: 'Designed with pro esports players, the G Pro Keyboard was Logitech\'s first tenkeyless competition board.' },
+    { name: 'SteelSeries Apex Pro',      year: 2019, category: 'Gaming Keyboard',       icon: '⌨️',
+      fact: 'The Apex Pro was the first keyboard with adjustable actuation — you could set each key from 0.4mm to 3.6mm.' },
+    { name: 'Wooting 60HE',              year: 2021, category: 'Gaming Keyboard',       icon: '⌨️',
+      fact: 'The Wooting 60HE brought Hall Effect analog input to the mainstream, enabling variable movement in games.' },
+    { name: 'Razer Huntsman V2',         year: 2021, category: 'Gaming Keyboard',       icon: '⌨️',
+      fact: 'The Huntsman V2 used optical switches rated at 100 million keystrokes, far beyond typical mechanical durability claims.' },
+    { name: 'Keychron K8 Pro',           year: 2022, category: 'Gaming Keyboard',       icon: '⌨️',
+      fact: 'The Keychron K8 Pro made hot-swap wireless tenkeyless keyboards accessible under $100, fueling the enthusiast boom.' },
+
+    // Headsets
+    { name: 'HyperX Cloud II',           year: 2015, category: 'Gaming Headset',        icon: '🎧',
+      fact: 'The HyperX Cloud II became one of the best-selling gaming headsets ever by delivering audiophile comfort at a mid-range price.' },
+    { name: 'SteelSeries Arctis 7',      year: 2017, category: 'Gaming Headset',        icon: '🎧',
+      fact: 'The Arctis 7 popularized the ski-goggle headband design that SteelSeries still uses across its lineup today.' },
+    { name: 'Razer BlackShark V2',       year: 2020, category: 'Gaming Headset',        icon: '🎧',
+      fact: 'Designed with esports pros, the BlackShark V2\'s THX Spatial Audio was tuned for competitive game sound positioning.' },
+    { name: 'Sony Pulse 3D',             year: 2020, category: 'Gaming Headset',        icon: '🎧',
+      fact: 'Sony built the Pulse 3D specifically for the PS5\'s Tempest 3D audio engine, launching alongside the console.' },
+    { name: 'SteelSeries Arctis Nova Pro', year: 2022, category: 'Gaming Headset',      icon: '🎧',
+      fact: 'The Arctis Nova Pro Wireless introduced a swappable battery system so players never had to stop gaming to charge.' },
+
+    // Monitors
+    { name: 'ASUS ROG Swift PG278Q',     year: 2014, category: 'Gaming Monitor',        icon: '🖥️',
+      fact: 'The ASUS PG278Q was the world\'s first 144Hz G-Sync IPS monitor, setting the template for premium gaming displays.' },
+    { name: 'LG 27GL850',                year: 2019, category: 'Gaming Monitor',        icon: '🖥️',
+      fact: 'The LG 27GL850 proved that 1440p 144Hz IPS gaming monitors could be under $400, reshaping the mid-range market.' },
+    { name: 'Samsung Odyssey G7',        year: 2020, category: 'Gaming Monitor',        icon: '🖥️',
+      fact: 'The Samsung Odyssey G7\'s 1000R curvature matches the curvature of the human eye for a more natural viewing experience.' },
+    { name: 'LG 27GP950-B',              year: 2021, category: 'Gaming Monitor',        icon: '🖥️',
+      fact: 'The LG 27GP950-B was among the first consumer monitors to support HDMI 2.1, enabling 4K 144Hz from next-gen consoles.' },
+    { name: 'ASUS PG279QM',              year: 2021, category: 'Gaming Monitor',        icon: '🖥️',
+      fact: 'The PG279QM brought 240Hz to a 1440p IPS panel for the first time, chasing esports framerates at higher resolution.' },
+    { name: 'LG C2 OLED',               year: 2022, category: 'Gaming Monitor',        icon: '🖥️',
+      fact: 'The LG C2 OLED became the most recommended gaming TV ever, offering near-zero response time with true blacks.' },
+
+    // Controllers
+    { name: 'Xbox 360 Controller',       year: 2005, category: 'Game Controller',       icon: '🎮',
+      fact: 'The Xbox 360 controller\'s layout became the template for nearly every PC gamepad designed in the following decade.' },
+    { name: 'DualShock 4',               year: 2013, category: 'Game Controller',       icon: '🎮',
+      fact: 'The DualShock 4 was the first PlayStation controller with a built-in touchpad and a light bar for game integration.' },
+    { name: 'Xbox One Controller',       year: 2013, category: 'Game Controller',       icon: '🎮',
+      fact: 'The Xbox One controller introduced rumble triggers — individual vibration motors in each trigger for haptic feedback.' },
+    { name: 'Nintendo Switch Pro Controller', year: 2017, category: 'Game Controller',  icon: '🎮',
+      fact: 'The Switch Pro Controller\'s 40-hour battery life is among the longest of any first-party wireless game controller.' },
+    { name: 'DualSense',                 year: 2020, category: 'Game Controller',       icon: '🎮',
+      fact: 'The DualSense\'s haptic feedback and adaptive triggers can simulate resistance — like drawing a bowstring or firing a weapon.' }
+  ];
+
+  var ROUNDS = 5;
+  var BASE_PTS = 100;
+  var STREAK_BONUS = 20;
+  var STREAK_THRESHOLD = 3;
+
+  var LS_BEST    = 'ht_best_score';
+  var LS_STREAK  = 'ht_day_streak';
+  var LS_LAST_D  = 'ht_last_date';
+
+  // ─── State ─────────────────────────────────────────────────────────────
+  var rounds = [];
+  var rIndex = 0;
+  var score = 0;
+  var correct = 0;
+  var currentStreak = 0;
+  var answered = false;
+  var emojiResults = [];
+
+  // ─── DOM ───────────────────────────────────────────────────────────────
+  var elStart       = document.getElementById('htStart');
+  var elGame        = document.getElementById('htGame');
+  var elResults     = document.getElementById('htResults');
+  var elEndBtns     = document.getElementById('htEndBtns');
+  var elPlayedMsg   = document.getElementById('htPlayedToday');
+  var elRoundLabel  = document.getElementById('htRoundLabel');
+  var elProgressBar = document.getElementById('htProgressBar');
+  var elStreakBadge = document.getElementById('htStreakBadge');
+  var elCatIcon     = document.getElementById('htCategoryIcon');
+  var elCatLabel    = document.getElementById('htCategoryLabel');
+  var elProductName = document.getElementById('htProductName');
+  var elFeedback    = document.getElementById('htFeedback');
+  var elFact        = document.getElementById('htFact');
+  var elStreakToast  = document.getElementById('htStreakToast');
+  var elNextWrap    = document.getElementById('htNextWrap');
+  var elStatCorrect = document.getElementById('statCorrect');
+  var elStatPts     = document.getElementById('statPts');
+  var elStatStreak  = document.getElementById('statStreak');
+  var elStartMeta   = document.getElementById('htStartMeta');
+  var elBottomMeta  = document.getElementById('htBottomMeta');
+
+  var choiceBtns = [1, 2, 3, 4].map(function (n) { return document.getElementById('choice' + n); });
+
+  var elResGrade    = document.getElementById('resGrade');
+  var elResScore    = document.getElementById('resScore');
+  var elResDesc     = document.getElementById('resDesc');
+  var elResBest     = document.getElementById('resBestBanner');
+  var elResCorrect  = document.getElementById('resCorrect');
+  var elResBonus    = document.getElementById('resBonus');
+  var elResAllBest  = document.getElementById('resAllBest');
+  var elResDayStreak = document.getElementById('resDayStreak');
+  var elResEmoji    = document.getElementById('resEmojiGrid');
+
+  // ─── Helpers ───────────────────────────────────────────────────────────
+  function grade(pts) {
+    if (pts >= 480) return 'S';
+    if (pts >= 380) return 'A';
+    if (pts >= 280) return 'B';
+    if (pts >= 180) return 'C';
+    if (pts >= 80)  return 'D';
+    return 'F';
+  }
+
+  function gradeDesc(g) {
+    return {
+      S: 'Flawless. You lived through the hardware golden age.',
+      A: 'Excellent gear historian. Very few miss this many.',
+      B: 'Solid. You know your classics.',
+      C: 'Average — a few launch dates slipped your memory.',
+      D: 'Hardware history is hazy — study up!',
+      F: 'Time to brush up on gaming history.'
+    }[g];
+  }
+
+  function updateLiveStats() {
+    elStatCorrect.textContent = correct;
+    elStatPts.textContent = score;
+    elStatStreak.textContent = currentStreak;
+    if (currentStreak >= 1) {
+      elStreakBadge.textContent = '🔥 ' + currentStreak;
+      elStreakBadge.classList.remove('hidden');
+    } else {
+      elStreakBadge.classList.add('hidden');
+    }
+  }
+
+  // ─── Generate wrong years (plausible ±3, no overlap) ──────────────────
+  function generateWrongYears(correctYear, rng) {
+    var pool = [];
+    for (var delta = -3; delta <= 3; delta++) {
+      var y = correctYear + delta;
+      if (y !== correctYear && y >= 2000 && y <= 2024) {
+        pool.push(y);
+      }
+    }
+    // Shuffle pool and pick 3
+    pool = shuffleWithRng(pool, rng);
+    return pool.slice(0, 3);
+  }
+
+  // ─── Build daily round set ─────────────────────────────────────────────
+  function getDailyRounds() {
+    var seed = dateSeed();
+    var rng = mulberry32(seed);
+    var shuffled = shuffleWithRng(PRODUCTS, rng);
+    return shuffled.slice(0, ROUNDS);
+  }
+
+  // ─── Load round ───────────────────────────────────────────────────────
+  function loadRound() {
+    answered = false;
+    elFact.classList.remove('show');
+    elFact.textContent = '';
+    elStreakToast.classList.remove('show');
+    elNextWrap.classList.remove('show');
+    elFeedback.textContent = '';
+    elFeedback.className = 'ht-feedback';
+
+    var product = rounds[rIndex];
+
+    // Build year options with a sub-seed
+    var subSeed = dateSeed() + rIndex * 199;
+    var rng2 = mulberry32(subSeed);
+    var wrong = generateWrongYears(product.year, rng2);
+    var allYears = [product.year].concat(wrong);
+    allYears = shuffleWithRng(allYears, rng2);
+
+    // Display
+    elCatIcon.textContent = product.icon;
+    elCatLabel.textContent = product.category;
+    elProductName.textContent = product.name;
+
+    elRoundLabel.textContent = 'Round ' + (rIndex + 1) + ' of ' + ROUNDS;
+    elProgressBar.style.width = (rIndex / ROUNDS * 100) + '%';
+
+    choiceBtns.forEach(function (btn, i) {
+      btn.querySelector('.ht-choice__year').textContent = allYears[i];
+      btn.className = 'ht-choice';
+      btn.disabled = false;
+      btn.dataset.correct = (allYears[i] === product.year) ? '1' : '0';
+    });
+  }
+
+  // ─── Answer handler ───────────────────────────────────────────────────
+  function handleAnswer(btn) {
+    if (answered) return;
+    answered = true;
+
+    var isCorrect = btn.dataset.correct === '1';
+    var product = rounds[rIndex];
+
+    // Style all buttons
+    choiceBtns.forEach(function (b) {
+      b.disabled = true;
+      if (b.dataset.correct === '1') b.classList.add('ht-choice--correct');
+      else if (b === btn && !isCorrect) b.classList.add('ht-choice--wrong');
+      else b.classList.add('ht-choice--dim');
+    });
+
+    if (isCorrect) {
+      var pts = BASE_PTS;
+      currentStreak++;
+      // Streak bonus kicks in at 3+
+      var bonusPts = 0;
+      if (currentStreak >= STREAK_THRESHOLD) {
+        bonusPts = STREAK_BONUS;
+        pts += bonusPts;
+        elStreakToast.textContent = '🔥 ' + currentStreak + '-streak! +' + bonusPts + ' bonus pts';
+        elStreakToast.classList.add('show');
+      }
+      score += pts;
+      correct++;
+      emojiResults.push('🟢');
+      elFeedback.textContent = '✓ Correct! +' + pts + ' pts';
+      elFeedback.className = 'ht-feedback ht-feedback--correct';
+    } else {
+      // Show what year it was
+      currentStreak = 0;
+      emojiResults.push('🔴');
+      elFeedback.textContent = '✗ Wrong — it launched in ' + product.year;
+      elFeedback.className = 'ht-feedback ht-feedback--wrong';
+    }
+
+    // Show fun fact
+    if (product.fact) {
+      elFact.innerHTML = '<strong>Did you know?</strong> ' + product.fact;
+      elFact.classList.add('show');
+    }
+
+    updateLiveStats();
+    elNextWrap.classList.add('show');
+  }
+
+  // ─── Next round ───────────────────────────────────────────────────────
+  function nextRound() {
+    rIndex++;
+    if (rIndex >= ROUNDS) {
+      showResults();
+    } else {
+      loadRound();
+    }
+  }
+
+  // ─── Results ──────────────────────────────────────────────────────────
+  function showResults() {
+    elGame.style.display = 'none';
+
+    var g = grade(score);
+    var prevBest = parseInt(localStorage.getItem(LS_BEST) || '0', 10);
+    var newBest = score > prevBest;
+
+    // Daily play streak
+    var lastDate = localStorage.getItem(LS_LAST_D);
+    var dayStreak = parseInt(localStorage.getItem(LS_STREAK) || '0', 10);
+    var today = todayStr();
+    var yesterday = (function () {
+      var d = new Date(); d.setDate(d.getDate() - 1);
+      return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+    })();
+
+    if (lastDate === today) {
+      // already counted
+    } else if (lastDate === yesterday) {
+      dayStreak++;
+    } else {
+      dayStreak = 1;
+    }
+
+    localStorage.setItem(LS_LAST_D, today);
+    localStorage.setItem(LS_STREAK, dayStreak);
+    if (newBest) localStorage.setItem(LS_BEST, score);
+
+    var displayBest = Math.max(score, prevBest);
+
+    elResGrade.textContent = g;
+    elResGrade.className = 'ht-grade ht-grade--' + g;
+    elResScore.textContent = score + ' / ' + (ROUNDS * BASE_PTS) + ' pts';
+    elResDesc.textContent = gradeDesc(g);
+    if (newBest) elResBest.classList.add('show');
+    elResCorrect.textContent = correct + ' / ' + ROUNDS;
+    elResBonus.textContent = (score - correct * BASE_PTS) > 0
+      ? '+' + (score - correct * BASE_PTS) + ' pts (streak)'
+      : '0 pts';
+    elResAllBest.textContent = displayBest + ' pts';
+    elResDayStreak.textContent = dayStreak + ' day' + (dayStreak !== 1 ? 's' : '');
+    elResEmoji.textContent = emojiResults.join(' ');
+
+    elResults.classList.add('show');
+    elEndBtns.style.display = 'flex';
+    elProgressBar.style.width = '100%';
+
+    elBottomMeta.style.display = 'flex';
+    elBottomMeta.innerHTML = 'Best: <span>' + displayBest + ' pts</span>&nbsp;&nbsp;Streak: <span>' + dayStreak + ' day' + (dayStreak !== 1 ? 's' : '') + '</span>';
+  }
+
+  // ─── Start ────────────────────────────────────────────────────────────
+  function startGame() {
+    rIndex = 0;
+    score = 0;
+    correct = 0;
+    currentStreak = 0;
+    emojiResults = [];
+
+    rounds = getDailyRounds();
+
+    elStart.style.display = 'none';
+    elResults.classList.remove('show');
+    elResBest.classList.remove('show');
+    elEndBtns.style.display = 'none';
+    elBottomMeta.style.display = 'none';
+
+    updateLiveStats();
+    elGame.style.display = 'block';
+    loadRound();
+  }
+
+  // ─── Init ─────────────────────────────────────────────────────────────
+  function init() {
+    var lastDate = localStorage.getItem(LS_LAST_D);
+    var today = todayStr();
+    var prevBest = parseInt(localStorage.getItem(LS_BEST) || '0', 10);
+    var dayStreak = parseInt(localStorage.getItem(LS_STREAK) || '0', 10);
+
+    if (lastDate === today) {
+      elPlayedMsg.classList.add('show');
+    }
+
+    if (prevBest > 0 || dayStreak > 0) {
+      elStartMeta.innerHTML =
+        (prevBest > 0 ? 'Best: <span>' + prevBest + ' pts</span>' : '') +
+        (prevBest > 0 && dayStreak > 0 ? '&nbsp;&nbsp;' : '') +
+        (dayStreak > 0 ? 'Streak: <span>' + dayStreak + ' day' + (dayStreak !== 1 ? 's' : '') + '</span>' : '');
+    }
+  }
+
+  // ─── Event wiring ─────────────────────────────────────────────────────
+  document.getElementById('btnStart').addEventListener('click', startGame);
+  document.getElementById('btnAgain').addEventListener('click', startGame);
+  document.getElementById('btnNext').addEventListener('click', nextRound);
+
+  choiceBtns.forEach(function (btn) {
+    btn.addEventListener('click', function () { handleAnswer(btn); });
+  });
+
+  // Keyboard shortcuts: 1/2/3/4
+  document.addEventListener('keydown', function (e) {
+    if (elGame.style.display === 'none') return;
+    var map = { '1': 0, '2': 1, '3': 2, '4': 3 };
+    var idx = map[e.key];
+    if (idx !== undefined && !choiceBtns[idx].disabled) {
+      handleAnswer(choiceBtns[idx]);
+      return;
+    }
+    // Enter or Space to advance when answered
+    if ((e.key === 'Enter' || e.key === ' ') && answered) {
+      e.preventDefault();
+      nextRound();
+    }
+  });
+
+  document.getElementById('btnShare').addEventListener('click', function () {
+    var g = grade(score);
+    var dateLabel = (function () {
+      var d = new Date();
+      return (d.getMonth() + 1) + '/' + d.getDate() + '/' + d.getFullYear();
+    })();
+    var text =
+      '📅 Hardware Timeline — ' + dateLabel +
+      '\nScore: ' + score + '  Grade: ' + g +
+      '\n' + emojiResults.join(' ') +
+      '\ncosmicgameshub.com/games/hardware-timeline';
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(function () {
+        var btn = document.getElementById('btnShare');
+        btn.textContent = '✓ Copied!';
+        setTimeout(function () { btn.textContent = '📋 Share'; }, 2000);
+      }).catch(function () {});
+    }
+  });
+
+  init();
+})();
+</script>
+
+<script>
+  const hamburger = document.getElementById('hamburger');
+  const navLinks = document.getElementById('navLinks');
+  hamburger.addEventListener('click', () => {
+    const open = navLinks.classList.toggle('open');
+    hamburger.setAttribute('aria-expanded', open);
+  });
+</script>
+<script src="/global.js" defer></script>
+
+</body>
+</html>
