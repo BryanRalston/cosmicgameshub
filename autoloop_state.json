@@ -432,6 +432,16 @@
       "id": "versus-monitor-4k-battle",
       "done": "2026-05-08",
       "notes": "LG 27GP950-B (4K 144Hz Nano IPS HDR600 USB-C 90W $400) vs Samsung G7 28\" (4K 144Hz IPS HDR400 matte $550). 6-category + FAQPage. Commit a6063b0."
+    },
+    {
+      "id": "seo-homepage-refresh",
+      "done": "2026-05-08",
+      "notes": "Featured versus cards updated to 6 newest comparisons. Meta description updated with 16 guides/30 comparisons/21 games. Section counts corrected: 30 head-to-head breakdowns, 21 original games. Commit aebd78b."
+    },
+    {
+      "id": "internal-links-pass4",
+      "done": "2026-05-08",
+      "notes": "9 guide files updated: 1440p monitors→PS5+LG28, headsets→NovaPro-GPX2, wireless headsets→NovaPro-GPX2 card, mice+fps mice+mouse shape→SL2-DAV3Pro, keyboards+switches→Wooting-Huntsman, PS5 monitors→LG-SamsungG728. Commit aebd78b."
     }
   ],
   "loop_log": [
@@ -756,22 +766,62 @@
         "a6063b0"
       ],
       "notes": "Wooting 60HE+ vs Huntsman V3 Pro TKL (Hall Effect vs optical analog showdown). LG 27GP950-B vs Samsung G7 28\" (4K flagship battle). Count now 30 comparisons. Queue: 2 SEO tasks remaining."
+    },
+    {
+      "iteration": 23,
+      "date": "2026-05-08",
+      "tasks_completed": [
+        "seo-homepage-refresh",
+        "internal-links-pass4"
+      ],
+      "commits": [
+        "aebd78b"
+      ],
+      "notes": "Homepage: featured cards refreshed to newest 6 comparisons, stats corrected (16 guides/30 comparisons/21 games). Internal links pass 4: 9 guide files cross-linked to newest content. Queue empty → 6 new tasks generated."
     }
   ],
   "queue": [
     {
-      "id": "seo-homepage-refresh",
-      "type": "seo",
-      "priority": 2,
-      "title": "SEO: Homepage refresh - featured cards + guide/game counts",
-      "description": "Update homepage: featured versus cards, guide count (15+), games count, hero meta. Consider adding guides section spotlighting newest guides."
+      "id": "versus-mouse-mid-wireless",
+      "type": "new-page",
+      "priority": 1,
+      "title": "Versus: Razer Viper V2 Pro vs Logitech G502 X Plus",
+      "description": "Mid-to-upper wireless mice: Viper V2 Pro ($120, 58g, Focus Pro 30K, HyperSpeed, ultralight) vs G502 X Plus ($130, 89g, HERO 25K, LIGHTSPEED, LIGHTFORCE switches, 13 buttons). Ultralight competitive vs feature-rich ergonomic."
     },
     {
-      "id": "internal-links-pass4",
+      "id": "versus-headset-console",
+      "type": "new-page",
+      "priority": 1,
+      "title": "Versus: Sony Pulse 3D vs Sony Pulse Explore",
+      "description": "PS5 headset family battle: Pulse 3D ($99, Tempest 3D, 12hr, USB dongle) vs Pulse Explore ($199, earbuds, Tempest 3D, 10hr+12hr case, Bluetooth LE Audio). Traditional over-ear vs premium wireless earbuds for PS5."
+    },
+    {
+      "id": "guide-gaming-monitor-buying-guide",
+      "type": "new-page",
+      "priority": 2,
+      "title": "Guide: Gaming Monitor Buying Guide 2026",
+      "description": "Explainer guide: resolution tiers (1080p/1440p/4K), panel types (IPS/VA/OLED), refresh rate (144/165/240/360Hz), response time, HDR ratings, sync tech (G-Sync vs FreeSync). Help the reader pick resolution+Hz combo for their GPU. Budget guidance."
+    },
+    {
+      "id": "game-hardware-timeline",
+      "type": "new-page",
+      "priority": 2,
+      "title": "Game: Hardware Timeline — guess the release year",
+      "description": "Show a gaming product name, player picks the year it was released from 4 options. 5 rounds daily seeded. Products span 2015-2024. Educational + fun. Speed scoring, share button, streak tracking."
+    },
+    {
+      "id": "seo-datemodified-versus",
       "type": "seo",
       "priority": 3,
-      "title": "SEO: Internal links audit pass 4",
-      "description": "Wire PS5 monitors guide, Nova Pro vs G Pro X 2, budget headsets guide, Superlight 2 vs DAV3 Pro into content graph."
+      "title": "SEO: Update dateModified on all versus pages to 2026-05-08",
+      "description": "All 30 versus pages JSON-LD Article schema has a dateModified field. Update any that are stale (older than 2026-05-08) to keep content freshness signals strong."
+    },
+    {
+      "id": "guide-best-gaming-chairs-2026",
+      "type": "new-page",
+      "priority": 3,
+      "title": "Guide: Best Gaming Chairs 2026 — Full Picks Guide",
+      "description": "Upgrade the existing best-budget-gaming-chairs guide into a full best-gaming-chairs-2026 guide. 5 picks from $100 to $499: Secretlab Titan Evo 2022 ($429), Corsair TC100 Relaxed ($299), Razer Iskur X ($299), DXRacer Formula ($299), RESPAWN 110 Racing ($150). Lumbar + headrest explainer section."
     }
   ]
 }
