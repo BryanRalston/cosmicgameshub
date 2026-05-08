@@ -442,6 +442,16 @@
       "id": "internal-links-pass4",
       "done": "2026-05-08",
       "notes": "9 guide files updated: 1440p monitors→PS5+LG28, headsets→NovaPro-GPX2, wireless headsets→NovaPro-GPX2 card, mice+fps mice+mouse shape→SL2-DAV3Pro, keyboards+switches→Wooting-Huntsman, PS5 monitors→LG-SamsungG728. Commit aebd78b."
+    },
+    {
+      "id": "versus-mouse-mid-wireless",
+      "done": "2026-05-08",
+      "notes": "Viper V2 Pro (58g, ambi, HyperSpeed, 80hr, $120) vs G502 X Plus (89g, ergo, LIGHTSPEED+LIGHTFORCE, 130hr, 13btns, $130). 6-category + FAQPage. Count→32. Commit a5df81f."
+    },
+    {
+      "id": "versus-headset-console",
+      "done": "2026-05-08",
+      "notes": "Pulse 3D ($99, over-ear, 12hr, USB dongle) vs Pulse Explore ($199, IEM, 22hr total, BT LE Audio). Both Tempest 3D. 6-category + FAQPage. Count→32. Commit a5df81f."
     }
   ],
   "loop_log": [
@@ -778,23 +788,21 @@
         "aebd78b"
       ],
       "notes": "Homepage: featured cards refreshed to newest 6 comparisons, stats corrected (16 guides/30 comparisons/21 games). Internal links pass 4: 9 guide files cross-linked to newest content. Queue empty → 6 new tasks generated."
+    },
+    {
+      "iteration": 24,
+      "date": "2026-05-08",
+      "tasks_completed": [
+        "versus-mouse-mid-wireless",
+        "versus-headset-console"
+      ],
+      "commits": [
+        "a5df81f"
+      ],
+      "notes": "Viper V2 Pro vs G502 X Plus (ultralight vs button-loaded). Pulse 3D vs Pulse Explore (PS5 over-ear vs IEM). Count now 32 comparisons. Queue: 4 tasks remaining."
     }
   ],
   "queue": [
-    {
-      "id": "versus-mouse-mid-wireless",
-      "type": "new-page",
-      "priority": 1,
-      "title": "Versus: Razer Viper V2 Pro vs Logitech G502 X Plus",
-      "description": "Mid-to-upper wireless mice: Viper V2 Pro ($120, 58g, Focus Pro 30K, HyperSpeed, ultralight) vs G502 X Plus ($130, 89g, HERO 25K, LIGHTSPEED, LIGHTFORCE switches, 13 buttons). Ultralight competitive vs feature-rich ergonomic."
-    },
-    {
-      "id": "versus-headset-console",
-      "type": "new-page",
-      "priority": 1,
-      "title": "Versus: Sony Pulse 3D vs Sony Pulse Explore",
-      "description": "PS5 headset family battle: Pulse 3D ($99, Tempest 3D, 12hr, USB dongle) vs Pulse Explore ($199, earbuds, Tempest 3D, 10hr+12hr case, Bluetooth LE Audio). Traditional over-ear vs premium wireless earbuds for PS5."
-    },
     {
       "id": "guide-gaming-monitor-buying-guide",
       "type": "new-page",
