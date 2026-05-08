@@ -272,6 +272,18 @@
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
+  <url>
+    <loc>https://cosmicgameshub.com/versus/sony-pulse-3d-vs-sony-pulse-explore</loc>
+    <lastmod>2026-05-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://cosmicgameshub.com/versus/razer-viper-v2-pro-vs-logitech-g502-x-plus</loc>
+    <lastmod>2026-05-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
 
   <!-- Platform Headset Guides -->
   <url>
