@@ -201,6 +201,12 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://cosmicgameshub.com/versus/lg-27gp950-b-vs-samsung-odyssey-g7-28</loc>
+    <lastmod>2026-05-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://cosmicgameshub.com/versus/logitech-g502-x-vs-razer-basilisk-v3</loc>
     <lastmod>2026-05-07</lastmod>
     <changefreq>monthly</changefreq>
@@ -256,6 +262,12 @@
   </url>
   <url>
     <loc>https://cosmicgameshub.com/versus/steelseries-arctis-nova-pro-wireless-vs-logitech-g-pro-x-2</loc>
+    <lastmod>2026-05-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://cosmicgameshub.com/versus/wooting-60he-vs-razer-huntsman-v3-pro-tkl</loc>
     <lastmod>2026-05-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
