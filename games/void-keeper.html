@@ -27,10 +27,28 @@
   #overlay.hidden { opacity: 0; pointer-events: none; }
   #overlay h1 {
     font-size: 2.4rem; font-weight: 300; letter-spacing: 0.15em;
-    color: #e0e4e8; margin-bottom: 0.6rem;
+    color: #e0e4e8; margin-bottom: 0.5rem;
   }
   #overlay .sub {
-    font-size: 0.85rem; opacity: 0.5; letter-spacing: 0.08em; margin-bottom: 2rem;
+    font-size: 0.85rem; opacity: 0.5; letter-spacing: 0.08em; margin-bottom: 1.4rem;
+  }
+  #overlay .how-to {
+    display: flex; gap: 1rem; margin-bottom: 1.6rem; flex-wrap: wrap; justify-content: center;
+  }
+  #overlay .ht-item {
+    display: flex; align-items: center; gap: 0.45rem;
+    font-size: 0.74rem; letter-spacing: 0.06em; opacity: 0.65;
+  }
+  #overlay .ht-dot {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  }
+  #overlay .lives-bar {
+    display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1.4rem;
+    font-size: 0.72rem; opacity: 0.45; letter-spacing: 0.1em;
+  }
+  #overlay .lives-pip {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: rgba(200,204,208,0.3); border: 1px solid rgba(200,204,208,0.4);
   }
   #overlay .final-score {
     font-family: 'JetBrains Mono', 'Fira Code', monospace;
@@ -86,7 +104,20 @@
 <canvas id="c"></canvas>
 <div id="overlay">
   <h1>Void Keeper</h1>
-  <div class="sub">catch light, release noise</div>
+  <div class="sub">move your cursor · collect the light · avoid the noise</div>
+
+  <div class="how-to" id="howToPlay">
+    <div class="ht-item"><span class="ht-dot" style="background:#E8C840;box-shadow:0 0 6px #E8C840;"></span> insight — 3 pts</div>
+    <div class="ht-item"><span class="ht-dot" style="background:#C8CCD0;box-shadow:0 0 6px #C8CCD0;"></span> reflection — 3 pts</div>
+    <div class="ht-item"><span class="ht-dot" style="background:#4ADE80;box-shadow:0 0 6px #4ADE80;"></span> idea — 2 pts</div>
+    <div class="ht-item"><span class="ht-dot" style="background:#D4A056;box-shadow:0 0 6px #D4A056;"></span> synthesis — 2 pts</div>
+    <div class="ht-item"><span class="ht-dot" style="background:#333;border:1px solid #555;"></span> noise — avoid · 5 hits = over</div>
+  </div>
+  <div class="lives-bar" id="howToLives">
+    <span>lives:</span>
+    <span class="lives-pip"></span><span class="lives-pip"></span><span class="lives-pip"></span><span class="lives-pip"></span><span class="lives-pip"></span>
+  </div>
+
   <div class="final-score" id="finalScore">0</div>
   <div class="final-label" id="finalLabel">thoughts kept</div>
   <div class="best-score-line" id="bestScoreLine"></div>
@@ -262,6 +293,12 @@
       finalLabel.style.display = 'none';
       bestScoreLine.classList.remove('show');
       overlayPrompt.textContent = 'click to begin';
+      const howTo = document.getElementById('howToPlay');
+      const howToLives = document.getElementById('howToLives');
+      if (gameOver) {
+        if (howTo) howTo.style.display = 'none';
+        if (howToLives) howToLives.style.display = 'none';
+      }
       init();
     }
   }
