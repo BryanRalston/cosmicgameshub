@@ -78,20 +78,8 @@
     {"id": "versus-mouse-wireless-flagship", "done": "2026-05-08", "notes": "Superlight 2 (60g, HERO 25K, LIGHTSPEED, $160) vs DeathAdder V3 Pro (64g, Focus Pro 30K, HyperSpeed 2.4GHz+BT, $150). Full versus + FAQPage schema. OG image generated. Count 26→27. Commit 3c8353e."},
     {"id": "seo-guide-faq-schema-audit", "done": "2026-05-08", "notes": "FAQPage JSON-LD added to 9 guide pages (4 patterns: faq__question, faq-q/faq-a, details/summary, div.faq-item>h3+p). 4-7 pairs per page. Commit 4b29b40."},
     {"id": "internal-links-pass3", "done": "2026-05-08", "notes": "mice-2026→mouse-shape-guide, keyboards→keychron-vs-apex7, headsets→hs65-vs-g435+cloud-ii-vs-nova7. All other cross-links already present. Commit 99ea1af."},
-    {
-      "id": "guide-ps5-monitors",
-      "type": "new-page",
-      "priority": 2,
-      "title": "Guide: Best Gaming Monitors for PS5 2026",
-      "description": "PS5-specific monitor guide. 4K 120Hz + HDMI 2.1 focus. 5 picks: LG 27GP950-B (4K 144Hz), Samsung G7 (4K 144Hz), LG OLED C3 (4K 120Hz OLED), Gigabyte M27Q (1440p 165Hz HDMI 2.1), AOC Q27G2 (budget 1440p). VRR/ALLM/HDR explainer."
-    },
-    {
-      "id": "versus-headset-premium-wireless",
-      "type": "new-page",
-      "priority": 2,
-      "title": "Versus: SteelSeries Arctis Nova Pro Wireless vs Logitech G Pro X 2 LIGHTSPEED",
-      "description": "Premium wireless headset battle: Nova Pro Wireless ($350, hot-swap battery, ANC, ChatMix) vs G Pro X 2 LIGHTSPEED ($250, Blue VO!CE mic, 50mm drivers, 50hr). Top-tier audio vs best-in-class mic quality."
-    },
+    {"id": "guide-ps5-monitors", "done": "2026-05-08", "notes": "5 picks: LG 27GP950-B (4K 144Hz, $399), Samsung G7 28\" (4K 144Hz, $549), LG C3 OLED 27\" (4K 120Hz OLED, $799), Gigabyte M27Q X (1440p 240Hz HDMI 2.1, $299), AOC 24G2 (1080p 144Hz, $159). HDMI 2.1/VRR/ALLM/HDR explainers. FAQPage+BreadcrumbList+Article+ItemList schema. Commit e51f7e2."},
+    {"id": "versus-headset-premium-wireless", "done": "2026-05-08", "notes": "Arctis Nova Pro Wireless ($350, hot-swap, ANC, ChatMix, parametric EQ) vs G Pro X 2 LIGHTSPEED ($250, Blue VO!CE, 50mm graphene drivers, 50hr). 6-category, FAQPage schema. Count 27→28. Commit e51f7e2."},
     {
       "id": "seo-guide-faq-schema-audit",
       "type": "seo",
@@ -133,6 +121,7 @@
     {"iteration": 16, "date": "2026-05-08", "tasks_completed": ["guide-best-gaming-mice-fps","versus-headset-wired-wireless","versus-mouse-wireless-budget","seo-guide-datemodified","homepage-versus-count-fix"], "commits": ["4045450","f82bfa3"], "notes": "FPS mice guide (643 lines, 5 picks, polling explainer, pro stats). HyperX Cloud II vs Nova 7 Wireless. G305 vs DeathAdder V3 HyperSpeed. dateModified updated on all 10 guides. Comparison count 22→24. Queue has 5 new tasks."},
     {"iteration": 17, "date": "2026-05-08", "tasks_completed": ["guide-1440p-monitors","versus-keyboard-mid","guide-gaming-mouse-shapes"], "commits": ["d05959e"], "notes": "3 content pages: Best 1440p Gaming Monitors guide (5 WQHD picks), Keychron K8 Pro vs Apex 7 TKL versus, Gaming Mouse Shape Guide (grip styles + recommendations). 2 canvas OG images generated. guides/index.html + sitemap updated. Count now 25 comparisons."},
     {"iteration": 18, "date": "2026-05-08", "tasks_completed": ["game-daily-challenge-refresh","versus-headset-budget-wireless","seo-versus-og-image-audit"], "commits": ["914d50f"], "notes": "Daily challenge: Mulberry32 PRNG + pool 7→34 challenges. HS65 Wireless vs G435 LIGHTSPEED versus page (budget wireless headset). OG image audit: all 26 versus pages clean. Queue cleared + 7 new tasks generated."},
-    {"iteration": 19, "date": "2026-05-08", "tasks_completed": ["guide-best-budget-headsets","versus-mouse-wireless-flagship","seo-guide-faq-schema-audit","internal-links-pass3"], "commits": ["4b29b40","99ea1af","3c8353e","f1cc58a"], "notes": "Budget headsets guide (5 picks $30-$50). Superlight 2 vs DAV3 Pro flagship wireless versus. FAQPage schema on all 9 remaining guides. Internal links pass 3 (3 files updated). Count now 27 comparisons."}
+    {"iteration": 19, "date": "2026-05-08", "tasks_completed": ["guide-best-budget-headsets","versus-mouse-wireless-flagship","seo-guide-faq-schema-audit","internal-links-pass3"], "commits": ["4b29b40","99ea1af","3c8353e","f1cc58a"], "notes": "Budget headsets guide (5 picks $30-$50). Superlight 2 vs DAV3 Pro flagship wireless versus. FAQPage schema on all 9 remaining guides. Internal links pass 3 (3 files updated). Count now 27 comparisons."},
+    {"iteration": 20, "date": "2026-05-08", "tasks_completed": ["guide-ps5-monitors","versus-headset-premium-wireless"], "commits": ["e51f7e2"], "notes": "PS5 monitors guide: 5 picks with HDMI 2.1/VRR/HDR explainers, added to guides index. Nova Pro Wireless vs G Pro X 2 LIGHTSPEED versus: $350 audiophile vs $250 esports mic. Count 28 comparisons. Queue has 3 tasks remaining."}
   ]
 }
