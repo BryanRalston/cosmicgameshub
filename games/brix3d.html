@@ -10346,7 +10346,7 @@
       const item = document.createElement('div');
       item.className = 'custom-prefab-item';
       item.innerHTML = `
-        <button class="prefab-btn custom" data-prefab="${key}">🎨 ${displayName}</button>
+        <button class="prefab-btn custom" data-prefab="${key}">🎨 ${escHtml(displayName)}</button>
         <button class="delete-prefab-btn" data-prefab="${key}">🗑️</button>
       `;
       
@@ -11747,7 +11747,7 @@
         const item = document.createElement('div');
         item.className = 'saved-project-item';
         item.innerHTML = `
-          <span class="saved-project-name" title="Click to load">${p.name}</span>
+          <span class="saved-project-name" title="Click to load">${escHtml(p.name)}</span>
           <span class="saved-project-date">${p.brickCount} bricks • ${date}</span>
           <button class="saved-project-delete" title="Delete">🗑️</button>
         `;
@@ -13991,8 +13991,8 @@
         <div class="gallery-item" data-index="${i}">
           <img src="${build.thumbnail}" alt="${build.name}">
           <div class="gallery-item-info">
-            <div class="gallery-item-name">${build.name}</div>
-            <div class="gallery-item-meta">${build.brickCount} bricks • ${build.date}</div>
+            <div class="gallery-item-name">${escHtml(build.name)}</div>
+            <div class="gallery-item-meta">${escHtml(String(build.brickCount))} bricks • ${escHtml(build.date)}</div>
           </div>
           <div class="gallery-item-actions">
             <button onclick="loadGalleryBuild(${i})">📂 Load</button>
