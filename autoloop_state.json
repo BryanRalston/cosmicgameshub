@@ -460,6 +460,22 @@
       "title": "SEO: Update dateModified on all versus pages to 2026-05-08",
       "description": "All 30 versus pages JSON-LD Article schema has a dateModified field. Update any that are stale (older than 2026-05-08) to keep content freshness signals strong.",
       "completedAt": "2026-05-08T13:28:30.027Z"
+    },
+    {
+      "id": "guide-gaming-monitor-buying-guide",
+      "completedAt": "2026-05-08T13:33:40.619Z"
+    },
+    {
+      "id": "game-hardware-timeline",
+      "completedAt": "2026-05-08T13:33:40.619Z"
+    },
+    {
+      "id": "guide-best-gaming-chairs-2026",
+      "type": "new-page",
+      "priority": 3,
+      "title": "Guide: Best Gaming Chairs 2026 — Full Picks Guide",
+      "description": "Upgrade the existing best-budget-gaming-chairs guide into a full best-gaming-chairs-2026 guide. 5 picks from $100 to $499: Secretlab Titan Evo 2022 ($429), Corsair TC100 Relaxed ($299), Razer Iskur X ($299), DXRacer Formula ($299), RESPAWN 110 Racing ($150). Lumbar + headrest explainer section.",
+      "completedAt": "2026-05-08T13:33:40.619Z"
     }
   ],
   "loop_log": [
@@ -815,15 +831,28 @@
       "completedAt": "2026-05-08T13:28:30.027Z",
       "summary": "Updated dateModified to 2026-05-08 on 18 versus pages — commit 0a87bd1",
       "commit": "0a87bd1"
+    },
+    {
+      "iteration": 26,
+      "task": "guide-gaming-monitor-buying-guide",
+      "completedAt": "2026-05-08T13:33:40.619Z",
+      "summary": "guides/gaming-monitor-buying-guide.html — 641 lines; BreadcrumbList+Article+FAQPage schema; commit 1a25918",
+      "commit": "1a25918"
+    },
+    {
+      "iteration": 27,
+      "task": "game-hardware-timeline",
+      "completedAt": "2026-05-08T13:33:40.619Z",
+      "summary": "games/hardware-timeline.html — 37-product DB, Mulberry32 PRNG, streak bonus, clipboard share; commit 1a25918",
+      "commit": "1a25918"
+    },
+    {
+      "iteration": 28,
+      "task": "guide-best-gaming-chairs-2026",
+      "completedAt": "2026-05-08T13:33:40.619Z",
+      "summary": "guides/best-gaming-chairs-2026.html — 618 lines; 5 picks $189-$499; FAQPage+ItemList schema; guides/index.html + sitemap updated",
+      "commit": "pending"
     }
   ],
-  "queue": [
-    {
-      "id": "guide-best-gaming-chairs-2026",
-      "type": "new-page",
-      "priority": 3,
-      "title": "Guide: Best Gaming Chairs 2026 — Full Picks Guide",
-      "description": "Upgrade the existing best-budget-gaming-chairs guide into a full best-gaming-chairs-2026 guide. 5 picks from $100 to $499: Secretlab Titan Evo 2022 ($429), Corsair TC100 Relaxed ($299), Razer Iskur X ($299), DXRacer Formula ($299), RESPAWN 110 Racing ($150). Lumbar + headrest explainer section."
-    }
-  ]
+  "queue": []
 }
