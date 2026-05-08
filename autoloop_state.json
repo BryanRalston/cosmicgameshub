@@ -422,6 +422,16 @@
       "id": "guide-gaming-keyboard-switches",
       "done": "2026-05-08",
       "notes": "Membrane/mechanical/optical/Hall Effect explainer. Brand table (Cherry MX vs Gateron vs Outemu vs Kailh). Linear/tactile/clicky cards. Rapid trigger section. Playstyle picker table. 4 affiliate picks (G Pro X TKL, Apex 3 TKL, Apex Pro TKL 2023, K552). BreadcrumbList+Article+FAQPage schema. Commit 5691a77."
+    },
+    {
+      "id": "versus-keyboard-premium",
+      "done": "2026-05-08",
+      "notes": "Wooting 60HE+ (60%, Hall Effect, SOCD, rapid trigger 0.1mm, $175) vs Huntsman V3 Pro TKL (TKL, optical analog, media keys, Synapse, $200). 6-category + FAQPage. Commit a6063b0."
+    },
+    {
+      "id": "versus-monitor-4k-battle",
+      "done": "2026-05-08",
+      "notes": "LG 27GP950-B (4K 144Hz Nano IPS HDR600 USB-C 90W $400) vs Samsung G7 28\" (4K 144Hz IPS HDR400 matte $550). 6-category + FAQPage. Commit a6063b0."
     }
   ],
   "loop_log": [
@@ -734,23 +744,21 @@
         "5691a77"
       ],
       "notes": "Spec Match daily game (30-product DB, speed scoring, streak bonus). Keyboard switches guide (full explainer: membrane/optical/HE, brand table, rapid trigger, playstyle picker). Games count 20→21. Queue has 4 tasks remaining."
+    },
+    {
+      "iteration": 22,
+      "date": "2026-05-08",
+      "tasks_completed": [
+        "versus-keyboard-premium",
+        "versus-monitor-4k-battle"
+      ],
+      "commits": [
+        "a6063b0"
+      ],
+      "notes": "Wooting 60HE+ vs Huntsman V3 Pro TKL (Hall Effect vs optical analog showdown). LG 27GP950-B vs Samsung G7 28\" (4K flagship battle). Count now 30 comparisons. Queue: 2 SEO tasks remaining."
     }
   ],
   "queue": [
-    {
-      "id": "versus-keyboard-premium",
-      "type": "new-page",
-      "priority": 1,
-      "title": "Versus: Wooting 60HE+ vs Razer Huntsman V3 Pro TKL",
-      "description": "Hall Effect rapid-trigger vs optical analog: Wooting 60HE+ ($175, 60%, SOCD) vs Huntsman V3 Pro TKL ($200, TKL, media keys). Compact vs full-featured analog."
-    },
-    {
-      "id": "versus-monitor-4k-battle",
-      "type": "new-page",
-      "priority": 2,
-      "title": "Versus: LG 27GP950-B vs Samsung Odyssey G7 28\"",
-      "description": "4K battle: LG 27GP950-B (Nano IPS 144Hz HDR600) vs Samsung G7 28\" (IPS 144Hz HDR400). Same res/Hz, different panel and HDR."
-    },
     {
       "id": "seo-homepage-refresh",
       "type": "seo",
