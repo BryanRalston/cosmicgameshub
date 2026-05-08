@@ -49,6 +49,8 @@
     @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
     .pulse { animation:pulse 1.5s ease-in-out infinite; }
   </style>
+  <meta property="og:title" content="Daily Challenge — Today's Gaming Puzzle | CosmicGamesHub">
+  <meta property="og:description" content="A new gaming challenge every day. Aim trainer targets, reaction time goals, memory puzzles, and trivia. Track your streak and share your score.">
   <meta property="og:image" content="https://cosmicgameshub.com/images/game-dailychallenge.jpg">
   <meta property="og:image:width" content="600">
   <meta property="og:image:height" content="260">
@@ -217,24 +219,73 @@
 </footer>
 
 <script>
-// ── Challenge definitions (rotate by day of year) ─────────────────────────────
+// ── Mulberry32 PRNG — deterministic daily seed ─────────────────────────────
+function mulberry32(seed) {
+  return function() {
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function dailySeed() {
+  const d = new Date();
+  return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+}
+
+// ── Challenge definitions ──────────────────────────────────────────────────
 const CHALLENGES = [
+  // ── Aim Trainer challenges ────────────────────────────────────────────
   {
-    type:'⚡ Aim Challenge', title:'Hit the Mark', tool:'/tools/aim-trainer',
+    type:'⚡ Aim Challenge', title:'Hit the Mark', tool:'/games/aim-trainer',
     desc:'Open the Aim Trainer and complete a full round on Medium difficulty.',
     objectives:['Set difficulty to Medium','Complete a 30-second round','Score 500+ points'],
     unit:'points', passMark:500,
     grade(v){ if(v>=2000)return'S'; if(v>=1200)return'A'; if(v>=700)return'B'; if(v>=500)return'C'; return'D'; },
-    msg(v,g){ return g==='S'?'Aimbot confirmed. Terrifying.':g==='A'?'Pro-level score. Strong round.':g==='B'?'Solid aim. A few more sessions and you\'ll be in A territory.':'Challenge passed! Keep practicing.'; }
+    msg(v,g){ return g==='S'?'Aimbot confirmed. Terrifying.':g==='A'?'Pro-level score. Strong round.':g==='B'?'Solid aim. Keep pushing.':'Challenge passed! Keep practicing.'; }
   },
   {
-    type:'⏱ Reaction Test', title:'Lightning Reflexes', tool:'/tools/reaction-time-test',
-    desc:'Run the Reaction Time Test and beat 250ms average across 5 rounds.',
+    type:'🎯 Accuracy Run', title:'No Misses', tool:'/games/aim-trainer',
+    desc:'Complete an Easy difficulty aim trainer round with 90%+ accuracy.',
+    objectives:['Set difficulty to Easy','Complete a 30-second round','Achieve 90%+ accuracy'],
+    unit:'% accuracy', passMark:90,
+    grade(v){ if(v>=99)return'S'; if(v>=96)return'A'; if(v>=93)return'B'; if(v>=90)return'C'; return'D'; },
+    msg(v,g){ return g==='S'?'99%+ accuracy is almost perfect. Machine-like.':g==='A'?'Excellent accuracy.':g==='B'?'Clean aim. Well done.':'Challenge passed!'; }
+  },
+  {
+    type:'⚡ Speed Round', title:'Hard Mode Blitz', tool:'/games/aim-trainer',
+    desc:'Complete a Hard difficulty aim trainer round and score 300+ points.',
+    objectives:['Set difficulty to Hard','Complete a 30-second round','Score 300+ points on Hard'],
+    unit:'points', passMark:300,
+    grade(v){ if(v>=1000)return'S'; if(v>=600)return'A'; if(v>=450)return'B'; if(v>=300)return'C'; return'D'; },
+    msg(v,g){ return g==='S'?'1000+ on Hard. Absolutely elite.':g==='A'?'Excellent on Hard difficulty.':g==='B'?'Solid Hard mode score.':'Challenge passed!'; }
+  },
+  {
+    type:'⚡ Aim Challenge', title:'Sustained Fire', tool:'/games/aim-trainer',
+    desc:'Play a 90-second aim trainer session on Medium and maintain 75%+ accuracy throughout.',
+    objectives:['Set difficulty to Medium','Run the full 90-second session','Keep accuracy at 75% or above'],
+    unit:'% accuracy', passMark:75,
+    grade(v){ if(v>=95)return'S'; if(v>=88)return'A'; if(v>=80)return'B'; if(v>=75)return'C'; return'D'; },
+    msg(v,g){ return g==='S'?'Consistent at 95%+ over 90 seconds — tournament-ready.':g==='A'?'High accuracy over the full session. Impressive.':g==='B'?'Steady aim. Good endurance.':'Challenge passed!'; }
+  },
+  // ── Reaction challenges ───────────────────────────────────────────────
+  {
+    type:'⏱ Reaction Test', title:'Lightning Reflexes', tool:'/games/reaction-trainer',
+    desc:'Run the Reaction Time Trainer and beat 250ms average across 5 rounds.',
     objectives:['Complete all 5 rounds','Average reaction time under 250ms','No "Too Early" clicks'],
     unit:'ms average', passMark:250, lowerBetter:true,
     grade(v){ if(v<160)return'S'; if(v<200)return'A'; if(v<230)return'B'; if(v<250)return'C'; return'D'; },
     msg(v,g){ return g==='S'?'Sub-160ms is inhuman. Respect.':g==='A'?'Pro gamer reflexes.':g==='B'?'Competitive level. You\'d do well in ranked.':'Challenge passed!'; }
   },
+  {
+    type:'⏱ Reaction Test', title:'Sub-200 Club', tool:'/games/reaction-trainer',
+    desc:'Hit sub-200ms on at least 3 out of 5 reaction test rounds.',
+    objectives:['Run 5 reaction rounds','Get sub-200ms on 3+ rounds','Log your best individual result'],
+    unit:'ms best', passMark:200, lowerBetter:true,
+    grade(v){ if(v<155)return'S'; if(v<170)return'A'; if(v<185)return'B'; if(v<200)return'C'; return'D'; },
+    msg(v,g){ return g==='S'?'Sub-155ms single shot. You\'re in rare company.':g==='A'?'Sub-170ms is elite-tier.':g==='B'?'Near-pro reflexes.':'You made the Sub-200 Club!'; }
+  },
+  // ── Memory challenges ─────────────────────────────────────────────────
   {
     type:'🃏 Memory Test', title:'Cosmic Memory', tool:'/games/memory-match',
     desc:'Complete a 5×6 Memory Match grid in under 90 seconds.',
@@ -244,6 +295,23 @@ const CHALLENGES = [
     msg(v,g){ return g==='S'?'Under 45 seconds is elite memory.':g==='A'?'Quick and accurate.':g==='B'?'Good spatial memory.':'Challenge complete!'; }
   },
   {
+    type:'🃏 Memory Test', title:'Perfect Round', tool:'/games/memory-match',
+    desc:'Complete a 4×4 Memory Match grid with zero re-flips (every pair matched on first try).',
+    objectives:['Select 4×4 grid size','Match every pair on first attempt','Zero mismatches'],
+    unit:'mismatches', passMark:0, lowerBetter:true,
+    grade(v){ if(v===0)return'S'; if(v<=1)return'A'; if(v<=3)return'B'; if(v<=5)return'C'; return'D'; },
+    msg(v,g){ return g==='S'?'Perfect round. Photographic memory confirmed.':g==='A'?'Just one slip — nearly flawless.':g==='B'?'Good focus. Getting there.':'Not bad — try again tomorrow.'; }
+  },
+  {
+    type:'🃏 Speed Memory', title:'Memory Blitz', tool:'/games/memory-match',
+    desc:'Complete a 4×5 Memory Match grid in under 60 seconds.',
+    objectives:['Select 4×5 grid size','Find all pairs','Finish in under 60 seconds'],
+    unit:'seconds', passMark:60, lowerBetter:true,
+    grade(v){ if(v<30)return'S'; if(v<40)return'A'; if(v<50)return'B'; if(v<60)return'C'; return'D'; },
+    msg(v,g){ return g==='S'?'Under 30 seconds? You\'re a memory machine.':g==='A'?'Fast and sharp.':g==='B'?'Solid time. Strong spatial recall.':'Challenge cleared!'; }
+  },
+  // ── Sudoku challenges ─────────────────────────────────────────────────
+  {
     type:'🔢 Sudoku Sprint', title:'Grid Master', tool:'/games/sudoku',
     desc:'Complete a Medium Sudoku puzzle with zero mistakes.',
     objectives:['Select Medium difficulty','Solve the full grid','0 mistakes (no hints)'],
@@ -252,13 +320,22 @@ const CHALLENGES = [
     msg(v,g){ return g==='S'?'Under 5 minutes is elite level.':g==='A'?'Sharp logic. Fast solve.':g==='B'?'Solid Sudoku skills.':'Challenge passed!'; }
   },
   {
-    type:'🎯 Accuracy Run', title:'No Misses', tool:'/tools/aim-trainer',
-    desc:'Complete an Easy difficulty aim trainer round with 90%+ accuracy.',
-    objectives:['Set difficulty to Easy','Complete a 30-second round','Achieve 90%+ accuracy'],
-    unit:'% accuracy', passMark:90,
-    grade(v){ if(v>=99)return'S'; if(v>=96)return'A'; if(v>=93)return'B'; if(v>=90)return'C'; return'D'; },
-    msg(v,g){ return g==='S'?'99%+ accuracy is almost perfect. Machine-like.':g==='A'?'Excellent accuracy.':g==='B'?'Clean aim. Well done.':'Challenge passed!'; }
+    type:'🔢 Sudoku Sprint', title:'Easy Sweep', tool:'/games/sudoku',
+    desc:'Solve an Easy Sudoku puzzle in under 4 minutes, no mistakes.',
+    objectives:['Select Easy difficulty','Solve in under 4 minutes','No errors, no hints'],
+    unit:'minutes', passMark:4, lowerBetter:true,
+    grade(v){ if(v<2)return'S'; if(v<2.5)return'A'; if(v<3)return'B'; if(v<4)return'C'; return'D'; },
+    msg(v,g){ return g==='S'?'Under 2 minutes on Easy — you\'re warming up in elite time.':g==='A'?'Very fast easy solve.':g==='B'?'Clean and quick.':'Puzzle cleared!'; }
   },
+  {
+    type:'🔢 Sudoku Sprint', title:'Expert Grid', tool:'/games/sudoku',
+    desc:'Attempt an Expert Sudoku puzzle and enter your completion time (or DNF = 99).',
+    objectives:['Select Expert difficulty','Attempt the full grid','Enter time in minutes (99 if not finished)'],
+    unit:'minutes', passMark:30, lowerBetter:true,
+    grade(v){ if(v<15)return'S'; if(v<20)return'A'; if(v<25)return'B'; if(v<30)return'C'; return'D'; },
+    msg(v,g){ return g==='S'?'Expert in under 15 minutes. Truly elite.':g==='A'?'Sub-20 expert. Strong logical reasoning.':g==='B'?'Expert cleared under 25 mins — well done.':'Expert completed. No small feat.'; }
+  },
+  // ── Minesweeper challenges ────────────────────────────────────────────
   {
     type:'☄️ Minesweeper', title:'Sweep the Field', tool:'/games/minesweeper',
     desc:'Complete a Medium (16×16) Minesweeper game without hitting a mine.',
@@ -268,20 +345,190 @@ const CHALLENGES = [
     msg(v,g){ return g==='S'?'Under 40 seconds on Medium is near-perfect logic.':g==='A'?'Fast and precise.':g==='B'?'Solid sweep.':'Field cleared!'; }
   },
   {
-    type:'⚡ Speed Round', title:'Hard Mode', tool:'/tools/aim-trainer',
-    desc:'Complete a Hard difficulty aim trainer round and score 300+ points.',
-    objectives:['Set difficulty to Hard','Complete a 30-second round','Score 300+ points on Hard'],
-    unit:'points', passMark:300,
-    grade(v){ if(v>=1000)return'S'; if(v>=600)return'A'; if(v>=450)return'B'; if(v>=300)return'C'; return'D'; },
-    msg(v,g){ return g==='S'?'1000+ on Hard. Absolutely elite.':g==='A'?'Excellent on Hard difficulty.':g==='B'?'Solid Hard mode score.':'Challenge passed!'; }
+    type:'☄️ Minesweeper', title:'Easy Clear', tool:'/games/minesweeper',
+    desc:'Finish an Easy (9×9) Minesweeper board with no mistakes in under 30 seconds.',
+    objectives:['Select Easy difficulty','Clear the full 9×9 board','Finish in under 30 seconds'],
+    unit:'seconds', passMark:30, lowerBetter:true,
+    grade(v){ if(v<10)return'S'; if(v<15)return'A'; if(v<22)return'B'; if(v<30)return'C'; return'D'; },
+    msg(v,g){ return g==='S'?'Under 10 seconds on Easy is legendary.':g==='A'?'Sub-15 easy clear. Very fast.':g==='B'?'Smooth sweep.':'Easy board cleared!'; }
+  },
+  {
+    type:'☄️ Minesweeper', title:'Hard Survival', tool:'/games/minesweeper',
+    desc:'Attempt a Hard (30×16) Minesweeper board and survive as long as possible.',
+    objectives:['Select Hard difficulty','Clear as many cells as possible','Enter time survived in seconds'],
+    unit:'seconds survived', passMark:60,
+    grade(v){ if(v>=300)return'S'; if(v>=180)return'A'; if(v>=120)return'B'; if(v>=60)return'C'; return'D'; },
+    msg(v,g){ return g==='S'?'5+ minutes on Hard. Legendary sweep.':g==='A'?'3+ minutes. Strong logical play.':g==='B'?'2 minutes survived on Hard — solid.':'A minute on Hard is respectable!'; }
+  },
+  // ── Type Racer challenges ─────────────────────────────────────────────
+  {
+    type:'⌨️ Speed Typing', title:'WPM Burst', tool:'/games/type-racer',
+    desc:'Complete a 60-second Type Racer session and hit 60+ WPM.',
+    objectives:['Select 60-second mode','Type gaming quotes accurately','Achieve 60+ WPM'],
+    unit:'WPM', passMark:60,
+    grade(v){ if(v>=100)return'S'; if(v>=80)return'A'; if(v>=70)return'B'; if(v>=60)return'C'; return'D'; },
+    msg(v,g){ return g==='S'?'100+ WPM is world-class typing. Incredible.':g==='A'?'80+ WPM is very fast. Well done.':g==='B'?'70+ WPM is solid competitive speed.':'60 WPM cleared — keep training!'; }
+  },
+  {
+    type:'⌨️ Speed Typing', title:'Accuracy First', tool:'/games/type-racer',
+    desc:'Complete a 30-second Type Racer run with 98%+ accuracy.',
+    objectives:['Select 30-second mode','Focus on zero errors','Score 98%+ accuracy'],
+    unit:'% accuracy', passMark:98,
+    grade(v){ if(v>=100)return'S'; if(v>=99)return'A'; if(v>=98.5)return'B'; if(v>=98)return'C'; return'D'; },
+    msg(v,g){ return g==='S'?'100% accuracy. Flawless. Literal perfection.':g==='A'?'99%+ accuracy. Extremely clean.':g==='B'?'98.5%+ — near-flawless.':'98%+ accuracy achieved!'; }
+  },
+  {
+    type:'⌨️ Speed Typing', title:'Sprint Mode', tool:'/games/type-racer',
+    desc:'Hit 75+ WPM in a 30-second burst session.',
+    objectives:['Select 30-second mode','Type as fast as you can','Reach 75+ WPM'],
+    unit:'WPM', passMark:75,
+    grade(v){ if(v>=120)return'S'; if(v>=100)return'A'; if(v>=85)return'B'; if(v>=75)return'C'; return'D'; },
+    msg(v,g){ return g==='S'?'120+ WPM sprint. You\'re a keyboard demon.':g==='A'?'100+ WPM. Fast fingers.':g==='B'?'85+ WPM. Strong burst speed.':'75+ WPM cleared!'; }
+  },
+  // ── Void Keeper challenges ────────────────────────────────────────────
+  {
+    type:'🌌 Void Keeper', title:'Void Survival', tool:'/games/void-keeper',
+    desc:'Survive Void Keeper for at least 90 seconds without losing.',
+    objectives:['Start a Void Keeper session','Collect light particles','Survive for 90+ seconds'],
+    unit:'seconds', passMark:90,
+    grade(v){ if(v>=300)return'S'; if(v>=180)return'A'; if(v>=120)return'B'; if(v>=90)return'C'; return'D'; },
+    msg(v,g){ return g==='S'?'5 minutes in the Void. You\'ve transcended.':g==='A'?'3 minutes. The void respects you.':g==='B'?'2 minutes. Solid survival instincts.':'90 seconds cleared — the void was tested.'; }
+  },
+  {
+    type:'🌌 Void Keeper', title:'Score Hunter', tool:'/games/void-keeper',
+    desc:'Play Void Keeper and collect 500+ particles before your first life ends.',
+    objectives:['Start Void Keeper','Collect light particles','Reach 500 before your first hit'],
+    unit:'particles', passMark:500,
+    grade(v){ if(v>=2000)return'S'; if(v>=1200)return'A'; if(v>=800)return'B'; if(v>=500)return'C'; return'D'; },
+    msg(v,g){ return g==='S'?'2000+ particles. You are the Void.':g==='A'?'1200+ — elite collection run.':g==='B'?'800+ particles. Strong focus.':'500 particles gathered!'; }
+  },
+  // ── Beat Lab challenges ───────────────────────────────────────────────
+  {
+    type:'🎵 Beat Lab', title:'Rhythm Check', tool:'/games/beat-lab',
+    desc:'Play a Beat Lab session and achieve a 10+ note combo.',
+    objectives:['Start Beat Lab','Hit incoming notes accurately','Build a 10-note combo without breaking'],
+    unit:'combo', passMark:10,
+    grade(v){ if(v>=50)return'S'; if(v>=30)return'A'; if(v>=20)return'B'; if(v>=10)return'C'; return'D'; },
+    msg(v,g){ return g==='S'?'50-note combo. You\'re a rhythm god.':g==='A'?'30-note combo. Near-perfect rhythm.':g==='B'?'20 combo. Solid beat sense.':'10-note combo achieved!'; }
+  },
+  {
+    type:'🎵 Beat Lab', title:'Score Blitz', tool:'/games/beat-lab',
+    desc:'Complete a full Beat Lab session and hit 1000+ points.',
+    objectives:['Play a full Beat Lab session','Chain combo multipliers','Score 1000+ total points'],
+    unit:'points', passMark:1000,
+    grade(v){ if(v>=5000)return'S'; if(v>=3000)return'A'; if(v>=2000)return'B'; if(v>=1000)return'C'; return'D'; },
+    msg(v,g){ return g==='S'?'5000+ points. World-class rhythm skills.':g==='A'?'3000+ — combo multipliers mastered.':g==='B'?'2000 points. Solid session.':'1000 points hit!'; }
+  },
+  // ── Gamerdle challenges ───────────────────────────────────────────────
+  {
+    type:'🎮 Gamerdle', title:'Gamer IQ Test', tool:'/games/gamerdle',
+    desc:'Guess today\'s mystery game in 3 tries or fewer.',
+    objectives:['Open Gamerdle','Guess the mystery game','Solve it in 3 guesses or fewer'],
+    unit:'guesses used', passMark:3, lowerBetter:true,
+    grade(v){ if(v===1)return'S'; if(v===2)return'A'; if(v===3)return'B'; if(v<=6)return'C'; return'D'; },
+    msg(v,g){ return g==='S'?'First guess solve. Encyclopedic knowledge.':g==='A'?'Two guesses — sharp gaming intuition.':g==='B'?'Three and done. Solid deduction.':'Gamerdle solved!'; }
+  },
+  {
+    type:'🎮 Gamerdle', title:'Perfect Deduction', tool:'/games/gamerdle',
+    desc:'Solve today\'s Gamerdle without using genre or platform hints.',
+    objectives:['Play today\'s Gamerdle','Solve using title/year guesses only','No genre-only shots'],
+    unit:'guesses used', passMark:6, lowerBetter:true,
+    grade(v){ if(v<=2)return'S'; if(v<=3)return'A'; if(v<=4)return'B'; if(v<=6)return'C'; return'D'; },
+    msg(v,g){ return g==='S'?'2 guesses with pure deduction. Legendary.':g==='A'?'3 guesses — incredibly sharp.':g==='B'?'4 guesses without hints. Strong.':'Gamerdle completed!'; }
+  },
+  // ── Asteroid Dodge challenges ─────────────────────────────────────────
+  {
+    type:'🚀 Asteroid Dodge', title:'Survive the Field', tool:'/games/asteroid-dodge',
+    desc:'Survive an Asteroid Dodge session for 60 seconds.',
+    objectives:['Launch Asteroid Dodge','Dodge all incoming asteroids','Survive for 60 seconds'],
+    unit:'seconds', passMark:60,
+    grade(v){ if(v>=180)return'S'; if(v>=120)return'A'; if(v>=90)return'B'; if(v>=60)return'C'; return'D'; },
+    msg(v,g){ return g==='S'?'3 minutes. You ARE the void pilot.':g==='A'?'2 minutes. Serious pilot skills.':g==='B'?'90 seconds dodging. Very sharp.':'60 seconds survived!'; }
+  },
+  {
+    type:'🚀 Asteroid Dodge', title:'Score Pusher', tool:'/games/asteroid-dodge',
+    desc:'Score 1000+ points in a single Asteroid Dodge run.',
+    objectives:['Play Asteroid Dodge','Collect score orbs while dodging','Hit 1000+ points'],
+    unit:'points', passMark:1000,
+    grade(v){ if(v>=5000)return'S'; if(v>=3000)return'A'; if(v>=2000)return'B'; if(v>=1000)return'C'; return'D'; },
+    msg(v,g){ return g==='S'?'5000+ points. You\'re an asteroid legend.':g==='A'?'3000+ — elite space pilot.':g==='B'?'2000 points. Strong run.':'1000 points! The field was tamed.'; }
+  },
+  // ── Gaming Trivia challenges ──────────────────────────────────────────
+  {
+    type:'🧠 Trivia', title:'Daily Quiz Ace', tool:'/games/gaming-trivia',
+    desc:'Complete today\'s 10-question gaming trivia quiz and score 8+.',
+    objectives:['Open Gaming Trivia','Answer all 10 questions','Score 8 or higher'],
+    unit:'correct answers', passMark:8,
+    grade(v){ if(v===10)return'S'; if(v===9)return'A'; if(v===8)return'B'; if(v>=6)return'C'; return'D'; },
+    msg(v,g){ return g==='S'?'10/10. Perfect gaming knowledge. Unstoppable.':g==='A'?'9/10. Near-perfect. One slip.':g==='B'?'8/10. Solid trivia game.':'Good score — come back tomorrow for more!'; }
+  },
+  {
+    type:'🧠 Trivia', title:'Speed Trivia', tool:'/games/gaming-trivia',
+    desc:'Answer all 10 trivia questions and use less than 60 seconds total time.',
+    objectives:['Open Gaming Trivia','Answer every question quickly','Use under 60 seconds total'],
+    unit:'seconds used', passMark:60, lowerBetter:true,
+    grade(v){ if(v<30)return'S'; if(v<40)return'A'; if(v<50)return'B'; if(v<60)return'C'; return'D'; },
+    msg(v,g){ return g==='S'?'Under 30 seconds — instant recall. Incredible.':g==='A'?'Under 40 seconds. Very fast knowledge.':g==='B'?'Under 50 seconds. Quick gaming brain.':'Under 60 seconds — speed challenge passed!'; }
+  },
+  // ── Gear Quiz challenges ──────────────────────────────────────────────
+  {
+    type:'🎧 Gear Quiz', title:'Spec Savant', tool:'/games/gear-quiz',
+    desc:'Complete the daily Gear Knowledge Quiz and answer 8+ questions correctly.',
+    objectives:['Open Gear Knowledge Quiz','Answer all 10 questions','Score 8 or higher'],
+    unit:'correct answers', passMark:8,
+    grade(v){ if(v===10)return'S'; if(v===9)return'A'; if(v===8)return'B'; if(v>=6)return'C'; return'D'; },
+    msg(v,g){ return g==='S'?'10/10 on gear specs. You live in the spreadsheet.':g==='A'?'9/10. Deep gear knowledge.':g==='B'?'8/10. You know your peripherals.':'You passed the gear quiz!'; }
+  },
+  {
+    type:'🎧 Gear Quiz', title:'Price Whisperer', tool:'/games/price-guesser',
+    desc:'Play Price Guesser and get within 15% of the correct price on 4 out of 5 items.',
+    objectives:['Open Price Guesser','Guess all 5 item prices','Land within 15% on 4+ items'],
+    unit:'items within 15%', passMark:4,
+    grade(v){ if(v===5)return'S'; if(v===4)return'A'; if(v===3)return'B'; if(v>=2)return'C'; return'D'; },
+    msg(v,g){ return g==='S'?'5/5 within 15%. You\'re a walking price list.':g==='A'?'4/5 — strong market awareness.':g==='B'?'3/5 — you know gear pricing well.':'Price awareness confirmed!'; }
+  },
+  // ── Color Memory challenges ───────────────────────────────────────────
+  {
+    type:'🎨 Color Memory', title:'Sequence Master', tool:'/games/color-memory',
+    desc:'Reach a sequence length of 10 in Color Memory without failing.',
+    objectives:['Open Color Memory','Watch and repeat sequences','Reach length 10 successfully'],
+    unit:'sequence length', passMark:10,
+    grade(v){ if(v>=20)return'S'; if(v>=15)return'A'; if(v>=12)return'B'; if(v>=10)return'C'; return'D'; },
+    msg(v,g){ return g==='S'?'Length 20. Superhuman working memory.':g==='A'?'Length 15 — elite pattern recall.':g==='B'?'Length 12. Excellent color memory.':'Sequence 10 reached — challenge complete!'; }
+  },
+  {
+    type:'🎨 Color Memory', title:'First Try Focus', tool:'/games/color-memory',
+    desc:'Play Color Memory and reach length 8 without a single mistake.',
+    objectives:['Open Color Memory','Replicate every sequence perfectly','No errors through length 8'],
+    unit:'max length no mistakes', passMark:8,
+    grade(v){ if(v>=15)return'S'; if(v>=12)return'A'; if(v>=10)return'B'; if(v>=8)return'C'; return'D'; },
+    msg(v,g){ return g==='S'?'15+ with zero errors. Photographic sequence memory.':g==='A'?'12 clean — precision focus.':g==='B'?'10 without a miss. Very sharp.':'8 reached without an error!'; }
+  },
+  // ── Crossword challenges ──────────────────────────────────────────────
+  {
+    type:'✏️ Crossword', title:'Grid Solver', tool:'/games/crossword',
+    desc:'Complete today\'s Gaming Crossword puzzle without using any hints.',
+    objectives:['Open Gaming Crossword','Fill in all squares','No hints used'],
+    unit:'hints used', passMark:0, lowerBetter:true,
+    grade(v){ if(v===0)return'S'; if(v===1)return'A'; if(v===2)return'B'; if(v<=3)return'C'; return'D'; },
+    msg(v,g){ return g==='S'?'Zero hints. Pure gaming vocabulary.':g==='A'?'One hint only — nearly clean.':g==='B'?'Two hints — solid crossword skills.':'Crossword completed!'; }
+  },
+  {
+    type:'✏️ Crossword', title:'Speed Fill', tool:'/games/crossword',
+    desc:'Complete today\'s Gaming Crossword in under 5 minutes.',
+    objectives:['Open Gaming Crossword','Fill in all squares','Finish in under 5 minutes'],
+    unit:'minutes', passMark:5, lowerBetter:true,
+    grade(v){ if(v<2)return'S'; if(v<3)return'A'; if(v<4)return'B'; if(v<5)return'C'; return'D'; },
+    msg(v,g){ return g==='S'?'Under 2 minutes. Word recall is instant.':g==='A'?'Under 3 minutes. Fast gaming vocab.':g==='B'?'Under 4 minutes. Smooth solve.':'Under 5 — crossword challenge passed!'; }
   },
 ];
 
 // ── State ─────────────────────────────────────────────────────────────────────
 const today = new Date();
 const todayKey = `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
-const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 86400000);
-const challenge = CHALLENGES[dayOfYear % CHALLENGES.length];
+const rng = mulberry32(dailySeed());
+const challengeIdx = Math.floor(rng() * CHALLENGES.length);
+const challenge = CHALLENGES[challengeIdx];
 
 let history = JSON.parse(localStorage.getItem('cgx-dc-history') || '[]');
 let streak  = parseInt(localStorage.getItem('cgx-dc-streak') || '0');
@@ -368,10 +615,7 @@ function renderHistory() {
   });
 }
 
-document.getElementById('hamburger').addEventListener('click', function() {
-  document.getElementById('navLinks').classList.toggle('open');
-  this.setAttribute('aria-expanded', document.getElementById('navLinks').classList.contains('open'));
-});
+/* Nav handled by global.js via .nav__hamburger class */
 </script>
 <script src="/global.js" defer></script>
 

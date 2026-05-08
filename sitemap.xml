@@ -224,6 +224,12 @@
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
+  <url>
+    <loc>https://cosmicgameshub.com/versus/corsair-hs65-wireless-vs-logitech-g435</loc>
+    <lastmod>2026-05-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
 
   <!-- Platform Headset Guides -->
   <url>
@@ -390,7 +396,7 @@
     <loc>https://cosmicgameshub.com/games/daily-challenge</loc>
     <lastmod>2026-05-08</lastmod>
     <changefreq>daily</changefreq>
-    <priority>0.6</priority>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://cosmicgameshub.com/games/brix3d</loc>
