@@ -2,84 +2,396 @@
   "version": 1,
   "last_updated": "2026-05-07",
   "completed": [
-    {"id": "schema-guide-headsets", "done": "2026-05-07", "notes": "BreadcrumbList + Article + ItemList with 5 products"},
-    {"id": "schema-guide-mice", "done": "2026-05-07", "notes": "BreadcrumbList + Article + ItemList with 5 products"},
-    {"id": "schema-guide-keyboards", "done": "2026-05-07", "notes": "BreadcrumbList + Article + ItemList with 5 products"},
-    {"id": "schema-guide-chairs", "done": "2026-05-07", "notes": "BreadcrumbList + Article + ItemList with 5 products"},
-    {"id": "schema-guide-monitors", "done": "2026-05-07", "notes": "BreadcrumbList + Article + ItemList with 5 products"},
-    {"id": "schema-versus-all", "done": "2026-05-07", "notes": "BreadcrumbList + Article + ItemList on all 6 versus pages"},
-    {"id": "og-images-all", "done": "2026-05-07", "notes": "og:image added to all 11 guide+versus pages"},
-    {"id": "about-page", "done": "2026-05-07", "notes": "about.html created with Grok Imagine hero, review process, editorial standards"},
-    {"id": "fix-amazon-links", "done": "2026-05-07", "notes": "All 25 products now use amazon.com/dp/ASIN direct links. Commit f9f0ba7."},
-    {"id": "versus-g502-vs-superlight2", "done": "2026-05-07", "notes": "Full versus page with Grok research + Grok Imagine image. Commit 0800793."},
-    {"id": "versus-arctis-nova-pro-vs-sony-pulse-3d", "done": "2026-05-07", "notes": "Nova Pro vs Pulse 3D, PS5 focus vs multi-platform. Commit 9b55738."},
-    {"id": "versus-razer-huntsman-v3-vs-wooting-60he", "done": "2026-05-07", "notes": "Analog keyboard showdown. SOCD vs wireless. Commit 9b55738."},
-    {"id": "versus-asus-vg279qm-vs-lg-27gp850", "done": "2026-05-07", "notes": "280Hz 1080p vs 165Hz 1440p. Commit 9b55738."},
-    {"id": "games-ux-fixes", "done": "2026-05-07", "notes": "RIFT restart+help, Gamerdle back button, Pixle close button, Beat Lab help modal. Commit 76ac9d3."},
-    {"id": "game-word-scramble", "done": "2026-05-07", "notes": "Daily gaming word scramble. 100+ word bank, 6 attempts, seeded PRNG, share button, streak tracking."},
-    {"id": "game-gaming-trivia", "done": "2026-05-07", "notes": "10Q daily trivia, 15s timer, speed scoring, S-F grades, confetti, share button."},
-    {"id": "game-type-racer", "done": "2026-05-07", "notes": "50 gaming phrases, 30/60/90s modes, character-level highlighting, WPM+accuracy, personal best."},
-    {"id": "game-asteroid-dodge", "done": "2026-05-07", "notes": "Canvas arcade: mouse/touch/WASD ship, wave system, score orbs, shield power-up, high score."},
-    {"id": "internal-links-audit", "done": "2026-05-07", "notes": "All versus pages updated with guide parent links + relevant cross-links. Guides updated with versus card links."},
-    {"id": "sitemap-update", "done": "2026-05-07", "notes": "Added 4 new versus + 12 game pages, updated all lastmod to 2026-05-07. Commit 667323f."},
-    {"id": "roundup-budget-setup-500", "done": "2026-05-07", "notes": "5-slot build guide under $500. Headset/mouse/keyboard/chair/monitor. Budget table, upgrade path, FAQ."},
-    {"id": "roundup-fps-setup", "done": "2026-05-07", "notes": "FPS-optimized guide: Superlight 2, VG279QM 280Hz, Arctis Nova Pro, Huntsman V3 Pro. Budget FPS build section."},
-    {"id": "games-hub-page", "done": "2026-05-07", "notes": "games/index.html listing all 12 games in 3 sections."},
-    {"id": "games-minesweeper-upgrade", "done": "2026-05-07", "notes": "Best-time per difficulty (localStorage), share button."},
-    {"id": "games-sudoku-upgrade", "done": "2026-05-07", "notes": "Best-time per difficulty (localStorage), share button, replaced alert() with proper fail-banner modal."},
-    {"id": "void-keeper-upgrade", "done": "2026-05-07", "notes": "High score (localStorage), best score in HUD, 'new best' on game over, 'click to play again' prompt, fixed nav to /games."},
-    {"id": "memory-match-upgrade", "done": "2026-05-07", "notes": "Best-time per grid size (localStorage), share button."},
-    {"id": "beat-lab-share", "done": "2026-05-07", "notes": "Share button on results screen."},
-    {"id": "versus-basilisk-v3-pro-vs-g502-x-plus", "done": "2026-05-07", "notes": "Basilisk V3 Pro vs G502 X Plus. Ergonomic vs utility. Focus Pro 30K vs HERO 25K. Grok research + Grok Imagine image."},
-    {"id": "roundup-wireless-headsets", "done": "2026-05-07", "notes": "5-tier wireless headset guide: Cloud Stinger Core, Arctis Nova 3, HS80, Pulse 3D, Arctis Nova Pro. 2.4GHz vs BT explainer."},
-    {"id": "versus-corsair-k100-vs-apex-pro-tkl", "done": "2026-05-07", "notes": "K100 RGB (8000Hz AXON, OPX optical) vs Apex Pro TKL (OmniPoint 2.0 Hall Effect, 0.2mm actuation). FPS vs versatility."},
-    {"id": "guide-best-gaming-chairs-upgrade", "done": "2026-05-07", "notes": "Added internal links to roundup guides (budget setup, FPS, keyboards, monitors) in chairs guide related section."},
-    {"id": "sitemap-update-2", "done": "2026-05-07", "notes": "Added corsair-k100-rgb-vs-steelseries-apex-pro-tkl. All new pages now indexed."},
-    {"id": "versus-monitor-2", "done": "2026-05-07", "notes": "ASUS ROG Swift PG279QM (240Hz Fast IPS) vs Dell S2722DGM (165Hz VA curved). 6 category breakdown, spec table, 4 key diffs, FAQ. Sitemap updated."},
-    {"id": "game-reaction-trainer", "done": "2026-05-07", "notes": "Reaction Time Trainer — 5-round click-when-green game. Grades S/A/B/C/D/F, personal best localStorage, share button, spacebar support, smooth CSS transitions."},
-    {"id": "game-fps-aim-trainer", "done": "2026-05-07", "notes": "FPS Aim Trainer — canvas target clicking game with 30/60/90s modes. Timer arcs, accuracy %, hits/sec, personal best, share button. Games hub updated."},
-    {"id": "versus-headset-3", "done": "2026-05-07", "notes": "Arctis Nova 7 vs Cloud Alpha Wireless: dual wireless + BT vs 300hr battery. 6-category breakdown, spec table, 4 key diffs, 6-question FAQ."},
-    {"id": "versus-mouse-3", "done": "2026-05-07", "notes": "Logitech G403 ($50, 87g, HERO 25K) vs Razer DeathAdder V3 ($70, 59g, Focus Pro 30K, optical switches). Budget ergonomic vs ultralight competitive. 6-category breakdown, 4 key diffs, 5-question FAQ."},
-    {"id": "guide-best-gaming-headsets-upgrade", "done": "2026-05-07", "notes": "Added quick-picks summary table (5 tiers at a glance). Added Nova 7 vs Cloud Alpha Wireless and wireless headsets guide links to comparisons section."},
-    {"id": "guide-best-gaming-mice-upgrade", "done": "2026-05-07", "notes": "Added quick-picks summary table with weight column. Added G403 vs DeathAdder V3 and Basilisk vs G502 X Plus links to comparisons section."},
-    {"id": "guide-best-gaming-keyboards-upgrade", "done": "2026-05-07", "notes": "Added 5-tier quick-picks table (switch type column). Added K100 vs Apex Pro TKL link and FPS guide link to comparisons section."},
-    {"id": "guide-best-gaming-monitors-upgrade", "done": "2026-05-07", "notes": "Added 5-tier quick-picks table (panel/Hz column). Added PG279QM vs S2722DGM link and FPS guide link to comparisons section."},
-    {"id": "game-color-memory", "done": "2026-05-07", "notes": "Simon Says color memory game. 4-color grid, sequence builds each round, dot progress visualizer, personal best, share. Games hub updated to 15 games."},
-    {"id": "versus-keyboard-budget", "done": "2026-05-07", "notes": "SteelSeries Apex 3 TKL ($45, Whisper Quiet Membrane, IP32, 10-zone RGB) vs Redragon K552 KUMARA ($40, Outemu Blue mechanical, metal alloy, red LED). Commit fb391a3."},
-    {"id": "versus-headset-4", "done": "2026-05-07", "notes": "Razer Kraken V3 ($99.99, wired, THX Spatial Audio, HyperClear Cardioid mic) vs Corsair HS65 Wireless ($99.99, 2.4GHz+BT, 24hr). Commit 8be24be."},
-    {"id": "versus-monitor-3", "done": "2026-05-07", "notes": "LG 27GP950-B ($699, 4K Nano IPS, 144Hz, 2x HDMI 2.1) vs Samsung Odyssey G7 ($549, 1440p 240Hz VA QLED, 1000R). Commit 03fc36c."},
-    {"id": "game-crossword", "done": "2026-05-07", "notes": "Daily 5x5 gaming crossword. 7 validated puzzles (all rows + col0 + col4 = valid gaming words), check/reveal/clear, streak tracking, personal best, share. Commit 079c648."},
-    {"id": "nav-fix", "done": "2026-05-07", "notes": "Created guides/index.html and versus/index.html (both were 404). Fixed nav on 29 files to include Guides/Comparisons/Games links. Added both index pages to sitemap. Commit bce20d1."},
-    {"id": "homepage-seo-update", "done": "2026-05-07", "notes": "Fixed cat-subnav dead links (daily-challenge→crossword, /tools/aim-trainer→/games/aim-trainer, reaction-time-test→reaction-trainer). Updated games count to 16. Refreshed arcade strip. Updated versus featured cards to newer comparisons + View All 18 CTA. Footer Compare+Play Free updated. Commit fb21d57."},
-    {"id": "game-upgrade-remaining", "done": "2026-05-07", "notes": "Full audit: all 16 games have appropriate restart/reset flows for their game type. Daily-seeded games (crossword, word-scramble, rift, gamerdle, pixle, gaming-trivia) have result modals with share+close. Arcade games (asteroid-dodge, void-keeper, type-racer, aim-trainer, reaction-trainer, beat-lab, memory-match, minesweeper, sudoku, color-memory) all have restart/play-again flows. No fixes needed."},
-    {"id": "versus-mouse-4", "done": "2026-05-07", "notes": "G502 X (~$60, HERO 25K LIGHTFORCE, 89g, 13 buttons, B0B6KWMF3X) vs Basilisk V3 (~$70, Focus+ 26K optical, 101g, SmartReel 4-mode scroll, B09J6XCCGX). Full versus page. Commit 8ff0ad9."},
-    {"id": "guide-best-gaming-setup-upgrade", "done": "2026-05-07", "notes": "Upgrade path table added (budget→upgrade per slot with cost+gain). Relevant Comparisons section with 4 versus cards. FAQ expanded 4→7 questions. Nav fixed from old site-header to site-nav. Footer updated. Commit d6042d2."},
-    {"id": "game-score-guesser", "done": "2026-05-07", "notes": "Gaming Gear Price Guesser — 28 products (headsets/mice/keyboards/monitors), 5 daily rounds seeded by Mulberry32 PRNG, Price is Right scoring (over=0pts, exact=100pts, progressive tiers). S/A/B/C/D/F grades, streak tracking, personal best, share with emoji grid, play-again random mode. Games hub updated to 18, sitemap updated."},
-    {"id": "guide-xbox-headsets", "done": "2026-05-07", "notes": "Xbox Series X/S headset guide: 5 picks (Stealth 600 Gen 3 $79 Xbox Wireless 80hr, Kaira Pro $149 Xbox Wireless+BT, Cloud II Wireless $149 2.4GHz multi-platform, Nova Pro X $349 hot-swap+ANC, HS35 $40 wired). Xbox Wireless vs BT vs 2.4GHz explainer table. Microsoft Spatial Sound FAQ. Added to guides index + sitemap."},
-    {"id": "versus-budget-monitor", "done": "2026-05-08", "notes": "AOC 27G2 (1080p 144Hz IPS ~$160) vs Gigabyte G27Q (1440p 165Hz IPS ~$230). 6-category breakdown, spec table, 4 key diffs, 5Q FAQ. FAQPage+Article schema. Added to versus index and sitemap. Commit 18f9849."},
-    {"id": "schema-faq-versus", "done": "2026-05-08", "notes": "FAQPage JSON-LD added to all 22 versus pages. 3-pattern parser (faq__question, faq-q, details/summary). Added FAQ sections to K100 vs Apex Pro TKL and Basilisk V3 Pro vs G502 X Plus. Commit d73a392."},
-    {"id": "homepage-arcade-strip-update", "done": "2026-05-08", "notes": "Price Guesser added to arcade strip and footer Play Free. Count updated to 20 games. Commit d73a392."},
-    {"id": "internal-links-pass2", "done": "2026-05-08", "notes": "Nova Pro vs Pulse 3D → PS5 guide link added. Keyboard guide → G915 vs K65 link added. G915 vs K65 already linked to keyboard guide. PS5 guide already had Nova Pro vs Pulse 3D link. Commit d73a392."},
-    {"id": "og-image-games", "done": "2026-05-08", "notes": "Already done in prior session commit 8c98d3a — VideoGame schema + og:image on all 19 game pages."},
-    {"id": "versus-gaming-chairs", "done": "2026-05-08", "notes": "Secretlab Titan Evo 2022 ($429) vs DXRacer Formula ($299). 6-category breakdown, spec table, 4 key diffs, 5Q FAQ. BreadcrumbList+Article+ItemList+FAQPage schema. Both affiliate links. Commit 9f87c65."},
-    {"id": "game-gear-quiz", "done": "2026-05-08", "notes": "Gaming Gear Knowledge Quiz (gear-quiz.html): 10 daily-seeded questions, SVG timer ring, speed bonus scoring, S-F grades, streak+PB, A/B/C/D keyboard shortcuts, share button. VideoGame schema. Games hub + sitemap updated. Commit 9f87c65."},
-    {"id": "guide-best-gaming-mice-fps", "done": "2026-05-08", "notes": "643-line guide: 5 FPS picks (Superlight 2/DeathAdder V3/Zowie EC2-C/Viper V2 Pro/G305), quick-picks table, polling rate explainer, pro stats callout, full schema. Cross-linked from mice guide. Commit f82bfa3."},
-    {"id": "versus-headset-wired-wireless", "done": "2026-05-08", "notes": "HyperX Cloud II ($99, wired, 7.1) vs SteelSeries Arctis Nova 7 Wireless ($179, 2.4GHz+BT, 38hr). 6-category, spec table, 5Q FAQ. Commit f82bfa3."},
-    {"id": "versus-mouse-wireless-budget", "done": "2026-05-08", "notes": "Logitech G305 ($40, 99g, 250hr) vs Razer DeathAdder V3 HyperSpeed ($70, 88g, 100hr). 6-category ergonomics vs value breakdown. Commit f82bfa3."},
-    {"id": "seo-guide-datemodified", "done": "2026-05-08", "notes": "All 10 guide pages updated dateModified to 2026-05-08. Commit 4045450."},
-    {"id": "homepage-versus-count-fix", "done": "2026-05-08", "notes": "Homepage count updated to 24 comparisons. Commit f82bfa3."},
-    {"id": "guide-1440p-monitors", "done": "2026-05-08", "notes": "5 WQHD picks $230-$549 (LG 27GP850-B, ASUS PG279QM, Samsung G7, AOC Q27G2, Gigabyte G27Q). Article+BreadcrumbList+ItemList+FAQPage schema. Cross-linked from monitors guide. Commit d05959e."},
-    {"id": "versus-keyboard-mid", "done": "2026-05-08", "notes": "Keychron K8 Pro (hot-swap, BT+2.4GHz, QMK, $89) vs Apex 7 TKL (OLED, OmniPoint 2.0, wired, $99). Full versus page + OG image generated. Commit d05959e."},
-    {"id": "guide-gaming-mouse-shapes", "done": "2026-05-08", "notes": "Palm/claw/fingertip grip breakdown, ergonomic vs ambidextrous, weight table, grip-specific picks with affiliate links. BreadcrumbList+Article+FAQPage schema. Added to guides index + sitemap. Commit d05959e."},
-    {"id": "game-daily-challenge-refresh", "done": "2026-05-08", "notes": "Mulberry32 PRNG seeded by YYYYMMDD. Challenge pool 7→34 (10 game categories: Aim Trainer, Reaction Trainer, Memory Match, Sudoku, Minesweeper, Type Racer, Void Keeper, Beat Lab, Gamerdle, Asteroid Dodge + more). og:title+og:description added. Broken hamburger JS removed. Sitemap priority bumped to 0.8. Commit 914d50f."},
-    {"id": "versus-headset-budget-wireless", "done": "2026-05-08", "notes": "Corsair HS65 Wireless ($99, 2.4GHz+BT, 24hr, SoundID, Tempest 3D) vs Logitech G435 ($79, LIGHTSPEED, 18hr, 165g ultra-light). 6-category breakdown, spec table, FAQPage+Article+BreadcrumbList+ItemList schemas. Affiliate links B09ZZM4T5T + B09BXKM9D5. OG image generated. Count 25→26. Commit 914d50f."},
-    {"id": "seo-versus-og-image-audit", "done": "2026-05-08", "notes": "Audited all 26 versus pages. 0 missing OG images — all image files exist in /images/. No fixes needed. Commit 914d50f."},
-    {"id": "guide-best-budget-headsets", "done": "2026-05-08", "notes": "5 picks $30-$50: Cloud Stinger 2/HS35/Kraken X/Arctis Nova 1/Cloud II. Quick-picks table, budget buying tips, BreadcrumbList+Article+ItemList+FAQPage schema. Added to guides index + sitemap. Link from best-gaming-headsets guide. Commit 3c8353e + f1cc58a."},
-    {"id": "versus-mouse-wireless-flagship", "done": "2026-05-08", "notes": "Superlight 2 (60g, HERO 25K, LIGHTSPEED, $160) vs DeathAdder V3 Pro (64g, Focus Pro 30K, HyperSpeed 2.4GHz+BT, $150). Full versus + FAQPage schema. OG image generated. Count 26→27. Commit 3c8353e."},
-    {"id": "seo-guide-faq-schema-audit", "done": "2026-05-08", "notes": "FAQPage JSON-LD added to 9 guide pages (4 patterns: faq__question, faq-q/faq-a, details/summary, div.faq-item>h3+p). 4-7 pairs per page. Commit 4b29b40."},
-    {"id": "internal-links-pass3", "done": "2026-05-08", "notes": "mice-2026→mouse-shape-guide, keyboards→keychron-vs-apex7, headsets→hs65-vs-g435+cloud-ii-vs-nova7. All other cross-links already present. Commit 99ea1af."},
-    {"id": "guide-ps5-monitors", "done": "2026-05-08", "notes": "5 picks: LG 27GP950-B (4K 144Hz, $399), Samsung G7 28\" (4K 144Hz, $549), LG C3 OLED 27\" (4K 120Hz OLED, $799), Gigabyte M27Q X (1440p 240Hz HDMI 2.1, $299), AOC 24G2 (1080p 144Hz, $159). HDMI 2.1/VRR/ALLM/HDR explainers. FAQPage+BreadcrumbList+Article+ItemList schema. Commit e51f7e2."},
-    {"id": "versus-headset-premium-wireless", "done": "2026-05-08", "notes": "Arctis Nova Pro Wireless ($350, hot-swap, ANC, ChatMix, parametric EQ) vs G Pro X 2 LIGHTSPEED ($250, Blue VO!CE, 50mm graphene drivers, 50hr). 6-category, FAQPage schema. Count 27→28. Commit e51f7e2."},
+    {
+      "id": "schema-guide-headsets",
+      "done": "2026-05-07",
+      "notes": "BreadcrumbList + Article + ItemList with 5 products"
+    },
+    {
+      "id": "schema-guide-mice",
+      "done": "2026-05-07",
+      "notes": "BreadcrumbList + Article + ItemList with 5 products"
+    },
+    {
+      "id": "schema-guide-keyboards",
+      "done": "2026-05-07",
+      "notes": "BreadcrumbList + Article + ItemList with 5 products"
+    },
+    {
+      "id": "schema-guide-chairs",
+      "done": "2026-05-07",
+      "notes": "BreadcrumbList + Article + ItemList with 5 products"
+    },
+    {
+      "id": "schema-guide-monitors",
+      "done": "2026-05-07",
+      "notes": "BreadcrumbList + Article + ItemList with 5 products"
+    },
+    {
+      "id": "schema-versus-all",
+      "done": "2026-05-07",
+      "notes": "BreadcrumbList + Article + ItemList on all 6 versus pages"
+    },
+    {
+      "id": "og-images-all",
+      "done": "2026-05-07",
+      "notes": "og:image added to all 11 guide+versus pages"
+    },
+    {
+      "id": "about-page",
+      "done": "2026-05-07",
+      "notes": "about.html created with Grok Imagine hero, review process, editorial standards"
+    },
+    {
+      "id": "fix-amazon-links",
+      "done": "2026-05-07",
+      "notes": "All 25 products now use amazon.com/dp/ASIN direct links. Commit f9f0ba7."
+    },
+    {
+      "id": "versus-g502-vs-superlight2",
+      "done": "2026-05-07",
+      "notes": "Full versus page with Grok research + Grok Imagine image. Commit 0800793."
+    },
+    {
+      "id": "versus-arctis-nova-pro-vs-sony-pulse-3d",
+      "done": "2026-05-07",
+      "notes": "Nova Pro vs Pulse 3D, PS5 focus vs multi-platform. Commit 9b55738."
+    },
+    {
+      "id": "versus-razer-huntsman-v3-vs-wooting-60he",
+      "done": "2026-05-07",
+      "notes": "Analog keyboard showdown. SOCD vs wireless. Commit 9b55738."
+    },
+    {
+      "id": "versus-asus-vg279qm-vs-lg-27gp850",
+      "done": "2026-05-07",
+      "notes": "280Hz 1080p vs 165Hz 1440p. Commit 9b55738."
+    },
+    {
+      "id": "games-ux-fixes",
+      "done": "2026-05-07",
+      "notes": "RIFT restart+help, Gamerdle back button, Pixle close button, Beat Lab help modal. Commit 76ac9d3."
+    },
+    {
+      "id": "game-word-scramble",
+      "done": "2026-05-07",
+      "notes": "Daily gaming word scramble. 100+ word bank, 6 attempts, seeded PRNG, share button, streak tracking."
+    },
+    {
+      "id": "game-gaming-trivia",
+      "done": "2026-05-07",
+      "notes": "10Q daily trivia, 15s timer, speed scoring, S-F grades, confetti, share button."
+    },
+    {
+      "id": "game-type-racer",
+      "done": "2026-05-07",
+      "notes": "50 gaming phrases, 30/60/90s modes, character-level highlighting, WPM+accuracy, personal best."
+    },
+    {
+      "id": "game-asteroid-dodge",
+      "done": "2026-05-07",
+      "notes": "Canvas arcade: mouse/touch/WASD ship, wave system, score orbs, shield power-up, high score."
+    },
+    {
+      "id": "internal-links-audit",
+      "done": "2026-05-07",
+      "notes": "All versus pages updated with guide parent links + relevant cross-links. Guides updated with versus card links."
+    },
+    {
+      "id": "sitemap-update",
+      "done": "2026-05-07",
+      "notes": "Added 4 new versus + 12 game pages, updated all lastmod to 2026-05-07. Commit 667323f."
+    },
+    {
+      "id": "roundup-budget-setup-500",
+      "done": "2026-05-07",
+      "notes": "5-slot build guide under $500. Headset/mouse/keyboard/chair/monitor. Budget table, upgrade path, FAQ."
+    },
+    {
+      "id": "roundup-fps-setup",
+      "done": "2026-05-07",
+      "notes": "FPS-optimized guide: Superlight 2, VG279QM 280Hz, Arctis Nova Pro, Huntsman V3 Pro. Budget FPS build section."
+    },
+    {
+      "id": "games-hub-page",
+      "done": "2026-05-07",
+      "notes": "games/index.html listing all 12 games in 3 sections."
+    },
+    {
+      "id": "games-minesweeper-upgrade",
+      "done": "2026-05-07",
+      "notes": "Best-time per difficulty (localStorage), share button."
+    },
+    {
+      "id": "games-sudoku-upgrade",
+      "done": "2026-05-07",
+      "notes": "Best-time per difficulty (localStorage), share button, replaced alert() with proper fail-banner modal."
+    },
+    {
+      "id": "void-keeper-upgrade",
+      "done": "2026-05-07",
+      "notes": "High score (localStorage), best score in HUD, 'new best' on game over, 'click to play again' prompt, fixed nav to /games."
+    },
+    {
+      "id": "memory-match-upgrade",
+      "done": "2026-05-07",
+      "notes": "Best-time per grid size (localStorage), share button."
+    },
+    {
+      "id": "beat-lab-share",
+      "done": "2026-05-07",
+      "notes": "Share button on results screen."
+    },
+    {
+      "id": "versus-basilisk-v3-pro-vs-g502-x-plus",
+      "done": "2026-05-07",
+      "notes": "Basilisk V3 Pro vs G502 X Plus. Ergonomic vs utility. Focus Pro 30K vs HERO 25K. Grok research + Grok Imagine image."
+    },
+    {
+      "id": "roundup-wireless-headsets",
+      "done": "2026-05-07",
+      "notes": "5-tier wireless headset guide: Cloud Stinger Core, Arctis Nova 3, HS80, Pulse 3D, Arctis Nova Pro. 2.4GHz vs BT explainer."
+    },
+    {
+      "id": "versus-corsair-k100-vs-apex-pro-tkl",
+      "done": "2026-05-07",
+      "notes": "K100 RGB (8000Hz AXON, OPX optical) vs Apex Pro TKL (OmniPoint 2.0 Hall Effect, 0.2mm actuation). FPS vs versatility."
+    },
+    {
+      "id": "guide-best-gaming-chairs-upgrade",
+      "done": "2026-05-07",
+      "notes": "Added internal links to roundup guides (budget setup, FPS, keyboards, monitors) in chairs guide related section."
+    },
+    {
+      "id": "sitemap-update-2",
+      "done": "2026-05-07",
+      "notes": "Added corsair-k100-rgb-vs-steelseries-apex-pro-tkl. All new pages now indexed."
+    },
+    {
+      "id": "versus-monitor-2",
+      "done": "2026-05-07",
+      "notes": "ASUS ROG Swift PG279QM (240Hz Fast IPS) vs Dell S2722DGM (165Hz VA curved). 6 category breakdown, spec table, 4 key diffs, FAQ. Sitemap updated."
+    },
+    {
+      "id": "game-reaction-trainer",
+      "done": "2026-05-07",
+      "notes": "Reaction Time Trainer — 5-round click-when-green game. Grades S/A/B/C/D/F, personal best localStorage, share button, spacebar support, smooth CSS transitions."
+    },
+    {
+      "id": "game-fps-aim-trainer",
+      "done": "2026-05-07",
+      "notes": "FPS Aim Trainer — canvas target clicking game with 30/60/90s modes. Timer arcs, accuracy %, hits/sec, personal best, share button. Games hub updated."
+    },
+    {
+      "id": "versus-headset-3",
+      "done": "2026-05-07",
+      "notes": "Arctis Nova 7 vs Cloud Alpha Wireless: dual wireless + BT vs 300hr battery. 6-category breakdown, spec table, 4 key diffs, 6-question FAQ."
+    },
+    {
+      "id": "versus-mouse-3",
+      "done": "2026-05-07",
+      "notes": "Logitech G403 ($50, 87g, HERO 25K) vs Razer DeathAdder V3 ($70, 59g, Focus Pro 30K, optical switches). Budget ergonomic vs ultralight competitive. 6-category breakdown, 4 key diffs, 5-question FAQ."
+    },
+    {
+      "id": "guide-best-gaming-headsets-upgrade",
+      "done": "2026-05-07",
+      "notes": "Added quick-picks summary table (5 tiers at a glance). Added Nova 7 vs Cloud Alpha Wireless and wireless headsets guide links to comparisons section."
+    },
+    {
+      "id": "guide-best-gaming-mice-upgrade",
+      "done": "2026-05-07",
+      "notes": "Added quick-picks summary table with weight column. Added G403 vs DeathAdder V3 and Basilisk vs G502 X Plus links to comparisons section."
+    },
+    {
+      "id": "guide-best-gaming-keyboards-upgrade",
+      "done": "2026-05-07",
+      "notes": "Added 5-tier quick-picks table (switch type column). Added K100 vs Apex Pro TKL link and FPS guide link to comparisons section."
+    },
+    {
+      "id": "guide-best-gaming-monitors-upgrade",
+      "done": "2026-05-07",
+      "notes": "Added 5-tier quick-picks table (panel/Hz column). Added PG279QM vs S2722DGM link and FPS guide link to comparisons section."
+    },
+    {
+      "id": "game-color-memory",
+      "done": "2026-05-07",
+      "notes": "Simon Says color memory game. 4-color grid, sequence builds each round, dot progress visualizer, personal best, share. Games hub updated to 15 games."
+    },
+    {
+      "id": "versus-keyboard-budget",
+      "done": "2026-05-07",
+      "notes": "SteelSeries Apex 3 TKL ($45, Whisper Quiet Membrane, IP32, 10-zone RGB) vs Redragon K552 KUMARA ($40, Outemu Blue mechanical, metal alloy, red LED). Commit fb391a3."
+    },
+    {
+      "id": "versus-headset-4",
+      "done": "2026-05-07",
+      "notes": "Razer Kraken V3 ($99.99, wired, THX Spatial Audio, HyperClear Cardioid mic) vs Corsair HS65 Wireless ($99.99, 2.4GHz+BT, 24hr). Commit 8be24be."
+    },
+    {
+      "id": "versus-monitor-3",
+      "done": "2026-05-07",
+      "notes": "LG 27GP950-B ($699, 4K Nano IPS, 144Hz, 2x HDMI 2.1) vs Samsung Odyssey G7 ($549, 1440p 240Hz VA QLED, 1000R). Commit 03fc36c."
+    },
+    {
+      "id": "game-crossword",
+      "done": "2026-05-07",
+      "notes": "Daily 5x5 gaming crossword. 7 validated puzzles (all rows + col0 + col4 = valid gaming words), check/reveal/clear, streak tracking, personal best, share. Commit 079c648."
+    },
+    {
+      "id": "nav-fix",
+      "done": "2026-05-07",
+      "notes": "Created guides/index.html and versus/index.html (both were 404). Fixed nav on 29 files to include Guides/Comparisons/Games links. Added both index pages to sitemap. Commit bce20d1."
+    },
+    {
+      "id": "homepage-seo-update",
+      "done": "2026-05-07",
+      "notes": "Fixed cat-subnav dead links (daily-challenge→crossword, /tools/aim-trainer→/games/aim-trainer, reaction-time-test→reaction-trainer). Updated games count to 16. Refreshed arcade strip. Updated versus featured cards to newer comparisons + View All 18 CTA. Footer Compare+Play Free updated. Commit fb21d57."
+    },
+    {
+      "id": "game-upgrade-remaining",
+      "done": "2026-05-07",
+      "notes": "Full audit: all 16 games have appropriate restart/reset flows for their game type. Daily-seeded games (crossword, word-scramble, rift, gamerdle, pixle, gaming-trivia) have result modals with share+close. Arcade games (asteroid-dodge, void-keeper, type-racer, aim-trainer, reaction-trainer, beat-lab, memory-match, minesweeper, sudoku, color-memory) all have restart/play-again flows. No fixes needed."
+    },
+    {
+      "id": "versus-mouse-4",
+      "done": "2026-05-07",
+      "notes": "G502 X (~$60, HERO 25K LIGHTFORCE, 89g, 13 buttons, B0B6KWMF3X) vs Basilisk V3 (~$70, Focus+ 26K optical, 101g, SmartReel 4-mode scroll, B09J6XCCGX). Full versus page. Commit 8ff0ad9."
+    },
+    {
+      "id": "guide-best-gaming-setup-upgrade",
+      "done": "2026-05-07",
+      "notes": "Upgrade path table added (budget→upgrade per slot with cost+gain). Relevant Comparisons section with 4 versus cards. FAQ expanded 4→7 questions. Nav fixed from old site-header to site-nav. Footer updated. Commit d6042d2."
+    },
+    {
+      "id": "game-score-guesser",
+      "done": "2026-05-07",
+      "notes": "Gaming Gear Price Guesser — 28 products (headsets/mice/keyboards/monitors), 5 daily rounds seeded by Mulberry32 PRNG, Price is Right scoring (over=0pts, exact=100pts, progressive tiers). S/A/B/C/D/F grades, streak tracking, personal best, share with emoji grid, play-again random mode. Games hub updated to 18, sitemap updated."
+    },
+    {
+      "id": "guide-xbox-headsets",
+      "done": "2026-05-07",
+      "notes": "Xbox Series X/S headset guide: 5 picks (Stealth 600 Gen 3 $79 Xbox Wireless 80hr, Kaira Pro $149 Xbox Wireless+BT, Cloud II Wireless $149 2.4GHz multi-platform, Nova Pro X $349 hot-swap+ANC, HS35 $40 wired). Xbox Wireless vs BT vs 2.4GHz explainer table. Microsoft Spatial Sound FAQ. Added to guides index + sitemap."
+    },
+    {
+      "id": "versus-budget-monitor",
+      "done": "2026-05-08",
+      "notes": "AOC 27G2 (1080p 144Hz IPS ~$160) vs Gigabyte G27Q (1440p 165Hz IPS ~$230). 6-category breakdown, spec table, 4 key diffs, 5Q FAQ. FAQPage+Article schema. Added to versus index and sitemap. Commit 18f9849."
+    },
+    {
+      "id": "schema-faq-versus",
+      "done": "2026-05-08",
+      "notes": "FAQPage JSON-LD added to all 22 versus pages. 3-pattern parser (faq__question, faq-q, details/summary). Added FAQ sections to K100 vs Apex Pro TKL and Basilisk V3 Pro vs G502 X Plus. Commit d73a392."
+    },
+    {
+      "id": "homepage-arcade-strip-update",
+      "done": "2026-05-08",
+      "notes": "Price Guesser added to arcade strip and footer Play Free. Count updated to 20 games. Commit d73a392."
+    },
+    {
+      "id": "internal-links-pass2",
+      "done": "2026-05-08",
+      "notes": "Nova Pro vs Pulse 3D → PS5 guide link added. Keyboard guide → G915 vs K65 link added. G915 vs K65 already linked to keyboard guide. PS5 guide already had Nova Pro vs Pulse 3D link. Commit d73a392."
+    },
+    {
+      "id": "og-image-games",
+      "done": "2026-05-08",
+      "notes": "Already done in prior session commit 8c98d3a — VideoGame schema + og:image on all 19 game pages."
+    },
+    {
+      "id": "versus-gaming-chairs",
+      "done": "2026-05-08",
+      "notes": "Secretlab Titan Evo 2022 ($429) vs DXRacer Formula ($299). 6-category breakdown, spec table, 4 key diffs, 5Q FAQ. BreadcrumbList+Article+ItemList+FAQPage schema. Both affiliate links. Commit 9f87c65."
+    },
+    {
+      "id": "game-gear-quiz",
+      "done": "2026-05-08",
+      "notes": "Gaming Gear Knowledge Quiz (gear-quiz.html): 10 daily-seeded questions, SVG timer ring, speed bonus scoring, S-F grades, streak+PB, A/B/C/D keyboard shortcuts, share button. VideoGame schema. Games hub + sitemap updated. Commit 9f87c65."
+    },
+    {
+      "id": "guide-best-gaming-mice-fps",
+      "done": "2026-05-08",
+      "notes": "643-line guide: 5 FPS picks (Superlight 2/DeathAdder V3/Zowie EC2-C/Viper V2 Pro/G305), quick-picks table, polling rate explainer, pro stats callout, full schema. Cross-linked from mice guide. Commit f82bfa3."
+    },
+    {
+      "id": "versus-headset-wired-wireless",
+      "done": "2026-05-08",
+      "notes": "HyperX Cloud II ($99, wired, 7.1) vs SteelSeries Arctis Nova 7 Wireless ($179, 2.4GHz+BT, 38hr). 6-category, spec table, 5Q FAQ. Commit f82bfa3."
+    },
+    {
+      "id": "versus-mouse-wireless-budget",
+      "done": "2026-05-08",
+      "notes": "Logitech G305 ($40, 99g, 250hr) vs Razer DeathAdder V3 HyperSpeed ($70, 88g, 100hr). 6-category ergonomics vs value breakdown. Commit f82bfa3."
+    },
+    {
+      "id": "seo-guide-datemodified",
+      "done": "2026-05-08",
+      "notes": "All 10 guide pages updated dateModified to 2026-05-08. Commit 4045450."
+    },
+    {
+      "id": "homepage-versus-count-fix",
+      "done": "2026-05-08",
+      "notes": "Homepage count updated to 24 comparisons. Commit f82bfa3."
+    },
+    {
+      "id": "guide-1440p-monitors",
+      "done": "2026-05-08",
+      "notes": "5 WQHD picks $230-$549 (LG 27GP850-B, ASUS PG279QM, Samsung G7, AOC Q27G2, Gigabyte G27Q). Article+BreadcrumbList+ItemList+FAQPage schema. Cross-linked from monitors guide. Commit d05959e."
+    },
+    {
+      "id": "versus-keyboard-mid",
+      "done": "2026-05-08",
+      "notes": "Keychron K8 Pro (hot-swap, BT+2.4GHz, QMK, $89) vs Apex 7 TKL (OLED, OmniPoint 2.0, wired, $99). Full versus page + OG image generated. Commit d05959e."
+    },
+    {
+      "id": "guide-gaming-mouse-shapes",
+      "done": "2026-05-08",
+      "notes": "Palm/claw/fingertip grip breakdown, ergonomic vs ambidextrous, weight table, grip-specific picks with affiliate links. BreadcrumbList+Article+FAQPage schema. Added to guides index + sitemap. Commit d05959e."
+    },
+    {
+      "id": "game-daily-challenge-refresh",
+      "done": "2026-05-08",
+      "notes": "Mulberry32 PRNG seeded by YYYYMMDD. Challenge pool 7→34 (10 game categories: Aim Trainer, Reaction Trainer, Memory Match, Sudoku, Minesweeper, Type Racer, Void Keeper, Beat Lab, Gamerdle, Asteroid Dodge + more). og:title+og:description added. Broken hamburger JS removed. Sitemap priority bumped to 0.8. Commit 914d50f."
+    },
+    {
+      "id": "versus-headset-budget-wireless",
+      "done": "2026-05-08",
+      "notes": "Corsair HS65 Wireless ($99, 2.4GHz+BT, 24hr, SoundID, Tempest 3D) vs Logitech G435 ($79, LIGHTSPEED, 18hr, 165g ultra-light). 6-category breakdown, spec table, FAQPage+Article+BreadcrumbList+ItemList schemas. Affiliate links B09ZZM4T5T + B09BXKM9D5. OG image generated. Count 25→26. Commit 914d50f."
+    },
+    {
+      "id": "seo-versus-og-image-audit",
+      "done": "2026-05-08",
+      "notes": "Audited all 26 versus pages. 0 missing OG images — all image files exist in /images/. No fixes needed. Commit 914d50f."
+    },
+    {
+      "id": "guide-best-budget-headsets",
+      "done": "2026-05-08",
+      "notes": "5 picks $30-$50: Cloud Stinger 2/HS35/Kraken X/Arctis Nova 1/Cloud II. Quick-picks table, budget buying tips, BreadcrumbList+Article+ItemList+FAQPage schema. Added to guides index + sitemap. Link from best-gaming-headsets guide. Commit 3c8353e + f1cc58a."
+    },
+    {
+      "id": "versus-mouse-wireless-flagship",
+      "done": "2026-05-08",
+      "notes": "Superlight 2 (60g, HERO 25K, LIGHTSPEED, $160) vs DeathAdder V3 Pro (64g, Focus Pro 30K, HyperSpeed 2.4GHz+BT, $150). Full versus + FAQPage schema. OG image generated. Count 26→27. Commit 3c8353e."
+    },
+    {
+      "id": "seo-guide-faq-schema-audit",
+      "done": "2026-05-08",
+      "notes": "FAQPage JSON-LD added to 9 guide pages (4 patterns: faq__question, faq-q/faq-a, details/summary, div.faq-item>h3+p). 4-7 pairs per page. Commit 4b29b40."
+    },
+    {
+      "id": "internal-links-pass3",
+      "done": "2026-05-08",
+      "notes": "mice-2026→mouse-shape-guide, keyboards→keychron-vs-apex7, headsets→hs65-vs-g435+cloud-ii-vs-nova7. All other cross-links already present. Commit 99ea1af."
+    },
+    {
+      "id": "guide-ps5-monitors",
+      "done": "2026-05-08",
+      "notes": "5 picks: LG 27GP950-B (4K 144Hz, $399), Samsung G7 28\" (4K 144Hz, $549), LG C3 OLED 27\" (4K 120Hz OLED, $799), Gigabyte M27Q X (1440p 240Hz HDMI 2.1, $299), AOC 24G2 (1080p 144Hz, $159). HDMI 2.1/VRR/ALLM/HDR explainers. FAQPage+BreadcrumbList+Article+ItemList schema. Commit e51f7e2."
+    },
+    {
+      "id": "versus-headset-premium-wireless",
+      "done": "2026-05-08",
+      "notes": "Arctis Nova Pro Wireless ($350, hot-swap, ANC, ChatMix, parametric EQ) vs G Pro X 2 LIGHTSPEED ($250, Blue VO!CE, 50mm graphene drivers, 50hr). 6-category, FAQPage schema. Count 27→28. Commit e51f7e2."
+    },
     {
       "id": "seo-guide-faq-schema-audit",
       "type": "seo",
@@ -103,25 +415,347 @@
     }
   ],
   "loop_log": [
-    {"iteration": 1, "date": "2026-05-07", "tasks_completed": ["schema-guide-headsets","schema-guide-mice","schema-guide-keyboards","schema-guide-chairs","schema-guide-monitors","schema-versus-all","og-images-all","about-page"], "commits": ["dcd862c"], "notes": "Schema markup and og:images on all 11 guide/versus pages. About page."},
-    {"iteration": 2, "date": "2026-05-07", "tasks_completed": ["fix-amazon-links"], "commits": ["f9f0ba7"], "notes": "All 25 amazon.com/s?k= search URLs replaced with direct dp/ASIN links."},
-    {"iteration": 3, "date": "2026-05-07", "tasks_completed": ["versus-g502-vs-superlight2","versus-arctis-nova-pro-vs-sony-pulse-3d","versus-razer-huntsman-v3-vs-wooting-60he","versus-asus-vg279qm-vs-lg-27gp850","games-ux-fixes"], "commits": ["0800793","9b55738","76ac9d3"], "notes": "4 new versus pages. Games UX fixes."},
-    {"iteration": 4, "date": "2026-05-07", "tasks_completed": ["game-word-scramble","game-gaming-trivia","game-type-racer","game-asteroid-dodge","internal-links-audit","sitemap-update"], "commits": ["b27e79d","667323f"], "notes": "4 new games. Internal links. Sitemap updated."},
-    {"iteration": 5, "date": "2026-05-07", "tasks_completed": ["roundup-budget-setup-500","roundup-fps-setup","games-hub-page","games-minesweeper-upgrade","games-sudoku-upgrade","void-keeper-upgrade","memory-match-upgrade","beat-lab-share","versus-basilisk-v3-pro-vs-g502-x-plus","roundup-wireless-headsets","versus-corsair-k100-vs-apex-pro-tkl","guide-best-gaming-chairs-upgrade","sitemap-update-2"], "commits": [], "notes": "3 roundup guides, games hub, 5 game upgrades, 2 versus pages."},
-    {"iteration": 6, "date": "2026-05-07", "tasks_completed": ["versus-monitor-2","game-reaction-trainer","game-fps-aim-trainer","versus-headset-3","versus-mouse-3","guide-best-gaming-headsets-upgrade","guide-best-gaming-mice-upgrade","guide-best-gaming-keyboards-upgrade","guide-best-gaming-monitors-upgrade","game-color-memory"], "commits": ["180c287","c7c39f2","27772a6","e1d1af2","93387d6","5a431f1","bfdb84b"], "notes": "Monitor-2, 2 new games, headset-3, mouse-3, quick-picks tables, color-memory."},
-    {"iteration": 7, "date": "2026-05-07", "tasks_completed": ["versus-keyboard-budget","versus-headset-4","versus-monitor-3","game-crossword","nav-fix"], "commits": ["fb391a3","8be24be","03fc36c","079c648","bce20d1"], "notes": "3 versus pages (keyboard budget, headset-4, monitor-3). Daily crossword game (7 validated puzzles). Nav overhaul: guides/index.html, versus/index.html, consistent nav on 29 files."},
-    {"iteration": 8, "date": "2026-05-07", "tasks_completed": ["homepage-seo-update","game-upgrade-remaining"], "commits": ["fb21d57"], "notes": "Homepage: cat-subnav dead links fixed, games count updated to 16, arcade strip updated, versus section refreshed with newer comparisons + View All CTA, footer updated. Game audit: all 16 games confirmed to have appropriate restart flows."},
-    {"iteration": 9, "date": "2026-05-07", "tasks_completed": ["versus-mouse-4"], "commits": ["8ff0ad9"], "notes": "G502 X (~$60, HERO 25K LIGHTFORCE, 89g, 13 buttons) vs Basilisk V3 (~$70, Focus+ 26K optical, 101g, SmartReel 4-mode scroll). Full versus page. Verdict: G502 X for value+switches, Basilisk V3 for scroll+RGB. Homepage count updated to 19 comparisons."},
-    {"iteration": 10, "date": "2026-05-07", "tasks_completed": ["fps-guide-nav-fix","orphan-pages-audit","guide-best-gaming-setup-upgrade"], "commits": ["d6042d2","c13aad4"], "notes": "FPS guide: nav fixed, related section + 3 versus cards. Budget guide: upgrade table, 4 versus links, FAQ 4→7, nav fixed. daily-challenge.html: nav fixed, added to games hub (17 games), added to sitemap. dream-machine: left in /lab, correct location."},
-    {"iteration": 11, "date": "2026-05-07", "tasks_completed": ["guide-ps5-headsets"], "commits": ["f4d60d6"], "notes": "PS5 headset guide: 5 picks (Pulse 3D $99, Pulse Elite $149, Cloud Alpha Wireless $200, HS80 $149, Nova Pro Wireless $350). Connection hierarchy table (USB-native > 2.4GHz > BT > 3.5mm). Quick-picks table. 5-question FAQ. Added to guides index + sitemap."},
-    {"iteration": 12, "date": "2026-05-07", "tasks_completed": ["versus-keyboard-wireless"], "commits": ["a46e4a4"], "notes": "G915 TKL (LIGHTSPEED+BT 5.1, GL low-profile, 40hr RGB, ~$160) vs K65 RGB Wireless (AXON, Cherry MX Speed, 75hr RGB, ~$140). Full versus page. Homepage count updated to 20 comparisons."},
-    {"iteration": 13, "date": "2026-05-07", "tasks_completed": ["game-score-guesser"], "commits": ["d8cdca1"], "notes": "Gaming Gear Price Guesser: 28-product database, daily seeded 5 rounds (Mulberry32 PRNG), Price is Right scoring, S-F grades, streak+PB tracking, share button with emoji grid. Games hub: 17→18. Homepage: 17→18. Sitemap updated."},
-    {"iteration": 14, "date": "2026-05-07", "tasks_completed": ["guide-xbox-headsets"], "commits": [], "notes": "Xbox Series X/S headset guide: Stealth 600 Gen 3 (#1 value), Kaira Pro (#2 mid-range), Cloud II Wireless (#3 multi-platform), Nova Pro X (#4 premium), HS35 (#5 budget wired). Xbox Wireless protocol explainer. FAQPage JSON-LD schema included. Added to guides index + sitemap."},
-    {"iteration": 15, "date": "2026-05-08", "tasks_completed": ["versus-budget-monitor","schema-faq-versus","homepage-arcade-strip-update","internal-links-pass2","og-image-games","versus-gaming-chairs","game-gear-quiz"], "commits": ["18f9849","d73a392","9f87c65"], "notes": "AOC 27G2 vs G27Q versus page. FAQPage JSON-LD on all 22 versus pages (3-pattern extraction + manual FAQ sections for 2 pages). Price Guesser on homepage arcade strip + footer. Internal links: Nova Pro vs Pulse 3D <-> PS5 guide, keyboards guide <-> G915 vs K65. Chair versus: Titan Evo vs DXRacer Formula. Gear Quiz game: 10Q daily seeded, SVG timer, speed scoring. Queue refreshed with 6 new tasks."},
-    {"iteration": 16, "date": "2026-05-08", "tasks_completed": ["guide-best-gaming-mice-fps","versus-headset-wired-wireless","versus-mouse-wireless-budget","seo-guide-datemodified","homepage-versus-count-fix"], "commits": ["4045450","f82bfa3"], "notes": "FPS mice guide (643 lines, 5 picks, polling explainer, pro stats). HyperX Cloud II vs Nova 7 Wireless. G305 vs DeathAdder V3 HyperSpeed. dateModified updated on all 10 guides. Comparison count 22→24. Queue has 5 new tasks."},
-    {"iteration": 17, "date": "2026-05-08", "tasks_completed": ["guide-1440p-monitors","versus-keyboard-mid","guide-gaming-mouse-shapes"], "commits": ["d05959e"], "notes": "3 content pages: Best 1440p Gaming Monitors guide (5 WQHD picks), Keychron K8 Pro vs Apex 7 TKL versus, Gaming Mouse Shape Guide (grip styles + recommendations). 2 canvas OG images generated. guides/index.html + sitemap updated. Count now 25 comparisons."},
-    {"iteration": 18, "date": "2026-05-08", "tasks_completed": ["game-daily-challenge-refresh","versus-headset-budget-wireless","seo-versus-og-image-audit"], "commits": ["914d50f"], "notes": "Daily challenge: Mulberry32 PRNG + pool 7→34 challenges. HS65 Wireless vs G435 LIGHTSPEED versus page (budget wireless headset). OG image audit: all 26 versus pages clean. Queue cleared + 7 new tasks generated."},
-    {"iteration": 19, "date": "2026-05-08", "tasks_completed": ["guide-best-budget-headsets","versus-mouse-wireless-flagship","seo-guide-faq-schema-audit","internal-links-pass3"], "commits": ["4b29b40","99ea1af","3c8353e","f1cc58a"], "notes": "Budget headsets guide (5 picks $30-$50). Superlight 2 vs DAV3 Pro flagship wireless versus. FAQPage schema on all 9 remaining guides. Internal links pass 3 (3 files updated). Count now 27 comparisons."},
-    {"iteration": 20, "date": "2026-05-08", "tasks_completed": ["guide-ps5-monitors","versus-headset-premium-wireless"], "commits": ["e51f7e2"], "notes": "PS5 monitors guide: 5 picks with HDMI 2.1/VRR/HDR explainers, added to guides index. Nova Pro Wireless vs G Pro X 2 LIGHTSPEED versus: $350 audiophile vs $250 esports mic. Count 28 comparisons. Queue has 3 tasks remaining."}
+    {
+      "iteration": 1,
+      "date": "2026-05-07",
+      "tasks_completed": [
+        "schema-guide-headsets",
+        "schema-guide-mice",
+        "schema-guide-keyboards",
+        "schema-guide-chairs",
+        "schema-guide-monitors",
+        "schema-versus-all",
+        "og-images-all",
+        "about-page"
+      ],
+      "commits": [
+        "dcd862c"
+      ],
+      "notes": "Schema markup and og:images on all 11 guide/versus pages. About page."
+    },
+    {
+      "iteration": 2,
+      "date": "2026-05-07",
+      "tasks_completed": [
+        "fix-amazon-links"
+      ],
+      "commits": [
+        "f9f0ba7"
+      ],
+      "notes": "All 25 amazon.com/s?k= search URLs replaced with direct dp/ASIN links."
+    },
+    {
+      "iteration": 3,
+      "date": "2026-05-07",
+      "tasks_completed": [
+        "versus-g502-vs-superlight2",
+        "versus-arctis-nova-pro-vs-sony-pulse-3d",
+        "versus-razer-huntsman-v3-vs-wooting-60he",
+        "versus-asus-vg279qm-vs-lg-27gp850",
+        "games-ux-fixes"
+      ],
+      "commits": [
+        "0800793",
+        "9b55738",
+        "76ac9d3"
+      ],
+      "notes": "4 new versus pages. Games UX fixes."
+    },
+    {
+      "iteration": 4,
+      "date": "2026-05-07",
+      "tasks_completed": [
+        "game-word-scramble",
+        "game-gaming-trivia",
+        "game-type-racer",
+        "game-asteroid-dodge",
+        "internal-links-audit",
+        "sitemap-update"
+      ],
+      "commits": [
+        "b27e79d",
+        "667323f"
+      ],
+      "notes": "4 new games. Internal links. Sitemap updated."
+    },
+    {
+      "iteration": 5,
+      "date": "2026-05-07",
+      "tasks_completed": [
+        "roundup-budget-setup-500",
+        "roundup-fps-setup",
+        "games-hub-page",
+        "games-minesweeper-upgrade",
+        "games-sudoku-upgrade",
+        "void-keeper-upgrade",
+        "memory-match-upgrade",
+        "beat-lab-share",
+        "versus-basilisk-v3-pro-vs-g502-x-plus",
+        "roundup-wireless-headsets",
+        "versus-corsair-k100-vs-apex-pro-tkl",
+        "guide-best-gaming-chairs-upgrade",
+        "sitemap-update-2"
+      ],
+      "commits": [],
+      "notes": "3 roundup guides, games hub, 5 game upgrades, 2 versus pages."
+    },
+    {
+      "iteration": 6,
+      "date": "2026-05-07",
+      "tasks_completed": [
+        "versus-monitor-2",
+        "game-reaction-trainer",
+        "game-fps-aim-trainer",
+        "versus-headset-3",
+        "versus-mouse-3",
+        "guide-best-gaming-headsets-upgrade",
+        "guide-best-gaming-mice-upgrade",
+        "guide-best-gaming-keyboards-upgrade",
+        "guide-best-gaming-monitors-upgrade",
+        "game-color-memory"
+      ],
+      "commits": [
+        "180c287",
+        "c7c39f2",
+        "27772a6",
+        "e1d1af2",
+        "93387d6",
+        "5a431f1",
+        "bfdb84b"
+      ],
+      "notes": "Monitor-2, 2 new games, headset-3, mouse-3, quick-picks tables, color-memory."
+    },
+    {
+      "iteration": 7,
+      "date": "2026-05-07",
+      "tasks_completed": [
+        "versus-keyboard-budget",
+        "versus-headset-4",
+        "versus-monitor-3",
+        "game-crossword",
+        "nav-fix"
+      ],
+      "commits": [
+        "fb391a3",
+        "8be24be",
+        "03fc36c",
+        "079c648",
+        "bce20d1"
+      ],
+      "notes": "3 versus pages (keyboard budget, headset-4, monitor-3). Daily crossword game (7 validated puzzles). Nav overhaul: guides/index.html, versus/index.html, consistent nav on 29 files."
+    },
+    {
+      "iteration": 8,
+      "date": "2026-05-07",
+      "tasks_completed": [
+        "homepage-seo-update",
+        "game-upgrade-remaining"
+      ],
+      "commits": [
+        "fb21d57"
+      ],
+      "notes": "Homepage: cat-subnav dead links fixed, games count updated to 16, arcade strip updated, versus section refreshed with newer comparisons + View All CTA, footer updated. Game audit: all 16 games confirmed to have appropriate restart flows."
+    },
+    {
+      "iteration": 9,
+      "date": "2026-05-07",
+      "tasks_completed": [
+        "versus-mouse-4"
+      ],
+      "commits": [
+        "8ff0ad9"
+      ],
+      "notes": "G502 X (~$60, HERO 25K LIGHTFORCE, 89g, 13 buttons) vs Basilisk V3 (~$70, Focus+ 26K optical, 101g, SmartReel 4-mode scroll). Full versus page. Verdict: G502 X for value+switches, Basilisk V3 for scroll+RGB. Homepage count updated to 19 comparisons."
+    },
+    {
+      "iteration": 10,
+      "date": "2026-05-07",
+      "tasks_completed": [
+        "fps-guide-nav-fix",
+        "orphan-pages-audit",
+        "guide-best-gaming-setup-upgrade"
+      ],
+      "commits": [
+        "d6042d2",
+        "c13aad4"
+      ],
+      "notes": "FPS guide: nav fixed, related section + 3 versus cards. Budget guide: upgrade table, 4 versus links, FAQ 4→7, nav fixed. daily-challenge.html: nav fixed, added to games hub (17 games), added to sitemap. dream-machine: left in /lab, correct location."
+    },
+    {
+      "iteration": 11,
+      "date": "2026-05-07",
+      "tasks_completed": [
+        "guide-ps5-headsets"
+      ],
+      "commits": [
+        "f4d60d6"
+      ],
+      "notes": "PS5 headset guide: 5 picks (Pulse 3D $99, Pulse Elite $149, Cloud Alpha Wireless $200, HS80 $149, Nova Pro Wireless $350). Connection hierarchy table (USB-native > 2.4GHz > BT > 3.5mm). Quick-picks table. 5-question FAQ. Added to guides index + sitemap."
+    },
+    {
+      "iteration": 12,
+      "date": "2026-05-07",
+      "tasks_completed": [
+        "versus-keyboard-wireless"
+      ],
+      "commits": [
+        "a46e4a4"
+      ],
+      "notes": "G915 TKL (LIGHTSPEED+BT 5.1, GL low-profile, 40hr RGB, ~$160) vs K65 RGB Wireless (AXON, Cherry MX Speed, 75hr RGB, ~$140). Full versus page. Homepage count updated to 20 comparisons."
+    },
+    {
+      "iteration": 13,
+      "date": "2026-05-07",
+      "tasks_completed": [
+        "game-score-guesser"
+      ],
+      "commits": [
+        "d8cdca1"
+      ],
+      "notes": "Gaming Gear Price Guesser: 28-product database, daily seeded 5 rounds (Mulberry32 PRNG), Price is Right scoring, S-F grades, streak+PB tracking, share button with emoji grid. Games hub: 17→18. Homepage: 17→18. Sitemap updated."
+    },
+    {
+      "iteration": 14,
+      "date": "2026-05-07",
+      "tasks_completed": [
+        "guide-xbox-headsets"
+      ],
+      "commits": [],
+      "notes": "Xbox Series X/S headset guide: Stealth 600 Gen 3 (#1 value), Kaira Pro (#2 mid-range), Cloud II Wireless (#3 multi-platform), Nova Pro X (#4 premium), HS35 (#5 budget wired). Xbox Wireless protocol explainer. FAQPage JSON-LD schema included. Added to guides index + sitemap."
+    },
+    {
+      "iteration": 15,
+      "date": "2026-05-08",
+      "tasks_completed": [
+        "versus-budget-monitor",
+        "schema-faq-versus",
+        "homepage-arcade-strip-update",
+        "internal-links-pass2",
+        "og-image-games",
+        "versus-gaming-chairs",
+        "game-gear-quiz"
+      ],
+      "commits": [
+        "18f9849",
+        "d73a392",
+        "9f87c65"
+      ],
+      "notes": "AOC 27G2 vs G27Q versus page. FAQPage JSON-LD on all 22 versus pages (3-pattern extraction + manual FAQ sections for 2 pages). Price Guesser on homepage arcade strip + footer. Internal links: Nova Pro vs Pulse 3D <-> PS5 guide, keyboards guide <-> G915 vs K65. Chair versus: Titan Evo vs DXRacer Formula. Gear Quiz game: 10Q daily seeded, SVG timer, speed scoring. Queue refreshed with 6 new tasks."
+    },
+    {
+      "iteration": 16,
+      "date": "2026-05-08",
+      "tasks_completed": [
+        "guide-best-gaming-mice-fps",
+        "versus-headset-wired-wireless",
+        "versus-mouse-wireless-budget",
+        "seo-guide-datemodified",
+        "homepage-versus-count-fix"
+      ],
+      "commits": [
+        "4045450",
+        "f82bfa3"
+      ],
+      "notes": "FPS mice guide (643 lines, 5 picks, polling explainer, pro stats). HyperX Cloud II vs Nova 7 Wireless. G305 vs DeathAdder V3 HyperSpeed. dateModified updated on all 10 guides. Comparison count 22→24. Queue has 5 new tasks."
+    },
+    {
+      "iteration": 17,
+      "date": "2026-05-08",
+      "tasks_completed": [
+        "guide-1440p-monitors",
+        "versus-keyboard-mid",
+        "guide-gaming-mouse-shapes"
+      ],
+      "commits": [
+        "d05959e"
+      ],
+      "notes": "3 content pages: Best 1440p Gaming Monitors guide (5 WQHD picks), Keychron K8 Pro vs Apex 7 TKL versus, Gaming Mouse Shape Guide (grip styles + recommendations). 2 canvas OG images generated. guides/index.html + sitemap updated. Count now 25 comparisons."
+    },
+    {
+      "iteration": 18,
+      "date": "2026-05-08",
+      "tasks_completed": [
+        "game-daily-challenge-refresh",
+        "versus-headset-budget-wireless",
+        "seo-versus-og-image-audit"
+      ],
+      "commits": [
+        "914d50f"
+      ],
+      "notes": "Daily challenge: Mulberry32 PRNG + pool 7→34 challenges. HS65 Wireless vs G435 LIGHTSPEED versus page (budget wireless headset). OG image audit: all 26 versus pages clean. Queue cleared + 7 new tasks generated."
+    },
+    {
+      "iteration": 19,
+      "date": "2026-05-08",
+      "tasks_completed": [
+        "guide-best-budget-headsets",
+        "versus-mouse-wireless-flagship",
+        "seo-guide-faq-schema-audit",
+        "internal-links-pass3"
+      ],
+      "commits": [
+        "4b29b40",
+        "99ea1af",
+        "3c8353e",
+        "f1cc58a"
+      ],
+      "notes": "Budget headsets guide (5 picks $30-$50). Superlight 2 vs DAV3 Pro flagship wireless versus. FAQPage schema on all 9 remaining guides. Internal links pass 3 (3 files updated). Count now 27 comparisons."
+    },
+    {
+      "iteration": 20,
+      "date": "2026-05-08",
+      "tasks_completed": [
+        "guide-ps5-monitors",
+        "versus-headset-premium-wireless"
+      ],
+      "commits": [
+        "e51f7e2"
+      ],
+      "notes": "PS5 monitors guide: 5 picks with HDMI 2.1/VRR/HDR explainers, added to guides index. Nova Pro Wireless vs G Pro X 2 LIGHTSPEED versus: $350 audiophile vs $250 esports mic. Count 28 comparisons. Queue has 3 tasks remaining."
+    }
+  ],
+  "queue": [
+    {
+      "id": "game-spec-match",
+      "type": "new-page",
+      "priority": 1,
+      "title": "Game: Spec Match - daily hardware identification game",
+      "description": "Show specs, pick the matching product from 4 options. 5 rounds daily seeded Mulberry32. Speed scoring, streak bonus, S-F grades, share button, PB. Games hub + sitemap. VideoGame schema."
+    },
+    {
+      "id": "versus-keyboard-premium",
+      "type": "new-page",
+      "priority": 1,
+      "title": "Versus: Wooting 60HE+ vs Razer Huntsman V3 Pro TKL",
+      "description": "Hall Effect rapid-trigger vs optical analog: Wooting 60HE+ ($175, 60%, SOCD) vs Huntsman V3 Pro TKL ($200, TKL, media keys). Compact vs full-featured analog."
+    },
+    {
+      "id": "guide-gaming-keyboard-switches",
+      "type": "new-page",
+      "priority": 2,
+      "title": "Guide: Gaming Keyboard Switches Explained 2026",
+      "description": "Membrane vs mechanical vs optical vs Hall Effect. Cherry MX vs Gateron vs Outemu vs Kailh. Linear vs tactile vs clicky. Rapid trigger explained. Affiliate picks per category."
+    },
+    {
+      "id": "versus-monitor-4k-battle",
+      "type": "new-page",
+      "priority": 2,
+      "title": "Versus: LG 27GP950-B vs Samsung Odyssey G7 28\"",
+      "description": "4K battle: LG 27GP950-B (Nano IPS 144Hz HDR600) vs Samsung G7 28\" (IPS 144Hz HDR400). Same res/Hz, different panel and HDR."
+    },
+    {
+      "id": "seo-homepage-refresh",
+      "type": "seo",
+      "priority": 2,
+      "title": "SEO: Homepage refresh - featured cards + guide/game counts",
+      "description": "Update homepage: featured versus cards, guide count (15+), games count, hero meta. Consider adding guides section spotlighting newest guides."
+    },
+    {
+      "id": "internal-links-pass4",
+      "type": "seo",
+      "priority": 3,
+      "title": "SEO: Internal links audit pass 4",
+      "description": "Wire PS5 monitors guide, Nova Pro vs G Pro X 2, budget headsets guide, Superlight 2 vs DAV3 Pro into content graph."
+    }
   ]
 }
