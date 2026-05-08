@@ -73,23 +73,11 @@
     {"id": "guide-gaming-mouse-shapes", "done": "2026-05-08", "notes": "Palm/claw/fingertip grip breakdown, ergonomic vs ambidextrous, weight table, grip-specific picks with affiliate links. BreadcrumbList+Article+FAQPage schema. Added to guides index + sitemap. Commit d05959e."},
     {"id": "game-daily-challenge-refresh", "done": "2026-05-08", "notes": "Mulberry32 PRNG seeded by YYYYMMDD. Challenge pool 7→34 (10 game categories: Aim Trainer, Reaction Trainer, Memory Match, Sudoku, Minesweeper, Type Racer, Void Keeper, Beat Lab, Gamerdle, Asteroid Dodge + more). og:title+og:description added. Broken hamburger JS removed. Sitemap priority bumped to 0.8. Commit 914d50f."},
     {"id": "versus-headset-budget-wireless", "done": "2026-05-08", "notes": "Corsair HS65 Wireless ($99, 2.4GHz+BT, 24hr, SoundID, Tempest 3D) vs Logitech G435 ($79, LIGHTSPEED, 18hr, 165g ultra-light). 6-category breakdown, spec table, FAQPage+Article+BreadcrumbList+ItemList schemas. Affiliate links B09ZZM4T5T + B09BXKM9D5. OG image generated. Count 25→26. Commit 914d50f."},
-    {"id": "seo-versus-og-image-audit", "done": "2026-05-08", "notes": "Audited all 26 versus pages. 0 missing OG images — all image files exist in /images/. No fixes needed. Commit 914d50f."}
-  ],
-  "queue": [
-    {
-      "id": "guide-best-budget-headsets",
-      "type": "new-page",
-      "priority": 1,
-      "title": "Guide: Best Budget Gaming Headsets Under $50",
-      "description": "5 picks under $50: HyperX Cloud Stinger 2 ($30), Corsair HS35 ($35), Razer Kraken X ($40), SteelSeries Arctis Nova 1 ($40), HyperX Cloud II ($50 at sale). Wired focus. Sound leakage, mic quality, comfort for marathon sessions. Budget vs value chart."
-    },
-    {
-      "id": "versus-mouse-wireless-flagship",
-      "type": "new-page",
-      "priority": 1,
-      "title": "Versus: Logitech G Pro X Superlight 2 vs Razer DeathAdder V3 Pro",
-      "description": "Wireless flagship mice: Superlight 2 ($160, 60g, HERO 25K, LIGHTSPEED) vs DeathAdder V3 Pro ($150, 64g, Focus Pro 30K, HyperSpeed Wireless). The two lightest wireless ergonomics. 6-category breakdown."
-    },
+    {"id": "seo-versus-og-image-audit", "done": "2026-05-08", "notes": "Audited all 26 versus pages. 0 missing OG images — all image files exist in /images/. No fixes needed. Commit 914d50f."},
+    {"id": "guide-best-budget-headsets", "done": "2026-05-08", "notes": "5 picks $30-$50: Cloud Stinger 2/HS35/Kraken X/Arctis Nova 1/Cloud II. Quick-picks table, budget buying tips, BreadcrumbList+Article+ItemList+FAQPage schema. Added to guides index + sitemap. Link from best-gaming-headsets guide. Commit 3c8353e + f1cc58a."},
+    {"id": "versus-mouse-wireless-flagship", "done": "2026-05-08", "notes": "Superlight 2 (60g, HERO 25K, LIGHTSPEED, $160) vs DeathAdder V3 Pro (64g, Focus Pro 30K, HyperSpeed 2.4GHz+BT, $150). Full versus + FAQPage schema. OG image generated. Count 26→27. Commit 3c8353e."},
+    {"id": "seo-guide-faq-schema-audit", "done": "2026-05-08", "notes": "FAQPage JSON-LD added to 9 guide pages (4 patterns: faq__question, faq-q/faq-a, details/summary, div.faq-item>h3+p). 4-7 pairs per page. Commit 4b29b40."},
+    {"id": "internal-links-pass3", "done": "2026-05-08", "notes": "mice-2026→mouse-shape-guide, keyboards→keychron-vs-apex7, headsets→hs65-vs-g435+cloud-ii-vs-nova7. All other cross-links already present. Commit 99ea1af."},
     {
       "id": "guide-ps5-monitors",
       "type": "new-page",
@@ -144,6 +132,7 @@
     {"iteration": 15, "date": "2026-05-08", "tasks_completed": ["versus-budget-monitor","schema-faq-versus","homepage-arcade-strip-update","internal-links-pass2","og-image-games","versus-gaming-chairs","game-gear-quiz"], "commits": ["18f9849","d73a392","9f87c65"], "notes": "AOC 27G2 vs G27Q versus page. FAQPage JSON-LD on all 22 versus pages (3-pattern extraction + manual FAQ sections for 2 pages). Price Guesser on homepage arcade strip + footer. Internal links: Nova Pro vs Pulse 3D <-> PS5 guide, keyboards guide <-> G915 vs K65. Chair versus: Titan Evo vs DXRacer Formula. Gear Quiz game: 10Q daily seeded, SVG timer, speed scoring. Queue refreshed with 6 new tasks."},
     {"iteration": 16, "date": "2026-05-08", "tasks_completed": ["guide-best-gaming-mice-fps","versus-headset-wired-wireless","versus-mouse-wireless-budget","seo-guide-datemodified","homepage-versus-count-fix"], "commits": ["4045450","f82bfa3"], "notes": "FPS mice guide (643 lines, 5 picks, polling explainer, pro stats). HyperX Cloud II vs Nova 7 Wireless. G305 vs DeathAdder V3 HyperSpeed. dateModified updated on all 10 guides. Comparison count 22→24. Queue has 5 new tasks."},
     {"iteration": 17, "date": "2026-05-08", "tasks_completed": ["guide-1440p-monitors","versus-keyboard-mid","guide-gaming-mouse-shapes"], "commits": ["d05959e"], "notes": "3 content pages: Best 1440p Gaming Monitors guide (5 WQHD picks), Keychron K8 Pro vs Apex 7 TKL versus, Gaming Mouse Shape Guide (grip styles + recommendations). 2 canvas OG images generated. guides/index.html + sitemap updated. Count now 25 comparisons."},
-    {"iteration": 18, "date": "2026-05-08", "tasks_completed": ["game-daily-challenge-refresh","versus-headset-budget-wireless","seo-versus-og-image-audit"], "commits": ["914d50f"], "notes": "Daily challenge: Mulberry32 PRNG + pool 7→34 challenges. HS65 Wireless vs G435 LIGHTSPEED versus page (budget wireless headset). OG image audit: all 26 versus pages clean. Queue cleared + 7 new tasks generated."}
+    {"iteration": 18, "date": "2026-05-08", "tasks_completed": ["game-daily-challenge-refresh","versus-headset-budget-wireless","seo-versus-og-image-audit"], "commits": ["914d50f"], "notes": "Daily challenge: Mulberry32 PRNG + pool 7→34 challenges. HS65 Wireless vs G435 LIGHTSPEED versus page (budget wireless headset). OG image audit: all 26 versus pages clean. Queue cleared + 7 new tasks generated."},
+    {"iteration": 19, "date": "2026-05-08", "tasks_completed": ["guide-best-budget-headsets","versus-mouse-wireless-flagship","seo-guide-faq-schema-audit","internal-links-pass3"], "commits": ["4b29b40","99ea1af","3c8353e","f1cc58a"], "notes": "Budget headsets guide (5 picks $30-$50). Superlight 2 vs DAV3 Pro flagship wireless versus. FAQPage schema on all 9 remaining guides. Internal links pass 3 (3 files updated). Count now 27 comparisons."}
   ]
 }
