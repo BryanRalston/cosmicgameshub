@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-D272MF8NQP"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-D272MF8NQP');
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gaming Gear Knowledge Quiz — CosmicGamesHub</title>
+  <meta name="description" content="Test your gaming gear IQ. 10 daily questions about real headsets, mice, keyboards, monitors, and chairs. Speed bonus scoring, S–F grade, personal best tracking." />
+  <meta property="og:title" content="Gaming Gear Knowledge Quiz — CosmicGamesHub" />
+  <meta property="og:description" content="How well do you know your gaming gear? 10 questions about real specs and brands. Speed bonus scoring — faster answers score more." />
+  <meta property="og:image" content="https://cosmicgameshub.com/images/game-gear-quiz.jpg" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://cosmicgameshub.com/games/gear-quiz" />
+  <meta property="og:site_name" content="CosmicGamesHub" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@CosmicGamesHub" />
+  <meta name="twitter:title" content="Gaming Gear Knowledge Quiz — CosmicGamesHub" />
+  <meta name="twitter:description" content="10 daily questions about real gaming gear specs and brands. Speed bonus scoring, S–F grade." />
+  <meta name="twitter:image" content="https://cosmicgameshub.com/images/game-gear-quiz.jpg" />
+  <link rel="canonical" href="https://cosmicgameshub.com/games/gear-quiz" />
+  <link rel="stylesheet" href="../styles.css" />
+  <style>
+    .gq-wrap {
+      max-width: 620px;
+      margin: 0 auto;
+      padding: 0 1rem;
+    }
+    .gq-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      margin-bottom: 1.5rem;
+    }
+    .gq-back:hover { color: var(--accent); }
+    .gq-title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0 0 0.3rem;
+    }
+    .gq-subtitle {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin: 0 0 1.75rem;
+    }
+
+    /* Progress bar */
+    .gq-progress-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 0.6rem;
+    }
+    .gq-progress-bar-wrap {
+      flex: 1;
+      height: 6px;
+      background: rgba(255,255,255,0.07);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .gq-progress-bar {
+      height: 100%;
+      background: var(--accent, #00d4ff);
+      border-radius: 3px;
+      transition: width 0.35s ease;
+      width: 0%;
+    }
+    .gq-q-label {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Timer ring */
+    .gq-timer-wrap {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 1.25rem;
+    }
+    .gq-timer-svg {
+      transform: rotate(-90deg);
+    }
+    .gq-timer-bg {
+      fill: none;
+      stroke: rgba(255,255,255,0.07);
+      stroke-width: 5;
+    }
+    .gq-timer-arc {
+      fill: none;
+      stroke: var(--accent, #00d4ff);
+      stroke-width: 5;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.25s linear, stroke 0.3s;
+    }
+    .gq-timer-text {
+      font-size: 1.15rem;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      dominant-baseline: central;
+      text-anchor: middle;
+      transform: rotate(90deg);
+      transform-origin: center;
+    }
+
+    /* Question card */
+    .gq-card {
+      background: var(--bg-surface, rgba(255,255,255,0.025));
+      border: 1px solid var(--border, rgba(255,255,255,0.08));
+      border-radius: 16px;
+      padding: 1.5rem 1.5rem 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+    .gq-category {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent, #00d4ff);
+      margin-bottom: 0.65rem;
+    }
+    .gq-question {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text-primary, #fff);
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    /* Choices */
+    .gq-choices {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.65rem;
+      margin-bottom: 1rem;
+    }
+    .gq-choice {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 0.7rem 0.9rem;
+      cursor: pointer;
+      font-size: 0.88rem;
+      color: var(--text-primary, #fff);
+      font-family: inherit;
+      text-align: left;
+      transition: background 0.13s, border-color 0.13s, transform 0.1s;
+      line-height: 1.35;
+    }
+    .gq-choice:hover:not(:disabled) {
+      background: rgba(0,212,255,0.08);
+      border-color: rgba(0,212,255,0.35);
+    }
+    .gq-choice:active:not(:disabled) { transform: scale(0.98); }
+    .gq-choice__key {
+      flex-shrink: 0;
+      width: 24px;
+      height: 24px;
+      background: rgba(255,255,255,0.07);
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .gq-choice--correct {
+      background: rgba(34,211,110,0.12) !important;
+      border-color: rgba(34,211,110,0.5) !important;
+    }
+    .gq-choice--correct .gq-choice__key {
+      background: rgba(34,211,110,0.25);
+      color: #22d36e;
+    }
+    .gq-choice--wrong {
+      background: rgba(239,68,68,0.1) !important;
+      border-color: rgba(239,68,68,0.4) !important;
+    }
+    .gq-choice--wrong .gq-choice__key {
+      background: rgba(239,68,68,0.2);
+      color: #ef4444;
+    }
+    .gq-choice--dim {
+      opacity: 0.35;
+    }
+
+    /* Feedback bar */
+    .gq-feedback {
+      min-height: 2.2rem;
+      font-size: 0.88rem;
+      font-weight: 600;
+      text-align: center;
+      padding: 0.45rem 0;
+      border-radius: 8px;
+      transition: opacity 0.2s;
+    }
+    .gq-feedback--correct { color: #22d36e; }
+    .gq-feedback--wrong   { color: #ef4444; }
+    .gq-feedback--time    { color: #f97316; }
+
+    /* Stats bar */
+    .gq-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.65rem;
+      margin-bottom: 1.5rem;
+    }
+    .gq-stat {
+      background: var(--bg-surface, rgba(255,255,255,0.025));
+      border: 1px solid var(--border, rgba(255,255,255,0.08));
+      border-radius: 10px;
+      padding: 0.7rem 0.5rem;
+      text-align: center;
+    }
+    .gq-stat__val {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--text-primary, #fff);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .gq-stat__lbl {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-top: 0.2rem;
+    }
+
+    /* Results panel */
+    .gq-results {
+      display: none;
+      background: var(--bg-surface, rgba(255,255,255,0.025));
+      border: 1px solid var(--border, rgba(255,255,255,0.08));
+      border-radius: 16px;
+      padding: 2rem 1.5rem 1.5rem;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+    .gq-results.show { display: block; }
+    .gq-grade {
+      font-size: 4.5rem;
+      font-weight: 900;
+      line-height: 1;
+      margin-bottom: 0.2rem;
+    }
+    .gq-grade--S { color: #ffd700; text-shadow: 0 0 24px rgba(255,215,0,0.5); }
+    .gq-grade--A { color: #22d36e; text-shadow: 0 0 24px rgba(34,211,110,0.45); }
+    .gq-grade--B { color: var(--accent, #00d4ff); text-shadow: 0 0 24px rgba(0,212,255,0.4); }
+    .gq-grade--C { color: #a78bfa; }
+    .gq-grade--D { color: #f97316; }
+    .gq-grade--F { color: #ef4444; }
+    .gq-results__score {
+      font-size: 1.55rem;
+      font-weight: 700;
+      color: var(--text-primary, #fff);
+      font-family: 'JetBrains Mono', monospace;
+      margin-bottom: 0.25rem;
+    }
+    .gq-results__desc {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      margin-bottom: 1.25rem;
+    }
+    .gq-best-banner {
+      display: none;
+      background: linear-gradient(135deg, rgba(255,215,0,0.1), rgba(255,215,0,0.05));
+      border: 1px solid rgba(255,215,0,0.25);
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-size: 0.85rem;
+      color: #ffd700;
+      margin-bottom: 1rem;
+    }
+    .gq-best-banner.show { display: block; }
+    .gq-results__row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      padding: 0.32rem 0;
+      border-top: 1px solid rgba(255,255,255,0.04);
+      text-align: left;
+    }
+    .gq-results__row span:last-child {
+      color: var(--text-primary, #fff);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Emoji grid share */
+    .gq-emoji-grid {
+      font-size: 1.1rem;
+      letter-spacing: 0.05em;
+      margin: 0.75rem 0 0;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Streak / best */
+    .gq-streak-row {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      margin-top: 1.25rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .gq-streak-row span { color: var(--accent, #00d4ff); font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+
+    /* Buttons */
+    .gq-btns {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .gq-btn {
+      padding: 0.65rem 1.4rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .gq-btn:active { transform: scale(0.97); }
+    .gq-btn--primary {
+      background: var(--accent, #00d4ff);
+      color: #000;
+    }
+    .gq-btn--secondary {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.15);
+      color: var(--text-secondary, #ccc);
+    }
+
+    /* Start screen */
+    .gq-start {
+      text-align: center;
+      padding: 1rem 0 0.5rem;
+    }
+    .gq-start__icon {
+      font-size: 3.5rem;
+      margin-bottom: 0.75rem;
+    }
+    .gq-start__title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-primary, #fff);
+      margin-bottom: 0.5rem;
+    }
+    .gq-start__sub {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.55;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .gq-rules {
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      text-align: left;
+      margin-bottom: 1.5rem;
+      font-size: 0.83rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .gq-rules li {
+      list-style: none;
+      padding-left: 0;
+    }
+    .gq-rules li::before {
+      content: '▸ ';
+      color: var(--accent, #00d4ff);
+    }
+
+    /* Already played today */
+    .gq-played-today {
+      display: none;
+      background: rgba(0,212,255,0.05);
+      border: 1px solid rgba(0,212,255,0.2);
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      font-size: 0.83rem;
+      color: var(--text-muted);
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+    .gq-played-today.show { display: block; }
+
+    @media (max-width: 480px) {
+      .gq-choices { grid-template-columns: 1fr; }
+      .gq-stats { grid-template-columns: repeat(3, 1fr); }
+      .gq-title { font-size: 1.35rem; }
+    }
+  </style>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "Gaming Gear Knowledge Quiz",
+  "description": "10 daily multiple-choice questions about real gaming gear specs and brands. Speed bonus scoring, S–F grade, and personal best tracking.",
+  "url": "https://cosmicgameshub.com/games/gear-quiz",
+  "image": "https://cosmicgameshub.com/images/game-gear-quiz.jpg",
+  "genre": "Trivia",
+  "gamePlatform": "Web Browser",
+  "applicationCategory": "Game",
+  "operatingSystem": "Any",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD",
+    "availability": "https://schema.org/InStock"
+  },
+  "author": {
+    "@type": "Organization",
+    "name": "CosmicGamesHub",
+    "url": "https://cosmicgameshub.com"
+  }
+}
+  </script>
+</head>
+<body>
+
+<nav class="nav" role="navigation" aria-label="Main navigation">
+  <div class="container">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo" aria-label="CosmicGamesHub home">
+        <span class="nav__logo-icon" aria-hidden="true">🎮</span>
+        <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
+      </a>
+      <ul class="nav__links" id="navLinks">
+        <li><a href="/games">← All Games</a></li>
+        <li><a href="/games/gaming-trivia">Gaming Trivia</a></li>
+        <li><a href="/games/price-guesser">Price Guesser</a></li>
+        <li><a href="/games/gamerdle">Gamerdle</a></li>
+        <li><a href="/games/reaction-trainer">Reaction Test</a></li>
+        <li><a href="/ai-gaming" class="nav__cta btn">AI Gaming</a></li>
+      </ul>
+      <button class="nav__hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<main style="padding: 2rem 0 4rem;">
+  <div class="gq-wrap">
+    <a href="/games" class="gq-back">← Back to Games</a>
+    <h1 class="gq-title">🎧 Gear Quiz</h1>
+    <p class="gq-subtitle">10 questions about real gaming gear — answer fast, score more</p>
+
+    <!-- Start screen -->
+    <div id="gqStart" class="gq-start">
+      <div class="gq-start__icon">🖱️</div>
+      <div class="gq-start__title">Gaming Gear Knowledge Quiz</div>
+      <p class="gq-start__sub">10 daily questions about headsets, mice, keyboards, monitors, and chairs. Questions rotate each day — same set for everyone.</p>
+      <ul class="gq-rules">
+        <li>15 seconds per question</li>
+        <li>Answer fast: &gt;10s left = 10pts · 5–10s = 8pts · &lt;5s = 6pts · wrong = 0</li>
+        <li>Earn a grade: S (90+) · A (80+) · B (70+) · C (60+) · D (50+) · F (below)</li>
+        <li>Share your result with the emoji grid</li>
+      </ul>
+      <div class="gq-played-today" id="gqPlayedToday">
+        You already played today's quiz. Play again to beat your score — or come back tomorrow for new questions.
+      </div>
+      <div class="gq-btns">
+        <button class="gq-btn gq-btn--primary" id="btnStart">▶ Start Quiz</button>
+      </div>
+      <div class="gq-streak-row" id="gqStartMeta" style="margin-top:1.25rem;"></div>
+    </div>
+
+    <!-- In-game UI (hidden until start) -->
+    <div id="gqGame" style="display:none;">
+      <!-- Progress -->
+      <div class="gq-progress-row">
+        <div class="gq-q-label" id="gqQLabel">Question 1 of 10</div>
+        <div class="gq-progress-bar-wrap">
+          <div class="gq-progress-bar" id="gqProgressBar"></div>
+        </div>
+        <div class="gq-q-label" id="gqScoreLabel">0 pts</div>
+      </div>
+
+      <!-- Timer ring -->
+      <div class="gq-timer-wrap">
+        <svg class="gq-timer-svg" width="72" height="72" viewBox="0 0 72 72">
+          <circle class="gq-timer-bg" cx="36" cy="36" r="30" />
+          <circle class="gq-timer-arc" id="gqTimerArc" cx="36" cy="36" r="30"
+            stroke-dasharray="188.5"
+            stroke-dashoffset="0" />
+          <text class="gq-timer-text" id="gqTimerText" x="36" y="36" fill="#fff">15</text>
+        </svg>
+      </div>
+
+      <!-- Question card -->
+      <div class="gq-card" id="gqCard">
+        <div class="gq-category" id="gqCategory">Category</div>
+        <p class="gq-question" id="gqQuestion">Loading…</p>
+      </div>
+
+      <!-- Choices -->
+      <div class="gq-choices" id="gqChoices">
+        <button class="gq-choice" id="choiceA">
+          <span class="gq-choice__key">A</span><span class="gq-choice__text"></span>
+        </button>
+        <button class="gq-choice" id="choiceB">
+          <span class="gq-choice__key">B</span><span class="gq-choice__text"></span>
+        </button>
+        <button class="gq-choice" id="choiceC">
+          <span class="gq-choice__key">C</span><span class="gq-choice__text"></span>
+        </button>
+        <button class="gq-choice" id="choiceD">
+          <span class="gq-choice__key">D</span><span class="gq-choice__text"></span>
+        </button>
+      </div>
+
+      <!-- Feedback -->
+      <div class="gq-feedback" id="gqFeedback"></div>
+
+      <!-- Live stats -->
+      <div class="gq-stats" id="gqStats">
+        <div class="gq-stat">
+          <div class="gq-stat__val" id="statCorrect">0</div>
+          <div class="gq-stat__lbl">Correct</div>
+        </div>
+        <div class="gq-stat">
+          <div class="gq-stat__val" id="statPts">0</div>
+          <div class="gq-stat__lbl">Points</div>
+        </div>
+        <div class="gq-stat">
+          <div class="gq-stat__val" id="statStreak">0</div>
+          <div class="gq-stat__lbl">Streak 🔥</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results panel -->
+    <div class="gq-results" id="gqResults">
+      <div class="gq-grade" id="resGrade">A</div>
+      <div class="gq-results__score" id="resScore">0 / 100</div>
+      <div class="gq-results__desc" id="resDesc"></div>
+      <div class="gq-best-banner" id="resBestBanner">🥇 New personal best!</div>
+      <div class="gq-results__row"><span>Correct answers</span><span id="resCorrect">—</span></div>
+      <div class="gq-results__row"><span>Speed bonus pts</span><span id="resBonus">—</span></div>
+      <div class="gq-results__row"><span>All-time best</span><span id="resAllTimeBest">—</span></div>
+      <div class="gq-results__row"><span>Current streak</span><span id="resStreak">—</span></div>
+      <div class="gq-emoji-grid" id="resEmojiGrid"></div>
+    </div>
+
+    <div class="gq-btns" id="gqEndBtns" style="display:none;">
+      <button class="gq-btn gq-btn--primary" id="btnAgain">↺ Play Again</button>
+      <button class="gq-btn gq-btn--secondary" id="btnShare">📋 Share</button>
+    </div>
+
+    <div class="gq-streak-row" id="gqBottomMeta" style="display:none;"></div>
+  </div>
+</main>
+
+
+<section class="rg-section">
+  <div class="container">
+    <h3 class="rg-heading">More Games</h3>
+    <div class="rg-grid">
+      <a href="/games/gaming-trivia" class="rg-card">
+        <img src="/images/game-trivia.jpg" alt="Gaming Trivia" loading="lazy" width="200" height="86">
+        <div class="rg-info">
+          <div class="rg-tags"><span class="rg-tag">Daily</span><span class="rg-tag">Trivia</span></div>
+          <div class="rg-name">Gaming Trivia</div>
+          <div class="rg-desc">10 gaming questions per day, speed-scored</div>
+        </div>
+      </a>
+      <a href="/games/price-guesser" class="rg-card">
+        <img src="/images/game-priceguesser.jpg" alt="Price Guesser" loading="lazy" width="200" height="86">
+        <div class="rg-info">
+          <div class="rg-tags"><span class="rg-tag">Daily</span><span class="rg-tag">Gear</span></div>
+          <div class="rg-name">Price Guesser</div>
+          <div class="rg-desc">Guess gaming gear prices — closest wins</div>
+        </div>
+      </a>
+      <a href="/games/gamerdle" class="rg-card">
+        <img src="/images/game-gamerdle.jpg" alt="Gamerdle" loading="lazy" width="200" height="86">
+        <div class="rg-info">
+          <div class="rg-tags"><span class="rg-tag">Daily</span><span class="rg-tag">Gaming</span></div>
+          <div class="rg-name">Gamerdle</div>
+          <div class="rg-desc">Guess the mystery video game in 6 tries</div>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+<style>
+.rg-section { padding: 2.5rem 0 3rem; border-top: 1px solid var(--border, rgba(255,255,255,0.08)); margin-top: 2rem; }
+.rg-heading { font-size: 0.75rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-lo, #666); margin: 0 0 1.25rem; }
+.rg-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+.rg-card { display: flex; gap: 0.75rem; background: var(--bg-card, #111); border: 1px solid var(--border, rgba(255,255,255,0.08)); border-radius: 10px; padding: 0.75rem; text-decoration: none; color: inherit; transition: border-color 0.15s, transform 0.15s; }
+.rg-card:hover { border-color: var(--accent, #22d3ee); transform: translateY(-2px); }
+.rg-card img { width: 100px; height: 43px; object-fit: cover; border-radius: 6px; flex-shrink: 0; }
+.rg-info { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+.rg-tags { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+.rg-tag { font-size: 0.65rem; font-weight: 700; color: var(--accent, #22d3ee); background: rgba(34,211,238,0.1); border-radius: 4px; padding: 0.1rem 0.35rem; letter-spacing: 0.04em; }
+.rg-name { font-size: 0.88rem; font-weight: 700; color: var(--text-hi, #fff); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rg-desc { font-size: 0.75rem; color: var(--text-lo, #888); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+@media (max-width: 640px) {
+  .rg-grid { grid-template-columns: 1fr; }
+  .rg-card img { width: 80px; height: 35px; }
+}
+</style>
+<footer class="footer">
+  <div class="container">
+    <div class="footer__bottom">
+      <p>© 2026 CosmicGamesHub. <a href="/games">← More Games</a></p>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  // ─── Mulberry32 PRNG — seeded by date ───────────────────────────────
+  function mulberry32(seed) {
+    return function () {
+      seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+      var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  function dateSeeded() {
+    var now = new Date();
+    // Seed: YYYYMMDD integer
+    return now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
+  }
+
+  function shuffleWithRng(arr, rng) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(rng() * (i + 1));
+      var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+    }
+    return a;
+  }
+
+  // ─── Question bank (10 questions) ───────────────────────────────────
+  var QUESTION_BANK = [
+    {
+      category: 'Gaming Mice',
+      q: 'Which Logitech mouse uses the HERO 25K sensor?',
+      choices: ['G305', 'G502 X', 'G Pro Wireless', 'G203'],
+      answer: 1   // B — G502 X
+    },
+    {
+      category: 'Keyboards',
+      q: 'What is the polling rate of the Corsair K100 RGB?',
+      choices: ['1000 Hz', '2000 Hz', '4000 Hz', '8000 Hz'],
+      answer: 3   // D — 8000 Hz
+    },
+    {
+      category: 'Headsets',
+      q: 'Which wireless headset offers approximately 300 hours of battery life?',
+      choices: ['Sony Pulse 3D', 'HyperX Cloud Alpha Wireless', 'Corsair HS65 Wireless', 'SteelSeries Arctis Nova 3'],
+      answer: 1   // B — HyperX Cloud Alpha Wireless
+    },
+    {
+      category: 'Monitors',
+      q: 'What panel type does the ASUS VG279QM use?',
+      choices: ['VA', 'TN', 'IPS', 'OLED'],
+      answer: 2   // C — IPS
+    },
+    {
+      category: 'Gaming Mice',
+      q: 'Which mouse switch type uses magnets to detect actuation — no physical contact?',
+      choices: ['Optical', 'Mechanical', 'Hall Effect', 'Capacitive'],
+      answer: 2   // C — Hall Effect
+    },
+    {
+      category: 'Keyboards',
+      q: 'What does "TKL" stand for in keyboard names?',
+      choices: ['Top Key Layout', 'Tenkeyless', 'Turbo Key Layer', 'True Key Limit'],
+      answer: 1   // B — Tenkeyless
+    },
+    {
+      category: 'Gaming Mice',
+      q: 'Which Razer mouse series includes an ultralight build under 70g (e.g. DeathAdder V3 at 59g)?',
+      choices: ['Basilisk', 'DeathAdder', 'Naga', 'Kraken'],
+      answer: 1   // B — DeathAdder
+    },
+    {
+      category: 'Wireless Tech',
+      q: 'What is the name of Logitech\'s proprietary wireless technology for gaming peripherals?',
+      choices: ['LIGHTSPEED', 'HyperSpeed', 'SkyLink', 'QuickSync'],
+      answer: 0   // A — LIGHTSPEED
+    },
+    {
+      category: 'Gaming Chairs',
+      q: 'Approximately how much does the Secretlab Titan Evo 2022 chair cost at retail?',
+      choices: ['$199', '$299', '$429', '$599'],
+      answer: 2   // C — $429
+    },
+    {
+      category: 'Monitors',
+      q: 'Which monitor spec determines how many times per second the image refreshes?',
+      choices: ['Resolution', 'Response time', 'Refresh rate', 'Contrast ratio'],
+      answer: 2   // C — Refresh rate
+    }
+  ];
+
+  var TOTAL = QUESTION_BANK.length;
+  var TIMER_SECS = 15;
+  var CIRCUMFERENCE = 2 * Math.PI * 30; // r=30
+
+  var LS_BEST    = 'gq_best_score';
+  var LS_STREAK  = 'gq_streak';
+  var LS_LAST_D  = 'gq_last_date';
+
+  // ─── State ──────────────────────────────────────────────────────────
+  var questions = [];
+  var qIndex = 0;
+  var score = 0;
+  var correct = 0;
+  var currentStreak = 0;   // within game
+  var timerInterval = null;
+  var timeLeft = TIMER_SECS;
+  var answered = false;
+  var emojiResults = [];
+
+  // ─── DOM ────────────────────────────────────────────────────────────
+  var elStart     = document.getElementById('gqStart');
+  var elGame      = document.getElementById('gqGame');
+  var elResults   = document.getElementById('gqResults');
+  var elEndBtns   = document.getElementById('gqEndBtns');
+  var elPlayedMsg = document.getElementById('gqPlayedToday');
+
+  var elQLabel    = document.getElementById('gqQLabel');
+  var elScoreLbl  = document.getElementById('gqScoreLabel');
+  var elProgressBar = document.getElementById('gqProgressBar');
+
+  var elTimerArc  = document.getElementById('gqTimerArc');
+  var elTimerText = document.getElementById('gqTimerText');
+
+  var elCategory  = document.getElementById('gqCategory');
+  var elQuestion  = document.getElementById('gqQuestion');
+  var elFeedback  = document.getElementById('gqFeedback');
+
+  var choiceBtns  = ['A','B','C','D'].map(function(k){ return document.getElementById('choice'+k); });
+
+  var elStatCorrect = document.getElementById('statCorrect');
+  var elStatPts     = document.getElementById('statPts');
+  var elStatStreak  = document.getElementById('statStreak');
+
+  // results
+  var elResGrade   = document.getElementById('resGrade');
+  var elResScore   = document.getElementById('resScore');
+  var elResDesc    = document.getElementById('resDesc');
+  var elResBest    = document.getElementById('resBestBanner');
+  var elResCorrect = document.getElementById('resCorrect');
+  var elResBonus   = document.getElementById('resBonus');
+  var elResAllBest = document.getElementById('resAllTimeBest');
+  var elResStreak  = document.getElementById('resStreak');
+  var elResEmoji   = document.getElementById('resEmojiGrid');
+
+  var elStartMeta  = document.getElementById('gqStartMeta');
+  var elBottomMeta = document.getElementById('gqBottomMeta');
+
+  // ─── Helpers ────────────────────────────────────────────────────────
+  function todayStr() {
+    var d = new Date();
+    return d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate();
+  }
+
+  function grade(pts) {
+    if (pts >= 90) return 'S';
+    if (pts >= 80) return 'A';
+    if (pts >= 70) return 'B';
+    if (pts >= 60) return 'C';
+    if (pts >= 50) return 'D';
+    return 'F';
+  }
+
+  function gradeDesc(g) {
+    return {
+      S: 'Perfect knowledge. You live and breathe gaming gear.',
+      A: 'Excellent. You clearly keep up with the spec sheets.',
+      B: 'Solid. Above average gear IQ.',
+      C: 'Average. Time to read more gear guides.',
+      D: 'Needs work — check out the guides on this site!',
+      F: 'Rough round. The gear guides are right here →'
+    }[g];
+  }
+
+  function setTimerArc(secs) {
+    var fraction = secs / TIMER_SECS;
+    var offset = CIRCUMFERENCE * (1 - fraction);
+    elTimerArc.style.strokeDashoffset = offset;
+    // color: green > yellow > red
+    var r, g2, b;
+    if (fraction > 0.5) {
+      // cyan → yellow
+      var t = (fraction - 0.5) * 2;
+      r = Math.round(255 * (1 - t));
+      g2 = 212;
+      b = Math.round(255 * (1 - t));
+      elTimerArc.style.stroke = 'rgb(0,212,255)';
+    } else {
+      var pct = fraction / 0.5;
+      if (pct > 0.33) {
+        elTimerArc.style.stroke = '#f59e0b';
+      } else {
+        elTimerArc.style.stroke = '#ef4444';
+      }
+    }
+    elTimerText.textContent = secs;
+  }
+
+  function speedPoints(secsLeft) {
+    if (secsLeft > 10) return 10;
+    if (secsLeft >= 5) return 8;
+    return 6;
+  }
+
+  function updateLiveStats() {
+    elStatCorrect.textContent = correct;
+    elStatPts.textContent = score;
+    elStatStreak.textContent = currentStreak;
+    elScoreLbl.textContent = score + ' pts';
+  }
+
+  // ─── Build question order once per day ──────────────────────────────
+  function getDailyQuestions() {
+    var seed = dateSeeded();
+    var rng = mulberry32(seed);
+    return shuffleWithRng(QUESTION_BANK, rng);
+  }
+
+  // ─── Load question ───────────────────────────────────────────────────
+  function loadQuestion() {
+    answered = false;
+    var q = questions[qIndex];
+
+    // Shuffle choices with a sub-seed so order varies day-to-day
+    var seed2 = dateSeeded() + qIndex * 137;
+    var rng2 = mulberry32(seed2);
+    var originalChoices = q.choices.slice();
+    var shuffledIndices = shuffleWithRng([0,1,2,3], rng2);
+    // Map: new position -> original position
+    var newChoices = shuffledIndices.map(function(i){ return originalChoices[i]; });
+    // Find where the correct original answer ended up
+    var newAnswer = shuffledIndices.indexOf(q.answer);
+
+    elCategory.textContent = q.category;
+    elQuestion.textContent = q.q;
+
+    choiceBtns.forEach(function(btn, i) {
+      btn.querySelector('.gq-choice__text').textContent = newChoices[i];
+      btn.className = 'gq-choice';
+      btn.disabled = false;
+      btn.dataset.correct = (i === newAnswer) ? '1' : '0';
+    });
+
+    // progress
+    elQLabel.textContent = 'Question ' + (qIndex + 1) + ' of ' + TOTAL;
+    elProgressBar.style.width = (qIndex / TOTAL * 100) + '%';
+
+    elFeedback.textContent = '';
+    elFeedback.className = 'gq-feedback';
+
+    startTimer();
+  }
+
+  // ─── Timer ──────────────────────────────────────────────────────────
+  function startTimer() {
+    timeLeft = TIMER_SECS;
+    setTimerArc(timeLeft);
+    clearInterval(timerInterval);
+    timerInterval = setInterval(function () {
+      timeLeft--;
+      setTimerArc(timeLeft);
+      if (timeLeft <= 0) {
+        clearInterval(timerInterval);
+        handleTimeout();
+      }
+    }, 1000);
+  }
+
+  function handleTimeout() {
+    if (answered) return;
+    answered = true;
+    currentStreak = 0;
+    emojiResults.push('⬛');
+
+    // reveal correct
+    choiceBtns.forEach(function(btn) {
+      btn.disabled = true;
+      if (btn.dataset.correct === '1') btn.classList.add('gq-choice--correct');
+      else btn.classList.add('gq-choice--dim');
+    });
+
+    elFeedback.textContent = '⏱ Time\'s up! +0 pts';
+    elFeedback.className = 'gq-feedback gq-feedback--time';
+    updateLiveStats();
+
+    setTimeout(nextQuestion, 1800);
+  }
+
+  // ─── Answer ──────────────────────────────────────────────────────────
+  function handleAnswer(btn) {
+    if (answered) return;
+    answered = true;
+    clearInterval(timerInterval);
+
+    var isCorrect = btn.dataset.correct === '1';
+
+    choiceBtns.forEach(function(b) {
+      b.disabled = true;
+      if (b.dataset.correct === '1') b.classList.add('gq-choice--correct');
+      else if (b === btn && !isCorrect) b.classList.add('gq-choice--wrong');
+      else b.classList.add('gq-choice--dim');
+    });
+
+    if (isCorrect) {
+      var pts = speedPoints(timeLeft);
+      score += pts;
+      correct++;
+      currentStreak++;
+      emojiResults.push(timeLeft > 10 ? '🟩' : timeLeft >= 5 ? '🟨' : '🟧');
+      elFeedback.textContent = '✓ Correct! +' + pts + ' pts';
+      elFeedback.className = 'gq-feedback gq-feedback--correct';
+    } else {
+      currentStreak = 0;
+      emojiResults.push('🟥');
+      elFeedback.textContent = '✗ Wrong. +0 pts';
+      elFeedback.className = 'gq-feedback gq-feedback--wrong';
+    }
+
+    updateLiveStats();
+    setTimeout(nextQuestion, 1800);
+  }
+
+  // ─── Next question ───────────────────────────────────────────────────
+  function nextQuestion() {
+    qIndex++;
+    if (qIndex >= TOTAL) {
+      showResults();
+    } else {
+      loadQuestion();
+    }
+  }
+
+  // ─── Results ─────────────────────────────────────────────────────────
+  function showResults() {
+    clearInterval(timerInterval);
+    elGame.style.display = 'none';
+
+    var g = grade(score);
+    var prevBest = parseInt(localStorage.getItem(LS_BEST) || '0', 10);
+    var newBest = score > prevBest;
+
+    // Streak persistence
+    var lastDate = localStorage.getItem(LS_LAST_D);
+    var streak = parseInt(localStorage.getItem(LS_STREAK) || '0', 10);
+    var today = todayStr();
+    var yesterday = (function(){
+      var d = new Date(); d.setDate(d.getDate()-1);
+      return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
+    })();
+
+    if (lastDate === today) {
+      // already played — streak unchanged
+    } else if (lastDate === yesterday) {
+      streak++;
+    } else {
+      streak = 1;
+    }
+
+    localStorage.setItem(LS_LAST_D, today);
+    localStorage.setItem(LS_STREAK, streak);
+    if (newBest) localStorage.setItem(LS_BEST, score);
+
+    // Fill results
+    elResGrade.textContent = g;
+    elResGrade.className = 'gq-grade gq-grade--' + g;
+    elResScore.textContent = score + ' / 100 pts';
+    elResDesc.textContent = gradeDesc(g);
+    if (newBest) elResBest.classList.add('show');
+    elResCorrect.textContent = correct + ' / ' + TOTAL;
+    elResBonus.textContent = (score - correct * 6) + ' pts (speed)';   // min 6/q if correct
+    elResAllBest.textContent = Math.max(score, prevBest) + ' pts';
+    elResStreak.textContent = streak + ' day' + (streak !== 1 ? 's' : '');
+
+    // Emoji grid
+    elResEmoji.textContent = emojiResults.join('');
+
+    elResults.classList.add('show');
+    elEndBtns.style.display = 'flex';
+
+    elBottomMeta.style.display = 'flex';
+    elBottomMeta.innerHTML = 'Best: <span>' + Math.max(score, prevBest) + ' pts</span>&nbsp;&nbsp;Streak: <span>' + streak + ' days</span>';
+
+    elProgressBar.style.width = '100%';
+  }
+
+  // ─── Start ───────────────────────────────────────────────────────────
+  function startGame() {
+    // Reset state
+    qIndex = 0;
+    score = 0;
+    correct = 0;
+    currentStreak = 0;
+    emojiResults = [];
+
+    questions = getDailyQuestions();
+
+    elStart.style.display = 'none';
+    elResults.classList.remove('show');
+    elResBest.classList.remove('show');
+    elEndBtns.style.display = 'none';
+    elBottomMeta.style.display = 'none';
+
+    updateLiveStats();
+    elGame.style.display = 'block';
+    loadQuestion();
+  }
+
+  // ─── Init ─────────────────────────────────────────────────────────────
+  function init() {
+    var lastDate = localStorage.getItem(LS_LAST_D);
+    var today = todayStr();
+    var prevBest = parseInt(localStorage.getItem(LS_BEST) || '0', 10);
+    var streak = parseInt(localStorage.getItem(LS_STREAK) || '0', 10);
+
+    if (lastDate === today) {
+      elPlayedMsg.classList.add('show');
+    }
+
+    if (prevBest > 0 || streak > 0) {
+      elStartMeta.innerHTML = (prevBest > 0 ? 'Best: <span>' + prevBest + ' pts</span>' : '') +
+        (prevBest > 0 && streak > 0 ? '&nbsp;&nbsp;' : '') +
+        (streak > 0 ? 'Streak: <span>' + streak + ' days</span>' : '');
+    }
+  }
+
+  // ─── Event wiring ────────────────────────────────────────────────────
+  document.getElementById('btnStart').addEventListener('click', startGame);
+  document.getElementById('btnAgain').addEventListener('click', startGame);
+
+  choiceBtns.forEach(function(btn) {
+    btn.addEventListener('click', function() { handleAnswer(btn); });
+  });
+
+  // Keyboard: A/B/C/D keys
+  document.addEventListener('keydown', function(e) {
+    if (elGame.style.display === 'none') return;
+    var map = { 'a': 0, 'b': 1, 'c': 2, 'd': 3 };
+    var idx = map[e.key.toLowerCase()];
+    if (idx !== undefined && !choiceBtns[idx].disabled) {
+      handleAnswer(choiceBtns[idx]);
+    }
+  });
+
+  document.getElementById('btnShare').addEventListener('click', function() {
+    var g = grade(score);
+    var dateLabel = (function(){
+      var d = new Date();
+      return (d.getMonth()+1) + '/' + d.getDate() + '/' + d.getFullYear();
+    })();
+    var text = '🎧 Gaming Gear Quiz — ' + dateLabel +
+      '\nScore: ' + score + '/100  Grade: ' + g +
+      '\n' + emojiResults.join('') +
+      '\ncosmicgameshub.com/games/gear-quiz';
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(function() {
+        var btn = document.getElementById('btnShare');
+        btn.textContent = '✓ Copied!';
+        setTimeout(function(){ btn.textContent = '📋 Share'; }, 2000);
+      }).catch(function(){});
+    }
+  });
+
+  init();
+})();
+</script>
+
+<script>
+  const hamburger = document.getElementById('hamburger');
+  const navLinks = document.getElementById('navLinks');
+  hamburger.addEventListener('click', () => {
+    const open = navLinks.classList.toggle('open');
+    hamburger.setAttribute('aria-expanded', open);
+  });
+</script>
+<script src="/global.js" defer></script>
+
+</body>
+</html>

@@ -55,64 +55,27 @@
     {"id": "versus-mouse-4", "done": "2026-05-07", "notes": "G502 X (~$60, HERO 25K LIGHTFORCE, 89g, 13 buttons, B0B6KWMF3X) vs Basilisk V3 (~$70, Focus+ 26K optical, 101g, SmartReel 4-mode scroll, B09J6XCCGX). Full versus page. Commit 8ff0ad9."},
     {"id": "guide-best-gaming-setup-upgrade", "done": "2026-05-07", "notes": "Upgrade path table added (budget→upgrade per slot with cost+gain). Relevant Comparisons section with 4 versus cards. FAQ expanded 4→7 questions. Nav fixed from old site-header to site-nav. Footer updated. Commit d6042d2."},
     {"id": "game-score-guesser", "done": "2026-05-07", "notes": "Gaming Gear Price Guesser — 28 products (headsets/mice/keyboards/monitors), 5 daily rounds seeded by Mulberry32 PRNG, Price is Right scoring (over=0pts, exact=100pts, progressive tiers). S/A/B/C/D/F grades, streak tracking, personal best, share with emoji grid, play-again random mode. Games hub updated to 18, sitemap updated."},
-    {"id": "guide-xbox-headsets", "done": "2026-05-07", "notes": "Xbox Series X/S headset guide: 5 picks (Stealth 600 Gen 3 $79 Xbox Wireless 80hr, Kaira Pro $149 Xbox Wireless+BT, Cloud II Wireless $149 2.4GHz multi-platform, Nova Pro X $349 hot-swap+ANC, HS35 $40 wired). Xbox Wireless vs BT vs 2.4GHz explainer table. Microsoft Spatial Sound FAQ. Added to guides index + sitemap."}
+    {"id": "guide-xbox-headsets", "done": "2026-05-07", "notes": "Xbox Series X/S headset guide: 5 picks (Stealth 600 Gen 3 $79 Xbox Wireless 80hr, Kaira Pro $149 Xbox Wireless+BT, Cloud II Wireless $149 2.4GHz multi-platform, Nova Pro X $349 hot-swap+ANC, HS35 $40 wired). Xbox Wireless vs BT vs 2.4GHz explainer table. Microsoft Spatial Sound FAQ. Added to guides index + sitemap."},
+    {"id": "versus-budget-monitor", "done": "2026-05-08", "notes": "AOC 27G2 (1080p 144Hz IPS ~$160) vs Gigabyte G27Q (1440p 165Hz IPS ~$230). 6-category breakdown, spec table, 4 key diffs, 5Q FAQ. FAQPage+Article schema. Added to versus index and sitemap. Commit 18f9849."},
+    {"id": "schema-faq-versus", "done": "2026-05-08", "notes": "FAQPage JSON-LD added to all 22 versus pages. 3-pattern parser (faq__question, faq-q, details/summary). Added FAQ sections to K100 vs Apex Pro TKL and Basilisk V3 Pro vs G502 X Plus. Commit d73a392."},
+    {"id": "homepage-arcade-strip-update", "done": "2026-05-08", "notes": "Price Guesser added to arcade strip and footer Play Free. Count updated to 20 games. Commit d73a392."},
+    {"id": "internal-links-pass2", "done": "2026-05-08", "notes": "Nova Pro vs Pulse 3D → PS5 guide link added. Keyboard guide → G915 vs K65 link added. G915 vs K65 already linked to keyboard guide. PS5 guide already had Nova Pro vs Pulse 3D link. Commit d73a392."},
+    {"id": "og-image-games", "done": "2026-05-08", "notes": "Already done in prior session commit 8c98d3a — VideoGame schema + og:image on all 19 game pages."}
   ],
   "queue": [
     {
-      "id": "guide-xbox-headsets",
-      "type": "new-page",
-      "priority": 1,
-      "title": "Guide: Best Gaming Headsets for Xbox Series X/S 2026",
-      "description": "Xbox-specific headset guide. Xbox Wireless protocol (SteelSeries Nova Pro X, Razer Kaira Pro), 3.5mm pass-through via controller, USB-C direct. 5 picks: Nova Pro X, Razer Kaira Pro, HyperX Cloud II Wireless, Corsair HS35 Stereo, Turtle Beach Stealth 600 Gen 3. Microsoft Spatial Sound vs Dolby Atmos."
-    },
-    {
-      "id": "versus-budget-monitor",
-      "type": "new-page",
-      "priority": 1,
-      "title": "Versus: AOC 27G2 vs Gigabyte G27Q",
-      "description": "Budget monitor face-off: AOC 27G2 (27in 1080p 144Hz IPS, ~$180) vs Gigabyte G27Q (27in 1440p 165Hz IPS, ~$230). Resolution vs price argument at the $200 sweet spot. 6-category breakdown, spec table, 4 key diffs, 5-question FAQ."
-    },
-    {
-      "id": "schema-faq-versus",
-      "type": "seo",
-      "priority": 2,
-      "title": "SEO: Add FAQ JSON-LD to all 20 versus pages",
-      "description": "All versus pages have FAQ sections in HTML but no FAQPage structured data schema. Add JSON-LD FAQPage schema to all 20 versus pages. Matches the format used in guide pages."
-    },
-    {
-      "id": "homepage-arcade-strip-update",
-      "type": "homepage",
-      "priority": 2,
-      "title": "Homepage: Add Price Guesser to arcade strip and footer",
-      "description": "Add price-guesser to homepage arcade strip (replace or add alongside current entries). Update footer Play Free section to include price-guesser link. Update og:description game count references."
-    },
-    {
-      "id": "internal-links-pass2",
-      "type": "seo",
-      "priority": 2,
-      "title": "Internal Links Pass 2: PS5 guide, G915/K65, price-guesser",
-      "description": "1) PS5 headsets guide → add link to Nova Pro vs Pulse 3D versus page in comparisons section. 2) Arctis Nova Pro vs Pulse 3D page → add link back to PS5 headsets guide. 3) G915 vs K65 page → link to keyboard guide. 4) Keyboard guide → link to G915 vs K65. 5) Games hub → verify price-guesser card is in good position."
-    },
-    {
       "id": "versus-gaming-chairs",
       "type": "new-page",
-      "priority": 3,
+      "priority": 1,
       "title": "Versus: Secretlab Titan Evo vs DXRacer Formula Series",
       "description": "Chair comparison: Secretlab Titan Evo 2022 (~$429, cold foam, 4-way lumbar, 5yr warranty) vs DXRacer Formula ($299, moldable foam, racing style). Premium ergonomics vs budget entry. 6-category breakdown, spec table, verdict."
     },
     {
       "id": "game-gear-quiz",
       "type": "new-game",
-      "priority": 3,
+      "priority": 1,
       "title": "New Game: Gaming Gear Knowledge Quiz",
       "description": "10-question multiple choice quiz about gaming gear specs and brands. Questions like 'Which mouse uses the HERO 25K sensor?', 'What is the polling rate of the Corsair K100?', 'Which headset has 300-hour battery life?'. Daily seeded, 15s per question, speed bonus scoring, S-F grade, share button."
-    },
-    {
-      "id": "og-image-games",
-      "type": "seo",
-      "priority": 3,
-      "title": "SEO: Add og:image meta tags to all game pages",
-      "description": "Most game pages are missing og:image tags. Add og:image pointing to a generic games hub image or generate per-game hero images with Grok Imagine. Improves social sharing previews."
     }
   ],
   "loop_log": [
