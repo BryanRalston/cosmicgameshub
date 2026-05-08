@@ -1,0 +1,1499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-D272MF8NQP"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-D272MF8NQP');
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spec Match — Identify the Gaming Gear | CosmicGamesHub</title>
+  <meta name="description" content="Read the specs, name the product. 5 daily hardware identification rounds — mice, headsets, keyboards, monitors. Speed scoring, streak bonus, S–F grade." />
+  <meta property="og:title" content="Spec Match — Identify the Gaming Gear | CosmicGamesHub" />
+  <meta property="og:description" content="Can you identify gaming gear from its raw specs? 5 daily rounds — weight, sensor, wireless type, panel tech. Speed scoring, streak bonus, S–F grade." />
+  <meta property="og:image" content="https://cosmicgameshub.com/images/game-spec-match.jpg" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://cosmicgameshub.com/games/spec-match" />
+  <meta property="og:site_name" content="CosmicGamesHub" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@CosmicGamesHub" />
+  <meta name="twitter:title" content="Spec Match — Identify the Gaming Gear | CosmicGamesHub" />
+  <meta name="twitter:description" content="5 daily hardware identification rounds. Read the specs, pick the product. Speed scoring, streak bonus, S–F grade." />
+  <meta name="twitter:image" content="https://cosmicgameshub.com/images/game-spec-match.jpg" />
+  <link rel="canonical" href="https://cosmicgameshub.com/games/spec-match" />
+  <link rel="stylesheet" href="../styles.css" />
+  <style>
+    .sm-wrap {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 0 1rem;
+    }
+    .sm-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      margin-bottom: 1.5rem;
+    }
+    .sm-back:hover { color: var(--accent); }
+    .sm-title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0 0 0.3rem;
+    }
+    .sm-subtitle {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin: 0 0 1.75rem;
+    }
+
+    /* Progress bar */
+    .sm-progress-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 0.6rem;
+    }
+    .sm-progress-bar-wrap {
+      flex: 1;
+      height: 6px;
+      background: rgba(255,255,255,0.07);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .sm-progress-bar {
+      height: 100%;
+      background: var(--accent, #00d4ff);
+      border-radius: 3px;
+      transition: width 0.35s ease;
+      width: 0%;
+    }
+    .sm-q-label {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Timer ring */
+    .sm-timer-wrap {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 1.25rem;
+    }
+    .sm-timer-svg {
+      transform: rotate(-90deg);
+    }
+    .sm-timer-bg {
+      fill: none;
+      stroke: rgba(255,255,255,0.07);
+      stroke-width: 5;
+    }
+    .sm-timer-arc {
+      fill: none;
+      stroke: var(--accent, #00d4ff);
+      stroke-width: 5;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.25s linear, stroke 0.3s;
+    }
+    .sm-timer-text {
+      font-size: 1.15rem;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      dominant-baseline: central;
+      text-anchor: middle;
+      transform: rotate(90deg);
+      transform-origin: center;
+    }
+
+    /* Spec card */
+    .sm-card {
+      background: var(--bg-surface, rgba(255,255,255,0.025));
+      border: 1px solid var(--border, rgba(255,255,255,0.08));
+      border-radius: 16px;
+      padding: 1.5rem 1.5rem 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+    .sm-category {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent, #00d4ff);
+      margin-bottom: 0.75rem;
+    }
+    .sm-prompt {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted, #888);
+      margin: 0 0 1rem;
+    }
+    .sm-specs {
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+    .sm-spec-row {
+      display: flex;
+      align-items: baseline;
+      gap: 0.75rem;
+    }
+    .sm-spec-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted, #888);
+      flex-shrink: 0;
+      width: 110px;
+    }
+    .sm-spec-value {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary, #fff);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Choices */
+    .sm-choices {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.65rem;
+      margin-bottom: 1rem;
+    }
+    .sm-choice {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.65rem;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 0.75rem 0.9rem;
+      cursor: pointer;
+      font-size: 0.86rem;
+      color: var(--text-primary, #fff);
+      font-family: inherit;
+      text-align: left;
+      transition: background 0.13s, border-color 0.13s, transform 0.1s;
+      line-height: 1.35;
+    }
+    .sm-choice:hover:not(:disabled) {
+      background: rgba(0,212,255,0.08);
+      border-color: rgba(0,212,255,0.35);
+    }
+    .sm-choice:active:not(:disabled) { transform: scale(0.98); }
+    .sm-choice__key {
+      flex-shrink: 0;
+      width: 24px;
+      height: 24px;
+      background: rgba(255,255,255,0.07);
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+      margin-top: 1px;
+    }
+    .sm-choice--correct {
+      background: rgba(34,211,110,0.12) !important;
+      border-color: rgba(34,211,110,0.5) !important;
+    }
+    .sm-choice--correct .sm-choice__key {
+      background: rgba(34,211,110,0.25);
+      color: #22d36e;
+    }
+    .sm-choice--wrong {
+      background: rgba(239,68,68,0.1) !important;
+      border-color: rgba(239,68,68,0.4) !important;
+    }
+    .sm-choice--wrong .sm-choice__key {
+      background: rgba(239,68,68,0.2);
+      color: #ef4444;
+    }
+    .sm-choice--dim {
+      opacity: 0.35;
+    }
+
+    /* Feedback bar */
+    .sm-feedback {
+      min-height: 2.2rem;
+      font-size: 0.88rem;
+      font-weight: 600;
+      text-align: center;
+      padding: 0.45rem 0;
+      border-radius: 8px;
+      transition: opacity 0.2s;
+    }
+    .sm-feedback--correct { color: #22d36e; }
+    .sm-feedback--wrong   { color: #ef4444; }
+    .sm-feedback--time    { color: #f97316; }
+
+    /* Streak bonus flash */
+    .sm-streak-bonus {
+      text-align: center;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #ffd700;
+      min-height: 1.2rem;
+      margin-top: -0.25rem;
+      margin-bottom: 0.4rem;
+    }
+
+    /* Stats bar */
+    .sm-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.65rem;
+      margin-bottom: 1.5rem;
+    }
+    .sm-stat {
+      background: var(--bg-surface, rgba(255,255,255,0.025));
+      border: 1px solid var(--border, rgba(255,255,255,0.08));
+      border-radius: 10px;
+      padding: 0.7rem 0.5rem;
+      text-align: center;
+    }
+    .sm-stat__val {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--text-primary, #fff);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .sm-stat__lbl {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-top: 0.2rem;
+    }
+
+    /* Results panel */
+    .sm-results {
+      display: none;
+      background: var(--bg-surface, rgba(255,255,255,0.025));
+      border: 1px solid var(--border, rgba(255,255,255,0.08));
+      border-radius: 16px;
+      padding: 2rem 1.5rem 1.5rem;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+    .sm-results.show { display: block; }
+    .sm-grade {
+      font-size: 4.5rem;
+      font-weight: 900;
+      line-height: 1;
+      margin-bottom: 0.2rem;
+    }
+    .sm-grade--S { color: #ffd700; text-shadow: 0 0 24px rgba(255,215,0,0.5); }
+    .sm-grade--A { color: #22d36e; text-shadow: 0 0 24px rgba(34,211,110,0.45); }
+    .sm-grade--B { color: var(--accent, #00d4ff); text-shadow: 0 0 24px rgba(0,212,255,0.4); }
+    .sm-grade--C { color: #a78bfa; }
+    .sm-grade--D { color: #f97316; }
+    .sm-grade--F { color: #ef4444; }
+    .sm-results__score {
+      font-size: 1.55rem;
+      font-weight: 700;
+      color: var(--text-primary, #fff);
+      font-family: 'JetBrains Mono', monospace;
+      margin-bottom: 0.25rem;
+    }
+    .sm-results__desc {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      margin-bottom: 1.25rem;
+    }
+    .sm-best-banner {
+      display: none;
+      background: linear-gradient(135deg, rgba(255,215,0,0.1), rgba(255,215,0,0.05));
+      border: 1px solid rgba(255,215,0,0.25);
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-size: 0.85rem;
+      color: #ffd700;
+      margin-bottom: 1rem;
+    }
+    .sm-best-banner.show { display: block; }
+    .sm-results__row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      padding: 0.32rem 0;
+      border-top: 1px solid rgba(255,255,255,0.04);
+      text-align: left;
+    }
+    .sm-results__row span:last-child {
+      color: var(--text-primary, #fff);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Emoji grid share */
+    .sm-emoji-grid {
+      font-size: 1.1rem;
+      letter-spacing: 0.05em;
+      margin: 0.75rem 0 0;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Streak / best row */
+    .sm-streak-row {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      margin-top: 1.25rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .sm-streak-row span { color: var(--accent, #00d4ff); font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+
+    /* Buttons */
+    .sm-btns {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .sm-btn {
+      padding: 0.65rem 1.4rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .sm-btn:active { transform: scale(0.97); }
+    .sm-btn--primary {
+      background: var(--accent, #00d4ff);
+      color: #000;
+    }
+    .sm-btn--secondary {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.15);
+      color: var(--text-secondary, #ccc);
+    }
+
+    /* Start screen */
+    .sm-start {
+      text-align: center;
+      padding: 1rem 0 0.5rem;
+    }
+    .sm-start__icon {
+      font-size: 3.5rem;
+      margin-bottom: 0.75rem;
+    }
+    .sm-start__title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-primary, #fff);
+      margin-bottom: 0.5rem;
+    }
+    .sm-start__sub {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.55;
+      max-width: 420px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .sm-rules {
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      text-align: left;
+      margin-bottom: 1.5rem;
+      font-size: 0.83rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .sm-rules li {
+      list-style: none;
+      padding-left: 0;
+    }
+    .sm-rules li::before {
+      content: '▸ ';
+      color: var(--accent, #00d4ff);
+    }
+
+    /* Already played today */
+    .sm-played-today {
+      display: none;
+      background: rgba(0,212,255,0.05);
+      border: 1px solid rgba(0,212,255,0.2);
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      font-size: 0.83rem;
+      color: var(--text-muted);
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+    .sm-played-today.show { display: block; }
+
+    @media (max-width: 480px) {
+      .sm-choices { grid-template-columns: 1fr; }
+      .sm-stats { grid-template-columns: repeat(3, 1fr); }
+      .sm-title { font-size: 1.35rem; }
+      .sm-spec-label { width: 90px; }
+    }
+  </style>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "Spec Match — Identify the Gaming Gear",
+  "description": "5 daily rounds: read hardware specs, identify the product from 4 choices. Mice, headsets, keyboards, monitors. Speed scoring, streak bonus, S–F grade.",
+  "url": "https://cosmicgameshub.com/games/spec-match",
+  "image": "https://cosmicgameshub.com/images/game-spec-match.jpg",
+  "genre": "Trivia",
+  "gamePlatform": "Web Browser",
+  "applicationCategory": "Game",
+  "operatingSystem": "Any",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD",
+    "availability": "https://schema.org/InStock"
+  },
+  "author": {
+    "@type": "Organization",
+    "name": "CosmicGamesHub",
+    "url": "https://cosmicgameshub.com"
+  }
+}
+  </script>
+</head>
+<body>
+
+<nav class="nav" role="navigation" aria-label="Main navigation">
+  <div class="container">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo" aria-label="CosmicGamesHub home">
+        <span class="nav__logo-icon" aria-hidden="true">🎮</span>
+        <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
+      </a>
+      <ul class="nav__links" id="navLinks">
+        <li><a href="/games">← All Games</a></li>
+        <li><a href="/games/gear-quiz">Gear Quiz</a></li>
+        <li><a href="/games/price-guesser">Price Guesser</a></li>
+        <li><a href="/games/gamerdle">Gamerdle</a></li>
+        <li><a href="/games/reaction-trainer">Reaction Test</a></li>
+        <li><a href="/ai-gaming" class="nav__cta btn">AI Gaming</a></li>
+      </ul>
+      <button class="nav__hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<main style="padding: 2rem 0 4rem;">
+  <div class="sm-wrap">
+    <a href="/games" class="sm-back">← Back to Games</a>
+    <h1 class="sm-title">🔍 Spec Match</h1>
+    <p class="sm-subtitle">Read the specs — name the product. 5 rounds, daily</p>
+
+    <!-- Start screen -->
+    <div id="smStart" class="sm-start">
+      <div class="sm-start__icon">🖱️</div>
+      <div class="sm-start__title">Hardware Identification Challenge</div>
+      <p class="sm-start__sub">5 daily rounds. Each round shows real hardware specs — weight, sensor, wireless tech, panel type. Pick the matching product from 4 options. Same set for everyone today.</p>
+      <ul class="sm-rules">
+        <li>Base 100 pts per correct answer</li>
+        <li>Speed bonus: −2 pts/second elapsed (min 20 pts if correct)</li>
+        <li>Streak bonus: +25 pts for 3 or more correct in a row</li>
+        <li>Wrong answer = 0 pts, streak resets</li>
+        <li>Keyboard: 1 / 2 / 3 / 4 to select options</li>
+        <li>Grade: S (450+) · A (350+) · B (250+) · C (150+) · D (50+) · F (&lt;50)</li>
+      </ul>
+      <div class="sm-played-today" id="smPlayedToday">
+        You already played today's Spec Match. Play again to beat your score — or come back tomorrow for new rounds.
+      </div>
+      <div class="sm-btns">
+        <button class="sm-btn sm-btn--primary" id="btnStart">▶ Start Game</button>
+      </div>
+      <div class="sm-streak-row" id="smStartMeta" style="margin-top:1.25rem;"></div>
+    </div>
+
+    <!-- In-game UI (hidden until start) -->
+    <div id="smGame" style="display:none;">
+      <!-- Progress -->
+      <div class="sm-progress-row">
+        <div class="sm-q-label" id="smQLabel">Round 1 of 5</div>
+        <div class="sm-progress-bar-wrap">
+          <div class="sm-progress-bar" id="smProgressBar"></div>
+        </div>
+        <div class="sm-q-label" id="smScoreLabel">0 pts</div>
+      </div>
+
+      <!-- Timer ring -->
+      <div class="sm-timer-wrap">
+        <svg class="sm-timer-svg" width="72" height="72" viewBox="0 0 72 72">
+          <circle class="sm-timer-bg" cx="36" cy="36" r="30" />
+          <circle class="sm-timer-arc" id="smTimerArc" cx="36" cy="36" r="30"
+            stroke-dasharray="188.5"
+            stroke-dashoffset="0" />
+          <text class="sm-timer-text" id="smTimerText" x="36" y="36" fill="#fff">20</text>
+        </svg>
+      </div>
+
+      <!-- Spec card -->
+      <div class="sm-card" id="smCard">
+        <div class="sm-category" id="smCategory">Category</div>
+        <p class="sm-prompt">Which product matches these specs?</p>
+        <div class="sm-specs" id="smSpecs">
+          <!-- Spec rows injected by JS -->
+        </div>
+      </div>
+
+      <!-- Choices -->
+      <div class="sm-choices" id="smChoices">
+        <button class="sm-choice" id="choice1">
+          <span class="sm-choice__key">1</span><span class="sm-choice__text"></span>
+        </button>
+        <button class="sm-choice" id="choice2">
+          <span class="sm-choice__key">2</span><span class="sm-choice__text"></span>
+        </button>
+        <button class="sm-choice" id="choice3">
+          <span class="sm-choice__key">3</span><span class="sm-choice__text"></span>
+        </button>
+        <button class="sm-choice" id="choice4">
+          <span class="sm-choice__key">4</span><span class="sm-choice__text"></span>
+        </button>
+      </div>
+
+      <!-- Feedback -->
+      <div class="sm-feedback" id="smFeedback"></div>
+      <div class="sm-streak-bonus" id="smStreakBonus"></div>
+
+      <!-- Live stats -->
+      <div class="sm-stats" id="smStats">
+        <div class="sm-stat">
+          <div class="sm-stat__val" id="statCorrect">0</div>
+          <div class="sm-stat__lbl">Correct</div>
+        </div>
+        <div class="sm-stat">
+          <div class="sm-stat__val" id="statPts">0</div>
+          <div class="sm-stat__lbl">Points</div>
+        </div>
+        <div class="sm-stat">
+          <div class="sm-stat__val" id="statStreak">0</div>
+          <div class="sm-stat__lbl">Streak 🔥</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results panel -->
+    <div class="sm-results" id="smResults">
+      <div class="sm-grade" id="resGrade">A</div>
+      <div class="sm-results__score" id="resScore">0 pts</div>
+      <div class="sm-results__desc" id="resDesc"></div>
+      <div class="sm-best-banner" id="resBestBanner">🥇 New personal best!</div>
+      <div class="sm-results__row"><span>Correct answers</span><span id="resCorrect">—</span></div>
+      <div class="sm-results__row"><span>Speed points earned</span><span id="resSpeedPts">—</span></div>
+      <div class="sm-results__row"><span>Streak bonus</span><span id="resStreakBonus">—</span></div>
+      <div class="sm-results__row"><span>All-time best</span><span id="resAllTimeBest">—</span></div>
+      <div class="sm-results__row"><span>Day streak</span><span id="resStreak">—</span></div>
+      <div class="sm-emoji-grid" id="resEmojiGrid"></div>
+    </div>
+
+    <div class="sm-btns" id="smEndBtns" style="display:none;">
+      <button class="sm-btn sm-btn--primary" id="btnAgain">↺ Play Again</button>
+      <button class="sm-btn sm-btn--secondary" id="btnShare">📋 Share</button>
+    </div>
+
+    <div class="sm-streak-row" id="smBottomMeta" style="display:none;"></div>
+  </div>
+</main>
+
+
+<section class="rg-section">
+  <div class="container">
+    <h3 class="rg-heading">More Games</h3>
+    <div class="rg-grid">
+      <a href="/games/gear-quiz" class="rg-card">
+        <img src="/images/game-gear-quiz.jpg" alt="Gear Knowledge Quiz" loading="lazy" width="200" height="86">
+        <div class="rg-info">
+          <div class="rg-tags"><span class="rg-tag">Daily</span><span class="rg-tag">Gear</span></div>
+          <div class="rg-name">Gear Knowledge Quiz</div>
+          <div class="rg-desc">10 daily questions about headsets, mice, keyboards, monitors</div>
+        </div>
+      </a>
+      <a href="/games/price-guesser" class="rg-card">
+        <img src="/images/game-priceguesser.jpg" alt="Price Guesser" loading="lazy" width="200" height="86">
+        <div class="rg-info">
+          <div class="rg-tags"><span class="rg-tag">Daily</span><span class="rg-tag">Gear</span></div>
+          <div class="rg-name">Price Guesser</div>
+          <div class="rg-desc">Guess gaming gear prices — closest wins</div>
+        </div>
+      </a>
+      <a href="/games/gamerdle" class="rg-card">
+        <img src="/images/game-gamerdle.jpg" alt="Gamerdle" loading="lazy" width="200" height="86">
+        <div class="rg-info">
+          <div class="rg-tags"><span class="rg-tag">Daily</span><span class="rg-tag">Gaming</span></div>
+          <div class="rg-name">Gamerdle</div>
+          <div class="rg-desc">Guess the mystery video game in 6 tries</div>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+<style>
+.rg-section { padding: 2.5rem 0 3rem; border-top: 1px solid var(--border, rgba(255,255,255,0.08)); margin-top: 2rem; }
+.rg-heading { font-size: 0.75rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-lo, #666); margin: 0 0 1.25rem; }
+.rg-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+.rg-card { display: flex; gap: 0.75rem; background: var(--bg-card, #111); border: 1px solid var(--border, rgba(255,255,255,0.08)); border-radius: 10px; padding: 0.75rem; text-decoration: none; color: inherit; transition: border-color 0.15s, transform 0.15s; }
+.rg-card:hover { border-color: var(--accent, #22d3ee); transform: translateY(-2px); }
+.rg-card img { width: 100px; height: 43px; object-fit: cover; border-radius: 6px; flex-shrink: 0; }
+.rg-info { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+.rg-tags { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+.rg-tag { font-size: 0.65rem; font-weight: 700; color: var(--accent, #22d3ee); background: rgba(34,211,238,0.1); border-radius: 4px; padding: 0.1rem 0.35rem; letter-spacing: 0.04em; }
+.rg-name { font-size: 0.88rem; font-weight: 700; color: var(--text-hi, #fff); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rg-desc { font-size: 0.75rem; color: var(--text-lo, #888); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+@media (max-width: 640px) {
+  .rg-grid { grid-template-columns: 1fr; }
+  .rg-card img { width: 80px; height: 35px; }
+}
+</style>
+<footer class="footer">
+  <div class="container">
+    <div class="footer__bottom">
+      <p>© 2026 CosmicGamesHub. <a href="/games">← More Games</a></p>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  // ─── Mulberry32 PRNG — seeded by date ───────────────────────────────
+  function mulberry32(seed) {
+    return function () {
+      seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+      var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  function dateSeeded() {
+    var now = new Date();
+    return now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
+  }
+
+  function shuffleWithRng(arr, rng) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(rng() * (i + 1));
+      var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+    }
+    return a;
+  }
+
+  // ─── Product database (30 products) ─────────────────────────────────
+  // Each entry: { id, category, name, specs: [{label, value}], wrongPool: [ids] }
+  // specs = clues shown to player (NOT including name)
+  // wrong answers drawn from same category products
+
+  var PRODUCTS = [
+    // ── MICE ──
+    {
+      id: 'gprox2',
+      category: 'Gaming Mouse',
+      name: 'Logitech G Pro X Superlight 2',
+      specs: [
+        { label: 'Weight',    value: '60 g' },
+        { label: 'Sensor',    value: 'HERO 25K' },
+        { label: 'Wireless',  value: 'LIGHTSPEED' },
+        { label: 'Price range', value: '$150–$170' }
+      ]
+    },
+    {
+      id: 'dav3pro',
+      category: 'Gaming Mouse',
+      name: 'Razer DeathAdder V3 Pro',
+      specs: [
+        { label: 'Weight',    value: '64 g' },
+        { label: 'Sensor',    value: 'Focus Pro 30K' },
+        { label: 'Wireless',  value: 'HyperSpeed' },
+        { label: 'Price range', value: '$140–$160' }
+      ]
+    },
+    {
+      id: 'g305',
+      category: 'Gaming Mouse',
+      name: 'Logitech G305',
+      specs: [
+        { label: 'Weight',    value: '99 g' },
+        { label: 'Sensor',    value: 'HERO 25K' },
+        { label: 'Battery',   value: 'AA (250 hr)' },
+        { label: 'Price range', value: '$35–$45' }
+      ]
+    },
+    {
+      id: 'dav3hs',
+      category: 'Gaming Mouse',
+      name: 'Razer DeathAdder V3 HyperSpeed',
+      specs: [
+        { label: 'Weight',    value: '88 g' },
+        { label: 'Wireless',  value: 'HyperSpeed' },
+        { label: 'Battery',   value: '300 hr' },
+        { label: 'Price range', value: '$65–$75' }
+      ]
+    },
+    {
+      id: 'g502x',
+      category: 'Gaming Mouse',
+      name: 'Logitech G502 X',
+      specs: [
+        { label: 'Weight',    value: '89 g' },
+        { label: 'Sensor',    value: 'HERO 25K' },
+        { label: 'Switch',    value: 'LIGHTFORCE optical-mech' },
+        { label: 'Price range', value: '$55–$65' }
+      ]
+    },
+    {
+      id: 'zec2c',
+      category: 'Gaming Mouse',
+      name: 'Zowie EC2-C',
+      specs: [
+        { label: 'Weight',    value: '73 g' },
+        { label: 'Sensor',    value: '3360' },
+        { label: 'Connection', value: 'Wired USB' },
+        { label: 'Price range', value: '$65–$75' }
+      ]
+    },
+    {
+      id: 'vipv2pro',
+      category: 'Gaming Mouse',
+      name: 'Razer Viper V2 Pro',
+      specs: [
+        { label: 'Weight',    value: '58 g' },
+        { label: 'Sensor',    value: 'Focus Pro 30K' },
+        { label: 'Wireless',  value: 'HyperSpeed' },
+        { label: 'Price range', value: '$110–$130' }
+      ]
+    },
+    // ── HEADSETS ──
+    {
+      id: 'hxcloud2',
+      category: 'Gaming Headset',
+      name: 'HyperX Cloud II',
+      specs: [
+        { label: 'Weight',      value: '309 g' },
+        { label: 'Driver size', value: '53 mm' },
+        { label: 'Connection',  value: '7.1 USB dongle' },
+        { label: 'Price range', value: '$90–$110' }
+      ]
+    },
+    {
+      id: 'nova3',
+      category: 'Gaming Headset',
+      name: 'SteelSeries Arctis Nova 3',
+      specs: [
+        { label: 'Weight',      value: '215 g' },
+        { label: 'Driver size', value: '40 mm' },
+        { label: 'Connection',  value: '3.5 mm analog' },
+        { label: 'Price range', value: '$45–$55' }
+      ]
+    },
+    {
+      id: 'hs65w',
+      category: 'Gaming Headset',
+      name: 'Corsair HS65 Wireless',
+      specs: [
+        { label: 'Weight',      value: '275 g' },
+        { label: 'Wireless',    value: '2.4 GHz + Bluetooth' },
+        { label: 'Battery',     value: '24 hr' },
+        { label: 'Price range', value: '$90–$110' }
+      ]
+    },
+    {
+      id: 'g435',
+      category: 'Gaming Headset',
+      name: 'Logitech G435',
+      specs: [
+        { label: 'Weight',      value: '165 g' },
+        { label: 'Wireless',    value: 'LIGHTSPEED + Bluetooth' },
+        { label: 'Battery',     value: '18 hr' },
+        { label: 'Price range', value: '$75–$85' }
+      ]
+    },
+    {
+      id: 'novaprow',
+      category: 'Gaming Headset',
+      name: 'SteelSeries Arctis Nova Pro Wireless',
+      specs: [
+        { label: 'Weight',      value: '338 g' },
+        { label: 'Feature',     value: 'Hot-swap batteries + ANC' },
+        { label: 'Wireless',    value: '2.4 GHz + Bluetooth' },
+        { label: 'Price range', value: '$330–$360' }
+      ]
+    },
+    {
+      id: 'gpx2ls',
+      category: 'Gaming Headset',
+      name: 'Logitech G Pro X 2 LIGHTSPEED',
+      specs: [
+        { label: 'Weight',      value: '345 g' },
+        { label: 'Driver size', value: '50 mm graphene' },
+        { label: 'Battery',     value: '50 hr' },
+        { label: 'Price range', value: '$240–$260' }
+      ]
+    },
+    // ── KEYBOARDS ──
+    {
+      id: 'g915tkl',
+      category: 'Gaming Keyboard',
+      name: 'Logitech G915 TKL',
+      specs: [
+        { label: 'Weight',       value: '810 g' },
+        { label: 'Wireless',     value: 'LIGHTSPEED + Bluetooth' },
+        { label: 'Battery',      value: '40 hr' },
+        { label: 'Switch profile', value: 'Low-profile GL' }
+      ]
+    },
+    {
+      id: 'apex7tkl',
+      category: 'Gaming Keyboard',
+      name: 'SteelSeries Apex 7 TKL',
+      specs: [
+        { label: 'Weight',       value: '820 g' },
+        { label: 'Display',      value: 'OLED smart display' },
+        { label: 'Connection',   value: 'Wired USB' },
+        { label: 'Price range',  value: '$90–$110' }
+      ]
+    },
+    {
+      id: 'k8pro',
+      category: 'Gaming Keyboard',
+      name: 'Keychron K8 Pro',
+      specs: [
+        { label: 'Weight',       value: '870 g' },
+        { label: 'Hot-swap',     value: 'Yes (5-pin)' },
+        { label: 'Wireless',     value: 'Bluetooth 5.1 + 2.4 GHz' },
+        { label: 'Price range',  value: '$85–$95' }
+      ]
+    },
+    {
+      id: 'k100',
+      category: 'Gaming Keyboard',
+      name: 'Corsair K100 RGB',
+      specs: [
+        { label: 'Weight',       value: '1.32 kg' },
+        { label: 'Polling rate', value: '8000 Hz' },
+        { label: 'Switch',       value: 'OPX optical-mech' },
+        { label: 'Price range',  value: '$220–$240' }
+      ]
+    },
+    {
+      id: 'k552',
+      category: 'Gaming Keyboard',
+      name: 'Redragon K552',
+      specs: [
+        { label: 'Weight',       value: '830 g' },
+        { label: 'Switch',       value: 'Outemu Blue (clicky)' },
+        { label: 'Build',        value: 'Metal top plate' },
+        { label: 'Price range',  value: '$35–$45' }
+      ]
+    },
+    // ── MONITORS ──
+    {
+      id: 'lg27gp850',
+      category: 'Gaming Monitor',
+      name: 'LG 27GP850-B',
+      specs: [
+        { label: 'Size',         value: '27 inch' },
+        { label: 'Resolution',   value: '2560×1440 (1440p)' },
+        { label: 'Refresh rate', value: '165 Hz' },
+        { label: 'Panel type',   value: 'IPS' }
+      ]
+    },
+    {
+      id: 'pg279qm',
+      category: 'Gaming Monitor',
+      name: 'ASUS ROG Swift PG279QM',
+      specs: [
+        { label: 'Size',         value: '27 inch' },
+        { label: 'Resolution',   value: '2560×1440 (1440p)' },
+        { label: 'Refresh rate', value: '240 Hz' },
+        { label: 'Panel type',   value: 'Fast IPS' }
+      ]
+    },
+    {
+      id: 'aoc27g2',
+      category: 'Gaming Monitor',
+      name: 'AOC 27G2',
+      specs: [
+        { label: 'Size',         value: '27 inch' },
+        { label: 'Resolution',   value: '1920×1080 (1080p)' },
+        { label: 'Refresh rate', value: '144 Hz' },
+        { label: 'Panel type',   value: 'IPS' }
+      ]
+    },
+    {
+      id: 'lg27gp950',
+      category: 'Gaming Monitor',
+      name: 'LG 27GP950-B',
+      specs: [
+        { label: 'Size',         value: '27 inch' },
+        { label: 'Resolution',   value: '3840×2160 (4K)' },
+        { label: 'Refresh rate', value: '144 Hz' },
+        { label: 'Panel type',   value: 'Nano IPS' }
+      ]
+    },
+    {
+      id: 'g7',
+      category: 'Gaming Monitor',
+      name: 'Samsung Odyssey G7',
+      specs: [
+        { label: 'Size',         value: '27 inch' },
+        { label: 'Resolution',   value: '2560×1440 (1440p)' },
+        { label: 'Refresh rate', value: '240 Hz' },
+        { label: 'Panel type',   value: 'VA (curved)' }
+      ]
+    },
+    // ── Extra products for wrong-answer pool diversity ──
+    {
+      id: 'g203',
+      category: 'Gaming Mouse',
+      name: 'Logitech G203',
+      specs: [
+        { label: 'Weight',    value: '85 g' },
+        { label: 'Sensor',    value: 'HERO 8K' },
+        { label: 'Connection', value: 'Wired USB' },
+        { label: 'Price range', value: '$25–$35' }
+      ]
+    },
+    {
+      id: 'gprow',
+      category: 'Gaming Mouse',
+      name: 'Logitech G Pro Wireless',
+      specs: [
+        { label: 'Weight',    value: '80 g' },
+        { label: 'Sensor',    value: 'HERO 16K' },
+        { label: 'Wireless',  value: 'LIGHTSPEED' },
+        { label: 'Price range', value: '$80–$100' }
+      ]
+    },
+    {
+      id: 'hxcloudcore',
+      category: 'Gaming Headset',
+      name: 'HyperX Cloud Core',
+      specs: [
+        { label: 'Weight',      value: '258 g' },
+        { label: 'Driver size', value: '53 mm' },
+        { label: 'Connection',  value: '3.5 mm analog' },
+        { label: 'Price range', value: '$45–$55' }
+      ]
+    },
+    {
+      id: 'arctis1w',
+      category: 'Gaming Headset',
+      name: 'SteelSeries Arctis 1 Wireless',
+      specs: [
+        { label: 'Weight',      value: '220 g' },
+        { label: 'Driver size', value: '40 mm' },
+        { label: 'Wireless',    value: '2.4 GHz' },
+        { label: 'Price range', value: '$75–$85' }
+      ]
+    },
+    {
+      id: 'apex5',
+      category: 'Gaming Keyboard',
+      name: 'SteelSeries Apex 5',
+      specs: [
+        { label: 'Weight',       value: '1.13 kg' },
+        { label: 'Switch',       value: 'Hybrid mechanical-optical' },
+        { label: 'Display',      value: 'OLED smart display' },
+        { label: 'Price range',  value: '$95–$110' }
+      ]
+    },
+    {
+      id: 'vg279qm',
+      category: 'Gaming Monitor',
+      name: 'ASUS TUF Gaming VG279QM',
+      specs: [
+        { label: 'Size',         value: '27 inch' },
+        { label: 'Resolution',   value: '1920×1080 (1080p)' },
+        { label: 'Refresh rate', value: '280 Hz' },
+        { label: 'Panel type',   value: 'Fast IPS' }
+      ]
+    },
+    {
+      id: 'msi27g',
+      category: 'Gaming Monitor',
+      name: 'MSI Optix MAG274QRF-QD',
+      specs: [
+        { label: 'Size',         value: '27 inch' },
+        { label: 'Resolution',   value: '2560×1440 (1440p)' },
+        { label: 'Refresh rate', value: '165 Hz' },
+        { label: 'Panel type',   value: 'IPS (Quantum Dot)' }
+      ]
+    }
+  ];
+
+  // Index by id for fast lookup
+  var PRODUCT_MAP = {};
+  PRODUCTS.forEach(function(p){ PRODUCT_MAP[p.id] = p; });
+
+  // Category buckets for wrong-answer selection
+  var BY_CATEGORY = {};
+  PRODUCTS.forEach(function(p) {
+    if (!BY_CATEGORY[p.category]) BY_CATEGORY[p.category] = [];
+    BY_CATEGORY[p.category].push(p.id);
+  });
+
+  // The 5 daily "rounds" — each specifies which product is the answer
+  // We pick 5 distinct products (one from each category), seeded by date
+  var ROUND_POOL = [
+    'gprox2','dav3pro','g305','dav3hs','g502x','zec2c','vipv2pro',
+    'hxcloud2','nova3','hs65w','g435','novaprow','gpx2ls',
+    'g915tkl','apex7tkl','k8pro','k100','k552',
+    'lg27gp850','pg279qm','aoc27g2','lg27gp950','g7'
+  ];
+
+  var TOTAL_ROUNDS = 5;
+  var TIMER_SECS = 20;
+  var CIRCUMFERENCE = 2 * Math.PI * 30; // r=30
+
+  var LS_BEST   = 'sm_best_score';
+  var LS_STREAK = 'sm_streak';
+  var LS_LAST_D = 'sm_last_date';
+
+  // ─── State ──────────────────────────────────────────────────────────
+  var rounds = [];          // array of product ids for today
+  var rIndex = 0;
+  var score = 0;
+  var correctCount = 0;
+  var inGameStreak = 0;     // consecutive correct within game
+  var streakBonusTotal = 0;
+  var speedPtsTotal = 0;
+  var timerInterval = null;
+  var timeElapsed = 0;
+  var answered = false;
+  var emojiResults = [];
+
+  // ─── DOM ────────────────────────────────────────────────────────────
+  var elStart     = document.getElementById('smStart');
+  var elGame      = document.getElementById('smGame');
+  var elResults   = document.getElementById('smResults');
+  var elEndBtns   = document.getElementById('smEndBtns');
+  var elPlayedMsg = document.getElementById('smPlayedToday');
+
+  var elQLabel    = document.getElementById('smQLabel');
+  var elScoreLbl  = document.getElementById('smScoreLabel');
+  var elProgressBar = document.getElementById('smProgressBar');
+
+  var elTimerArc  = document.getElementById('smTimerArc');
+  var elTimerText = document.getElementById('smTimerText');
+
+  var elCategory  = document.getElementById('smCategory');
+  var elSpecs     = document.getElementById('smSpecs');
+  var elFeedback  = document.getElementById('smFeedback');
+  var elStreakBonus = document.getElementById('smStreakBonus');
+
+  var choiceBtns  = [1,2,3,4].map(function(k){ return document.getElementById('choice'+k); });
+
+  var elStatCorrect = document.getElementById('statCorrect');
+  var elStatPts     = document.getElementById('statPts');
+  var elStatStreak  = document.getElementById('statStreak');
+
+  var elResGrade       = document.getElementById('resGrade');
+  var elResScore       = document.getElementById('resScore');
+  var elResDesc        = document.getElementById('resDesc');
+  var elResBest        = document.getElementById('resBestBanner');
+  var elResCorrect     = document.getElementById('resCorrect');
+  var elResSpeedPts    = document.getElementById('resSpeedPts');
+  var elResStreakBonus = document.getElementById('resStreakBonus');
+  var elResAllBest     = document.getElementById('resAllTimeBest');
+  var elResStreak      = document.getElementById('resStreak');
+  var elResEmoji       = document.getElementById('resEmojiGrid');
+
+  var elStartMeta  = document.getElementById('smStartMeta');
+  var elBottomMeta = document.getElementById('smBottomMeta');
+
+  // ─── Helpers ────────────────────────────────────────────────────────
+  function todayStr() {
+    var d = new Date();
+    return d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate();
+  }
+
+  function grade(pts) {
+    if (pts >= 450) return 'S';
+    if (pts >= 350) return 'A';
+    if (pts >= 250) return 'B';
+    if (pts >= 150) return 'C';
+    if (pts >= 50)  return 'D';
+    return 'F';
+  }
+
+  function gradeDesc(g) {
+    return {
+      S: 'Spec wizard. You could write the product pages yourself.',
+      A: 'Excellent — you know your hardware inside and out.',
+      B: 'Solid spec knowledge. Above average gear head.',
+      C: 'Average. Time to spend more time on spec sheets.',
+      D: 'Needs work — the gear guides on this site will help.',
+      F: 'Rough round. Start with the gear guides and come back.'
+    }[g];
+  }
+
+  function setTimerArc(secsLeft) {
+    var fraction = secsLeft / TIMER_SECS;
+    var offset = CIRCUMFERENCE * (1 - fraction);
+    elTimerArc.style.strokeDashoffset = offset;
+    if (fraction > 0.5) {
+      elTimerArc.style.stroke = 'rgb(0,212,255)';
+    } else if (fraction > 0.25) {
+      elTimerArc.style.stroke = '#f59e0b';
+    } else {
+      elTimerArc.style.stroke = '#ef4444';
+    }
+    elTimerText.textContent = secsLeft;
+  }
+
+  function calcSpeedPts(elapsed) {
+    // Base 100, minus 2 per second, min 20
+    return Math.max(20, 100 - elapsed * 2);
+  }
+
+  function updateLiveStats() {
+    elStatCorrect.textContent = correctCount;
+    elStatPts.textContent = score;
+    elStatStreak.textContent = inGameStreak;
+    elScoreLbl.textContent = score + ' pts';
+  }
+
+  // ─── Build today's 5 rounds ──────────────────────────────────────────
+  function getDailyRounds() {
+    var seed = dateSeeded();
+    var rng = mulberry32(seed);
+    var shuffled = shuffleWithRng(ROUND_POOL, rng);
+    // Pick first 5
+    return shuffled.slice(0, TOTAL_ROUNDS);
+  }
+
+  // Pick 3 wrong answers from same category, not the correct product
+  function pickWrongAnswers(correctId, category, rng) {
+    var pool = (BY_CATEGORY[category] || []).filter(function(id){ return id !== correctId; });
+    var shuffled = shuffleWithRng(pool, rng);
+    return shuffled.slice(0, 3);
+  }
+
+  // ─── Load round ─────────────────────────────────────────────────────
+  function loadRound() {
+    answered = false;
+    timeElapsed = 0;
+
+    var productId = rounds[rIndex];
+    var product = PRODUCT_MAP[productId];
+
+    // Shuffle which specs to show (show up to 4, prefer important ones)
+    // The product already has the specs we want, just render them all
+    elCategory.textContent = product.category;
+    elSpecs.innerHTML = '';
+    product.specs.forEach(function(spec) {
+      var row = document.createElement('div');
+      row.className = 'sm-spec-row';
+      row.innerHTML =
+        '<span class="sm-spec-label">' + escHtml(spec.label) + '</span>' +
+        '<span class="sm-spec-value">' + escHtml(spec.value) + '</span>';
+      elSpecs.appendChild(row);
+    });
+
+    // Build answer choices: 1 correct + 3 wrong from same category
+    var seed2 = dateSeeded() + rIndex * 251;
+    var rng2 = mulberry32(seed2);
+    var wrongIds = pickWrongAnswers(productId, product.category, rng2);
+
+    // If not enough wrong answers in category, fill from other categories
+    while (wrongIds.length < 3) {
+      var fillers = PRODUCTS
+        .filter(function(p){ return p.id !== productId && wrongIds.indexOf(p.id) === -1; });
+      var filler = fillers[Math.floor(rng2() * fillers.length)];
+      if (filler) wrongIds.push(filler.id);
+    }
+
+    var allOptions = [productId].concat(wrongIds.slice(0, 3));
+    var shuffledOptions = shuffleWithRng(allOptions, rng2);
+
+    choiceBtns.forEach(function(btn, i) {
+      var pid = shuffledOptions[i];
+      var p = PRODUCT_MAP[pid];
+      btn.querySelector('.sm-choice__text').textContent = p ? p.name : pid;
+      btn.className = 'sm-choice';
+      btn.disabled = false;
+      btn.dataset.correct = (pid === productId) ? '1' : '0';
+    });
+
+    // Progress
+    elQLabel.textContent = 'Round ' + (rIndex + 1) + ' of ' + TOTAL_ROUNDS;
+    elProgressBar.style.width = (rIndex / TOTAL_ROUNDS * 100) + '%';
+
+    elFeedback.textContent = '';
+    elFeedback.className = 'sm-feedback';
+    elStreakBonus.textContent = '';
+
+    startTimer();
+  }
+
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  // ─── Timer ──────────────────────────────────────────────────────────
+  function startTimer() {
+    setTimerArc(TIMER_SECS);
+    clearInterval(timerInterval);
+    timerInterval = setInterval(function () {
+      timeElapsed++;
+      var remaining = TIMER_SECS - timeElapsed;
+      setTimerArc(Math.max(0, remaining));
+      if (remaining <= 0) {
+        clearInterval(timerInterval);
+        handleTimeout();
+      }
+    }, 1000);
+  }
+
+  function handleTimeout() {
+    if (answered) return;
+    answered = true;
+    inGameStreak = 0;
+    emojiResults.push('⬛');
+
+    choiceBtns.forEach(function(btn) {
+      btn.disabled = true;
+      if (btn.dataset.correct === '1') btn.classList.add('sm-choice--correct');
+      else btn.classList.add('sm-choice--dim');
+    });
+
+    elFeedback.textContent = '⏱ Time\'s up! +0 pts';
+    elFeedback.className = 'sm-feedback sm-feedback--time';
+    updateLiveStats();
+
+    setTimeout(nextRound, 2000);
+  }
+
+  // ─── Answer ──────────────────────────────────────────────────────────
+  function handleAnswer(btn) {
+    if (answered) return;
+    answered = true;
+    clearInterval(timerInterval);
+
+    var isCorrect = btn.dataset.correct === '1';
+
+    choiceBtns.forEach(function(b) {
+      b.disabled = true;
+      if (b.dataset.correct === '1') b.classList.add('sm-choice--correct');
+      else if (b === btn && !isCorrect) b.classList.add('sm-choice--wrong');
+      else b.classList.add('sm-choice--dim');
+    });
+
+    if (isCorrect) {
+      var sp = calcSpeedPts(timeElapsed);
+      inGameStreak++;
+      speedPtsTotal += sp;
+      var bonus = 0;
+      if (inGameStreak >= 3) {
+        bonus = 25;
+        streakBonusTotal += bonus;
+        elStreakBonus.textContent = '🔥 Streak bonus! +25 pts';
+      }
+      score += sp + bonus;
+      correctCount++;
+      // Emoji based on speed
+      if (timeElapsed <= 5) emojiResults.push('🟩');
+      else if (timeElapsed <= 12) emojiResults.push('🟨');
+      else emojiResults.push('🟧');
+      elFeedback.textContent = '✓ Correct! +' + sp + ' pts' + (bonus ? ' (+25 streak)' : '');
+      elFeedback.className = 'sm-feedback sm-feedback--correct';
+    } else {
+      inGameStreak = 0;
+      emojiResults.push('🟥');
+      elFeedback.textContent = '✗ Wrong. +0 pts';
+      elFeedback.className = 'sm-feedback sm-feedback--wrong';
+    }
+
+    updateLiveStats();
+    setTimeout(nextRound, 2000);
+  }
+
+  // ─── Next round ──────────────────────────────────────────────────────
+  function nextRound() {
+    rIndex++;
+    if (rIndex >= TOTAL_ROUNDS) {
+      showResults();
+    } else {
+      loadRound();
+    }
+  }
+
+  // ─── Results ─────────────────────────────────────────────────────────
+  function showResults() {
+    clearInterval(timerInterval);
+    elGame.style.display = 'none';
+
+    var g = grade(score);
+    var prevBest = parseInt(localStorage.getItem(LS_BEST) || '0', 10);
+    var newBest = score > prevBest;
+
+    // Day streak persistence
+    var lastDate = localStorage.getItem(LS_LAST_D);
+    var dayStreak = parseInt(localStorage.getItem(LS_STREAK) || '0', 10);
+    var today = todayStr();
+    var yesterday = (function(){
+      var d = new Date(); d.setDate(d.getDate()-1);
+      return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
+    })();
+
+    if (lastDate === today) {
+      // already played — streak unchanged
+    } else if (lastDate === yesterday) {
+      dayStreak++;
+    } else {
+      dayStreak = 1;
+    }
+
+    localStorage.setItem(LS_LAST_D, today);
+    localStorage.setItem(LS_STREAK, dayStreak);
+    if (newBest) localStorage.setItem(LS_BEST, score);
+
+    elResGrade.textContent = g;
+    elResGrade.className = 'sm-grade sm-grade--' + g;
+    elResScore.textContent = score + ' pts';
+    elResDesc.textContent = gradeDesc(g);
+    if (newBest) elResBest.classList.add('show');
+    elResCorrect.textContent = correctCount + ' / ' + TOTAL_ROUNDS;
+    elResSpeedPts.textContent = speedPtsTotal + ' pts';
+    elResStreakBonus.textContent = streakBonusTotal > 0 ? '+' + streakBonusTotal + ' pts' : '—';
+    elResAllBest.textContent = Math.max(score, prevBest) + ' pts';
+    elResStreak.textContent = dayStreak + ' day' + (dayStreak !== 1 ? 's' : '');
+
+    elResEmoji.textContent = emojiResults.join('');
+
+    elResults.classList.add('show');
+    elEndBtns.style.display = 'flex';
+
+    elBottomMeta.style.display = 'flex';
+    elBottomMeta.innerHTML = 'Best: <span>' + Math.max(score, prevBest) + ' pts</span>&nbsp;&nbsp;Streak: <span>' + dayStreak + ' days</span>';
+
+    elProgressBar.style.width = '100%';
+  }
+
+  // ─── Start ───────────────────────────────────────────────────────────
+  function startGame() {
+    rIndex = 0;
+    score = 0;
+    correctCount = 0;
+    inGameStreak = 0;
+    streakBonusTotal = 0;
+    speedPtsTotal = 0;
+    emojiResults = [];
+
+    rounds = getDailyRounds();
+
+    elStart.style.display = 'none';
+    elResults.classList.remove('show');
+    elResBest.classList.remove('show');
+    elEndBtns.style.display = 'none';
+    elBottomMeta.style.display = 'none';
+
+    updateLiveStats();
+    elGame.style.display = 'block';
+    loadRound();
+  }
+
+  // ─── Init ─────────────────────────────────────────────────────────────
+  function init() {
+    var lastDate = localStorage.getItem(LS_LAST_D);
+    var today = todayStr();
+    var prevBest = parseInt(localStorage.getItem(LS_BEST) || '0', 10);
+    var streak = parseInt(localStorage.getItem(LS_STREAK) || '0', 10);
+
+    if (lastDate === today) {
+      elPlayedMsg.classList.add('show');
+    }
+
+    if (prevBest > 0 || streak > 0) {
+      elStartMeta.innerHTML =
+        (prevBest > 0 ? 'Best: <span>' + prevBest + ' pts</span>' : '') +
+        (prevBest > 0 && streak > 0 ? '&nbsp;&nbsp;' : '') +
+        (streak > 0 ? 'Streak: <span>' + streak + ' days</span>' : '');
+    }
+  }
+
+  // ─── Event wiring ────────────────────────────────────────────────────
+  document.getElementById('btnStart').addEventListener('click', startGame);
+  document.getElementById('btnAgain').addEventListener('click', startGame);
+
+  choiceBtns.forEach(function(btn) {
+    btn.addEventListener('click', function() { handleAnswer(btn); });
+  });
+
+  // Keyboard: 1/2/3/4 to pick option
+  document.addEventListener('keydown', function(e) {
+    if (elGame.style.display === 'none') return;
+    var map = { '1': 0, '2': 1, '3': 2, '4': 3 };
+    var idx = map[e.key];
+    if (idx !== undefined && !choiceBtns[idx].disabled) {
+      handleAnswer(choiceBtns[idx]);
+    }
+  });
+
+  document.getElementById('btnShare').addEventListener('click', function() {
+    var g = grade(score);
+    var dateLabel = (function(){
+      var d = new Date();
+      return (d.getMonth()+1) + '/' + d.getDate() + '/' + d.getFullYear();
+    })();
+    var text = '🔍 Spec Match — ' + dateLabel +
+      '\nScore: ' + score + ' pts  Grade: ' + g +
+      '\n' + emojiResults.join('') +
+      '\ncosmicgameshub.com/games/spec-match';
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(function() {
+        var btn = document.getElementById('btnShare');
+        btn.textContent = '✓ Copied!';
+        setTimeout(function(){ btn.textContent = '📋 Share'; }, 2000);
+      }).catch(function(){});
+    }
+  });
+
+  init();
+})();
+</script>
+
+<script>
+  const hamburger = document.getElementById('hamburger');
+  const navLinks = document.getElementById('navLinks');
+  hamburger.addEventListener('click', () => {
+    const open = navLinks.classList.toggle('open');
+    hamburger.setAttribute('aria-expanded', open);
+  });
+</script>
+<script src="/global.js" defer></script>
+
+</body>
+</html>

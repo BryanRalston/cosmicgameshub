@@ -55,6 +55,12 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://cosmicgameshub.com/guides/gaming-keyboard-switches-guide</loc>
+    <lastmod>2026-05-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://cosmicgameshub.com/guides/best-budget-gaming-chairs</loc>
     <lastmod>2026-05-07</lastmod>
     <changefreq>monthly</changefreq>
@@ -439,6 +445,12 @@
     <lastmod>2026-05-08</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://cosmicgameshub.com/games/spec-match</loc>
+    <lastmod>2026-05-08</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
   </url>
 
   <!-- AI Gaming -->
