@@ -103,6 +103,25 @@
     <priority>0.8</priority>
   </url>
 
+  <url>
+    <loc>https://cosmicgameshub.com/guides/gaming-headset-buying-guide</loc>
+    <lastmod>2026-05-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://cosmicgameshub.com/guides/gaming-mouse-buying-guide</loc>
+    <lastmod>2026-05-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://cosmicgameshub.com/guides/best-gaming-headsets-for-pc-2026</loc>
+    <lastmod>2026-05-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
   <!-- Versus / Comparison Pages -->
   <url>
     <loc>https://cosmicgameshub.com/versus/hyperx-cloud-stinger-vs-steelseries-arctis-nova-3</loc>
@@ -199,6 +218,18 @@
     <lastmod>2026-05-07</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://cosmicgameshub.com/versus/corsair-hs65-wireless-vs-hyperx-cloud-alpha-wireless</loc>
+    <lastmod>2026-05-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://cosmicgameshub.com/versus/lg-c3-oled-vs-samsung-odyssey-oled-g8</loc>
+    <lastmod>2026-05-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://cosmicgameshub.com/versus/razer-kraken-v3-vs-corsair-hs65-wireless</loc>
