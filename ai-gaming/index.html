@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-D272MF8NQP"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-D272MF8NQP');
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Build Games with AI (2026) — Tools, Workflows & Real Examples | CosmicGamesHub</title>
+  <meta name="description" content="Learn how to build browser games with AI in 2026. The complete toolkit — Claude, Cursor, Midjourney, Suno, Meshy — plus real workflows and examples from games built right here." />
+  <meta name="keywords" content="build games with AI, AI game development, AI game dev tools 2026, make browser game AI, Claude game development, Cursor game dev, Midjourney game assets" />
+  <meta property="og:title" content="Build Games with AI (2026) — Tools, Workflows & Real Examples" />
+  <meta property="og:description" content="The complete guide to building browser games with AI — code, art, audio, 3D — with real examples from games built at CosmicGamesHub." />
+  <meta property="og:image" content="https://cosmicgameshub.com/images/ai-gaming-hero.jpg" />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://cosmicgameshub.com/ai-gaming" />
+  <link rel="canonical" href="https://cosmicgameshub.com/ai-gaming" />
+  <link rel="stylesheet" href="../styles.css" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "Build Games with AI (2026): Tools, Workflows & Real Examples",
+    "description": "The complete guide to building browser games with AI — code, art, audio, and 3D — with real examples from games built at CosmicGamesHub.",
+    "author": {"@type":"Organization","name":"CosmicGamesHub","url":"https://cosmicgameshub.com"},
+    "publisher": {"@type":"Organization","name":"CosmicGamesHub","url":"https://cosmicgameshub.com"},
+    "datePublished": "2026-05-07",
+    "dateModified": "2026-05-07",
+    "mainEntityOfPage": "https://cosmicgameshub.com/ai-gaming",
+    "image": "https://cosmicgameshub.com/images/ai-gaming-hero.jpg"
+  }
+  </script>
+
+  <style>
+    /* ── Page-specific overrides ── */
+    .aig-hero {
+      position: relative;
+      padding: 5rem 0 4rem;
+      text-align: center;
+      overflow: hidden;
+      border-bottom: 1px solid var(--border);
+    }
+    .aig-hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse at 50% 0%, rgba(0,212,255,0.12) 0%, transparent 60%),
+        radial-gradient(ellipse at 20% 90%, rgba(139,92,246,0.08) 0%, transparent 55%),
+        radial-gradient(ellipse at 80% 80%, rgba(249,115,22,0.06) 0%, transparent 50%);
+      pointer-events: none;
+    }
+    .aig-badge {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      background: rgba(139,92,246,0.1);
+      border: 1px solid rgba(139,92,246,0.25);
+      border-radius: 20px;
+      padding: 0.3rem 1rem;
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #a78bfa;
+      margin-bottom: 1.4rem;
+    }
+    .aig-badge .dot {
+      width: 6px; height: 6px;
+      background: #a78bfa;
+      border-radius: 50%;
+      animation: aidot 2s ease-in-out infinite;
+    }
+    @keyframes aidot {
+      0%,100% { opacity:1; transform:scale(1); }
+      50% { opacity:0.35; transform:scale(0.6); }
+    }
+    .aig-hero__title {
+      font-size: clamp(2.2rem, 5vw, 3.8rem);
+      font-weight: 800;
+      color: var(--text-hi);
+      line-height: 1.1;
+      margin-bottom: 1rem;
+      letter-spacing: -0.02em;
+    }
+    .aig-hero__title .hl-cyan { color: var(--accent); }
+    .aig-hero__title .hl-purple { color: #a78bfa; }
+    .aig-hero__sub {
+      font-size: clamp(1rem, 2.5vw, 1.18rem);
+      color: var(--text-mid);
+      max-width: 620px;
+      margin: 0 auto 2rem;
+      line-height: 1.65;
+    }
+    .aig-hero__cta-row {
+      display: flex; gap: 0.9rem; justify-content: center; flex-wrap: wrap;
+    }
+    .aig-btn-primary {
+      display: inline-flex; align-items: center; gap: 0.45rem;
+      background: linear-gradient(135deg, #7c3aed, #4f46e5);
+      color: #fff; padding: 0.75rem 1.6rem;
+      border-radius: 10px; font-weight: 700; font-size: 0.95rem;
+      text-decoration: none; transition: opacity 0.18s, transform 0.18s;
+    }
+    .aig-btn-primary:hover { opacity: 0.88; transform: translateY(-2px); }
+    .aig-btn-ghost {
+      display: inline-flex; align-items: center; gap: 0.45rem;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      color: var(--text-mid); padding: 0.75rem 1.6rem;
+      border-radius: 10px; font-weight: 600; font-size: 0.95rem;
+      text-decoration: none; transition: border-color 0.18s, color 0.18s, transform 0.18s;
+    }
+    .aig-btn-ghost:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-2px); }
+
+    /* ── Intro stat row ── */
+    .aig-stats {
+      display: flex; gap: 0; justify-content: center;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+      flex-wrap: wrap;
+    }
+    .aig-stat {
+      flex: 1 1 160px; max-width: 220px;
+      padding: 1.6rem 1rem;
+      text-align: center;
+      border-right: 1px solid var(--border);
+    }
+    .aig-stat:last-child { border-right: none; }
+    .aig-stat__num {
+      font-size: 2rem; font-weight: 800;
+      color: var(--text-hi); line-height: 1;
+      margin-bottom: 0.35rem;
+    }
+    .aig-stat__num span { color: var(--accent); }
+    .aig-stat__label { font-size: 0.78rem; color: var(--text-lo); text-transform: uppercase; letter-spacing: 0.08em; }
+
+    /* ── Section layout ── */
+    .aig-section {
+      padding: 4rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .aig-section:last-of-type { border-bottom: none; }
+    .aig-section__label {
+      font-size: 0.72rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.15em;
+      color: var(--accent); margin-bottom: 0.6rem;
+    }
+    .aig-section__title {
+      font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+      font-weight: 800; color: var(--text-hi);
+      margin-bottom: 0.9rem; line-height: 1.2;
+    }
+    .aig-section__sub {
+      font-size: 1.02rem; color: var(--text-mid);
+      max-width: 680px; line-height: 1.7;
+      margin-bottom: 2.5rem;
+    }
+
+    /* ── Tool category tabs ── */
+    .tool-tabs {
+      display: flex; gap: 0.5rem; flex-wrap: wrap;
+      margin-bottom: 2rem;
+    }
+    .tool-tab {
+      padding: 0.4rem 1rem;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-mid);
+      font-size: 0.82rem; font-weight: 600;
+      cursor: pointer; transition: all 0.18s;
+    }
+    .tool-tab.active, .tool-tab:hover {
+      background: rgba(0,212,255,0.08);
+      border-color: rgba(0,212,255,0.35);
+      color: var(--accent);
+    }
+
+    /* ── Tool cards grid ── */
+    .tool-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.2rem;
+    }
+    .tool-card {
+      background: var(--card-bg, rgba(255,255,255,0.03));
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.4rem;
+      transition: border-color 0.2s, transform 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .tool-card:hover {
+      border-color: rgba(0,212,255,0.3);
+      transform: translateY(-3px);
+    }
+    .tool-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: var(--tc-accent, var(--accent));
+      opacity: 0.7;
+    }
+    .tool-card__header {
+      display: flex; align-items: center; gap: 0.7rem;
+      margin-bottom: 0.8rem;
+    }
+    .tool-card__icon {
+      width: 40px; height: 40px;
+      background: var(--tc-bg, rgba(0,212,255,0.1));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem; flex-shrink: 0;
+    }
+    .tool-card__name {
+      font-size: 1rem; font-weight: 700; color: var(--text-hi);
+    }
+    .tool-card__category {
+      font-size: 0.7rem; color: var(--text-lo);
+      text-transform: uppercase; letter-spacing: 0.1em;
+    }
+    .tool-card__desc {
+      font-size: 0.88rem; color: var(--text-mid);
+      line-height: 1.6; margin-bottom: 1rem;
+    }
+    .tool-card__tags {
+      display: flex; gap: 0.4rem; flex-wrap: wrap;
+    }
+    .tool-tag {
+      font-size: 0.7rem; padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      color: var(--text-lo);
+    }
+    .tool-tag--highlight {
+      background: rgba(0,212,255,0.08);
+      border-color: rgba(0,212,255,0.2);
+      color: var(--accent);
+    }
+
+    /* ── Workflow steps ── */
+    .workflow-steps {
+      display: flex; flex-direction: column; gap: 0;
+      position: relative;
+    }
+    .workflow-steps::before {
+      content: '';
+      position: absolute; left: 22px; top: 44px; bottom: 44px; width: 2px;
+      background: linear-gradient(to bottom, var(--accent), #7c3aed);
+      opacity: 0.25;
+    }
+    .workflow-step {
+      display: flex; gap: 1.4rem;
+      padding: 1.8rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .workflow-step:last-child { border-bottom: none; }
+    .workflow-step__num {
+      width: 44px; height: 44px; flex-shrink: 0;
+      background: linear-gradient(135deg, rgba(0,212,255,0.15), rgba(139,92,246,0.1));
+      border: 1px solid rgba(0,212,255,0.25);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; font-weight: 800;
+      color: var(--accent); z-index: 1;
+    }
+    .workflow-step__body { flex: 1; }
+    .workflow-step__title {
+      font-size: 1.05rem; font-weight: 700;
+      color: var(--text-hi); margin-bottom: 0.5rem;
+    }
+    .workflow-step__desc {
+      font-size: 0.9rem; color: var(--text-mid); line-height: 1.7;
+      margin-bottom: 0.8rem;
+    }
+    .workflow-step__tool-row {
+      display: flex; gap: 0.5rem; flex-wrap: wrap;
+    }
+    .wf-tool {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      font-size: 0.76rem; font-weight: 600;
+      padding: 0.22rem 0.7rem;
+      border-radius: 6px;
+      background: rgba(0,212,255,0.07);
+      border: 1px solid rgba(0,212,255,0.18);
+      color: var(--accent);
+    }
+
+    /* ── Example game cards ── */
+    .example-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.4rem;
+    }
+    .example-card {
+      background: rgba(255,255,255,0.025);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .example-card:hover {
+      border-color: rgba(139,92,246,0.4);
+      transform: translateY(-4px);
+    }
+    .example-card__img {
+      width: 100%; aspect-ratio: 16/9;
+      object-fit: cover;
+      display: block;
+    }
+    .example-card__img-placeholder {
+      width: 100%; aspect-ratio: 16/9;
+      background: linear-gradient(135deg, var(--ec-from, #0f172a), var(--ec-to, #1e293b));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 3rem;
+    }
+    .example-card__body { padding: 1.3rem; }
+    .example-card__tag {
+      font-size: 0.7rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.1em;
+      color: var(--ec-color, var(--accent));
+      margin-bottom: 0.4rem;
+    }
+    .example-card__title {
+      font-size: 1.1rem; font-weight: 700;
+      color: var(--text-hi); margin-bottom: 0.5rem;
+    }
+    .example-card__desc {
+      font-size: 0.86rem; color: var(--text-mid);
+      line-height: 1.6; margin-bottom: 1rem;
+    }
+    .example-card__stack {
+      display: flex; gap: 0.4rem; flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+    .stack-tag {
+      font-size: 0.7rem; padding: 0.18rem 0.5rem;
+      border-radius: 5px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      color: var(--text-lo);
+    }
+    .example-card__play {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      font-size: 0.82rem; font-weight: 700;
+      color: var(--ec-color, var(--accent));
+      text-decoration: none;
+    }
+    .example-card__play:hover { text-decoration: underline; }
+
+    /* ── Prompt box ── */
+    .prompt-box {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(0,212,255,0.18);
+      border-radius: 12px;
+      padding: 1.3rem 1.5rem;
+      margin-bottom: 1.2rem;
+      position: relative;
+    }
+    .prompt-box__label {
+      font-size: 0.68rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.12em;
+      color: var(--accent); margin-bottom: 0.6rem;
+    }
+    .prompt-box__text {
+      font-family: 'Courier New', monospace;
+      font-size: 0.88rem; color: var(--text-mid);
+      line-height: 1.65;
+      white-space: pre-wrap;
+    }
+    .prompt-box__copy {
+      position: absolute; top: 1rem; right: 1rem;
+      background: rgba(0,212,255,0.1);
+      border: 1px solid rgba(0,212,255,0.2);
+      border-radius: 7px;
+      padding: 0.3rem 0.7rem;
+      font-size: 0.72rem; font-weight: 600;
+      color: var(--accent); cursor: pointer;
+      transition: background 0.15s;
+    }
+    .prompt-box__copy:hover { background: rgba(0,212,255,0.2); }
+
+    /* ── Submit teaser ── */
+    .submit-banner {
+      background: linear-gradient(135deg, rgba(139,92,246,0.08), rgba(0,212,255,0.05));
+      border: 1px solid rgba(139,92,246,0.2);
+      border-radius: 18px;
+      padding: 2.5rem;
+      display: flex; gap: 2rem; align-items: center;
+      flex-wrap: wrap;
+    }
+    .submit-banner__icon {
+      font-size: 3.5rem; flex-shrink: 0;
+    }
+    .submit-banner__body { flex: 1; min-width: 240px; }
+    .submit-banner__title {
+      font-size: 1.4rem; font-weight: 800;
+      color: var(--text-hi); margin-bottom: 0.5rem;
+    }
+    .submit-banner__desc {
+      font-size: 0.92rem; color: var(--text-mid);
+      line-height: 1.65; margin-bottom: 1.2rem;
+    }
+
+    /* ── FAQ ── */
+    .aig-faq { display: flex; flex-direction: column; gap: 0; }
+    .aig-faq .faq__item {
+      border-bottom: 1px solid var(--border);
+    }
+    .aig-faq .faq__question {
+      width: 100%; background: none; border: none;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1.2rem 0; cursor: pointer;
+      font-size: 0.97rem; font-weight: 600; color: var(--text-hi);
+      text-align: left; gap: 1rem;
+    }
+    .aig-faq .faq__question::after {
+      content: '+'; font-size: 1.4rem; color: var(--text-lo);
+      flex-shrink: 0; transition: transform 0.2s;
+    }
+    .aig-faq .faq__item.open .faq__question::after {
+      transform: rotate(45deg); color: var(--accent);
+    }
+    .aig-faq .faq__answer {
+      max-height: 0; overflow: hidden;
+      transition: max-height 0.3s ease;
+      font-size: 0.9rem; color: var(--text-mid); line-height: 1.7;
+    }
+    .aig-faq .faq__item.open .faq__answer {
+      max-height: 400px; padding-bottom: 1.2rem;
+    }
+
+    @media (max-width: 600px) {
+      .aig-hero { padding: 3rem 0 2.5rem; }
+      .aig-stat { padding: 1.1rem 0.7rem; }
+      .aig-stat__num { font-size: 1.5rem; }
+      .workflow-step { gap: 1rem; }
+      .workflow-steps::before { left: 20px; }
+      .submit-banner { padding: 1.5rem; gap: 1rem; }
+      .submit-banner__icon { font-size: 2.5rem; }
+      .prompt-box { padding: 1rem 1rem 1rem; }
+      .prompt-box__copy { position: static; display: block; margin-top: 0.8rem; width: max-content; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─── Navigation ──────────────────────────────────── -->
+<nav class="nav" id="mainNav" role="navigation" aria-label="Main navigation">
+  <div class="container">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo" aria-label="CosmicGamesHub home">
+        <span class="nav__logo-icon" aria-hidden="true">🎮</span>
+        <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
+      </a>
+      <ul class="nav__links" id="navLinks">
+        <li><a href="/guides/best-gaming-headsets-2026">Headsets</a></li>
+        <li><a href="/guides/best-gaming-mice-2026">Mice</a></li>
+        <li><a href="/guides/best-budget-gaming-chairs">Chairs</a></li>
+        <li><a href="/guides/best-gaming-keyboards-2026">Keyboards</a></li>
+        <li><a href="/guides/best-gaming-monitors-2026">Monitors</a></li>
+        <li><a href="/games">Games</a></li>
+        <li><a href="/versus">Comparisons</a></li>
+        <li><a href="/ai-gaming" class="nav__cta btn active">AI Gaming</a></li>
+      </ul>
+      <button class="nav__hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- ─── Hero ─────────────────────────────────────────── -->
+<section class="aig-hero" aria-label="AI Gaming introduction">
+  <div class="container">
+    <div class="aig-badge"><span class="dot"></span> AI × Game Development</div>
+    <h1 class="aig-hero__title">
+      Build Games with<br>
+      <span class="hl-cyan">AI</span> — <span class="hl-purple">Anyone Can Ship</span>
+    </h1>
+    <p class="aig-hero__sub">
+      You don't need a $100K game engine license or a 10-person studio. In 2026,
+      a browser game goes from idea to live URL in a weekend — with the right AI tools
+      handling the code, art, and audio. Here's exactly how it's done.
+    </p>
+    <div class="aig-hero__cta-row">
+      <a href="#toolkit" class="aig-btn-primary">⚡ See the Toolkit</a>
+      <a href="#workflow" class="aig-btn-ghost">📋 Full Workflow</a>
+      <a href="/games/brix3d" class="aig-btn-ghost">🧱 Play a Real Example</a>
+    </div>
+  </div>
+</section>
+
+<!-- ─── Stats bar ─────────────────────────────────────── -->
+<div class="aig-stats" aria-label="Key stats">
+  <div class="aig-stat js-reveal">
+    <div class="aig-stat__num">1<span>–3</span></div>
+    <div class="aig-stat__label">Days to ship a browser game</div>
+  </div>
+  <div class="aig-stat js-reveal">
+    <div class="aig-stat__num"><span>$0</span></div>
+    <div class="aig-stat__label">Cost to start — all tools have free tiers</div>
+  </div>
+  <div class="aig-stat js-reveal">
+    <div class="aig-stat__num">19<span>+</span></div>
+    <div class="aig-stat__label">Games on this hub — most AI-assisted</div>
+  </div>
+  <div class="aig-stat js-reveal">
+    <div class="aig-stat__num"><span>0</span></div>
+    <div class="aig-stat__label">Lines of art/audio code you need to write</div>
+  </div>
+</div>
+
+<!-- ─── Intro ─────────────────────────────────────────── -->
+<section class="aig-section guide-main" aria-label="Introduction">
+  <div class="container container--narrow">
+    <p class="aig-section__label">The Shift</p>
+    <h2 class="aig-section__title">Game dev just got redefined</h2>
+    <div style="font-size:0.97rem; color:var(--text-mid); line-height:1.8;">
+      <p>The barrier to game development used to be clear: you needed programming skills, art skills, audio skills, or money to hire people who had them. AI didn't remove that barrier — it <em>dissolved</em> it.</p>
+      <p>Modern AI coding assistants don't just autocomplete — they write complete game systems from a description. You describe the mechanic, they write the physics loop. You describe the feel, they write the event handlers. You push back on something broken, they fix it and explain why. The loop of idea → working code has compressed from weeks to hours.</p>
+      <p>The games on this hub — BRIX 3D, Void Keeper, Gamerdle, Dream Machine and others — were all built with AI assistance. Not by hiding that fact, but by leaning into it. The workflow is real, the tools are free to start, and the skills transfer to every future project.</p>
+      <p>This page is the complete picture: which tools exist, what each one is actually good for, the workflow that works, and real examples you can play right now.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ─── Toolkit ─────────────────────────────────────── -->
+<section class="aig-section" id="toolkit" aria-label="AI game dev toolkit">
+  <div class="container">
+    <p class="aig-section__label">The Toolkit</p>
+    <h2 class="aig-section__title">Every tool you need — by category</h2>
+    <p class="aig-section__sub">
+      Split by what you're trying to produce. You won't need all of these at once —
+      a browser game typically only needs the first two categories.
+    </p>
+
+    <!-- Code & Logic -->
+    <h3 style="font-size:1rem; font-weight:700; color:var(--text-hi); margin-bottom:1rem; margin-top:0; padding-bottom:0.5rem; border-bottom:1px solid var(--border);">
+      🧠 Code &amp; Game Logic
+    </h3>
+    <div class="tool-grid" style="margin-bottom:2.5rem;">
+
+      <div class="tool-card js-reveal" style="--tc-accent:#00d4ff; --tc-bg:rgba(0,212,255,0.1);">
+        <div class="tool-card__header">
+          <div class="tool-card__icon">🤖</div>
+          <div>
+            <div class="tool-card__name">Claude (Anthropic)</div>
+            <div class="tool-card__category">Code assistant</div>
+          </div>
+        </div>
+        <p class="tool-card__desc">Best-in-class for complex game architecture. Understands multi-file context, reasons about performance, and explains trade-offs — not just autocomplete. Strong with Three.js, Canvas, WebGL, and game loop patterns. <strong style="color:var(--text-hi);">Used to build BRIX 3D.</strong></p>
+        <div class="tool-card__tags">
+          <span class="tool-tag tool-tag--highlight">Free tier</span>
+          <span class="tool-tag">Three.js</span>
+          <span class="tool-tag">Debugging</span>
+          <span class="tool-tag">Architecture</span>
+        </div>
+      </div>
+
+      <div class="tool-card js-reveal" style="--tc-accent:#7c3aed; --tc-bg:rgba(124,58,237,0.1);">
+        <div class="tool-card__header">
+          <div class="tool-card__icon">⚡</div>
+          <div>
+            <div class="tool-card__name">Cursor</div>
+            <div class="tool-card__category">AI-native IDE</div>
+          </div>
+        </div>
+        <p class="tool-card__desc">VS Code fork where the AI has full project context — not just the open file. Ask it to refactor across 10 files, add a feature while maintaining patterns, or explain a complex codebase. The fastest iteration loop for larger game projects.</p>
+        <div class="tool-card__tags">
+          <span class="tool-tag tool-tag--highlight">Free tier</span>
+          <span class="tool-tag">Multi-file</span>
+          <span class="tool-tag">Refactoring</span>
+          <span class="tool-tag">VS Code base</span>
+        </div>
+      </div>
+
+      <div class="tool-card js-reveal" style="--tc-accent:#22c55e; --tc-bg:rgba(34,197,94,0.1);">
+        <div class="tool-card__header">
+          <div class="tool-card__icon">🐙</div>
+          <div>
+            <div class="tool-card__name">GitHub Copilot</div>
+            <div class="tool-card__category">Inline completion</div>
+          </div>
+        </div>
+        <p class="tool-card__desc">Line-by-line autocomplete that lives inside your editor. Best for filling in the mechanics you already know the shape of — event handlers, collision math, state machines — without context switching.</p>
+        <div class="tool-card__tags">
+          <span class="tool-tag">$10/month</span>
+          <span class="tool-tag">Inline</span>
+          <span class="tool-tag">All editors</span>
+        </div>
+      </div>
+
+      <div class="tool-card js-reveal" style="--tc-accent:#f97316; --tc-bg:rgba(249,115,22,0.1);">
+        <div class="tool-card__header">
+          <div class="tool-card__icon">🌐</div>
+          <div>
+            <div class="tool-card__name">Grok (xAI)</div>
+            <div class="tool-card__category">Research + code</div>
+          </div>
+        </div>
+        <p class="tool-card__desc">Strong for game design research — competitive analysis, mechanic breakdowns, "what made X fun" analysis. Also a capable coder with real-time web access. Good companion to Claude for research phases before you build.</p>
+        <div class="tool-card__tags">
+          <span class="tool-tag tool-tag--highlight">Free tier</span>
+          <span class="tool-tag">Real-time web</span>
+          <span class="tool-tag">Research</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Art & Assets -->
+    <h3 style="font-size:1rem; font-weight:700; color:var(--text-hi); margin-bottom:1rem; padding-bottom:0.5rem; border-bottom:1px solid var(--border);">
+      🎨 Art &amp; Visual Assets
+    </h3>
+    <div class="tool-grid" style="margin-bottom:2.5rem;">
+
+      <div class="tool-card js-reveal" style="--tc-accent:#ec4899; --tc-bg:rgba(236,72,153,0.1);">
+        <div class="tool-card__header">
+          <div class="tool-card__icon">🖼</div>
+          <div>
+            <div class="tool-card__name">Midjourney</div>
+            <div class="tool-card__category">Image generation</div>
+          </div>
+        </div>
+        <p class="tool-card__desc">Highest quality for game concept art, character design, environment splashscreens. Consistent style across a project when you use the same seed and style reference. Best for hero images, thumbnails, loading screens.</p>
+        <div class="tool-card__tags">
+          <span class="tool-tag">$10/month</span>
+          <span class="tool-tag">Concept art</span>
+          <span class="tool-tag">Style control</span>
+        </div>
+      </div>
+
+      <div class="tool-card js-reveal" style="--tc-accent:#f97316; --tc-bg:rgba(249,115,22,0.1);">
+        <div class="tool-card__header">
+          <div class="tool-card__icon">✨</div>
+          <div>
+            <div class="tool-card__name">Grok Imagine (xAI)</div>
+            <div class="tool-card__category">Image generation</div>
+          </div>
+        </div>
+        <p class="tool-card__desc">Fast, free image generation with no content filters for creative prompts. The BRIX 3D hero image on this site was generated with Grok Imagine — the glowing LEGO bricks on a cosmic background. Great for quick iterations.</p>
+        <div class="tool-card__tags">
+          <span class="tool-tag tool-tag--highlight">Free</span>
+          <span class="tool-tag">Fast</span>
+          <span class="tool-tag">Game thumbnails</span>
+        </div>
+      </div>
+
+      <div class="tool-card js-reveal" style="--tc-accent:#a78bfa; --tc-bg:rgba(167,139,250,0.1);">
+        <div class="tool-card__header">
+          <div class="tool-card__icon">🎯</div>
+          <div>
+            <div class="tool-card__name">Scenario</div>
+            <div class="tool-card__category">Game asset AI</div>
+          </div>
+        </div>
+        <p class="tool-card__desc">Built specifically for game developers. Fine-tune models on your art style to generate consistent sprites, tiles, and characters. If you need a consistent 2D aesthetic across 50 game characters, Scenario is the right tool.</p>
+        <div class="tool-card__tags">
+          <span class="tool-tag">$24/month</span>
+          <span class="tool-tag">Sprites</span>
+          <span class="tool-tag">Style consistency</span>
+          <span class="tool-tag">Tilesets</span>
+        </div>
+      </div>
+
+      <div class="tool-card js-reveal" style="--tc-accent:#00d4ff; --tc-bg:rgba(0,212,255,0.08);">
+        <div class="tool-card__header">
+          <div class="tool-card__icon">🌅</div>
+          <div>
+            <div class="tool-card__name">DALL-E 3 / GPT-4o</div>
+            <div class="tool-card__category">Image generation</div>
+          </div>
+        </div>
+        <p class="tool-card__desc">Strong for precise prompting — GPT-4o understands game design context, so "a pixel art space shooter enemy in 16×16 sprite, transparent background" actually works as expected. Good API access for automation pipelines.</p>
+        <div class="tool-card__tags">
+          <span class="tool-tag">Pay-per-image</span>
+          <span class="tool-tag">Precise prompts</span>
+          <span class="tool-tag">API access</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 3D -->
+    <h3 style="font-size:1rem; font-weight:700; color:var(--text-hi); margin-bottom:1rem; padding-bottom:0.5rem; border-bottom:1px solid var(--border);">
+      🧊 3D Assets &amp; Scenes
+    </h3>
+    <div class="tool-grid" style="margin-bottom:2.5rem;">
+
+      <div class="tool-card js-reveal" style="--tc-accent:#22d3ee; --tc-bg:rgba(34,211,238,0.1);">
+        <div class="tool-card__header">
+          <div class="tool-card__icon">📦</div>
+          <div>
+            <div class="tool-card__name">Meshy.ai</div>
+            <div class="tool-card__category">Text/image → 3D mesh</div>
+          </div>
+        </div>
+        <p class="tool-card__desc">Describe or show a 2D image and get back a 3D mesh (GLB/FBX/OBJ) in minutes. Works well for low-poly game assets. Outputs can be imported directly into Three.js or Unity. Best for props, items, and simple characters.</p>
+        <div class="tool-card__tags">
+          <span class="tool-tag tool-tag--highlight">Free tier</span>
+          <span class="tool-tag">GLB export</span>
+          <span class="tool-tag">Three.js</span>
+          <span class="tool-tag">Unity ready</span>
+        </div>
+      </div>
+
+      <div class="tool-card js-reveal" style="--tc-accent:#818cf8; --tc-bg:rgba(129,140,248,0.1);">
+        <div class="tool-card__header">
+          <div class="tool-card__icon">🌊</div>
+          <div>
+            <div class="tool-card__name">Spline AI</div>
+            <div class="tool-card__category">Browser-based 3D</div>
+          </div>
+        </div>
+        <p class="tool-card__desc">Design 3D scenes in the browser with AI assist — generate objects, apply materials, animate. Export directly to a React component or iFrame. Great for game menus, loading screens, and lightweight interactive 3D elements.</p>
+        <div class="tool-card__tags">
+          <span class="tool-tag tool-tag--highlight">Free tier</span>
+          <span class="tool-tag">Browser-based</span>
+          <span class="tool-tag">React export</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Audio -->
+    <h3 style="font-size:1rem; font-weight:700; color:var(--text-hi); margin-bottom:1rem; padding-bottom:0.5rem; border-bottom:1px solid var(--border);">
+      🎵 Music &amp; Audio
+    </h3>
+    <div class="tool-grid">
+
+      <div class="tool-card js-reveal" style="--tc-accent:#f59e0b; --tc-bg:rgba(245,158,11,0.1);">
+        <div class="tool-card__header">
+          <div class="tool-card__icon">🎸</div>
+          <div>
+            <div class="tool-card__name">Suno</div>
+            <div class="tool-card__category">Music generation</div>
+          </div>
+        </div>
+        <p class="tool-card__desc">Full songs from a text prompt. "8-bit chiptune loop, upbeat, 120 BPM, loopable" produces a downloadable game track in seconds. Free tier gives you enough for a full game jam. Quality is genuinely good for indie game use.</p>
+        <div class="tool-card__tags">
+          <span class="tool-tag tool-tag--highlight">Free tier</span>
+          <span class="tool-tag">Loop-ready</span>
+          <span class="tool-tag">Game music</span>
+        </div>
+      </div>
+
+      <div class="tool-card js-reveal" style="--tc-accent:#10b981; --tc-bg:rgba(16,185,129,0.1);">
+        <div class="tool-card__header">
+          <div class="tool-card__icon">🔊</div>
+          <div>
+            <div class="tool-card__name">ElevenLabs</div>
+            <div class="tool-card__category">Voice &amp; SFX</div>
+          </div>
+        </div>
+        <p class="tool-card__desc">AI voice generation for narrator lines, character dialogue, and UI sound effects. Create a consistent voice character for your game's announcer in minutes. SFX generation is newer but covers basic game sounds well.</p>
+        <div class="tool-card__tags">
+          <span class="tool-tag tool-tag--highlight">Free tier</span>
+          <span class="tool-tag">Voice acting</span>
+          <span class="tool-tag">SFX</span>
+          <span class="tool-tag">Dialogue</span>
+        </div>
+      </div>
+
+      <div class="tool-card js-reveal" style="--tc-accent:#6366f1; --tc-bg:rgba(99,102,241,0.1);">
+        <div class="tool-card__header">
+          <div class="tool-card__icon">🎹</div>
+          <div>
+            <div class="tool-card__name">Udio</div>
+            <div class="tool-card__category">Music generation</div>
+          </div>
+        </div>
+        <p class="tool-card__desc">Suno alternative with strong genre control. Better for atmospheric / ambient game soundscapes than Suno — "dark ambient dungeon crawler" or "tense sci-fi loop" both produce excellent results.</p>
+        <div class="tool-card__tags">
+          <span class="tool-tag tool-tag--highlight">Free tier</span>
+          <span class="tool-tag">Ambient</span>
+          <span class="tool-tag">Atmospheric</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─── Workflow ──────────────────────────────────────── -->
+<section class="aig-section" id="workflow" aria-label="How to build a browser game with AI">
+  <div class="container">
+    <p class="aig-section__label">The Workflow</p>
+    <h2 class="aig-section__title">How to build a browser game — step by step</h2>
+    <p class="aig-section__sub">
+      This is the exact workflow used to build BRIX 3D and the other games on this hub.
+      No build tools, no package managers, no deployment pipelines — just HTML, JavaScript, and AI.
+    </p>
+
+    <div class="workflow-steps">
+
+      <div class="workflow-step js-reveal">
+        <div class="workflow-step__num">1</div>
+        <div class="workflow-step__body">
+          <div class="workflow-step__title">Define the game in one sentence</div>
+          <p class="workflow-step__desc">Write the clearest possible one-sentence description of your game: what the player does, what makes it fun, and what the win/lose condition is. This becomes your north star prompt. Vague ideas produce vague games — get specific. <em>"A 3D brick-building sandbox in the browser where players place colored LEGO-style bricks on a grid using Three.js"</em> is a real starting prompt.</p>
+          <div class="workflow-step__tool-row">
+            <span class="wf-tool">Claude</span>
+            <span class="wf-tool">Grok</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="workflow-step js-reveal">
+        <div class="workflow-step__num">2</div>
+        <div class="workflow-step__body">
+          <div class="workflow-step__title">Research similar games and mechanics</div>
+          <p class="workflow-step__desc">Ask Grok or Claude to break down what makes 3–5 similar games fun — the mechanics, the feedback loops, the difficulty curve. This research phase saves you from building the wrong thing. Ask: <em>"What are the core feedback loops that make Minecraft satisfying? What should I replicate in a browser 3D builder?"</em></p>
+          <div class="workflow-step__tool-row">
+            <span class="wf-tool">Grok</span>
+            <span class="wf-tool">Claude</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="workflow-step js-reveal">
+        <div class="workflow-step__num">3</div>
+        <div class="workflow-step__body">
+          <div class="workflow-step__title">Scaffold the core loop with AI</div>
+          <p class="workflow-step__desc">Give Claude your one-sentence description and ask for a working HTML file with just the core mechanic — no menus, no scoring, no polish. Get the thing that makes the game <em>a game</em> working first. For BRIX 3D: place a brick, see it stick to the grid, be able to orbit the camera. Everything else is secondary.</p>
+          <div class="workflow-step__tool-row">
+            <span class="wf-tool">Claude</span>
+            <span class="wf-tool">Cursor</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="workflow-step js-reveal">
+        <div class="workflow-step__num">4</div>
+        <div class="workflow-step__body">
+          <div class="workflow-step__title">Iterate with the AI in a feedback loop</div>
+          <p class="workflow-step__desc">Play the game. Write down everything that feels wrong. Feed those notes back: <em>"The camera orbits feel stiff. The grid snapping is off by half a unit. There's no visual feedback when I hover over a slot."</em> AI handles implementation; you handle judgment. This is the most valuable skill in AI game dev — precise, opinionated feedback.</p>
+          <div class="workflow-step__tool-row">
+            <span class="wf-tool">Claude</span>
+            <span class="wf-tool">Cursor</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="workflow-step js-reveal">
+        <div class="workflow-step__num">5</div>
+        <div class="workflow-step__body">
+          <div class="workflow-step__title">Generate art assets in parallel</div>
+          <p class="workflow-step__desc">While the game loop is taking shape, generate your hero image, splash screen, and any sprite sheets. Use Midjourney or Grok Imagine for the visual identity. Keep a style reference prompt you reuse so everything looks cohesive. Prompt tip: end every prompt with your color palette — <em>"neon cyan, amber, deep space black background"</em>.</p>
+          <div class="workflow-step__tool-row">
+            <span class="wf-tool">Grok Imagine</span>
+            <span class="wf-tool">Midjourney</span>
+            <span class="wf-tool">DALL-E</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="workflow-step js-reveal">
+        <div class="workflow-step__num">6</div>
+        <div class="workflow-step__body">
+          <div class="workflow-step__title">Add music and audio</div>
+          <p class="workflow-step__desc">Generate a looping background track in Suno — specify BPM, genre, mood, and that it needs to be loop-ready. Then ask Claude to add the Web Audio API code that fades it in on first user interaction (required by browsers). Ambient music dramatically improves perceived game quality.</p>
+          <div class="workflow-step__tool-row">
+            <span class="wf-tool">Suno</span>
+            <span class="wf-tool">Udio</span>
+            <span class="wf-tool">ElevenLabs</span>
+            <span class="wf-tool">Claude</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="workflow-step js-reveal">
+        <div class="workflow-step__num">7</div>
+        <div class="workflow-step__body">
+          <div class="workflow-step__title">Performance audit &amp; mobile check</div>
+          <p class="workflow-step__desc">Ask Claude: <em>"Audit this game for performance. What's calling render every frame unnecessarily? What should be throttled? Does it work on mobile?"</em> This prompt reliably catches 80% of perf issues — render-on-demand patterns, event listener leaks, oversized assets. BRIX 3D went from lagging at 300+ bricks to smooth at 1000+ with this step.</p>
+          <div class="workflow-step__tool-row">
+            <span class="wf-tool">Claude</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="workflow-step js-reveal">
+        <div class="workflow-step__num">8</div>
+        <div class="workflow-step__body">
+          <div class="workflow-step__title">Deploy on GitHub Pages or Vercel — free</div>
+          <p class="workflow-step__desc">A single HTML file deploys in under 5 minutes. Push to GitHub, enable Pages, done. For multiple games with a shared nav and styles, a Vercel project gives you instant global CDN, <code>cleanUrls</code> (no .html in URLs), and automatic HTTPS. All the games on this hub deploy exactly this way.</p>
+          <div class="workflow-step__tool-row">
+            <span class="wf-tool">GitHub Pages</span>
+            <span class="wf-tool">Vercel</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─── Real Examples ─────────────────────────────────── -->
+<section class="aig-section" id="examples" aria-label="Games built with AI on this site">
+  <div class="container">
+    <p class="aig-section__label">Real Examples</p>
+    <h2 class="aig-section__title">Games built with AI — right here</h2>
+    <p class="aig-section__sub">
+      Every game below was built using AI assistance. The stack used and what the AI handled
+      is listed for each so you can see exactly where AI fits in the process.
+    </p>
+
+    <div class="example-grid">
+
+      <div class="example-card js-reveal" style="--ec-color:#00d4ff; --ec-from:#0a1628; --ec-to:#0e2040;">
+        <img src="/images/game-brix3d.jpg" alt="BRIX 3D browser game" class="example-card__img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+        <div class="example-card__img-placeholder" style="display:none;">🧱</div>
+        <div class="example-card__body">
+          <div class="example-card__tag">3D Builder · AI-Assisted</div>
+          <div class="example-card__title">BRIX 3D</div>
+          <p class="example-card__desc">Full 3D brick-building sandbox in the browser. InstancedMesh rendering, render-on-demand dirty flags, bloom post-processing, custom HUD — all implemented through AI iteration. Hero image generated with Grok Imagine.</p>
+          <div class="example-card__stack">
+            <span class="stack-tag">Three.js</span>
+            <span class="stack-tag">Claude</span>
+            <span class="stack-tag">Grok Imagine</span>
+            <span class="stack-tag">InstancedMesh</span>
+          </div>
+          <a href="/games/brix3d" class="example-card__play">▶ Play BRIX 3D →</a>
+        </div>
+      </div>
+
+      <div class="example-card js-reveal" style="--ec-color:#8b5cf6; --ec-from:#1a0a2e; --ec-to:#2d1b4e;">
+        <div class="example-card__img-placeholder">🌌</div>
+        <div class="example-card__body">
+          <div class="example-card__tag">Arcade Shooter · AI-Assisted</div>
+          <div class="example-card__title">Void Keeper</div>
+          <p class="example-card__desc">Canvas-based space shooter with procedural wave generation and adaptive difficulty. AI handled the enemy behavior trees and collision resolution math — the hardest parts to write from scratch.</p>
+          <div class="example-card__stack">
+            <span class="stack-tag">HTML Canvas</span>
+            <span class="stack-tag">Claude</span>
+            <span class="stack-tag">Procedural gen</span>
+          </div>
+          <a href="/games/void-keeper" class="example-card__play">▶ Play Void Keeper →</a>
+        </div>
+      </div>
+
+      <div class="example-card js-reveal" style="--ec-color:#f59e0b; --ec-from:#1c1200; --ec-to:#2d1e00;">
+        <div class="example-card__img-placeholder">🎮</div>
+        <div class="example-card__body">
+          <div class="example-card__tag">Word Puzzle · AI-Assisted</div>
+          <div class="example-card__title">Gamerdle</div>
+          <p class="example-card__desc">Guess the game from hints — Wordle mechanics applied to gaming culture. AI generated the entire initial question bank and suggested the hint reveal order based on information theory. New questions added via AI weekly.</p>
+          <div class="example-card__stack">
+            <span class="stack-tag">Vanilla JS</span>
+            <span class="stack-tag">Claude</span>
+            <span class="stack-tag">Grok research</span>
+          </div>
+          <a href="/games/gamerdle" class="example-card__play">▶ Play Gamerdle →</a>
+        </div>
+      </div>
+
+      <div class="example-card js-reveal" style="--ec-color:#ec4899; --ec-from:#1a0010; --ec-to:#2d001e;">
+        <div class="example-card__img-placeholder">✨</div>
+        <div class="example-card__body">
+          <div class="example-card__tag">Generative Art · AI-Assisted</div>
+          <div class="example-card__title">Dream Machine</div>
+          <p class="example-card__desc">Procedural particle system that responds to mouse and audio input. The shader math and particle lifecycle management were written entirely through AI prompting — no prior WebGL knowledge required to build it.</p>
+          <div class="example-card__stack">
+            <span class="stack-tag">WebGL</span>
+            <span class="stack-tag">Claude</span>
+            <span class="stack-tag">Shaders</span>
+          </div>
+          <a href="/games/dream-machine" class="example-card__play">▶ Play Dream Machine →</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─── Starter Prompts ──────────────────────────────── -->
+<section class="aig-section" id="prompts" aria-label="Starter prompts for AI game development">
+  <div class="container container--narrow">
+    <p class="aig-section__label">Start Building</p>
+    <h2 class="aig-section__title">3 prompts to get your first game running today</h2>
+    <p class="aig-section__sub" style="margin-bottom:2rem;">
+      Copy any of these into Claude. Each produces a working, self-contained HTML file
+      with no dependencies — open in a browser and you're playing.
+    </p>
+
+    <div class="prompt-box">
+      <div class="prompt-box__label">🧱 Starter 1 — 3D Builder</div>
+      <button class="prompt-box__copy" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('.prompt-box__text').textContent); this.textContent='Copied!'">Copy</button>
+      <div class="prompt-box__text">Build a self-contained browser game in a single HTML file. A 3D brick-building game using Three.js loaded from a CDN. The player places colored cubes on a flat grid — clicking snaps them to the nearest grid position. OrbitControls for camera. A ghost brick follows the mouse showing where the next piece will land. 10 color options in a bottom toolbar. Undo button. Dark background. No external assets needed.</div>
+    </div>
+
+    <div class="prompt-box">
+      <div class="prompt-box__label">🚀 Starter 2 — Arcade Shooter</div>
+      <button class="prompt-box__copy" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('.prompt-box__text').textContent); this.textContent='Copied!'">Copy</button>
+      <div class="prompt-box__text">Build a self-contained browser game in a single HTML file. A top-down space shooter using an HTML5 Canvas. Player ship at the bottom, moves with arrow keys or WASD, shoots with spacebar. Enemies spawn from the top in waves — each wave faster and more numerous. Score counter. Lives system. Particle explosion when enemies die. Dark space background with a few parallax star layers. All drawn with Canvas 2D API — no external libraries.</div>
+    </div>
+
+    <div class="prompt-box">
+      <div class="prompt-box__label">🧠 Starter 3 — Word Puzzle</div>
+      <button class="prompt-box__copy" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('.prompt-box__text').textContent); this.textContent='Copied!'">Copy</button>
+      <div class="prompt-box__text">Build a self-contained browser word game in a single HTML file. Wordle-style: player has 6 guesses to identify a 5-letter word. After each guess, letters light up green (correct position), yellow (wrong position), or gray (not in word). Include a 50-word list of common gaming terms. On-screen keyboard that also lights up as guesses are made. Reveal animation when letters are submitted. Show answer on fail. Dark themed, clean UI.</div>
+    </div>
+
+    <p style="font-size:0.85rem; color:var(--text-lo); margin-top:1.5rem; line-height:1.6;">
+      Tip: after the first working version, your next message should be a list of specific things that feel wrong — not "make it better." Precise feedback → precise improvements.
+    </p>
+  </div>
+</section>
+
+<!-- ─── Submit Teaser ─────────────────────────────────── -->
+<section class="aig-section" id="submit" aria-label="Submit your AI-built game">
+  <div class="container">
+    <div class="submit-banner">
+      <div class="submit-banner__icon">🚀</div>
+      <div class="submit-banner__body">
+        <div class="submit-banner__title">Built something with AI? Show it here.</div>
+        <p class="submit-banner__desc">
+          We're building a curated gallery of AI-assisted browser games. If you built something
+          using the workflow above — or your own — we want to feature it. Each listing shows
+          the stack used, what AI handled, and lets visitors play directly in the browser.
+          No frameworks, no installs, no gatekeeping on how "professional" it looks.
+        </p>
+        <a href="mailto:submit@cosmicgameshub.com?subject=Game Submission" class="aig-btn-primary">
+          ✉ Submit Your Game
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FAQ ───────────────────────────────────────────── -->
+<section class="aig-section guide-main" aria-label="FAQ">
+  <div class="container container--narrow">
+    <p class="aig-section__label">FAQ</p>
+    <h2 class="aig-section__title">Common questions</h2>
+
+    <div class="aig-faq faq__list">
+
+      <div class="faq__item">
+        <button class="faq__question" aria-expanded="false">Do I need to know how to code to build a browser game with AI?</button>
+        <div class="faq__answer">Not to start. You need to be able to open a browser console, notice when something looks wrong, and describe it clearly. That said — the more you understand HTML, CSS, and basic JavaScript, the faster the iteration loop becomes. AI fills gaps in your knowledge, but it works fastest when you can tell it exactly what's wrong rather than "it doesn't work."</div>
+      </div>
+
+      <div class="faq__item">
+        <button class="faq__question" aria-expanded="false">Which AI tool is best for game development — Claude or ChatGPT?</button>
+        <div class="faq__answer">Claude (especially Claude 3.5/4) has become the standard for complex coding tasks among developers who've tried both. It handles larger context windows better, explains trade-offs instead of just generating code, and is less likely to hallucinate library APIs. ChatGPT is solid for simpler games and when you want a quick first draft. For anything involving Three.js, WebGL, or Canvas with significant logic — Claude is the recommendation here.</div>
+      </div>
+
+      <div class="faq__item">
+        <button class="faq__question" aria-expanded="false">Can AI-generated games actually be fun?</button>
+        <div class="faq__answer">The AI writes mechanics. Fun comes from design decisions — and those are still yours. The games on this hub that get the most plays are the ones where someone had a clear vision of what makes the loop satisfying and kept iterating on that specifically. AI accelerates implementation; it doesn't replace the designer's eye. Think of it the same way you think about a game engine: Three.js doesn't make your game fun, but it does let you spend more time on what does.</div>
+      </div>
+
+      <div class="faq__item">
+        <button class="faq__question" aria-expanded="false">How long does it actually take to ship a browser game with AI?</button>
+        <div class="faq__answer">A working prototype of a simple game (arcade shooter, word puzzle, basic platformer) in 2–4 hours. A polished version with art, audio, mobile support, and a good UX — 1–3 days. BRIX 3D with its full 3D renderer, InstancedMesh performance system, and custom HUD took roughly a weekend of iteration. The ceiling is wherever your design ambition takes you.</div>
+      </div>
+
+      <div class="faq__item">
+        <button class="faq__question" aria-expanded="false">How do I handle performance in AI-generated Three.js games?</button>
+        <div class="faq__answer">The most common mistake in AI-generated 3D games is calling the renderer every frame regardless of whether anything changed. Ask Claude specifically: "Add render-on-demand — only call composer.render() when a dirty flag is set. Set the flag on camera movement, ghost updates, and brick additions/removals." That single change can cut GPU usage by 80% at idle. InstancedMesh instead of individual meshes is the other big one for games with repeated objects.</div>
+      </div>
+
+      <div class="faq__item">
+        <button class="faq__question" aria-expanded="false">Is it free to build and host a browser game?</button>
+        <div class="faq__answer">Yes, completely. Claude's free tier is enough to build a full game. Grok Imagine (for art) is free. Suno's free tier gives you music. GitHub Pages and Vercel both have free hosting with custom domains. The only costs are if you upgrade to paid tiers for higher limits — which makes sense once you're shipping regularly, not before.</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─── Footer nav ─────────────────────────────────────── -->
+<footer class="site-footer" role="contentinfo">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <div class="footer-brand">
+          <span class="footer-brand__icon">🎮</span>
+          <span class="footer-brand__name">CosmicGamesHub</span>
+        </div>
+        <p class="footer-tagline">Expert gear guides &amp; free browser games.</p>
+        <p class="footer-disclosure">
+          CosmicGamesHub participates in the Amazon Associates program. We earn a commission
+          on qualifying purchases at no extra cost to you.
+        </p>
+      </div>
+      <div class="footer-col">
+        <div class="footer-heading">Gear Guides</div>
+        <ul class="footer-links">
+          <li><a href="/guides/best-gaming-headsets-2026">Gaming Headsets</a></li>
+          <li><a href="/guides/best-gaming-mice-2026">Gaming Mice</a></li>
+          <li><a href="/guides/best-gaming-keyboards-2026">Keyboards</a></li>
+          <li><a href="/guides/best-gaming-monitors-2026">Monitors</a></li>
+          <li><a href="/guides/best-budget-gaming-chairs">Chairs</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <div class="footer-heading">Games &amp; Tools</div>
+        <ul class="footer-links">
+          <li><a href="/games">All Games</a></li>
+          <li><a href="/games/brix3d">BRIX 3D</a></li>
+          <li><a href="/games/gamerdle">Gamerdle</a></li>
+          <li><a href="/tools/gaming-fps-calculator">FPS Calculator</a></li>
+          <li><a href="/ai-gaming">AI Gaming Guide</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <div class="footer-heading">Site</div>
+        <ul class="footer-links">
+          <li><a href="/about">About</a></li>
+          <li><a href="/versus">Comparisons</a></li>
+          <li><a href="/lab">From the Lab</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 CosmicGamesHub. All rights reserved.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="../global.js"></script>
+<script>
+  /* Copy button reset */
+  document.querySelectorAll('.prompt-box__copy').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var b = btn;
+      setTimeout(function() { b.textContent = 'Copy'; }, 2500);
+    });
+  });
+</script>
+</body>
+</html>
