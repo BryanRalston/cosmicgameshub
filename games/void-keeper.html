@@ -141,7 +141,7 @@
 <canvas id="c"></canvas>
 <div id="overlay">
   <h1>Void Keeper</h1>
-  <div class="sub">move your cursor · collect the light · avoid the noise</div>
+  <div class="sub">drag your finger or move your cursor · collect the light · avoid the noise</div>
 
   <div class="how-to" id="howToPlay">
     <div class="ht-item"><span class="ht-dot" style="background:#E8C840;box-shadow:0 0 6px #E8C840;"></span> insight — 3 pts</div>
@@ -158,7 +158,7 @@
   <div class="final-score" id="finalScore">0</div>
   <div class="final-label" id="finalLabel">thoughts kept</div>
   <div class="best-score-line" id="bestScoreLine"></div>
-  <div class="prompt" id="overlayPrompt">click to begin</div>
+  <div class="prompt" id="overlayPrompt">tap to begin</div>
 </div>
 <script>
 (() => {
@@ -317,7 +317,7 @@
       bestScoreLine.textContent = `best: ${prev}`;
     }
     bestScoreLine.classList.add('show');
-    overlayPrompt.textContent = 'click to play again';
+    overlayPrompt.textContent = 'tap to play again';
 
     setTimeout(() => {
       overlay.classList.remove('hidden');
@@ -329,7 +329,7 @@
       finalScoreEl.style.display = 'none';
       finalLabel.style.display = 'none';
       bestScoreLine.classList.remove('show');
-      overlayPrompt.textContent = 'click to begin';
+      overlayPrompt.textContent = 'tap to begin';
       const howTo = document.getElementById('howToPlay');
       const howToLives = document.getElementById('howToLives');
       if (gameOver) {

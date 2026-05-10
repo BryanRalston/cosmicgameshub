@@ -25,7 +25,7 @@
     .ms-face:hover { transform:scale(1.15); }
 
     #msGrid { display:grid; border:2px solid rgba(0,212,255,0.4); border-radius:8px; overflow:hidden; max-width:min(600px,95vw); }
-    .ms-cell { width:100%; aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:clamp(0.65rem,2.5vw,0.95rem); font-weight:800; cursor:pointer; border:1px solid rgba(0,212,255,0.07); background:var(--bg-card); transition:background 0.1s; user-select:none; position:relative; }
+    .ms-cell { width:100%; aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:clamp(0.65rem,2.5vw,0.95rem); font-weight:800; cursor:pointer; border:1px solid rgba(0,212,255,0.18); background:var(--bg-card); transition:background 0.1s; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; position:relative; }
     .ms-cell:hover:not(.revealed):not(.flagged) { background:var(--bg-raised); }
     .ms-cell.revealed { background:var(--bg-void); cursor:default; }
     .ms-cell.flagged  { background:rgba(255,179,0,0.08); }
@@ -101,7 +101,7 @@
     <div style="padding:1.5rem 0 1rem;text-align:center;">
       <span class="section__eyebrow">Puzzle Game</span>
       <h1 style="margin-top:0.4rem;margin-bottom:0.25rem;">☄️ Cosmic Minesweeper</h1>
-      <p style="color:var(--text-mid);font-size:0.9rem;">Left-click to reveal. Right-click to flag. Clear the field without hitting a meteor.</p>
+      <p style="color:var(--text-mid);font-size:0.9rem;">Tap to reveal · long-press (or right-click) to flag. Clear the field without hitting a meteor.</p>
     </div>
 
     <div class="ms-wrap">
