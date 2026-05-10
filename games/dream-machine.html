@@ -285,8 +285,13 @@ function lerpAngle(a, b, t) {
 ctx.fillStyle = '#000';
 ctx.fillRect(0, 0, W, H);
 
-setTimeout(() => infoEl.classList.add('visible'), 2000);
-setTimeout(() => infoEl.classList.remove('visible'), 10000);
+// On touch devices users won't see a cursor — show the prompt sooner and longer
+const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+if (isTouch) {
+  infoEl.textContent = 'drag to nudge it — it has its own ideas';
+}
+setTimeout(() => infoEl.classList.add('visible'), isTouch ? 600 : 2000);
+setTimeout(() => infoEl.classList.remove('visible'), isTouch ? 14000 : 10000);
 
 function frame() {
   dream.t += dream.flowSpeed;

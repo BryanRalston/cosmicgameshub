@@ -138,6 +138,12 @@
 
       <div class="cw-layout">
         <div class="cw-grid" id="cw-grid"></div>
+        <!-- Off-screen input invokes the mobile system keyboard when a cell is tapped.
+             Each character typed is forwarded to the existing keydown logic, then cleared. -->
+        <input id="cw-hidden-input" type="text" inputmode="text" autocomplete="off"
+               autocorrect="off" autocapitalize="characters" spellcheck="false"
+               aria-label="Crossword letter input"
+               style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;" />
         <div class="cw-clues" id="cw-clues-panel"></div>
       </div>
 
@@ -490,6 +496,7 @@
     renderHighlights();
     updateActiveClue();
     updateClueHighlight();
+    focusHiddenInput();
   }
 
   function renderHighlights() {
@@ -567,6 +574,32 @@
     } else {
       if (selRow > 0) selectCell(selRow - 1, selCol, 'down');
     }
+  }
+
+  // Mobile keyboard support: invisible input that opens the system keyboard
+  // when a cell is selected. Letters typed there are dispatched as keydown
+  // events into the existing handler.
+  const hiddenInput = document.getElementById('cw-hidden-input');
+  function focusHiddenInput() {
+    if (!hiddenInput) return;
+    // iOS requires this in a tap handler — already in onCellClick path
+    try { hiddenInput.focus({ preventScroll: true }); } catch (_) { hiddenInput.focus(); }
+  }
+  if (hiddenInput) {
+    hiddenInput.addEventListener('input', e => {
+      const v = (hiddenInput.value || '').slice(-1);
+      hiddenInput.value = '';
+      if (!v) return;
+      if (/^[a-zA-Z]$/.test(v)) {
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: v.toUpperCase() }));
+      }
+    });
+    hiddenInput.addEventListener('keydown', e => {
+      if (e.key === 'Backspace' || e.key === 'Delete') {
+        e.preventDefault();
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace' }));
+      }
+    });
   }
 
   document.addEventListener('keydown', e => {
