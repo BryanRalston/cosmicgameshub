@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Puzzles — Today's Gaming Games | CosmicGamesHub</title>
+  <meta name="description" content="Play today's set of free daily gaming puzzles — Gamerdle, Pixle, Hardware Timeline, Gaming Trivia, Sudoku, Crossword, and more. Track your streak across every game.">
+  <meta name="keywords" content="daily gaming puzzles, daily browser games, gamerdle today, pixle today, gaming wordle">
+  <meta property="og:title" content="Daily Puzzles — CosmicGamesHub">
+  <meta property="og:description" content="Today's gaming puzzles in one place. Track your streak. New every day.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://cosmicgameshub.com/games/daily">
+  <meta property="og:image" content="https://cosmicgameshub.com/images/game-daily-hub.jpg">
+  <link rel="canonical" href="https://cosmicgameshub.com/games/daily">
+  <link rel="stylesheet" href="../styles.css">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-D272MF8NQP"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-D272MF8NQP');</script>
+  <style>
+    .dh-wrap { max-width: 980px; margin: 0 auto; padding: 0 1rem 4rem; }
+    .dh-hero { text-align: center; padding: 3rem 1rem 1.5rem; position: relative; }
+    .dh-hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 80% 100% at 50% 0%, rgba(0,212,255,0.08) 0%, transparent 70%); pointer-events: none; }
+    .dh-eyebrow { font-size: .78rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--accent, #00d4ff); margin-bottom: .65rem; position: relative; }
+    .dh-h1 { font-size: clamp(2.1rem, 6vw, 3.4rem); margin: 0 0 .5rem; color: #fff; font-family: 'Outfit', sans-serif; font-weight: 900; letter-spacing: -0.04em; line-height: 1.05; position: relative; }
+    .dh-date { color: var(--text-mid, #a8a8c0); font-size: 1rem; margin: 0 0 .25rem; position: relative; }
+    .dh-sub { color: var(--text-lo, #888); font-size: .92rem; max-width: 520px; margin: .25rem auto 0; line-height: 1.55; position: relative; }
+
+    /* Stat strip */
+    .dh-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem; max-width: 540px; margin: 1.75rem auto 0; position: relative; }
+    .dh-stat { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: .9rem .5rem; text-align: center; }
+    .dh-stat-val { font-size: clamp(1.4rem, 5vw, 1.85rem); font-weight: 800; color: var(--accent, #00d4ff); font-variant-numeric: tabular-nums; line-height: 1.05; }
+    .dh-stat-lbl { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--text-lo, #888); margin-top: .35rem; }
+
+    /* Card grid */
+    .dh-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: .85rem; margin-top: 2.25rem; }
+    .dh-card { display: flex; align-items: center; gap: .9rem; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 1rem 1.1rem; text-decoration: none; transition: all .18s; position: relative; overflow: hidden; }
+    .dh-card:hover { border-color: var(--accent, #00d4ff); background: rgba(0,212,255,0.04); transform: translateY(-2px); box-shadow: 0 12px 32px rgba(0,0,0,.5); }
+    .dh-card.is-played { border-color: rgba(0,230,118,0.28); background: rgba(0,230,118,0.04); }
+    .dh-card.is-played:hover { border-color: rgba(0,230,118,0.55); background: rgba(0,230,118,0.06); box-shadow: 0 12px 32px rgba(0,230,118,.18); }
+    .dh-icon { font-size: 2rem; line-height: 1; flex-shrink: 0; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.04); border-radius: 12px; }
+    .dh-card.is-played .dh-icon { background: rgba(0,230,118,0.10); }
+    .dh-meta { flex: 1; min-width: 0; }
+    .dh-name { font-size: 1rem; font-weight: 700; color: #fff; font-family: 'Outfit', sans-serif; line-height: 1.2; margin: 0 0 .2rem; }
+    .dh-line { font-size: .78rem; color: var(--text-lo, #888); display: flex; align-items: center; gap: .55rem; flex-wrap: wrap; }
+    .dh-status { font-weight: 700; }
+    .dh-status.todo { color: var(--accent, #00d4ff); }
+    .dh-status.done { color: #00e676; }
+    .dh-streak { display: inline-flex; align-items: center; gap: .15rem; }
+    .dh-streak.zero { opacity: 0.45; }
+    .dh-arrow { font-size: 1.05rem; color: var(--text-lo, #888); flex-shrink: 0; }
+    .dh-card:hover .dh-arrow { color: var(--accent, #00d4ff); transform: translateX(2px); }
+
+    /* Section divider */
+    .dh-section-label { font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; color: var(--accent, #00d4ff); border-bottom: 1px solid rgba(0,212,255,0.2); padding-bottom: .35rem; margin: 2.5rem 0 1rem; }
+
+    .dh-cta { text-align: center; margin: 2.5rem 0 .5rem; padding: 1.4rem; background: rgba(0,212,255,0.04); border: 1px solid rgba(0,212,255,0.15); border-radius: 16px; }
+    .dh-cta-title { font-size: 1rem; font-weight: 700; color: #fff; margin-bottom: .25rem; font-family: 'Outfit', sans-serif; }
+    .dh-cta-sub { font-size: .85rem; color: var(--text-mid, #a8a8c0); }
+
+    @media (max-width: 480px) {
+      .dh-grid { grid-template-columns: 1fr; }
+      .dh-card { padding: .85rem 1rem; }
+      .dh-icon { width: 44px; height: 44px; font-size: 1.7rem; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav" role="navigation" aria-label="Main navigation">
+    <div class="container">
+      <div class="nav__inner">
+        <a href="/" class="nav__logo" aria-label="CosmicGamesHub home">
+          <span class="nav__logo-icon">🎮</span>
+          <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
+        </a>
+        <ul class="nav__links">
+          <li><a href="/games/daily" class="active">Daily</a></li>
+          <li><a href="/games">Games</a></li>
+          <li><a href="/guides">Guides</a></li>
+          <li><a href="/versus">Comparisons</a></li>
+          <li><a href="/tools/gaming-fps-calculator" class="nav__cta btn">Free Tools</a></li>
+        </ul>
+        <button class="nav__hamburger" aria-label="Open menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <nav class="breadcrumb" aria-label="Breadcrumb" style="max-width:980px;margin:1rem auto;padding:0 1rem;">
+      <ol><li><a href="/">Home</a></li><li><a href="/games">Games</a></li><li aria-current="page">Daily</li></ol>
+    </nav>
+
+    <div class="dh-hero">
+      <div class="dh-eyebrow" id="dhEyebrow">Today's Set</div>
+      <h1 class="dh-h1">Daily Puzzles</h1>
+      <p class="dh-date" id="dhDate">—</p>
+      <p class="dh-sub">Twelve gaming puzzles, fresh every day. Track your streak across every game — same puzzle for every player worldwide.</p>
+
+      <div class="dh-strip">
+        <div class="dh-stat"><div class="dh-stat-val" id="dhPlayedCount">0/12</div><div class="dh-stat-lbl">Played Today</div></div>
+        <div class="dh-stat"><div class="dh-stat-val" id="dhStreakSum">0</div><div class="dh-stat-lbl">Total Streak</div></div>
+        <div class="dh-stat"><div class="dh-stat-val" id="dhPercent">0%</div><div class="dh-stat-lbl">Completion</div></div>
+      </div>
+    </div>
+
+    <div class="dh-wrap">
+
+      <div class="dh-section-label" id="dhTodoLabel">To Play</div>
+      <div class="dh-grid" id="dhTodoGrid"></div>
+
+      <div class="dh-section-label" id="dhDoneLabel" style="display:none;">Played Today</div>
+      <div class="dh-grid" id="dhDoneGrid"></div>
+
+      <div class="dh-cta">
+        <div class="dh-cta-title">All gaming games · No download · No login</div>
+        <div class="dh-cta-sub">Free forever — bookmark <span style="color:var(--accent,#00d4ff);">cosmicgameshub.com/games/daily</span> for tomorrow.</div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>© 2026 CosmicGamesHub · <a href="/about">About</a> · <a href="/games">Games</a> · <a href="/">Home</a></p>
+  </footer>
+  <script src="/global.js" defer></script>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": "Daily Puzzles",
+    "description": "Today's set of free daily gaming puzzles — Gamerdle, Pixle, Hardware Timeline, Gaming Trivia, Sudoku, Crossword, and more.",
+    "url": "https://cosmicgameshub.com/games/daily"
+  }
+  </script>
+
+<script>
+(function () {
+  // ── Helpers — match the day/date conventions used inside each game ───────
+  const now = new Date();
+  const yyyymmdd = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+  const yesterdayDate = new Date(now); yesterdayDate.setDate(now.getDate() - 1);
+  const yKey = `${yesterdayDate.getFullYear()}-${yesterdayDate.getMonth() + 1}-${yesterdayDate.getDate()}`;
+  const isoToday = now.toISOString().slice(0, 10); // YYYY-MM-DD
+  const startOfYear = new Date(now.getFullYear(), 0, 0);
+  const dayOfYear = Math.floor((now - startOfYear) / 86400000);
+  const epoch2026 = new Date('2026-01-01').getTime();
+  const dayIndex2026 = Math.floor((Date.now() - epoch2026) / 86400000);
+  const dayIndexUnix = Math.floor(Date.now() / 86400000);
+
+  function safeJSON(key) {
+    try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch (_) { return null; }
+  }
+  function safeInt(key, fallback = 0) {
+    const v = parseInt(localStorage.getItem(key), 10);
+    return Number.isFinite(v) ? v : fallback;
+  }
+
+  // ── Adapters per game — return { played: bool, streak: number } ──────────
+  function adapters() {
+    return {
+      gamerdle() {
+        const s = safeJSON('gamerdle-stats') || { streak: 0, history: {} };
+        return { played: !!(s.history && s.history[yyyymmdd]), streak: s.streak || 0 };
+      },
+      'gaming-trivia'() {
+        const s = safeJSON('trivia-stats') || { streak: 0, history: {} };
+        return { played: !!(s.history && s.history[yyyymmdd]), streak: s.streak || 0 };
+      },
+      'hardware-timeline'() {
+        const last = localStorage.getItem('ht_last_date');
+        return { played: last === isoToday, streak: safeInt('ht_day_streak') };
+      },
+      'gear-quiz'() {
+        const last = localStorage.getItem('gq_last_date');
+        return { played: last === isoToday, streak: safeInt('gq_streak') };
+      },
+      'spec-match'() {
+        const last = localStorage.getItem('sm_last_date');
+        return { played: last === isoToday, streak: safeInt('sm_streak') };
+      },
+      pixle() {
+        const state = safeJSON('pixle-state-v1') || {};
+        const stats = safeJSON('pixle-stats-v1') || {};
+        const finished = state.dayIndex === dayIndex2026 && (state.status === 'won' || state.status === 'lost');
+        return { played: finished, streak: stats.streak || 0 };
+      },
+      'word-scramble'() {
+        // word-scramble uses Math.floor(Date.now()/86400000) % WORDS.length internally.
+        // For "played today" we just check the state's dayIndex matches today's unix-day-index.
+        const state = safeJSON('scramble-state-v1') || {};
+        const stats = safeJSON('scramble-stats-v1') || {};
+        // word-scramble's DAY_INDEX is unix-day-index modulo WORDS.length, but the state stores
+        // the same modulo'd value. The simplest reliable check: state status finished + lastWinDay near today.
+        const finished = state.status === 'won' || state.status === 'lost';
+        const playedToday = finished && (typeof stats.lastWinDay === 'number' ? stats.lastWinDay >= dayIndexUnix - 1 : true);
+        return { played: !!playedToday, streak: stats.streak || 0 };
+      },
+      sudoku() {
+        // Sudoku stores per-day timer keys; we don't track a streak for it.
+        // Played today if any timer key for today's date exists. The keys aren't standard,
+        // so we check for any sudoku key updated today via a lighter signal: we look for
+        // `sk_solved_<isoToday>` (a marker we'll update via a small patch later); for now
+        // we treat sudoku as untracked-played with streak 0.
+        return { played: false, streak: 0, untracked: true };
+      },
+      crossword() {
+        const last = safeInt('cw_last_day', -1);
+        return { played: last === dayOfYear, streak: safeInt('cw_streak') };
+      },
+      'price-guesser'() {
+        const last = safeInt('pg_last_day', -1);
+        return { played: last === dayOfYear, streak: safeInt('pg_streak') };
+      },
+      rift() {
+        const state = safeJSON(`rift_state_${dayIndex2026}`);
+        const meta = safeJSON('rift_meta') || {};
+        const finished = state && state.zones && Object.values(state.zones).every(z => z && (z.completed || z.solved || z.status === 'done'));
+        return { played: !!finished, streak: meta.streak || 0 };
+      },
+      'daily-challenge'() {
+        const history = safeJSON('cgx-dc-history') || [];
+        const todayDone = Array.isArray(history) && history.some(h => h && (h.date === isoToday || h.date === yyyymmdd));
+        return { played: !!todayDone, streak: safeInt('cgx-dc-streak') };
+      }
+    };
+  }
+
+  // ── Game registry — display order + metadata ─────────────────────────────
+  const GAMES = [
+    { id: 'gamerdle',           name: 'Gamerdle',          icon: '🎮', tag: 'Mystery video game',    href: '/games/gamerdle' },
+    { id: 'pixle',              name: 'Pixle',             icon: '🟩', tag: '5-letter Wordle',       href: '/games/pixle' },
+    { id: 'rift',               name: 'Rift',              icon: '🌀', tag: '3 word zones',          href: '/games/rift' },
+    { id: 'hardware-timeline',  name: 'Hardware Timeline', icon: '📅', tag: 'Guess the year',        href: '/games/hardware-timeline' },
+    { id: 'spec-match',         name: 'Spec Match',        icon: '🔍', tag: 'Specs → product',       href: '/games/spec-match' },
+    { id: 'gear-quiz',          name: 'Gear Quiz',         icon: '🎧', tag: '10 gear questions',     href: '/games/gear-quiz' },
+    { id: 'gaming-trivia',      name: 'Gaming Trivia',     icon: '🧠', tag: '10 daily questions',    href: '/games/gaming-trivia' },
+    { id: 'word-scramble',      name: 'Word Scramble',     icon: '🔀', tag: 'Unscramble the word',   href: '/games/word-scramble' },
+    { id: 'crossword',          name: 'Gaming Crossword',  icon: '✏️', tag: '5×5 mini',              href: '/games/crossword' },
+    { id: 'sudoku',             name: 'Sudoku',            icon: '🔢', tag: 'Daily 9×9',             href: '/games/sudoku' },
+    { id: 'price-guesser',      name: 'Price Guesser',     icon: '💰', tag: '5 hardware prices',     href: '/games/price-guesser' },
+    { id: 'daily-challenge',    name: 'Daily Challenge',   icon: '⭐', tag: 'Curated rotation',      href: '/games/daily-challenge' }
+  ];
+
+  function fmtStreak(n) {
+    if (!n || n <= 0) return null;
+    if (n === 1) return '🔥 1 day';
+    return `🔥 ${n} days`;
+  }
+
+  function render() {
+    const a = adapters();
+    const dhTodoGrid = document.getElementById('dhTodoGrid');
+    const dhDoneGrid = document.getElementById('dhDoneGrid');
+    const dhDoneLabel = document.getElementById('dhDoneLabel');
+    const dhTodoLabel = document.getElementById('dhTodoLabel');
+
+    let playedCount = 0;
+    let streakSum = 0;
+    const todoCards = [];
+    const doneCards = [];
+
+    GAMES.forEach(g => {
+      let status;
+      try { status = a[g.id](); } catch (_) { status = { played: false, streak: 0 }; }
+      if (status.played) playedCount++;
+      streakSum += status.streak || 0;
+
+      const streakHtml = fmtStreak(status.streak);
+      const card = document.createElement('a');
+      card.href = g.href;
+      card.className = 'dh-card' + (status.played ? ' is-played' : '');
+      card.innerHTML = `
+        <div class="dh-icon" aria-hidden="true">${g.icon}</div>
+        <div class="dh-meta">
+          <div class="dh-name">${g.name}</div>
+          <div class="dh-line">
+            <span class="dh-status ${status.played ? 'done' : 'todo'}">${status.played ? '✓ Played' : g.tag}</span>
+            ${streakHtml ? `<span class="dh-streak">${streakHtml}</span>` : ''}
+          </div>
+        </div>
+        <div class="dh-arrow">${status.played ? '↻' : '→'}</div>
+      `;
+      (status.played ? doneCards : todoCards).push(card);
+    });
+
+    todoCards.forEach(c => dhTodoGrid.appendChild(c));
+    doneCards.forEach(c => dhDoneGrid.appendChild(c));
+
+    if (todoCards.length === 0) {
+      dhTodoLabel.textContent = 'All caught up — come back tomorrow';
+    } else {
+      dhTodoLabel.textContent = `To Play (${todoCards.length})`;
+    }
+    if (doneCards.length > 0) {
+      dhDoneLabel.style.display = '';
+      dhDoneLabel.textContent = `Played Today (${doneCards.length})`;
+    }
+
+    document.getElementById('dhPlayedCount').textContent = `${playedCount}/${GAMES.length}`;
+    document.getElementById('dhStreakSum').textContent = streakSum;
+    document.getElementById('dhPercent').textContent = `${Math.round(playedCount / GAMES.length * 100)}%`;
+  }
+
+  // ── Set the date display ────────────────────────────────────────────────
+  const dayName = now.toLocaleDateString('en-US', { weekday: 'long' });
+  const monthName = now.toLocaleDateString('en-US', { month: 'long' });
+  document.getElementById('dhDate').textContent = `${dayName}, ${monthName} ${now.getDate()}, ${now.getFullYear()}`;
+
+  render();
+})();
+</script>
+
+</body>
+</html>
