@@ -281,7 +281,7 @@
     <a href="/games" class="at-back">← Back to Games</a>
     <div class="at-header">
       <h1 class="at-title">🎯 FPS Aim Trainer</h1>
-      <p class="at-subtitle">Click targets before they disappear · Track your accuracy</p>
+      <p class="at-subtitle">Tap targets before they disappear · Track your accuracy</p>
     </div>
 
     <!-- HUD -->
@@ -311,7 +311,7 @@
       <!-- Start overlay -->
       <div class="at-overlay" id="startOverlay">
         <div class="at-overlay__title">🎯 Aim Trainer</div>
-        <div class="at-overlay__sub">Click every target before it disappears. How many can you hit in time?</div>
+        <div class="at-overlay__sub">Tap every target before it disappears. How many can you hit in time?</div>
         <div class="at-overlay__mode">
           <button class="at-mode-btn active" data-dur="30" id="mode30">30s</button>
           <button class="at-mode-btn" data-dur="60" id="mode60">60s</button>
@@ -650,9 +650,11 @@
     document.getElementById('bottomBestLine').innerHTML = txt;
   }
 
-  // Click on canvas
-  canvas.addEventListener('click', e => {
+  // Click / tap on canvas — pointerdown unifies mouse and touch with no 300ms delay
+  canvas.style.touchAction = 'manipulation';
+  canvas.addEventListener('pointerdown', e => {
     if (!running) return;
+    e.preventDefault();
     const rect = canvas.getBoundingClientRect();
     const mx = (e.clientX - rect.left);
     const my = (e.clientY - rect.top);

@@ -306,6 +306,24 @@
     /* Share button success state */
     .btn--share.copied { background: rgba(0,230,118,0.15) !important; border-color: var(--green) !important; color: var(--green) !important; }
 
+    /* Duration selector buttons */
+    .difficulty-btn {
+      padding: 0.65rem 1.4rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-mid);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
+      min-height: 48px;
+      min-width: 64px;
+    }
+    .difficulty-btn:hover { border-color: var(--accent); color: var(--text-hi); }
+    .difficulty-btn.active { background: rgba(0,212,255,0.1); border-color: var(--accent); color: var(--accent); }
+
     /* ── Progress bar beneath phrase ────────────────── */
     .tr-progress-wrap {
       width: 100%;

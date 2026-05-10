@@ -14,7 +14,7 @@
   <title>Scramble — Daily Gaming Word Unscramble | CosmicGamesHub</title>
   <meta name="description" content="Unscramble the daily gaming word in 6 tries. Gaming terms, titles, and characters — new puzzle every day." />
   <link rel="canonical" href="https://cosmicgameshub.com/games/word-scramble" />
-  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="../styles.css" />
   <style>
 /* ── Layout ── */
 .scramble-wrap {
@@ -1366,6 +1366,16 @@ if (!localStorage.getItem('scramble-seen-help')) {
     localStorage.setItem('scramble-seen-help', '1');
   }, 500);
 }
+
+// Tap-outside and Escape close help modal
+document.getElementById('help-modal').addEventListener('click', function(e) {
+  if (e.target === this) this.classList.remove('open');
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    document.getElementById('help-modal').classList.remove('open');
+  }
+});
 </script>
 <script src="/global.js" defer></script>
 

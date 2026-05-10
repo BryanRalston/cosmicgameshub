@@ -305,7 +305,7 @@
     <a href="/games" class="rt-back">← Back to Games</a>
 
     <h1 class="rt-title">⚡ Reaction Time</h1>
-    <p class="rt-subtitle">Wait for green — then click as fast as you can</p>
+    <p class="rt-subtitle">Wait for green — then tap as fast as you can</p>
 
     <!-- Round progress -->
     <div class="rt-rounds" id="rtRounds">
@@ -319,7 +319,7 @@
     <!-- Target circle -->
     <div class="rt-target-wrap">
       <div class="rt-target rt-target--idle" id="rtTarget" tabindex="0" role="button" aria-label="Click when green">
-        <div class="rt-label" id="rtLabel">Click to Start</div>
+        <div class="rt-label" id="rtLabel">Tap to Start</div>
         <div class="rt-label-sub" id="rtSub"></div>
       </div>
     </div>
@@ -493,7 +493,7 @@
     lbl.className = 'rt-label';
     lbl.textContent = 'Get Ready...';
     sub.textContent = '';
-    hintEl.textContent = 'Don\'t click yet!';
+    hintEl.textContent = 'Don\'t tap yet!';
 
     const delay = MIN_DELAY + Math.random() * (MAX_DELAY - MIN_DELAY);
     waitTimer = setTimeout(() => {
@@ -527,7 +527,7 @@
       setTargetState('done');
       lbl.className = 'rt-label';
       lbl.textContent = ms + 'ms';
-      sub.textContent = 'Click to continue';
+      sub.textContent = 'Tap to continue';
       hintEl.textContent = 'Round ' + round + ' of ' + ROUNDS;
     }
   }
@@ -570,7 +570,7 @@
 
     setTargetState('idle');
     lbl.className = 'rt-label';
-    lbl.textContent = 'Click to Start';
+    lbl.textContent = 'Tap to Start';
     sub.textContent = '';
     hintEl.textContent = '';
     statsEl.style.display = 'none';

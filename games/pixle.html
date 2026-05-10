@@ -14,7 +14,7 @@
 <title>Pixle — Daily Gaming Wordle | CosmicGamesHub</title>
 <meta name="description" content="Guess the 5-letter gaming word in 6 tries. A daily word game for gamers — new puzzle every day." />
 <link rel="canonical" href="https://cosmicgameshub.com/games/pixle" />
-<link rel="stylesheet" href="/styles.css" />
+<link rel="stylesheet" href="../styles.css" />
 <style>
 /* ── Layout ── */
 .pixle-wrap {
@@ -1062,6 +1062,16 @@ if (!localStorage.getItem('pixle-seen-help')) {
     localStorage.setItem('pixle-seen-help', '1');
   }, 400);
 }
+
+// Tap-outside and Escape close help modal
+document.getElementById('help-modal').addEventListener('click', function(e) {
+  if (e.target === this) this.classList.remove('open');
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    document.getElementById('help-modal').classList.remove('open');
+  }
+});
 </script>
 <script src="/global.js" defer></script>
 
