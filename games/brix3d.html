@@ -1614,14 +1614,23 @@
         /* Respect iPhone home bar / safe area */
         padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
       }
-      #stats { top: 8px; right: 8px; padding: 8px 12px; gap: 12px; }
-      .stat-val { font-size: 18px; }
+      /* Default the panel to collapsed on mobile so the canvas is usable */
+      #controls.collapsed-mobile {
+        max-height: 60px !important;
+        overflow: hidden;
+      }
+      /* Hide the floating stats panel on mobile — same counts are shown
+         in the controls panel and they overlap with the quick-bar icons */
+      #stats { display: none; }
       #info { display: none; }
       .fps { left: 8px; bottom: auto; top: 8px; }
       .rotation-ind { bottom: auto; top: 60px; }
       .brick-grid { grid-template-columns: repeat(6, 1fr); }
       .tool-grid { grid-template-columns: repeat(3, 1fr); }
-      
+
+      /* WASD pan camera hint is keyboard-only — hide on touch devices */
+      .pan-hint { display: none; }
+
       /* FPS hotbar safe area on mobile */
       .fps-hotbar {
         bottom: calc(120px + env(safe-area-inset-bottom, 0px));
@@ -13913,12 +13922,17 @@
       // Mobile panel toggle
       const panelToggle = document.getElementById('panelToggle');
       const mobileControlsPanel = document.getElementById('controls');
-      let panelCollapsed = false;
-      
+      // Default to collapsed on mobile so the canvas is immediately usable
+      let panelCollapsed = window.innerWidth <= 768;
+      if (panelCollapsed) {
+        mobileControlsPanel.style.maxHeight = '60px';
+        panelToggle.textContent = '▲ Tap to expand controls';
+      }
+
       panelToggle.addEventListener('click', () => {
         panelCollapsed = !panelCollapsed;
         mobileControlsPanel.style.maxHeight = panelCollapsed ? '60px' : '50vh';
-        panelToggle.textContent = panelCollapsed ? '▲ Tap to expand' : '▼ Tap to collapse';
+        panelToggle.textContent = panelCollapsed ? '▲ Tap to expand controls' : '▼ Tap to collapse';
       });
     }
     
