@@ -577,6 +577,16 @@
     </div>
 
     <div class="gq-streak-row" id="gqBottomMeta" style="display:none;"></div>
+
+    <div id="gqCrossPromo" style="display:none;margin-top:1.25rem;padding-top:1.1rem;border-top:1px solid rgba(255,255,255,0.06);">
+      <div style="font-size:.72rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:.6rem;text-align:center;">Play another puzzle today</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">
+        <a href="/games/hardware-timeline" style="display:block;padding:.65rem .75rem;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;text-decoration:none;"><div style="font-size:1.05rem;line-height:1;margin-bottom:.2rem;">📅</div><div style="font-size:.8rem;font-weight:700;color:#fff;">Hardware Timeline</div><div style="font-size:.68rem;color:var(--text-lo);">Guess the year</div></a>
+        <a href="/games/spec-match" style="display:block;padding:.65rem .75rem;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;text-decoration:none;"><div style="font-size:1.05rem;line-height:1;margin-bottom:.2rem;">🔍</div><div style="font-size:.8rem;font-weight:700;color:#fff;">Spec Match</div><div style="font-size:.68rem;color:var(--text-lo);">Specs → product</div></a>
+        <a href="/games/gamerdle" style="display:block;padding:.65rem .75rem;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;text-decoration:none;"><div style="font-size:1.05rem;line-height:1;margin-bottom:.2rem;">🎮</div><div style="font-size:.8rem;font-weight:700;color:#fff;">Gamerdle</div><div style="font-size:.68rem;color:var(--text-lo);">Mystery video game</div></a>
+        <a href="/games/daily" style="display:block;padding:.65rem .75rem;background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.25);border-radius:10px;text-decoration:none;"><div style="font-size:1.05rem;line-height:1;margin-bottom:.2rem;">📋</div><div style="font-size:.8rem;font-weight:700;color:var(--accent);">All 12 daily</div><div style="font-size:.68rem;color:var(--text-lo);">See your streak</div></a>
+      </div>
+    </div>
   </div>
 </main>
 
@@ -1020,6 +1030,9 @@
 
     elBottomMeta.style.display = 'flex';
     elBottomMeta.innerHTML = 'Best: <span>' + Math.max(score, prevBest) + ' pts</span>&nbsp;&nbsp;Streak: <span>' + streak + ' days</span>';
+
+    var elCross = document.getElementById('gqCrossPromo');
+    if (elCross) elCross.style.display = 'block';
 
     elProgressBar.style.width = '100%';
   }
