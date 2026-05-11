@@ -603,7 +603,11 @@
     }
   }
 
-  target.addEventListener('click', handleClick);
+  // pointerdown fires immediately on touch (no 300ms click delay) and on mouse.
+  // For a reaction-time game this is critical — mobile click was inflating
+  // reaction times by ~300ms.
+  target.style.touchAction = 'manipulation';
+  target.addEventListener('pointerdown', e => { e.preventDefault(); handleClick(); });
   target.addEventListener('keydown', e => {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick(); }
   });

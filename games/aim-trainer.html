@@ -416,7 +416,9 @@
   const hudMisses = document.getElementById('hudMisses');
   const hudAcc = document.getElementById('hudAcc');
 
-  const CANVAS_H = 420;
+  // Taller playfield on mobile (no horizontal space to spare) so targets feel
+  // less cramped. Desktop keeps the original height for predictability.
+  const CANVAS_H = Math.min(640, Math.max(420, Math.floor(window.innerHeight * 0.55)));
   const TARGET_R_MIN = 22;
   const TARGET_R_MAX = 42;
   const TARGET_LIFE_MIN = 1200;
