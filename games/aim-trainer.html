@@ -423,7 +423,9 @@
   const TARGET_R_MAX = 42;
   const TARGET_LIFE_MIN = 1200;
   const TARGET_LIFE_MAX = 2400;
-  const MAX_TARGETS = 3;
+  // Max simultaneous targets scales: 3 early → 5 at the climax.
+  function maxTargets() { return Math.round(3 + progress() * 2); }
+  const MAX_TARGETS = 3; // legacy constant, no longer used directly
 
   let duration = 30;
   let timeLeft = 30;
@@ -447,19 +449,37 @@
   function cw() { return wrap.clientWidth; }
   function ch() { return CANVAS_H; }
 
+  // Difficulty ramp: returns 0 at session start, 1 at the very end.
+  // Used to shrink targets, shorten lifetime, and tighten spawn intervals
+  // so the game escalates instead of feeling flat for 30s.
+  function progress() {
+    if (!duration || duration <= 0) return 0;
+    return Math.max(0, Math.min(1, 1 - timeLeft / duration));
+  }
+
   function spawnTarget() {
     if (!running) return;
-    if (targets.length >= MAX_TARGETS) return;
-    const r = TARGET_R_MIN + Math.random() * (TARGET_R_MAX - TARGET_R_MIN);
+    if (targets.length >= maxTargets()) return;
+    const p = progress();
+    // Targets shrink from full size to 60% over the run.
+    const sizeScale = 1 - p * 0.40;
+    const rMin = TARGET_R_MIN * sizeScale;
+    const rMax = TARGET_R_MAX * sizeScale;
+    const r = rMin + Math.random() * (rMax - rMin);
     const x = r + 10 + Math.random() * (cw() - 2 * r - 20);
     const y = r + 10 + Math.random() * (ch() - 2 * r - 20);
-    const life = TARGET_LIFE_MIN + Math.random() * (TARGET_LIFE_MAX - TARGET_LIFE_MIN);
+    // Lifetime shrinks 50% over the run.
+    const lifeScale = 1 - p * 0.50;
+    const life = (TARGET_LIFE_MIN + Math.random() * (TARGET_LIFE_MAX - TARGET_LIFE_MIN)) * lifeScale;
     targets.push({ x, y, r, born: performance.now(), life, hit: false, hitAt: 0 });
   }
 
   function scheduleSpawn() {
     if (!running) return;
-    const delay = 300 + Math.random() * 500;
+    const p = progress();
+    // Spawn 50% faster by end of session.
+    const delayScale = 1 - p * 0.50;
+    const delay = (300 + Math.random() * 500) * delayScale;
     spawnTimer = setTimeout(() => {
       spawnTarget();
       scheduleSpawn();

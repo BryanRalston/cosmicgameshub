@@ -550,11 +550,12 @@ canvas#gameCanvas {
 <div id="title-screen">
   <h1>BEAT LAB</h1>
   <div class="subtitle">choose your fighter &nbsp;<button onclick="document.getElementById('beatHelp').style.display='flex'" style="background:none;border:1px solid rgba(34,211,238,0.4);color:#22d3ee;border-radius:50%;width:22px;height:22px;font-size:0.75rem;cursor:pointer;padding:0;line-height:1;vertical-align:middle;" title="How to Play">?</button></div>
+  <div style="text-align:center;font-size:.7rem;color:rgba(200,204,208,0.45);letter-spacing:.08em;margin-top:.3rem;font-family:'Courier New',monospace;">— picks your color theme · all play the same —</div>
 
   <div class="player-select" id="player-select">
-    <button class="player-btn p1" data-player="Blaze">Blaze</button>
-    <button class="player-btn p2" data-player="Nova">Nova</button>
-    <button class="player-btn p3" data-player="Volt">Volt</button>
+    <button class="player-btn p1" data-player="Blaze" title="Pink / red theme">Blaze</button>
+    <button class="player-btn p2" data-player="Nova" title="Cyan theme">Nova</button>
+    <button class="player-btn p3" data-player="Volt" title="Green theme">Volt</button>
   </div>
 
   <div id="unlock-text">&#128274; PRO MODE UNLOCKED</div>
