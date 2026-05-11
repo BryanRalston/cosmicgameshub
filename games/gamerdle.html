@@ -207,6 +207,34 @@
     <button class="btn btn--primary" onclick="copyShare()" style="margin-bottom:0.75rem;">📋 Copy &amp; Share</button>
     <br>
     <button class="btn" style="margin-top:0.5rem;width:100%;background:var(--bg-surface);border:1px solid var(--border-mid);color:var(--text-hi);" onclick="this.closest('.result-panel').classList.remove('show');window.scrollTo(0,0);">↑ Back to Guesses</button>
+
+    <!-- Cross-game CTA: keep them on the site after they finish today's puzzle -->
+    <div style="margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid rgba(255,255,255,0.06);">
+      <div style="font-size:.72rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:.6rem;">Play another puzzle today</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">
+        <a href="/games/pixle" style="display:block;padding:.7rem .8rem;background:var(--bg-surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;text-align:left;">
+          <div style="font-size:1.1rem;line-height:1;margin-bottom:.25rem;">🟩</div>
+          <div style="font-size:.82rem;font-weight:700;color:#fff;">Pixle</div>
+          <div style="font-size:.7rem;color:var(--text-lo);">5-letter gaming Wordle</div>
+        </a>
+        <a href="/games/rift" style="display:block;padding:.7rem .8rem;background:var(--bg-surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;text-align:left;">
+          <div style="font-size:1.1rem;line-height:1;margin-bottom:.25rem;">🌀</div>
+          <div style="font-size:.82rem;font-weight:700;color:#fff;">Rift</div>
+          <div style="font-size:.7rem;color:var(--text-lo);">3 word zones daily</div>
+        </a>
+        <a href="/games/hardware-timeline" style="display:block;padding:.7rem .8rem;background:var(--bg-surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;text-align:left;">
+          <div style="font-size:1.1rem;line-height:1;margin-bottom:.25rem;">📅</div>
+          <div style="font-size:.82rem;font-weight:700;color:#fff;">Hardware Timeline</div>
+          <div style="font-size:.7rem;color:var(--text-lo);">Guess the year</div>
+        </a>
+        <a href="/games/daily" style="display:block;padding:.7rem .8rem;background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.25);border-radius:10px;text-decoration:none;text-align:left;">
+          <div style="font-size:1.1rem;line-height:1;margin-bottom:.25rem;">📋</div>
+          <div style="font-size:.82rem;font-weight:700;color:var(--accent);">All 12 daily</div>
+          <div style="font-size:.7rem;color:var(--text-lo);">See your streak</div>
+        </a>
+      </div>
+    </div>
+
     <p style="font-size:0.78rem;color:var(--text-lo);margin:0.75rem 0 0;">New puzzle tomorrow. Come back daily to keep your streak!</p>
   </div>
 
