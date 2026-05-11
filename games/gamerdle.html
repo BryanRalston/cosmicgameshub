@@ -72,6 +72,17 @@
     .confetti-piece { position:fixed; width:8px; height:8px; border-radius:2px; pointer-events:none; animation:fall linear forwards; z-index:999; }
     @keyframes fall { 0%{transform:translateY(-20px) rotate(0deg);opacity:1} 100%{transform:translateY(100vh) rotate(720deg);opacity:0} }
 
+    /* "Close — keep guessing" toast for high-green-no-name-match guesses */
+    .gd-close-toast {
+      position: fixed; top: 5rem; left: 50%; transform: translateX(-50%) translateY(-1rem);
+      background: rgba(15, 15, 26, 0.97); border: 1px solid rgba(0,212,255,0.35);
+      border-radius: 14px; padding: .75rem 1.1rem; color: var(--text-hi); font-size: .88rem;
+      font-weight: 600; box-shadow: 0 12px 36px rgba(0,0,0,.5), 0 0 0 1px rgba(0,212,255,.08);
+      z-index: 998; opacity: 0; pointer-events: none; transition: all .25s ease; max-width: 92vw; text-align: center;
+    }
+    .gd-close-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .gd-close-toast strong { color: #00e676; }
+
     @media(max-width:600px){
       .attr-header,.guess-row,.guess-empty { grid-template-columns:1.2fr repeat(5,minmax(52px,1fr)); }
       .cell { min-height:44px; font-size:0.68rem; }
@@ -177,6 +188,9 @@
   <div class="guess-rows" id="guessRows"></div>
   <!-- Empty slots -->
   <div id="emptySlots"></div>
+
+  <!-- Toast: "all attributes match but wrong game" -->
+  <div class="gd-close-toast" id="gdCloseToast" role="status" aria-live="polite"></div>
 
   <!-- Result -->
   <div class="result-panel" id="resultPanel">
@@ -619,6 +633,23 @@ function submitGuess() {
   } else {
     stats.history[todayKey] = { done: false, won: false, guesses };
     localStorage.setItem('gamerdle-stats', JSON.stringify(stats));
+
+    // Show "close — keep guessing" toast when the guess matched ≥4 attributes
+    // but is the wrong game. Prevents "I thought I won" confusion.
+    const cmp = buildComparison(match);
+    const greenCount = ['genre','platform','mode','rating'].filter(k => cmp[k] === 'green').length
+                     + (cmp.year && cmp.year.result === 'green' ? 1 : 0);
+    if (greenCount >= 4) {
+      const t = document.getElementById('gdCloseToast');
+      if (t) {
+        t.innerHTML = greenCount === 5
+          ? '🎯 <strong>All 5 specs match</strong> — different game with the same stats. Keep guessing!'
+          : `🎯 <strong>${greenCount}/5 specs match</strong> — you're close. Keep guessing!`;
+        t.classList.add('show');
+        clearTimeout(window._gdToastT);
+        window._gdToastT = setTimeout(() => t.classList.remove('show'), 3800);
+      }
+    }
   }
 
   renderAll();
