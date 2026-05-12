@@ -11,6 +11,12 @@
 
   <!-- Index Pages -->
   <url>
+    <loc>https://cosmicgameshub.com/pros</loc>
+    <lastmod>2026-05-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
     <loc>https://cosmicgameshub.com/guides</loc>
     <lastmod>2026-05-07</lastmod>
     <changefreq>weekly</changefreq>
