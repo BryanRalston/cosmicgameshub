@@ -320,6 +320,77 @@ strong { color: var(--text-hi); font-weight: 600; }
   flex-wrap: wrap;
 }
 
+/* Secondary CTA row — gives casual visitors and builders a doorway */
+.hero__alt-cta {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  color: rgba(200,200,220,0.55);
+  text-align: center;
+}
+.hero__alt-cta a {
+  color: var(--accent, #22D3EE);
+  text-decoration: none;
+  font-weight: 600;
+}
+.hero__alt-cta a:hover { text-decoration: underline; }
+
+/* Live pros preview — proof the database exists */
+.hero__preview {
+  margin: 2rem auto 0;
+  max-width: 900px;
+  padding: 0 1rem;
+}
+.hero__preview-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(34,211,238,0.7);
+  margin-bottom: 0.6rem;
+  text-align: center;
+}
+.hero__preview-row {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding: 0.25rem 0 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.hero__preview-row::-webkit-scrollbar { display: none; }
+.hero__pro-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.85rem;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 999px;
+  text-decoration: none;
+  scroll-snap-align: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.hero__pro-chip:hover {
+  border-color: rgba(34,211,238,0.5);
+  background: rgba(34,211,238,0.06);
+  transform: translateY(-1px);
+}
+.hero__pro-flag { font-size: 1.1rem; line-height: 1; }
+.hero__pro-name { font-size: 0.85rem; font-weight: 800; color: #fff; }
+.hero__pro-gear { font-size: 0.72rem; color: rgba(200,200,220,0.55); }
+.hero__pro-more {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--accent, #22D3EE);
+  padding: 0.55rem 0.95rem;
+  text-decoration: none;
+  align-self: center;
+}
+.hero__pro-more:hover { text-decoration: underline; }
+
 /* Scroll hint mouse */
 .hero__scroll {
   position: absolute;

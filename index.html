@@ -119,8 +119,19 @@
       <a href="/pros" class="btn btn--primary">Browse Pro Setups →</a>
       <a href="/guides" class="btn btn--outline">View Gear Guides</a>
     </div>
+    <p class="hero__alt-cta js-reveal" style="transition-delay:0.35s">
+      Just want to play? <a href="/games/daily">Today's daily puzzles →</a>
+      &nbsp;·&nbsp;
+      Building a kit? <a href="/build">Pick your game →</a>
+    </p>
 
-    <div class="hero__stats js-reveal" style="transition-delay:0.45s">
+    <!-- Live preview — proves the database is real before the visitor has to trust the promise -->
+    <div class="hero__preview js-reveal" id="heroPreview" style="transition-delay:0.4s" hidden>
+      <div class="hero__preview-label">▶ Live · A few of the 30 pros in the database</div>
+      <div class="hero__preview-row" id="heroPreviewRow"></div>
+    </div>
+
+    <div class="hero__stats js-reveal" style="transition-delay:0.5s">
       <div class="hero__stat">
         <span class="hero__stat-num">30+</span>
         <span class="hero__stat-label">Pros tracked, updated monthly</span>
@@ -900,6 +911,44 @@ window.addEventListener('load', () => {
     });
   }
 });
+</script>
+<script>
+  // Hero "live preview" — populate from /data/pros.json so visitors see the
+  // database is real before they have to trust the promise.
+  (function () {
+    function flag(iso) {
+      if (!iso || iso.length !== 2) return '🌐';
+      const A = 0x1F1E6, base = 'A'.charCodeAt(0);
+      return String.fromCodePoint(A + (iso.toUpperCase().charCodeAt(0) - base), A + (iso.toUpperCase().charCodeAt(1) - base));
+    }
+    function pickRandom(arr, n) {
+      const copy = arr.slice();
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy.slice(0, n);
+    }
+    fetch('/data/pros.json').then(r => r.json()).then(pros => {
+      if (!pros || !pros.length) return;
+      const preview = document.getElementById('heroPreview');
+      const row = document.getElementById('heroPreviewRow');
+      if (!preview || !row) return;
+      preview.hidden = false;
+      // Show 5 random pros with their mouse — most-visible piece of gear
+      const picks = pickRandom(pros.filter(p => p.mouse), 5);
+      const chips = picks.map(p => `
+        <a class="hero__pro-chip" href="/pros" aria-label="${p.name} setup">
+          <span class="hero__pro-flag">${flag(p.country)}</span>
+          <span>
+            <span class="hero__pro-name">${p.name}</span>
+            <span class="hero__pro-gear"> · ${p.mouse}</span>
+          </span>
+        </a>
+      `).join('');
+      row.innerHTML = chips + `<a class="hero__pro-more" href="/pros">+${pros.length - picks.length} more →</a>`;
+    }).catch(()=>{});
+  })();
 </script>
 <script src="/global.js" defer></script>
 </body>
