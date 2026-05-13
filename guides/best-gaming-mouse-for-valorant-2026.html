@@ -487,6 +487,14 @@
     <p class="affiliate-disclosure">As an Amazon Associate we earn from qualifying purchases. Prices may vary.</p>
   </footer>
 
+  <style>
+    /* Inline 'used-by-pros' line that auto-decorates each .vg-pick card */
+    .vg-pros-line { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; padding: .65rem .85rem; margin: .85rem 0 .5rem; background: rgba(255,70,85,0.04); border: 1px solid rgba(255,70,85,0.18); border-radius: 10px; font-size: .82rem; color: var(--text-mid, #b8b8c8); }
+    .vg-pros-line strong { color: #ff4655; font-weight: 800; }
+    .vg-pros-line .vg-pros-names { color: var(--text-hi, #eef); }
+    .vg-pros-line a { color: #ff4655; text-decoration: none; font-weight: 700; }
+    .vg-pros-line a:hover { text-decoration: underline; }
+  </style>
   <script src="/global.js" defer></script>
   <script>
     document.querySelectorAll('.faq__question').forEach(btn => {
@@ -494,6 +502,35 @@
         btn.parentElement.classList.toggle('open');
       });
     });
+
+    // ── Auto-decorate .vg-pick cards with 'X pros use this' lines ───
+    (function () {
+      const FIELD = 'mouse';        // which pro DB column to match
+      const TOTAL_LABEL = 'tracked pros';
+      fetch('/data/pros.json').then(r => r.json()).then(pros => {
+        document.querySelectorAll('.vg-pick').forEach(card => {
+          const nameEl = card.querySelector('.vg-pick-name');
+          if (!nameEl) return;
+          const cardName = nameEl.textContent.trim();
+          const cardLower = cardName.toLowerCase();
+          const matches = pros.filter(p => {
+            const g = p[FIELD]; if (!g) return false;
+            const gl = g.toLowerCase();
+            return cardLower.startsWith(gl) || gl.startsWith(cardLower);
+          });
+          if (!matches.length) return;
+          const names = matches.slice(0, 4).map(p => p.name).join(', ');
+          const more = matches.length > 4 ? ` <a href="/pros">+${matches.length - 4} more →</a>` : ' <a href="/pros">See setups →</a>';
+          const line = document.createElement('div');
+          line.className = 'vg-pros-line';
+          line.innerHTML = `🎮 <strong>${matches.length} of ${pros.length} ${TOTAL_LABEL}</strong> use this — <span class="vg-pros-names">${names}</span>${more}`;
+          // Insert before the Amazon CTA if found, otherwise at end of card body
+          const cta = card.querySelector('.vg-cta');
+          if (cta) cta.parentElement.insertBefore(line, cta);
+          else card.querySelector('.vg-pick-body')?.appendChild(line);
+        });
+      }).catch(()=>{});
+    })();
   </script>
 </body>
 </html>

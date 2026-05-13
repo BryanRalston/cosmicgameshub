@@ -384,11 +384,43 @@
     <p class="affiliate-disclosure">As an Amazon Associate we earn from qualifying purchases. Prices may vary.</p>
   </footer>
 
+  <style>
+    .vg-pros-line { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; padding: .65rem .85rem; margin: .85rem 0 .5rem; background: rgba(255,46,99,0.04); border: 1px solid rgba(255,46,99,0.18); border-radius: 10px; font-size: .82rem; color: var(--text-mid, #b8b8c8); }
+    .vg-pros-line strong { color: #ff2e63; font-weight: 800; }
+    .vg-pros-line .vg-pros-names { color: var(--text-hi, #eef); }
+    .vg-pros-line a { color: #ff2e63; text-decoration: none; font-weight: 700; }
+    .vg-pros-line a:hover { text-decoration: underline; }
+  </style>
   <script src="/global.js" defer></script>
   <script>
     document.querySelectorAll('.faq__question').forEach(btn => {
       btn.addEventListener('click', () => { btn.parentElement.classList.toggle('open'); });
     });
+
+    (function () {
+      const FIELD = 'monitor';
+      fetch('/data/pros.json').then(r => r.json()).then(pros => {
+        document.querySelectorAll('.vg-pick').forEach(card => {
+          const nameEl = card.querySelector('.vg-pick-name');
+          if (!nameEl) return;
+          const cardLower = nameEl.textContent.trim().toLowerCase();
+          const matches = pros.filter(p => {
+            const g = p[FIELD]; if (!g) return false;
+            const gl = g.toLowerCase();
+            return cardLower.startsWith(gl) || gl.startsWith(cardLower);
+          });
+          if (!matches.length) return;
+          const names = matches.slice(0, 4).map(p => p.name).join(', ');
+          const more = matches.length > 4 ? ` <a href="/pros">+${matches.length - 4} more →</a>` : ' <a href="/pros">See setups →</a>';
+          const line = document.createElement('div');
+          line.className = 'vg-pros-line';
+          line.innerHTML = `🖥️ <strong>${matches.length} of ${pros.length} tracked pros</strong> use this — <span class="vg-pros-names">${names}</span>${more}`;
+          const cta = card.querySelector('.vg-cta');
+          if (cta) cta.parentElement.insertBefore(line, cta);
+          else card.querySelector('.vg-pick-body')?.appendChild(line);
+        });
+      }).catch(()=>{});
+    })();
   </script>
 </body>
 </html>
