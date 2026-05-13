@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Build My Setup — Pro-Validated Gaming Kit 2026 | CosmicGamesHub</title>
+  <meta name="description" content="Pick a game and get the gaming mouse, keyboard, headset and monitor most used by pros in 2026. A real pro-validated kit, assembled from our live database — not a generic guide.">
+  <meta property="og:title" content="Build My Setup — Pro-Validated Gaming Kit 2026">
+  <meta property="og:description" content="Pick a game. Get the kit pros actually use. Built from the live pro database.">
+  <meta property="og:type" content="website">
+  <link rel="canonical" href="https://cosmicgameshub.com/build">
+  <link rel="icon" href="/favicon.ico">
+  <link rel="stylesheet" href="../styles.css">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-D272MF8NQP"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-D272MF8NQP');</script>
+  <style>
+    .bm-hero { text-align: center; padding: 3rem 1rem 1rem; }
+    .bm-eyebrow { display: inline-block; font-size: .72rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--accent, #00d4ff); margin-bottom: .55rem; }
+    .bm-h1 { font-size: clamp(2rem, 5vw, 3.2rem); margin: 0 0 .55rem; color: #fff; font-family: 'Outfit', sans-serif; font-weight: 900; letter-spacing: -0.04em; line-height: 1.05; }
+    .bm-sub { color: var(--text-mid, #a8a8c0); max-width: 620px; margin: 0 auto; font-size: 1rem; line-height: 1.6; }
+    .bm-wrap { max-width: 900px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+
+    /* Game picker */
+    .bm-picker { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 1.25rem 1.4rem; margin: 1.5rem 0; }
+    .bm-picker-label { font-size: .72rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--accent, #00d4ff); margin-bottom: .75rem; }
+    .bm-games { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: .55rem; }
+    .bm-game { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); color: var(--text-hi, #eee); padding: .9rem .75rem; border-radius: 12px; cursor: pointer; font-family: inherit; text-align: center; transition: all .12s; }
+    .bm-game:hover { border-color: var(--accent, #00d4ff); }
+    .bm-game.is-active { background: rgba(0,212,255,0.1); border-color: var(--accent, #00d4ff); color: var(--accent, #00d4ff); }
+    .bm-game-emoji { display: block; font-size: 1.5rem; margin-bottom: .2rem; }
+    .bm-game-name { font-size: .82rem; font-weight: 700; }
+    .bm-game.is-active .bm-game-name { color: var(--accent, #00d4ff); }
+
+    /* Kit cards */
+    .bm-kit { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: .85rem; margin: 1.25rem 0; }
+    .bm-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 1.2rem 1.3rem; position: relative; }
+    .bm-card-cat { font-size: .65rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--text-lo, #888); margin-bottom: .35rem; }
+    .bm-card-name { font-size: 1.05rem; font-weight: 800; color: #fff; font-family: 'Outfit', sans-serif; line-height: 1.2; margin-bottom: .45rem; }
+    .bm-card-meta { font-size: .78rem; color: var(--text-mid, #b8b8c8); margin-bottom: .85rem; line-height: 1.45; }
+    .bm-card-meta strong { color: var(--accent, #00d4ff); font-weight: 800; }
+    .bm-card-cta { display: inline-block; background: var(--accent, #00d4ff); color: #050508; font-weight: 800; font-size: .85rem; padding: .55rem 1rem; border-radius: 8px; text-decoration: none; transition: all .15s; }
+    .bm-card-cta:hover { background: #33dfff; transform: translateY(-1px); }
+    .bm-card-secondary { display: block; font-size: .75rem; color: var(--text-lo, #888); text-decoration: none; margin-top: .55rem; }
+    .bm-card-secondary:hover { color: var(--accent, #00d4ff); }
+
+    /* Summary panel */
+    .bm-summary { background: linear-gradient(135deg, rgba(0,212,255,0.04), rgba(255,255,255,0.02)); border: 1px solid rgba(0,212,255,0.25); border-radius: 16px; padding: 1.4rem 1.5rem; margin-top: 1.25rem; text-align: center; }
+    .bm-summary-title { font-size: 1.15rem; font-weight: 800; color: #fff; margin-bottom: .35rem; font-family: 'Outfit', sans-serif; }
+    .bm-summary-line { color: var(--text-mid, #b8b8c8); font-size: .88rem; line-height: 1.55; margin-bottom: 1rem; }
+    .bm-summary-line strong { color: var(--accent, #00d4ff); font-weight: 800; }
+    .bm-summary-actions { display: flex; gap: .55rem; justify-content: center; flex-wrap: wrap; }
+    .bm-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: .65rem 1.1rem; border-radius: 10px; font-weight: 700; font-size: .85rem; cursor: pointer; font-family: inherit; text-decoration: none; transition: all .12s; }
+    .bm-btn:hover { border-color: var(--accent, #00d4ff); color: var(--accent, #00d4ff); }
+    .bm-btn--primary { background: var(--accent, #00d4ff); border-color: var(--accent, #00d4ff); color: #050508; }
+    .bm-btn--primary:hover { background: #33dfff; color: #050508; }
+
+    .bm-empty { text-align: center; color: var(--text-lo, #888); padding: 2.5rem 1rem; }
+  </style>
+</head>
+<body>
+  <nav class="nav" role="navigation" aria-label="Main navigation">
+    <div class="container">
+      <div class="nav__inner">
+        <a href="/" class="nav__logo" aria-label="CosmicGamesHub home">
+          <span class="nav__logo-icon">🎮</span>
+          <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
+        </a>
+        <ul class="nav__links">
+          <li><a href="/pros">Pros</a></li>
+          <li><a href="/build" class="active">Build</a></li>
+          <li><a href="/guides">Guides</a></li>
+          <li><a href="/games/daily">Daily</a></li>
+          <li><a href="/games">Games</a></li>
+          <li><a href="/tools/gaming-fps-calculator" class="nav__cta btn">Free Tools</a></li>
+        </ul>
+        <button class="nav__hamburger" aria-label="Open menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <nav class="breadcrumb" aria-label="Breadcrumb" style="max-width:900px;margin:1rem auto;padding:0 1rem;">
+      <ol><li><a href="/">Home</a></li><li aria-current="page">Build My Setup</li></ol>
+    </nav>
+
+    <div class="bm-hero">
+      <div class="bm-eyebrow">Pro-Validated · Built from the Live DB</div>
+      <h1 class="bm-h1">Build My Setup</h1>
+      <p class="bm-sub">Pick a game. Get the mouse, keyboard, headset, and monitor most used by tracked pros in that game right now. Not opinion — straight from <a href="/pros" style="color:var(--accent,#00d4ff);">the database</a>.</p>
+    </div>
+
+    <div class="bm-wrap">
+      <div class="bm-picker">
+        <div class="bm-picker-label">Which game?</div>
+        <div class="bm-games" id="bmGames">
+          <button class="bm-game is-active" data-game="all"><span class="bm-game-emoji">🎮</span><span class="bm-game-name">Any / All Pros</span></button>
+          <button class="bm-game" data-game="valorant"><span class="bm-game-emoji">🔫</span><span class="bm-game-name">Valorant</span></button>
+          <button class="bm-game" data-game="cs2"><span class="bm-game-emoji">🎯</span><span class="bm-game-name">CS2</span></button>
+          <button class="bm-game" data-game="apex"><span class="bm-game-emoji">🟥</span><span class="bm-game-name">Apex</span></button>
+          <button class="bm-game" data-game="fortnite"><span class="bm-game-emoji">🏗️</span><span class="bm-game-name">Fortnite</span></button>
+        </div>
+      </div>
+
+      <div class="bm-kit" id="bmKit"></div>
+
+      <div class="bm-summary" id="bmSummary" style="display:none;">
+        <div class="bm-summary-title" id="bmSummaryTitle">The most-pro-used setup</div>
+        <div class="bm-summary-line" id="bmSummaryLine">—</div>
+        <div class="bm-summary-actions">
+          <a href="/pros" class="bm-btn bm-btn--primary">See all pro setups →</a>
+          <button class="bm-btn" id="bmShare">📋 Copy setup</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>© 2026 CosmicGamesHub · <a href="/about">About</a> · <a href="/games">Games</a> · <a href="/">Home</a></p>
+    <p class="affiliate-disclosure">As an Amazon Associate we earn from qualifying purchases. The picks below are computed from public pro-player data on file in <a href="/pros">the database</a>.</p>
+  </footer>
+
+  <script src="/global.js" defer></script>
+  <script>
+  (function () {
+    const GAME_LABEL = { valorant: 'Valorant', cs2: 'CS2', apex: 'Apex Legends', fortnite: 'Fortnite', all: 'across all games' };
+    const CATEGORIES = [
+      { key: 'mouse',    label: 'Mouse' },
+      { key: 'keyboard', label: 'Keyboard' },
+      { key: 'headset',  label: 'Headset' },
+      { key: 'monitor',  label: 'Monitor' }
+    ];
+
+    let pros = [], links = {};
+    let game = 'all';
+
+    function topProduct(filteredPros, field) {
+      const counts = new Map();
+      filteredPros.forEach(p => {
+        const v = p[field]; if (!v) return;
+        counts.set(v, (counts.get(v) || 0) + 1);
+      });
+      let best = null, bestCount = 0;
+      for (const [name, n] of counts) {
+        if (n > bestCount) { best = name; bestCount = n; }
+      }
+      return best ? { name: best, count: bestCount, total: filteredPros.length } : null;
+    }
+
+    function resolveLink(name) {
+      if (!name || !links) return null;
+      const direct = links[name];
+      if (direct) return { href: direct.internal || direct.amazon, isInternal: !!direct.internal, internal: direct.internal };
+      const lower = name.toLowerCase();
+      let best = null;
+      for (const key of Object.keys(links)) {
+        if (key.startsWith('_')) continue;
+        const lk = key.toLowerCase();
+        if (lower.startsWith(lk) && (!best || lk.length > best.length)) best = lk;
+      }
+      if (best) {
+        const m = links[Object.keys(links).find(k => k.toLowerCase() === best)];
+        return { href: m.internal || m.amazon, isInternal: !!m.internal, internal: m.internal };
+      }
+      return null;
+    }
+
+    function render() {
+      const filtered = game === 'all' ? pros : pros.filter(p => p.game === game);
+      const kit = document.getElementById('bmKit');
+      const summary = document.getElementById('bmSummary');
+      if (!filtered.length) {
+        kit.innerHTML = '';
+        summary.style.display = 'none';
+        kit.innerHTML = '<div class="bm-empty">No pros tracked yet for this game — try another.</div>';
+        return;
+      }
+
+      const picks = CATEGORIES.map(c => ({ ...c, top: topProduct(filtered, c.key) })).filter(p => p.top);
+
+      kit.innerHTML = picks.map(p => {
+        const r = resolveLink(p.top.name);
+        const pct = Math.round(p.top.count / p.top.total * 100);
+        const buyHref = r ? r.href : `https://www.amazon.com/s?k=${encodeURIComponent(p.top.name)}&tag=cosmicgameshu-20`;
+        const buyAttrs = r && r.isInternal ? '' : ' rel="nofollow sponsored" target="_blank"';
+        const reviewHtml = r && r.internal ? `<a class="bm-card-secondary" href="${r.internal}">Read our review →</a>` : '';
+        return `
+          <article class="bm-card">
+            <div class="bm-card-cat">${p.label}</div>
+            <div class="bm-card-name">${p.top.name}</div>
+            <div class="bm-card-meta"><strong>${p.top.count} of ${p.top.total}</strong> tracked pros ${game === 'all' ? '' : 'in ' + GAME_LABEL[game]} use this (${pct}%)</div>
+            <a class="bm-card-cta" href="${buyHref}"${buyAttrs}>Check price →</a>
+            ${reviewHtml}
+          </article>
+        `;
+      }).join('');
+
+      summary.style.display = 'block';
+      document.getElementById('bmSummaryTitle').textContent = `The most-pro-used kit ${GAME_LABEL[game]}`;
+      const names = picks.map(p => p.top.name).join(' · ');
+      document.getElementById('bmSummaryLine').innerHTML = `Computed across <strong>${filtered.length} pros</strong>. This is the gear most of them run — not a generic recommendation.`;
+
+      window._bmKit = picks.map(p => `${p.label}: ${p.top.name} (${p.top.count}/${p.top.total} pros)`).join('\n');
+    }
+
+    document.querySelectorAll('.bm-game').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.bm-game').forEach(b => b.classList.remove('is-active'));
+        btn.classList.add('is-active');
+        game = btn.dataset.game;
+        render();
+      });
+    });
+
+    document.getElementById('bmShare').addEventListener('click', () => {
+      const text = `My pro-validated setup (${GAME_LABEL[game]})\n${window._bmKit || ''}\n\nBuilt at cosmicgameshub.com/build`;
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('bmShare');
+        const orig = btn.textContent;
+        btn.textContent = '✓ Copied';
+        setTimeout(() => btn.textContent = orig, 1500);
+      }).catch(() => {});
+    });
+
+    Promise.all([
+      fetch('/data/pros.json').then(r => r.json()),
+      fetch('/data/product-links.json').then(r => r.json()).catch(() => ({}))
+    ]).then(([prosData, linksData]) => {
+      pros = prosData;
+      links = linksData;
+      render();
+    }).catch(err => {
+      document.getElementById('bmKit').innerHTML = '<div class="bm-empty">Could not load database.</div>';
+    });
+  })();
+  </script>
+</body>
+</html>
