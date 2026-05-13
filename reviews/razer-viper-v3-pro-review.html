@@ -152,6 +152,41 @@
       </div>
     </header>
 
+    <!-- "Used by pros" trust badge -->
+    <div class="ub-wrap" id="ubWrap" hidden>
+      <div class="ub-card">
+        <div class="ub-head">
+          <div class="ub-stat">
+            <div class="ub-count" id="ubCount">—</div>
+            <div class="ub-of" id="ubTotal">of — tracked pros</div>
+          </div>
+          <div class="ub-blurb" id="ubBlurb">use this mouse in 2026</div>
+        </div>
+        <div class="ub-chips" id="ubChips"></div>
+        <a href="/pros" class="ub-cta">See every pro's full setup →</a>
+      </div>
+    </div>
+    <style>
+      .ub-wrap { max-width: 880px; margin: 1rem auto 0; padding: 0 1rem; }
+      .ub-card { background: linear-gradient(135deg, rgba(68,255,71,0.04), rgba(255,255,255,0.02)); border: 1px solid rgba(68,255,71,0.25); border-radius: 14px; padding: 1.1rem 1.25rem; }
+      .ub-head { display: flex; align-items: center; gap: 1rem; margin-bottom: .85rem; flex-wrap: wrap; }
+      .ub-stat { display: flex; flex-direction: column; align-items: center; min-width: 92px; padding: .35rem .65rem; background: rgba(68,255,71,0.08); border: 1px solid rgba(68,255,71,0.2); border-radius: 10px; }
+      .ub-count { font-family: 'Outfit', sans-serif; font-size: 2rem; font-weight: 900; color: #44ff47; line-height: 1; }
+      .ub-of { font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--text-lo, #888); margin-top: .25rem; }
+      .ub-blurb { flex: 1; min-width: 180px; color: var(--text-hi, #eef); font-size: .95rem; font-weight: 700; font-family: 'Outfit', sans-serif; line-height: 1.3; }
+      .ub-chips { display: flex; gap: .4rem; flex-wrap: wrap; margin-bottom: .85rem; }
+      .ub-chip { display: inline-flex; align-items: center; gap: .35rem; padding: .35rem .65rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 999px; font-size: .78rem; color: var(--text-hi, #eee); text-decoration: none; transition: all .12s; font-weight: 700; }
+      .ub-chip:hover { border-color: #44ff47; background: rgba(68,255,71,0.05); }
+      .ub-chip-flag { font-size: .95rem; line-height: 1; }
+      .ub-chip-team { font-size: .68rem; font-weight: 600; color: var(--text-lo, #888); margin-left: .15rem; }
+      .ub-game-valorant { box-shadow: inset 3px 0 0 #ff4655; }
+      .ub-game-cs2 { box-shadow: inset 3px 0 0 #ffb300; }
+      .ub-game-apex { box-shadow: inset 3px 0 0 #ff2e63; }
+      .ub-game-fortnite { box-shadow: inset 3px 0 0 #9b5de5; }
+      .ub-cta { display: inline-block; font-size: .82rem; font-weight: 700; color: #44ff47; text-decoration: none; }
+      .ub-cta:hover { text-decoration: underline; }
+    </style>
+
     <div class="rv-wrap">
       <p class="rv-disclosure">As an Amazon Associate we earn from qualifying purchases. Prices may vary. We only recommend products we'd use ourselves — our picks are independent of any sponsorship.</p>
 
@@ -301,6 +336,39 @@
     document.querySelectorAll('.faq__question').forEach(btn => {
       btn.addEventListener('click', () => { btn.parentElement.classList.toggle('open'); });
     });
+
+    // ── "Used by pros" badge ─────────────────────────────────────────
+    (function () {
+      const PRODUCT = 'Razer Viper V3 Pro';
+      const FIELD = 'mouse';
+      function flag(iso) {
+        if (!iso || iso.length !== 2) return '🌐';
+        const A = 0x1F1E6, base = 'A'.charCodeAt(0);
+        return String.fromCodePoint(A + (iso.toUpperCase().charCodeAt(0) - base), A + (iso.toUpperCase().charCodeAt(1) - base));
+      }
+      fetch('/data/pros.json').then(r => r.json()).then(pros => {
+        const matches = pros.filter(p => {
+          const v = p[FIELD];
+          return v && v.toLowerCase().startsWith(PRODUCT.toLowerCase());
+        });
+        if (!matches.length) return;
+        const wrap = document.getElementById('ubWrap');
+        wrap.hidden = false;
+        document.getElementById('ubCount').textContent = matches.length;
+        document.getElementById('ubTotal').textContent = `of ${pros.length} tracked pros`;
+        const chips = document.getElementById('ubChips');
+        chips.innerHTML = matches.slice(0, 12).map(p => {
+          return `<a href="/pros" class="ub-chip ub-game-${p.game}" title="${p.name} — ${p.team || 'no team'} — ${p.game}">
+            <span class="ub-chip-flag">${flag(p.country)}</span>
+            <span>${p.name}</span>
+            ${p.team ? `<span class="ub-chip-team">${p.team}</span>` : ''}
+          </a>`;
+        }).join('');
+        if (matches.length > 12) {
+          chips.insertAdjacentHTML('beforeend', `<a href="/pros" class="ub-chip">+${matches.length - 12} more</a>`);
+        }
+      }).catch(()=>{});
+    })();
   </script>
 </body>
 </html>
