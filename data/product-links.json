@@ -1,0 +1,149 @@
+{
+  "_doc": "Product name → links. 'internal' is our own review/guide page (preferred, E-E-A-T). 'amazon' is the affiliate fallback. Matching is case-insensitive and tolerates the product-family name being a prefix (e.g. 'Logitech G Pro X Superlight' matches the family).",
+  "_tag": "cosmicgameshu-20",
+
+  "Logitech G Pro X Superlight": {
+    "internal": "/reviews/logitech-g-pro-x-superlight-2-dex-review",
+    "amazon": "https://www.amazon.com/dp/B0DG2XJPTC?tag=cosmicgameshu-20"
+  },
+  "Logitech G Pro X Superlight 2 DEX": {
+    "internal": "/reviews/logitech-g-pro-x-superlight-2-dex-review",
+    "amazon": "https://www.amazon.com/dp/B0DG2XJPTC?tag=cosmicgameshu-20"
+  },
+  "Razer Viper V3 Pro": {
+    "internal": "/reviews/razer-viper-v3-pro-review",
+    "amazon": "https://www.amazon.com/dp/B0CW1HW1QH?tag=cosmicgameshu-20"
+  },
+  "Logitech G Pro Wireless": {
+    "amazon": "https://www.amazon.com/s?k=Logitech+G+Pro+Wireless+gaming+mouse&tag=cosmicgameshu-20"
+  },
+  "Logitech G305": {
+    "amazon": "https://www.amazon.com/dp/B07W5KMKJV?tag=cosmicgameshu-20"
+  },
+  "Logitech G402": {
+    "amazon": "https://www.amazon.com/s?k=Logitech+G402&tag=cosmicgameshu-20"
+  },
+  "Razer DeathAdder V3 Pro": {
+    "amazon": "https://www.amazon.com/dp/B0BBSVDBVZ?tag=cosmicgameshu-20"
+  },
+  "Razer DeathAdder V3": {
+    "amazon": "https://www.amazon.com/dp/B0B7WQCTBS?tag=cosmicgameshu-20"
+  },
+  "Lamzu Thorn": {
+    "amazon": "https://www.amazon.com/s?k=Lamzu+Thorn+gaming+mouse&tag=cosmicgameshu-20"
+  },
+  "Finalmouse Starlight-12": {
+    "amazon": "https://www.amazon.com/s?k=Finalmouse+Starlight&tag=cosmicgameshu-20"
+  },
+  "Zowie EC2-C": {
+    "amazon": "https://www.amazon.com/dp/B09GXNS1HJ?tag=cosmicgameshu-20"
+  },
+
+  "Wooting 60HE": {
+    "internal": "/guides/best-gaming-keyboard-for-minecraft-2026",
+    "amazon": "https://www.amazon.com/dp/B0BQRTV5DR?tag=cosmicgameshu-20"
+  },
+  "SteelSeries Apex Pro TKL": {
+    "internal": "/guides/best-gaming-keyboard-for-minecraft-2026",
+    "amazon": "https://www.amazon.com/dp/B0CN7JQ1KN?tag=cosmicgameshu-20"
+  },
+  "SteelSeries Apex Pro Mini": {
+    "amazon": "https://www.amazon.com/s?k=SteelSeries+Apex+Pro+Mini&tag=cosmicgameshu-20"
+  },
+  "Razer Huntsman Mini": {
+    "amazon": "https://www.amazon.com/s?k=Razer+Huntsman+Mini&tag=cosmicgameshu-20"
+  },
+  "Razer Huntsman V3 Pro": {
+    "amazon": "https://www.amazon.com/dp/B0CHKYQ51X?tag=cosmicgameshu-20"
+  },
+  "Razer BlackWidow V3 Mini": {
+    "amazon": "https://www.amazon.com/s?k=Razer+BlackWidow+V3+Mini&tag=cosmicgameshu-20"
+  },
+  "Logitech G Pro X Keyboard": {
+    "amazon": "https://www.amazon.com/s?k=Logitech+G+Pro+X+keyboard&tag=cosmicgameshu-20"
+  },
+  "Logitech G Pro X": {
+    "amazon": "https://www.amazon.com/s?k=Logitech+G+Pro+X+keyboard&tag=cosmicgameshu-20"
+  },
+  "Logitech G915 TKL": {
+    "amazon": "https://www.amazon.com/s?k=Logitech+G915+TKL&tag=cosmicgameshu-20"
+  },
+  "Corsair K70 RGB": {
+    "amazon": "https://www.amazon.com/s?k=Corsair+K70+RGB&tag=cosmicgameshu-20"
+  },
+  "Corsair K65 RGB Mini": {
+    "amazon": "https://www.amazon.com/s?k=Corsair+K65+RGB+Mini&tag=cosmicgameshu-20"
+  },
+  "HyperX Alloy FPS": {
+    "amazon": "https://www.amazon.com/s?k=HyperX+Alloy+FPS&tag=cosmicgameshu-20"
+  },
+
+  "HyperX Cloud II": {
+    "internal": "/guides/best-gaming-headset-for-cs2-2026",
+    "amazon": "https://www.amazon.com/dp/B00SAYCXWG?tag=cosmicgameshu-20"
+  },
+  "HyperX Cloud Alpha": {
+    "internal": "/guides/best-gaming-headset-for-cs2-2026",
+    "amazon": "https://www.amazon.com/dp/B0BHBNHQJM?tag=cosmicgameshu-20"
+  },
+  "Sennheiser HD 600": {
+    "amazon": "https://www.amazon.com/s?k=Sennheiser+HD+600&tag=cosmicgameshu-20"
+  },
+  "Sennheiser HD 660S": {
+    "amazon": "https://www.amazon.com/s?k=Sennheiser+HD+660S&tag=cosmicgameshu-20"
+  },
+  "Beyerdynamic DT 990 Pro": {
+    "amazon": "https://www.amazon.com/s?k=Beyerdynamic+DT+990+Pro&tag=cosmicgameshu-20"
+  },
+  "Audio-Technica ATH-M50x": {
+    "amazon": "https://www.amazon.com/s?k=Audio-Technica+ATH-M50x&tag=cosmicgameshu-20"
+  },
+  "JBL Quantum One": {
+    "amazon": "https://www.amazon.com/s?k=JBL+Quantum+One&tag=cosmicgameshu-20"
+  },
+  "Razer BlackShark V2": {
+    "amazon": "https://www.amazon.com/s?k=Razer+BlackShark+V2&tag=cosmicgameshu-20"
+  },
+  "Corsair HS80": {
+    "amazon": "https://www.amazon.com/s?k=Corsair+HS80&tag=cosmicgameshu-20"
+  },
+  "SteelSeries Arctis Nova Pro": {
+    "internal": "/guides/best-gaming-headset-for-cs2-2026",
+    "amazon": "https://www.amazon.com/dp/B0B1JH9Y2H?tag=cosmicgameshu-20"
+  },
+
+  "ZOWIE XL2566K": {
+    "amazon": "https://www.amazon.com/s?k=ZOWIE+XL2566K&tag=cosmicgameshu-20"
+  },
+  "ZOWIE XL2546K": {
+    "amazon": "https://www.amazon.com/s?k=ZOWIE+XL2546K&tag=cosmicgameshu-20"
+  },
+  "ZOWIE XL2546": {
+    "amazon": "https://www.amazon.com/s?k=ZOWIE+XL2546&tag=cosmicgameshu-20"
+  },
+
+  "Artisan Hien": {
+    "amazon": "https://www.amazon.com/s?k=Artisan+Hien+mousepad&tag=cosmicgameshu-20"
+  },
+  "Artisan Zero Soft": {
+    "amazon": "https://www.amazon.com/s?k=Artisan+Zero+Soft&tag=cosmicgameshu-20"
+  },
+  "SteelSeries QcK Heavy": {
+    "amazon": "https://www.amazon.com/s?k=SteelSeries+QcK+Heavy&tag=cosmicgameshu-20"
+  },
+  "SteelSeries QcK+": {
+    "amazon": "https://www.amazon.com/s?k=SteelSeries+QcK+Plus&tag=cosmicgameshu-20"
+  },
+  "Logitech G640": {
+    "amazon": "https://www.amazon.com/s?k=Logitech+G640+mousepad&tag=cosmicgameshu-20"
+  },
+  "Razer Gigantus V2": {
+    "amazon": "https://www.amazon.com/s?k=Razer+Gigantus+V2&tag=cosmicgameshu-20"
+  },
+  "Corsair MM350": {
+    "amazon": "https://www.amazon.com/s?k=Corsair+MM350&tag=cosmicgameshu-20"
+  },
+  "HyperX Fury S": {
+    "amazon": "https://www.amazon.com/s?k=HyperX+Fury+S&tag=cosmicgameshu-20"
+  }
+}

@@ -57,6 +57,8 @@
     .ph-gear-lbl { font-size: .65rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-lo, #777); min-width: 56px; }
     .ph-gear-val { color: var(--text-hi, #eee); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .ph-gear-val.null { color: var(--text-lo, #555); font-style: italic; }
+    a.ph-gear-link { color: var(--text-hi, #eee); text-decoration: none; border-bottom: 1px dotted rgba(0,212,255,0.35); padding-bottom: 1px; transition: color .12s; }
+    a.ph-gear-link:hover { color: var(--accent, #00d4ff); border-bottom-color: var(--accent, #00d4ff); }
 
     .ph-card-foot { display: flex; gap: .4rem; margin-top: .75rem; padding-top: .65rem; border-top: 1px solid rgba(255,255,255,0.04); align-items: center; }
     .ph-stat { font-size: .7rem; color: var(--text-mid, #aaa); }
@@ -185,8 +187,42 @@
     const GAME_LABEL = { valorant: 'Valorant', cs2: 'CS2', apex: 'Apex', fortnite: 'Fortnite' };
 
     let pros = [];
+    let productLinks = {};
     let filterGame = 'all';
     let searchQ = '';
+
+    // Resolve a product name to { href, isInternal }. Tries exact match first,
+    // then the longest known prefix (so 'Logitech G Pro X Superlight 2 DEX'
+    // matches the 'Logitech G Pro X Superlight' family entry when no exact
+    // match exists). Returns null if no mapping is known.
+    function resolveProduct(name) {
+      if (!name || !productLinks) return null;
+      const direct = productLinks[name];
+      if (direct) return { href: direct.internal || direct.amazon, isInternal: !!direct.internal };
+      // Prefix fallback: find the longest key that is a case-insensitive prefix of name.
+      const lower = name.toLowerCase();
+      let best = null;
+      for (const key of Object.keys(productLinks)) {
+        if (key.startsWith('_')) continue;
+        const lk = key.toLowerCase();
+        if (lower.startsWith(lk) && (!best || lk.length > best.length)) best = lk;
+      }
+      if (best) {
+        const matched = Object.keys(productLinks).find(k => k.toLowerCase() === best);
+        const m = productLinks[matched];
+        return { href: m.internal || m.amazon, isInternal: !!m.internal };
+      }
+      return null;
+    }
+
+    function gearLink(name) {
+      if (!name) return '<span class="ph-gear-val null">—</span>';
+      const r = resolveProduct(name);
+      if (!r) return `<span class="ph-gear-val">${name}</span>`;
+      const rel = r.isInternal ? '' : ' rel="nofollow sponsored"';
+      const target = r.isInternal ? '' : ' target="_blank"';
+      return `<a class="ph-gear-val ph-gear-link" href="${r.href}"${rel}${target} onclick="event.stopPropagation();">${name}</a>`;
+    }
 
     function matches(p) {
       if (filterGame !== 'all' && p.game !== filterGame) return false;
@@ -200,8 +236,7 @@
       const gameBadge = `<span class="ph-game-badge ph-game-${p.game}">${GAME_LABEL[p.game] || p.game}</span>`;
       const teamLine = p.team ? `${p.team}${gameBadge}` : gameBadge;
       function row(lbl, val) {
-        const cls = val ? '' : 'null';
-        return `<div class="ph-gear-row"><div class="ph-gear-lbl">${lbl}</div><div class="ph-gear-val ${cls}">${val || '—'}</div></div>`;
+        return `<div class="ph-gear-row"><div class="ph-gear-lbl">${lbl}</div>${gearLink(val)}</div>`;
       }
       return `
         <div class="ph-card" data-id="${p.id}" tabindex="0" role="button" aria-label="View ${p.name} setup">
@@ -254,17 +289,27 @@
       document.getElementById('phMsSens').textContent = p.sensitivity != null ? p.sensitivity : '—';
       document.getElementById('phMsEdpi').textContent = p.edpi != null ? p.edpi : '—';
 
+      function detailVal(v, asProduct) {
+        if (!v) return '<span class="ph-detail-val" style="color:var(--text-lo,#666);">—</span>';
+        if (!asProduct) return `<span class="ph-detail-val">${v}</span>`;
+        const r = resolveProduct(v);
+        if (!r) return `<span class="ph-detail-val">${v}</span>`;
+        const rel = r.isInternal ? '' : ' rel="nofollow sponsored"';
+        const target = r.isInternal ? '' : ' target="_blank"';
+        return `<a class="ph-detail-val ph-gear-link" href="${r.href}"${rel}${target}>${v}</a>`;
+      }
+
       const gearEl = document.getElementById('phMsGear');
       gearEl.innerHTML = [
-        ['Mouse', p.mouse], ['Keyboard', p.keyboard], ['Headset', p.headset], ['Mousepad', p.mousepad]
-      ].map(([k, v]) => `<div class="ph-detail-row"><div class="ph-detail-key">${k}</div><div class="ph-detail-val">${v || '—'}</div></div>`).join('');
+        ['Mouse', p.mouse, true], ['Keyboard', p.keyboard, true], ['Headset', p.headset, true], ['Mousepad', p.mousepad, true]
+      ].map(([k, v, prod]) => `<div class="ph-detail-row"><div class="ph-detail-key">${k}</div>${detailVal(v, prod)}</div>`).join('');
 
       document.getElementById('phMsDisplay').innerHTML = [
-        ['Monitor', p.monitor],
-        ['Resolution', p.resolution],
-        ['Refresh', p.refreshHz ? p.refreshHz + 'Hz' : null],
-        ['Polling', p.pollingHz ? p.pollingHz + 'Hz' : null]
-      ].map(([k, v]) => `<div class="ph-detail-row"><div class="ph-detail-key">${k}</div><div class="ph-detail-val">${v || '—'}</div></div>`).join('');
+        ['Monitor', p.monitor, true],
+        ['Resolution', p.resolution, false],
+        ['Refresh', p.refreshHz ? p.refreshHz + 'Hz' : null, false],
+        ['Polling', p.pollingHz ? p.pollingHz + 'Hz' : null, false]
+      ].map(([k, v, prod]) => `<div class="ph-detail-row"><div class="ph-detail-key">${k}</div>${detailVal(v, prod)}</div>`).join('');
 
       document.getElementById('phMsVerified').textContent = p.lastVerified ? `Last verified: ${p.lastVerified}` : '';
       document.getElementById('phModal').classList.add('open');
@@ -288,8 +333,12 @@
       render();
     });
 
-    fetch('/data/pros.json').then(r => r.json()).then(data => {
-      pros = data;
+    Promise.all([
+      fetch('/data/pros.json').then(r => r.json()),
+      fetch('/data/product-links.json').then(r => r.json()).catch(() => ({}))
+    ]).then(([prosData, links]) => {
+      pros = prosData;
+      productLinks = links || {};
       render();
     }).catch(err => {
       document.getElementById('phGrid').innerHTML = '<div class="ph-empty">Could not load pro database.</div>';
