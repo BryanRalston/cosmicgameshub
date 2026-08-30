@@ -72,10 +72,11 @@
           <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
         </a>
         <ul class="nav__links">
-          <li><a href="/games/daily" class="active">Daily</a></li>
-          <li><a href="/games">Games</a></li>
+          <li><a href="/pros">Pros</a></li>
           <li><a href="/guides">Guides</a></li>
+          <li><a href="/games/daily" class="active">Daily</a></li>
           <li><a href="/versus">Comparisons</a></li>
+          <li><a href="/games">Games</a></li>
           <li><a href="/tools/gaming-fps-calculator" class="nav__cta btn">Free Tools</a></li>
         </ul>
         <button class="nav__hamburger" aria-label="Open menu" aria-expanded="false">
@@ -94,7 +95,7 @@
       <div class="dh-eyebrow" id="dhEyebrow">Today's Set</div>
       <h1 class="dh-h1">Daily Puzzles</h1>
       <p class="dh-date" id="dhDate">—</p>
-      <p class="dh-sub">Twelve gaming puzzles, fresh every day. Track your streak across every game — same puzzle for every player worldwide.</p>
+      <p class="dh-sub">Twelve puzzles, one UTC day. Same board for every player. Streaks stay on this device. If JavaScript is off, the links below still work.</p>
 
       <div class="dh-strip">
         <div class="dh-stat"><div class="dh-stat-val" id="dhPlayedCount">0/12</div><div class="dh-stat-lbl">Played Today</div></div>
@@ -105,8 +106,21 @@
 
     <div class="dh-wrap">
 
-      <div class="dh-section-label" id="dhTodoLabel">To Play</div>
-      <div class="dh-grid" id="dhTodoGrid"></div>
+      <div class="dh-section-label" id="dhTodoLabel">Today's 12</div>
+      <div class="dh-grid" id="dhTodoGrid">
+        <a class="dh-card" href="/games/gamerdle"><div class="dh-icon">🎮</div><div class="dh-meta"><div class="dh-name">Gamerdle</div><div class="dh-line"><span class="dh-status todo">Mystery video game</span></div></div><div class="dh-arrow">→</div></a>
+        <a class="dh-card" href="/games/pixle"><div class="dh-icon">🟩</div><div class="dh-meta"><div class="dh-name">Pixle</div><div class="dh-line"><span class="dh-status todo">Pixel screenshot</span></div></div><div class="dh-arrow">→</div></a>
+        <a class="dh-card" href="/games/rift"><div class="dh-icon">🌀</div><div class="dh-meta"><div class="dh-name">RIFT</div><div class="dh-line"><span class="dh-status todo">3 word zones</span></div></div><div class="dh-arrow">→</div></a>
+        <a class="dh-card" href="/games/hardware-timeline"><div class="dh-icon">📅</div><div class="dh-meta"><div class="dh-name">Hardware Timeline</div><div class="dh-line"><span class="dh-status todo">Guess the year</span></div></div><div class="dh-arrow">→</div></a>
+        <a class="dh-card" href="/games/spec-match"><div class="dh-icon">🔍</div><div class="dh-meta"><div class="dh-name">Spec Match</div><div class="dh-line"><span class="dh-status todo">Specs → product</span></div></div><div class="dh-arrow">→</div></a>
+        <a class="dh-card" href="/games/gear-quiz"><div class="dh-icon">🎧</div><div class="dh-meta"><div class="dh-name">Gear Quiz</div><div class="dh-line"><span class="dh-status todo">10 gear questions</span></div></div><div class="dh-arrow">→</div></a>
+        <a class="dh-card" href="/games/gaming-trivia"><div class="dh-icon">🧠</div><div class="dh-meta"><div class="dh-name">Gaming Trivia</div><div class="dh-line"><span class="dh-status todo">10 daily questions</span></div></div><div class="dh-arrow">→</div></a>
+        <a class="dh-card" href="/games/word-scramble"><div class="dh-icon">🔀</div><div class="dh-meta"><div class="dh-name">Word Scramble</div><div class="dh-line"><span class="dh-status todo">Unscramble the word</span></div></div><div class="dh-arrow">→</div></a>
+        <a class="dh-card" href="/games/crossword"><div class="dh-icon">✏️</div><div class="dh-meta"><div class="dh-name">Gaming Crossword</div><div class="dh-line"><span class="dh-status todo">5×5 mini</span></div></div><div class="dh-arrow">→</div></a>
+        <a class="dh-card" href="/games/sudoku"><div class="dh-icon">🔢</div><div class="dh-meta"><div class="dh-name">Sudoku</div><div class="dh-line"><span class="dh-status todo">Daily 9×9</span></div></div><div class="dh-arrow">→</div></a>
+        <a class="dh-card" href="/games/price-guesser"><div class="dh-icon">💰</div><div class="dh-meta"><div class="dh-name">Price Guesser</div><div class="dh-line"><span class="dh-status todo">5 hardware prices</span></div></div><div class="dh-arrow">→</div></a>
+        <a class="dh-card" href="/games/daily-challenge"><div class="dh-icon">⭐</div><div class="dh-meta"><div class="dh-name">Daily Challenge</div><div class="dh-line"><span class="dh-status todo">Curated rotation</span></div></div><div class="dh-arrow">→</div></a>
+      </div>
 
       <div class="dh-section-label" id="dhDoneLabel" style="display:none;">Played Today</div>
       <div class="dh-grid" id="dhDoneGrid"></div>
@@ -119,7 +133,7 @@
   </main>
 
   <footer class="site-footer">
-    <p>© 2026 CosmicGamesHub · <a href="/about">About</a> · <a href="/games">Games</a> · <a href="/">Home</a></p>
+    <p>© 2026 CosmicGamesHub · <a href="/about">About</a> · <a href="/privacy">Privacy</a> · <a href="/games">Games</a> · <a href="/">Home</a></p>
   </footer>
   <script src="/global.js" defer></script>
 
@@ -228,7 +242,7 @@
   // ── Game registry — display order + metadata ─────────────────────────────
   const GAMES = [
     { id: 'gamerdle',           name: 'Gamerdle',          icon: '🎮', tag: 'Mystery video game',    href: '/games/gamerdle' },
-    { id: 'pixle',              name: 'Pixle',             icon: '🟩', tag: '5-letter Wordle',       href: '/games/pixle' },
+    { id: 'pixle',              name: 'Pixle',             icon: '🟩', tag: 'Pixel screenshot',      href: '/games/pixle' },
     { id: 'rift',               name: 'Rift',              icon: '🌀', tag: '3 word zones',          href: '/games/rift' },
     { id: 'hardware-timeline',  name: 'Hardware Timeline', icon: '📅', tag: 'Guess the year',        href: '/games/hardware-timeline' },
     { id: 'spec-match',         name: 'Spec Match',        icon: '🔍', tag: 'Specs → product',       href: '/games/spec-match' },
@@ -283,6 +297,8 @@
       (status.played ? doneCards : todoCards).push(card);
     });
 
+    dhTodoGrid.innerHTML = '';
+    dhDoneGrid.innerHTML = '';
     todoCards.forEach(c => dhTodoGrid.appendChild(c));
     doneCards.forEach(c => dhDoneGrid.appendChild(c));
 

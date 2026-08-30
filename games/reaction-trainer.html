@@ -282,18 +282,18 @@
   <div class="container">
     <div class="nav__inner">
       <a href="/" class="nav__logo" aria-label="CosmicGamesHub home">
-        <span class="nav__logo-icon" aria-hidden="true">🎮</span>
+        <span class="nav__logo-icon">🎮</span>
         <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
       </a>
       <ul class="nav__links" id="navLinks">
-        <li><a href="/games">← All Games</a></li>
-        <li><a href="/games/aim-trainer">Aim Trainer</a></li>
-        <li><a href="/games/type-racer">Type Racer</a></li>
-        <li><a href="/games/void-keeper">Void Keeper</a></li>
-        <li><a href="/games/asteroid-dodge">Asteroid Dodge</a></li>
-        <li><a href="/ai-gaming" class="nav__cta btn">AI Gaming</a></li>
+        <li><a href="/pros">Pros</a></li>
+        <li><a href="/guides">Guides</a></li>
+        <li><a href="/games/daily">Daily</a></li>
+        <li><a href="/versus">Comparisons</a></li>
+        <li><a href="/games" class="active">Games</a></li>
+        <li><a href="/tools/gaming-fps-calculator" class="nav__cta btn">Free Tools</a></li>
       </ul>
-      <button class="nav__hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
+      <button class="nav__hamburger" aria-label="Open menu" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
     </div>
@@ -481,7 +481,8 @@
   }
 
   function showAllTime() {
-    const prev = localStorage.getItem(BEST_KEY);
+    let prev = null;
+    try { prev = localStorage.getItem(BEST_KEY); } catch (_) {}
     if (prev) {
       allTimeEl.innerHTML = 'All-time best: <span>' + prev + 'ms</span>';
     }
@@ -543,14 +544,17 @@
     document.getElementById('resGrade').textContent = grade;
     document.getElementById('resGrade').className = 'rt-grade rt-grade--' + grade;
     document.getElementById('resAvg').textContent = avg + 'ms average';
-    document.getElementById('resDesc').textContent = gradeDesc(grade);
+    var band = avg < 180 ? 'Faster than most casual players.' : avg < 220 ? 'Typical competitive-gamer band.' : avg < 280 ? 'Average desktop reaction.' : 'Slower than average — more reps help.';
+    document.getElementById('resDesc').textContent = gradeDesc(grade) + ' ' + band;
     document.getElementById('resBestRound').textContent = sessionBest + 'ms';
     document.getElementById('resWorstRound').textContent = sessionWorst + 'ms';
     document.getElementById('resRounds').textContent = ROUNDS;
 
-    const prev = parseInt(localStorage.getItem(BEST_KEY) || '9999', 10);
+    let prev = 9999;
+    try { prev = parseInt(localStorage.getItem(BEST_KEY) || '9999', 10); } catch (_) {}
+    if (!Number.isFinite(prev)) prev = 9999;
     if (avg < prev) {
-      localStorage.setItem(BEST_KEY, avg);
+      try { localStorage.setItem(BEST_KEY, avg); } catch (_) {}
       document.getElementById('resBestBanner').classList.add('show');
     }
 
@@ -613,6 +617,9 @@
   });
 
   document.getElementById('btnAgain').addEventListener('click', reset);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && state === 'done') reset();
+  });
 
   document.getElementById('btnShare').addEventListener('click', () => {
     const avg = Math.round(times.reduce((a, b) => a + b, 0) / times.length);

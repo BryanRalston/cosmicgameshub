@@ -259,17 +259,18 @@
   <div class="container">
     <div class="nav__inner">
       <a href="/" class="nav__logo" aria-label="CosmicGamesHub home">
-        <span class="nav__logo-icon" aria-hidden="true">🎮</span>
+        <span class="nav__logo-icon">🎮</span>
         <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
       </a>
       <ul class="nav__links" id="navLinks">
-        <li><a href="/games/reaction-trainer">Reaction Test</a></li>
-        <li><a href="/games/type-racer">Type Racer</a></li>
-        <li><a href="/games/asteroid-dodge">Asteroid Dodge</a></li>
-        <li><a href="/games/beat-lab">Beat Lab</a></li>
-        <li><a href="/games/aim-trainer" class="active nav__cta btn">Aim Trainer</a></li>
+        <li><a href="/pros">Pros</a></li>
+        <li><a href="/guides">Guides</a></li>
+        <li><a href="/games/daily">Daily</a></li>
+        <li><a href="/versus">Comparisons</a></li>
+        <li><a href="/games" class="active">Games</a></li>
+        <li><a href="/tools/gaming-fps-calculator" class="nav__cta btn">Free Tools</a></li>
       </ul>
-      <button class="nav__hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
+      <button class="nav__hamburger" aria-label="Open menu" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
     </div>
@@ -281,7 +282,7 @@
     <a href="/games" class="at-back">← Back to Games</a>
     <div class="at-header">
       <h1 class="at-title">🎯 FPS Aim Trainer</h1>
-      <p class="at-subtitle">Tap targets before they disappear · Track your accuracy</p>
+      <p class="at-subtitle">Tap targets before they expire · Esc pauses · Enter after a round returns to start</p>
     </div>
 
     <!-- HUD -->
@@ -438,12 +439,13 @@
   let animFrame = null;
   let lastTs = 0;
 
+  let paused = false;
   function initCanvas() {
     const w = wrap.clientWidth;
     canvas.width = w * devicePixelRatio;
     canvas.height = CANVAS_H * devicePixelRatio;
     canvas.style.height = CANVAS_H + 'px';
-    ctx.scale(devicePixelRatio, devicePixelRatio);
+    ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
   }
 
   function cw() { return wrap.clientWidth; }
@@ -528,7 +530,10 @@
 
       const age = now - t.born;
       if (age > t.life) {
-        // expired
+        misses++;
+        hudMisses.textContent = misses;
+        const total = hits + misses;
+        hudAcc.textContent = Math.round(hits / total * 100) + '%';
         return false;
       }
 
@@ -599,6 +604,7 @@
   function startGame() {
     hits = 0; misses = 0; targets = [];
     timeLeft = duration;
+    paused = false;
     running = true;
     hudTimer.textContent = timeLeft;
     hudHits.textContent = '0';
@@ -702,6 +708,8 @@
       hudMisses.textContent = misses;
       const total = hits + misses;
       hudAcc.textContent = Math.round(hits / total * 100) + '%';
+      wrap.style.boxShadow = 'inset 0 0 0 2px rgba(248,113,113,0.7)';
+      setTimeout(function () { wrap.style.boxShadow = ''; }, 90);
     }
   });
 
@@ -717,6 +725,33 @@
   });
 
   document.getElementById('btnStart').addEventListener('click', startGame);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && (running || paused)) {
+      if (!paused) {
+        paused = true;
+        running = false;
+        clearInterval(gameTimer);
+        clearTimeout(spawnTimer);
+        cancelAnimationFrame(animFrame);
+        hudTimer.textContent = 'II';
+      } else {
+        paused = false;
+        running = true;
+        hudTimer.textContent = timeLeft;
+        gameTimer = setInterval(function () {
+          timeLeft--;
+          hudTimer.textContent = timeLeft;
+          if (timeLeft <= 0) endGame();
+        }, 1000);
+        scheduleSpawn();
+        animFrame = requestAnimationFrame(draw);
+      }
+    }
+    if (e.key === 'Enter' && !running && resultOverlay && !resultOverlay.classList.contains('hidden')) {
+      resultOverlay.classList.add('hidden');
+      startOverlay.classList.remove('hidden');
+    }
+  });
   document.getElementById('btnPlayAgain').addEventListener('click', () => {
     resultOverlay.classList.add('hidden');
     startOverlay.classList.remove('hidden');

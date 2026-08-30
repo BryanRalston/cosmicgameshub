@@ -104,18 +104,24 @@
   <meta property="og:url" content="https://cosmicgameshub.com/games/sudoku">
 </head>
 <body>
-<nav class="nav" role="navigation">
+<nav class="nav" role="navigation" aria-label="Main navigation">
   <div class="container">
     <div class="nav__inner">
-      <a href="/" class="nav__logo"><span class="nav__logo-icon">🎮</span><span class="nav__logo-text">Cosmic<span>Games</span>Hub</span></a>
+      <a href="/" class="nav__logo" aria-label="CosmicGamesHub home">
+        <span class="nav__logo-icon">🎮</span>
+        <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
+      </a>
       <ul class="nav__links" id="navLinks">
-        <li><a href="/games/sudoku" class="active nav__cta btn">Sudoku</a></li>
-        <li><a href="/games/minesweeper">Minesweeper</a></li>
-        <li><a href="/games/memory-match">Memory Match</a></li>
-        <li><a href="/games/crossword">Crossword</a></li>
-        <li><a href="/games/color-memory">Color Memory</a></li>
+        <li><a href="/pros">Pros</a></li>
+        <li><a href="/guides">Guides</a></li>
+        <li><a href="/games/daily">Daily</a></li>
+        <li><a href="/versus">Comparisons</a></li>
+        <li><a href="/games" class="active">Games</a></li>
+        <li><a href="/tools/gaming-fps-calculator" class="nav__cta btn">Free Tools</a></li>
       </ul>
-      <button class="nav__hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false"><span></span><span></span><span></span></button>
+      <button class="nav__hamburger" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
     </div>
   </div>
 </nav>
@@ -161,6 +167,7 @@
 
         <div class="action-btns">
           <button class="btn btn--outline" id="noteBtn" onclick="toggleNotes()" style="font-size:0.85rem;padding:0.5rem;">✏️ Notes: OFF</button>
+          <button class="btn btn--outline" id="undoBtn" onclick="undoMove()" style="font-size:0.85rem;padding:0.5rem;">↩ Undo</button>
           <button class="btn btn--outline" onclick="useHint()" style="font-size:0.85rem;padding:0.5rem;" id="hintBtn">💡 Hint (3 left)</button>
           <button class="btn btn--primary" onclick="newGame()" style="font-size:0.85rem;padding:0.5rem;">New Puzzle</button>
         </div>
@@ -291,6 +298,7 @@ function makePuzzle(diff, s) {
 // ── State ──────────────────────────────────────────────────────────────────
 let puzzle=[], solved=[], userGrid=[], notes=[], selected=null;
 let mistakes=0, hintsLeft=3, notesMode=false, timerSecs=0, timerInt=null, diff='easy', done=false;
+let undoStack=[];
 
 // ── Init ───────────────────────────────────────────────────────────────────
 const today = new Date();
@@ -313,6 +321,7 @@ function newGame(forceDiff) {
   puzzle=p; solved=sv;
   userGrid=p.map(r=>[...r]);
   notes=Array.from({length:9},()=>Array.from({length:9},()=>new Set()));
+  undoStack=[];
 
   renderBoard(); buildNumpad();
   timerInt=setInterval(()=>{ if(!done){timerSecs++;updateTimer();} },1000);
@@ -376,10 +385,25 @@ function buildNumpad() {
   er.addEventListener('click',()=>inputNum(0)); np.appendChild(er);
 }
 
+function undoMove(){
+  if(!undoStack.length||done) return;
+  const snap=undoStack.pop();
+  userGrid=snap.user.map(row=>row.slice());
+  notes=snap.notes.map(row=>row.map(s=>new Set(s)));
+  mistakes=snap.mistakes;
+  updateMistakes();
+  renderBoard(); buildNumpad();
+}
+
 function inputNum(n) {
   if(!selected||done) return;
   const {r,c}=selected;
   if(puzzle[r][c]!==0) return;
+  undoStack.push({
+    user: userGrid.map(row=>row.slice()),
+    notes: notes.map(row=>row.map(s=>new Set(s))),
+    mistakes
+  });
   if(notesMode&&n!==0){
     if(notes[r][c].has(n)) notes[r][c].delete(n); else notes[r][c].add(n);
     renderBoard(); return;
@@ -397,6 +421,7 @@ document.addEventListener('keydown',e=>{
   if(!selected||done) return;
   if(e.key>='1'&&e.key<='9'){ inputNum(+e.key); return; }
   if(e.key==='Backspace'||e.key==='Delete'||e.key==='0'){ inputNum(0); return; }
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){ e.preventDefault(); undoMove(); return; }
   const {r,c}=selected;
   if(e.key==='ArrowUp'   &&r>0) selectCell(r-1,c);
   if(e.key==='ArrowDown' &&r<8) selectCell(r+1,c);

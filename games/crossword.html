@@ -13,7 +13,7 @@
     .cw-wrap { max-width: 680px; margin: 0 auto; padding: 1rem; }
     .cw-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: .75rem; font-size: .85rem; color: var(--text-muted, #aaa); }
     .cw-streak { font-weight: 700; color: var(--accent, #22d3ee); }
-    .cw-active-clue { background: var(--bg-card, #1a1a2e); border: 1px solid var(--accent, #22d3ee); border-radius: 8px; padding: .6rem 1rem; margin-bottom: 1rem; font-size: .95rem; min-height: 2.2rem; color: #fff; }
+    .cw-active-clue { background: var(--bg-card, #1a1a2e); border: 1px solid var(--accent, #22d3ee); border-radius: 8px; padding: .6rem 1rem; margin-bottom: 1rem; font-size: .95rem; min-height: 2.2rem; color: #fff; position: sticky; top: 72px; z-index: 5; }
     .cw-active-clue strong { color: var(--accent, #22d3ee); margin-right: .4rem; }
     .cw-layout { display: flex; gap: 1.5rem; flex-wrap: wrap; justify-content: center; }
     .cw-grid { display: grid; grid-template-columns: repeat(5, 58px); grid-template-rows: repeat(5, 58px); gap: 3px; flex-shrink: 0; }
@@ -55,8 +55,9 @@
       .cw-grid { grid-template-columns: repeat(5, 50px); grid-template-rows: repeat(5, 50px); gap: 2px; }
       .cw-cell { width: 50px; height: 50px; }
       .cw-letter { font-size: 18px; }
-      .cw-clues { max-width: 100%; }
+      .cw-clues { max-width: 100%; width: 100%; }
       .cw-layout { flex-direction: column; align-items: center; }
+      .cw-active-clue { top: 56px; width: 100%; box-sizing: border-box; }
     }
   </style>
   <meta property="og:image" content="https://cosmicgameshub.com/images/game-crossword.jpg">
@@ -104,12 +105,13 @@
         <span class="nav__logo-icon">🎮</span>
         <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
       </a>
-      <ul class="nav__links">
-        <li><a href="/games/sudoku">Sudoku</a></li>
-        <li><a href="/games/minesweeper">Minesweeper</a></li>
-        <li><a href="/games/memory-match">Memory Match</a></li>
-        <li><a href="/games/daily-challenge">Daily</a></li>
-        <li><a href="/games/crossword" class="active nav__cta btn">Crossword</a></li>
+      <ul class="nav__links" id="navLinks">
+        <li><a href="/pros">Pros</a></li>
+        <li><a href="/guides">Guides</a></li>
+        <li><a href="/games/daily">Daily</a></li>
+        <li><a href="/versus">Comparisons</a></li>
+        <li><a href="/games" class="active">Games</a></li>
+        <li><a href="/tools/gaming-fps-calculator" class="nav__cta btn">Free Tools</a></li>
       </ul>
       <button class="nav__hamburger" aria-label="Open menu" aria-expanded="false">
         <span></span><span></span><span></span>

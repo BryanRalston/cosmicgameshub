@@ -96,12 +96,13 @@
         <span class="nav__logo-icon">🎮</span>
         <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
       </a>
-      <ul class="nav__links">
-        <li><a href="/games/memory-match">Memory Match</a></li>
-        <li><a href="/games/gamerdle">Gamerdle</a></li>
-        <li><a href="/games/gaming-trivia">Trivia</a></li>
-        <li><a href="/games">All Games</a></li>
-        <li><a href="/games/daily-challenge" class="active nav__cta btn">Daily</a></li>
+      <ul class="nav__links" id="navLinks">
+        <li><a href="/pros">Pros</a></li>
+        <li><a href="/guides">Guides</a></li>
+        <li><a href="/games/daily">Daily</a></li>
+        <li><a href="/versus">Comparisons</a></li>
+        <li><a href="/games" class="active">Games</a></li>
+        <li><a href="/tools/gaming-fps-calculator" class="nav__cta btn">Free Tools</a></li>
       </ul>
       <button class="nav__hamburger" aria-label="Open menu" aria-expanded="false">
         <span></span><span></span><span></span>
@@ -139,6 +140,7 @@
             <input type="number" id="scoreInput" placeholder="Enter your score / time" min="0"/>
             <button class="btn btn--primary" onclick="submitResult()">Submit Result</button>
           </div>
+          <p id="scoreError" hidden style="color:#f87171;font-size:0.85rem;margin:0.5rem 0 0;"></p>
         </div>
 
         <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
@@ -530,8 +532,11 @@ const rng = mulberry32(dailySeed());
 const challengeIdx = Math.floor(rng() * CHALLENGES.length);
 const challenge = CHALLENGES[challengeIdx];
 
-let history = JSON.parse(localStorage.getItem('cgx-dc-history') || '[]');
-let streak  = parseInt(localStorage.getItem('cgx-dc-streak') || '0');
+let history = [];
+try { history = JSON.parse(localStorage.getItem('cgx-dc-history') || '[]') || []; } catch (_) { history = []; }
+if (!Array.isArray(history)) history = [];
+let streak  = parseInt(localStorage.getItem('cgx-dc-streak') || '0', 10);
+if (!Number.isFinite(streak)) streak = 0;
 const alreadyDone = history.some(h => h.date === todayKey);
 
 // ── Render ─────────────────────────────────────────────────────────────────────
@@ -562,7 +567,13 @@ renderHistory();
 // ── Submit ────────────────────────────────────────────────────────────────────
 function submitResult() {
   const raw = parseFloat(document.getElementById('scoreInput').value);
-  if (isNaN(raw) || raw < 0) { alert('Enter a valid score.'); return; }
+  if (isNaN(raw) || raw < 0) {
+    const err = document.getElementById('scoreError');
+    if (err) { err.hidden = false; err.textContent = 'Enter a valid score.'; }
+    return;
+  }
+  const err = document.getElementById('scoreError');
+  if (err) err.hidden = true;
   const grade = challenge.grade(raw);
   // Update streak
   const yesterday = new Date(today); yesterday.setDate(yesterday.getDate()-1);

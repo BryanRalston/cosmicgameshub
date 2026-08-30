@@ -355,18 +355,24 @@
   <meta property="og:url" content="https://cosmicgameshub.com/games/gaming-trivia">
 </head>
 <body>
-<nav class="nav">
+<nav class="nav" role="navigation" aria-label="Main navigation">
   <div class="container">
     <div class="nav__inner">
-      <a href="/" class="nav__logo"><span class="nav__logo-icon">🎮</span><span class="nav__logo-text">Cosmic<span>Games</span>Hub</span></a>
+      <a href="/" class="nav__logo" aria-label="CosmicGamesHub home">
+        <span class="nav__logo-icon">🎮</span>
+        <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
+      </a>
       <ul class="nav__links" id="navLinks">
-        <li><a href="/games/gamerdle">Gamerdle</a></li>
-        <li><a href="/games/pixle">Pixle</a></li>
-        <li><a href="/games/word-scramble">Word Scramble</a></li>
-        <li><a href="/games/rift">RIFT</a></li>
-        <li><a href="/games/gaming-trivia" class="active nav__cta btn">Trivia</a></li>
+        <li><a href="/pros">Pros</a></li>
+        <li><a href="/guides">Guides</a></li>
+        <li><a href="/games/daily">Daily</a></li>
+        <li><a href="/versus">Comparisons</a></li>
+        <li><a href="/games" class="active">Games</a></li>
+        <li><a href="/tools/gaming-fps-calculator" class="nav__cta btn">Free Tools</a></li>
       </ul>
-      <button class="nav__hamburger" id="hamburger"><span></span><span></span><span></span></button>
+      <button class="nav__hamburger" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
     </div>
   </div>
 </nav>
@@ -634,7 +640,9 @@ const DAILY_QS = pickDailyQuestions();
 const TIMER_MAX = 15;
 const LABELS = ['A', 'B', 'C', 'D'];
 
-let stats = JSON.parse(localStorage.getItem('trivia-stats') || '{"streak":0,"hiScore":0,"played":0,"lastDate":"","history":{}}');
+let stats = {streak:0,hiScore:0,played:0,lastDate:"",history:{}};
+try { stats = Object.assign(stats, JSON.parse(localStorage.getItem('trivia-stats') || '{}') || {}); } catch (_) {}
+if (!stats.history || typeof stats.history !== 'object') stats.history = {};
 let currentQ   = 0;
 let scores     = [];       // array of points per question
 let results    = [];       // 'correct' | 'wrong' | 'timeout'
