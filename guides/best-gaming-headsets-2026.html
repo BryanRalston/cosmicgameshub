@@ -10,7 +10,7 @@
     gtag('config', 'G-D272MF8NQP');
   </script>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Best Gaming Headsets 2026 — Top 5 Picks at Every Budget</title>
   <meta name="description" content="The best gaming headsets of 2026. We reviewed 5 top picks across $50–$300+ price tiers — wireless, wired, 7.1 surround, and noise cancelling. Updated for 2026." />
   <meta name="keywords" content="best gaming headsets 2026, gaming headset, wireless gaming headset, best headset for gaming" />
@@ -662,13 +662,14 @@
 </footer>
 
 <script>
-  // Mobile nav
+  // Mobile nav — mark init so /global.js does not double-toggle
   const hamburger = document.getElementById('hamburger');
   const navLinks  = document.getElementById('navLinks');
   hamburger.addEventListener('click', () => {
     const open = navLinks.classList.toggle('open');
     hamburger.setAttribute('aria-expanded', open);
   });
+  hamburger.dataset.navInit = '1';
   // FAQ accordion
   document.querySelectorAll('.faq__question').forEach(btn => {
     btn.addEventListener('click', () => {

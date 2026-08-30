@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Daily Puzzles — Today's Gaming Games | CosmicGamesHub</title>
   <meta name="description" content="Play today's set of free daily gaming puzzles — Gamerdle, Pixle, Hardware Timeline, Gaming Trivia, Sudoku, Crossword, and more. Track your streak across every game.">
   <meta name="keywords" content="daily gaming puzzles, daily browser games, gamerdle today, pixle today, gaming wordle">
@@ -17,18 +17,19 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-D272MF8NQP');</script>
   <style>
     .dh-wrap { max-width: 980px; margin: 0 auto; padding: 0 1rem 4rem; }
-    .dh-hero { text-align: center; padding: 3rem 1rem 1.5rem; position: relative; }
-    .dh-hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 80% 100% at 50% 0%, rgba(0,212,255,0.08) 0%, transparent 70%); pointer-events: none; }
+    .dh-hero { text-align: center; padding: 3rem 1rem 1.5rem; position: relative; overflow: hidden; background: url('/images/games-hub-bg.jpg') center 40% / cover no-repeat; }
+    .dh-hero::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(9,9,15,0.72) 0%, rgba(9,9,15,0.9) 100%); pointer-events: none; }
+    .dh-hero > * { position: relative; z-index: 1; }
     .dh-eyebrow { font-size: .78rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--accent, #00d4ff); margin-bottom: .65rem; position: relative; }
-    .dh-h1 { font-size: clamp(2.1rem, 6vw, 3.4rem); margin: 0 0 .5rem; color: #fff; font-family: 'Outfit', sans-serif; font-weight: 900; letter-spacing: -0.04em; line-height: 1.05; position: relative; }
+    .dh-h1 { font-size: clamp(1.7rem, 7vw, 3.4rem); margin: 0 0 .5rem; color: #fff; font-family: 'Outfit', sans-serif; font-weight: 900; letter-spacing: -0.03em; line-height: 1.15; position: relative; }
     .dh-date { color: var(--text-mid, #a8a8c0); font-size: 1rem; margin: 0 0 .25rem; position: relative; }
     .dh-sub { color: var(--text-lo, #888); font-size: .92rem; max-width: 520px; margin: .25rem auto 0; line-height: 1.55; position: relative; }
 
     /* Stat strip */
-    .dh-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem; max-width: 540px; margin: 1.75rem auto 0; position: relative; }
-    .dh-stat { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: .9rem .5rem; text-align: center; }
+    .dh-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; max-width: 540px; margin: 1.75rem auto 0; position: relative; }
+    .dh-stat { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: .9rem .35rem; text-align: center; min-width: 0; }
     .dh-stat-val { font-size: clamp(1.4rem, 5vw, 1.85rem); font-weight: 800; color: var(--accent, #00d4ff); font-variant-numeric: tabular-nums; line-height: 1.05; }
-    .dh-stat-lbl { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--text-lo, #888); margin-top: .35rem; }
+    .dh-stat-lbl { font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text-lo, #888); margin-top: .35rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
     /* Card grid */
     .dh-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: .85rem; margin-top: 2.25rem; }
@@ -56,9 +57,14 @@
     .dh-cta-title { font-size: 1rem; font-weight: 700; color: #fff; margin-bottom: .25rem; font-family: 'Outfit', sans-serif; }
     .dh-cta-sub { font-size: .85rem; color: var(--text-mid, #a8a8c0); }
 
+    @media (max-width: 768px) {
+      .dh-hero { padding: 1.5rem 1rem 1.25rem; }
+      .dh-wrap { padding: 0 1rem 2.5rem; }
+      .dh-grid { grid-template-columns: 1fr; }
+    }
     @media (max-width: 480px) {
       .dh-grid { grid-template-columns: 1fr; }
-      .dh-card { padding: .85rem 1rem; }
+      .dh-card { padding: .85rem 1rem; min-height: 44px; }
       .dh-icon { width: 44px; height: 44px; font-size: 1.7rem; }
     }
   </style>
@@ -73,11 +79,11 @@
         </a>
         <ul class="nav__links">
           <li><a href="/pros">Pros</a></li>
-          <li><a href="/guides">Guides</a></li>
-          <li><a href="/games/daily" class="active">Daily</a></li>
-          <li><a href="/versus">Comparisons</a></li>
           <li><a href="/games">Games</a></li>
-          <li><a href="/tools/gaming-fps-calculator" class="nav__cta btn">Free Tools</a></li>
+          <li><a href="/games/daily" class="active">Daily</a></li>
+          <li><a href="/guides">Guides</a></li>
+          <li><a href="/versus">Comparisons</a></li>
+          <li><a href="/tools/gaming-fps-calculator" class="nav__cta btn">Tools</a></li>
         </ul>
         <button class="nav__hamburger" aria-label="Open menu" aria-expanded="false">
           <span></span><span></span><span></span>

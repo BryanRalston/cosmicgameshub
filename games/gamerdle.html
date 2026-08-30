@@ -10,7 +10,7 @@
     gtag('config', 'G-D272MF8NQP');
   </script>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <title>Gamerdle — Guess the Video Game Daily | CosmicGamesHub</title>
   <meta name="description" content="Guess the mystery video game in 6 tries. Each guess reveals clues about genre, platform, year, and more. New game every day. Free to play."/>
   <link rel="canonical" href="https://cosmicgameshub.com/games/gamerdle"/>
@@ -26,7 +26,7 @@
 
     /* ── Guess input ── */
     .guess-form { display:flex; gap:0.6rem; margin-bottom:1.5rem; position:relative; }
-    #guessInput { flex:1; background:var(--bg-surface); border:1.5px solid var(--border-mid); border-radius:var(--radius-sm); color:var(--text-hi); font-family:inherit; font-size:0.95rem; padding:0.7rem 1rem; transition:border-color 0.2s; }
+    #guessInput { flex:1; background:var(--bg-surface); border:1.5px solid var(--border-mid); border-radius:var(--radius-sm); color:var(--text-hi); font-family:inherit; font-size:16px; padding:0.7rem 1rem; min-height:44px; transition:border-color 0.2s; }
     #guessInput:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-dim); }
     #guessInput:disabled { opacity:0.5; cursor:not-allowed; }
     .autocomplete-list { position:absolute; top:calc(100% + 4px); left:0; right:80px; background:var(--bg-card); border:1px solid var(--border-mid); border-radius:var(--radius-sm); z-index:50; max-height:220px; overflow-y:auto; box-shadow:var(--shadow-lg); }
@@ -142,11 +142,11 @@
       </a>
       <ul class="nav__links" id="navLinks">
         <li><a href="/pros">Pros</a></li>
-        <li><a href="/guides">Guides</a></li>
-        <li><a href="/games/daily">Daily</a></li>
-        <li><a href="/versus">Comparisons</a></li>
         <li><a href="/games" class="active">Games</a></li>
-        <li><a href="/tools/gaming-fps-calculator" class="nav__cta btn">Free Tools</a></li>
+        <li><a href="/games/daily">Daily</a></li>
+        <li><a href="/guides">Guides</a></li>
+        <li><a href="/versus">Comparisons</a></li>
+        <li><a href="/tools/gaming-fps-calculator" class="nav__cta btn">Tools</a></li>
       </ul>
       <button class="nav__hamburger" aria-label="Open menu" aria-expanded="false">
         <span></span><span></span><span></span>

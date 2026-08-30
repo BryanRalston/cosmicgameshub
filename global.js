@@ -9,19 +9,39 @@
     hamburger.addEventListener('click', function () {
       var open = navLinks.classList.toggle('open');
       hamburger.setAttribute('aria-expanded', String(open));
+      hamburger.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
     });
     document.addEventListener('click', function (e) {
       if (navLinks.classList.contains('open') && !hamburger.contains(e.target) && !navLinks.contains(e.target)) {
         navLinks.classList.remove('open');
         hamburger.setAttribute('aria-expanded', 'false');
+        hamburger.setAttribute('aria-label', 'Open menu');
+      }
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && navLinks.classList.contains('open')) {
+        navLinks.classList.remove('open');
+        hamburger.setAttribute('aria-expanded', 'false');
+        hamburger.setAttribute('aria-label', 'Open menu');
+        hamburger.focus();
       }
     });
   }
-  /* ── Scroll reveal ── */
-  if ('IntersectionObserver' in window) {
+  /* ── Scroll reveal: first-paint visible, animate only off-screen ── */
+  (function () {
     var revealEls = document.querySelectorAll(
       '.js-reveal, .product-card, .guide-card, .game-card, .cat-card, .versus-card, .feature-card, .stat-block, .faq__item, .faq-item, .disclosure'
     );
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    revealEls.forEach(function (el) {
+      if (!el.classList.contains('js-reveal')) el.classList.add('js-reveal');
+      var r = el.getBoundingClientRect();
+      if (reduce || (r.top < window.innerHeight - 4 && r.bottom > 0)) {
+        el.classList.add('revealed');
+      }
+    });
+    document.documentElement.classList.add('js-ready');
+    if (reduce || !('IntersectionObserver' in window)) return;
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {
         if (entry.isIntersecting) {
@@ -29,12 +49,11 @@
           io.unobserve(entry.target);
         }
       });
-    }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+    }, { threshold: 0.08, rootMargin: '0px 0px -24px 0px' });
     revealEls.forEach(function (el) {
-      if (!el.classList.contains('js-reveal')) el.classList.add('js-reveal');
-      io.observe(el);
+      if (!el.classList.contains('revealed')) io.observe(el);
     });
-  }
+  })();
 
   /* ── Flashlight glow on grid containers ── */
   document.querySelectorAll('.glow-grid, .guide-cards, .product-grid, .game-grid, .cat-grid, .versus-grid').forEach(function (grid) {

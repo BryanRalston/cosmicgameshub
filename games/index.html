@@ -10,7 +10,7 @@
     gtag('config', 'G-D272MF8NQP');
   </script>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Free Browser Games 2026 — 24 Games, No Download | CosmicGamesHub</title>
   <meta name="description" content="24 free browser games — 12 daily puzzles plus arcade, skill trainers, a 3D brick builder, and a live farm sim. No download, no login. Updated August 2026." />
   <meta name="keywords" content="free browser games 2026, online games no download, daily puzzle games, BRIX 3D, Gamerdle, Void Keeper, gaming trivia, type racer, aim trainer" />
@@ -25,19 +25,19 @@
     /* ─── Hero ─── */
     .gh-hero {
       position: relative;
-      padding: 4.5rem 1.5rem 3rem;
+      padding: 3rem 1.5rem 2rem;
       text-align: center;
       border-bottom: 1px solid var(--border);
       overflow: hidden;
+      background: url('/images/games-hub-bg.jpg') center 40% / cover no-repeat;
     }
     .gh-hero::before {
       content: '';
       position: absolute; inset: 0;
-      background:
-        radial-gradient(ellipse at 30% 50%, rgba(99,102,241,0.09) 0%, transparent 55%),
-        radial-gradient(ellipse at 70% 30%, rgba(0,212,255,0.07) 0%, transparent 50%);
+      background: linear-gradient(180deg, rgba(9,9,15,0.72) 0%, rgba(9,9,15,0.88) 70%, rgba(9,9,15,0.96) 100%);
       pointer-events: none;
     }
+    .gh-hero > * { position: relative; z-index: 1; }
     .gh-hero__eyebrow {
       display: inline-flex; align-items: center; gap: 0.4rem;
       font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em;
@@ -50,10 +50,11 @@
     }
     @keyframes livepulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.6)} }
     .gh-hero__title {
-      font-size: clamp(2.2rem, 5vw, 3.4rem);
+      font-size: clamp(1.7rem, 7vw, 3.4rem);
       font-weight: 800; color: var(--text-hi);
-      margin: 0 0 0.9rem; line-height: 1.1;
+      margin: 0 0 0.9rem; line-height: 1.15;
       letter-spacing: -0.02em;
+      padding: 0 0.25rem;
     }
     .gh-hero__sub {
       font-size: 1.05rem; color: var(--text-mid);
@@ -67,7 +68,8 @@
       border: 1px solid var(--border, rgba(255,255,255,0.08));
       background: var(--bg-surface, #0f0f18);
       color: var(--text-hi, #eee);
-      font-size: 0.95rem; font-family: inherit;
+      font-size: 16px; font-family: inherit;
+      min-height: 44px;
     }
     .gh-search:focus { outline: none; border-color: var(--accent, #00d4ff); }
     .gh-card__time { font-size: 0.7rem; color: var(--text-lo, #888); margin: 0 0 0.55rem; }
@@ -299,13 +301,17 @@
       color: var(--text-lo); font-size: 0.9rem;
     }
     /* ─── Responsive ─── */
-    @media (max-width: 700px) {
+    @media (max-width: 768px) {
+      .gh-hero { padding: 1.5rem 1rem 1.25rem; }
       .gh-featured { grid-template-columns: 1fr; }
       .gh-featured__img { height: 180px; }
       .gh-featured__body { padding: 1.2rem; }
       .gh-featured__title { font-size: 1.6rem; }
       .gh-card__thumb { height: 140px; }
       .gh-dual { grid-template-columns: 1fr; }
+      .gh-main { padding: 1.5rem 1rem 3rem; }
+      .gh-filter { min-height: 44px; }
+      .gh-stat { flex: 1 1 42%; border-right: 0; border-bottom: 1px solid var(--border); }
     }
     @media (max-width: 480px) {
       .gh-grid { grid-template-columns: 1fr; gap: 0.85rem; }
@@ -368,11 +374,11 @@
       </a>
       <ul class="nav__links" id="navLinks">
         <li><a href="/pros">Pros</a></li>
-        <li><a href="/guides">Guides</a></li>
-        <li><a href="/games/daily">Daily</a></li>
-        <li><a href="/versus">Comparisons</a></li>
         <li><a href="/games" class="active">Games</a></li>
-        <li><a href="/tools/gaming-fps-calculator" class="nav__cta btn">Free Tools</a></li>
+        <li><a href="/games/daily">Daily</a></li>
+        <li><a href="/guides">Guides</a></li>
+        <li><a href="/versus">Comparisons</a></li>
+        <li><a href="/tools/gaming-fps-calculator" class="nav__cta btn">Tools</a></li>
       </ul>
       <button class="nav__hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
         <span></span><span></span><span></span>

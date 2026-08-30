@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Pro Gamer Gear &amp; Settings 2026 — Mouse, Keyboard, Sens | CosmicGamesHub</title>
   <meta name="description" content="The full gear and settings database for pro Valorant, CS2, Apex Legends, and Fortnite players in 2026. Mouse, keyboard, headset, monitor, DPI, sensitivity, eDPI — verified and dated.">
   <meta name="keywords" content="pro gamer settings, valorant pro settings, cs2 pro settings, what mouse does tenz use, esports gear database">
@@ -16,16 +16,18 @@
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-D272MF8NQP"></script>
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-D272MF8NQP');</script>
   <style>
-    .ph-hero { text-align: center; padding: 3rem 1rem 1.25rem; position: relative; }
+    .ph-hero { text-align: center; padding: 3rem 1rem 1.25rem; position: relative; overflow: hidden; background: url('/images/pros-bg.jpg') center 40% / cover no-repeat; }
+    .ph-hero::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(9,9,15,0.7) 0%, rgba(9,9,15,0.92) 100%); pointer-events: none; }
+    .ph-hero > * { position: relative; z-index: 1; }
     .ph-eyebrow { display: inline-block; font-size: .72rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--accent, #00d4ff); margin-bottom: .55rem; }
-    .ph-h1 { font-size: clamp(2rem, 5vw, 3.2rem); margin: 0 0 .55rem; color: #fff; font-family: 'Outfit', sans-serif; font-weight: 900; letter-spacing: -0.04em; line-height: 1.05; }
+    .ph-h1 { font-size: clamp(1.7rem, 7vw, 3.2rem); margin: 0 0 .55rem; color: #fff; font-family: 'Outfit', sans-serif; font-weight: 900; letter-spacing: -0.03em; line-height: 1.15; padding: 0 .25rem; }
     .ph-sub { color: var(--text-mid, #a8a8c0); max-width: 620px; margin: 0 auto; font-size: 1rem; line-height: 1.6; }
 
     .ph-wrap { max-width: 1080px; margin: 0 auto; padding: 0 1rem 4rem; }
 
     /* Controls */
     .ph-controls { display: flex; flex-direction: column; gap: .75rem; margin: 1.75rem 0 1.25rem; position: sticky; top: 0; padding: .85rem 0 .85rem; background: linear-gradient(to bottom, var(--bg-void, #06060a) 0%, var(--bg-void, #06060a) 75%, transparent 100%); z-index: 50; }
-    .ph-search { background: var(--bg-surface, #0f0f18); border: 1px solid var(--border, rgba(255,255,255,0.08)); border-radius: 10px; padding: .75rem 1rem; color: var(--text-hi, #eee); font-size: .95rem; width: 100%; font-family: inherit; }
+    .ph-search { background: var(--bg-surface, #0f0f18); border: 1px solid var(--border, rgba(255,255,255,0.08)); border-radius: 10px; padding: .75rem 1rem; color: var(--text-hi, #eee); font-size: 16px; width: 100%; font-family: inherit; min-height: 44px; }
     .ph-search:focus { outline: none; border-color: var(--accent, #00d4ff); }
     .ph-filters { display: flex; gap: .4rem; flex-wrap: wrap; }
     .ph-pill { background: var(--bg-surface, #0f0f18); border: 1px solid var(--border, rgba(255,255,255,0.08)); color: var(--text-mid, #a8a8c0); padding: .5rem .9rem; border-radius: 999px; font-size: .8rem; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .12s; }
@@ -34,7 +36,8 @@
     .ph-count { font-size: .8rem; color: var(--text-lo, #666); margin-left: auto; align-self: center; }
 
     /* Card grid */
-    .ph-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: .85rem; }
+    .ph-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: .85rem; }
+    .ph-card { min-width: 0; max-width: 100%; }
     .ph-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 1.1rem 1.2rem; transition: all .15s; cursor: pointer; }
     a.ph-card { text-decoration: none; color: inherit; display: block; }
     .ph-card:hover { border-color: var(--accent, #00d4ff); background: rgba(0,212,255,0.03); transform: translateY(-2px); box-shadow: 0 14px 36px rgba(0,0,0,.4); }
@@ -88,9 +91,15 @@
     .ph-modal-stat-lbl { font-size: .6rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-lo, #888); margin-top: .3rem; }
     .ph-modal-pos { position: relative; }
 
+    @media (max-width: 768px) {
+      .ph-hero { padding: 1.5rem 1rem 1.1rem; }
+      .ph-wrap { padding: 0 1rem 2.5rem; }
+      .ph-grid { grid-template-columns: 1fr; }
+      .ph-pill { min-height: 44px; }
+    }
     @media (max-width: 480px) {
       .ph-grid { grid-template-columns: 1fr; }
-      .ph-pill { font-size: .75rem; padding: .45rem .75rem; }
+      .ph-pill { font-size: .75rem; padding: .45rem .75rem; min-height: 44px; }
     }
   </style>
 </head>
@@ -104,11 +113,11 @@
         </a>
         <ul class="nav__links">
           <li><a href="/pros" class="active">Pros</a></li>
-          <li><a href="/guides">Guides</a></li>
-          <li><a href="/games/daily">Daily</a></li>
-          <li><a href="/versus">Comparisons</a></li>
           <li><a href="/games">Games</a></li>
-          <li><a href="/tools/gaming-fps-calculator" class="nav__cta btn">Free Tools</a></li>
+          <li><a href="/games/daily">Daily</a></li>
+          <li><a href="/guides">Guides</a></li>
+          <li><a href="/versus">Comparisons</a></li>
+          <li><a href="/tools/gaming-fps-calculator" class="nav__cta btn">Tools</a></li>
         </ul>
         <button class="nav__hamburger" aria-label="Open menu" aria-expanded="false">
           <span></span><span></span><span></span>
