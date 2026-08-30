@@ -199,6 +199,50 @@ def detail_page(p: dict, links: dict, n_pros: int) -> str:
     )
     verified = p.get("lastVerified") or ""
     extra = extra_links(p.get("mouse"), links)
+    page_url = f"https://cosmicgameshub.com/pros/{p['id']}"
+    json_ld = json.dumps(
+        {
+            "@context": "https://schema.org",
+            "@graph": [
+                {
+                    "@type": "Article",
+                    "headline": f"{name} Settings 2026",
+                    "description": desc,
+                    "dateModified": "2026-08-30",
+                    "author": {
+                        "@type": "Organization",
+                        "name": "CosmicGamesHub",
+                        "url": "https://cosmicgameshub.com",
+                    },
+                    "mainEntityOfPage": page_url,
+                },
+                {
+                    "@type": "BreadcrumbList",
+                    "itemListElement": [
+                        {
+                            "@type": "ListItem",
+                            "position": 1,
+                            "name": "Home",
+                            "item": "https://cosmicgameshub.com/",
+                        },
+                        {
+                            "@type": "ListItem",
+                            "position": 2,
+                            "name": "Pro Gear & Settings",
+                            "item": "https://cosmicgameshub.com/pros",
+                        },
+                        {
+                            "@type": "ListItem",
+                            "position": 3,
+                            "name": name,
+                            "item": page_url,
+                        },
+                    ],
+                },
+            ],
+        },
+        ensure_ascii=False,
+    )
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -212,6 +256,7 @@ def detail_page(p: dict, links: dict, n_pros: int) -> str:
   <meta property="og:type" content="article">
   <meta property="og:url" content="https://cosmicgameshub.com/pros/{esc(p['id'])}">
   <link rel="canonical" href="https://cosmicgameshub.com/pros/{esc(p['id'])}">
+  <script type="application/ld+json">{json_ld}</script>
   <link rel="icon" href="/favicon.ico">
   <link rel="stylesheet" href="/styles.css">
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-D272MF8NQP"></script>
