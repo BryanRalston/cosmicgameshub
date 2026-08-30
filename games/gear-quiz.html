@@ -253,6 +253,12 @@
       text-align: center;
     }
     .gq-results.show { display: block; }
+    .gear-hop { max-width: 420px; margin: 1.25rem auto 0; text-align: left; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 1.1rem 1.2rem; }
+    .gear-hop__eyebrow { font-size: .68rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--accent, #00d4ff); margin-bottom: .35rem; }
+    .gear-hop__name { font-size: 1.05rem; font-weight: 800; color: #fff; margin-bottom: .35rem; }
+    .gear-hop__blurb { font-size: .82rem; color: var(--text-muted, #aaa); line-height: 1.5; margin: 0 0 .85rem; }
+    .gear-hop__actions { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: flex-start; }
+    .gear-hop__actions .btn { width: auto; }
     .gq-grade {
       font-size: 4.5rem;
       font-weight: 900;
@@ -575,6 +581,15 @@
       <button class="gq-btn gq-btn--primary" id="btnAgain">↺ Play Again</button>
       <button class="gq-btn gq-btn--secondary" id="btnShare">📋 Share</button>
     </div>
+    <aside class="gear-hop" id="gqGearHop" style="display:none;" aria-label="Recommended gear">
+      <div class="gear-hop__eyebrow">Upgrade Your Mouse</div>
+      <div class="gear-hop__name">Logitech G Pro X Superlight 2 DEX</div>
+      <p class="gear-hop__blurb">You just sat a gear quiz. One card: the mice guide, plus the Superlight listing we actually use.</p>
+      <div class="gear-hop__actions">
+        <a href="/guides/best-gaming-mice-2026" class="btn btn--outline">Read the mice guide →</a>
+        <a href="https://www.amazon.com/dp/B0DG2XJPTC?tag=cosmicgameshu-20" class="btn btn--amazon-sm" target="_blank" rel="nofollow sponsored noopener">Check price on Amazon</a>
+      </div>
+    </aside>
 
     <div class="gq-streak-row" id="gqBottomMeta" style="display:none;"></div>
 
@@ -642,7 +657,7 @@
 <footer class="footer">
   <div class="container">
     <div class="footer__bottom">
-      <p>© 2026 CosmicGamesHub. <a href="/games">← More Games</a></p>
+      <p>© 2026 CosmicGamesHub. <a href="/games">← More Games</a> · <a href="/privacy">Privacy</a></p>
     </div>
   </div>
 </footer>
@@ -1027,6 +1042,8 @@
 
     elResults.classList.add('show');
     elEndBtns.style.display = 'flex';
+    var hop = document.getElementById('gqGearHop');
+    if (hop) hop.style.display = 'block';
 
     elBottomMeta.style.display = 'flex';
     elBottomMeta.innerHTML = 'Best: <span>' + Math.max(score, prevBest) + ' pts</span>&nbsp;&nbsp;Streak: <span>' + streak + ' days</span>';
@@ -1052,6 +1069,8 @@
     elResults.classList.remove('show');
     elResBest.classList.remove('show');
     elEndBtns.style.display = 'none';
+    var hopHide = document.getElementById('gqGearHop');
+    if (hopHide) hopHide.style.display = 'none';
     elBottomMeta.style.display = 'none';
 
     updateLiveStats();

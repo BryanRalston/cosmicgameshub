@@ -36,6 +36,7 @@
     /* Card grid */
     .ph-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: .85rem; }
     .ph-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 1.1rem 1.2rem; transition: all .15s; cursor: pointer; }
+    a.ph-card { text-decoration: none; color: inherit; display: block; }
     .ph-card:hover { border-color: var(--accent, #00d4ff); background: rgba(0,212,255,0.03); transform: translateY(-2px); box-shadow: 0 14px 36px rgba(0,0,0,.4); }
     .ph-card-head { display: flex; align-items: center; gap: .65rem; margin-bottom: .85rem; }
     .ph-flag { font-size: 1.5rem; line-height: 1; }
@@ -136,189 +137,826 @@
           <button class="ph-pill" data-game="cs2">CS2</button>
           <button class="ph-pill" data-game="apex">Apex</button>
           <button class="ph-pill" data-game="fortnite">Fortnite</button>
-          <span class="ph-count" id="phCount">— pros</span>
+          <span class="ph-count" id="phCount">30 pros</span>
         </div>
       </div>
 
-      <div class="ph-grid" id="phGrid"></div>
+      <div class="ph-grid" id="phGrid">
+    <!-- PROS_CARDS_START -->
+        <a class="ph-card" href="/pros/tenz" data-id="tenz" data-game="valorant" data-search="tenz sentinels tyson ngo lamzu thorn wooting 60he hyperx cloud ii zowie xl2566k artisan zero soft duelist valorant">
+          <div class="ph-card-head">
+            <div class="ph-flag" aria-hidden="true">🇨🇦</div>
+            <div class="ph-card-name">
+              <div class="ph-name">TenZ</div>
+              <div class="ph-team">Sentinels<span class="ph-game-badge ph-game-valorant">Valorant</span></div>
+            </div>
+            <div class="ph-edpi">
+              <div class="ph-edpi-val">352</div>
+              <div class="ph-edpi-lbl">eDPI</div>
+            </div>
+          </div>
+          <div class="ph-gear">
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Mouse</div><span class="ph-gear-val">Lamzu Thorn</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Headset</div><span class="ph-gear-val">HyperX Cloud II</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Monitor</div><span class="ph-gear-val">ZOWIE XL2566K</span></div>
+          </div>
+          <div class="ph-card-foot">
+            <span class="ph-stat"><strong>1600</strong> dpi</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat"><strong>360</strong>Hz</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat">1920x1080</span>
+            <span class="ph-verified">v 2026-04</span>
+          </div>
+        </a>
+        <a class="ph-card" href="/pros/demon1" data-id="demon1" data-game="valorant" data-search="demon1 nrg esports max mazanov razer viper v3 pro steelseries apex pro tkl hyperx cloud ii zowie xl2546k steelseries qck heavy duelist valorant">
+          <div class="ph-card-head">
+            <div class="ph-flag" aria-hidden="true">🇺🇸</div>
+            <div class="ph-card-name">
+              <div class="ph-name">Demon1</div>
+              <div class="ph-team">NRG Esports<span class="ph-game-badge ph-game-valorant">Valorant</span></div>
+            </div>
+            <div class="ph-edpi">
+              <div class="ph-edpi-val">160</div>
+              <div class="ph-edpi-lbl">eDPI</div>
+            </div>
+          </div>
+          <div class="ph-gear">
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Mouse</div><span class="ph-gear-val">Razer Viper V3 Pro</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Headset</div><span class="ph-gear-val">HyperX Cloud II</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Monitor</div><span class="ph-gear-val">ZOWIE XL2546K</span></div>
+          </div>
+          <div class="ph-card-foot">
+            <span class="ph-stat"><strong>1600</strong> dpi</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat"><strong>240</strong>Hz</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat">1920x1080</span>
+            <span class="ph-verified">v 2026-04</span>
+          </div>
+        </a>
+        <a class="ph-card" href="/pros/aspas" data-id="aspas" data-game="valorant" data-search="aspas leviatán erick santos razer viper v3 pro razer huntsman mini hyperx cloud ii zowie xl2546 steelseries qck+ duelist valorant">
+          <div class="ph-card-head">
+            <div class="ph-flag" aria-hidden="true">🇧🇷</div>
+            <div class="ph-card-name">
+              <div class="ph-name">aspas</div>
+              <div class="ph-team">Leviatán<span class="ph-game-badge ph-game-valorant">Valorant</span></div>
+            </div>
+            <div class="ph-edpi">
+              <div class="ph-edpi-val">320</div>
+              <div class="ph-edpi-lbl">eDPI</div>
+            </div>
+          </div>
+          <div class="ph-gear">
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Mouse</div><span class="ph-gear-val">Razer Viper V3 Pro</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Headset</div><span class="ph-gear-val">HyperX Cloud II</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Monitor</div><span class="ph-gear-val">ZOWIE XL2546</span></div>
+          </div>
+          <div class="ph-card-foot">
+            <span class="ph-stat"><strong>800</strong> dpi</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat"><strong>240</strong>Hz</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat">1920x1080</span>
+            <span class="ph-verified">v 2026-04</span>
+          </div>
+        </a>
+        <a class="ph-card" href="/pros/derke" data-id="derke" data-game="valorant" data-search="derke fnatic nikita sirmitev razer viper v3 pro wooting 60he beyerdynamic dt 990 pro zowie xl2566k artisan zero soft duelist valorant">
+          <div class="ph-card-head">
+            <div class="ph-flag" aria-hidden="true">🇫🇮</div>
+            <div class="ph-card-name">
+              <div class="ph-name">Derke</div>
+              <div class="ph-team">Fnatic<span class="ph-game-badge ph-game-valorant">Valorant</span></div>
+            </div>
+            <div class="ph-edpi">
+              <div class="ph-edpi-val">296</div>
+              <div class="ph-edpi-lbl">eDPI</div>
+            </div>
+          </div>
+          <div class="ph-gear">
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Mouse</div><span class="ph-gear-val">Razer Viper V3 Pro</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Headset</div><span class="ph-gear-val">Beyerdynamic DT 990 Pro</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Monitor</div><span class="ph-gear-val">ZOWIE XL2566K</span></div>
+          </div>
+          <div class="ph-card-foot">
+            <span class="ph-stat"><strong>400</strong> dpi</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat"><strong>360</strong>Hz</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat">1920x1080</span>
+            <span class="ph-verified">v 2026-04</span>
+          </div>
+        </a>
+        <a class="ph-card" href="/pros/boaster" data-id="boaster" data-game="valorant" data-search="boaster fnatic jake howlett logitech g pro wireless razer blackwidow v3 mini hyperx cloud alpha zowie xl2546 hyperx fury s igl valorant">
+          <div class="ph-card-head">
+            <div class="ph-flag" aria-hidden="true">🇬🇧</div>
+            <div class="ph-card-name">
+              <div class="ph-name">Boaster</div>
+              <div class="ph-team">Fnatic<span class="ph-game-badge ph-game-valorant">Valorant</span></div>
+            </div>
+            <div class="ph-edpi">
+              <div class="ph-edpi-val">208</div>
+              <div class="ph-edpi-lbl">eDPI</div>
+            </div>
+          </div>
+          <div class="ph-gear">
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Mouse</div><span class="ph-gear-val">Logitech G Pro Wireless</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Headset</div><span class="ph-gear-val">HyperX Cloud Alpha</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Monitor</div><span class="ph-gear-val">ZOWIE XL2546</span></div>
+          </div>
+          <div class="ph-card-foot">
+            <span class="ph-stat"><strong>400</strong> dpi</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat"><strong>240</strong>Hz</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat">1920x1080</span>
+            <span class="ph-verified">v 2026-03</span>
+          </div>
+        </a>
+        <a class="ph-card" href="/pros/jawgemo" data-id="jawgemo" data-game="valorant" data-search="jawgemo evil geniuses alexander mor logitech g pro x superlight steelseries apex pro mini sennheiser hd 600 zowie xl2546k steelseries qck heavy duelist valorant">
+          <div class="ph-card-head">
+            <div class="ph-flag" aria-hidden="true">🇺🇸</div>
+            <div class="ph-card-name">
+              <div class="ph-name">jawgemo</div>
+              <div class="ph-team">Evil Geniuses<span class="ph-game-badge ph-game-valorant">Valorant</span></div>
+            </div>
+            <div class="ph-edpi">
+              <div class="ph-edpi-val">254</div>
+              <div class="ph-edpi-lbl">eDPI</div>
+            </div>
+          </div>
+          <div class="ph-gear">
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Mouse</div><span class="ph-gear-val">Logitech G Pro X Superlight</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Headset</div><span class="ph-gear-val">Sennheiser HD 600</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Monitor</div><span class="ph-gear-val">ZOWIE XL2546K</span></div>
+          </div>
+          <div class="ph-card-foot">
+            <span class="ph-stat"><strong>800</strong> dpi</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat"><strong>240</strong>Hz</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat">1920x1080</span>
+            <span class="ph-verified">v 2026-03</span>
+          </div>
+        </a>
+        <a class="ph-card" href="/pros/chronicle" data-id="chronicle" data-game="valorant" data-search="chronicle fnatic timofey khromov logitech g pro wireless corsair k65 rgb mini hyperx cloud ii zowie xl2546 steelseries qck+ controller valorant">
+          <div class="ph-card-head">
+            <div class="ph-flag" aria-hidden="true">🇷🇺</div>
+            <div class="ph-card-name">
+              <div class="ph-name">Chronicle</div>
+              <div class="ph-team">Fnatic<span class="ph-game-badge ph-game-valorant">Valorant</span></div>
+            </div>
+            <div class="ph-edpi">
+              <div class="ph-edpi-val">200</div>
+              <div class="ph-edpi-lbl">eDPI</div>
+            </div>
+          </div>
+          <div class="ph-gear">
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Mouse</div><span class="ph-gear-val">Logitech G Pro Wireless</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Headset</div><span class="ph-gear-val">HyperX Cloud II</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Monitor</div><span class="ph-gear-val">ZOWIE XL2546</span></div>
+          </div>
+          <div class="ph-card-foot">
+            <span class="ph-stat"><strong>800</strong> dpi</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat"><strong>240</strong>Hz</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat">1920x1080</span>
+            <span class="ph-verified">v 2026-03</span>
+          </div>
+        </a>
+        <a class="ph-card" href="/pros/sayf" data-id="sayf" data-game="valorant" data-search="sayf team liquid saif jibraeel razer deathadder v3 pro steelseries apex pro tkl sennheiser hd 660s zowie xl2566k artisan hien duelist valorant">
+          <div class="ph-card-head">
+            <div class="ph-flag" aria-hidden="true">🇸🇪</div>
+            <div class="ph-card-name">
+              <div class="ph-name">Sayf</div>
+              <div class="ph-team">Team Liquid<span class="ph-game-badge ph-game-valorant">Valorant</span></div>
+            </div>
+            <div class="ph-edpi">
+              <div class="ph-edpi-val">224</div>
+              <div class="ph-edpi-lbl">eDPI</div>
+            </div>
+          </div>
+          <div class="ph-gear">
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Mouse</div><span class="ph-gear-val">Razer DeathAdder V3 Pro</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Headset</div><span class="ph-gear-val">Sennheiser HD 660S</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Monitor</div><span class="ph-gear-val">ZOWIE XL2566K</span></div>
+          </div>
+          <div class="ph-card-foot">
+            <span class="ph-stat"><strong>800</strong> dpi</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat"><strong>360</strong>Hz</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat">1920x1080</span>
+            <span class="ph-verified">v 2026-04</span>
+          </div>
+        </a>
+        <a class="ph-card" href="/pros/nats" data-id="nats" data-game="valorant" data-search="nats team liquid ayaz akhmetshin logitech g pro x superlight razer huntsman mini hyperx cloud ii zowie xl2546 steelseries qck+ sentinel valorant">
+          <div class="ph-card-head">
+            <div class="ph-flag" aria-hidden="true">🇷🇺</div>
+            <div class="ph-card-name">
+              <div class="ph-name">nAts</div>
+              <div class="ph-team">Team Liquid<span class="ph-game-badge ph-game-valorant">Valorant</span></div>
+            </div>
+            <div class="ph-edpi">
+              <div class="ph-edpi-val">392</div>
+              <div class="ph-edpi-lbl">eDPI</div>
+            </div>
+          </div>
+          <div class="ph-gear">
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Mouse</div><span class="ph-gear-val">Logitech G Pro X Superlight</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Headset</div><span class="ph-gear-val">HyperX Cloud II</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Monitor</div><span class="ph-gear-val">ZOWIE XL2546</span></div>
+          </div>
+          <div class="ph-card-foot">
+            <span class="ph-stat"><strong>800</strong> dpi</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat"><strong>240</strong>Hz</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat">1920x1080</span>
+            <span class="ph-verified">v 2026-03</span>
+          </div>
+        </a>
+        <a class="ph-card" href="/pros/less" data-id="less" data-game="valorant" data-search="less loud felipe basso logitech g pro x superlight razer blackwidow v3 mini hyperx cloud alpha zowie xl2546k steelseries qck heavy sentinel valorant">
+          <div class="ph-card-head">
+            <div class="ph-flag" aria-hidden="true">🇧🇷</div>
+            <div class="ph-card-name">
+              <div class="ph-name">Less</div>
+              <div class="ph-team">LOUD<span class="ph-game-badge ph-game-valorant">Valorant</span></div>
+            </div>
+            <div class="ph-edpi">
+              <div class="ph-edpi-val">280</div>
+              <div class="ph-edpi-lbl">eDPI</div>
+            </div>
+          </div>
+          <div class="ph-gear">
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Mouse</div><span class="ph-gear-val">Logitech G Pro X Superlight</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Headset</div><span class="ph-gear-val">HyperX Cloud Alpha</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Monitor</div><span class="ph-gear-val">ZOWIE XL2546K</span></div>
+          </div>
+          <div class="ph-card-foot">
+            <span class="ph-stat"><strong>800</strong> dpi</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat"><strong>240</strong>Hz</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat">1920x1080</span>
+            <span class="ph-verified">v 2026-03</span>
+          </div>
+        </a>
+        <a class="ph-card" href="/pros/s1mple" data-id="s1mple" data-game="cs2" data-search="s1mple natus vincere oleksandr kostyliev logitech g pro x superlight logitech g915 tkl logitech g pro x zowie xl2566k logitech g640 awper cs2">
+          <div class="ph-card-head">
+            <div class="ph-flag" aria-hidden="true">🇺🇦</div>
+            <div class="ph-card-name">
+              <div class="ph-name">s1mple</div>
+              <div class="ph-team">Natus Vincere<span class="ph-game-badge ph-game-cs2">CS2</span></div>
+            </div>
+            <div class="ph-edpi">
+              <div class="ph-edpi-val">1236</div>
+              <div class="ph-edpi-lbl">eDPI</div>
+            </div>
+          </div>
+          <div class="ph-gear">
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Mouse</div><span class="ph-gear-val">Logitech G Pro X Superlight</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Headset</div><span class="ph-gear-val">Logitech G Pro X</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Monitor</div><span class="ph-gear-val">ZOWIE XL2566K</span></div>
+          </div>
+          <div class="ph-card-foot">
+            <span class="ph-stat"><strong>400</strong> dpi</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat"><strong>360</strong>Hz</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat">1280x960</span>
+            <span class="ph-verified">v 2026-04</span>
+          </div>
+        </a>
+        <a class="ph-card" href="/pros/m0nesy" data-id="m0nesy" data-game="cs2" data-search="m0nesy g2 esports ilya osipov logitech g pro x superlight logitech g pro x keyboard logitech g pro x zowie xl2566k logitech g640 awper cs2">
+          <div class="ph-card-head">
+            <div class="ph-flag" aria-hidden="true">🇷🇺</div>
+            <div class="ph-card-name">
+              <div class="ph-name">m0NESY</div>
+              <div class="ph-team">G2 Esports<span class="ph-game-badge ph-game-cs2">CS2</span></div>
+            </div>
+            <div class="ph-edpi">
+              <div class="ph-edpi-val">800</div>
+              <div class="ph-edpi-lbl">eDPI</div>
+            </div>
+          </div>
+          <div class="ph-gear">
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Mouse</div><span class="ph-gear-val">Logitech G Pro X Superlight</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Headset</div><span class="ph-gear-val">Logitech G Pro X</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Monitor</div><span class="ph-gear-val">ZOWIE XL2566K</span></div>
+          </div>
+          <div class="ph-card-foot">
+            <span class="ph-stat"><strong>400</strong> dpi</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat"><strong>360</strong>Hz</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat">1280x960</span>
+            <span class="ph-verified">v 2026-04</span>
+          </div>
+        </a>
+        <a class="ph-card" href="/pros/donk" data-id="donk" data-game="cs2" data-search="donk team spirit danil kryshkovets logitech g pro x superlight steelseries apex pro tkl hyperx cloud ii zowie xl2566k steelseries qck heavy rifler cs2">
+          <div class="ph-card-head">
+            <div class="ph-flag" aria-hidden="true">🇷🇺</div>
+            <div class="ph-card-name">
+              <div class="ph-name">donk</div>
+              <div class="ph-team">Team Spirit<span class="ph-game-badge ph-game-cs2">CS2</span></div>
+            </div>
+            <div class="ph-edpi">
+              <div class="ph-edpi-val">880</div>
+              <div class="ph-edpi-lbl">eDPI</div>
+            </div>
+          </div>
+          <div class="ph-gear">
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Mouse</div><span class="ph-gear-val">Logitech G Pro X Superlight</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Headset</div><span class="ph-gear-val">HyperX Cloud II</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Monitor</div><span class="ph-gear-val">ZOWIE XL2566K</span></div>
+          </div>
+          <div class="ph-card-foot">
+            <span class="ph-stat"><strong>800</strong> dpi</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat"><strong>360</strong>Hz</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat">1280x960</span>
+            <span class="ph-verified">v 2026-04</span>
+          </div>
+        </a>
+        <a class="ph-card" href="/pros/zywoo" data-id="zywoo" data-game="cs2" data-search="zywoo team vitality mathieu herbaut logitech g pro x superlight corsair k70 rgb corsair hs80 zowie xl2566k corsair mm350 awper cs2">
+          <div class="ph-card-head">
+            <div class="ph-flag" aria-hidden="true">🇫🇷</div>
+            <div class="ph-card-name">
+              <div class="ph-name">ZywOo</div>
+              <div class="ph-team">Team Vitality<span class="ph-game-badge ph-game-cs2">CS2</span></div>
+            </div>
+            <div class="ph-edpi">
+              <div class="ph-edpi-val">760</div>
+              <div class="ph-edpi-lbl">eDPI</div>
+            </div>
+          </div>
+          <div class="ph-gear">
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Mouse</div><span class="ph-gear-val">Logitech G Pro X Superlight</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Headset</div><span class="ph-gear-val">Corsair HS80</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Monitor</div><span class="ph-gear-val">ZOWIE XL2566K</span></div>
+          </div>
+          <div class="ph-card-foot">
+            <span class="ph-stat"><strong>400</strong> dpi</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat"><strong>360</strong>Hz</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat">1920x1080</span>
+            <span class="ph-verified">v 2026-04</span>
+          </div>
+        </a>
+        <a class="ph-card" href="/pros/niko" data-id="niko" data-game="cs2" data-search="niko g2 esports nikola kovač razer deathadder v3 pro razer huntsman mini razer blackshark v2 zowie xl2566k razer gigantus v2 rifler cs2">
+          <div class="ph-card-head">
+            <div class="ph-flag" aria-hidden="true">🇧🇦</div>
+            <div class="ph-card-name">
+              <div class="ph-name">NiKo</div>
+              <div class="ph-team">G2 Esports<span class="ph-game-badge ph-game-cs2">CS2</span></div>
+            </div>
+            <div class="ph-edpi">
+              <div class="ph-edpi-val">604</div>
+              <div class="ph-edpi-lbl">eDPI</div>
+            </div>
+          </div>
+          <div class="ph-gear">
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Mouse</div><span class="ph-gear-val">Razer DeathAdder V3 Pro</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Headset</div><span class="ph-gear-val">Razer BlackShark V2</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Monitor</div><span class="ph-gear-val">ZOWIE XL2566K</span></div>
+          </div>
+          <div class="ph-card-foot">
+            <span class="ph-stat"><strong>400</strong> dpi</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat"><strong>360</strong>Hz</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat">1920x1080</span>
+            <span class="ph-verified">v 2026-04</span>
+          </div>
+        </a>
+        <a class="ph-card" href="/pros/broky" data-id="broky" data-game="cs2" data-search="broky faze clan helvijs saukants logitech g pro x superlight steelseries apex pro tkl steelseries arctis nova pro zowie xl2566k steelseries qck heavy awper cs2">
+          <div class="ph-card-head">
+            <div class="ph-flag" aria-hidden="true">🇱🇻</div>
+            <div class="ph-card-name">
+              <div class="ph-name">broky</div>
+              <div class="ph-team">FaZe Clan<span class="ph-game-badge ph-game-cs2">CS2</span></div>
+            </div>
+            <div class="ph-edpi">
+              <div class="ph-edpi-val">800</div>
+              <div class="ph-edpi-lbl">eDPI</div>
+            </div>
+          </div>
+          <div class="ph-gear">
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Mouse</div><span class="ph-gear-val">Logitech G Pro X Superlight</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Headset</div><span class="ph-gear-val">SteelSeries Arctis Nova Pro</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Monitor</div><span class="ph-gear-val">ZOWIE XL2566K</span></div>
+          </div>
+          <div class="ph-card-foot">
+            <span class="ph-stat"><strong>400</strong> dpi</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat"><strong>360</strong>Hz</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat">1280x960</span>
+            <span class="ph-verified">v 2026-04</span>
+          </div>
+        </a>
+        <a class="ph-card" href="/pros/jl" data-id="jl" data-game="cs2" data-search="jl natus vincere justinas lekavičius logitech g pro x superlight logitech g pro x keyboard hyperx cloud ii zowie xl2566k logitech g640 rifler cs2">
+          <div class="ph-card-head">
+            <div class="ph-flag" aria-hidden="true">🇱🇹</div>
+            <div class="ph-card-name">
+              <div class="ph-name">jL</div>
+              <div class="ph-team">Natus Vincere<span class="ph-game-badge ph-game-cs2">CS2</span></div>
+            </div>
+            <div class="ph-edpi">
+              <div class="ph-edpi-val">720</div>
+              <div class="ph-edpi-lbl">eDPI</div>
+            </div>
+          </div>
+          <div class="ph-gear">
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Mouse</div><span class="ph-gear-val">Logitech G Pro X Superlight</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Headset</div><span class="ph-gear-val">HyperX Cloud II</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Monitor</div><span class="ph-gear-val">ZOWIE XL2566K</span></div>
+          </div>
+          <div class="ph-card-foot">
+            <span class="ph-stat"><strong>800</strong> dpi</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat"><strong>360</strong>Hz</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat">1280x960</span>
+            <span class="ph-verified">v 2026-04</span>
+          </div>
+        </a>
+        <a class="ph-card" href="/pros/twistzz" data-id="twistzz" data-game="cs2" data-search="twistzz team liquid russel van dulken logitech g pro x superlight steelseries apex pro tkl steelseries arctis nova pro zowie xl2566k steelseries qck+ rifler cs2">
+          <div class="ph-card-head">
+            <div class="ph-flag" aria-hidden="true">🇨🇦</div>
+            <div class="ph-card-name">
+              <div class="ph-name">Twistzz</div>
+              <div class="ph-team">Team Liquid<span class="ph-game-badge ph-game-cs2">CS2</span></div>
+            </div>
+            <div class="ph-edpi">
+              <div class="ph-edpi-val">680</div>
+              <div class="ph-edpi-lbl">eDPI</div>
+            </div>
+          </div>
+          <div class="ph-gear">
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Mouse</div><span class="ph-gear-val">Logitech G Pro X Superlight</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Headset</div><span class="ph-gear-val">SteelSeries Arctis Nova Pro</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Monitor</div><span class="ph-gear-val">ZOWIE XL2566K</span></div>
+          </div>
+          <div class="ph-card-foot">
+            <span class="ph-stat"><strong>400</strong> dpi</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat"><strong>360</strong>Hz</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat">1920x1080</span>
+            <span class="ph-verified">v 2026-04</span>
+          </div>
+        </a>
+        <a class="ph-card" href="/pros/electronic" data-id="electronic" data-game="cs2" data-search="electronic cloud9 denis sharipov logitech g pro wireless hyperx alloy fps hyperx cloud ii zowie xl2546 hyperx fury s rifler cs2">
+          <div class="ph-card-head">
+            <div class="ph-flag" aria-hidden="true">🇷🇺</div>
+            <div class="ph-card-name">
+              <div class="ph-name">electronic</div>
+              <div class="ph-team">Cloud9<span class="ph-game-badge ph-game-cs2">CS2</span></div>
+            </div>
+            <div class="ph-edpi">
+              <div class="ph-edpi-val">880</div>
+              <div class="ph-edpi-lbl">eDPI</div>
+            </div>
+          </div>
+          <div class="ph-gear">
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Mouse</div><span class="ph-gear-val">Logitech G Pro Wireless</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Headset</div><span class="ph-gear-val">HyperX Cloud II</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Monitor</div><span class="ph-gear-val">ZOWIE XL2546</span></div>
+          </div>
+          <div class="ph-card-foot">
+            <span class="ph-stat"><strong>400</strong> dpi</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat"><strong>240</strong>Hz</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat">1280x960</span>
+            <span class="ph-verified">v 2026-03</span>
+          </div>
+        </a>
+        <a class="ph-card" href="/pros/device" data-id="device" data-game="cs2" data-search="device astralis nicolai reedtz logitech g pro x superlight steelseries apex pro tkl steelseries arctis nova pro zowie xl2566k steelseries qck heavy awper cs2">
+          <div class="ph-card-head">
+            <div class="ph-flag" aria-hidden="true">🇩🇰</div>
+            <div class="ph-card-name">
+              <div class="ph-name">device</div>
+              <div class="ph-team">Astralis<span class="ph-game-badge ph-game-cs2">CS2</span></div>
+            </div>
+            <div class="ph-edpi">
+              <div class="ph-edpi-val">800</div>
+              <div class="ph-edpi-lbl">eDPI</div>
+            </div>
+          </div>
+          <div class="ph-gear">
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Mouse</div><span class="ph-gear-val">Logitech G Pro X Superlight</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Headset</div><span class="ph-gear-val">SteelSeries Arctis Nova Pro</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Monitor</div><span class="ph-gear-val">ZOWIE XL2566K</span></div>
+          </div>
+          <div class="ph-card-foot">
+            <span class="ph-stat"><strong>400</strong> dpi</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat"><strong>360</strong>Hz</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat">1280x960</span>
+            <span class="ph-verified">v 2026-04</span>
+          </div>
+        </a>
+        <a class="ph-card" href="/pros/imperialhal" data-id="imperialhal" data-game="apex" data-search="imperialhal tsm phillip dosen logitech g pro x superlight wooting 60he audio-technica ath-m50x zowie xl2546k steelseries qck heavy igl apex">
+          <div class="ph-card-head">
+            <div class="ph-flag" aria-hidden="true">🇺🇸</div>
+            <div class="ph-card-name">
+              <div class="ph-name">ImperialHal</div>
+              <div class="ph-team">TSM<span class="ph-game-badge ph-game-apex">Apex</span></div>
+            </div>
+            <div class="ph-edpi">
+              <div class="ph-edpi-val">880</div>
+              <div class="ph-edpi-lbl">eDPI</div>
+            </div>
+          </div>
+          <div class="ph-gear">
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Mouse</div><span class="ph-gear-val">Logitech G Pro X Superlight</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Headset</div><span class="ph-gear-val">Audio-Technica ATH-M50x</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Monitor</div><span class="ph-gear-val">ZOWIE XL2546K</span></div>
+          </div>
+          <div class="ph-card-foot">
+            <span class="ph-stat"><strong>800</strong> dpi</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat"><strong>240</strong>Hz</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat">1920x1080</span>
+            <span class="ph-verified">v 2026-03</span>
+          </div>
+        </a>
+        <a class="ph-card" href="/pros/reps" data-id="reps" data-game="apex" data-search="reps tsm jordan wolfe logitech g pro wireless steelseries apex pro mini hyperx cloud ii zowie xl2546 steelseries qck+ fragger apex">
+          <div class="ph-card-head">
+            <div class="ph-flag" aria-hidden="true">🇺🇸</div>
+            <div class="ph-card-name">
+              <div class="ph-name">Reps</div>
+              <div class="ph-team">TSM<span class="ph-game-badge ph-game-apex">Apex</span></div>
+            </div>
+            <div class="ph-edpi">
+              <div class="ph-edpi-val">1040</div>
+              <div class="ph-edpi-lbl">eDPI</div>
+            </div>
+          </div>
+          <div class="ph-gear">
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Mouse</div><span class="ph-gear-val">Logitech G Pro Wireless</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Headset</div><span class="ph-gear-val">HyperX Cloud II</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Monitor</div><span class="ph-gear-val">ZOWIE XL2546</span></div>
+          </div>
+          <div class="ph-card-foot">
+            <span class="ph-stat"><strong>800</strong> dpi</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat"><strong>240</strong>Hz</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat">1920x1080</span>
+            <span class="ph-verified">v 2026-03</span>
+          </div>
+        </a>
+        <a class="ph-card" href="/pros/verhulst" data-id="verhulst" data-game="apex" data-search="verhulst tsm evan verhulst logitech g pro x superlight razer huntsman mini sennheiser hd 600 zowie xl2546k artisan hien fragger apex">
+          <div class="ph-card-head">
+            <div class="ph-flag" aria-hidden="true">🇺🇸</div>
+            <div class="ph-card-name">
+              <div class="ph-name">Verhulst</div>
+              <div class="ph-team">TSM<span class="ph-game-badge ph-game-apex">Apex</span></div>
+            </div>
+            <div class="ph-edpi">
+              <div class="ph-edpi-val">960</div>
+              <div class="ph-edpi-lbl">eDPI</div>
+            </div>
+          </div>
+          <div class="ph-gear">
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Mouse</div><span class="ph-gear-val">Logitech G Pro X Superlight</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Headset</div><span class="ph-gear-val">Sennheiser HD 600</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Monitor</div><span class="ph-gear-val">ZOWIE XL2546K</span></div>
+          </div>
+          <div class="ph-card-foot">
+            <span class="ph-stat"><strong>800</strong> dpi</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat"><strong>240</strong>Hz</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat">1920x1080</span>
+            <span class="ph-verified">v 2026-03</span>
+          </div>
+        </a>
+        <a class="ph-card" href="/pros/genburten" data-id="genburten" data-game="apex" data-search="genburten darkzero esports noyan ozkose logitech g pro wireless hyperx cloud ii zowie xl2546 steelseries qck+ fragger apex">
+          <div class="ph-card-head">
+            <div class="ph-flag" aria-hidden="true">🇦🇺</div>
+            <div class="ph-card-name">
+              <div class="ph-name">Genburten</div>
+              <div class="ph-team">DarkZero Esports<span class="ph-game-badge ph-game-apex">Apex</span></div>
+            </div>
+            <div class="ph-edpi">
+              <div class="ph-edpi-val">1200</div>
+              <div class="ph-edpi-lbl">eDPI</div>
+            </div>
+          </div>
+          <div class="ph-gear">
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Mouse</div><span class="ph-gear-val">Logitech G Pro Wireless</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Headset</div><span class="ph-gear-val">HyperX Cloud II</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Monitor</div><span class="ph-gear-val">ZOWIE XL2546</span></div>
+          </div>
+          <div class="ph-card-foot">
+            <span class="ph-stat"><strong>800</strong> dpi</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat"><strong>240</strong>Hz</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat">1920x1080</span>
+            <span class="ph-verified">v 2026-03</span>
+          </div>
+        </a>
+        <a class="ph-card" href="/pros/sweetdreams" data-id="sweetdreams" data-game="apex" data-search="sweetdreams nrg esports chris sexton logitech g pro x superlight steelseries apex pro tkl sennheiser hd 660s zowie xl2566k artisan zero soft igl apex">
+          <div class="ph-card-head">
+            <div class="ph-flag" aria-hidden="true">🇺🇸</div>
+            <div class="ph-card-name">
+              <div class="ph-name">Sweetdreams</div>
+              <div class="ph-team">NRG Esports<span class="ph-game-badge ph-game-apex">Apex</span></div>
+            </div>
+            <div class="ph-edpi">
+              <div class="ph-edpi-val">880</div>
+              <div class="ph-edpi-lbl">eDPI</div>
+            </div>
+          </div>
+          <div class="ph-gear">
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Mouse</div><span class="ph-gear-val">Logitech G Pro X Superlight</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Headset</div><span class="ph-gear-val">Sennheiser HD 660S</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Monitor</div><span class="ph-gear-val">ZOWIE XL2566K</span></div>
+          </div>
+          <div class="ph-card-foot">
+            <span class="ph-stat"><strong>800</strong> dpi</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat"><strong>360</strong>Hz</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat">1920x1080</span>
+            <span class="ph-verified">v 2026-04</span>
+          </div>
+        </a>
+        <a class="ph-card" href="/pros/bugha" data-id="bugha" data-game="fortnite" data-search="bugha dignitas kyle giersdorf logitech g pro x superlight steelseries apex pro tkl jbl quantum one zowie xl2546k steelseries qck+ fragger fortnite">
+          <div class="ph-card-head">
+            <div class="ph-flag" aria-hidden="true">🇺🇸</div>
+            <div class="ph-card-name">
+              <div class="ph-name">Bugha</div>
+              <div class="ph-team">Dignitas<span class="ph-game-badge ph-game-fortnite">Fortnite</span></div>
+            </div>
+            <div class="ph-edpi">
+              <div class="ph-edpi-val">80</div>
+              <div class="ph-edpi-lbl">eDPI</div>
+            </div>
+          </div>
+          <div class="ph-gear">
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Mouse</div><span class="ph-gear-val">Logitech G Pro X Superlight</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Headset</div><span class="ph-gear-val">JBL Quantum One</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Monitor</div><span class="ph-gear-val">ZOWIE XL2546K</span></div>
+          </div>
+          <div class="ph-card-foot">
+            <span class="ph-stat"><strong>800</strong> dpi</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat"><strong>240</strong>Hz</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat">1920x1080</span>
+            <span class="ph-verified">v 2026-03</span>
+          </div>
+        </a>
+        <a class="ph-card" href="/pros/mongraal" data-id="mongraal" data-game="fortnite" data-search="mongraal faze clan kyle jackson logitech g402 steelseries apex pro mini hyperx cloud ii zowie xl2546 steelseries qck heavy fragger fortnite">
+          <div class="ph-card-head">
+            <div class="ph-flag" aria-hidden="true">🇬🇧</div>
+            <div class="ph-card-name">
+              <div class="ph-name">Mongraal</div>
+              <div class="ph-team">FaZe Clan<span class="ph-game-badge ph-game-fortnite">Fortnite</span></div>
+            </div>
+            <div class="ph-edpi">
+              <div class="ph-edpi-val">36</div>
+              <div class="ph-edpi-lbl">eDPI</div>
+            </div>
+          </div>
+          <div class="ph-gear">
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Mouse</div><span class="ph-gear-val">Logitech G402</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Headset</div><span class="ph-gear-val">HyperX Cloud II</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Monitor</div><span class="ph-gear-val">ZOWIE XL2546</span></div>
+          </div>
+          <div class="ph-card-foot">
+            <span class="ph-stat"><strong>400</strong> dpi</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat"><strong>240</strong>Hz</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat">1920x1080</span>
+            <span class="ph-verified">v 2026-03</span>
+          </div>
+        </a>
+        <a class="ph-card" href="/pros/mrsavage" data-id="mrsavage" data-game="fortnite" data-search="mrsavage 100 thieves martin foss andersen logitech g pro x superlight steelseries apex pro mini sennheiser hd 600 zowie xl2566k artisan hien fragger fortnite">
+          <div class="ph-card-head">
+            <div class="ph-flag" aria-hidden="true">🇳🇴</div>
+            <div class="ph-card-name">
+              <div class="ph-name">MrSavage</div>
+              <div class="ph-team">100 Thieves<span class="ph-game-badge ph-game-fortnite">Fortnite</span></div>
+            </div>
+            <div class="ph-edpi">
+              <div class="ph-edpi-val">56</div>
+              <div class="ph-edpi-lbl">eDPI</div>
+            </div>
+          </div>
+          <div class="ph-gear">
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Mouse</div><span class="ph-gear-val">Logitech G Pro X Superlight</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Headset</div><span class="ph-gear-val">Sennheiser HD 600</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Monitor</div><span class="ph-gear-val">ZOWIE XL2566K</span></div>
+          </div>
+          <div class="ph-card-foot">
+            <span class="ph-stat"><strong>800</strong> dpi</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat"><strong>360</strong>Hz</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat">1920x1080</span>
+            <span class="ph-verified">v 2026-04</span>
+          </div>
+        </a>
+        <a class="ph-card" href="/pros/epikwhale" data-id="epikwhale" data-game="fortnite" data-search="epikwhale tsm shane cotton finalmouse starlight-12 steelseries apex pro tkl beyerdynamic dt 990 pro zowie xl2546k steelseries qck heavy fragger fortnite">
+          <div class="ph-card-head">
+            <div class="ph-flag" aria-hidden="true">🇺🇸</div>
+            <div class="ph-card-name">
+              <div class="ph-name">EpikWhale</div>
+              <div class="ph-team">TSM<span class="ph-game-badge ph-game-fortnite">Fortnite</span></div>
+            </div>
+            <div class="ph-edpi">
+              <div class="ph-edpi-val">80</div>
+              <div class="ph-edpi-lbl">eDPI</div>
+            </div>
+          </div>
+          <div class="ph-gear">
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Mouse</div><span class="ph-gear-val">Finalmouse Starlight-12</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Headset</div><span class="ph-gear-val">Beyerdynamic DT 990 Pro</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Monitor</div><span class="ph-gear-val">ZOWIE XL2546K</span></div>
+          </div>
+          <div class="ph-card-foot">
+            <span class="ph-stat"><strong>800</strong> dpi</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat"><strong>240</strong>Hz</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat">1920x1080</span>
+            <span class="ph-verified">v 2026-03</span>
+          </div>
+        </a>
+        <a class="ph-card" href="/pros/aussirok" data-id="aussirok" data-game="fortnite" data-search="aussirok logitech g pro wireless hyperx cloud ii zowie xl2546 fragger fortnite">
+          <div class="ph-card-head">
+            <div class="ph-flag" aria-hidden="true">🇦🇺</div>
+            <div class="ph-card-name">
+              <div class="ph-name">Aussirok</div>
+              <div class="ph-team"><span class="ph-game-badge ph-game-fortnite">Fortnite</span></div>
+            </div>
+            <div class="ph-edpi">
+              <div class="ph-edpi-val">64</div>
+              <div class="ph-edpi-lbl">eDPI</div>
+            </div>
+          </div>
+          <div class="ph-gear">
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Mouse</div><span class="ph-gear-val">Logitech G Pro Wireless</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Headset</div><span class="ph-gear-val">HyperX Cloud II</span></div>
+            <div class="ph-gear-row"><div class="ph-gear-lbl">Monitor</div><span class="ph-gear-val">ZOWIE XL2546</span></div>
+          </div>
+          <div class="ph-card-foot">
+            <span class="ph-stat"><strong>800</strong> dpi</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat"><strong>240</strong>Hz</span>
+            <span class="ph-stat-sep">·</span>
+            <span class="ph-stat">1920x1080</span>
+            <span class="ph-verified">v 2026-03</span>
+          </div>
+        </a>
+    <!-- PROS_CARDS_END -->
+      </div>
       <div class="ph-empty" id="phEmpty" style="display:none;">No pros match. Try clearing the search.</div>
     </div>
   </main>
 
-  <!-- Detail modal -->
-  <div class="ph-modal-bg" id="phModal" role="dialog" aria-modal="true">
-    <div class="ph-modal ph-modal-pos">
-      <button class="ph-modal-close" aria-label="Close" id="phModalClose">×</button>
-      <h2 id="phModalName">—</h2>
-      <div class="ph-modal-sub" id="phModalSub">—</div>
-
-      <div class="ph-modal-stats">
-        <div class="ph-modal-stat"><div class="ph-modal-stat-val" id="phMsDpi">—</div><div class="ph-modal-stat-lbl">DPI</div></div>
-        <div class="ph-modal-stat"><div class="ph-modal-stat-val" id="phMsSens">—</div><div class="ph-modal-stat-lbl">Sens</div></div>
-        <div class="ph-modal-stat"><div class="ph-modal-stat-val" id="phMsEdpi">—</div><div class="ph-modal-stat-lbl">eDPI</div></div>
-      </div>
-
-      <div class="ph-section-lbl">Gear</div>
-      <div id="phMsGear"></div>
-
-      <div class="ph-section-lbl">Display</div>
-      <div id="phMsDisplay"></div>
-
-      <div style="margin-top:1rem;font-size:.72rem;color:var(--text-lo,#666);text-align:center;" id="phMsVerified">—</div>
-    </div>
-  </div>
-
   <footer class="site-footer">
-    <p>© 2026 CosmicGamesHub · <a href="/about">About</a> · <a href="/games">Games</a> · <a href="/">Home</a></p>
+    <p>© 2026 CosmicGamesHub · <a href="/about">About</a> · <a href="/privacy">Privacy</a> · <a href="/games">Games</a> · <a href="/">Home</a></p>
     <p class="affiliate-disclosure">As an Amazon Associate we earn from qualifying purchases. Pro player gear data compiled from public sources; may not reflect day-of changes.</p>
   </footer>
 
   <script src="/global.js" defer></script>
   <script>
   (function() {
-    // ── ISO-2 → flag emoji ───────────────────────────
-    function flagFor(iso) {
-      if (!iso || iso.length !== 2) return '🌐';
-      const A = 0x1F1E6, base = 'A'.charCodeAt(0);
-      const cc = iso.toUpperCase();
-      return String.fromCodePoint(A + (cc.charCodeAt(0) - base), A + (cc.charCodeAt(1) - base));
-    }
-
-    const GAME_LABEL = { valorant: 'Valorant', cs2: 'CS2', apex: 'Apex', fortnite: 'Fortnite' };
-
-    let pros = [];
-    let productLinks = {};
     let filterGame = 'all';
     let searchQ = '';
 
-    // Resolve a product name to { href, isInternal }. Tries exact match first,
-    // then the longest known prefix (so 'Logitech G Pro X Superlight 2 DEX'
-    // matches the 'Logitech G Pro X Superlight' family entry when no exact
-    // match exists). Returns null if no mapping is known.
-    function resolveProduct(name) {
-      if (!name || !productLinks) return null;
-      const direct = productLinks[name];
-      if (direct) return { href: direct.internal || direct.amazon, isInternal: !!direct.internal };
-      // Prefix fallback: find the longest key that is a case-insensitive prefix of name.
-      const lower = name.toLowerCase();
-      let best = null;
-      for (const key of Object.keys(productLinks)) {
-        if (key.startsWith('_')) continue;
-        const lk = key.toLowerCase();
-        if (lower.startsWith(lk) && (!best || lk.length > best.length)) best = lk;
-      }
-      if (best) {
-        const matched = Object.keys(productLinks).find(k => k.toLowerCase() === best);
-        const m = productLinks[matched];
-        return { href: m.internal || m.amazon, isInternal: !!m.internal };
-      }
-      return null;
-    }
-
-    function gearLink(name) {
-      if (!name) return '<span class="ph-gear-val null">—</span>';
-      const r = resolveProduct(name);
-      if (!r) return `<span class="ph-gear-val">${name}</span>`;
-      const rel = r.isInternal ? '' : ' rel="nofollow sponsored"';
-      const target = r.isInternal ? '' : ' target="_blank"';
-      return `<a class="ph-gear-val ph-gear-link" href="${r.href}"${rel}${target} onclick="event.stopPropagation();">${name}</a>`;
-    }
-
-    function matches(p) {
-      if (filterGame !== 'all' && p.game !== filterGame) return false;
+    function matches(card) {
+      if (filterGame !== 'all' && card.dataset.game !== filterGame) return false;
       if (!searchQ) return true;
-      const q = searchQ.toLowerCase();
-      return [p.name, p.team, p.realName, p.mouse, p.keyboard, p.headset, p.monitor, p.mousepad]
-        .filter(Boolean).some(v => v.toLowerCase().includes(q));
-    }
-
-    function cardHtml(p) {
-      const gameBadge = `<span class="ph-game-badge ph-game-${p.game}">${GAME_LABEL[p.game] || p.game}</span>`;
-      const teamLine = p.team ? `${p.team}${gameBadge}` : gameBadge;
-      function row(lbl, val) {
-        return `<div class="ph-gear-row"><div class="ph-gear-lbl">${lbl}</div>${gearLink(val)}</div>`;
-      }
-      return `
-        <div class="ph-card" data-id="${p.id}" tabindex="0" role="button" aria-label="View ${p.name} setup">
-          <div class="ph-card-head">
-            <div class="ph-flag" aria-hidden="true">${flagFor(p.country)}</div>
-            <div class="ph-card-name">
-              <div class="ph-name">${p.name}</div>
-              <div class="ph-team">${teamLine}</div>
-            </div>
-            <div class="ph-edpi">
-              <div class="ph-edpi-val">${p.edpi != null ? p.edpi : '—'}</div>
-              <div class="ph-edpi-lbl">eDPI</div>
-            </div>
-          </div>
-          <div class="ph-gear">
-            ${row('Mouse', p.mouse)}
-            ${row('Headset', p.headset)}
-            ${row('Monitor', p.monitor)}
-          </div>
-          <div class="ph-card-foot">
-            <span class="ph-stat"><strong>${p.dpi || '—'}</strong> dpi</span>
-            <span class="ph-stat-sep">·</span>
-            <span class="ph-stat"><strong>${p.refreshHz || '—'}</strong>Hz</span>
-            <span class="ph-stat-sep">·</span>
-            <span class="ph-stat">${p.resolution || '—'}</span>
-            <span class="ph-verified">v ${p.lastVerified || ''}</span>
-          </div>
-        </div>
-      `;
+      return (card.dataset.search || '').indexOf(searchQ.toLowerCase()) !== -1;
     }
 
     function render() {
-      const grid = document.getElementById('phGrid');
-      const filtered = pros.filter(matches);
-      document.getElementById('phCount').textContent = `${filtered.length} pro${filtered.length === 1 ? '' : 's'}`;
-      document.getElementById('phEmpty').style.display = filtered.length ? 'none' : 'block';
-      grid.innerHTML = filtered.map(cardHtml).join('');
-      grid.querySelectorAll('.ph-card').forEach(el => {
-        el.addEventListener('click', () => openModal(el.dataset.id));
-        el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(el.dataset.id); } });
+      const cards = document.querySelectorAll('#phGrid .ph-card');
+      let n = 0;
+      cards.forEach(card => {
+        const show = matches(card);
+        card.hidden = !show;
+        if (show) n += 1;
       });
+      document.getElementById('phCount').textContent = n + ' pro' + (n === 1 ? '' : 's');
+      document.getElementById('phEmpty').style.display = n ? 'none' : 'block';
     }
-
-    function openModal(id) {
-      const p = pros.find(x => x.id === id);
-      if (!p) return;
-      document.getElementById('phModalName').textContent = p.name;
-      document.getElementById('phModalSub').innerHTML = `${flagFor(p.country)} ${p.realName || ''}${p.realName ? ' · ' : ''}${p.team || ''} <span class="ph-game-badge ph-game-${p.game}">${GAME_LABEL[p.game] || p.game}</span>${p.role ? ' · ' + p.role : ''}`;
-      document.getElementById('phMsDpi').textContent = p.dpi != null ? p.dpi : '—';
-      document.getElementById('phMsSens').textContent = p.sensitivity != null ? p.sensitivity : '—';
-      document.getElementById('phMsEdpi').textContent = p.edpi != null ? p.edpi : '—';
-
-      function detailVal(v, asProduct) {
-        if (!v) return '<span class="ph-detail-val" style="color:var(--text-lo,#666);">—</span>';
-        if (!asProduct) return `<span class="ph-detail-val">${v}</span>`;
-        const r = resolveProduct(v);
-        if (!r) return `<span class="ph-detail-val">${v}</span>`;
-        const rel = r.isInternal ? '' : ' rel="nofollow sponsored"';
-        const target = r.isInternal ? '' : ' target="_blank"';
-        return `<a class="ph-detail-val ph-gear-link" href="${r.href}"${rel}${target}>${v}</a>`;
-      }
-
-      const gearEl = document.getElementById('phMsGear');
-      gearEl.innerHTML = [
-        ['Mouse', p.mouse, true], ['Keyboard', p.keyboard, true], ['Headset', p.headset, true], ['Mousepad', p.mousepad, true]
-      ].map(([k, v, prod]) => `<div class="ph-detail-row"><div class="ph-detail-key">${k}</div>${detailVal(v, prod)}</div>`).join('');
-
-      document.getElementById('phMsDisplay').innerHTML = [
-        ['Monitor', p.monitor, true],
-        ['Resolution', p.resolution, false],
-        ['Refresh', p.refreshHz ? p.refreshHz + 'Hz' : null, false],
-        ['Polling', p.pollingHz ? p.pollingHz + 'Hz' : null, false]
-      ].map(([k, v, prod]) => `<div class="ph-detail-row"><div class="ph-detail-key">${k}</div>${detailVal(v, prod)}</div>`).join('');
-
-      document.getElementById('phMsVerified').textContent = p.lastVerified ? `Last verified: ${p.lastVerified}` : '';
-      document.getElementById('phModal').classList.add('open');
-    }
-    function closeModal() { document.getElementById('phModal').classList.remove('open'); }
-
-    document.getElementById('phModalClose').addEventListener('click', closeModal);
-    document.getElementById('phModal').addEventListener('click', e => { if (e.target.id === 'phModal') closeModal(); });
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
     document.querySelectorAll('.ph-pill').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -333,17 +971,7 @@
       render();
     });
 
-    Promise.all([
-      fetch('/data/pros.json').then(r => r.json()),
-      fetch('/data/product-links.json').then(r => r.json()).catch(() => ({}))
-    ]).then(([prosData, links]) => {
-      pros = prosData;
-      productLinks = links || {};
-      render();
-    }).catch(err => {
-      document.getElementById('phGrid').innerHTML = '<div class="ph-empty">Could not load pro database.</div>';
-      console.error(err);
-    });
+    render();
   })();
   </script>
 </body>

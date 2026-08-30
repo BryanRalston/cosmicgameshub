@@ -289,6 +289,12 @@
       text-align: center;
     }
     .sm-results.show { display: block; }
+    .gear-hop { max-width: 420px; margin: 1.25rem auto 0; text-align: left; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 1.1rem 1.2rem; }
+    .gear-hop__eyebrow { font-size: .68rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--accent, #00d4ff); margin-bottom: .35rem; }
+    .gear-hop__name { font-size: 1.05rem; font-weight: 800; color: #fff; margin-bottom: .35rem; }
+    .gear-hop__blurb { font-size: .82rem; color: var(--text-muted, #aaa); line-height: 1.5; margin: 0 0 .85rem; }
+    .gear-hop__actions { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: flex-start; }
+    .gear-hop__actions .btn { width: auto; }
     .sm-grade {
       font-size: 4.5rem;
       font-weight: 900;
@@ -617,6 +623,15 @@
       <button class="sm-btn sm-btn--primary" id="btnAgain">↺ Play Again</button>
       <button class="sm-btn sm-btn--secondary" id="btnShare">📋 Share</button>
     </div>
+    <aside class="gear-hop" id="smGearHop" style="display:none;" aria-label="Recommended gear">
+      <div class="gear-hop__eyebrow">Upgrade Your Mouse</div>
+      <div class="gear-hop__name">Razer DeathAdder V3 Pro</div>
+      <p class="gear-hop__blurb">You just matched specs to products. One hop to the mice guide, or the DeathAdder listing we already cite.</p>
+      <div class="gear-hop__actions">
+        <a href="/guides/best-gaming-mice-2026" class="btn btn--outline">Read the mice guide →</a>
+        <a href="https://www.amazon.com/dp/B0BBSVDBVZ?tag=cosmicgameshu-20" class="btn btn--amazon-sm" target="_blank" rel="nofollow sponsored noopener">Check price on Amazon</a>
+      </div>
+    </aside>
 
     <div class="sm-streak-row" id="smBottomMeta" style="display:none;"></div>
 
@@ -684,7 +699,7 @@
 <footer class="footer">
   <div class="container">
     <div class="footer__bottom">
-      <p>© 2026 CosmicGamesHub. <a href="/games">← More Games</a></p>
+      <p>© 2026 CosmicGamesHub. <a href="/games">← More Games</a> · <a href="/privacy">Privacy</a></p>
     </div>
   </div>
 </footer>
@@ -1405,6 +1420,8 @@
 
     elResults.classList.add('show');
     elEndBtns.style.display = 'flex';
+    var hop = document.getElementById('smGearHop');
+    if (hop) hop.style.display = 'block';
 
     elBottomMeta.style.display = 'flex';
     elBottomMeta.innerHTML = 'Best: <span>' + Math.max(score, prevBest) + ' pts</span>&nbsp;&nbsp;Streak: <span>' + dayStreak + ' days</span>';
@@ -1431,6 +1448,8 @@
     elResults.classList.remove('show');
     elResBest.classList.remove('show');
     elEndBtns.style.display = 'none';
+    var hopHide = document.getElementById('smGearHop');
+    if (hopHide) hopHide.style.display = 'none';
     elBottomMeta.style.display = 'none';
 
     updateLiveStats();

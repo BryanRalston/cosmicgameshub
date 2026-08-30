@@ -89,6 +89,12 @@
     .pg-tomorrow { font-size: .8rem; color: #666; margin-top: 1rem; }
     .pg-countdown { color: var(--g-a); font-weight: 700; }
     .pg-best-score { font-size: .82rem; color: #666; margin-top: .5rem; }
+    .gear-hop { max-width: 420px; margin: 1.5rem auto 0; text-align: left; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 1.1rem 1.2rem; }
+    .gear-hop__eyebrow { font-size: .68rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--accent, #00d4ff); margin-bottom: .35rem; }
+    .gear-hop__name { font-size: 1.05rem; font-weight: 800; color: #fff; margin-bottom: .35rem; }
+    .gear-hop__blurb { font-size: .82rem; color: #aaa; line-height: 1.5; margin: 0 0 .85rem; }
+    .gear-hop__actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+    .gear-hop__actions .btn { width: auto; }
 
     /* Round breakdown */
     .pg-breakdown { margin: 1.5rem 0; text-align: left; }
@@ -216,6 +222,15 @@
         <div class="pg-share-copied" id="shareCopied">Copied!</div>
         <br/>
         <button class="pg-play-again" id="playAgainBtn">Play Again (New Picks)</button>
+        <aside class="gear-hop" aria-label="Recommended gear">
+          <div class="gear-hop__eyebrow">Upgrade Your Mouse</div>
+          <div class="gear-hop__name">Logitech G Pro X Superlight 2 DEX</div>
+          <p class="gear-hop__blurb">The ultralight wireless this game prices around $159. One hop to the mice guide, or the current Amazon listing.</p>
+          <div class="gear-hop__actions">
+            <a href="/guides/best-gaming-mice-2026" class="btn btn--outline">Read the mice guide →</a>
+            <a href="https://www.amazon.com/dp/B0DG2XJPTC?tag=cosmicgameshu-20" class="btn btn--amazon-sm" target="_blank" rel="nofollow sponsored noopener">Check price on Amazon</a>
+          </div>
+        </aside>
         <div class="pg-tomorrow">Daily picks reset at midnight · <span class="pg-countdown" id="countdown"></span></div>
         <div class="pg-best-score" id="bestScoreDisplay"></div>
       </div>
@@ -272,7 +287,7 @@
 }
 </style>
 <footer class="site-footer">
-    <p>© 2026 CosmicGamesHub · <a href="/about">About</a> · <a href="/games">Games</a> · <a href="/">Home</a></p>
+    <p>© 2026 CosmicGamesHub · <a href="/about">About</a> · <a href="/privacy">Privacy</a> · <a href="/games">Games</a> · <a href="/">Home</a></p>
     <p class="affiliate-disclosure">As an Amazon Associate we earn from qualifying purchases.</p>
   
 </footer>
