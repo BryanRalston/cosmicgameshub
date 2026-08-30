@@ -291,27 +291,18 @@
 </section>
 
 <!-- ─── Email Capture ──────────────────────────────────── -->
-<section class="section email-band" aria-label="Newsletter signup">
+<section class="section email-band" aria-label="Newsletter">
   <div class="container">
     <div class="email-band__inner">
       <div class="email-band__left">
-        <div class="email-band__eyebrow">Free · No spam · Unsubscribe anytime</div>
-        <h2 class="email-band__title">Never miss today's puzzle</h2>
-        <p class="email-band__sub">Daily RIFT, Gamerdle, and Pixle reminders + our weekly gear deal roundup — straight to your inbox.</p>
-        <div class="email-band__social-proof">
-          <span class="email-band__stars">★★★★★</span>
-          <span>Joined by 2,400+ gamers</span>
-        </div>
+        <div class="email-band__eyebrow">Not collecting emails yet</div>
+        <h2 class="email-band__title">A daily-puzzle email is planned</h2>
+        <p class="email-band__sub">We want reminders for RIFT, Gamerdle, and Pixle plus a weekly gear-deal note. There is no list today, so there is nothing to join.</p>
+        <p class="email-band__note" style="margin-top:0;">See <a href="/privacy" style="color:var(--accent);">Privacy</a> for analytics and Amazon Associates. We do not sell emails.</p>
       </div>
       <div>
-        <form class="email-band__form" id="emailSignupForm" action="#" novalidate>
-          <div class="email-band__input-wrap">
-            <input type="email" id="emailInput" placeholder="your@email.com" class="email-band__input" required autocomplete="email" aria-label="Email address" />
-            <button type="submit" class="btn btn--primary email-band__btn">Get Daily Puzzles →</button>
-          </div>
-          <div class="email-band__success" id="emailSuccess" hidden>✓ You're in — check your inbox!</div>
-          <p class="email-band__note">We send one email per day max. Your address is never shared.</p>
-        </form>
+        <p class="email-band__title" style="font-size:1.15rem;margin-bottom:0.4rem;">Coming soon</p>
+        <p class="email-band__sub">The signup is not wired. We will not pretend you joined a list we cannot send. Questions: <a href="mailto:hello@cosmicgameshub.com">hello@cosmicgameshub.com</a>.</p>
       </div>
     </div>
   </div>
@@ -380,7 +371,7 @@
       <a href="/guides/best-gaming-mice-2026#top" class="quick-picks__chip"><strong>Best Mouse:</strong> Logitech G Pro X2 ~$99</a>
       <a href="/guides/best-gaming-keyboards-2026#budget" class="quick-picks__chip"><strong>Best Budget Keyboard:</strong> HyperX Alloy Origins Core ~$69</a>
       <a href="/guides/best-gaming-monitors-2026#top" class="quick-picks__chip"><strong>Best Monitor:</strong> LG 27GP850 ~$249</a>
-      <a href="/guides/best-budget-gaming-chairs#top" class="quick-picks__chip"><strong>Best Chair:</strong> Secretlab Titan ~$149</a>
+      <a href="/guides/best-budget-gaming-chairs#best-overall" class="quick-picks__chip"><strong>Best Chair:</strong> Homall ~$130</a>
     </div>
 
     <div class="grid grid--3 glow-grid" id="guidesGrid">
@@ -761,7 +752,7 @@
       <p class="footer__disclosure">
         <strong>Affiliate Disclosure:</strong> As an Amazon Associate I earn from qualifying purchases. When you click links on this site and make a purchase, we may receive a small commission at no extra cost to you. This helps keep our guides free. We only recommend products we believe are genuinely good picks.
       </p>
-      <p class="footer__legal">© 2026 CosmicGamesHub. All rights reserved. · <a href="/about" style="color:var(--text-mid);">About</a></p>
+      <p class="footer__legal">© 2026 CosmicGamesHub. All rights reserved. · <a href="/about" style="color:var(--text-mid);">About</a> · <a href="/privacy" style="color:var(--text-mid);">Privacy</a></p>
     </div>
   </div>
 </footer>
@@ -770,20 +761,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
 <script>
-// ── Email signup ────────────────────────────
-const emailForm    = document.getElementById('emailSignupForm');
-const emailSuccess = document.getElementById('emailSuccess');
-if (emailForm) {
-  emailForm.addEventListener('submit', e => {
-    e.preventDefault();
-    const val = document.getElementById('emailInput').value.trim();
-    if (!val || !val.includes('@')) return;
-    emailForm.querySelector('.email-band__input-wrap').style.display = 'none';
-    emailSuccess.hidden = false;
-    // Wire to Mailchimp/ConvertKit: replace this block with their API call
-  });
-}
-
 // ── Mobile nav ─────────────────────────────
 const hamburger = document.getElementById('hamburger');
 const navLinks  = document.getElementById('navLinks');
@@ -940,7 +917,7 @@ window.addEventListener('load', () => {
       // Show 5 random pros with their mouse — most-visible piece of gear
       const picks = pickRandom(pros.filter(p => p.mouse), 5);
       const chips = picks.map(p => `
-        <a class="hero__pro-chip" href="/pros" aria-label="${p.name} setup">
+        <a class="hero__pro-chip" href="/pros/${p.id}" aria-label="${p.name} setup">
           <span class="hero__pro-flag">${flag(p.country)}</span>
           <span>
             <span class="hero__pro-name">${p.name}</span>

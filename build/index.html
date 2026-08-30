@@ -117,7 +117,7 @@
   </main>
 
   <footer class="site-footer">
-    <p>© 2026 CosmicGamesHub · <a href="/about">About</a> · <a href="/games">Games</a> · <a href="/">Home</a></p>
+    <p>© 2026 CosmicGamesHub · <a href="/about">About</a> · <a href="/privacy">Privacy</a> · <a href="/games">Games</a> · <a href="/">Home</a></p>
     <p class="affiliate-disclosure">As an Amazon Associate we earn from qualifying purchases. The picks below are computed from public pro-player data on file in <a href="/pros">the database</a>.</p>
   </footer>
 
@@ -151,7 +151,7 @@
     function resolveLink(name) {
       if (!name || !links) return null;
       const direct = links[name];
-      if (direct) return { href: direct.internal || direct.amazon, isInternal: !!direct.internal, internal: direct.internal };
+      if (direct) return { amazon: direct.amazon || null, internal: direct.internal || null };
       const lower = name.toLowerCase();
       let best = null;
       for (const key of Object.keys(links)) {
@@ -161,7 +161,7 @@
       }
       if (best) {
         const m = links[Object.keys(links).find(k => k.toLowerCase() === best)];
-        return { href: m.internal || m.amazon, isInternal: !!m.internal, internal: m.internal };
+        return { amazon: m.amazon || null, internal: m.internal || null };
       }
       return null;
     }
@@ -182,9 +182,9 @@
       kit.innerHTML = picks.map(p => {
         const r = resolveLink(p.top.name);
         const pct = Math.round(p.top.count / p.top.total * 100);
-        const buyHref = r ? r.href : `https://www.amazon.com/s?k=${encodeURIComponent(p.top.name)}&tag=cosmicgameshu-20`;
-        const buyAttrs = r && r.isInternal ? '' : ' rel="nofollow sponsored" target="_blank"';
-        const reviewHtml = r && r.internal ? `<a class="bm-card-secondary" href="${r.internal}">Read our review →</a>` : '';
+        const buyHref = (r && r.amazon) ? r.amazon : `https://www.amazon.com/s?k=${encodeURIComponent(p.top.name)}&tag=cosmicgameshu-20`;
+        const buyAttrs = ' rel="nofollow sponsored" target="_blank"';
+        const reviewHtml = r && r.internal ? `<a class="bm-card-secondary" href="${r.internal}">Read our page →</a>` : '';
         return `
           <article class="bm-card">
             <div class="bm-card-cat">${p.label}</div>
