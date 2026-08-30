@@ -4,7 +4,7 @@
   <!-- Homepage -->
   <url>
     <loc>https://cosmicgameshub.com/</loc>
-    <lastmod>2026-05-07</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
@@ -24,13 +24,13 @@
   </url>
   <url>
     <loc>https://cosmicgameshub.com/guides</loc>
-    <lastmod>2026-05-07</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://cosmicgameshub.com/versus</loc>
-    <lastmod>2026-05-07</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -38,7 +38,7 @@
   <!-- Guide Pages -->
   <url>
     <loc>https://cosmicgameshub.com/guides/best-gaming-headsets-2026</loc>
-    <lastmod>2026-05-07</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
@@ -50,7 +50,7 @@
   </url>
   <url>
     <loc>https://cosmicgameshub.com/guides/best-gaming-mice-2026</loc>
-    <lastmod>2026-05-07</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
@@ -74,25 +74,25 @@
   </url>
   <url>
     <loc>https://cosmicgameshub.com/guides/best-gaming-chairs-2026</loc>
-    <lastmod>2026-05-08</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://cosmicgameshub.com/guides/best-budget-gaming-chairs</loc>
-    <lastmod>2026-05-07</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://cosmicgameshub.com/guides/best-gaming-keyboards-2026</loc>
-    <lastmod>2026-05-07</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://cosmicgameshub.com/guides/best-gaming-monitors-2026</loc>
-    <lastmod>2026-05-08</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -578,6 +578,12 @@
     <changefreq>yearly</changefreq>
     <priority>0.6</priority>
   </url>
+  <url>
+    <loc>https://cosmicgameshub.com/tools/monitor-hz-calculator</loc>
+    <lastmod>2026-08-30</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
 
   <!-- Games Hub -->
   <url>
@@ -624,7 +630,7 @@
   </url>
   <url>
     <loc>https://cosmicgameshub.com/reviews</loc>
-    <lastmod>2026-05-10</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
@@ -637,6 +643,54 @@
   <url>
     <loc>https://cosmicgameshub.com/reviews/razer-viper-v3-pro-review</loc>
     <lastmod>2026-05-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://cosmicgameshub.com/reviews/wooting-80he-review</loc>
+    <lastmod>2026-08-30</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://cosmicgameshub.com/guides/best-hall-effect-gaming-keyboards-2026</loc>
+    <lastmod>2026-08-30</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://cosmicgameshub.com/guides/best-oled-gaming-monitors-2026</loc>
+    <lastmod>2026-08-30</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://cosmicgameshub.com/guides/best-wireless-gaming-mice-2026</loc>
+    <lastmod>2026-08-30</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://cosmicgameshub.com/versus/logitech-g-pro-x-superlight-2-vs-razer-viper-v3-pro</loc>
+    <lastmod>2026-08-30</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://cosmicgameshub.com/versus/wooting-80he-vs-wooting-60he-v2</loc>
+    <lastmod>2026-08-30</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://cosmicgameshub.com/versus/razer-blackshark-v2-pro-vs-razer-blackshark-v3-pro</loc>
+    <lastmod>2026-08-30</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://cosmicgameshub.com/versus/logitech-g-pro-x-superlight-2-vs-logitech-g-pro-x2-superstrike</loc>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>

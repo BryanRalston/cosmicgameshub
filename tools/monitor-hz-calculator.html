@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-D272MF8NQP"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-D272MF8NQP');</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Monitor Hz Calculator — Stop Overpaying for 480Hz | CosmicGamesHub</title>
+  <meta name="description" content="Free monitor refresh-rate calculator. Enter GPU tier, resolution, and game type to see whether 144Hz, 240Hz, or 480Hz OLED is actually usable. Client-side, no signup." />
+  <link rel="canonical" href="https://cosmicgameshub.com/tools/monitor-hz-calculator" />
+  <meta property="og:title" content="Monitor Hz Calculator" />
+  <meta property="og:description" content="Find the refresh rate your GPU can actually feed. 144Hz vs 240Hz vs 480Hz OLED." />
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+<body>
+<nav class="nav" role="navigation" aria-label="Main navigation">
+  <div class="container"><div class="nav__inner">
+    <a href="/" class="nav__logo"><span class="nav__logo-icon">🎮</span><span class="nav__logo-text">Cosmic<span>Games</span>Hub</span></a>
+    <ul class="nav__links" id="navLinks">
+      <li><a href="/guides/best-gaming-monitors-2026">Monitors</a></li>
+      <li><a href="/guides/best-oled-gaming-monitors-2026">OLED</a></li>
+      <li><a href="/tools/gaming-fps-calculator">FPS Calculator</a></li>
+      <li><a href="/games">Games</a></li>
+      <li><a href="/tools/monitor-hz-calculator" class="nav__cta btn">Hz Calculator</a></li>
+    </ul>
+    <button class="nav__hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false"><span></span><span></span><span></span></button>
+  </div></div>
+</nav>
+<main>
+  <div class="container--narrow">
+    <div class="breadcrumbs"><a href="/">Home</a><span class="sep">›</span><span class="current">Monitor Hz Calculator</span></div>
+    <section style="padding: 2.5rem 0 1rem;">
+      <span class="section__eyebrow">Free Tool · Client-side</span>
+      <h1 style="margin-top:0.5rem;">Monitor Hz Calculator</h1>
+      <p style="max-width:640px;color:var(--text-mid);margin-bottom:0;">Estimates a playable FPS band from GPU tier, resolution, and game type, then names a refresh rate that is not theater. 480Hz OLED is real. It is also wasted if the GPU cannot hold 300+. These numbers are rough public-benchmark ranges, not a lab.</p>
+    </section>
+    <div class="tool-card">
+      <form class="tool-form" onsubmit="return false;">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="gpu">GPU tier</label>
+            <select id="gpu">
+              <option value="90">RTX 5090 / 4090</option>
+              <option value="80">RTX 5080 / 4080 Super</option>
+              <option value="70ti">RTX 5070 Ti / 4070 Ti Super</option>
+              <option value="70" selected>RTX 5070 / 4070 Super</option>
+              <option value="60ti">RTX 4060 Ti / 3070</option>
+              <option value="60">RTX 4060 / 3060 Ti</option>
+              <option value="3060">RTX 3060 / 4060 laptop</option>
+              <option value="old">GTX 1660 Super / RX 6600</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="res">Resolution</label>
+            <select id="res">
+              <option value="1080">1080p</option>
+              <option value="1440" selected>1440p</option>
+              <option value="4k">4K</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="game">Game type</label>
+          <select id="game">
+            <option value="esports">Esports (CS2, VALORANT, LoL)</option>
+            <option value="aaa" selected>AAA FPS (CoD, Battlefield)</option>
+            <option value="heavy">Heavy single-player (Cyberpunk, Expedition 33)</option>
+          </select>
+        </div>
+        <button type="button" class="btn btn--primary" style="width:100%;justify-content:center;padding:0.85rem;" onclick="calcHz()">Find the Hz I should pay for</button>
+      </form>
+      <div class="tool-result" id="result" style="display:none;margin-top:1.5rem;">
+        <div class="tool-result__fps" id="hzValue">—</div>
+        <div class="tool-result__range" id="fpsBand"></div>
+        <div class="tool-result__tier" id="buyLine"></div>
+        <p id="note" style="font-size:0.85rem;color:var(--text-lo);max-width:520px;text-align:center;margin:0.75rem auto 0;"></p>
+        <p id="links" style="text-align:center;margin-top:1rem;"></p>
+      </div>
+    </div>
+    <section style="margin:2rem 0 3rem;">
+      <h2>What this is not</h2>
+      <p>It is not a promise your exact SKU will hit the number. Driver, CPU, and settings move the band. Use it to avoid buying a 540Hz OLED for a 4060 at 4K Ultra.</p>
+      <p><a href="/guides/best-oled-gaming-monitors-2026">OLED guide →</a> · <a href="/guides/best-gaming-monitors-2026">All monitors →</a> · <a href="/tools/gaming-fps-calculator">FPS calculator →</a></p>
+    </section>
+  </div>
+</main>
+<footer class="footer" role="contentinfo"><div class="container"><div class="footer__bottom"><p class="footer__legal">© 2026 CosmicGamesHub</p></div></div></footer>
+<script>
+document.getElementById('hamburger').addEventListener('click', () => {
+  const n = document.getElementById('navLinks');
+  document.getElementById('hamburger').setAttribute('aria-expanded', n.classList.toggle('open'));
+});
+const gpuBase = { '90': 420, '80': 320, '70ti': 260, '70': 210, '60ti': 160, '60': 130, '3060': 95, 'old': 70 };
+const resMul = { '1080': 1.35, '1440': 1, '4k': 0.52 };
+const gameMul = { esports: 1.55, aaa: 1, heavy: 0.62 };
+function calcHz() {
+  const gpu = document.getElementById('gpu').value;
+  const res = document.getElementById('res').value;
+  const game = document.getElementById('game').value;
+  const mid = Math.round(gpuBase[gpu] * resMul[res] * gameMul[game]);
+  const low = Math.round(mid * 0.75);
+  const high = Math.round(mid * 1.2);
+  let rec = 144, buy = '144–180Hz IPS is the honest buy', waste = '240Hz+ is extra smoothness, not a requirement.';
+  if (low >= 220) { rec = 240; buy = '240Hz is justified'; waste = '480Hz only if you live in esports and the high end of this band is over 350.'; }
+  if (low >= 300 && game === 'esports') { rec = 360; buy = '360–480Hz OLED is no longer theater'; waste = 'You can actually feed it. Still buy 240Hz if you want the cheaper OLED picture.'; }
+  if (high < 100) { rec = 120; buy = '120–144Hz is the ceiling'; waste = 'Do not buy 240Hz for this GPU at this resolution.'; }
+  if (res === '4k' && mid < 160) { rec = 144; buy = '4K at 144Hz (or 120Hz console) is the target'; waste = '480Hz 1440p OLED is a different resolution conversation.'; }
+  document.getElementById('result').style.display = 'block';
+  document.getElementById('hzValue').textContent = rec + 'Hz';
+  document.getElementById('fpsBand').textContent = 'Estimated FPS band: ' + low + '–' + high;
+  document.getElementById('buyLine').textContent = buy;
+  document.getElementById('note').textContent = waste + ' Band is a public-benchmark sketch, not a promise.';
+  const oled = rec >= 240
+    ? '<a href="/guides/best-oled-gaming-monitors-2026">OLED monitors →</a>'
+    : '<a href="/guides/best-gaming-monitors-2026">LCD sweet-spot monitors →</a>';
+  document.getElementById('links').innerHTML = oled + ' · <a href="/tools/gaming-fps-calculator">Full FPS calculator →</a>';
+}
+</script>
+<script src="/global.js" defer></script>
+</body>
+</html>
