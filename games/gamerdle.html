@@ -55,6 +55,8 @@
     .c-green  { background:rgba(0,230,118,0.18); border:1px solid rgba(0,230,118,0.4); color:#00e676; }
     .c-yellow { background:rgba(255,179,0,0.15); border:1px solid rgba(255,179,0,0.35); color:#ffb300; }
     .c-gray   { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); color:var(--text-lo); }
+    .c-green::after { content:'✓'; font-size:0.65rem; opacity:0.85; }
+    .c-yellow::after { content:'~'; font-size:0.7rem; opacity:0.85; }
 
     /* ── Result panel ── */
     .result-panel { display:none; background:var(--bg-card); border:1px solid var(--border-mid); border-radius:var(--radius-lg); padding:1.75rem; text-align:center; margin-top:1.5rem; }
@@ -465,8 +467,30 @@ const GAMES = [
 // ═══════════════════════════════════════════════════════════════════════════
 const today = new Date();
 const todayKey = `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
-const dayNum = Math.floor((today - new Date(2026, 0, 1)) / 86400000) + 1;
-const TARGET = GAMES[Math.abs(dayNum) % GAMES.length];
+const dayNum = Math.floor((Date.now() - Date.UTC(2026, 0, 1)) / 86400000);
+const DAILY_TARGETS = [
+  "Minecraft","Fortnite","Elden Ring","The Witcher 3","Red Dead Redemption 2",
+  "Grand Theft Auto V","God of War","The Last of Us","Dark Souls","Bloodborne",
+  "Sekiro","Cyberpunk 2077","Baldur's Gate 3","Hades","Hollow Knight",
+  "Celeste","Stardew Valley","Portal 2","Half-Life 2","Counter-Strike 2",
+  "Overwatch 2","Valorant","Apex Legends","League of Legends","World of Warcraft",
+  "Diablo IV","Halo: Combat Evolved","Halo Infinite","Doom Eternal",
+  "BioShock Infinite","The Elder Scrolls V: Skyrim","Fallout 4","Mass Effect 2",
+  "Resident Evil Village","Silent Hill 2","Super Mario Odyssey",
+  "The Legend of Zelda: Breath of the Wild","The Legend of Zelda: Tears of the Kingdom",
+  "Animal Crossing: New Horizons","Mario Kart 8 Deluxe","Super Smash Bros. Ultimate",
+  "Splatoon 3","Pokemon Scarlet and Violet","Street Fighter 6","Mortal Kombat 11",
+  "Tekken 8","Rocket League","Ghost of Tsushima","Horizon Zero Dawn","Spider-Man",
+  "Final Fantasy VII Remake","Genshin Impact","Destiny 2",
+  "Tom Clancy's Rainbow Six Siege","It Takes Two","Sea of Thieves","Subnautica",
+  "Valheim","Lethal Company","Black Myth: Wukong","Astro Bot","Helldivers 2",
+  "Clair Obscur: Expedition 33","Monster Hunter Wilds","DOOM: The Dark Ages",
+  "Mario Kart World","Elden Ring Nightreign","Undertale","Disco Elysium",
+  "Outer Wilds","Cuphead","Terraria","StarCraft II","Metroid Dread",
+  "Death Stranding","Path of Exile 2","Split Fiction"
+];
+const targetName = DAILY_TARGETS[Math.abs(dayNum) % DAILY_TARGETS.length];
+const TARGET = GAMES.find(g => g.name === targetName) || GAMES[Math.abs(dayNum) % GAMES.length];
 
 document.getElementById('puzzleNum').textContent = '#' + dayNum;
 

@@ -1326,8 +1326,274 @@ const DECODE_PUZZLES = [
       { text: 'Age, Dragon Age origin', answer: 'AGE' },
       { text: 'Pit, a hole you do not walk into', answer: 'PIT' },
       { text: 'Star, Nintendo black hole item', answer: 'STAR' },
-      { text: 'Cloud, a 2017 shooter with jetpacks', answer: 'CLOUD' },
+      { text: 'Cloud, PlayStation JRPG from 1997', answer: 'CLOUD' },
       { text: 'Harvest, farming at night', answer: 'HARVEST' },
+    ]
+  },
+  {
+    connection: 'ESPORTS ROLES',
+    gaming: true,
+    hint: 'CS / tactical FPS jobs',
+    clues: [
+      { text: 'Calls the strats, in-game leader', answer: 'IGL' },
+      { text: 'The big-gun specialist', answer: 'AWPER' },
+      { text: 'First through the site', answer: 'ENTRY' },
+      { text: 'Late lurk, quiet footsteps', answer: 'LURKER' },
+      { text: 'Utility and trades, not the star', answer: 'SUPPORT' },
+      { text: 'Rifle, not the AWP', answer: 'RIFLER' },
+      { text: 'Timeouts from the bench', answer: 'COACH' },
+    ]
+  },
+  {
+    connection: 'HEAL ITEMS',
+    gaming: true,
+    hint: 'Things that put HP back',
+    clues: [
+      { text: 'Lordran flask', answer: 'ESTUS' },
+      { text: 'FPS first-aid pack', answer: 'MEDKIT' },
+      { text: 'Fallout syringe', answer: 'STIMPACK' },
+      { text: 'JRPG bottle, red', answer: 'POTION' },
+      { text: 'Bloodborne vial', answer: 'BLOODVIAL' },
+      { text: 'Mario 1-up cousin from a block', answer: 'MUSHROOM' },
+      { text: 'Zelda bottle companion', answer: 'FAIRY' },
+    ]
+  },
+  {
+    connection: 'SPEEDRUN TERMS',
+    gaming: true,
+    hint: 'Timer and skip vocabulary',
+    clues: [
+      { text: 'Any percent, written with a sign', answer: 'ANY%' },
+      { text: 'Sequence break that was not intended', answer: 'GLITCH' },
+      { text: 'Leave a whole section unplayed', answer: 'SKIP' },
+      { text: 'World record, two letters', answer: 'WR' },
+      { text: 'Personal best', answer: 'PB' },
+      { text: 'Individual level', answer: 'IL' },
+      { text: 'Tool-assisted, not on console', answer: 'TAS' },
+    ]
+  },
+  {
+    connection: 'FIGHTING TERMS',
+    gaming: true,
+    hint: 'FGC vocabulary',
+    clues: [
+      { text: 'Swing and miss on purpose or not', answer: 'WHIFF' },
+      { text: 'Hit them for missing', answer: 'PUNISH' },
+      { text: 'High/low guess after knockdown', answer: 'MIXUP' },
+      { text: '1/60 of a second, the gospel', answer: 'FRAME' },
+      { text: 'Kara or special cancel', answer: 'CANCEL' },
+      { text: 'The big meter dump', answer: 'SUPER' },
+      { text: 'The bar you spend', answer: 'METER' },
+    ]
+  },
+  {
+    connection: 'RHYTHM TERMS',
+    gaming: true,
+    hint: 'Chart and judgment words',
+    clues: [
+      { text: 'The thing you hit on the lane', answer: 'NOTE' },
+      { text: 'The pulse the chart follows', answer: 'BEAT' },
+      { text: 'Unbroken chain of hits', answer: 'COMBO' },
+      { text: 'You did not hit it', answer: 'MISS' },
+      { text: 'Full combo, two letters', answer: 'FC' },
+      { text: 'Modifier on a chart', answer: 'MOD' },
+      { text: 'The mapped song itself', answer: 'CHART' },
+    ]
+  },
+  {
+    connection: 'ENGINE NAMES',
+    gaming: true,
+    hint: 'What the game is built in',
+    clues: [
+      { text: 'Epic\'s, Fortnite lives here', answer: 'UNREAL' },
+      { text: 'Indie default, C#', answer: 'UNITY' },
+      { text: 'Valve\'s, now 2', answer: 'SOURCE' },
+      { text: 'EA\'s battlefield engine', answer: 'FROSTBITE' },
+      { text: 'Bethesda\'s, Skyrim still', answer: 'CREATION' },
+      { text: 'Open-source, GDScript', answer: 'GODOT' },
+      { text: 'id\'s, shotguns and maps', answer: 'IDTECH' },
+    ]
+  },
+  {
+    connection: 'GRAPHICS APIS',
+    gaming: true,
+    hint: 'What the GPU speaks',
+    clues: [
+      { text: 'Microsoft 11', answer: 'DX11' },
+      { text: 'Microsoft 12', answer: 'DX12' },
+      { text: 'Khronos, Steam Deck loves it', answer: 'VULKAN' },
+      { text: 'The old cross-platform one', answer: 'OPENGL' },
+      { text: 'Apple\'s', answer: 'METAL' },
+      { text: 'Bounces light, two words smashed', answer: 'RAYTRACING' },
+      { text: 'Nvidia upscaler', answer: 'DLSS' },
+    ]
+  },
+  {
+    connection: 'ANTICHEAT',
+    gaming: true,
+    hint: 'The thing that bans the cheat',
+    clues: [
+      { text: 'Valve\'s, vac-banned', answer: 'VAC' },
+      { text: 'Easy Anti-Cheat, three letters', answer: 'EAC' },
+      { text: 'Riot\'s kernel one', answer: 'VANGUARD' },
+      { text: 'R6 and a lot of Ubisoft', answer: 'BATTLEYE' },
+      { text: 'The result you do not want', answer: 'BAN' },
+      { text: 'HWID, hardware id', answer: 'HWID' },
+      { text: 'Ring 0, the argument', answer: 'KERNEL' },
+    ]
+  },
+  {
+    connection: 'MMO ROLES',
+    gaming: true,
+    hint: 'Raid slots',
+    clues: [
+      { text: 'Eats the boss', answer: 'TANK' },
+      { text: 'Keeps people standing', answer: 'HEALER' },
+      { text: 'Damage, three letters', answer: 'DPS' },
+      { text: 'Second tank', answer: 'OFFTANK' },
+      { text: 'Calls the fight', answer: 'RAIDLEAD' },
+      { text: 'Main assist, marks the kill', answer: 'MAINASSIST' },
+      { text: 'Need before greed officer', answer: 'LOOTMASTER' },
+    ]
+  },
+  {
+    connection: 'NINTENDO HARDWARE',
+    gaming: true,
+    hint: 'Boxes from Kyoto',
+    clues: [
+      { text: '1985, two-tone rectangle', answer: 'NES' },
+      { text: '16-bit, purple later', answer: 'SNES' },
+      { text: 'Three sticks, 1996', answer: 'N64' },
+      { text: 'Handlebar, GameCube', answer: 'GAMECUBE' },
+      { text: 'Motion, 2006', answer: 'WII' },
+      { text: 'The one between Wii and Switch', answer: 'WIIU' },
+      { text: 'Hybrid, 2017', answer: 'SWITCH' },
+    ]
+  },
+  {
+    connection: 'BATTLE PASS',
+    gaming: true,
+    hint: 'Season track vocabulary',
+    clues: [
+      { text: 'The rung you buy up to', answer: 'TIER' },
+      { text: 'What fills the bar', answer: 'XP' },
+      { text: 'Cosmetic you actually wanted', answer: 'SKIN' },
+      { text: 'Paid track versus free', answer: 'PREMIUM' },
+      { text: 'The track you did not pay for', answer: 'FREE' },
+      { text: 'Three-month container', answer: 'SEASON' },
+      { text: 'Pack of tiers sold as one', answer: 'BUNDLE' },
+    ]
+  },
+  {
+    connection: 'SURVIVAL CRAFT',
+    gaming: true,
+    hint: 'Punch trees vocabulary',
+    clues: [
+      { text: 'First thing you do to a tree', answer: 'PUNCH' },
+      { text: 'The 2x2 or 3x3 grid', answer: 'CRAFT' },
+      { text: 'The bar that says eat', answer: 'HUNGER' },
+      { text: 'Four walls and a door', answer: 'SHELTER' },
+      { text: 'When the zombies come', answer: 'NIGHT' },
+      { text: 'Your box of chests', answer: 'BASE' },
+      { text: 'Wheat, cows, loops', answer: 'FARM' },
+    ]
+  },
+  {
+    connection: 'STREAM TERMS',
+    gaming: true,
+    hint: 'Twitch vocabulary',
+    clues: [
+      { text: 'Megabits out', answer: 'BITRATE' },
+      { text: 'Money in the jar', answer: 'DONATION' },
+      { text: 'Twenty seconds of a play', answer: 'CLIP' },
+      { text: 'Incoming streamer army', answer: 'RAID' },
+      { text: 'Hand off the channel', answer: 'HOST' },
+      { text: 'The archive, three letters', answer: 'VOD' },
+      { text: 'Not a game, just life', answer: 'IRL' },
+    ]
+  },
+  {
+    connection: 'LOOTER SHOOTER',
+    gaming: true,
+    hint: 'Guns with stats',
+    clues: [
+      { text: 'The thing with a rarity color', answer: 'GUN' },
+      { text: 'Destiny bubble, or a riot', answer: 'SHIELD' },
+      { text: 'Fire, shock, corrosive', answer: 'ELEMENT' },
+      { text: 'Borderlands difficulty noun', answer: 'MAYHEM' },
+      { text: 'Where the chest lives', answer: 'VAULT' },
+      { text: 'Eridian, alien loot word', answer: 'ERIDIAN' },
+      { text: 'The franchise with a claptrap', answer: 'BORDERLANDS' },
+    ]
+  },
+  {
+    connection: 'METROIDVANIA',
+    gaming: true,
+    hint: 'Map-gated exploration',
+    clues: [
+      { text: 'The thing you fill in as you go', answer: 'MAP' },
+      { text: 'New movement unlock', answer: 'ABILITY' },
+      { text: 'The door you cannot open yet', answer: 'GATE' },
+      { text: 'Walk the same hall with a new tool', answer: 'BACKTRACK' },
+      { text: 'The mid-map wall', answer: 'BOSS' },
+      { text: 'Bench, bed, or statue', answer: 'SAVE' },
+      { text: 'Ball form, Metroid', answer: 'MORPH' },
+    ]
+  },
+  {
+    connection: 'CONSOLE GEN',
+    gaming: true,
+    hint: 'Sony boxes in order',
+    clues: [
+      { text: '1994, grey brick', answer: 'PS1' },
+      { text: '2000, the library one', answer: 'PS2' },
+      { text: 'Cell processor, 2006', answer: 'PS3' },
+      { text: '2013, share button', answer: 'PS4' },
+      { text: 'DualSense, 2020', answer: 'PS5' },
+      { text: 'Microsoft 2005, the template pad', answer: '360' },
+      { text: 'The other living-room brand', answer: 'XBOX' },
+    ]
+  },
+  {
+    connection: 'BLIZZARD TITLES',
+    gaming: true,
+    hint: 'Azeroth and friends',
+    clues: [
+      { text: 'The MMO, three letters', answer: 'WOW' },
+      { text: 'Click the demons', answer: 'DIABLO' },
+      { text: 'You must construct additional pylons', answer: 'STARCRAFT' },
+      { text: 'Hero shooter, 2016 then 2', answer: 'OVERWATCH' },
+      { text: 'The card game', answer: 'HEARTHSTONE' },
+      { text: 'The RTS before the MMO', answer: 'WARCRAFT' },
+      { text: 'The MOBA they shut down', answer: 'HEROES' },
+    ]
+  },
+  {
+    connection: 'RACING TERMS',
+    gaming: true,
+    hint: 'Track vocabulary',
+    clues: [
+      { text: 'Slide the rear out', answer: 'DRIFT' },
+      { text: 'Sit in the slipstream', answer: 'DRAFT' },
+      { text: 'One circuit of the track', answer: 'LAP' },
+      { text: 'The silver car that is you, yesterday', answer: 'GHOST' },
+      { text: 'Did not finish', answer: 'DNF' },
+      { text: 'First on the grid', answer: 'POLE' },
+      { text: 'Stop for tires', answer: 'PIT' },
+    ]
+  },
+  {
+    connection: 'CARD TYPES',
+    gaming: true,
+    hint: 'Magic / Hearthstone paper',
+    clues: [
+      { text: 'The thing you tap for mana', answer: 'LAND' },
+      { text: 'The resource', answer: 'MANA' },
+      { text: 'Yu-Gi-Oh set-and-wait', answer: 'TRAP' },
+      { text: 'Instant or sorcery cousin', answer: 'SPELL' },
+      { text: 'The body that attacks', answer: 'CREATURE' },
+      { text: 'Swords, rocks, not alive', answer: 'ARTIFACT' },
+      { text: 'Walks between worlds, MTG', answer: 'PLANESWALKER' },
     ]
   }
 ];

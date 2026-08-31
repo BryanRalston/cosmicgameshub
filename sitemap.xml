@@ -889,6 +889,12 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://cosmicgameshub.com/games/link</loc>
+    <lastmod>2026-08-31</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://cosmicgameshub.com/games/pixle</loc>
     <lastmod>2026-05-07</lastmod>
     <changefreq>daily</changefreq>

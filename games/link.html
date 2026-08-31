@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-D272MF8NQP"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-D272MF8NQP');</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Link — Daily gaming groups | CosmicGamesHub</title>
+  <meta name="description" content="Four groups of four. Find the gaming categories. New constructed puzzle every UTC day." />
+  <link rel="canonical" href="https://cosmicgameshub.com/games/link" />
+  <link rel="stylesheet" href="../styles.css" />
+  <meta property="og:title" content="Link — Daily gaming groups | CosmicGamesHub" />
+  <meta property="og:description" content="Four groups of four. Same board for everyone today." />
+  <meta property="og:image" content="https://cosmicgameshub.com/images/game-link-v2.jpg" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://cosmicgameshub.com/games/link" />
+  <meta property="og:site_name" content="CosmicGamesHub" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Link — Daily gaming groups" />
+  <meta name="twitter:image" content="https://cosmicgameshub.com/images/game-link-v2.jpg" />
+  <style>
+    .lk-wrap { max-width: 520px; margin: 0 auto; padding: 0 0.75rem 2rem; }
+    .lk-header { display:flex; justify-content:space-between; align-items:center; padding:0.85rem 0 0.55rem; border-bottom:1px solid var(--border); margin-bottom:0.85rem; }
+    .lk-header h1 { font-size:1.35rem; font-weight:800; letter-spacing:0.14em; margin:0; }
+    .lk-sub { font-size:0.7rem; color:var(--text-lo); letter-spacing:0.08em; text-transform:uppercase; }
+    .lk-tools { display:flex; gap:0.4rem; align-items:center; }
+    .lk-icon { width:32px; height:32px; border-radius:50%; border:1px solid var(--border); background:none; color:var(--text-mid); cursor:pointer; font:inherit; }
+    .lk-icon:hover { border-color:var(--accent); color:var(--accent); }
+    .lk-mistakes { display:flex; gap:6px; justify-content:center; margin:0.4rem 0 0.9rem; align-items:center; font-size:0.78rem; color:var(--text-lo); }
+    .lk-dot { width:10px; height:10px; border-radius:50%; background:#3a3a3c; }
+    .lk-dot.on { background:#e8e8f0; }
+    .lk-solved { display:flex; flex-direction:column; gap:8px; margin-bottom:8px; }
+    .lk-group { border-radius:10px; padding:0.7rem 0.8rem; text-align:center; color:#111; }
+    .lk-group.y { background:#e8c547; }
+    .lk-group.g { background:#6aaa64; color:#fff; }
+    .lk-group.b { background:#4b87c5; color:#fff; }
+    .lk-group.p { background:#b46dc2; color:#fff; }
+    .lk-group__t { font-size:0.78rem; font-weight:800; letter-spacing:0.08em; }
+    .lk-group__w { font-size:0.78rem; margin-top:0.15rem; font-weight:600; }
+    .lk-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+    .lk-tile { min-height:64px; border:none; border-radius:10px; background:#2a2a38; color:#fff; font:700 0.78rem/1.2 inherit; padding:0.4rem; cursor:pointer; text-transform:uppercase; letter-spacing:0.02em; }
+    .lk-tile.sel { background:#6e6e80; outline:2px solid #fff; }
+    .lk-tile:disabled { cursor:default; opacity:0.45; }
+    .lk-actions { display:flex; gap:0.45rem; margin-top:0.9rem; justify-content:center; flex-wrap:wrap; }
+    .lk-btn { min-height:44px; padding:0.5rem 1rem; border-radius:999px; border:1px solid var(--border); background:transparent; color:var(--text-hi); font:700 0.85rem inherit; cursor:pointer; }
+    .lk-btn.primary { background:var(--accent,#00d4ff); color:#06060a; border-color:transparent; }
+    .lk-btn:disabled { opacity:0.4; cursor:default; }
+    .lk-toast { position:fixed; top:80px; left:50%; transform:translateX(-50%); background:#eee; color:#111; font-weight:800; font-size:0.8rem; padding:0.45rem 1rem; border-radius:8px; z-index:50; opacity:0; pointer-events:none; }
+    .lk-toast.show { opacity:1; }
+    .lk-modal-bg { position:fixed; inset:0; background:rgba(0,0,0,0.75); display:flex; align-items:center; justify-content:center; z-index:200; opacity:0; pointer-events:none; }
+    .lk-modal-bg.open { opacity:1; pointer-events:auto; }
+    .lk-modal { background:var(--bg-card,#12121c); border:1px solid var(--border); border-radius:16px; padding:1.4rem; width:min(360px,92vw); text-align:center; }
+    .lk-modal h2 { margin:0 0 0.5rem; }
+    .lk-share { font-size:1.2rem; line-height:1.35; margin:0.8rem 0; }
+    .lk-statrow { display:flex; justify-content:center; gap:1.4rem; margin:0.8rem 0; }
+    .lk-statrow b { display:block; font-size:1.4rem; color:var(--accent); }
+    .lk-statrow span { font-size:0.65rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-lo); }
+    .how-p { text-align:left; font-size:0.85rem; color:var(--text-mid); line-height:1.5; }
+    @media (max-width:400px) {
+      .lk-tile { min-height:58px; font-size:0.7rem; }
+      .lk-header h1 { font-size:1.15rem; }
+    }
+    body.lk-cb .lk-group.y::before, body.lk-cb .lk-tile.sel::after { }
+    body.lk-cb .lk-group.y { box-shadow: inset 0 0 0 3px #111; }
+    body.lk-cb .lk-group.g { box-shadow: inset 4px 0 0 #111; }
+    body.lk-cb .lk-group.b { box-shadow: inset 0 4px 0 #111; }
+    body.lk-cb .lk-group.p { box-shadow: inset 4px 4px 0 #111; }
+  </style>
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"VideoGame","name":"Link","description":"Four groups of four. Daily constructed gaming categories.","url":"https://cosmicgameshub.com/games/link","image":"https://cosmicgameshub.com/images/game-link-v2.jpg","genre":"Puzzle","gamePlatform":"Web Browser","applicationCategory":"Game","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+  </script>
+</head>
+<body>
+<nav class="nav" role="navigation" aria-label="Main navigation">
+  <div class="container">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo" aria-label="CosmicGamesHub home">
+        <span class="nav__logo-icon">🎮</span>
+        <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
+      </a>
+      <ul class="nav__links" id="navLinks">
+        <li><a href="/pros">Pros</a></li>
+        <li><a href="/games" class="active">Games</a></li>
+        <li><a href="/games/daily">Daily</a></li>
+        <li><a href="/guides">Guides</a></li>
+        <li><a href="/versus">Comparisons</a></li>
+        <li><a href="/tools/gaming-fps-calculator" class="nav__cta btn">Tools</a></li>
+      </ul>
+      <button class="nav__hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+<div class="lk-toast" id="lkToast"></div>
+<div class="lk-wrap">
+  <div class="lk-header">
+    <div>
+      <h1>LINK</h1>
+      <div class="lk-sub">Four groups of four · Daily</div>
+    </div>
+    <div class="lk-tools">
+      <button class="lk-icon" id="lkStatsBtn" aria-label="Statistics">#</button>
+      <button class="lk-icon" id="lkHelpBtn" aria-label="How to play">?</button>
+    </div>
+  </div>
+  <div class="lk-mistakes">Mistakes remaining
+    <span class="lk-dot on" id="d0"></span>
+    <span class="lk-dot on" id="d1"></span>
+    <span class="lk-dot on" id="d2"></span>
+    <span class="lk-dot on" id="d3"></span>
+  </div>
+  <div class="lk-solved" id="lkSolved"></div>
+  <div class="lk-grid" id="lkGrid"></div>
+  <div class="lk-actions">
+    <button class="lk-btn" id="lkShuffle">Shuffle</button>
+    <button class="lk-btn" id="lkDeselect">Deselect</button>
+    <button class="lk-btn primary" id="lkSubmit">Submit</button>
+  </div>
+</div>
+
+<div class="lk-modal-bg" id="lkHelp">
+  <div class="lk-modal" style="text-align:left;">
+    <h2 style="text-align:center;">How to play</h2>
+    <p class="how-p">Find four groups of four. Categories are gaming — some obvious, one that will start an argument.</p>
+    <p class="how-p">Select four tiles and submit. Four mistakes and the board locks.</p>
+    <p class="how-p"><strong>Yellow</strong> easiest · <strong>Green</strong> · <strong>Blue</strong> · <strong>Purple</strong> hardest.</p>
+    <p class="how-p">Same puzzle for everyone this UTC day. Colorblind marks live on solved groups.</p>
+    <label class="how-p" style="display:flex;gap:0.5rem;align-items:center;margin-top:0.8rem;">
+      <input type="checkbox" id="lkCb" /> Colorblind patterns
+    </label>
+    <div style="text-align:center;margin-top:1rem;">
+      <button class="lk-btn primary" id="lkHelpClose">Got it</button>
+    </div>
+  </div>
+</div>
+
+<div class="lk-modal-bg" id="lkResult">
+  <div class="lk-modal">
+    <h2 id="lkResTitle">Solved</h2>
+    <div class="lk-share" id="lkShareGrid"></div>
+    <div class="lk-statrow">
+      <div><b id="lkSPlayed">0</b><span>Played</span></div>
+      <div><b id="lkSWin">0%</b><span>Win%</span></div>
+      <div><b id="lkSStreak">0</b><span>Streak</span></div>
+    </div>
+    <button class="lk-btn primary" id="lkShareBtn">Share</button>
+    <div class="cg-daily-dock" data-slug="link" style="margin-top:1rem;"></div>
+    <button class="lk-btn" id="lkResClose" style="margin-top:0.6rem;width:100%;">Close</button>
+  </div>
+</div>
+
+<script src="/games/link-puzzles.js"></script>
+<script src="/games/cg-sfx.js"></script>
+<script src="/games/daily-kit.js" defer></script>
+<script src="/global.js" defer></script>
+<script>
+(function () {
+  'use strict';
+  var LEVELS = ['y', 'g', 'b', 'p'];
+  var EMOJI = ['🟨', '🟩', '🟦', '🟪'];
+  function dayIndex() {
+    return Math.floor((Date.now() - Date.UTC(2026, 0, 1)) / 86400000);
+  }
+  var DAY = dayIndex();
+  var PUZZLES = window.LINK_PUZZLES || [];
+  var puzzle = PUZZLES[DAY % PUZZLES.length];
+  var STORE = 'link-state-v1';
+  var STATS = 'link-stats-v1';
+
+  function mulberry(a) {
+    return function () {
+      var t = a += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  function shuffle(arr, seed) {
+    var rng = mulberry(seed);
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(rng() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  function loadStats() {
+    try { return JSON.parse(localStorage.getItem(STATS)) || { played:0, wins:0, streak:0, maxStreak:0 }; }
+    catch (e) { return { played:0, wins:0, streak:0, maxStreak:0 }; }
+  }
+  function saveStats(s) { localStorage.setItem(STATS, JSON.stringify(s)); }
+  var stats = loadStats();
+
+  function defaultState() {
+    var tiles = [];
+    puzzle.groups.forEach(function (g, gi) {
+      g.words.forEach(function (w) { tiles.push({ w: w, level: g.level }); });
+    });
+    return { day: DAY, tiles: shuffle(tiles, DAY + 17), sel: [], solved: [], mistakes: 0, status: 'playing', order: [] };
+  }
+  function loadState() {
+    try {
+      var s = JSON.parse(localStorage.getItem(STORE));
+      if (s && s.day === DAY) return s;
+    } catch (e) {}
+    return defaultState();
+  }
+  var state = loadState();
+  function save() { localStorage.setItem(STORE, JSON.stringify(state)); }
+
+  var grid = document.getElementById('lkGrid');
+  var solvedEl = document.getElementById('lkSolved');
+
+  function toast(msg) {
+    var el = document.getElementById('lkToast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(function () { el.classList.remove('show'); }, 1400);
+  }
+
+  function remainingTiles() {
+    return state.tiles.filter(function (t) { return state.solved.indexOf(t.level) === -1; });
+  }
+
+  function renderSolved() {
+    solvedEl.innerHTML = '';
+    state.solved.forEach(function (lv) {
+      var g = puzzle.groups.find(function (x) { return x.level === lv; });
+      var d = document.createElement('div');
+      d.className = 'lk-group ' + LEVELS[lv];
+      d.innerHTML = '<div class="lk-group__t">' + g.title + '</div><div class="lk-group__w">' + g.words.join(', ') + '</div>';
+      solvedEl.appendChild(d);
+    });
+  }
+
+  function renderGrid() {
+    grid.innerHTML = '';
+    remainingTiles().forEach(function (t, i) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'lk-tile' + (state.sel.indexOf(t.w) >= 0 ? ' sel' : '');
+      b.textContent = t.w;
+      b.disabled = state.status !== 'playing';
+      b.addEventListener('click', function () { toggle(t.w); });
+      grid.appendChild(b);
+    });
+    for (var m = 0; m < 4; m++) {
+      document.getElementById('d' + m).className = 'lk-dot' + (m < (4 - state.mistakes) ? ' on' : '');
+    }
+    document.getElementById('lkSubmit').disabled = state.sel.length !== 4 || state.status !== 'playing';
+  }
+
+  function toggle(w) {
+    if (state.status !== 'playing') return;
+    var i = state.sel.indexOf(w);
+    if (i >= 0) state.sel.splice(i, 1);
+    else if (state.sel.length < 4) state.sel.push(w);
+    save(); renderGrid();
+  }
+
+  function submit() {
+    if (state.sel.length !== 4 || state.status !== 'playing') return;
+    var picked = state.sel.slice();
+    var levels = picked.map(function (w) {
+      var t = state.tiles.find(function (x) { return x.w === w; });
+      return t.level;
+    });
+    var allSame = levels.every(function (l) { return l === levels[0]; });
+    if (allSame) {
+      state.solved.push(levels[0]);
+      state.order.push(levels[0]);
+      state.sel = [];
+      if (window.CGSfx) window.CGSfx.play('correct');
+      if (state.solved.length === 4) win();
+      else toast(puzzle.groups.find(function (g) { return g.level === levels[0]; }).title);
+    } else {
+      var counts = [0,0,0,0];
+      levels.forEach(function (l) { counts[l]++; });
+      var oneAway = counts.some(function (c) { return c === 3; });
+      state.mistakes += 1;
+      state.sel = [];
+      if (window.CGSfx) window.CGSfx.play('miss');
+      if (state.mistakes >= 4) lose();
+      else toast(oneAway ? 'One away' : 'Not a group');
+    }
+    save(); renderSolved(); renderGrid();
+  }
+
+  function finishStats(won) {
+    if (state.logged) return;
+    state.logged = true;
+    stats.played += 1;
+    if (won) { stats.wins += 1; stats.streak += 1; stats.maxStreak = Math.max(stats.maxStreak, stats.streak); }
+    else stats.streak = 0;
+    saveStats(stats);
+    save();
+  }
+  function win() {
+    state.status = 'won';
+    finishStats(true);
+    setTimeout(function () { showResult(true); }, 500);
+  }
+  function lose() {
+    state.status = 'lost';
+    puzzle.groups.forEach(function (g) {
+      if (state.solved.indexOf(g.level) === -1) {
+        state.solved.push(g.level);
+        state.order.push(g.level);
+      }
+    });
+    finishStats(false);
+    setTimeout(function () { showResult(false); }, 400);
+  }
+
+  function shareLines() {
+    return state.order.map(function (lv) { return EMOJI[lv] + EMOJI[lv] + EMOJI[lv] + EMOJI[lv]; }).join('\n');
+  }
+  function showResult(won) {
+    document.getElementById('lkResTitle').textContent = won ? (state.mistakes === 0 ? 'Perfect' : 'Solved') : 'Next UTC day';
+    document.getElementById('lkShareGrid').textContent = shareLines();
+    document.getElementById('lkSPlayed').textContent = stats.played;
+    document.getElementById('lkSWin').textContent = stats.played ? Math.round(stats.wins / stats.played * 100) + '%' : '0%';
+    document.getElementById('lkSStreak').textContent = stats.streak;
+    document.getElementById('lkResult').classList.add('open');
+    if (window.CGDaily && window.CGDaily.mountAll) window.CGDaily.mountAll();
+  }
+
+  document.getElementById('lkShuffle').addEventListener('click', function () {
+    if (state.status !== 'playing') return;
+    var rest = remainingTiles();
+    var shuffled = shuffle(rest, Date.now() % 99991);
+    var kept = state.tiles.filter(function (t) { return state.solved.indexOf(t.level) !== -1; });
+    state.tiles = kept.concat(shuffled);
+    save(); renderGrid();
+  });
+  document.getElementById('lkDeselect').addEventListener('click', function () { state.sel = []; save(); renderGrid(); });
+  document.getElementById('lkSubmit').addEventListener('click', submit);
+  document.getElementById('lkHelpBtn').addEventListener('click', function () { document.getElementById('lkHelp').classList.add('open'); });
+  document.getElementById('lkHelpClose').addEventListener('click', function () { document.getElementById('lkHelp').classList.remove('open'); });
+  document.getElementById('lkStatsBtn').addEventListener('click', function () { showResult(state.status === 'won'); });
+  document.getElementById('lkResClose').addEventListener('click', function () { document.getElementById('lkResult').classList.remove('open'); });
+  document.getElementById('lkShareBtn').addEventListener('click', function () {
+    var text = 'Link #' + DAY + '\n' + (state.status === 'won' ? '' : 'X — ') + shareLines() + '\n\ncosmicgameshub.com/games/link';
+    var go = function () { toast('Copied + card'); };
+    if (window.CGSfx && window.CGSfx.shareNow) {
+      window.CGSfx.shareNow({
+        title: 'Link',
+        subtitle: '#' + DAY,
+        grid: shareLines(),
+        lines: [state.status === 'won' ? (4 - state.mistakes) + ' remaining' : 'Lost'],
+        url: 'cosmicgameshub.com/games/link',
+        filename: 'link-' + DAY,
+        text: text
+      }).then(go).catch(go);
+    } else if (navigator.clipboard) navigator.clipboard.writeText(text).then(go);
+  });
+  document.getElementById('lkCb').addEventListener('change', function () {
+    var on = document.getElementById('lkCb').checked;
+    document.body.classList.toggle('lk-cb', on);
+    try { localStorage.setItem('link-cb', on ? '1' : '0'); } catch (e) {}
+  });
+  try { if (localStorage.getItem('link-cb') === '1') { document.getElementById('lkCb').checked = true; document.body.classList.add('lk-cb'); } } catch (e) {}
+
+  document.getElementById('lkHelp').addEventListener('click', function (e) { if (e.target === this) this.classList.remove('open'); });
+  document.getElementById('lkResult').addEventListener('click', function (e) { if (e.target === this) this.classList.remove('open'); });
+
+  (function () {
+    var h = document.getElementById('hamburger') || document.querySelector('.nav__hamburger');
+    var n = document.getElementById('navLinks');
+    if (!h || !n) return;
+    h.dataset.navInit = '1';
+    h.addEventListener('click', function () {
+      var open = n.classList.toggle('open');
+      h.setAttribute('aria-expanded', String(open));
+    });
+  })();
+
+  renderSolved();
+  renderGrid();
+  if (state.status !== 'playing') setTimeout(function () { showResult(state.status === 'won'); }, 300);
+  if (!localStorage.getItem('link-seen-help')) {
+    document.getElementById('lkHelp').classList.add('open');
+    localStorage.setItem('link-seen-help', '1');
+  }
+})();
+</script>
+</body>
+</html>

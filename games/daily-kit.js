@@ -10,7 +10,7 @@
     { id: 'spec-match', name: 'Spec Match', href: '/games/spec-match' },
     { id: 'gear-quiz', name: 'Gear Quiz', href: '/games/gear-quiz' },
     { id: 'gaming-trivia', name: 'Gaming Trivia', href: '/games/gaming-trivia' },
-    { id: 'word-scramble', name: 'Word Scramble', href: '/games/word-scramble' },
+    { id: 'link', name: 'Link', href: '/games/link' },
     { id: 'crossword', name: 'Crossword', href: '/games/crossword' },
     { id: 'sudoku', name: 'Sudoku', href: '/games/sudoku' },
     { id: 'price-guesser', name: 'Price Guesser', href: '/games/price-guesser' },
@@ -63,11 +63,9 @@
     map.crossword = safeInt('cw_last_day', -1) === dayOfYear();
     map['price-guesser'] = safeInt('pg_last_day', -1) === dayOfYear();
     try {
-      var ss = safeJSON('scramble-state-v1') || {};
-      var scrambleIso = localStorage.getItem('scramble_last_date');
-      map['word-scramble'] = scrambleIso === iso || scrambleIso === ymd ||
-        (ss.dayIndex === unixDay() && (ss.status === 'won' || ss.status === 'lost'));
-    } catch (e) { map['word-scramble'] = false; }
+      var ls = safeJSON('link-state-v1') || {};
+      map.link = ls.day === dayIndex2026() && (ls.status === 'won' || ls.status === 'lost');
+    } catch (e) { map.link = false; }
     try {
       var rs = safeJSON('rift_state_' + dayIndex2026());
       if (!rs) rs = safeJSON('rift_state_' + dayOfYear());

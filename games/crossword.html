@@ -128,7 +128,8 @@
     <div class="cw-wrap">
       <div style="text-align:center;margin-bottom:1rem;">
         <h1 style="font-size:1.6rem;margin:0 0 .25rem;">Gaming Crossword</h1>
-        <p style="color:#aaa;font-size:.9rem;margin:0;">Daily 5×5 mini puzzle — new challenge every day</p>
+        <p style="color:#aaa;font-size:.9rem;margin:0;">Daily 5×5 mini — constructed, fully checked</p>
+        <div id="cw-timer" style="margin-top:.35rem;font-size:.8rem;color:var(--accent,#22d3ee);font-weight:700;">0:00</div>
       </div>
 
       <div class="cw-meta">
@@ -232,172 +233,23 @@
   
 </footer>
 
+<script src="/games/crossword-puzzles.js"></script>
 <script>
 (function() {
   'use strict';
 
-  const PUZZLES = [
-    {
-      rows: ['SPAWN','TURBO','ORBIT','MAGIC','PATCH'],
-      across: [
-        {num:1,clue:'Appear in the game world after dying'},
-        {num:3,clue:'Speed-boost power-up; Mario Kart staple'},
-        {num:4,clue:'Circle around a planet or enemy in space games'},
-        {num:5,clue:'Spell-casting stat powering wizards in RPGs'},
-        {num:6,clue:'Game update that fixes bugs and rebalances characters'}
-      ],
-      down: [
-        {num:1,col:0,clue:'Crush enemies underfoot by jumping on their heads'},
-        {num:2,col:4,clue:"Minecraft creator Markus Persson's nickname"}
-      ]
-    },
-    {
-      rows: ['GLIDE','ANVIL','MIXED','EVADE','RADAR'],
-      across: [
-        {num:1,clue:'Float through the air in a wingsuit or platformer'},
-        {num:3,clue:'Crafting station used to forge weapons in Minecraft'},
-        {num:4,clue:'Blended lobby of different skill levels'},
-        {num:5,clue:'Dodge an attack or slip past an enemy undetected'},
-        {num:6,clue:'Enemy detection system shown on your HUD'}
-      ],
-      down: [
-        {num:1,col:0,clue:'One who plays video games'},
-        {num:2,col:4,clue:'Ancient high-level NPC in fantasy RPGs'}
-      ]
-    },
-    {
-      rows: ['SHELL','LIMBO','AGAIN','SCENE','HUMOR'],
-      across: [
-        {num:1,clue:"Projectile from a cannon; also a turtle's defense"},
-        {num:3,clue:'Underground dance challenge; also a difficulty tier'},
-        {num:4,clue:'Press start to try once more'},
-        {num:5,clue:'In-engine cutscene; a dramatic story moment'},
-        {num:6,clue:'Trait affecting dialogue choices in RPGs like Fallout'}
-      ],
-      down: [
-        {num:1,col:0,clue:'Sword attack that cuts horizontally'},
-        {num:2,col:4,clue:'Player who prefers solo runs over party play'}
-      ]
-    },
-    {
-      rows: ['CHAOS','HEART','EMOTE','AGILE','TRIAL'],
-      across: [
-        {num:1,clue:'Total disorder in battle; god-tier difficulty level'},
-        {num:3,clue:'Extra life container in Zelda-style games'},
-        {num:4,clue:'Animated character expression triggered by command'},
-        {num:5,clue:'Quick and nimble; a key trait in stealth games'},
-        {num:6,clue:'Limited demo access or time-limited game test'}
-      ],
-      down: [
-        {num:1,col:0,clue:'Forbidden code unlocking god mode or infinite ammo'},
-        {num:2,col:4,clue:'Refined metal ore used for crafting weapons and armor'}
-      ]
-    },
-    {
-      rows: ['SCORE','NINJA','ICING','PIXEL','EVADE'],
-      across: [
-        {num:1,clue:'Your running tally of points or kills in a match'},
-        {num:3,clue:'Stealthy warrior class known for speed and silent kills'},
-        {num:4,clue:'Scoring a goal from behind center ice in hockey games'},
-        {num:5,clue:"The smallest unit on a display; retro games' building block"},
-        {num:6,clue:'Dodge incoming fire or slip out of detection range'}
-      ],
-      down: [
-        {num:1,col:0,clue:'Take out an enemy from extreme range with a rifle'},
-        {num:2,col:4,clue:'Achievement badge icon; also a golf score of minus two'}
-      ]
-    },
-    {
-      rows: ['GOALS','UPSET','AZURE','RUMBA','DREAM'],
-      across: [
-        {num:1,clue:'Objectives you complete to advance a quest or match'},
-        {num:3,clue:'Shocking tournament victory by the underdog'},
-        {num:4,clue:'Sky-blue color scheme popular in RPGs and sci-fi games'},
-        {num:5,clue:'Rhythm game dance pattern with hip-swing timing cues'},
-        {num:6,clue:'Narrative mode where you explore a character\'s inner world'}
-      ],
-      down: [
-        {num:1,col:0,clue:'Defensive role that protects teammates and absorbs damage'},
-        {num:2,col:4,clue:"Valve's PC gaming platform where you manage your library"}
-      ]
-    },
-    {
-      rows: ['POWER','RANGE','EXTRA','SKILL','STORM'],
-      across: [
-        {num:1,clue:'Core stat governing spell strength or melee force'},
-        {num:3,clue:'Maximum distance a weapon or ability can reach'},
-        {num:4,clue:'Bonus life awarded for hitting a score threshold'},
-        {num:5,clue:'Learned ability unlocked with XP in RPG skill trees'},
-        {num:6,clue:'Charge into battle; also the shrinking zone in battle royale'}
-      ],
-      down: [
-        {num:1,col:0,clue:'Input a button; also journalists who cover the industry'},
-        {num:2,col:4,clue:'Distinct game world or server zone in an MMO'}
-      ]
-    },
-    { rows:['HEART','EMBER','ABUSE','RESIN','TREND'],
-      across:[{num:1,clue:'Extra life container in Zelda-likes'},{num:3,clue:'Dying fire leftover; also a loot shard'},{num:4,clue:'Report a toxic player'},{num:5,clue:'Pine sap; also a crafting gum'},{num:6,clue:'The current meta direction'}],
-      down:[{num:1,col:0,clue:'Same as 1-Across'},{num:2,col:4,clue:'What ranked graphs do after a patch'}] },
-    { rows:['BLAST','LUNCH','ANGER','SCENE','THREE'],
-      across:[{num:1,clue:'Explosion damage or a shotgun cone'},{num:3,clue:'AFK-to-eat break in a raid'},{num:4,clue:'Tilt fuel'},{num:5,clue:'Cutscene or a fight location'},{num:6,clue:'Party size in a lot of JRPGs'}],
-      down:[{num:1,col:0,clue:'Same as 1-Across'},{num:2,col:4,clue:'Green lantern of a stoplight; also a kill feed hue'}] },
-    { rows:['CAUSE','ALPHA','UPPER','SHEET','EARTH'],
-      across:[{num:1,clue:'Why a bug happened'},{num:3,clue:'Top-rank player or a wolf pack leader'},{num:4,clue:'Above the fold of a HUD'},{num:5,clue:'Character spreadsheet of stats'},{num:6,clue:'Minecraft overworld'}],
-      down:[{num:1,col:0,clue:'Same as 1-Across'},{num:2,col:4,clue:'Dirt, grass, and the planet you defend'}] },
-    { rows:['FEAST','EMBER','ABOVE','SEVEN','TREND'],
-      across:[{num:1,clue:'Banquet cutscene after a raid'},{num:3,clue:'Coal that still glows'},{num:4,clue:'HP bar sitting over a boss'},{num:5,clue:'Lucky number; also a civ in Civ'},{num:6,clue:'What Twitter says the meta is'}],
-      down:[{num:1,col:0,clue:'Same as 1-Across'},{num:2,col:4,clue:'Chart direction after a good patch'}] },
-    { rows:['MARCH','AWARE','RADAR','CRAFT','HERTZ'],
-      across:[{num:1,clue:'Move an army in formation'},{num:3,clue:'Not caught off guard'},{num:4,clue:'Minimap ping that spots enemies'},{num:5,clue:'Minecraft making things'},{num:6,clue:'Hz — refresh and poll rate unit'}],
-      down:[{num:1,col:0,clue:'Same as 1-Across'},{num:2,col:4,clue:'The unit on a 240 Hz panel'}] },
-    { rows:['STARS','TULIP','ALIVE','RIVAL','SPELL'],
-      across:[{num:1,clue:'Review score out of five'},{num:3,clue:'Flower; also a Dutch puzzle motif'},{num:4,clue:'Not downed yet'},{num:5,clue:'The other team in ranked'},{num:6,clue:'Cast a mage ability'}],
-      down:[{num:1,col:0,clue:'Same as 1-Across'},{num:2,col:4,clue:'What a wizard casts'}] },
-    { rows:['START','THREE','ARISE','RESET','TEETH'],
-      across:[{num:1,clue:'Press this to play'},{num:3,clue:'Trio queue size'},{num:4,clue:'Stand back up after a knockdown'},{num:5,clue:'New game; wipe the board'},{num:6,clue:'Hitbox on a bite attack'}],
-      down:[{num:1,col:0,clue:'Same as 1-Across'},{num:2,col:4,clue:'What the shark NPC shows'}] },
-    { rows:['THESE','HAVEN','EVENT','SENSE','ENTER'],
-      across:[{num:1,clue:'These loot tables'},{num:3,clue:'Safe town in a survival game'},{num:4,clue:'Limited-time live-ops drop'},{num:5,clue:'Dark Souls stat for vison and magic'},{num:6,clue:'Confirm a guess'}],
-      down:[{num:1,col:0,clue:'Same as 1-Across'},{num:2,col:4,clue:'The key that submits'}] },
-    { rows:['TOTAL','OMEGA','TEARS','AGREE','LASER'],
-      across:[{num:1,clue:'Sum of your damage meter'},{num:3,clue:'Last Greek letter; raid-tier suffix'},{num:4,clue:'Of the Kingdom, 2023'},{num:5,clue:'Ready check accepted'},{num:6,clue:'Beam weapon or a mouse sensor'}],
-      down:[{num:1,col:0,clue:'Same as 1-Across'},{num:2,col:4,clue:'Optical mouse tech'}] },
-    { rows:['SMURF','MINOR','UNDUE','ROUTE','FREES'],
-      across:[{num:1,clue:'High-skill player on a fresh account'},{num:3,clue:'Not the major patch'},{num:4,clue:'Unfair advantage'},{num:5,clue:'Path a jungler takes'},{num:6,clue:'Releases a stunned ally'}],
-      down:[{num:1,col:0,clue:'Same as 1-Across'},{num:2,col:4,clue:'What a cleanse does'}] },
-    { rows:['STARS','THROW','ARGUE','ROUTE','SWEET'],
-      across:[{num:1,clue:'Metacritic dots'},{num:3,clue:'Inting on purpose'},{num:4,clue:'Voice chat after a throw'},{num:5,clue:'Set path in a speedrun'},{num:6,clue:'A clean clip'}],
-      down:[{num:1,col:0,clue:'Same as 1-Across'},{num:2,col:4,clue:'S-rank loot flavor'}] },
-    { rows:['CAUSE','ALPHA','UPPER','SHELL','EARLY'],
-      across:[{num:1,clue:'Root of a crash'},{num:3,clue:'Build name before beta'},{num:4,clue:'Top half of a 60% board'},{num:5,clue:'Turtle defense; also a console CLI'},{num:6,clue:'First access / EA'}],
-      down:[{num:1,col:0,clue:'Same as 1-Across'},{num:2,col:4,clue:'Not late-game'}] },
-    { rows:['BRAND','ROGER','AGREE','NEEDS','DRESS'],
-      across:[{num:1,clue:'Peripheral maker name on the box'},{num:3,clue:'Radio confirm; also a first name'},{num:4,clue:'Queue accept'},{num:5,clue:'Stat requirements to equip'},{num:6,clue:'Cosmetic outfit'}],
-      down:[{num:1,col:0,clue:'Same as 1-Across'},{num:2,col:4,clue:'Armor you wear'}] },
-    { rows:['ABOVE','BARON','ORBIT','VOICE','ENTER'],
-      across:[{num:1,clue:'Over the fog of war'},{num:3,clue:'Nashor; also a LoL objective'},{num:4,clue:'Circle a planet in a space sim'},{num:5,clue:'Chat you hear'},{num:6,clue:'Submit the guess'}],
-      down:[{num:1,col:0,clue:'Same as 1-Across'},{num:2,col:4,clue:'The confirm key'}] },
-    { rows:['GRAND','ROGER','AGREE','NEEDS','DRESS'],
-      across:[{num:1,clue:'Final fantasy of a certain number'},{num:3,clue:'Copy that'},{num:4,clue:'I accept the ready check'},{num:5,clue:'What a build still lacks'},{num:6,clue:'Transmog piece'}],
-      down:[{num:1,col:0,clue:'Same as 1-Across'},{num:2,col:4,clue:'Put it on the character'}] },
-    { rows:['FEAST','EARTH','ARMOR','STONE','THREE'],
-      across:[{num:1,clue:'Victory banquet'},{num:3,clue:'Element and overworld'},{num:4,clue:'Chest piece'},{num:5,clue:'Minecraft cobble cousin'},{num:6,clue:'Triple kill starting count'}],
-      down:[{num:1,col:0,clue:'Same as 1-Across'},{num:2,col:4,clue:'Trio'}] }
-  ];
+  const PUZZLES = window.CROSSWORD_PUZZLES;
 
-  // Cell number layout: (0,0)=1, (0,4)=2, (1,0)=3, (2,0)=4, (3,0)=5, (4,0)=6
+    // Fully checked 5x5 Mini numbering: 1-5 across the first row (downs), 6-9 down the first column (acrosses).
   const CELL_NUMS = {
-    '0,0': 1, '0,4': 2,
-    '1,0': 3, '2,0': 4, '3,0': 5, '4,0': 6
+    '0,0': 1, '0,1': 2, '0,2': 3, '0,3': 4, '0,4': 5,
+    '1,0': 6, '2,0': 7, '3,0': 8, '4,0': 9
   };
 
-  // Across clue numbers by row
-  const ACROSS_ROW_NUM = [1, 3, 4, 5, 6];
+  const ACROSS_ROW_NUM = [1, 6, 7, 8, 9];
 
   function getDayOfYear() {
-    const now = new Date();
-    const start = new Date(now.getFullYear(), 0, 0);
-    return Math.floor((now - start) / 86400000);
+    return Math.floor((Date.now() - Date.UTC(2026, 0, 1)) / 86400000);
   }
 
   const dayIndex = getDayOfYear();
@@ -410,6 +262,17 @@
   let selRow = 0, selCol = 0, dir = 'across';
   let checkCount = 0;
   let solved = false;
+  const t0 = Date.now();
+  let elapsedSec = 0;
+  setInterval(function () {
+    if (solved) return;
+    elapsedSec = Math.floor((Date.now() - t0) / 1000);
+    var el = document.getElementById('cw-timer');
+    if (!el) return;
+    var m = Math.floor(elapsedSec / 60);
+    var s = elapsedSec % 60;
+    el.textContent = m + ':' + (s < 10 ? '0' : '') + s;
+  }, 250);
 
   // DOM
   const gridEl = document.getElementById('cw-grid');
@@ -532,7 +395,7 @@
   }
 
   function canDown(c) {
-    return puzzle.down.some(d => d.col === c);
+    return puzzle.down.some(d => d.col === c) || puzzle.down.length >= 5;
   }
 
   function selectCell(r, c, newDir) {
@@ -601,7 +464,7 @@
   function updateActiveClue() {
     const w = getActiveWord();
     const dirLabel = dir === 'across' ? 'Across' : 'Down';
-    activeClueEl.innerHTML = `<strong>${w.num}-${dirLabel}</strong>${w.clueText}`;
+    activeClueEl.innerHTML = `<strong>${w.num}-${dirLabel}</strong> ${w.clueText}`;
   }
 
   function updateClueHighlight() {
@@ -846,8 +709,11 @@
   document.getElementById('btn-share').addEventListener('click', () => {
     const grade = getGrade(checkCount);
     const grid = buildEmojiGrid();
-    const text = 'CosmicGamesHub Gaming Crossword #' + (puzzleNum + 1) + '\n' +
-      grade + ' | ' + checkCount + ' check' + (checkCount === 1 ? '' : 's') + '\n\n' +
+    const mm = Math.floor(elapsedSec / 60);
+    const ss = elapsedSec % 60;
+    const timeLabel = mm + ':' + (ss < 10 ? '0' : '') + ss;
+    const text = 'CosmicGamesHub Mini #' + (puzzleNum + 1) + '\n' +
+      timeLabel + ' · ' + checkCount + ' check' + (checkCount === 1 ? '' : 's') + '\n\n' +
       grid + '\n\ncosmicgameshub.com/games/crossword';
     const go = function () {
       const btn = document.getElementById('btn-share');
@@ -857,9 +723,9 @@
     if (window.CGSfx && window.CGSfx.shareNow) {
       window.CGSfx.shareNow({
         title: 'Crossword',
-        subtitle: '#' + (puzzleNum + 1) + '  ·  ' + grade,
+        subtitle: '#' + (puzzleNum + 1) + '  ·  ' + timeLabel,
         grid: grid,
-        lines: [checkCount + ' check' + (checkCount === 1 ? '' : 's')],
+        lines: [checkCount + ' check' + (checkCount === 1 ? '' : 's'), timeLabel],
         url: 'cosmicgameshub.com/games/crossword',
         filename: 'crossword-' + (puzzleNum + 1),
         text: text

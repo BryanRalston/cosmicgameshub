@@ -333,9 +333,36 @@
 .how-text { font-size: 0.8rem; color: var(--text-mid); line-height: 1.5; margin: 0.2rem 0 0.75rem; text-align: left; }
 .how-text strong { color: var(--text-hi); }
 
+.pixle-dist { text-align:left; margin:0.8rem 0 0.2rem; }
+.pixle-dist h3 { font-size:0.72rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-lo); margin:0 0 0.4rem; }
+.pixle-bar { display:flex; align-items:center; gap:0.4rem; margin:0.18rem 0; font-size:0.75rem; }
+.pixle-bar span { width:12px; color:var(--text-mid); }
+.pixle-bar i { display:block; height:16px; background:#3a3a3c; min-width:8px; border-radius:3px; font-style:normal; font-size:0.68rem; font-weight:700; color:#fff; padding:0 6px; line-height:16px; }
+.pixle-bar i.win { background:#538d4e; }
+body.pixle-cb .pixle-tile.correct::after,
+body.pixle-cb .kb-key.correct::after { content:''; position:absolute; width:6px; height:6px; border-radius:50%; background:#fff; bottom:4px; left:50%; transform:translateX(-50%); }
+body.pixle-cb .pixle-tile.present::after,
+body.pixle-cb .kb-key.present::after { content:''; position:absolute; width:12px; height:2px; background:#fff; bottom:5px; left:50%; transform:translateX(-50%); }
+.kb-key { position:relative; }
+.how-check { display:flex; gap:0.5rem; align-items:center; font-size:0.82rem; color:var(--text-mid); margin:0.35rem 0; }
 @media (max-width: 400px) {
-  .kb-key { height: 46px; min-width: 30px; font-size: 0.72rem; }
-  .kb-key.wide { min-width: 46px; }
+  .pixle-wrap { padding: 0 0.45rem 0.4rem; }
+  .pixle-header { padding: 0.45rem 0 0.35rem; }
+  .pixle-title-block h1 { font-size: 1.15rem; }
+  .pixle-board {
+    margin: 0.4rem auto 0.45rem;
+    max-width: min(320px, calc(100vw - 1.1rem));
+    max-height: calc(100dvh - 16.5rem);
+  }
+  .pixle-keyboard {
+    position: sticky;
+    bottom: 0;
+    padding: 6px 2px max(8px, env(safe-area-inset-bottom));
+    background: var(--bg-void, #09090f);
+    z-index: 4;
+  }
+  .kb-key { height: 42px; min-width: 28px; font-size: 0.7rem; }
+  .kb-key.wide { min-width: 44px; }
 }
 </style>
   <meta property="og:image" content="https://cosmicgameshub.com/images/game-pixle.jpg">
@@ -419,6 +446,7 @@
         <div class="pixle-stat__num" id="stat-played">0</div>
         <div class="pixle-stat__label">Played</div>
       </div>
+      <button class="pixle-help-btn" id="stats-btn" aria-label="Statistics">#</button>
       <button class="pixle-help-btn" id="help-btn" aria-label="How to play">?</button>
     </div>
   </div>
@@ -455,38 +483,12 @@
         <div class="modal-stat__label">Win%</div>
       </div>
     </div>
+    <div class="pixle-dist" id="guess-dist"></div>
     <div class="share-grid" id="share-grid"></div>
-    <button class="share-btn" id="share-btn">📋 Share Result</button>
+    <button class="share-btn" id="share-btn">Share</button>
     <div class="next-timer">Next Pixle in <span id="next-countdown">00:00:00</span></div>
-
-    <!-- Cross-game CTA -->
-    <div style="margin-top:1.1rem;padding-top:1.1rem;border-top:1px solid rgba(255,255,255,0.08);text-align:left;">
-      <div style="font-size:.72rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:.55rem;text-align:center;">Play another puzzle today</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">
-        <a href="/games/gamerdle" style="display:block;padding:.65rem .75rem;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;text-decoration:none;">
-          <div style="font-size:1.05rem;line-height:1;margin-bottom:.2rem;">🎮</div>
-          <div style="font-size:.8rem;font-weight:700;color:#fff;">Gamerdle</div>
-          <div style="font-size:.68rem;color:rgba(255,255,255,0.5);">Mystery video game</div>
-        </a>
-        <a href="/games/word-scramble" style="display:block;padding:.65rem .75rem;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;text-decoration:none;">
-          <div style="font-size:1.05rem;line-height:1;margin-bottom:.2rem;">🔀</div>
-          <div style="font-size:.8rem;font-weight:700;color:#fff;">Word Scramble</div>
-          <div style="font-size:.68rem;color:rgba(255,255,255,0.5);">Unscramble daily</div>
-        </a>
-        <a href="/games/rift" style="display:block;padding:.65rem .75rem;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;text-decoration:none;">
-          <div style="font-size:1.05rem;line-height:1;margin-bottom:.2rem;">🌀</div>
-          <div style="font-size:.8rem;font-weight:700;color:#fff;">Rift</div>
-          <div style="font-size:.68rem;color:rgba(255,255,255,0.5);">3 word zones</div>
-        </a>
-        <a href="/games/daily" style="display:block;padding:.65rem .75rem;background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.25);border-radius:10px;text-decoration:none;">
-          <div style="font-size:1.05rem;line-height:1;margin-bottom:.2rem;">📋</div>
-          <div style="font-size:.8rem;font-weight:700;color:var(--accent);">All 12 daily</div>
-          <div style="font-size:.68rem;color:rgba(255,255,255,0.5);">See your streak</div>
-        </a>
-      </div>
-    </div>
-
-    <button onclick="document.getElementById('result-modal').classList.remove('open')" style="margin-top:0.75rem;background:none;border:1px solid rgba(255,255,255,0.15);color:var(--text-mid);border-radius:8px;padding:0.5rem 1.25rem;cursor:pointer;font-size:0.85rem;width:100%;">✕ Close</button>
+    <div class="cg-daily-dock" data-slug="pixle"></div>
+    <button onclick="document.getElementById('result-modal').classList.remove('open')" style="margin-top:0.75rem;background:none;border:1px solid rgba(255,255,255,0.15);color:var(--text-mid);border-radius:8px;padding:0.5rem 1.25rem;cursor:pointer;font-size:0.85rem;width:100%;">Close</button>
   </div>
 </div>
 
@@ -524,46 +526,23 @@
     </div>
     <p class="how-text"><strong style="color:#818384;">Gray</strong> — letter not in the word.</p>
 
-    <p class="how-text" style="border-top:1px solid var(--border);padding-top:0.75rem;">All answers are gaming terms. Guesses can be <em>any</em> 5-letter word.</p>
+    <p class="how-text" style="border-top:1px solid var(--border);padding-top:0.75rem;">Answers are curated gaming words. Guesses must be real 5-letter English — GQZXV is not in the list.</p>
+    <label class="how-check"><input type="checkbox" id="hard-toggle"> Hard mode (must use revealed hints)</label>
+    <label class="how-check"><input type="checkbox" id="cb-toggle"> Colorblind patterns</label>
     <div style="text-align:center;margin-top:1rem;">
       <button class="share-btn" onclick="document.getElementById('help-modal').classList.remove('open')" style="background:var(--border);color:var(--text-hi);">Got it</button>
     </div>
   </div>
 </div>
 
+<script src="/games/pixle-words.js"></script>
 <script>
 // ═══════════════════════════════════════════════════
 // WORD LISTS
 // ═══════════════════════════════════════════════════
 
-// Daily answer pool — curated gaming 5-letter words
-const ANSWERS = [
-  'SPAWN','QUEST','GRIND','PIXEL','SNIPE','COMBO','SQUAD','PATCH','SCORE',
-  'STAGE','SWORD','MAGIC','SKILL','POWER','RESET','BOOST','BLITZ','DODGE',
-  'PARRY','MELEE','ARMOR','ARENA','LOBBY','PARTY','GUILD','STAFF','SPELL',
-  'WRATH','FLAME','FROST','BLAST','BURST','SURGE','PULSE','STORM','FLARE',
-  'SPEAR','CLOAK','CHAOS','ORDER','LIGHT','NIGHT','FORGE','CRAFT','BUILD',
-  'SMASH','SLASH','CHAIN','ULTRA','FATAL','CURSE','PHASE','SHIFT','EVADE',
-  'BLOCK','SNEAK','FLANK','STACK','CARRY','STOMP','RUNES','SIEGE','MARCH',
-  'RALLY','NEXUS','TOWER','CREEP','TAUNT','MACRO','MICRO','SMURF','TOXIC',
-  'THROW','TROLL','TIMER','SPEED','ELITE','WORLD','REALM','RUINS','VAULT',
-  'CRYPT','SWAMP','GROVE','SPACE','ORBIT','VOXEL','ALPHA','BLADE','BOOTS',
-  'CHARM','RELIC','SHARD','EMBER','DRAKE','BARON','RANGE','QUEUE','FEINT',
-  'MOUNT','FETCH','EQUIP','HAVEN','LUNAR','SOLAR','STARS','OMEGA','CHOKE',
-  'PROXY','DELTA','GLOOM','BIOME','STEPP','SNARE','SCOUT','RADAR','LASER',
-  'GLYPH','LEASH','CREEP','STUNT','TEMPO','PIVOT','COVER','BONUS','LUNGE',
-  'PURGE','BLINK','GRAVE','CHAOS','CYCLE','LIMIT','GUARD','LANCE','BRAVE',
-  'CLASH','LODGE','SWIPE','FLAIR','VALOR','VIGOR','AGILE','HASTE','BLIND',
-  'STUN','RISKY','DREAD','GLARE','BLEED','BURNS','SHOCK','DECAY','DRAIN',
-  'HERTZ','GSYNC','MOUSE','BOARD','CLICK','SWIPE','SHARE',
-  'DAILY','STREAK','GUESS','PIXLE','RIFTS','HALLS','RAPID',
-];
-
-// Remove duplicates and ensure clean list
-const ANSWER_LIST = [...new Set(ANSWERS.filter(w => w.length === 5))];
-
-// Valid guess set — answer list + common 5-letter words (any 5-letter input accepted)
-// We accept any 5-letter alpha string as a valid guess
+const ANSWER_LIST = [...new Set((window.PIXLE_ANSWERS || []).filter(w => w.length === 5))];
+const GUESS_SET = new Set((window.PIXLE_GUESSES || []).concat(ANSWER_LIST));
 
 // ═══════════════════════════════════════════════════
 // WORD HINTS — shown in result modal
@@ -738,8 +717,11 @@ function saveState(state) {
 
 function loadStats() {
   try {
-    return JSON.parse(localStorage.getItem(STATS_KEY)) || { played: 0, wins: 0, streak: 0, maxStreak: 0 };
-  } catch(e) { return { played: 0, wins: 0, streak: 0, maxStreak: 0 }; }
+    var s = JSON.parse(localStorage.getItem(STATS_KEY)) || {};
+    if (!s.guessDist || s.guessDist.length !== 6) s.guessDist = [0,0,0,0,0,0];
+    s.played = s.played || 0; s.wins = s.wins || 0; s.streak = s.streak || 0; s.maxStreak = s.maxStreak || 0;
+    return s;
+  } catch(e) { return { played: 0, wins: 0, streak: 0, maxStreak: 0, guessDist: [0,0,0,0,0,0] }; }
 }
 
 function saveStats(stats) {
@@ -869,6 +851,21 @@ function evaluate(guess, answer) {
 // ═══════════════════════════════════════════════════
 // SUBMIT GUESS
 // ═══════════════════════════════════════════════════
+function hardOk(guess) {
+  if (localStorage.getItem('pixle-hard') !== '1') return true;
+  for (let gi = 0; gi < state.guesses.length; gi++) {
+    const prev = state.guesses[gi];
+    const res = evaluate(prev, ANSWER);
+    for (let i = 0; i < 5; i++) {
+      if (res[i] === 'correct' && guess[i] !== prev[i]) return false;
+    }
+    for (let i = 0; i < 5; i++) {
+      if (res[i] === 'present' && guess.indexOf(prev[i]) < 0) return false;
+    }
+  }
+  return true;
+}
+
 function submitGuess() {
   if (currentInput.length < 5) {
     shakeRow(currentRow);
@@ -877,6 +874,16 @@ function submitGuess() {
   }
 
   const guess = currentInput;
+  if (!GUESS_SET.has(guess)) {
+    shakeRow(currentRow);
+    showToast('Not in list');
+    return;
+  }
+  if (!hardOk(guess)) {
+    shakeRow(currentRow);
+    showToast('Hard mode: use revealed hints');
+    return;
+  }
   const result = evaluate(guess, ANSWER);
   const isWin = result.every(r => r === 'correct');
   const row = rows[currentRow];
@@ -920,6 +927,8 @@ function submitGuess() {
       stats.wins++;
       stats.streak++;
       stats.maxStreak = Math.max(stats.maxStreak, stats.streak);
+      if (!stats.guessDist) stats.guessDist = [0,0,0,0,0,0];
+      stats.guessDist[state.guesses.length - 1]++;
       saveStats(stats);
       updateStatDisplay();
       gameOver = true;
@@ -1008,23 +1017,33 @@ function showResultModal(won) {
   const grid = buildShareGrid();
   const guessLine = won ? `${guessCount}/6` : 'X/6';
   document.getElementById('share-grid').textContent = grid;
+  (function renderDist() {
+    const el = document.getElementById('guess-dist');
+    if (!el) return;
+    const d = stats.guessDist || [0,0,0,0,0,0];
+    const max = Math.max(1, Math.max.apply(null, d));
+    const n = won ? guessCount : 0;
+    el.innerHTML = '<h3>Guess distribution</h3>' + [1,2,3,4,5,6].map(function (i) {
+      const v = d[i-1] || 0;
+      const w = Math.round(v / max * 100);
+      return '<div class="pixle-bar"><span>' + i + '</span><i class="' + (n===i?'win':'') + '" style="width:' + Math.max(8,w) + '%">' + v + '</i></div>';
+    }).join('');
+  })();
 
   document.getElementById('share-btn').onclick = () => {
     const text = `Pixle #${DAY_INDEX} ${guessLine}\nThe Wordle for gamers\n\n${grid}\n\ncosmicgameshub.com/games/pixle`;
-    if (window.CGSfx) {
-      window.CGSfx.play('share');
-      window.CGSfx.shareCard({
+    if (window.CGSfx && window.CGSfx.shareNow) {
+      window.CGSfx.shareNow({
         title: 'Pixle',
         subtitle: '#' + DAY_INDEX + '  ·  ' + guessLine,
         grid: grid,
         lines: [won ? 'Solved' : 'X — ' + ANSWER, 'The Wordle for gamers'],
-        url: 'cosmicgameshub.com/games/pixle'
-      }).then(function (card) {
-        var a = document.createElement('a');
-        a.href = card.url;
-        a.download = 'pixle-' + DAY_INDEX + '.png';
-        a.click();
+        url: 'cosmicgameshub.com/games/pixle',
+        filename: 'pixle-' + DAY_INDEX,
+        text: text
       });
+    } else if (window.CGSfx) {
+      window.CGSfx.play('share');
     }
     if (navigator.clipboard) {
       navigator.clipboard.writeText(text).then(() => showToast('Copied + card saved'));
@@ -1083,6 +1102,45 @@ function updateStatDisplay() {
 document.getElementById('help-btn').addEventListener('click', () => {
   document.getElementById('help-modal').classList.add('open');
 });
+document.getElementById('stats-btn').addEventListener('click', () => {
+  if (gameOver) showResultModal(state.status === 'won');
+  else {
+    document.getElementById('modal-title').textContent = 'Statistics';
+    document.getElementById('modal-answer').textContent = '';
+    document.getElementById('modal-hint').textContent = 'Finish today\'s puzzle to reveal the word.';
+    document.getElementById('modal-streak').textContent = stats.streak;
+    document.getElementById('modal-played').textContent = stats.played;
+    const wp = stats.played > 0 ? Math.round((stats.wins / stats.played) * 100) : 0;
+    document.getElementById('modal-winpct').textContent = wp + '%';
+    document.getElementById('share-grid').textContent = '';
+    var dist = document.getElementById('guess-dist');
+    if (dist) {
+      const d = stats.guessDist || [0,0,0,0,0,0];
+      const max = Math.max(1, Math.max.apply(null, d));
+      dist.innerHTML = '<h3>Guess distribution</h3>' + [1,2,3,4,5,6].map(function (i) {
+        const v = d[i-1] || 0;
+        return '<div class="pixle-bar"><span>' + i + '</span><i style="width:' + Math.max(8, Math.round(v/max*100)) + '%">' + v + '</i></div>';
+      }).join('');
+    }
+    document.getElementById('result-modal').classList.add('open');
+  }
+});
+(function bindToggles() {
+  var h = document.getElementById('hard-toggle');
+  var c = document.getElementById('cb-toggle');
+  if (h) {
+    h.checked = localStorage.getItem('pixle-hard') === '1';
+    h.addEventListener('change', function () { localStorage.setItem('pixle-hard', h.checked ? '1' : '0'); });
+  }
+  if (c) {
+    c.checked = localStorage.getItem('pixle-cb') === '1';
+    document.body.classList.toggle('pixle-cb', c.checked);
+    c.addEventListener('change', function () {
+      localStorage.setItem('pixle-cb', c.checked ? '1' : '0');
+      document.body.classList.toggle('pixle-cb', c.checked);
+    });
+  }
+})();
 
 document.querySelectorAll('.pixle-modal-bg').forEach(bg => {
   bg.addEventListener('click', e => {
@@ -1131,58 +1189,5 @@ document.addEventListener('keydown', function(e) {
 <script src="/games/cg-sfx.js"></script>
 <script src="/games/daily-kit.js" defer></script>
 <script src="/global.js" defer></script>
-
-
-<div class="cg-daily-dock" data-slug="pixle"></div>
 </body>
 </html>
-
-
-<section class="rg-section">
-  <div class="container">
-    <h3 class="rg-heading">More Games</h3>
-    <div class="rg-grid">
-      <a href="/games/gamerdle" class="rg-card">
-        <img src="/images/game-gamerdle.jpg" alt="Gamerdle" loading="lazy" width="200" height="86">
-        <div class="rg-info">
-          <div class="rg-tags"><span class="rg-tag">Daily</span><span class="rg-tag">Word</span></div>
-          <div class="rg-name">Gamerdle</div>
-          <div class="rg-desc">Guess the mystery game in 6 tries</div>
-        </div>
-      </a>
-      <a href="/games/word-scramble" class="rg-card">
-        <img src="/images/game-wordscramble.jpg" alt="Word Scramble" loading="lazy" width="200" height="86">
-        <div class="rg-info">
-          <div class="rg-tags"><span class="rg-tag">Daily</span><span class="rg-tag">Word</span></div>
-          <div class="rg-name">Word Scramble</div>
-          <div class="rg-desc">Unscramble the daily gaming word</div>
-        </div>
-      </a>
-      <a href="/games/rift" class="rg-card">
-        <img src="/images/rift-hero.jpg" alt="RIFT" loading="lazy" width="200" height="86">
-        <div class="rg-info">
-          <div class="rg-tags"><span class="rg-tag">Daily</span><span class="rg-tag">Word</span></div>
-          <div class="rg-name">RIFT</div>
-          <div class="rg-desc">Three daily word zones — chain, grow, decode</div>
-        </div>
-      </a>
-    </div>
-  </div>
-</section>
-<style>
-.rg-section { padding: 2.5rem 0 3rem; border-top: 1px solid var(--border, rgba(255,255,255,0.08)); margin-top: 2rem; }
-.rg-heading { font-size: 0.75rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-lo, #666); margin: 0 0 1.25rem; }
-.rg-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-.rg-card { display: flex; gap: 0.75rem; background: var(--bg-card, #111); border: 1px solid var(--border, rgba(255,255,255,0.08)); border-radius: 10px; padding: 0.75rem; text-decoration: none; color: inherit; transition: border-color 0.15s, transform 0.15s; }
-.rg-card:hover { border-color: var(--accent, #22d3ee); transform: translateY(-2px); }
-.rg-card img { width: 100px; height: 43px; object-fit: cover; border-radius: 6px; flex-shrink: 0; }
-.rg-info { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
-.rg-tags { display: flex; gap: 0.3rem; flex-wrap: wrap; }
-.rg-tag { font-size: 0.65rem; font-weight: 700; color: var(--accent, #22d3ee); background: rgba(34,211,238,0.1); border-radius: 4px; padding: 0.1rem 0.35rem; letter-spacing: 0.04em; }
-.rg-name { font-size: 0.88rem; font-weight: 700; color: var(--text-hi, #fff); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rg-desc { font-size: 0.75rem; color: var(--text-lo, #888); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-@media (max-width: 640px) {
-  .rg-grid { grid-template-columns: 1fr; }
-  .rg-card img { width: 80px; height: 35px; }
-}
-</style>

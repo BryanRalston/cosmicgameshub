@@ -18,3 +18,6 @@
 
 ## DAU product
 `/games/daily` is the front door. One shared day, 12 puzzles, visible progress, streak, next puzzle, share the set.
+
+## NYT bar (flagships)
+See `games/NYT_BAR.md`. Pixle, Mini crossword, Link, Gamerdle are editorial products. Do not RNG a Link set. Do not shrink Pixle answers back to a junk list.
