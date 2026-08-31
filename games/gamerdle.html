@@ -468,26 +468,21 @@ const GAMES = [
 const today = new Date();
 const todayKey = `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
 const dayNum = Math.floor((Date.now() - Date.UTC(2026, 0, 1)) / 86400000);
+/* Constructed queue, not a CSV shuffle.
+   Repeating week: Nintendo / Souls-hard / FPS / RPG / live-service / indie / new-or-multiplayer.
+   No two FromSoft, no two Nintendo, no two tactical-FPS adjacent. */
 const DAILY_TARGETS = [
-  "Minecraft","Fortnite","Elden Ring","The Witcher 3","Red Dead Redemption 2",
-  "Grand Theft Auto V","God of War","The Last of Us","Dark Souls","Bloodborne",
-  "Sekiro","Cyberpunk 2077","Baldur's Gate 3","Hades","Hollow Knight",
-  "Celeste","Stardew Valley","Portal 2","Half-Life 2","Counter-Strike 2",
-  "Overwatch 2","Valorant","Apex Legends","League of Legends","World of Warcraft",
-  "Diablo IV","Halo: Combat Evolved","Halo Infinite","Doom Eternal",
-  "BioShock Infinite","The Elder Scrolls V: Skyrim","Fallout 4","Mass Effect 2",
-  "Resident Evil Village","Silent Hill 2","Super Mario Odyssey",
-  "The Legend of Zelda: Breath of the Wild","The Legend of Zelda: Tears of the Kingdom",
-  "Animal Crossing: New Horizons","Mario Kart 8 Deluxe","Super Smash Bros. Ultimate",
-  "Splatoon 3","Pokemon Scarlet and Violet","Street Fighter 6","Mortal Kombat 11",
-  "Tekken 8","Rocket League","Ghost of Tsushima","Horizon Zero Dawn","Spider-Man",
-  "Final Fantasy VII Remake","Genshin Impact","Destiny 2",
-  "Tom Clancy's Rainbow Six Siege","It Takes Two","Sea of Thieves","Subnautica",
-  "Valheim","Lethal Company","Black Myth: Wukong","Astro Bot","Helldivers 2",
-  "Clair Obscur: Expedition 33","Monster Hunter Wilds","DOOM: The Dark Ages",
-  "Mario Kart World","Elden Ring Nightreign","Undertale","Disco Elysium",
-  "Outer Wilds","Cuphead","Terraria","StarCraft II","Metroid Dread",
-  "Death Stranding","Path of Exile 2","Split Fiction"
+  "Super Mario Odyssey","Elden Ring","Counter-Strike 2","The Witcher 3","Fortnite","Hades","Baldur's Gate 3",
+  "The Legend of Zelda: Breath of the Wild","Dark Souls","Valorant","The Elder Scrolls V: Skyrim","League of Legends","Hollow Knight","Grand Theft Auto V",
+  "The Legend of Zelda: Tears of the Kingdom","Bloodborne","Halo: Combat Evolved","Mass Effect 2","World of Warcraft","Celeste","Red Dead Redemption 2",
+  "Super Smash Bros. Ultimate","Sekiro","Doom Eternal","Cyberpunk 2077","Apex Legends","Stardew Valley","God of War",
+  "Mario Kart 8 Deluxe","Elden Ring Nightreign","Overwatch 2","Fallout 4","Destiny 2","Undertale","The Last of Us",
+  "Animal Crossing: New Horizons","Metal Gear Solid V","Half-Life 2","Final Fantasy VII Remake","Genshin Impact","Disco Elysium","Spider-Man",
+  "Splatoon 3","Black Myth: Wukong","Halo Infinite","Diablo IV","Tom Clancy's Rainbow Six Siege","Outer Wilds","Ghost of Tsushima",
+  "Metroid Dread","Path of Exile 2","Portal 2","Pokemon Scarlet and Violet","Minecraft","Cuphead","Horizon Zero Dawn",
+  "Astro Bot","Clair Obscur: Expedition 33","BioShock Infinite","Street Fighter 6","Rocket League","Terraria","It Takes Two",
+  "Mario Kart World","Monster Hunter Wilds","DOOM: The Dark Ages","Tekken 8","Helldivers 2","Dead Cells","Split Fiction",
+  "Kirby and the Forgotten Land","Silent Hill 2","Resident Evil Village","Mortal Kombat 11","Sea of Thieves","Valheim","Death Stranding"
 ];
 const targetName = DAILY_TARGETS[Math.abs(dayNum) % DAILY_TARGETS.length];
 const TARGET = GAMES.find(g => g.name === targetName) || GAMES[Math.abs(dayNum) % GAMES.length];

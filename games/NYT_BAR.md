@@ -54,6 +54,9 @@ Not for BRIX, Beat Lab, Asteroid, Void, Aim. Those are a different sport.
 - Gaming terms only. Pasta / clouds / rainbow stay quarantined
 - Bank large enough that it does not loop every two weeks
 
+## Validator
+`node games/validate-nyt.js` must pass before a flagship commit. It checks Pixle answer shape, Mini 5×5 checking, and Link uniqueness.
+
 ## Desk
 - `/games/daily` is a games desk, not an arcade banner
 - Twelve slots. Link replaced Word Scramble on the desk; scramble remains an anytime on `/games`
