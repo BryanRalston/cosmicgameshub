@@ -1146,88 +1146,11 @@ const GROW_SEEDS = [
   'TAP','URN','VAN','WAX','WEB','ZAP','ODD','ILL','AID','OWE'
 ];
 
-// DECODE sets — 20 distinct
+// DECODE sets — gaming only (pasta/clouds/rainbow filler removed)
 const DECODE_PUZZLES = [
   {
-    connection: 'FIRE',
-    hint: 'Each word follows FIRE',
-    clues: [
-      { text: 'Explosions and sparkle in the sky', answer: 'WORKS' },
-      { text: 'Where flames burn in a home wall', answer: 'PLACE' },
-      { text: 'Just next to the flames', answer: 'SIDE' },
-      { text: 'You carry it for protection', answer: 'ARM' },
-      { text: 'Flicker in the dark, not a candle brand', answer: 'LIGHT' },
-      { text: 'One who fights blazes for a living', answer: 'MAN' },
-      { text: 'The big red vehicle with a siren', answer: 'TRUCK' },
-    ]
-  },
-  {
-    connection: 'BALL',
-    hint: 'Each word precedes BALL',
-    clues: [
-      { text: 'Eleven players, goalposts, and a pitch', answer: 'FOOT' },
-      { text: 'Nine innings, a diamond, and a pitcher', answer: 'BASE' },
-      { text: 'Hoops and a 10-foot rim', answer: 'BASKET' },
-      { text: 'Net in the middle, sets and spikes', answer: 'VOLLEY' },
-      { text: 'Like baseball but pitched underhand', answer: 'SOFT' },
-      { text: 'Fired from artillery', answer: 'CANNON' },
-      { text: 'Cold white sphere you throw in winter', answer: 'SNOW' },
-    ]
-  },
-  {
-    connection: 'TYPES OF CLOUD',
-    hint: 'All are types of cloud',
-    clues: [
-      { text: 'Thin, wispy, high-altitude streaks', answer: 'CIRRUS' },
-      { text: 'Flat, layered, covers the sky like a blanket', answer: 'STRATUS' },
-      { text: 'Puffy white cotton balls', answer: 'CUMULUS' },
-      { text: 'The massive storm tower', answer: 'CUMULONIMBUS' },
-      { text: 'Rain-bearing layer cloud', answer: 'NIMBOSTRATUS' },
-      { text: 'Mid-level, often gray patches', answer: 'ALTOCUMULUS' },
-      { text: 'Thin, layered at mid altitude', answer: 'ALTOSTRATUS' },
-    ]
-  },
-  {
-    connection: 'GAME',
-    hint: 'Each word precedes GAME',
-    clues: [
-      { text: 'Played on a table with paddles and a tiny ball', answer: 'TABLE' },
-      { text: 'Where players compete outdoors in sports', answer: 'BALL' },
-      { text: 'A big-stakes match or the final contest', answer: 'BIG' },
-      { text: 'What you call a rigged contest', answer: 'FAIR' },
-      { text: 'Classic hunting target animal category', answer: 'WILD' },
-      { text: 'Hosted at home for friends', answer: 'HOME' },
-      { text: 'No rules, anything goes', answer: 'FREE' },
-    ]
-  },
-  {
-    connection: 'CHESS PIECES',
-    hint: 'All are chess pieces',
-    clues: [
-      { text: 'Moves diagonally only, one color', answer: 'BISHOP' },
-      { text: 'Jumps over others in an L-shape', answer: 'KNIGHT' },
-      { text: 'Most powerful piece on the board', answer: 'QUEEN' },
-      { text: 'The piece you must protect at all costs', answer: 'KING' },
-      { text: 'Stands on the corners at the start', answer: 'ROOK' },
-      { text: 'The front row soldiers', answer: 'PAWN' },
-      { text: 'Can move any number of squares in a line', answer: 'ROOK' },
-    ]
-  },
-  {
-    connection: 'THINGS IN SPACE',
-    hint: 'All are things found in space',
-    clues: [
-      { text: 'Streaks across the sky and grants wishes', answer: 'METEOR' },
-      { text: 'Rocky body orbiting the sun, not a planet', answer: 'ASTEROID' },
-      { text: 'Dirty snowball with a glowing tail', answer: 'COMET' },
-      { text: 'Our galaxy type — a spinning arm structure', answer: 'SPIRAL' },
-      { text: 'Where gravity is so strong light cannot escape', answer: 'BLACKHOLE' },
-      { text: 'The dense remnant after a star explodes', answer: 'NEUTRON' },
-      { text: 'Giant cloud of gas and dust where stars form', answer: 'NEBULA' },
-    ]
-  },
-  {
     connection: 'POKEMON TYPES',
+    gaming: true,
     hint: 'All are Pokémon battle types',
     clues: [
       { text: 'Pikachu\'s element', answer: 'ELECTRIC' },
@@ -1237,175 +1160,6 @@ const DECODE_PUZZLES = [
       { text: 'Ghost Pokémon are this type too', answer: 'DARK' },
       { text: 'Jigglypuff and Clefairy share this', answer: 'NORMAL' },
       { text: 'Legendary type, hard to find', answer: 'PSYCHIC' },
-    ]
-  },
-  {
-    connection: 'PLANETS',
-    hint: 'All are planets in our solar system',
-    clues: [
-      { text: 'Closest to the sun, no moons', answer: 'MERCURY' },
-      { text: 'Hottest planet, covered in clouds', answer: 'VENUS' },
-      { text: 'The red planet', answer: 'MARS' },
-      { text: 'Largest planet, has a giant storm', answer: 'JUPITER' },
-      { text: 'Has iconic rings', answer: 'SATURN' },
-      { text: 'Rotates on its side', answer: 'URANUS' },
-      { text: 'Furthest from the sun, deep blue', answer: 'NEPTUNE' },
-    ]
-  },
-  {
-    connection: 'MUSICAL INSTRUMENTS',
-    hint: 'All are musical instruments',
-    clues: [
-      { text: 'You blow into it and press valves — brass', answer: 'TRUMPET' },
-      { text: 'Six strings and a fretboard', answer: 'GUITAR' },
-      { text: 'Eighty-eight keys, black and white', answer: 'PIANO' },
-      { text: 'You hit it with sticks in a kit', answer: 'DRUMS' },
-      { text: 'Bowed string instrument, under violin', answer: 'VIOLA' },
-      { text: 'Reed instrument, often jazz', answer: 'SAXOPHONE' },
-      { text: 'Large stringed instrument, played upright', answer: 'CELLO' },
-    ]
-  },
-  {
-    connection: 'WORDS BEFORE LIGHT',
-    hint: 'Each word precedes LIGHT',
-    clues: [
-      { text: 'What the sun provides at noon', answer: 'DAY' },
-      { text: 'Illumination from above the clouds', answer: 'SKY' },
-      { text: 'Comes before dawn', answer: 'MOON' },
-      { text: 'A car\'s front lamp', answer: 'HEAD' },
-      { text: 'What traffic uses to signal', answer: 'STOP' },
-      { text: 'Romantic dinner lamp style', answer: 'CANDLE' },
-      { text: 'Flash from the storm', answer: 'FLASH' },
-    ]
-  },
-  {
-    connection: 'CARD SUITS',
-    hint: 'Broader card and board game connection',
-    clues: [
-      { text: 'Highest-value suit in many games', answer: 'SPADES' },
-      { text: 'Red suit with a leaf shape', answer: 'CLUBS' },
-      { text: 'Red suit shaped like a gem', answer: 'DIAMONDS' },
-      { text: 'Red suit, love symbol', answer: 'HEARTS' },
-      { text: 'The joker card has no...' , answer: 'SUIT' },
-      { text: 'What a flush all share in poker', answer: 'SUIT' },
-      { text: 'Bridge players bid on these four', answer: 'SUIT' },
-    ]
-  },
-  {
-    connection: 'PROGRAMMING LANGUAGES',
-    hint: 'All are programming languages',
-    clues: [
-      { text: 'Snake mascot, very beginner-friendly', answer: 'PYTHON' },
-      { text: 'Runs in every browser natively', answer: 'JAVASCRIPT' },
-      { text: 'Coffee cup logo, write once run anywhere', answer: 'JAVA' },
-      { text: 'Low-level, close to the machine', answer: 'C' },
-      { text: 'Microsoft language, often enterprise', answer: 'CSHARP' },
-      { text: 'Apple\'s modern language, replaces Objective-C', answer: 'SWIFT' },
-      { text: 'Mozilla\'s memory-safe systems language', answer: 'RUST' },
-    ]
-  },
-  {
-    connection: 'TYPES OF PASTA',
-    hint: 'All are types of pasta',
-    clues: [
-      { text: 'Long, thin, classic Italian strand', answer: 'SPAGHETTI' },
-      { text: 'Tube-shaped, often baked with meat', answer: 'PENNE' },
-      { text: 'Bow-tie shape', answer: 'FARFALLE' },
-      { text: 'Corkscrew spiral', answer: 'FUSILLI' },
-      { text: 'Wide flat ribbons', answer: 'FETTUCCINE' },
-      { text: 'Tiny rice-shaped pasta', answer: 'ORZO' },
-      { text: 'Sheet-layered baked dish', answer: 'LASAGNE' },
-    ]
-  },
-  {
-    connection: 'WORDS AFTER SNOW',
-    hint: 'Each word follows SNOW',
-    clues: [
-      { text: 'White flake that falls from the sky', answer: 'FLAKE' },
-      { text: 'You pack and roll it in the yard', answer: 'BALL' },
-      { text: 'Built with a carrot nose', answer: 'MAN' },
-      { text: 'A sudden cold slide down a mountain', answer: 'SLIDE' },
-      { text: 'Strapped to your feet for winter terrain', answer: 'BOARD' },
-      { text: 'Clears the driveway after a storm', answer: 'PLOW' },
-      { text: 'A miniature winter scene in a glass sphere', answer: 'GLOBE' },
-    ]
-  },
-  {
-    connection: 'TYPES OF STAR',
-    hint: 'All are types of star',
-    clues: [
-      { text: 'Our sun is this common, stable type', answer: 'DWARF' },
-      { text: 'Cooler, expanded old star — reddish', answer: 'GIANT' },
-      { text: 'Tiny, ultra-dense spinning remnant', answer: 'NEUTRON' },
-      { text: 'Hot, very luminous and blue', answer: 'SUPERGIANT' },
-      { text: 'Star that pulsates in brightness', answer: 'VARIABLE' },
-      { text: 'Two stars orbiting each other', answer: 'BINARY' },
-      { text: 'Explodes in a massive supernova', answer: 'MASSIVE' },
-    ]
-  },
-  {
-    connection: 'WORDS BEFORE HOUSE',
-    hint: 'Each word precedes HOUSE',
-    clues: [
-      { text: 'Where the sick go for treatment', answer: 'POWER' },
-      { text: 'For your car', answer: 'CAR' },
-      { text: 'Trees and glass, growing plants inside', answer: 'GREEN' },
-      { text: 'Haunted — spooky attraction', answer: 'HAUNTED' },
-      { text: 'Restaurant-style premises', answer: 'STEAK' },
-      { text: 'A tiny home for dolls', answer: 'DOLL' },
-      { text: 'Storage for farm equipment', answer: 'WARE' },
-    ]
-  },
-  {
-    connection: 'OCEAN CREATURES',
-    hint: 'All live in the ocean',
-    clues: [
-      { text: 'Has eight arms and sprays ink', answer: 'OCTOPUS' },
-      { text: 'Largest mammal on Earth', answer: 'WHALE' },
-      { text: 'Bioluminescent, no brain or heart', answer: 'JELLYFISH' },
-      { text: 'Spiny bottom-dweller, edible roe', answer: 'SEAURCHIN' },
-      { text: 'Apex predator with rows of teeth', answer: 'SHARK' },
-      { text: 'Horse-shaped fish that swims upright', answer: 'SEAHORSE' },
-      { text: 'Star-shaped, can regenerate arms', answer: 'STARFISH' },
-    ]
-  },
-  {
-    connection: 'BOARD GAME BRANDS',
-    hint: 'All are classic board games',
-    clues: [
-      { text: 'Buy properties, build hotels, go broke', answer: 'MONOPOLY' },
-      { text: 'Black and white 64-square strategy', answer: 'CHESS' },
-      { text: 'Guess who did it, where, with what', answer: 'CLUEDO' },
-      { text: 'Tile-laying word scoring game', answer: 'SCRABBLE' },
-      { text: 'Risk everything to conquer the world', answer: 'RISK' },
-      { text: 'Connect four in a row', answer: 'CONNECT4' },
-      { text: 'Snakes and ladders cousin, luck-only', answer: 'SORRY' },
-    ]
-  },
-  {
-    connection: 'COLORS OF THE RAINBOW',
-    hint: 'All are rainbow colors (ROYGBIV)',
-    clues: [
-      { text: 'First color, warmest', answer: 'RED' },
-      { text: 'Second color, citrus fruit shade', answer: 'ORANGE' },
-      { text: 'Third, sunflower and caution', answer: 'YELLOW' },
-      { text: 'Fourth, nature and go', answer: 'GREEN' },
-      { text: 'Fifth, sky and ocean', answer: 'BLUE' },
-      { text: 'Sixth, between blue and violet', answer: 'INDIGO' },
-      { text: 'Seventh, last in the arc', answer: 'VIOLET' },
-    ]
-  },
-  {
-    connection: 'WORDS AFTER BLACK',
-    hint: 'Each word follows BLACK',
-    clues: [
-      { text: 'Board used to write on with chalk', answer: 'BOARD' },
-      { text: 'What a pirate flies', answer: 'FLAG' },
-      { text: 'Recorded audio device in a plane', answer: 'BOX' },
-      { text: 'What a smith works with hot metal', answer: 'SMITH' },
-      { text: 'To extinguish all lights in wartime', answer: 'OUT' },
-      { text: 'A dark Friday in shopping', answer: 'FRIDAY' },
-      { text: 'Small wild fruit — bramble berry', answer: 'BERRY' },
     ]
   },
   {
@@ -1575,7 +1329,7 @@ const DECODE_PUZZLES = [
       { text: 'Cloud, a 2017 shooter with jetpacks', answer: 'CLOUD' },
       { text: 'Harvest, farming at night', answer: 'HARVEST' },
     ]
-  },
+  }
 ];
 
 // ── GAME STATE ───────────────────────────────────────────────
@@ -1590,7 +1344,8 @@ function getPuzzleIndex() {
 
 function decodePool() {
   var g = DECODE_PUZZLES.filter(function (p) { return p.gaming; });
-  return g.length ? g : DECODE_PUZZLES;
+  if (!g.length) throw new Error('RIFT Decode: gaming pool empty');
+  return g;
 }
 function getDecodeIndex() {
   return DAY_INDEX % decodePool().length;
