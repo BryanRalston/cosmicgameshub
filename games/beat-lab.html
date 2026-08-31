@@ -581,7 +581,10 @@ canvas#gameCanvas {
     <h3>HIGH SCORES</h3>
     <div id="score-list"></div>
   </div>
-  <div class="title-footer">CosmicGamesHub.com</div>
+  <div class="title-footer">
+    <button type="button" id="btnMute" style="margin:.6rem auto 0;display:block;background:transparent;border:1px solid rgba(255,255,255,.2);color:#ccc;border-radius:8px;padding:.4rem .9rem;cursor:pointer;font-family:inherit;">Mute audio</button>
+    CosmicGamesHub.com
+  </div>
 </div>
 
 <!-- Countdown Overlay -->
@@ -647,6 +650,7 @@ document.addEventListener('touchstart', function(e) {
 var AudioEngine = (function() {
   var ctx = null;
   var unlocked = false;
+  var muted = false;
 
   function getCtx() {
     if (!ctx) {
@@ -670,6 +674,7 @@ var AudioEngine = (function() {
   }
 
   function playKick() {
+    if (muted) return;
     var ac = getCtx();
     var t = ac.currentTime;
     var osc = ac.createOscillator();
@@ -751,6 +756,7 @@ var AudioEngine = (function() {
   }
 
   function playKickAt(time) {
+    if (muted) return;
     var ac = getCtx();
     var t = time;
     var osc = ac.createOscillator();
@@ -774,6 +780,7 @@ var AudioEngine = (function() {
   }
 
   function playChimeAt(time) {
+    if (muted) return;
     var ac = getCtx();
     var t = time;
     var osc1 = ac.createOscillator();
@@ -789,6 +796,7 @@ var AudioEngine = (function() {
   }
 
   function playSnareAt(time) {
+    if (muted) return;
     var ac = getCtx();
     var t = time;
     var bufSize = Math.floor(ac.sampleRate * 0.08);
@@ -807,6 +815,7 @@ var AudioEngine = (function() {
   }
 
   function playBassAt(time) {
+    if (muted) return;
     var ac = getCtx();
     var t = time;
     var osc = ac.createOscillator();
@@ -825,9 +834,10 @@ var AudioEngine = (function() {
 
   var laneSounds = [playKick, playChime, playSnare, playBass];
 
-  function playLane(lane) { laneSounds[lane](); }
+  function playLane(lane) { if (muted) return; laneSounds[lane](); }
 
   function playMiss() {
+    if (muted) return;
     var ac = getCtx();
     var t = ac.currentTime;
     var osc = ac.createOscillator();
@@ -843,6 +853,7 @@ var AudioEngine = (function() {
   }
 
   function playComboMilestone(level) {
+    if (muted) return;
     var ac = getCtx();
     var t = ac.currentTime;
     var freqs = [523, 659, 784, 1047];
@@ -864,6 +875,7 @@ var AudioEngine = (function() {
   }
 
   function playGameOver() {
+    if (muted) return;
     var ac = getCtx();
     var t = ac.currentTime;
     var osc = ac.createOscillator();
@@ -884,6 +896,7 @@ var AudioEngine = (function() {
   }
 
   function playCountTick(pitch) {
+    if (muted) return;
     var ac = getCtx();
     var t = ac.currentTime;
     var osc = ac.createOscillator();
@@ -899,6 +912,7 @@ var AudioEngine = (function() {
   }
 
   function playComplete() {
+    if (muted) return;
     var ac = getCtx();
     var t = ac.currentTime;
     var notes = [523, 659, 784, 1047, 1319];
@@ -926,7 +940,9 @@ var AudioEngine = (function() {
     playGameOver: playGameOver,
     playCountTick: playCountTick,
     playComplete: playComplete,
-    getCtx: getCtx
+    getCtx: getCtx,
+    setMuted: function (v) { muted = !!v; },
+    isMuted: function () { return muted; }
   };
 })();
 
@@ -978,7 +994,7 @@ function generateSong(difficulty) {
     var beatInterval = 60 / bpm;
     var time;
     if (i === 0) {
-      time = 2.0;
+      time = 0.85;
     } else {
       time = notes[notes.length - 1].time + beatInterval * (0.8 + Math.random() * 0.4);
     }
@@ -1189,6 +1205,11 @@ var isProPlayer = false;
 var PRO_PLAYERS = ['Shadow', 'Ghost', 'Neon', 'Storm'];
 
 var titleH1 = document.querySelector('#title-screen h1');
+var muteBtn = document.getElementById('btnMute');
+if (muteBtn) muteBtn.addEventListener('click', function () {
+  AudioEngine.setMuted(!AudioEngine.isMuted());
+  muteBtn.textContent = AudioEngine.isMuted() ? 'Audio muted' : 'Mute audio';
+});
 titleH1.addEventListener('click', function() {
   if (proModeUnlocked) return;
   titleTapCount++;
@@ -1340,9 +1361,9 @@ function startGame() {
   G.maxMisses = G.difficulty === 'impossible' ? 30 : 20;
 
   if (G.difficulty === 'easy') {
-    PERFECT_WINDOW = 0.12;
-    GOOD_WINDOW = 0.22;
-    MISS_WINDOW = 0.36;
+    PERFECT_WINDOW = 0.14;
+    GOOD_WINDOW = 0.28;
+    MISS_WINDOW = 0.42;
   } else if (G.difficulty === 'medium') {
     PERFECT_WINDOW = 0.08;
     GOOD_WINDOW = 0.16;
@@ -1417,6 +1438,7 @@ function hitLane(laneIndex) {
   bestNote.hit = true;
   bestNote.judged = true;
   AudioEngine.playLane(laneIndex);
+  try { if (navigator.vibrate) navigator.vibrate(12); } catch (e) {}
 
   if (bestDiff <= PERFECT_WINDOW) {
     var mult = getMultiplier();
