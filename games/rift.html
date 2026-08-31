@@ -299,6 +299,13 @@
       color: var(--text-lo);
       text-align: center;
     }
+    .grow-err {
+      font-size: 0.85rem;
+      color: var(--red);
+      text-align: center;
+      margin: -0.35rem 0 0.65rem;
+      min-height: 1.1em;
+    }
 
     /* ── DECODE zone ── */
     .decode-progress {
@@ -757,7 +764,7 @@
                maxlength="6" placeholder="next word…"
                autocomplete="off" autocorrect="off" spellcheck="false"
                onkeydown="if(event.key==='Enter')submitChain()"/>
-        <button type="button" class="btn btn-zone1" id="chainSubmitBtn">Submit</button>
+        <button type="button" class="btn btn-zone1" id="chainSubmitBtn" onclick="submitChain()">Submit</button>
       </div>
       <div id="chainDone" style="display:none;">
         <div class="done-banner show" id="chainDoneBanner"></div>
@@ -789,8 +796,9 @@
                autocomplete="off" autocorrect="off" spellcheck="false"
                style="text-transform:uppercase;font-family:'JetBrains Mono',monospace;font-weight:700;letter-spacing:0.1em;"
                onkeydown="if(event.key==='Enter')submitGrow()"/>
-        <button type="button" class="btn btn-zone2" id="growSubmitBtn">Submit</button>
+        <button type="button" class="btn btn-zone2" id="growSubmitBtn" onclick="submitGrow()">Submit</button>
       </div>
+      <div class="grow-err" id="growErr" hidden></div>
       <div class="grow-hint" id="growHint">Type a word that contains <strong id="growHintWord">—</strong> with one extra letter inserted anywhere</div>
 
       <div id="growDone" style="display:none;">
@@ -832,7 +840,7 @@
                  placeholder="Type your guess…"
                  autocomplete="off"
                  onkeydown="if(event.key==='Enter')submitDecode()"/>
-          <button type="button" class="btn btn-zone3" id="decodeSubmitBtn">Guess</button>
+          <button type="button" class="btn btn-zone3" id="decodeSubmitBtn" onclick="submitDecode()">Guess</button>
         </div>
         <div class="decode-guesses-log" id="decodeGuessLog"></div>
       </div>
@@ -2999,9 +3007,8 @@ function submitChain() {
   const p = CHAIN_PUZZLES[getPuzzleIndex()];
   const input = document.getElementById('chainInput');
   const raw = input.value.trim().toUpperCase();
-  input.value = '';
-
   if (!raw) { showToast('Type a word first', 'error'); return; }
+  input.value = '';
 
   const currentWord = STATE.chainSteps.length > 0 ? STATE.chainSteps[STATE.chainSteps.length-1] : p.start;
   const expectedLen = p.start.length;
@@ -3108,47 +3115,60 @@ function isOneLetterInserted(shorter, longer) {
   return false;
 }
 
-function submitGrow() {
-  if (STATE.growDone) return;
+function growFail(msg) {
+  const err = document.getElementById('growErr');
+  if (err) { err.hidden = false; err.textContent = msg; }
+  showToast(msg, 'error');
   const input = document.getElementById('growInput');
-  const raw = input.value.trim().toUpperCase();
-  input.value = '';
-  if (!raw) { showToast('Type a word first', 'error'); return; }
-
-  const current = STATE.growWords[STATE.growWords.length - 1].toUpperCase();
-
-  if (raw.length !== current.length + 1) {
-    showToast(`Must be ${current.length + 1} letters (insert one letter)`, 'error');
+  if (input) {
     input.classList.add('shake');
     setTimeout(() => input.classList.remove('shake'), 450);
-    return;
   }
+}
 
-  if (!isOneLetterInserted(current, raw)) {
-    showToast('Must be ' + current + ' with exactly one letter inserted', 'error');
-    input.classList.add('shake');
-    setTimeout(() => input.classList.remove('shake'), 450);
-    return;
+function submitGrow() {
+  try {
+    if (STATE.growDone) { growFail('Zone already complete — continue to Decode'); return; }
+    const input = document.getElementById('growInput');
+    if (!input) return;
+    const raw = input.value.trim().toUpperCase();
+    if (!raw) { growFail('Type a word first'); return; }
+
+    const current = (STATE.growWords[STATE.growWords.length - 1] || '').toUpperCase();
+
+    if (raw.length !== current.length + 1) {
+      growFail('Must be ' + (current.length + 1) + ' letters — insert one letter into ' + current);
+      return;
+    }
+
+    if (!isOneLetterInserted(current, raw)) {
+      growFail('Must be ' + current + ' with exactly one letter inserted');
+      return;
+    }
+
+    if (!isValidWord(raw)) {
+      growFail(raw + ' is not in the word list');
+      return;
+    }
+
+    if (STATE.growWords.map(w=>w.toUpperCase()).includes(raw)) {
+      growFail('Already used that word');
+      return;
+    }
+
+    const err = document.getElementById('growErr');
+    if (err) { err.hidden = true; err.textContent = ''; }
+    input.value = '';
+    STATE.growWords.push(raw);
+    updateGrowDisplay();
+    saveState(STATE);
+    showToast('+1 extension!', 'success');
+    checkGrowStopButton();
+    input.focus();
+  } catch (e) {
+    growFail('Submit failed — hard-refresh and try again');
+    console.error(e);
   }
-
-  if (!isValidWord(raw)) {
-    showToast('Not a valid word', 'error');
-    input.classList.add('shake');
-    setTimeout(() => input.classList.remove('shake'), 450);
-    return;
-  }
-
-  if (STATE.growWords.map(w=>w.toUpperCase()).includes(raw)) {
-    showToast('Already used that word', 'error');
-    return;
-  }
-
-  STATE.growWords.push(raw);
-  updateGrowDisplay();
-  saveState(STATE);
-  showToast('+1 extension!', 'success');
-  checkGrowStopButton();
-  input.focus();
 }
 
 function finishGrow() {
@@ -3559,9 +3579,9 @@ function init() {
   document.getElementById('statPlayed').textContent = meta.played || 0;
 
   // Initialize all zones
-  initChain();
-  initGrow();
-  initDecode();
+  try { initChain(); } catch (e) { console.error(e); }
+  try { initGrow(); } catch (e) { console.error(e); }
+  try { initDecode(); } catch (e) { console.error(e); }
 
   // Restore zone
   if (STATE.zone >= 3) {
@@ -3572,10 +3592,6 @@ function init() {
 
   // If grow already has extensions, show stop button
   checkGrowStopButton();
-
-  document.getElementById('chainSubmitBtn')?.addEventListener('click', submitChain);
-  document.getElementById('growSubmitBtn')?.addEventListener('click', submitGrow);
-  document.getElementById('decodeSubmitBtn')?.addEventListener('click', submitDecode);
 }
 
 init();
