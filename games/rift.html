@@ -425,7 +425,7 @@
     /* ── Toast ── */
     .toast {
       position: fixed;
-      bottom: 2rem;
+      bottom: max(1.25rem, calc(env(safe-area-inset-bottom, 0px) + 1rem));
       left: 50%;
       transform: translateX(-50%) translateY(10px);
       background: var(--bg-raised);
@@ -757,7 +757,7 @@
                maxlength="6" placeholder="next word…"
                autocomplete="off" autocorrect="off" spellcheck="false"
                onkeydown="if(event.key==='Enter')submitChain()"/>
-        <button class="btn btn-zone1" onclick="submitChain()">Submit</button>
+        <button type="button" class="btn btn-zone1" id="chainSubmitBtn">Submit</button>
       </div>
       <div id="chainDone" style="display:none;">
         <div class="done-banner show" id="chainDoneBanner"></div>
@@ -789,7 +789,7 @@
                autocomplete="off" autocorrect="off" spellcheck="false"
                style="text-transform:uppercase;font-family:'JetBrains Mono',monospace;font-weight:700;letter-spacing:0.1em;"
                onkeydown="if(event.key==='Enter')submitGrow()"/>
-        <button class="btn btn-zone2" onclick="submitGrow()">Submit</button>
+        <button type="button" class="btn btn-zone2" id="growSubmitBtn">Submit</button>
       </div>
       <div class="grow-hint" id="growHint">Type a word that contains <strong id="growHintWord">—</strong> with one extra letter inserted anywhere</div>
 
@@ -832,7 +832,7 @@
                  placeholder="Type your guess…"
                  autocomplete="off"
                  onkeydown="if(event.key==='Enter')submitDecode()"/>
-          <button class="btn btn-zone3" onclick="submitDecode()">Guess</button>
+          <button type="button" class="btn btn-zone3" id="decodeSubmitBtn">Guess</button>
         </div>
         <div class="decode-guesses-log" id="decodeGuessLog"></div>
       </div>
@@ -3001,7 +3001,7 @@ function submitChain() {
   const raw = input.value.trim().toUpperCase();
   input.value = '';
 
-  if (!raw) return;
+  if (!raw) { showToast('Type a word first', 'error'); return; }
 
   const currentWord = STATE.chainSteps.length > 0 ? STATE.chainSteps[STATE.chainSteps.length-1] : p.start;
   const expectedLen = p.start.length;
@@ -3113,7 +3113,7 @@ function submitGrow() {
   const input = document.getElementById('growInput');
   const raw = input.value.trim().toUpperCase();
   input.value = '';
-  if (!raw) return;
+  if (!raw) { showToast('Type a word first', 'error'); return; }
 
   const current = STATE.growWords[STATE.growWords.length - 1].toUpperCase();
 
@@ -3147,6 +3147,7 @@ function submitGrow() {
   updateGrowDisplay();
   saveState(STATE);
   showToast('+1 extension!', 'success');
+  checkGrowStopButton();
   input.focus();
 }
 
@@ -3276,7 +3277,7 @@ function submitDecode() {
   const input = document.getElementById('decodeInput');
   const raw = input.value.trim().toUpperCase();
   input.value = '';
-  if (!raw) return;
+  if (!raw) { showToast('Type a guess first', 'error'); return; }
 
   const correct = dp.connection.toUpperCase();
 
@@ -3549,13 +3550,6 @@ function checkGrowStopButton() {
   }
 }
 
-// Patch submitGrow to call this
-const _origSubmitGrow = submitGrow;
-function submitGrow() {
-  _origSubmitGrow();
-  checkGrowStopButton();
-}
-
 // ── INIT ─────────────────────────────────────────────────────
 
 function init() {
@@ -3578,6 +3572,10 @@ function init() {
 
   // If grow already has extensions, show stop button
   checkGrowStopButton();
+
+  document.getElementById('chainSubmitBtn')?.addEventListener('click', submitChain);
+  document.getElementById('growSubmitBtn')?.addEventListener('click', submitGrow);
+  document.getElementById('decodeSubmitBtn')?.addEventListener('click', submitDecode);
 }
 
 init();
