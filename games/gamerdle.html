@@ -591,19 +591,42 @@ function buildRow(g, cmp, rowIdx) {
 const guessedNames = new Set(guesses.map(g => g.name.toLowerCase()));
 let acFocused = -1;
 
-document.getElementById('guessInput').addEventListener('input', function() {
-  const q = this.value.trim().toLowerCase();
+function renderAutocomplete(q) {
   const list = document.getElementById('acList');
   acFocused = -1;
-  if (!q) { list.style.display = 'none'; return; }
+  if (!q) { list.style.display = 'none'; list._matches = []; return; }
   const matches = GAMES.filter(g => g.name.toLowerCase().includes(q) && !guessedNames.has(g.name.toLowerCase())).slice(0, 8);
-  if (!matches.length) { list.style.display = 'none'; return; }
-  list.innerHTML = matches.map((g,i) => `<div class="autocomplete-item" data-idx="${i}" onclick="selectGame('${g.name.replace(/'/g,"\\'")}')">
-    ${g.name.replace(new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'), m => `<em>${m}</em>`)}
-    <span style="float:right;font-size:0.7rem;color:var(--text-lo);">${g.year}</span>
-  </div>`).join('');
-  list.style.display = 'block';
   list._matches = matches;
+  if (!matches.length) { list.style.display = 'none'; return; }
+  list.innerHTML = matches.map((g, i) => {
+    const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+    const label = g.name.replace(re, m => `<em>${m}</em>`);
+    return `<div class="autocomplete-item" data-idx="${i}" data-name="${g.name.replace(/"/g, '&quot;')}">${label}<span style="float:right;font-size:0.7rem;color:var(--text-lo);">${g.year}</span></div>`;
+  }).join('');
+  list.style.display = 'block';
+  list.querySelectorAll('.autocomplete-item').forEach(el => {
+    el.addEventListener('mousedown', function (ev) {
+      ev.preventDefault();
+      selectGame(this.getAttribute('data-name'));
+    });
+  });
+}
+
+function resolveGuess(val) {
+  const q = (val || '').trim().toLowerCase();
+  if (!q) return null;
+  const exact = GAMES.find(g => g.name.toLowerCase() === q);
+  if (exact) return exact;
+  const list = document.getElementById('acList');
+  const matches = (list && list._matches) ? list._matches : GAMES.filter(g => g.name.toLowerCase().includes(q) && !guessedNames.has(g.name.toLowerCase()));
+  const prefix = matches.filter(g => g.name.toLowerCase().startsWith(q));
+  if (prefix.length === 1) return prefix[0];
+  if (matches.length === 1) return matches[0];
+  return null;
+}
+
+document.getElementById('guessInput').addEventListener('input', function() {
+  renderAutocomplete(this.value.trim().toLowerCase());
 });
 
 document.getElementById('guessInput').addEventListener('keydown', function(e) {
@@ -612,9 +635,14 @@ document.getElementById('guessInput').addEventListener('keydown', function(e) {
   if (e.key === 'ArrowDown') { acFocused = Math.min(acFocused+1, items.length-1); items.forEach((el,i)=>el.classList.toggle('focused',i===acFocused)); e.preventDefault(); }
   else if (e.key === 'ArrowUp') { acFocused = Math.max(acFocused-1, -1); items.forEach((el,i)=>el.classList.toggle('focused',i===acFocused)); e.preventDefault(); }
   else if (e.key === 'Enter') {
+    e.preventDefault();
     if (acFocused >= 0 && list._matches && list._matches[acFocused]) {
-      selectGame(list._matches[acFocused].name); e.preventDefault();
-    } else { submitGuess(); }
+      selectGame(list._matches[acFocused].name);
+    } else {
+      const resolved = resolveGuess(this.value);
+      if (resolved) selectGame(resolved.name);
+      else submitGuess();
+    }
   }
   else if (e.key === 'Escape') { list.style.display = 'none'; acFocused = -1; }
 });
@@ -624,6 +652,8 @@ document.addEventListener('click', e => { if (!e.target.closest('.guess-form')) 
 function selectGame(name) {
   document.getElementById('guessInput').value = name;
   document.getElementById('acList').style.display = 'none';
+  acFocused = -1;
+  submitGuess();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -632,7 +662,7 @@ function selectGame(name) {
 function submitGuess() {
   if (gameOver || guesses.length >= MAX_GUESSES) return;
   const val = document.getElementById('guessInput').value.trim();
-  const match = GAMES.find(g => g.name.toLowerCase() === val.toLowerCase());
+  const match = resolveGuess(val) || GAMES.find(g => g.name.toLowerCase() === val.toLowerCase());
   if (!match) {
     document.getElementById('guessInput').style.borderColor = 'var(--red)';
     setTimeout(() => document.getElementById('guessInput').style.borderColor = '', 600);
