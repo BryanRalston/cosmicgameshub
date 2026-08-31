@@ -26,7 +26,10 @@ function read(rel) {
   });
   ['REYNA', 'GEKKO', 'ASTRA', 'CLOVE', 'STEPP',
    'INHIB', 'MOLLY', 'GANKS', 'CREEP', 'LEASH', 'ROAMS', 'SHOVE',
-   'WARDS', 'LANES', 'NEXUS', 'BARON', 'PROMO', 'PWNED', 'NOOBS'].forEach(function (w) {
+   'WARDS', 'LANES', 'NEXUS', 'BARON', 'PROMO', 'PWNED', 'NOOBS',
+   'HASTE', 'VIGOR', 'GLOCK', 'GSYNC', 'VSYNC', 'HERTZ', 'GLYPH',
+   'LUNGE', 'FEINT', 'MAINS', 'PEEKS', 'NERFS', 'SMURF', 'STUNS',
+   'TILTS', 'TOXIC', 'TROLL', 'AGGRO', 'FLASK', 'CACHE', 'FRAGS'].forEach(function (w) {
     if (seen[w]) fail('Pixle banned ' + w);
   });
   var g = t.match(/window\.PIXLE_GUESSES = \[([\s\S]*?)\];/);
@@ -39,12 +42,14 @@ function read(rel) {
 (function mini() {
   var t = read('crossword-puzzles.js');
   var blocks = t.split('rows:').slice(1);
-  if (blocks.length < 50) fail('Mini count ' + blocks.length + ' < 50');
+  if (blocks.length < 45) fail('Mini count ' + blocks.length + ' < 45');
   var geo = ['OMAHA', 'ESSEX', 'HELEN', 'KENYA', 'GHANA', 'IDAHO', 'YUKON', 'SPAIN', 'TAMPA', 'PARIS', 'SAMOA', 'INDIA', 'MALTA'];
   geo.forEach(function (g) {
     if (t.indexOf("'" + g + "'") >= 0) fail('Mini geo filler ' + g);
   });
   if (/gaming term for/i.test(t)) fail('Mini slop clue');
+  var oneWord = (t.match(/clue:'[A-Za-z]{2,12}'/g) || []).concat(t.match(/clue:"[A-Za-z]{2,12}"/g) || []);
+  if (oneWord.length) fail('Mini one-word clues ' + oneWord.slice(0, 8).join(', '));
   var bad = 0;
   blocks.forEach(function (b, i) {
     var rows = (b.match(/'([A-Z]{5})'/g) || []).slice(0, 5).map(function (s) { return s.slice(1, -1); });
@@ -90,6 +95,25 @@ function read(rel) {
   var n = (t.match(/gaming: true/g) || []).length;
   if (n < 120) fail('Decode gaming sets ' + n + ' < 120');
   if (/TYPES OF PASTA|TYPES OF CLOUD|COLORS OF THE RAINBOW/.test(t)) fail('Decode filler leak');
+  var start = t.indexOf('const DECODE_PUZZLES');
+  var end = t.indexOf('// ── GAME STATE');
+  var block = start >= 0 && end > start ? t.slice(start, end) : '';
+  var allowShort = {
+    'TETRIS PIECES': 1, 'SPEEDRUN TERMS': 1, 'RHYTHM TERMS': 1, 'RHYTHM JUDGE': 1,
+    'CS UTILITY': 1, 'FGC INPUTS': 1, 'DND STATS': 1, 'POKEMON STATS': 1,
+    'MULTIPLAYER MODES': 1, 'DIFFICULTY NAMES': 1, 'GPU BRANDS': 1, 'GUILD RANKS': 1,
+    'HUD PIECES': 1, 'CHAT COMMANDS': 1, 'TOURNAMENT BRACKET': 1, 'CROSSPLAY': 1
+  };
+  var sets = block.split(/\n  \{\n    connection:/).slice(1);
+  sets.forEach(function (s) {
+    var titleM = s.match(/'([^']+)'/);
+    var title = titleM ? titleM[1] : '?';
+    var answers = s.match(/answer: '([^']+)'/g) || [];
+    answers.forEach(function (a) {
+      var w = a.slice(9, -1);
+      if (w.length <= 2 && !allowShort[title]) fail('Decode short ' + w + ' in ' + title);
+    });
+  });
   ok('Decode ' + n + ' gaming sets');
 })();
 

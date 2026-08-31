@@ -1,4 +1,3 @@
-/* Hand-written Link days. Do not RNG. See games/NYT_BAR.md. */
 window.LINK_PUZZLES = [
   { groups: [
     { level: 0, title: 'NINTENDO HEROES', words: ['MARIO', 'ZELDA', 'KIRBY', 'SAMUS'] },
@@ -106,7 +105,7 @@ window.LINK_PUZZLES = [
     { level: 0, title: 'WII SPORTS', words: ['BOWLING', 'TENNIS', 'BOXING', 'GOLF'] },
     { level: 1, title: 'MONSTER HUNTER WEAPONS', words: ['GREATSWORD', 'LONG SWORD', 'HAMMER', 'HUNTING HORN'] },
     { level: 2, title: 'SONY HOME CONSOLES', words: ['PS1', 'PS2', 'PS3', 'PS4'] },
-    { level: 3, title: 'FACE BUTTONS', words: ['A', 'B', 'X', 'Y'] }
+    { level: 3, title: 'WII SPORTS RESORT ADD-ONS', words: ['SWORDPLAY', 'WAKEBOARDING', 'ARCHERY', 'FRISBEE'] }
   ]},
   { groups: [
     { level: 0, title: 'AMONG US TASKS', words: ['WIRES', 'CARDS', 'TRASH', 'REACTOR'] },
@@ -124,7 +123,7 @@ window.LINK_PUZZLES = [
     { level: 0, title: 'TETRIS PIECES', words: ['I-PIECE', 'O-PIECE', 'T-PIECE', 'L-PIECE'] },
     { level: 1, title: 'FROM SOFTWARE HUBS', words: ['FIRELINK', 'HUNTER\'S DREAM', 'ROUNDTABLE', 'MAJULA'] },
     { level: 2, title: 'CS ROLES', words: ['IGL', 'AWPER', 'ENTRY', 'LURKER'] },
-    { level: 3, title: 'REPORT-CARD LETTERS', words: ['S', 'A', 'B', 'C'] }
+    { level: 3, title: 'TETRIS LINE CLEARS', words: ['SINGLE', 'DOUBLE', 'TRIPLE', 'TETRIS'] }
   ]},
   { groups: [
     { level: 0, title: 'ANIMAL CROSSING VILLAGERS PEOPLE FIGHT OVER', words: ['MARSHALL', 'STITCHES', 'RAYMOND', 'MAPLE'] },
@@ -148,7 +147,7 @@ window.LINK_PUZZLES = [
     { level: 0, title: 'SPLATOON WEAPONS', words: ['SHOOTER', 'ROLLER', 'CHARGER', 'SPLATLING'] },
     { level: 1, title: 'BETHESDA RPGS', words: ['SKYRIM', 'OBLIVION', 'FALLOUT 3', 'FALLOUT 4'] },
     { level: 2, title: 'UPSCALERS', words: ['DLSS', 'FSR', 'XESS', 'TSR'] },
-    { level: 3, title: '___ SCROLLS', words: ['ELDER', 'DEAD SEA', 'KHAJIIT', 'LOADING'] }
+    { level: 3, title: '___ SCROLLS', words: ['ELDER', 'DEAD SEA', 'CREDIT', 'TITLE'] }
   ]},
   { groups: [
     { level: 0, title: 'PAC-MAN GHOSTS', words: ['BLINKY', 'PINKY', 'INKY', 'CLYDE'] },
@@ -304,7 +303,7 @@ window.LINK_PUZZLES = [
     { level: 0, title: 'TF2 CLASSES (OFFENSE-ISH)', words: ['SCOUT', 'SOLDIER', 'PYRO', 'DEMOMAN'] },
     { level: 1, title: 'PERSONA HEROES', words: ['JOKER', 'YU', 'MAKOTO YUKI', 'REN AMAMIYA'] },
     { level: 2, title: 'STORAGE', words: ['SSD', 'HDD', 'NVME', 'MICROSD'] },
-    { level: 3, title: 'WORDS AFTER DEVIL', words: ['MAY CRY', 'DEAL', 'TRIGGER', 'WENT DOWN TO GEORGIA'] }
+    { level: 3, title: 'DEVIL MAY CRY LEADS', words: ['DANTE', 'VERGIL', 'NERO', 'LADY'] }
   ]},
   { groups: [
     { level: 0, title: 'TF2 CLASSES (THE REST)', words: ['HEAVY', 'ENGINEER', 'MEDIC', 'SNIPER'] },
@@ -340,37 +339,37 @@ window.LINK_PUZZLES = [
     { level: 0, title: 'GTA PROTAGS', words: ['CJ', 'NIKO', 'TREVOR', 'FRANKLIN'] },
     { level: 1, title: 'SAINTS ROW / OPEN WORLD COUSINS', words: ['SAINTS ROW', 'SLEEPING DOGS', 'JUST CAUSE', 'WATCH DOGS'] },
     { level: 2, title: 'MINIMAP SHAPES', words: ['CIRCLE', 'SQUARE', 'RECTANGLE', 'NONE'] },
-    { level: 3, title: 'THINGS YOU JACK', words: ['CAR', 'TRADE', 'SPLINE', 'THE BOX'] }
+    { level: 3, title: 'GTA CRIMES', words: ['CARJACK', 'MUGGING', 'STORE HOLDUP', 'HEIST'] }
   ]},
   { groups: [
     { level: 0, title: 'MARIO GALAXY COLLECTIBLES', words: ['STAR BITS', 'POWER STARS', 'LUMAS', 'LIFE MUSHROOM'] },
     { level: 1, title: 'DONKEY KONG COUNTRY', words: ['DIDDY', 'DIXIE', 'FUNKY', 'CRANKY'] },
     { level: 2, title: 'RUMBLE TYPES', words: ['ERM', 'LRA', 'HD RUMBLE', 'ADAPTIVE TRIGGERS'] },
-    { level: 3, title: 'WORDS AFTER FUNKY', words: ['KONG', 'MODE', 'FRESH', 'TOWN'] }
+    { level: 3, title: 'RAREWARE CREW', words: ['BANJO', 'KAZOOIE', 'CONKER', 'BOTTLES'] }
   ]},
   { groups: [
     { level: 0, title: 'KIRBY BOSSES', words: ['DEDEDE', 'MARX', 'VOID TERMINA', 'MAGOLOR'] },
     { level: 1, title: 'EARTHBOUND PARTY', words: ['NESS', 'PAULA', 'JEFF', 'POO'] },
-    { level: 2, title: 'BATTERY-HOUR BRAGS', words: ['8', '15', '20', '40'] },
-    { level: 3, title: 'WORDS AFTER META', words: ['KNIGHT', 'DATA', 'GAME', 'JOKE'] }
+    { level: 2, title: 'KIRBY GAMES', words: ['DREAM LAND', 'SUPER STAR', 'EPIC YARN', 'FORGOTTEN LAND'] },
+    { level: 3, title: 'WORDS AFTER META', words: ['KNIGHT', 'DATA', 'GAME', 'SCORE'] }
   ]},
   { groups: [
     { level: 0, title: 'PLATFORM HAZARDS', words: ['SPIKES', 'LAVA', 'CRUSHERS', 'SAWS'] },
     { level: 1, title: 'CASTLEVANIA HEROES', words: ['SIMON', 'ALUCARD', 'RICHTER', 'JULIUS'] },
     { level: 2, title: 'DIFFICULTY NAMES', words: ['EASY', 'NORMAL', 'HARD', 'UNFAIR'] },
-    { level: 3, title: '___ PIT', words: ['BOTTOMLESS', 'ORCHESTRA', 'MONEY', 'THE'] }
+    { level: 3, title: '___ PIT', words: ['BOTTOMLESS', 'SNAKE', 'ORCHESTRA', 'MONEY'] }
   ]},
   { groups: [
     { level: 0, title: 'RATCHET WEAPONS ENERGY', words: ['BOMB GLOVE', 'SUCK CANNON', 'RYNO', 'SHEEPINATOR'] },
     { level: 1, title: 'JAK GAMES', words: ['JAK AND DAXTER', 'JAK II', 'JAK 3', 'JAK X'] },
     { level: 2, title: 'COLLECTIBLE CURRENCIES', words: ['BOLTS', 'PRECURSOR ORBS', 'COGS', 'MOONS'] },
-    { level: 3, title: 'THINGS YOU SUCK', words: ['ITEMS', 'AT THE GAME', 'AIR', 'UP'] }
+    { level: 3, title: 'INSOMNIAC HEROES', words: ['RATCHET', 'CLANK', 'SPIDER-MAN', 'SUNSET OVERDRIVE'] }
   ]},
   { groups: [
     { level: 0, title: 'SPYRO GEMS', words: ['RED', 'GREEN', 'PURPLE', 'GOLD'] },
     { level: 1, title: 'CRASH BANDICOOT GAMES', words: ['WARPED', 'TWINSANITY', 'N. SANE', 'IT\'S ABOUT TIME'] },
     { level: 2, title: 'PLATFORMER COLLECTIBLES', words: ['GEMS', 'RELICS', 'TROPHIES', 'TIME TRIAL GHOSTS'] },
-    { level: 3, title: 'WORDS AFTER N.', words: ['SANE', 'GIN', 'CREDIBLE', 'BRIO'] }
+    { level: 3, title: 'CRASH MAD SCIENTISTS', words: ['N. BRIO', 'N. GIN', 'N. TROPY', 'N. OXIDE'] }
   ]},
   { groups: [
     { level: 0, title: 'BIOSHOCK LOCALES', words: ['RAPTURE', 'COLUMBIA', 'MINERVA\'S DEN', 'FONTAINE'] },
@@ -412,7 +411,7 @@ window.LINK_PUZZLES = [
     { level: 0, title: 'UNCHARTED LOCALES', words: ['AMAZON', 'ARABIA', 'TIBET', 'LOST CITY'] },
     { level: 1, title: 'NATHAN DRAKE COUSINS', words: ['NATE', 'SULLY', 'ELENA', 'CHLOE'] },
     { level: 2, title: 'COVER-SHOOTER VERBS', words: ['TAKE COVER', 'BLIND FIRE', 'VAULT', 'MELEE'] },
-    { level: 3, title: '___ DRAKE', words: ['NATHAN', 'TIM', 'JOSHUA', 'CAMP'] }
+    { level: 3, title: 'UNCHARTED SUBTITLES', words: ['DRAKE\'S FORTUNE', 'AMONG THIEVES', 'DRAKE\'S DECEPTION', 'A THIEF\'S END'] }
   ]},
   { groups: [
     { level: 0, title: 'LAST OF US PEOPLE', words: ['JOEL', 'ELLIE', 'TESS', 'BILL'] },
@@ -424,7 +423,7 @@ window.LINK_PUZZLES = [
     { level: 0, title: 'GOD OF WAR TOOLS', words: ['LEVIATHAN', 'BLADES OF CHAOS', 'GUARDIAN SHIELD', 'DRAUPNIR'] },
     { level: 1, title: 'GREEK / NORSE ROSTER', words: ['KRATOS', 'ATREUS', 'ZEUS', 'MIMIR'] },
     { level: 2, title: 'RAGE METERS', words: ['SPARTAN RAGE', 'VALOR', 'SPARTAN', 'FURY'] },
-    { level: 3, title: 'WORDS AFTER GOD OF', words: ['WAR', 'WAR III', 'THUNDER', 'LOVE'] }
+    { level: 3, title: 'GOD OF WAR ENTRIES', words: ['CHAINS OF OLYMPUS', 'GHOST OF SPARTA', '2018', 'RAGNAROK'] }
   ]},
   { groups: [
     { level: 0, title: 'HORIZON MACHINES', words: ['WATCHER', 'THUNDERJAW', 'STORMBIRD', 'TALLNECK'] },
@@ -484,7 +483,7 @@ window.LINK_PUZZLES = [
     { level: 0, title: 'TITANFALL TITANS', words: ['ION', 'SCORCH', 'NORTHSTAR', 'RONIN'] },
     { level: 1, title: 'PILOT MOVEMENT', words: ['WALL RUN', 'SLIDE', 'GRAPPLE', 'STIM'] },
     { level: 2, title: 'GAUNTLET / MP', words: ['ATTRITION', 'PILOTS VS PILOTS', 'AMPED HARDPOINT', 'CTF'] },
-    { level: 3, title: 'WORDS AFTER FRONTIER', words: ['DEFENSE', 'TOWN', 'AIRLINES', 'PSYCHIATRIC'] }
+    { level: 3, title: 'TITANFALL MAPS', words: ['ANGEL CITY', 'RISE', 'COLONY', 'BONEYARD'] }
   ]},
   { groups: [
     { level: 0, title: 'APEX MAPS', words: ['KINGS CANYON', 'WORLD\'S EDGE', 'OLYMPUS', 'STORM POINT'] },
@@ -496,7 +495,7 @@ window.LINK_PUZZLES = [
     { level: 0, title: 'VALORANT MAPS', words: ['ASCENT', 'BIND', 'HAVEN', 'SPLIT'] },
     { level: 1, title: 'VALORANT CLASSES', words: ['DUELIST', 'CONTROLLER', 'SENTINEL', 'INITIATOR'] },
     { level: 2, title: 'VALORANT ORBS', words: ['SPIKE', 'ULT ORB', 'CREDITS', 'SHIELDS'] },
-    { level: 3, title: '___ BIND', words: ['DOUBLE', 'KEY', 'SPELL', 'IN A'] }
+    { level: 3, title: 'VALORANT AGENTS PEOPLE BAN', words: ['JETT', 'REYNA', 'CHAMBER', 'KILLJOY'] }
   ]},
   { groups: [
     { level: 0, title: 'OVERWATCH MAP TYPES', words: ['ESCORT', 'HYBRID', 'CONTROL', 'PUSH'] },
@@ -526,7 +525,7 @@ window.LINK_PUZZLES = [
     { level: 0, title: 'SMASH VETERANS 2', words: ['PIKACHU', 'LINK', 'SAMUS', 'KIRBY'] },
     { level: 1, title: 'SMASH NEWCOMERS PEOPLE ARGUE ABOUT', words: ['STEVE', 'SEPHIROTH', 'SORA', 'PYRA'] },
     { level: 2, title: 'SMASH TERMS', words: ['TILT', 'SMASH ATTACK', 'AERIAL', 'GRAB'] },
-    { level: 3, title: '___ STEVE', words: ['MINECRAFT', 'JOBS', 'IRWIN', 'HARVEY'] }
+    { level: 3, title: 'MINECRAFT MOBS ON THE SMASH STAGE', words: ['ZOMBIE', 'ENDERMAN', 'CREEPER', 'SKELETON'] }
   ]},
   { groups: [
     { level: 0, title: 'MARIO KART CUPS', words: ['MUSHROOM', 'FLOWER', 'STAR', 'SPECIAL'] },
@@ -538,13 +537,13 @@ window.LINK_PUZZLES = [
     { level: 0, title: 'OOT EARLY DUNGEONS', words: ['DEKU TREE', 'DODONGO\'S CAVERN', 'JABU-JABU', 'FOREST TEMPLE'] },
     { level: 1, title: 'SPIRITUAL STONES', words: ['KOKIRI EMERALD', 'GORON RUBY', 'ZORA SAPPHIRE', 'LIGHT MEDALLION'] },
     { level: 2, title: 'OOT TEMPLES', words: ['FIRE TEMPLE', 'WATER TEMPLE', 'SHADOW TEMPLE', 'SPIRIT TEMPLE'] },
-    { level: 3, title: '___ TEMPLE', words: ['SHANG', 'LOOSE', 'OF DOOM', 'RUN'] }
+    { level: 3, title: 'OOT BOSSES', words: ['GOHMA', 'KING DODONGO', 'BARINADE', 'VOLVAGIA'] }
   ]},
   { groups: [
     { level: 0, title: 'METROID SUIT UPGRADES', words: ['VARIA', 'GRAVITY', 'PHAZON', 'FUSION'] },
     { level: 1, title: 'METROID BEAMS', words: ['ICE BEAM', 'WAVE BEAM', 'PLASMA BEAM', 'POWER BEAM'] },
     { level: 2, title: 'METROID MOVEMENT', words: ['SPACE JUMP', 'SPEED BOOSTER', 'SHINESPARK', 'GRAPPLE BEAM'] },
-    { level: 3, title: '___ BEAM', words: ['HIGH', 'LOW', 'BRIGHT', 'BALANCE'] }
+    { level: 3, title: 'METROID PRIME BOSSES', words: ['FLAAHGRA', 'THARDUS', 'OMEGA PIRATE', 'META RIDLEY'] }
   ]},
   { groups: [
     { level: 0, title: 'NINTENDO HANDHELDS 2', words: ['GAME BOY', 'GAME BOY COLOR', 'GBA', 'GAME BOY SP'] },
@@ -556,7 +555,7 @@ window.LINK_PUZZLES = [
     { level: 0, title: 'WII U ENERGY', words: ['GAMEPAD', 'OFF-TV PLAY', 'MIIVERSE', 'E-SHOP'] },
     { level: 1, title: 'NINTENDO FLOPS PEOPLE RECONSIDER', words: ['WII U', 'VIRTUAL BOY', 'GAMECUBE', 'SATELLAVIEW'] },
     { level: 2, title: 'WII MOTION', words: ['WII REMOTE', 'NUNCHUK', 'MOTIONPLUS', 'WII BALANCE BOARD'] },
-    { level: 3, title: '___ U', words: ['WII', 'LETTER', 'TURN', 'R'] }
+    { level: 3, title: 'WII PACK-IN ENERGY', words: ['WII SPORTS', 'WII PLAY', 'WII PARTY', 'WII FIT'] }
   ]},
   { groups: [
     { level: 0, title: 'PSP HITS', words: ['GOD OF WAR: CHAINS', 'MONSTER HUNTER FREEDOM', 'PERSONA 3 PORTABLE', 'GRAND THEFT AUTO: LCS'] },
@@ -577,13 +576,13 @@ window.LINK_PUZZLES = [
     { level: 3, title: '___ CARD', words: ['MEMORY', 'SD', 'SOUND', 'WILD'] }
   ]},
   { groups: [
-    { level: 0, title: 'GAMECUBE CONTROLLER', words: ['A', 'B', 'X', 'Y'] },
+    { level: 0, title: 'GAMECUBE PORTS', words: ['DIGITAL AV', 'SERIAL PORT', 'MEMORY CARD SLOT', 'CONTROLLER PORT'] },
     { level: 1, title: 'GAMECUBE FLAGSHIPS', words: ['WIND WAKER', 'METROID PRIME', 'RESIDENT EVIL 4', 'MELEE'] },
     { level: 2, title: 'GAMECUBE ODDITIES', words: ['HANDLE', 'MINI DVDS', 'WAVEBIRD', 'GAME BOY PLAYER'] },
     { level: 3, title: 'WORDS AFTER WAVE', words: ['BIRD', 'DASH', 'RACE', 'SOUND'] }
   ]},
   { groups: [
-    { level: 0, title: 'N64 CONTROLLER', words: ['A', 'B', 'C-LEFT', 'Z'] },
+    { level: 0, title: 'RARE N64', words: ['BANJO-KAZOOIE', 'BLAST CORPS', 'JET FORCE GEMINI', 'CONKER'] },
     { level: 1, title: 'N64 FLAGSHIPS', words: ['OOT', 'MARIO 64', 'GOLDENEYE', 'SMASH 64'] },
     { level: 2, title: 'N64 ODDITIES', words: ['THREE HANDLES', 'RUMBLE PAK', 'EXPANSION PAK', 'TRANSFER PAK'] },
     { level: 3, title: '___ PAK', words: ['RUMBLE', 'EXPANSION', 'TRANSFER', 'MEMORY'] }
@@ -609,7 +608,7 @@ window.LINK_PUZZLES = [
   { groups: [
     { level: 0, title: 'SEGA GENESIS HITS', words: ['SONIC 2', 'STREETS OF RAGE 2', 'GUNSTAR HEROES', 'PHANTASY STAR IV'] },
     { level: 1, title: 'SEGA CD / 32X CURIOS', words: ['SONIC CD', 'KNUCKLES CHAOTIX', 'NIGHT TRAP', 'LUNAR'] },
-    { level: 2, title: 'GENESIS CONTROLLER', words: ['A', 'B', 'C', 'START'] },
+    { level: 2, title: 'GENESIS SIX-BUTTON', words: ['X', 'Y', 'Z', 'MODE'] },
     { level: 3, title: '___ RAGE', words: ['STREETS OF', 'SPARTAN', 'HULK', 'QUIT'] }
   ]},
   { groups: [
@@ -682,7 +681,7 @@ window.LINK_PUZZLES = [
     { level: 0, title: 'INDIE PUBLISHERS', words: ['DEVOLVER', 'ANNAPURNA', 'TEAM17', 'RAW FURY'] },
     { level: 1, title: 'ITCH.IO ENERGY', words: ['TWINE', 'GB STUDIO', 'PICO-8', 'BITSY'] },
     { level: 2, title: 'GAME JAMS', words: ['LUDUM DARE', 'GMTK', 'GLOBAL GAME JAM', 'MY FIRST GAME JAM'] },
-    { level: 3, title: '___ JAM', words: ['GAME', 'TRAFFIC', 'SPACE', 'PEAR'] }
+    { level: 3, title: '___ JAM', words: ['GAME', 'TRAFFIC', 'SPACE', 'LOG'] }
   ]},
   { groups: [
     { level: 0, title: 'ASCII CRAWLERS', words: ['NETHACK', 'ANGBAND', 'TOME', 'ADOM'] },
@@ -700,7 +699,7 @@ window.LINK_PUZZLES = [
     { level: 0, title: 'EXTRACT SHOOTERS', words: ['TARKOV', 'ARENA BREAKOUT', 'DELTA FORCE', 'MARATHON'] },
     { level: 1, title: 'GEAR FEAR NOUNS', words: ['KIT', 'INSU', 'FIR', 'THERMAL'] },
     { level: 2, title: 'EXTRACT VERBS', words: ['EXTRACT', 'INSURE', 'HIDEOUT', 'SCAV'] },
-    { level: 3, title: '___ FEAR', words: ['GEAR', 'STAGE', 'NO', 'FEAR ITSELF'] }
+    { level: 3, title: '___ FEAR', words: ['GEAR', 'STAGE', 'NO', 'FACTOR'] }
   ]},
   { groups: [
     { level: 0, title: 'HERO SHOOTERS', words: ['OVERWATCH 2', 'MARVEL RIVALS', 'THE FINALS', 'PALADINS'] },
@@ -718,7 +717,7 @@ window.LINK_PUZZLES = [
     { level: 0, title: 'DECKBUILDERS 2', words: ['MONSTER TRAIN', 'ACROSS THE OBELISK', 'GRIFTLANDS', 'VAULT OF THE VOID'] },
     { level: 1, title: 'CARD PILES', words: ['DRAW', 'DISCARD', 'EXHAUST', 'BURN'] },
     { level: 2, title: 'ENERGY CURRENCIES', words: ['ENERGY', 'MANA', 'STARS', 'PIPS'] },
-    { level: 3, title: '___ PILE', words: ['JUNK', 'WOOD', 'SCRAP', 'RUG'] }
+    { level: 3, title: '___ PILE', words: ['JUNK', 'WOOD', 'SCRAP', 'STOCK'] }
   ]},
   { groups: [
     { level: 0, title: 'CITY BUILDERS', words: ['CITIES SKYLINES', 'SIMCITY', 'FROSTPUNK', 'AGAINST THE STORM'] },
@@ -736,7 +735,7 @@ window.LINK_PUZZLES = [
     { level: 0, title: 'SPORTS TITLES 2', words: ['MADDEN', 'FIFA', 'NBA 2K', 'MLB THE SHOW'] },
     { level: 1, title: 'EXTREME SPORTS', words: ['SSX', 'TONY HAWK', 'SKATE', 'STEEP'] },
     { level: 2, title: 'ULTIMATE TEAM NOUNS', words: ['PACKS', 'FUT', 'MYTEAM', 'MUT'] },
-    { level: 3, title: '___ TEAM', words: ['ULTIMATE', 'DREAM', 'HOME', 'A'] }
+    { level: 3, title: '___ TEAM', words: ['ULTIMATE', 'DREAM', 'HOME', 'RAID'] }
   ]},
   { groups: [
     { level: 0, title: 'RACING SIMS', words: ['IACING', 'ASSETTO CORSA', 'GRAN TURISMO 7', 'FORZA MOTORSPORT'] },
@@ -772,7 +771,7 @@ window.LINK_PUZZLES = [
     { level: 0, title: 'STEALTH METERS', words: ['DETECTION', 'NOISE', 'LIGHT', 'ALERT'] },
     { level: 1, title: 'STEALTH TAKEDOWNS', words: ['CHOKE', 'TRANQ', 'LETHAL', 'HIDE BODY'] },
     { level: 2, title: 'STEALTH AI STATES', words: ['IDLE', 'SUSPICIOUS', 'SEARCHING', 'COMBAT'] },
-    { level: 3, title: '___ BODY', words: ['HIDE', 'CALL OF', 'OUT OF', 'STUDENT'] }
+    { level: 3, title: 'METAL GEAR CODENAMES', words: ['SNAKE', 'RAIDER', 'OCELOT', 'THE BOSS'] }
   ]},
   { groups: [
     { level: 0, title: 'COVER SHOOTERS', words: ['GEARS', 'UNCHARTED', 'THE DIVISION', 'GHOST RECON'] },
@@ -784,13 +783,13 @@ window.LINK_PUZZLES = [
     { level: 0, title: 'IMMERSIVE SIMS', words: ['DEUS EX', 'DISHONORED', 'PREY', 'SYSTEM SHOCK 2'] },
     { level: 1, title: 'IMMSIM VERBS', words: ['HACK', 'STACK', 'GHOST', 'PACIFIST'] },
     { level: 2, title: 'IMMSIM TRAVERSAL', words: ['VENT', 'LEDGE', 'BLINK', 'FAR REACH'] },
-    { level: 3, title: '___ HACK', words: ['LIFE', 'LIFE 2', 'PHISHING', 'COUGH'] }
+    { level: 3, title: 'DEUS EX AUGS', words: ['CLOAK', 'STRENGTH', 'VISION', 'HACKING'] }
   ]},
   { groups: [
     { level: 0, title: 'WALKING SIMS', words: ['FIREWATCH', 'GONE HOME', 'WHAT REMAINS OF EDITH FINCH', 'DEAR ESTHER'] },
     { level: 1, title: 'NARRATIVE ADVENTURES', words: ['KENTUCKY ROUTE ZERO', 'RETURN OF THE OBRA DINN', 'OUTER WILDS', 'TACOMA'] },
     { level: 2, title: 'ENVIRONMENTAL STORYTELLING', words: ['NOTE', 'RECORDING', 'GRAFFITI', 'EMPTY ROOM'] },
-    { level: 3, title: '___ HOME', words: ['GONE', 'SWEET', 'AT', 'PAGE'] }
+    { level: 3, title: '___ HOME', words: ['GONE', 'SWEET', 'AT', 'ALONE'] }
   ]},
   { groups: [
     { level: 0, title: 'POINT AND CLICK', words: ['MONKEY ISLAND', 'GRIM FANDANGO', 'BROKEN SWORD', 'DAY OF THE TENTACLE'] },
@@ -814,13 +813,13 @@ window.LINK_PUZZLES = [
     { level: 0, title: 'SOULS-LIKE INDIES', words: ['BLASPHEMOUS', 'SALT AND SANCTUARY', 'ANOTHER CRAB\'S TREASURE', 'NINE SOLS'] },
     { level: 1, title: 'METROIDVANIA INDIES', words: ['ORI', 'A HAT IN TIME', 'ANIMAL WELL', 'SUPER MEAT BOY'] },
     { level: 2, title: 'CHARM / RELIC SLOTS', words: ['CHARM', 'NOTCH', 'RELIC', 'MUTATION'] },
-    { level: 3, title: 'WORDS AFTER ANIMAL', words: ['CROSSING', 'WELL', 'WELL BEING', 'HOUSE'] }
+    { level: 3, title: 'WORDS AFTER ANIMAL', words: ['CROSSING', 'WELL', 'FARM', 'HOUSE'] }
   ]},
   { groups: [
     { level: 0, title: 'BOOMER SHOOTERS', words: ['DOOM ETERNAL', 'ULTRAKILL', 'DUSK', 'AMID EVIL'] },
     { level: 1, title: 'RETRO FPS WEAPONS', words: ['SHOTGUN', 'ROCKET LAUNCHER', 'PLASMA RIFLE', 'GAUSS'] },
     { level: 2, title: 'ARENA FPS', words: ['QL', 'QC', 'UNREAL TOURNAMENT', 'SPLITGATE'] },
-    { level: 3, title: '___ JUMP', words: ['ROCKET', 'PLASMA', 'BUNNY', 'JUMP SCARE'] }
+    { level: 3, title: '___ JUMP', words: ['ROCKET', 'PLASMA', 'BUNNY', 'LONG'] }
   ]},
   { groups: [
     { level: 0, title: 'TACTICAL FPS 2', words: ['R6 SIEGE', 'READY OR NOT', 'GROUNDS BRANCH', 'INSURGENCY SANDSTORM'] },
@@ -910,7 +909,7 @@ window.LINK_PUZZLES = [
     { level: 0, title: 'NINTENDO LABO', words: ['PIANO', 'ROBOT', 'HOUSE', 'VEHICLE'] },
     { level: 1, title: 'STRANGE NINTENDO PERIPHERALS', words: ['ROB', 'POWER GLOVE', 'WII ZAPPER', 'RING-CON'] },
     { level: 2, title: 'NINTENDO PLASTIC', words: ['AMIIBO', 'POKE BALL PLUS', 'RING FIT', 'LABO'] },
-    { level: 3, title: '___ GLOVE', words: ['POWER', 'BOXING', 'LOVE', 'CATCHER\'S'] }
+    { level: 3, title: '___ GLOVE', words: ['POWER', 'BOXING', 'GOLDEN', 'CATCHER\'S'] }
   ]},
   { groups: [
     { level: 0, title: 'MOBILE HITS', words: ['GENSHIN', 'COD MOBILE', 'PUBG MOBILE', 'HONOR OF KINGS'] },
@@ -937,10 +936,10 @@ window.LINK_PUZZLES = [
     { level: 3, title: '___ REMAKE', words: ['RE2', 'FF7', 'DEMON\'S', 'YOUR'] }
   ]},
   { groups: [
-    { level: 0, title: 'SEQUELS NUMBERED', words: ['2', '3', '4', '7'] },
+    { level: 0, title: 'HALO CAMPAIGNS', words: ['HALO CE', 'HALO 2', 'HALO 3', 'HALO 4'] },
     { level: 1, title: 'SILENT PROTAGONISTS', words: ['LINK', 'CHIEF', 'SAMUS', 'DOOMGUY'] },
     { level: 2, title: 'NAMED PROTAGS', words: ['LARA', 'NATE', 'JOEL', 'KRATOS'] },
-    { level: 3, title: '___ 7', words: ['FF', 'RESIDENT EVIL', 'PERSONA', 'LUCKY'] }
+    { level: 3, title: 'GAMES WITH A SEVEN', words: ['FF7', 'RE7', 'YAKUZA 7', 'DQ VII'] }
   ]},
   { groups: [
     { level: 0, title: 'EXPANSIONS PEOPLE CITE', words: ['THE FROZEN THRONE', 'WOTLK', 'BLOOD AND WINE', 'HEART OF THE SWARM'] },
@@ -968,7 +967,7 @@ window.LINK_PUZZLES = [
   ]},
   { groups: [
     { level: 0, title: 'PLATFORMER COLLECTATHONS', words: ['BANJO', 'SPYRO', 'MARIO 64', 'DK64'] },
-    { level: 1, title: 'COLLECTIBLE COUNTS', words: ['120', '201', '100', '47'] },
+    { level: 1, title: 'BANJO MOVES', words: ['FLAP FLIP', 'BEAK BARGE', 'TALON TROT', 'WONDERWING'] },
     { level: 2, title: 'MOVE UNLOCKS', words: ['GROUND POUND', 'DIVE', 'LONG JUMP', 'BACKFLIP'] },
     { level: 3, title: '___ POUND', words: ['GROUND', 'FLESH', 'PET', 'LONDON'] }
   ]},
@@ -976,7 +975,7 @@ window.LINK_PUZZLES = [
     { level: 0, title: '3D MARIO MOVES', words: ['TRIPLE JUMP', 'SIDEFLIP', 'BACKFLIP', 'WALL KICK'] },
     { level: 1, title: '3D MARIO CAMERAS', words: ['LAKITU', 'C-UP', 'FIRST PERSON', 'ZOOM'] },
     { level: 2, title: '3D MARIO HEALTH', words: ['8 SLICES', 'POWER FLOWER', 'LIFE UP', 'COIN GATE'] },
-    { level: 3, title: '___ JUMP', words: ['LONG', 'WALL', 'BUNNY', 'JUMP SCARE'] }
+    { level: 3, title: '___ JUMP', words: ['LONG', 'WALL', 'TRIPLE', 'SIDE'] }
   ]},
   { groups: [
     { level: 0, title: 'ZELDA STEEDS', words: ['EPONA', 'WOLF LINK', 'MASTER CYCLE ZERO', 'SAND SEAL'] },
@@ -1042,7 +1041,7 @@ window.LINK_PUZZLES = [
     { level: 0, title: 'MOTHER 3 PARTY', words: ['LUCAS', 'CLAUS', 'KUMATORA', 'DOSH'] },
     { level: 1, title: 'MOTHER 3 MECHANICS', words: ['RHYTHM', 'ROLLING HP', 'SAVE FROG', 'CHIMERA'] },
     { level: 2, title: 'MOTHER 3 PIGMASK', words: ['PIGMASK', 'PORKY', 'NEW PORK CITY', 'HAPPYBOX'] },
-    { level: 3, title: '___ FROG', words: ['SAVE', 'FROG SUIT', 'FROGGIT', 'FROGGER'] }
+    { level: 3, title: 'FROGS IN GAMES', words: ['FROG SUIT', 'FROGGIT', 'FROGGER', 'SLIPPY'] }
   ]},
   { groups: [
     { level: 0, title: 'ADVANCE WARS CO\'S', words: ['ANDY', 'MAX', 'SWORDS', 'OLAF'] },
@@ -1079,5 +1078,5 @@ window.LINK_PUZZLES = [
     { level: 1, title: 'MH LOOP', words: ['HUNT', 'CARVE', 'UPGRADE', 'EAT'] },
     { level: 2, title: 'MH CAMPS', words: ['BASE CAMP', 'POP-UP CAMP', 'CANTEEN', 'SMITHY'] },
     { level: 3, title: '___ CAMP', words: ['BASE', 'BOOT', 'SUMMER', 'DAY'] }
-  ]}
+  ]},
 ];

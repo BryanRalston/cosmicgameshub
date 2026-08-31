@@ -20,7 +20,7 @@ Not for BRIX, Beat Lab, Asteroid, Void, Aim. Those are a different sport.
 - Clues that read "gaming term for X"
 
 ## Pixle
-- Curated **answer** list only: common 5-letter gaming words a player will nod at
+- Curated **answer** list only: household gaming words a player will nod at. Not HASTE / VIGOR / GLOCK-class jargon.
 - Separate **allowed-guess** dictionary (thousands of 5-letter English words)
 - GQZXV is "not in list"; CRANE is accepted even if it is not today's answer
 - Guess distribution 1–6 in the stats modal
@@ -30,7 +30,7 @@ Not for BRIX, Beat Lab, Asteroid, Void, Aim. Those are a different sport.
 
 ## Mini crossword
 - Fully checked 5×5 (five across, five down, all real words)
-- Clues have a voice (witty / gaming). Never "gaming term for X"
+- Clues have a voice (witty / gaming). Never "gaming term for X". Never a one-word shrug (`Kills`).
 - Drop any grid that is not fully checked
 - Sticky clue for the active cell on mobile
 - Share is filled time + a fair grid
@@ -52,6 +52,7 @@ Not for BRIX, Beat Lab, Asteroid, Void, Aim. Those are a different sport.
 
 ## RIFT Decode
 - Gaming terms only. Pasta / clouds / rainbow stay quarantined
+- No two-letter answers (HP, GG) unless the rest of the set is actually a constructed puzzle (Tetris pieces, chat commands, Pokémon stats)
 - Bank large enough that it does not loop every two weeks
 
 ## Validator
