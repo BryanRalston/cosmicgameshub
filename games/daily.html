@@ -17,7 +17,7 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-D272MF8NQP');</script>
   <style>
     .dh-wrap { max-width: 980px; margin: 0 auto; padding: 0 1rem 4rem; }
-    .dh-hero { text-align: center; padding: 3rem 1rem 1.5rem; position: relative; overflow: hidden; background: url('/images/games-hub-bg.jpg') center 40% / cover no-repeat; }
+    .dh-hero { text-align: center; padding: 3rem 1rem 1.5rem; position: relative; overflow: hidden; background: url('/images/game-daily-hub-v2.jpg') center 40% / cover no-repeat; }
     .dh-hero::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(9,9,15,0.72) 0%, rgba(9,9,15,0.9) 100%); pointer-events: none; }
     .dh-hero > * { position: relative; z-index: 1; }
     .dh-eyebrow { font-size: .78rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--accent, #00d4ff); margin-bottom: .65rem; position: relative; }
@@ -56,6 +56,14 @@
     .dh-cta { text-align: center; margin: 2.5rem 0 .5rem; padding: 1.4rem; background: rgba(0,212,255,0.04); border: 1px solid rgba(0,212,255,0.15); border-radius: 16px; }
     .dh-cta-title { font-size: 1rem; font-weight: 700; color: #fff; margin-bottom: .25rem; font-family: 'Outfit', sans-serif; }
     .dh-cta-sub { font-size: .85rem; color: var(--text-mid, #a8a8c0); }
+    .dh-progress { height: 6px; background: rgba(255,255,255,.06); border-radius: 99px; max-width: 540px; margin: 1rem auto 0; overflow: hidden; }
+    .dh-progress > span { display:block; height:100%; background: var(--accent); width:0; transition: width .35s; }
+    .dh-ritual { display:flex; flex-wrap:wrap; gap:.6rem; justify-content:center; margin:1.1rem auto 0; }
+    .dh-ritual .btn { min-height:44px; }
+    .dh-next { display:none; }
+    .dh-next.show { display:inline-flex; }
+    .dh-card { align-items: stretch; }
+    .dh-thumb { width: 72px; height: 72px; object-fit: cover; border-radius: 12px; flex-shrink: 0; }
 
     @media (max-width: 768px) {
       .dh-hero { padding: 1.5rem 1rem 1.25rem; }
@@ -101,12 +109,17 @@
       <div class="dh-eyebrow" id="dhEyebrow">Today's Set</div>
       <h1 class="dh-h1">Daily Puzzles</h1>
       <p class="dh-date" id="dhDate">—</p>
-      <p class="dh-sub">Twelve puzzles, one UTC day. Same board for every player. Streaks stay on this device. If JavaScript is off, the links below still work.</p>
+      <p class="dh-sub">Twelve puzzles, one UTC day. Same board for every player. Streaks stay on this device. Next UTC day in <strong data-cd>——:——:——</strong>.</p>
 
       <div class="dh-strip">
         <div class="dh-stat"><div class="dh-stat-val" id="dhPlayedCount">0/12</div><div class="dh-stat-lbl">Played Today</div></div>
         <div class="dh-stat"><div class="dh-stat-val" id="dhStreakSum">0</div><div class="dh-stat-lbl">Total Streak</div></div>
         <div class="dh-stat"><div class="dh-stat-val" id="dhPercent">0%</div><div class="dh-stat-lbl">Completion</div></div>
+      </div>
+      <div class="dh-progress" aria-hidden="true"><span id="dhBar"></span></div>
+      <div class="dh-ritual">
+        <a class="btn btn--primary dh-next" id="dhNext" href="/games/gamerdle">Play next →</a>
+        <button class="btn btn--outline" type="button" id="dhShare">Share today's set</button>
       </div>
     </div>
 
@@ -125,15 +138,15 @@
         <a class="dh-card" href="/games/crossword"><div class="dh-icon">✏️</div><div class="dh-meta"><div class="dh-name">Gaming Crossword</div><div class="dh-line"><span class="dh-status todo">5×5 mini</span></div></div><div class="dh-arrow">→</div></a>
         <a class="dh-card" href="/games/sudoku"><div class="dh-icon">🔢</div><div class="dh-meta"><div class="dh-name">Sudoku</div><div class="dh-line"><span class="dh-status todo">Daily 9×9</span></div></div><div class="dh-arrow">→</div></a>
         <a class="dh-card" href="/games/price-guesser"><div class="dh-icon">💰</div><div class="dh-meta"><div class="dh-name">Price Guesser</div><div class="dh-line"><span class="dh-status todo">5 hardware prices</span></div></div><div class="dh-arrow">→</div></a>
-        <a class="dh-card" href="/games/daily-challenge"><div class="dh-icon">⭐</div><div class="dh-meta"><div class="dh-name">Daily Challenge</div><div class="dh-line"><span class="dh-status todo">Curated rotation</span></div></div><div class="dh-arrow">→</div></a>
+        <a class="dh-card" href="/games/daily-challenge"><div class="dh-icon">⭐</div><div class="dh-meta"><div class="dh-name">Pro Kit Daily</div><div class="dh-line"><span class="dh-status todo">Guess the pro</span></div></div><div class="dh-arrow">→</div></a>
       </div>
 
       <div class="dh-section-label" id="dhDoneLabel" style="display:none;">Played Today</div>
       <div class="dh-grid" id="dhDoneGrid"></div>
 
       <div class="dh-cta">
-        <div class="dh-cta-title">All gaming games · No download · No login</div>
-        <div class="dh-cta-sub">Free forever — bookmark <span style="color:var(--accent,#00d4ff);">cosmicgameshub.com/games/daily</span> for tomorrow.</div>
+        <div class="dh-cta-title">Bookmark this page</div>
+        <div class="dh-cta-sub">cosmicgameshub.com/games/daily · free · no login · next UTC day in <span data-cd></span></div>
       </div>
     </div>
   </main>
@@ -141,6 +154,7 @@
   <footer class="site-footer">
     <p>© 2026 CosmicGamesHub · <a href="/about">About</a> · <a href="/privacy">Privacy</a> · <a href="/games">Games</a> · <a href="/">Home</a></p>
   </footer>
+  <script src="/games/daily-kit.js" defer></script>
   <script src="/global.js" defer></script>
 
   <script type="application/ld+json">
@@ -216,12 +230,9 @@
         return { played: !!playedToday, streak: stats.streak || 0 };
       },
       sudoku() {
-        // Sudoku stores per-day timer keys; we don't track a streak for it.
-        // Played today if any timer key for today's date exists. The keys aren't standard,
-        // so we check for any sudoku key updated today via a lighter signal: we look for
-        // `sk_solved_<isoToday>` (a marker we'll update via a small patch later); for now
-        // we treat sudoku as untracked-played with streak 0.
-        return { played: false, streak: 0, untracked: true };
+        const iso = isoToday;
+        const ymd = yyyymmdd;
+        return { played: localStorage.getItem('sdk_solved_' + iso) === '1' || localStorage.getItem('sdk_solved_' + ymd) === '1', streak: 0 };
       },
       crossword() {
         const last = safeInt('cw_last_day', -1);
@@ -247,18 +258,18 @@
 
   // ── Game registry — display order + metadata ─────────────────────────────
   const GAMES = [
-    { id: 'gamerdle',           name: 'Gamerdle',          icon: '🎮', tag: 'Mystery video game',    href: '/games/gamerdle' },
-    { id: 'pixle',              name: 'Pixle',             icon: '🟩', tag: '5-letter Wordle',      href: '/games/pixle' },
-    { id: 'rift',               name: 'Rift',              icon: '🌀', tag: '3 word zones',          href: '/games/rift' },
-    { id: 'hardware-timeline',  name: 'Hardware Timeline', icon: '📅', tag: 'Guess the year',        href: '/games/hardware-timeline' },
-    { id: 'spec-match',         name: 'Spec Match',        icon: '🔍', tag: 'Specs → product',       href: '/games/spec-match' },
-    { id: 'gear-quiz',          name: 'Gear Quiz',         icon: '🎧', tag: '10 gear questions',     href: '/games/gear-quiz' },
-    { id: 'gaming-trivia',      name: 'Gaming Trivia',     icon: '🧠', tag: '10 daily questions',    href: '/games/gaming-trivia' },
-    { id: 'word-scramble',      name: 'Word Scramble',     icon: '🔀', tag: 'Unscramble the word',   href: '/games/word-scramble' },
-    { id: 'crossword',          name: 'Gaming Crossword',  icon: '✏️', tag: '5×5 mini',              href: '/games/crossword' },
-    { id: 'sudoku',             name: 'Sudoku',            icon: '🔢', tag: 'Daily 9×9',             href: '/games/sudoku' },
-    { id: 'price-guesser',      name: 'Price Guesser',     icon: '💰', tag: '5 hardware prices',     href: '/games/price-guesser' },
-    { id: 'daily-challenge',    name: 'Daily Challenge',   icon: '⭐', tag: 'Curated rotation',      href: '/games/daily-challenge' }
+    { id: 'gamerdle',           name: 'Gamerdle',          icon: '🎮', tag: 'Mystery video game',    href: '/games/gamerdle', thumb: '/images/game-gamerdle-v2.jpg' },
+    { id: 'pixle',              name: 'Pixle',             icon: '🟩', tag: '5-letter Wordle',      href: '/games/pixle', thumb: '/images/game-pixle-v2.jpg' },
+    { id: 'rift',               name: 'Rift',              icon: '🌀', tag: '3 word zones',          href: '/games/rift', thumb: '/images/game-rift-v2.jpg' },
+    { id: 'hardware-timeline',  name: 'Hardware Timeline', icon: '📅', tag: 'Guess the year',        href: '/games/hardware-timeline', thumb: '/images/game-hardware-timeline-v2.jpg' },
+    { id: 'spec-match',         name: 'Spec Match',        icon: '🔍', tag: 'Specs → product',       href: '/games/spec-match', thumb: '/images/game-spec-match-v2.jpg' },
+    { id: 'gear-quiz',          name: 'Gear Quiz',         icon: '🎧', tag: '10 gear questions',     href: '/games/gear-quiz', thumb: '/images/game-gear-quiz-v2.jpg' },
+    { id: 'gaming-trivia',      name: 'Gaming Trivia',     icon: '🧠', tag: '10 daily questions',    href: '/games/gaming-trivia', thumb: '/images/game-trivia-v2.jpg' },
+    { id: 'word-scramble',      name: 'Word Scramble',     icon: '🔀', tag: 'Unscramble the word',   href: '/games/word-scramble', thumb: '/images/game-wordscramble-v2.jpg' },
+    { id: 'crossword',          name: 'Gaming Crossword',  icon: '✏️', tag: '5×5 mini',              href: '/games/crossword', thumb: '/images/game-crossword-v2.jpg' },
+    { id: 'sudoku',             name: 'Sudoku',            icon: '🔢', tag: 'Daily 9×9',             href: '/games/sudoku', thumb: '/images/game-sudoku-v2.jpg' },
+    { id: 'price-guesser',      name: 'Price Guesser',     icon: '💰', tag: '5 hardware prices',     href: '/games/price-guesser', thumb: '/images/game-priceguesser-v2.jpg' },
+    { id: 'daily-challenge',    name: 'Pro Kit Daily',     icon: '⭐', tag: 'Guess the pro',         href: '/games/daily-challenge', thumb: '/images/game-dailychallenge-v2.jpg' }
   ];
 
   function fmtStreak(n) {
@@ -290,11 +301,11 @@
       card.href = g.href;
       card.className = 'dh-card' + (status.played ? ' is-played' : '');
       card.innerHTML = `
-        <div class="dh-icon" aria-hidden="true">${g.icon}</div>
+        <img class="dh-thumb" src="${g.thumb}" alt="" width="72" height="72" loading="lazy"/>
         <div class="dh-meta">
           <div class="dh-name">${g.name}</div>
           <div class="dh-line">
-            <span class="dh-status ${status.played ? 'done' : 'todo'}">${status.played ? '✓ Played' : g.tag}</span>
+            <span class="dh-status ${status.played ? 'done' : 'todo'}">${status.played ? 'Played' : g.tag}</span>
             ${streakHtml ? `<span class="dh-streak">${streakHtml}</span>` : ''}
           </div>
         </div>
@@ -321,6 +332,18 @@
     document.getElementById('dhPlayedCount').textContent = `${playedCount}/${GAMES.length}`;
     document.getElementById('dhStreakSum').textContent = streakSum;
     document.getElementById('dhPercent').textContent = `${Math.round(playedCount / GAMES.length * 100)}%`;
+    const bar = document.getElementById('dhBar');
+    if (bar) bar.style.width = Math.round(playedCount / GAMES.length * 100) + '%';
+    const nextBtn = document.getElementById('dhNext');
+    if (nextBtn) {
+      if (todoCards.length) {
+        nextBtn.href = todoCards[0].href;
+        nextBtn.textContent = 'Play next — ' + (todoCards[0].querySelector('.dh-name') ? todoCards[0].querySelector('.dh-name').textContent : 'daily') + ' →';
+        nextBtn.classList.add('show');
+      } else {
+        nextBtn.classList.remove('show');
+      }
+    }
   }
 
   // ── Set the date display ────────────────────────────────────────────────
@@ -329,6 +352,14 @@
   document.getElementById('dhDate').textContent = `${dayName}, ${monthName} ${now.getDate()}, ${now.getFullYear()}`;
 
   render();
+
+  var shareBtn = document.getElementById('dhShare');
+  if (shareBtn) shareBtn.addEventListener('click', function () {
+    var n = document.getElementById('dhPlayedCount').textContent;
+    var text = 'CosmicGamesHub Daily ' + document.getElementById('dhDate').textContent + '\n' + n + ' played\ncosmicgameshub.com/games/daily';
+    var p = (navigator.clipboard && navigator.clipboard.writeText) ? navigator.clipboard.writeText(text) : Promise.reject();
+    p.then(function () { shareBtn.textContent = 'Copied'; }).catch(function () { shareBtn.textContent = 'Copy failed'; });
+  });
 })();
 </script>
 

@@ -1,92 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-D272MF8NQP"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-D272MF8NQP');
-  </script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-D272MF8NQP');</script>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Daily Challenge — Today's Gaming Puzzle | CosmicGamesHub</title>
-  <meta name="description" content="A new gaming challenge every day. Aim trainer targets, reaction time goals, memory puzzles, and trivia. Track your streak and share your score."/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>Pro Kit Daily — Guess today's pro from their gear | CosmicGamesHub</title>
+  <meta name="description" content="One UTC puzzle from the 60-pro database. See a mouse, DPI, and game — guess which pro it is. Free, no login."/>
   <link rel="canonical" href="https://cosmicgameshub.com/games/daily-challenge"/>
   <link rel="stylesheet" href="../styles.css"/>
+  <meta property="og:title" content="Pro Kit Daily — CosmicGamesHub"/>
+  <meta property="og:description" content="Guess today's pro from their public kit. One puzzle per UTC day."/>
+  <meta property="og:image" content="https://cosmicgameshub.com/images/game-dailychallenge-v2.jpg"/>
+  <meta property="og:url" content="https://cosmicgameshub.com/games/daily-challenge"/>
   <style>
-    .challenge-hero { text-align:center; padding:2rem 0 1.5rem; }
-    .streak-badge { display:inline-flex; align-items:center; gap:0.5rem; background:rgba(255,179,0,0.1); border:1px solid rgba(255,179,0,0.35); border-radius:999px; padding:0.35rem 1rem; font-size:0.85rem; font-weight:700; color:#ffb300; margin-bottom:1rem; }
-    .challenge-card { max-width:680px; margin:0 auto; background:var(--bg-card); border:1px solid var(--border-mid); border-radius:var(--radius-lg); overflow:hidden; }
-    .challenge-header { background:linear-gradient(135deg,rgba(0,212,255,0.08),rgba(0,100,255,0.08)); padding:2rem; border-bottom:1px solid var(--border); text-align:center; }
-    .challenge-type { display:inline-flex; align-items:center; gap:0.4rem; background:var(--accent-dim); border:1px solid var(--border-mid); border-radius:999px; padding:0.3rem 0.9rem; font-size:0.75rem; font-weight:700; color:var(--accent); letter-spacing:0.06em; text-transform:uppercase; margin-bottom:0.75rem; }
-    .challenge-title { font-size:1.6rem; font-weight:800; color:var(--text-hi); margin-bottom:0.5rem; }
-    .challenge-desc  { color:var(--text-mid); font-size:0.95rem; max-width:480px; margin:0 auto; }
-    .challenge-body  { padding:2rem; }
-    .objective-list  { list-style:none; padding:0; margin:0 0 1.5rem; display:flex; flex-direction:column; gap:0.6rem; }
-    .objective-list li { display:flex; align-items:center; gap:0.75rem; background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:0.65rem 1rem; font-size:0.9rem; color:var(--text-mid); }
-    .objective-list li .obj-icon { font-size:1.2rem; flex-shrink:0; }
-    .objective-list li.done { border-color:rgba(0,230,118,0.4); color:var(--text-hi); }
-    .objective-list li.done::after { content:'✓'; color:#00e676; font-weight:800; margin-left:auto; }
-
-    .score-input { display:flex; gap:0.75rem; margin-bottom:1.5rem; flex-wrap:wrap; }
-    .score-input input { flex:1; min-width:120px; background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text-hi); font-family:inherit; font-size:1rem; padding:0.65rem 1rem; }
-    .score-input input:focus { outline:none; border-color:var(--accent); }
-
-    .result-box { display:none; background:var(--bg-void); border:1px solid var(--border-mid); border-radius:var(--radius); padding:1.5rem; text-align:center; margin-top:1rem; }
-    .result-box.show { display:block; }
-    .result-grade-big { font-size:3.5rem; font-weight:900; color:var(--accent); line-height:1; }
-
-    .history-section { max-width:680px; margin:2rem auto 0; }
-    .history-row { display:flex; justify-content:space-between; align-items:center; padding:0.6rem 0; border-bottom:1px solid var(--border); font-size:0.85rem; }
-    .history-row:last-child { border-bottom:none; }
-    .history-row .date { color:var(--text-lo); }
-    .history-row .grade { font-weight:700; color:var(--accent); }
-
-    .share-box { background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:0.75rem 1rem; font-size:0.82rem; font-family:'JetBrains Mono',monospace; color:var(--text-mid); margin:1rem 0; white-space:pre-wrap; word-break:break-all; }
-
-    @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
-    .pulse { animation:pulse 1.5s ease-in-out infinite; }
+    .pk-wrap { max-width: 560px; margin: 0 auto; padding: 0 1rem 3rem; }
+    .pk-hero { text-align:center; padding: 1.5rem 0 1rem; }
+    .pk-hero img { width:100%; height:140px; object-fit:cover; border-radius:14px; border:1px solid var(--border); margin-bottom:1rem; }
+    .pk-clue { background: var(--bg-card); border:1px solid var(--border); border-radius:16px; padding:1.25rem; margin-bottom:1rem; }
+    .pk-k { font-size:.68rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); margin-bottom:.35rem; }
+    .pk-v { font-size:1.15rem; font-weight:800; color:#fff; font-family:'Outfit',sans-serif; margin-bottom:.85rem; }
+    .pk-v:last-child { margin-bottom:0; }
+    .pk-choices { display:grid; gap:.65rem; }
+    .pk-choice { min-height:48px; text-align:left; padding:.85rem 1rem; border-radius:12px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:#fff; font-weight:700; font-family:inherit; cursor:pointer; }
+    .pk-choice:hover { border-color:var(--accent); }
+    .pk-choice.is-right { border-color:#00e676; background:rgba(0,230,118,.1); }
+    .pk-choice.is-wrong { border-color:#ff4757; background:rgba(255,71,87,.1); }
+    .pk-choice:disabled { cursor:default; }
+    .pk-result { display:none; text-align:center; margin-top:1.25rem; padding:1.25rem; border:1px solid var(--border); border-radius:16px; background:rgba(0,0,0,.35); }
+    .pk-result.show { display:block; }
+    .pk-share { font-family: ui-monospace, monospace; font-size:.82rem; color:var(--text-mid); background:var(--bg-surface); border:1px solid var(--border); border-radius:10px; padding:.75rem; white-space:pre-wrap; margin:1rem 0; }
   </style>
-  <meta property="og:title" content="Daily Challenge — Today's Gaming Puzzle | CosmicGamesHub">
-  <meta property="og:description" content="A new gaming challenge every day. Aim trainer targets, reaction time goals, memory puzzles, and trivia. Track your streak and share your score.">
-  <meta property="og:image" content="https://cosmicgameshub.com/images/game-dailychallenge.jpg">
-  <meta property="og:image:width" content="600">
-  <meta property="og:image:height" content="260">
-  <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "VideoGame",
-  "name": "Daily Challenge",
-  "description": "A new gaming challenge every day. Aim trainer targets, reaction time goals, memory puzzles, and trivia. Track your streak and share your score.",
-  "url": "https://cosmicgameshub.com/games/daily-challenge",
-  "image": "https://cosmicgameshub.com/images/game-dailychallenge.jpg",
-  "genre": "Puzzle",
-  "gamePlatform": "Web Browser",
-  "applicationCategory": "Game",
-  "operatingSystem": "Any",
-  "offers": {
-    "@type": "Offer",
-    "price": "0",
-    "priceCurrency": "USD",
-    "availability": "https://schema.org/InStock"
-  },
-  "author": {
-    "@type": "Organization",
-    "name": "CosmicGamesHub",
-    "url": "https://cosmicgameshub.com"
-  }
-}
-  </script>
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:site" content="@CosmicGamesHub">
-  <meta name="twitter:title" content="Daily Challenge — Today's Gaming Puzzle | CosmicGamesHub">
-  <meta name="twitter:description" content="A new gaming challenge every day. Aim trainer targets, reaction time goals, memory puzzles, and trivia. Track your streak and share your score.">
-  <meta name="twitter:image" content="https://cosmicgameshub.com/images/game-dailychallenge.jpg">
-  <meta property="og:type" content="website">
-  <meta property="og:site_name" content="CosmicGamesHub">
-  <meta property="og:url" content="https://cosmicgameshub.com/games/daily-challenge">
 </head>
 <body>
 <nav class="nav" role="navigation" aria-label="Main navigation">
@@ -98,11 +42,11 @@
       </a>
       <ul class="nav__links" id="navLinks">
         <li><a href="/pros">Pros</a></li>
+        <li><a href="/games">Games</a></li>
+        <li><a href="/games/daily" class="active">Daily</a></li>
         <li><a href="/guides">Guides</a></li>
-        <li><a href="/games/daily">Daily</a></li>
         <li><a href="/versus">Comparisons</a></li>
-        <li><a href="/games" class="active">Games</a></li>
-        <li><a href="/tools/gaming-fps-calculator" class="nav__cta btn">Free Tools</a></li>
+        <li><a href="/tools/gaming-fps-calculator" class="nav__cta btn">Tools</a></li>
       </ul>
       <button class="nav__hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
         <span></span><span></span><span></span>
@@ -112,523 +56,139 @@
 </nav>
 
 <main>
-  <div class="container">
-    <div class="challenge-hero">
-      <div class="streak-badge" id="streakBadge">🔥 Streak: 0 days</div>
-      <h1 style="margin-bottom:0.25rem;">Daily Challenge</h1>
-      <p style="color:var(--text-mid);margin:0;" id="dateLabel"></p>
+  <div class="pk-wrap">
+    <div class="pk-hero">
+      <img src="/images/game-dailychallenge-v2.jpg" alt="" width="1280" height="720"/>
+      <div class="section__eyebrow">Daily · One UTC puzzle</div>
+      <h1 style="margin:.4rem 0 .25rem;">Pro Kit Daily</h1>
+      <p style="color:var(--text-mid);margin:0;">Guess the pro from a public kit in the August 2026 database. Not a lab. Not a census.</p>
+      <p style="color:var(--accent);font-weight:700;margin:.65rem 0 0;" id="pkStreak">Streak 0</p>
     </div>
 
-    <div class="challenge-card" id="challengeCard">
-      <div class="challenge-header">
-        <div class="challenge-type" id="challengeType"></div>
-        <div class="challenge-title" id="challengeTitle"></div>
-        <div class="challenge-desc" id="challengeDesc"></div>
-      </div>
-      <div class="challenge-body">
-        <ul class="objective-list" id="objectiveList"></ul>
-
-        <div id="alreadyDone" style="display:none;background:rgba(0,230,118,0.08);border:1px solid rgba(0,230,118,0.3);border-radius:var(--radius-sm);padding:1rem;text-align:center;margin-bottom:1rem;">
-          <div style="font-size:1.5rem;">✅</div>
-          <div style="font-weight:700;color:#00e676;margin:0.25rem 0;">Already completed today!</div>
-          <div style="font-size:0.85rem;color:var(--text-mid);">Come back tomorrow for a new challenge.</div>
-        </div>
-
-        <div id="submitSection">
-          <p style="font-size:0.88rem;color:var(--text-mid);margin-bottom:0.75rem;">Complete the challenge above, then enter your result:</p>
-          <div class="score-input">
-            <input type="number" id="scoreInput" placeholder="Enter your score / time" min="0"/>
-            <button class="btn btn--primary" onclick="submitResult()">Submit Result</button>
-          </div>
-          <p id="scoreError" hidden style="color:#f87171;font-size:0.85rem;margin:0.5rem 0 0;"></p>
-        </div>
-
-        <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
-          <a id="challengeLink" href="#" class="btn btn--outline" target="_blank" style="flex:1;justify-content:center;">Open Challenge Tool →</a>
-        </div>
-
-        <div class="result-box" id="resultBox">
-          <div class="result-grade-big" id="resultGrade"></div>
-          <div id="resultTitle" style="font-size:1.2rem;font-weight:700;color:var(--text-hi);margin:0.5rem 0 0.25rem;"></div>
-          <div id="resultMsg" style="color:var(--text-mid);font-size:0.88rem;margin-bottom:1rem;"></div>
-          <div class="share-box" id="shareText"></div>
-          <button class="btn btn--outline" onclick="copyShare()" style="font-size:0.85rem;">📋 Copy to Share</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="history-section">
-      <h2 style="font-size:1.1rem;margin-bottom:0.75rem;">Your History</h2>
-      <div id="historyList">
-        <p style="color:var(--text-lo);font-size:0.85rem;">No completions yet — come back after your first challenge!</p>
-      </div>
+    <div class="pk-clue" id="pkClue">Loading today's kit…</div>
+    <div class="pk-choices" id="pkChoices"></div>
+    <div class="pk-result" id="pkResult">
+      <h2 id="pkTitle"></h2>
+      <p id="pkMsg" style="color:var(--text-mid);"></p>
+      <p><a id="pkProLink" href="/pros">Open the pro page →</a></p>
+      <div class="pk-share" id="pkShare"></div>
+      <button class="btn btn--primary" type="button" id="pkCopy">Copy share</button>
+      <div class="cg-daily-dock" data-slug="daily-challenge"></div>
     </div>
   </div>
 </main>
 
-
-<section class="rg-section">
-  <div class="container">
-    <h3 class="rg-heading">More Games</h3>
-    <div class="rg-grid">
-      <a href="/games/gaming-trivia" class="rg-card">
-        <img src="/images/game-trivia.jpg" alt="Gaming Trivia" loading="lazy" width="200" height="86">
-        <div class="rg-info">
-          <div class="rg-tags"><span class="rg-tag">Daily</span><span class="rg-tag">Trivia</span></div>
-          <div class="rg-name">Gaming Trivia</div>
-          <div class="rg-desc">10 quiz questions, race the clock for bonus pts</div>
-        </div>
-      </a>
-      <a href="/games/sudoku" class="rg-card">
-        <img src="/images/game-sudoku.jpg" alt="Sudoku" loading="lazy" width="200" height="86">
-        <div class="rg-info">
-          <div class="rg-tags"><span class="rg-tag">Daily</span><span class="rg-tag">Puzzle</span></div>
-          <div class="rg-name">Sudoku</div>
-          <div class="rg-desc">Daily 9×9 grid, easy to expert difficulty</div>
-        </div>
-      </a>
-      <a href="/games/gamerdle" class="rg-card">
-        <img src="/images/game-gamerdle.jpg" alt="Gamerdle" loading="lazy" width="200" height="86">
-        <div class="rg-info">
-          <div class="rg-tags"><span class="rg-tag">Daily</span><span class="rg-tag">Word</span></div>
-          <div class="rg-name">Gamerdle</div>
-          <div class="rg-desc">Guess the mystery game in 6 tries</div>
-        </div>
-      </a>
-    </div>
-  </div>
-</section>
-<style>
-.rg-section { padding: 2.5rem 0 3rem; border-top: 1px solid var(--border, rgba(255,255,255,0.08)); margin-top: 2rem; }
-.rg-heading { font-size: 0.75rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-lo, #666); margin: 0 0 1.25rem; }
-.rg-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-.rg-card { display: flex; gap: 0.75rem; background: var(--bg-card, #111); border: 1px solid var(--border, rgba(255,255,255,0.08)); border-radius: 10px; padding: 0.75rem; text-decoration: none; color: inherit; transition: border-color 0.15s, transform 0.15s; }
-.rg-card:hover { border-color: var(--accent, #22d3ee); transform: translateY(-2px); }
-.rg-card img { width: 100px; height: 43px; object-fit: cover; border-radius: 6px; flex-shrink: 0; }
-.rg-info { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
-.rg-tags { display: flex; gap: 0.3rem; flex-wrap: wrap; }
-.rg-tag { font-size: 0.65rem; font-weight: 700; color: var(--accent, #22d3ee); background: rgba(34,211,238,0.1); border-radius: 4px; padding: 0.1rem 0.35rem; letter-spacing: 0.04em; }
-.rg-name { font-size: 0.88rem; font-weight: 700; color: var(--text-hi, #fff); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rg-desc { font-size: 0.75rem; color: var(--text-lo, #888); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-@media (max-width: 640px) {
-  .rg-grid { grid-template-columns: 1fr; }
-  .rg-card img { width: 80px; height: 35px; }
-}
-</style>
-<footer class="footer"><div class="container"><div class="footer__bottom">
-  <p class="footer__legal">© 2026 CosmicGamesHub.</p>
-</div></div>
-</footer>
-
-<script>
-// ── Mulberry32 PRNG — deterministic daily seed ─────────────────────────────
-function mulberry32(seed) {
-  return function() {
-    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
-    var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
-    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
-    return ((t ^ t >>> 14) >>> 0) / 4294967296;
-  };
-}
-function dailySeed() {
-  const d = new Date();
-  return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
-}
-
-// ── Challenge definitions ──────────────────────────────────────────────────
-const CHALLENGES = [
-  // ── Aim Trainer challenges ────────────────────────────────────────────
-  {
-    type:'⚡ Aim Challenge', title:'Hit the Mark', tool:'/games/aim-trainer',
-    desc:'Open the Aim Trainer and complete a full round on Medium difficulty.',
-    objectives:['Set difficulty to Medium','Complete a 30-second round','Score 500+ points'],
-    unit:'points', passMark:500,
-    grade(v){ if(v>=2000)return'S'; if(v>=1200)return'A'; if(v>=700)return'B'; if(v>=500)return'C'; return'D'; },
-    msg(v,g){ return g==='S'?'Aimbot confirmed. Terrifying.':g==='A'?'Pro-level score. Strong round.':g==='B'?'Solid aim. Keep pushing.':'Challenge passed! Keep practicing.'; }
-  },
-  {
-    type:'🎯 Accuracy Run', title:'No Misses', tool:'/games/aim-trainer',
-    desc:'Complete an Easy difficulty aim trainer round with 90%+ accuracy.',
-    objectives:['Set difficulty to Easy','Complete a 30-second round','Achieve 90%+ accuracy'],
-    unit:'% accuracy', passMark:90,
-    grade(v){ if(v>=99)return'S'; if(v>=96)return'A'; if(v>=93)return'B'; if(v>=90)return'C'; return'D'; },
-    msg(v,g){ return g==='S'?'99%+ accuracy is almost perfect. Machine-like.':g==='A'?'Excellent accuracy.':g==='B'?'Clean aim. Well done.':'Challenge passed!'; }
-  },
-  {
-    type:'⚡ Speed Round', title:'Hard Mode Blitz', tool:'/games/aim-trainer',
-    desc:'Complete a Hard difficulty aim trainer round and score 300+ points.',
-    objectives:['Set difficulty to Hard','Complete a 30-second round','Score 300+ points on Hard'],
-    unit:'points', passMark:300,
-    grade(v){ if(v>=1000)return'S'; if(v>=600)return'A'; if(v>=450)return'B'; if(v>=300)return'C'; return'D'; },
-    msg(v,g){ return g==='S'?'1000+ on Hard. Absolutely elite.':g==='A'?'Excellent on Hard difficulty.':g==='B'?'Solid Hard mode score.':'Challenge passed!'; }
-  },
-  {
-    type:'⚡ Aim Challenge', title:'Sustained Fire', tool:'/games/aim-trainer',
-    desc:'Play a 90-second aim trainer session on Medium and maintain 75%+ accuracy throughout.',
-    objectives:['Set difficulty to Medium','Run the full 90-second session','Keep accuracy at 75% or above'],
-    unit:'% accuracy', passMark:75,
-    grade(v){ if(v>=95)return'S'; if(v>=88)return'A'; if(v>=80)return'B'; if(v>=75)return'C'; return'D'; },
-    msg(v,g){ return g==='S'?'Consistent at 95%+ over 90 seconds — tournament-ready.':g==='A'?'High accuracy over the full session. Impressive.':g==='B'?'Steady aim. Good endurance.':'Challenge passed!'; }
-  },
-  // ── Reaction challenges ───────────────────────────────────────────────
-  {
-    type:'⏱ Reaction Test', title:'Lightning Reflexes', tool:'/games/reaction-trainer',
-    desc:'Run the Reaction Time Trainer and beat 250ms average across 5 rounds.',
-    objectives:['Complete all 5 rounds','Average reaction time under 250ms','No "Too Early" clicks'],
-    unit:'ms average', passMark:250, lowerBetter:true,
-    grade(v){ if(v<160)return'S'; if(v<200)return'A'; if(v<230)return'B'; if(v<250)return'C'; return'D'; },
-    msg(v,g){ return g==='S'?'Sub-160ms is inhuman. Respect.':g==='A'?'Pro gamer reflexes.':g==='B'?'Competitive level. You\'d do well in ranked.':'Challenge passed!'; }
-  },
-  {
-    type:'⏱ Reaction Test', title:'Sub-200 Club', tool:'/games/reaction-trainer',
-    desc:'Hit sub-200ms on at least 3 out of 5 reaction test rounds.',
-    objectives:['Run 5 reaction rounds','Get sub-200ms on 3+ rounds','Log your best individual result'],
-    unit:'ms best', passMark:200, lowerBetter:true,
-    grade(v){ if(v<155)return'S'; if(v<170)return'A'; if(v<185)return'B'; if(v<200)return'C'; return'D'; },
-    msg(v,g){ return g==='S'?'Sub-155ms single shot. You\'re in rare company.':g==='A'?'Sub-170ms is elite-tier.':g==='B'?'Near-pro reflexes.':'You made the Sub-200 Club!'; }
-  },
-  // ── Memory challenges ─────────────────────────────────────────────────
-  {
-    type:'🃏 Memory Test', title:'Cosmic Memory', tool:'/games/memory-match',
-    desc:'Complete a 5×6 Memory Match grid in under 90 seconds.',
-    objectives:['Select 5×6 grid size','Find all pairs','Finish in under 90 seconds'],
-    unit:'seconds', passMark:90, lowerBetter:true,
-    grade(v){ if(v<45)return'S'; if(v<60)return'A'; if(v<75)return'B'; if(v<90)return'C'; return'D'; },
-    msg(v,g){ return g==='S'?'Under 45 seconds is elite memory.':g==='A'?'Quick and accurate.':g==='B'?'Good spatial memory.':'Challenge complete!'; }
-  },
-  {
-    type:'🃏 Memory Test', title:'Perfect Round', tool:'/games/memory-match',
-    desc:'Complete a 4×4 Memory Match grid with zero re-flips (every pair matched on first try).',
-    objectives:['Select 4×4 grid size','Match every pair on first attempt','Zero mismatches'],
-    unit:'mismatches', passMark:0, lowerBetter:true,
-    grade(v){ if(v===0)return'S'; if(v<=1)return'A'; if(v<=3)return'B'; if(v<=5)return'C'; return'D'; },
-    msg(v,g){ return g==='S'?'Perfect round. Photographic memory confirmed.':g==='A'?'Just one slip — nearly flawless.':g==='B'?'Good focus. Getting there.':'Not bad — try again tomorrow.'; }
-  },
-  {
-    type:'🃏 Speed Memory', title:'Memory Blitz', tool:'/games/memory-match',
-    desc:'Complete a 4×5 Memory Match grid in under 60 seconds.',
-    objectives:['Select 4×5 grid size','Find all pairs','Finish in under 60 seconds'],
-    unit:'seconds', passMark:60, lowerBetter:true,
-    grade(v){ if(v<30)return'S'; if(v<40)return'A'; if(v<50)return'B'; if(v<60)return'C'; return'D'; },
-    msg(v,g){ return g==='S'?'Under 30 seconds? You\'re a memory machine.':g==='A'?'Fast and sharp.':g==='B'?'Solid time. Strong spatial recall.':'Challenge cleared!'; }
-  },
-  // ── Sudoku challenges ─────────────────────────────────────────────────
-  {
-    type:'🔢 Sudoku Sprint', title:'Grid Master', tool:'/games/sudoku',
-    desc:'Complete a Medium Sudoku puzzle with zero mistakes.',
-    objectives:['Select Medium difficulty','Solve the full grid','0 mistakes (no hints)'],
-    unit:'minutes', passMark:15, lowerBetter:true,
-    grade(v){ if(v<5)return'S'; if(v<8)return'A'; if(v<12)return'B'; if(v<15)return'C'; return'D'; },
-    msg(v,g){ return g==='S'?'Under 5 minutes is elite level.':g==='A'?'Sharp logic. Fast solve.':g==='B'?'Solid Sudoku skills.':'Challenge passed!'; }
-  },
-  {
-    type:'🔢 Sudoku Sprint', title:'Easy Sweep', tool:'/games/sudoku',
-    desc:'Solve an Easy Sudoku puzzle in under 4 minutes, no mistakes.',
-    objectives:['Select Easy difficulty','Solve in under 4 minutes','No errors, no hints'],
-    unit:'minutes', passMark:4, lowerBetter:true,
-    grade(v){ if(v<2)return'S'; if(v<2.5)return'A'; if(v<3)return'B'; if(v<4)return'C'; return'D'; },
-    msg(v,g){ return g==='S'?'Under 2 minutes on Easy — you\'re warming up in elite time.':g==='A'?'Very fast easy solve.':g==='B'?'Clean and quick.':'Puzzle cleared!'; }
-  },
-  {
-    type:'🔢 Sudoku Sprint', title:'Expert Grid', tool:'/games/sudoku',
-    desc:'Attempt an Expert Sudoku puzzle and enter your completion time (or DNF = 99).',
-    objectives:['Select Expert difficulty','Attempt the full grid','Enter time in minutes (99 if not finished)'],
-    unit:'minutes', passMark:30, lowerBetter:true,
-    grade(v){ if(v<15)return'S'; if(v<20)return'A'; if(v<25)return'B'; if(v<30)return'C'; return'D'; },
-    msg(v,g){ return g==='S'?'Expert in under 15 minutes. Truly elite.':g==='A'?'Sub-20 expert. Strong logical reasoning.':g==='B'?'Expert cleared under 25 mins — well done.':'Expert completed. No small feat.'; }
-  },
-  // ── Minesweeper challenges ────────────────────────────────────────────
-  {
-    type:'☄️ Minesweeper', title:'Sweep the Field', tool:'/games/minesweeper',
-    desc:'Complete a Medium (16×16) Minesweeper game without hitting a mine.',
-    objectives:['Select Medium difficulty','Clear all safe cells','No mine detonations'],
-    unit:'seconds', passMark:120, lowerBetter:true,
-    grade(v){ if(v<40)return'S'; if(v<65)return'A'; if(v<90)return'B'; if(v<120)return'C'; return'D'; },
-    msg(v,g){ return g==='S'?'Under 40 seconds on Medium is near-perfect logic.':g==='A'?'Fast and precise.':g==='B'?'Solid sweep.':'Field cleared!'; }
-  },
-  {
-    type:'☄️ Minesweeper', title:'Easy Clear', tool:'/games/minesweeper',
-    desc:'Finish an Easy (9×9) Minesweeper board with no mistakes in under 30 seconds.',
-    objectives:['Select Easy difficulty','Clear the full 9×9 board','Finish in under 30 seconds'],
-    unit:'seconds', passMark:30, lowerBetter:true,
-    grade(v){ if(v<10)return'S'; if(v<15)return'A'; if(v<22)return'B'; if(v<30)return'C'; return'D'; },
-    msg(v,g){ return g==='S'?'Under 10 seconds on Easy is legendary.':g==='A'?'Sub-15 easy clear. Very fast.':g==='B'?'Smooth sweep.':'Easy board cleared!'; }
-  },
-  {
-    type:'☄️ Minesweeper', title:'Hard Survival', tool:'/games/minesweeper',
-    desc:'Attempt a Hard (30×16) Minesweeper board and survive as long as possible.',
-    objectives:['Select Hard difficulty','Clear as many cells as possible','Enter time survived in seconds'],
-    unit:'seconds survived', passMark:60,
-    grade(v){ if(v>=300)return'S'; if(v>=180)return'A'; if(v>=120)return'B'; if(v>=60)return'C'; return'D'; },
-    msg(v,g){ return g==='S'?'5+ minutes on Hard. Legendary sweep.':g==='A'?'3+ minutes. Strong logical play.':g==='B'?'2 minutes survived on Hard — solid.':'A minute on Hard is respectable!'; }
-  },
-  // ── Type Racer challenges ─────────────────────────────────────────────
-  {
-    type:'⌨️ Speed Typing', title:'WPM Burst', tool:'/games/type-racer',
-    desc:'Complete a 60-second Type Racer session and hit 60+ WPM.',
-    objectives:['Select 60-second mode','Type gaming quotes accurately','Achieve 60+ WPM'],
-    unit:'WPM', passMark:60,
-    grade(v){ if(v>=100)return'S'; if(v>=80)return'A'; if(v>=70)return'B'; if(v>=60)return'C'; return'D'; },
-    msg(v,g){ return g==='S'?'100+ WPM is world-class typing. Incredible.':g==='A'?'80+ WPM is very fast. Well done.':g==='B'?'70+ WPM is solid competitive speed.':'60 WPM cleared — keep training!'; }
-  },
-  {
-    type:'⌨️ Speed Typing', title:'Accuracy First', tool:'/games/type-racer',
-    desc:'Complete a 30-second Type Racer run with 98%+ accuracy.',
-    objectives:['Select 30-second mode','Focus on zero errors','Score 98%+ accuracy'],
-    unit:'% accuracy', passMark:98,
-    grade(v){ if(v>=100)return'S'; if(v>=99)return'A'; if(v>=98.5)return'B'; if(v>=98)return'C'; return'D'; },
-    msg(v,g){ return g==='S'?'100% accuracy. Flawless. Literal perfection.':g==='A'?'99%+ accuracy. Extremely clean.':g==='B'?'98.5%+ — near-flawless.':'98%+ accuracy achieved!'; }
-  },
-  {
-    type:'⌨️ Speed Typing', title:'Sprint Mode', tool:'/games/type-racer',
-    desc:'Hit 75+ WPM in a 30-second burst session.',
-    objectives:['Select 30-second mode','Type as fast as you can','Reach 75+ WPM'],
-    unit:'WPM', passMark:75,
-    grade(v){ if(v>=120)return'S'; if(v>=100)return'A'; if(v>=85)return'B'; if(v>=75)return'C'; return'D'; },
-    msg(v,g){ return g==='S'?'120+ WPM sprint. You\'re a keyboard demon.':g==='A'?'100+ WPM. Fast fingers.':g==='B'?'85+ WPM. Strong burst speed.':'75+ WPM cleared!'; }
-  },
-  // ── Void Keeper challenges ────────────────────────────────────────────
-  {
-    type:'🌌 Void Keeper', title:'Void Survival', tool:'/games/void-keeper',
-    desc:'Survive Void Keeper for at least 90 seconds without losing.',
-    objectives:['Start a Void Keeper session','Collect light particles','Survive for 90+ seconds'],
-    unit:'seconds', passMark:90,
-    grade(v){ if(v>=300)return'S'; if(v>=180)return'A'; if(v>=120)return'B'; if(v>=90)return'C'; return'D'; },
-    msg(v,g){ return g==='S'?'5 minutes in the Void. You\'ve transcended.':g==='A'?'3 minutes. The void respects you.':g==='B'?'2 minutes. Solid survival instincts.':'90 seconds cleared — the void was tested.'; }
-  },
-  {
-    type:'🌌 Void Keeper', title:'Score Hunter', tool:'/games/void-keeper',
-    desc:'Play Void Keeper and collect 500+ particles before your first life ends.',
-    objectives:['Start Void Keeper','Collect light particles','Reach 500 before your first hit'],
-    unit:'particles', passMark:500,
-    grade(v){ if(v>=2000)return'S'; if(v>=1200)return'A'; if(v>=800)return'B'; if(v>=500)return'C'; return'D'; },
-    msg(v,g){ return g==='S'?'2000+ particles. You are the Void.':g==='A'?'1200+ — elite collection run.':g==='B'?'800+ particles. Strong focus.':'500 particles gathered!'; }
-  },
-  // ── Beat Lab challenges ───────────────────────────────────────────────
-  {
-    type:'🎵 Beat Lab', title:'Rhythm Check', tool:'/games/beat-lab',
-    desc:'Play a Beat Lab session and achieve a 10+ note combo.',
-    objectives:['Start Beat Lab','Hit incoming notes accurately','Build a 10-note combo without breaking'],
-    unit:'combo', passMark:10,
-    grade(v){ if(v>=50)return'S'; if(v>=30)return'A'; if(v>=20)return'B'; if(v>=10)return'C'; return'D'; },
-    msg(v,g){ return g==='S'?'50-note combo. You\'re a rhythm god.':g==='A'?'30-note combo. Near-perfect rhythm.':g==='B'?'20 combo. Solid beat sense.':'10-note combo achieved!'; }
-  },
-  {
-    type:'🎵 Beat Lab', title:'Score Blitz', tool:'/games/beat-lab',
-    desc:'Complete a full Beat Lab session and hit 1000+ points.',
-    objectives:['Play a full Beat Lab session','Chain combo multipliers','Score 1000+ total points'],
-    unit:'points', passMark:1000,
-    grade(v){ if(v>=5000)return'S'; if(v>=3000)return'A'; if(v>=2000)return'B'; if(v>=1000)return'C'; return'D'; },
-    msg(v,g){ return g==='S'?'5000+ points. World-class rhythm skills.':g==='A'?'3000+ — combo multipliers mastered.':g==='B'?'2000 points. Solid session.':'1000 points hit!'; }
-  },
-  // ── Gamerdle challenges ───────────────────────────────────────────────
-  {
-    type:'🎮 Gamerdle', title:'Gamer IQ Test', tool:'/games/gamerdle',
-    desc:'Guess today\'s mystery game in 3 tries or fewer.',
-    objectives:['Open Gamerdle','Guess the mystery game','Solve it in 3 guesses or fewer'],
-    unit:'guesses used', passMark:3, lowerBetter:true,
-    grade(v){ if(v===1)return'S'; if(v===2)return'A'; if(v===3)return'B'; if(v<=6)return'C'; return'D'; },
-    msg(v,g){ return g==='S'?'First guess solve. Encyclopedic knowledge.':g==='A'?'Two guesses — sharp gaming intuition.':g==='B'?'Three and done. Solid deduction.':'Gamerdle solved!'; }
-  },
-  {
-    type:'🎮 Gamerdle', title:'Perfect Deduction', tool:'/games/gamerdle',
-    desc:'Solve today\'s Gamerdle without using genre or platform hints.',
-    objectives:['Play today\'s Gamerdle','Solve using title/year guesses only','No genre-only shots'],
-    unit:'guesses used', passMark:6, lowerBetter:true,
-    grade(v){ if(v<=2)return'S'; if(v<=3)return'A'; if(v<=4)return'B'; if(v<=6)return'C'; return'D'; },
-    msg(v,g){ return g==='S'?'2 guesses with pure deduction. Legendary.':g==='A'?'3 guesses — incredibly sharp.':g==='B'?'4 guesses without hints. Strong.':'Gamerdle completed!'; }
-  },
-  // ── Asteroid Dodge challenges ─────────────────────────────────────────
-  {
-    type:'🚀 Asteroid Dodge', title:'Survive the Field', tool:'/games/asteroid-dodge',
-    desc:'Survive an Asteroid Dodge session for 60 seconds.',
-    objectives:['Launch Asteroid Dodge','Dodge all incoming asteroids','Survive for 60 seconds'],
-    unit:'seconds', passMark:60,
-    grade(v){ if(v>=180)return'S'; if(v>=120)return'A'; if(v>=90)return'B'; if(v>=60)return'C'; return'D'; },
-    msg(v,g){ return g==='S'?'3 minutes. You ARE the void pilot.':g==='A'?'2 minutes. Serious pilot skills.':g==='B'?'90 seconds dodging. Very sharp.':'60 seconds survived!'; }
-  },
-  {
-    type:'🚀 Asteroid Dodge', title:'Score Pusher', tool:'/games/asteroid-dodge',
-    desc:'Score 1000+ points in a single Asteroid Dodge run.',
-    objectives:['Play Asteroid Dodge','Collect score orbs while dodging','Hit 1000+ points'],
-    unit:'points', passMark:1000,
-    grade(v){ if(v>=5000)return'S'; if(v>=3000)return'A'; if(v>=2000)return'B'; if(v>=1000)return'C'; return'D'; },
-    msg(v,g){ return g==='S'?'5000+ points. You\'re an asteroid legend.':g==='A'?'3000+ — elite space pilot.':g==='B'?'2000 points. Strong run.':'1000 points! The field was tamed.'; }
-  },
-  // ── Gaming Trivia challenges ──────────────────────────────────────────
-  {
-    type:'🧠 Trivia', title:'Daily Quiz Ace', tool:'/games/gaming-trivia',
-    desc:'Complete today\'s 10-question gaming trivia quiz and score 8+.',
-    objectives:['Open Gaming Trivia','Answer all 10 questions','Score 8 or higher'],
-    unit:'correct answers', passMark:8,
-    grade(v){ if(v===10)return'S'; if(v===9)return'A'; if(v===8)return'B'; if(v>=6)return'C'; return'D'; },
-    msg(v,g){ return g==='S'?'10/10. Perfect gaming knowledge. Unstoppable.':g==='A'?'9/10. Near-perfect. One slip.':g==='B'?'8/10. Solid trivia game.':'Good score — come back tomorrow for more!'; }
-  },
-  {
-    type:'🧠 Trivia', title:'Speed Trivia', tool:'/games/gaming-trivia',
-    desc:'Answer all 10 trivia questions and use less than 60 seconds total time.',
-    objectives:['Open Gaming Trivia','Answer every question quickly','Use under 60 seconds total'],
-    unit:'seconds used', passMark:60, lowerBetter:true,
-    grade(v){ if(v<30)return'S'; if(v<40)return'A'; if(v<50)return'B'; if(v<60)return'C'; return'D'; },
-    msg(v,g){ return g==='S'?'Under 30 seconds — instant recall. Incredible.':g==='A'?'Under 40 seconds. Very fast knowledge.':g==='B'?'Under 50 seconds. Quick gaming brain.':'Under 60 seconds — speed challenge passed!'; }
-  },
-  // ── Gear Quiz challenges ──────────────────────────────────────────────
-  {
-    type:'🎧 Gear Quiz', title:'Spec Savant', tool:'/games/gear-quiz',
-    desc:'Complete the daily Gear Knowledge Quiz and answer 8+ questions correctly.',
-    objectives:['Open Gear Knowledge Quiz','Answer all 10 questions','Score 8 or higher'],
-    unit:'correct answers', passMark:8,
-    grade(v){ if(v===10)return'S'; if(v===9)return'A'; if(v===8)return'B'; if(v>=6)return'C'; return'D'; },
-    msg(v,g){ return g==='S'?'10/10 on gear specs. You live in the spreadsheet.':g==='A'?'9/10. Deep gear knowledge.':g==='B'?'8/10. You know your peripherals.':'You passed the gear quiz!'; }
-  },
-  {
-    type:'🎧 Gear Quiz', title:'Price Whisperer', tool:'/games/price-guesser',
-    desc:'Play Price Guesser and get within 15% of the correct price on 4 out of 5 items.',
-    objectives:['Open Price Guesser','Guess all 5 item prices','Land within 15% on 4+ items'],
-    unit:'items within 15%', passMark:4,
-    grade(v){ if(v===5)return'S'; if(v===4)return'A'; if(v===3)return'B'; if(v>=2)return'C'; return'D'; },
-    msg(v,g){ return g==='S'?'5/5 within 15%. You\'re a walking price list.':g==='A'?'4/5 — strong market awareness.':g==='B'?'3/5 — you know gear pricing well.':'Price awareness confirmed!'; }
-  },
-  // ── Color Memory challenges ───────────────────────────────────────────
-  {
-    type:'🎨 Color Memory', title:'Sequence Master', tool:'/games/color-memory',
-    desc:'Reach a sequence length of 10 in Color Memory without failing.',
-    objectives:['Open Color Memory','Watch and repeat sequences','Reach length 10 successfully'],
-    unit:'sequence length', passMark:10,
-    grade(v){ if(v>=20)return'S'; if(v>=15)return'A'; if(v>=12)return'B'; if(v>=10)return'C'; return'D'; },
-    msg(v,g){ return g==='S'?'Length 20. Superhuman working memory.':g==='A'?'Length 15 — elite pattern recall.':g==='B'?'Length 12. Excellent color memory.':'Sequence 10 reached — challenge complete!'; }
-  },
-  {
-    type:'🎨 Color Memory', title:'First Try Focus', tool:'/games/color-memory',
-    desc:'Play Color Memory and reach length 8 without a single mistake.',
-    objectives:['Open Color Memory','Replicate every sequence perfectly','No errors through length 8'],
-    unit:'max length no mistakes', passMark:8,
-    grade(v){ if(v>=15)return'S'; if(v>=12)return'A'; if(v>=10)return'B'; if(v>=8)return'C'; return'D'; },
-    msg(v,g){ return g==='S'?'15+ with zero errors. Photographic sequence memory.':g==='A'?'12 clean — precision focus.':g==='B'?'10 without a miss. Very sharp.':'8 reached without an error!'; }
-  },
-  // ── Crossword challenges ──────────────────────────────────────────────
-  {
-    type:'✏️ Crossword', title:'Grid Solver', tool:'/games/crossword',
-    desc:'Complete today\'s Gaming Crossword puzzle without using any hints.',
-    objectives:['Open Gaming Crossword','Fill in all squares','No hints used'],
-    unit:'hints used', passMark:0, lowerBetter:true,
-    grade(v){ if(v===0)return'S'; if(v===1)return'A'; if(v===2)return'B'; if(v<=3)return'C'; return'D'; },
-    msg(v,g){ return g==='S'?'Zero hints. Pure gaming vocabulary.':g==='A'?'One hint only — nearly clean.':g==='B'?'Two hints — solid crossword skills.':'Crossword completed!'; }
-  },
-  {
-    type:'✏️ Crossword', title:'Speed Fill', tool:'/games/crossword',
-    desc:'Complete today\'s Gaming Crossword in under 5 minutes.',
-    objectives:['Open Gaming Crossword','Fill in all squares','Finish in under 5 minutes'],
-    unit:'minutes', passMark:5, lowerBetter:true,
-    grade(v){ if(v<2)return'S'; if(v<3)return'A'; if(v<4)return'B'; if(v<5)return'C'; return'D'; },
-    msg(v,g){ return g==='S'?'Under 2 minutes. Word recall is instant.':g==='A'?'Under 3 minutes. Fast gaming vocab.':g==='B'?'Under 4 minutes. Smooth solve.':'Under 5 — crossword challenge passed!'; }
-  },
-];
-
-// ── State ─────────────────────────────────────────────────────────────────────
-const today = new Date();
-const todayKey = `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
-const rng = mulberry32(dailySeed());
-const challengeIdx = Math.floor(rng() * CHALLENGES.length);
-const challenge = CHALLENGES[challengeIdx];
-
-let history = [];
-try { history = JSON.parse(localStorage.getItem('cgx-dc-history') || '[]') || []; } catch (_) { history = []; }
-if (!Array.isArray(history)) history = [];
-let streak  = parseInt(localStorage.getItem('cgx-dc-streak') || '0', 10);
-if (!Number.isFinite(streak)) streak = 0;
-const alreadyDone = history.some(h => h.date === todayKey);
-
-// ── Render ─────────────────────────────────────────────────────────────────────
-document.getElementById('dateLabel').textContent = today.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
-document.getElementById('streakBadge').textContent = `🔥 Streak: ${streak} day${streak!==1?'s':''}`;
-document.getElementById('challengeType').textContent  = challenge.type;
-document.getElementById('challengeTitle').textContent = challenge.title;
-document.getElementById('challengeDesc').textContent  = challenge.desc;
-document.getElementById('challengeLink').href = challenge.tool;
-document.getElementById('challengeLink').textContent  = `Open ${challenge.type.split(' ').slice(1).join(' ')} →`;
-
-const ol = document.getElementById('objectiveList');
-challenge.objectives.forEach(obj => {
-  const li = document.createElement('li');
-  li.innerHTML = `<span class="obj-icon">▸</span>${obj}`;
-  ol.appendChild(li);
-});
-
-if (alreadyDone) {
-  document.getElementById('alreadyDone').style.display = 'block';
-  document.getElementById('submitSection').style.display = 'none';
-  const done = history.find(h => h.date === todayKey);
-  if (done) showResult(done.score, done.grade, false);
-}
-
-renderHistory();
-
-// ── Submit ────────────────────────────────────────────────────────────────────
-function submitResult() {
-  const raw = parseFloat(document.getElementById('scoreInput').value);
-  if (isNaN(raw) || raw < 0) {
-    const err = document.getElementById('scoreError');
-    if (err) { err.hidden = false; err.textContent = 'Enter a valid score.'; }
-    return;
-  }
-  const err = document.getElementById('scoreError');
-  if (err) err.hidden = true;
-  const grade = challenge.grade(raw);
-  // Update streak
-  const yesterday = new Date(today); yesterday.setDate(yesterday.getDate()-1);
-  const yesterdayKey = `${yesterday.getFullYear()}-${yesterday.getMonth()+1}-${yesterday.getDate()}`;
-  const hadYesterday = history.some(h => h.date === yesterdayKey);
-  streak = hadYesterday ? streak + 1 : 1;
-  localStorage.setItem('cgx-dc-streak', streak);
-  document.getElementById('streakBadge').textContent = `🔥 Streak: ${streak} day${streak!==1?'s':''}`;
-  // Save
-  history.unshift({ date: todayKey, title: challenge.title, score: raw, unit: challenge.unit, grade });
-  localStorage.setItem('cgx-dc-history', JSON.stringify(history.slice(0,30)));
-  document.getElementById('submitSection').style.display = 'none';
-  showResult(raw, grade, true);
-  renderHistory();
-}
-
-function showResult(score, grade, animate) {
-  const box = document.getElementById('resultBox');
-  box.classList.add('show');
-  document.getElementById('resultGrade').textContent = grade;
-  document.getElementById('resultTitle').textContent = challenge.msg(score, grade);
-  document.getElementById('resultMsg').textContent = `${score} ${challenge.unit}`;
-  const shareStr = buildShare(score, grade);
-  document.getElementById('shareText').textContent = shareStr;
-  if (animate) document.getElementById('resultGrade').classList.add('pulse');
-}
-
-function buildShare(score, grade) {
-  const bars = {'S':'██████','A':'█████░','B':'████░░','C':'███░░░','D':'██░░░░'};
-  return `CosmicGamesHub Daily Challenge\n${today.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}\n\n${challenge.type}: ${challenge.title}\nGrade: ${grade} ${bars[grade]}\nScore: ${score} ${challenge.unit}\nStreak: ${streak} day${streak!==1?'s':''} 🔥\n\ncosmicgameshub.com/games/daily-challenge`;
-}
-
-function copyShare() {
-  const text = document.getElementById('shareText').textContent;
-  navigator.clipboard.writeText(text).then(() => {
-    const btn = document.querySelector('[onclick="copyShare()"]');
-    btn.textContent = '✅ Copied!';
-    setTimeout(() => btn.textContent = '📋 Copy to Share', 2000);
-  });
-}
-
-function renderHistory() {
-  const el = document.getElementById('historyList');
-  if (!history.length) return;
-  el.innerHTML = '';
-  history.slice(0,7).forEach(h => {
-    const row = document.createElement('div'); row.className = 'history-row';
-    row.innerHTML = `<span class="date">${h.date}</span><span>${h.title}</span><span>${h.score} ${h.unit}</span><span class="grade">${h.grade}</span>`;
-    el.appendChild(row);
-  });
-}
-
-/* Nav handled by global.js via .nav__hamburger class */
-</script>
+<script src="/games/daily-kit.js" defer></script>
 <script src="/global.js" defer></script>
+<script>
+(function () {
+  var iso = new Date().toISOString().slice(0, 10);
+  var STREAK_KEY = 'cgx-dc-streak';
+  var LAST_KEY = 'cgx-dc-last';
+  var HIST_KEY = 'cgx-dc-history';
 
+  function safeJSON(k) {
+    try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; }
+  }
+  function mulberry(a) {
+    return function () {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      var t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  function shuffle(arr, rnd) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(rnd() * (i + 1));
+      var x = a[i]; a[i] = a[j]; a[j] = x;
+    }
+    return a;
+  }
+
+  function renderStreak() {
+    document.getElementById('pkStreak').textContent = 'Streak ' + (parseInt(localStorage.getItem(STREAK_KEY), 10) || 0);
+  }
+
+  function finish(ok, target) {
+    var last = localStorage.getItem(LAST_KEY);
+    if (last !== iso) {
+      var y = new Date(); y.setUTCDate(y.getUTCDate() - 1);
+      var yiso = y.toISOString().slice(0, 10);
+      var streak = parseInt(localStorage.getItem(STREAK_KEY), 10) || 0;
+      localStorage.setItem(STREAK_KEY, String(last === yiso ? streak + 1 : 1));
+      localStorage.setItem(LAST_KEY, iso);
+      var hist = safeJSON(HIST_KEY) || [];
+      hist.push({ date: iso, ok: !!ok, id: target.id });
+      localStorage.setItem(HIST_KEY, JSON.stringify(hist.slice(-60)));
+    }
+    renderStreak();
+    document.getElementById('pkTitle').textContent = ok ? 'Correct' : 'Not today';
+    document.getElementById('pkMsg').textContent = target.name + ' · ' + (target.team || 'Free Agent') + ' · ' + (target.game || '');
+    document.getElementById('pkProLink').href = '/pros/' + target.id;
+    var share = 'Pro Kit Daily ' + iso + '\n' + (ok ? 'got it' : 'missed') + ' — ' + target.name + '\ncosmicgameshub.com/games/daily-challenge';
+    document.getElementById('pkShare').textContent = share;
+    document.getElementById('pkResult').classList.add('show');
+    if (window.CGDaily) window.CGDaily.mountAll();
+  }
+
+  fetch('/data/pros.json').then(function (r) { return r.json(); }).then(function (pros) {
+    var pool = (pros || []).filter(function (p) { return p && p.mouse && p.name && p.id; });
+    var day = Math.floor(Date.now() / 86400000);
+    var rnd = mulberry(day * 9973);
+    var target = pool[Math.floor(rnd() * pool.length)];
+    var others = shuffle(pool.filter(function (p) { return p.id !== target.id; }), rnd).slice(0, 3);
+    var choices = shuffle(others.concat([target]), rnd);
+
+    document.getElementById('pkClue').innerHTML =
+      '<div class="pk-k">Mouse</div><div class="pk-v">' + target.mouse + '</div>' +
+      (target.dpi ? '<div class="pk-k">DPI</div><div class="pk-v">' + target.dpi + (target.sensitivity != null ? ' × ' + target.sensitivity : '') + '</div>' : '') +
+      '<div class="pk-k">Game</div><div class="pk-v">' + String(target.game || '').toUpperCase() + '</div>' +
+      (target.monitor ? '<div class="pk-k">Monitor</div><div class="pk-v">' + target.monitor + '</div>' : '');
+
+    var box = document.getElementById('pkChoices');
+    var already = localStorage.getItem(LAST_KEY) === iso;
+    choices.forEach(function (p) {
+      var b = document.createElement('button');
+      b.className = 'pk-choice';
+      b.type = 'button';
+      b.textContent = p.name + (p.team ? ' · ' + p.team : '');
+      if (already) {
+        b.disabled = true;
+        if (p.id === target.id) b.classList.add('is-right');
+      } else {
+        b.addEventListener('click', function () {
+          var ok = p.id === target.id;
+          box.querySelectorAll('button').forEach(function (x) {
+            x.disabled = true;
+            var pid = x.textContent.split(' · ')[0];
+            if (pid === target.name) x.classList.add('is-right');
+          });
+          if (!ok) b.classList.add('is-wrong');
+          finish(ok, target);
+        });
+      }
+      box.appendChild(b);
+    });
+    if (already) {
+      var recs = safeJSON(HIST_KEY) || [];
+      var rec = recs.filter(function (h) { return h && h.date === iso; }).pop();
+      finish(rec ? !!rec.ok : true, target);
+      document.getElementById('pkTitle').textContent = 'Already played today';
+    }
+  }).catch(function () {
+    document.getElementById('pkClue').textContent = 'Could not load the pro database. Open /pros and try again.';
+  });
+
+  document.getElementById('pkCopy').addEventListener('click', function () {
+    var t = document.getElementById('pkShare').textContent;
+    if (window.CGDaily) window.CGDaily.copyText(t);
+    else if (navigator.clipboard) navigator.clipboard.writeText(t);
+    this.textContent = 'Copied';
+  });
+  renderStreak();
+})();
+</script>
 </body>
 </html>
