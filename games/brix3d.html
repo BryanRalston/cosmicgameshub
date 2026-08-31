@@ -402,6 +402,26 @@
       font-size: 11px; color: #4ade80;
       font-weight: 600;
       border: 1px solid rgba(255,255,255,0.08);
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    #qualityBar {
+      position: absolute; bottom: 12px; right: 12px;
+      z-index: 100;
+      display: flex; gap: 4px;
+      background: rgba(15, 15, 26, 0.9);
+      padding: 4px; border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    #qualityBar button {
+      background: transparent; color: rgba(255,255,255,0.55);
+      border: 1px solid transparent; border-radius: 6px;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.4px;
+      padding: 5px 8px; cursor: pointer; font-family: inherit;
+    }
+    #qualityBar button.active {
+      color: #ffd700; background: rgba(255,215,0,0.12);
+      border-color: rgba(255,215,0,0.25);
     }
     
     /* Zoom controls */
@@ -3552,6 +3572,14 @@
             <button class="time-preset" data-time="0.0">🌙 Night</button>
           </div>
           <div class="env-row" style="margin-top: 8px;">
+            <span class="env-label">Quality:</span>
+          </div>
+          <div class="weather-btns" id="qualityBtns">
+            <button class="weather-btn" data-quality="high">High</button>
+            <button class="weather-btn active" data-quality="balanced">Balanced</button>
+            <button class="weather-btn" data-quality="performance">Performance</button>
+          </div>
+          <div class="env-row" style="margin-top: 8px;">
             <span class="env-label">Weather:</span>
           </div>
           <div class="weather-btns">
@@ -3606,7 +3634,12 @@
     <div class="shortcut"><span class="key">Ctrl+S</span> Save project</div>
   </div>
   
-  <div class="fps" id="fps">60 FPS</div>
+  <div class="fps" id="fps">-- FPS · 0 bricks · 0 draws</div>
+  <div id="qualityBar">
+    <button data-quality="high">High</button>
+    <button data-quality="balanced" class="active">Balanced</button>
+    <button data-quality="performance">Perf</button>
+  </div>
   <div class="toast" id="toast"></div>
   <div class="touch-indicator" id="touchIndicator"></div>
   <div class="floor-preview-info" id="floorPreviewInfo">Drag to select area: 0×0</div>
@@ -3711,7 +3744,7 @@
     import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
     import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
     import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
-    import { BokehPass } from 'three/addons/postprocessing/BokehPass.js';
+    import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
     
     // ==================== CONSTANTS ====================
     const STUD = 0.8;
@@ -3954,7 +3987,7 @@
     
     // ==================== STATE ====================
     let scene, camera, renderer, controls, raycaster, mouse, groundPlane;
-    let composer, bloomPass, bokehPass; // Post-processing
+    let composer, bloomPass, ssaoPass, smaaPass, vignettePass;
     let ghost = null;
     let mirrorGhosts = []; // Ghost previews for mirrored bricks
     let prefabGhosts = []; // Ghost previews for prefab bricks
@@ -4748,8 +4781,180 @@
       'lamp2x2': {w:2,d:2,h:'b',light:true,lightIntensity:80,lightDistance:80,defaultColor:0xffdd44}
     };
     
-    // Track light sources for cleanup
-    const lightSources = new Map(); // brickId -> THREE.PointLight
+    // Track lamp bricks for the capped PointLight pool (never one light per lamp).
+    const lightSources = new Map(); // brickId -> { color, intensity, distance, position }
+    const MAX_BRICK_LIGHTS = 4;
+    const brickLightPool = [];
+    
+    // ==================== QUALITY PRESETS ====================
+    // High / Balanced / Performance. Default Balanced. Persist in localStorage.
+    // Do not reintroduce per-brick Mesh groups, 4096 shadows, or DPR 2 on phones.
+    const QUALITY_PRESETS = {
+      high: {
+        dprDesktop: 1.5, dprMobile: 1.25,
+        shadowDesktop: 2048, shadowMobile: 1024,
+        bloom: true, ssao: true, smaa: true, post: true
+      },
+      balanced: {
+        dprDesktop: 1.5, dprMobile: 1.25,
+        shadowDesktop: 2048, shadowMobile: 1024,
+        bloom: true, ssao: false, smaa: true, post: true
+      },
+      performance: {
+        dprDesktop: 1, dprMobile: 1,
+        shadowDesktop: 1024, shadowMobile: 1024,
+        bloom: false, ssao: false, smaa: false, post: false
+      }
+    };
+    let qualityPreset = 'balanced';
+    let qualitySettings = QUALITY_PRESETS.balanced;
+    let lastHudFps = 0;
+    let lastPointerMs = 0;
+    let lastWeatherTick = 0;
+    let lastLightUpdate = 0;
+    let pmremGenerator = null;
+    const _noonWhite = new THREE.Color(0xffffff);
+    
+    function isMobileGfx() {
+      const ua = navigator.userAgent || '';
+      const touch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+      const small = Math.min(innerWidth, innerHeight) < 900;
+      return touch && (small || /Mobi|Android|iPhone|iPad/i.test(ua));
+    }
+    
+    function loadQualityPreset() {
+      try {
+        const saved = localStorage.getItem('brixQuality');
+        if (saved && QUALITY_PRESETS[saved]) qualityPreset = saved;
+      } catch (e) {}
+      qualitySettings = QUALITY_PRESETS[qualityPreset];
+    }
+    
+    function qualityDpr() {
+      const cap = isMobileGfx() ? qualitySettings.dprMobile : qualitySettings.dprDesktop;
+      return Math.min(window.devicePixelRatio || 1, cap);
+    }
+    
+    function qualityShadowSize() {
+      return isMobileGfx() ? qualitySettings.shadowMobile : qualitySettings.shadowDesktop;
+    }
+    
+    function applyQuality(name, opts = {}) {
+      if (!QUALITY_PRESETS[name]) name = 'balanced';
+      qualityPreset = name;
+      qualitySettings = QUALITY_PRESETS[name];
+      try { localStorage.setItem('brixQuality', name); } catch (e) {}
+      
+      document.querySelectorAll('[data-quality]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.quality === name);
+      });
+      
+      if (!renderer) return;
+      renderer.setPixelRatio(qualityDpr());
+      renderer.setSize(innerWidth, innerHeight);
+      
+      const sun = window.sunLight;
+      if (sun && sun.shadow) {
+        const size = qualityShadowSize();
+        if (sun.shadow.mapSize.width !== size) {
+          sun.shadow.mapSize.set(size, size);
+          if (sun.shadow.map) {
+            sun.shadow.map.dispose();
+            sun.shadow.map = null;
+          }
+        }
+        sun.shadow.needsUpdate = true;
+      }
+      updateShadowFrustum();
+      setupPostProcessing();
+      needsRender = true;
+      if (!opts.silent) toast(`Quality: ${name.charAt(0).toUpperCase() + name.slice(1)}`);
+    }
+    
+    function initBrickLightPool() {
+      for (let i = 0; i < MAX_BRICK_LIGHTS; i++) {
+        const l = new THREE.PointLight(0xffdd44, 0, 0);
+        l.castShadow = false;
+        l.visible = false;
+        scene.add(l);
+        brickLightPool.push(l);
+      }
+    }
+    
+    function registerLampBrick(id, color, intensity, distance, position) {
+      lightSources.set(id, { color, intensity, distance, position: position.clone() });
+      updateBrickLights(true);
+    }
+    
+    function unregisterLampBrick(id) {
+      if (lightSources.delete(id)) updateBrickLights(true);
+    }
+    
+    function updateBrickLights(force = false) {
+      const now = performance.now();
+      if (!force && now - lastLightUpdate < 120) return;
+      lastLightUpdate = now;
+      if (!camera || brickLightPool.length === 0) return;
+      
+      const items = [];
+      lightSources.forEach((src, id) => {
+        items.push({ id, src, dist: camera.position.distanceToSquared(src.position) });
+      });
+      items.sort((a, b) => a.dist - b.dist);
+      
+      for (let i = 0; i < MAX_BRICK_LIGHTS; i++) {
+        const l = brickLightPool[i];
+        const item = items[i];
+        if (!item) {
+          l.visible = false;
+          l.intensity = 0;
+          continue;
+        }
+        l.visible = true;
+        l.color.setHex(item.src.color);
+        l.intensity = Math.min(item.src.intensity * 0.35, 18);
+        l.distance = item.src.distance;
+        l.decay = 2;
+        l.position.copy(item.src.position);
+        l.position.y += 0.6;
+      }
+    }
+    
+    function updateShadowFrustum() {
+      const sun = window.sunLight;
+      if (!sun || !sun.shadow) return;
+      const cam = sun.shadow.camera;
+      const plate = 96 * STUD;
+      let minX = 0, maxX = plate, minZ = 0, maxZ = plate, maxY = 12;
+      if (bricks.length) {
+        minX = Infinity; maxX = -Infinity; minZ = Infinity; maxZ = -Infinity; maxY = 4;
+        for (let i = 0; i < bricks.length; i++) {
+          const b = bricks[i];
+          const p = b.position;
+          if (!p) continue;
+          const g = b.userData && b.userData.grid;
+          const hx = g ? (g.w * STUD) * 0.5 + 2 : 4;
+          const hz = g ? (g.d * STUD) * 0.5 + 2 : 4;
+          minX = Math.min(minX, p.x - hx);
+          maxX = Math.max(maxX, p.x + hx);
+          minZ = Math.min(minZ, p.z - hz);
+          maxZ = Math.max(maxZ, p.z + hz);
+          maxY = Math.max(maxY, p.y + (g ? g.hp * PLATE_H : 4) + 4);
+        }
+      }
+      const cx = (minX + maxX) * 0.5;
+      const cz = (minZ + maxZ) * 0.5;
+      const extent = Math.max(maxX - minX, maxZ - minZ) * 0.5 + 8;
+      cam.left = -extent;
+      cam.right = extent;
+      cam.top = extent;
+      cam.bottom = -extent;
+      cam.near = 1;
+      cam.far = Math.max(160, extent * 3 + maxY);
+      cam.updateProjectionMatrix();
+      sun.target.position.set(cx, 0, cz);
+      sun.target.updateMatrixWorld();
+    }
     
     // Function to create custom brick type
     function createCustomType(w, d, typeStr) {
@@ -4806,6 +5011,7 @@
     // ==================== INIT ====================
     function init() {
       isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      loadQualityPreset();
       
       // Initialize sound system
       SoundSystem.init();
@@ -4817,21 +5023,19 @@
       camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 1000);
       camera.position.set(60, 40, 80); // Position to see baseplate nicely
       
-      renderer = new THREE.WebGLRenderer({antialias: true, preserveDrawingBuffer: true});
+      renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: false, powerPreference: 'high-performance' });
       renderer.setSize(innerWidth, innerHeight);
-      renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+      renderer.setPixelRatio(qualityDpr());
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.2;
+      renderer.info.autoReset = false;
       document.getElementById('container').appendChild(renderer.domElement);
       
-      // Create environment map for reflections (procedural gradient sky)
+      // Create environment map for reflections (procedural gradient sky) — once
       envMap = createEnvMap();
       scene.environment = envMap;
-      
-      // Setup post-processing
-      setupPostProcessing();
       
       controls = new OrbitControls(camera, renderer.domElement);
       controls.addEventListener('change', () => { needsRender = true; });
@@ -4859,33 +5063,38 @@
       raycaster = new THREE.Raycaster();
       mouse = new THREE.Vector2();
       
-      // Lights - will be updated by time of day
+      // Lights: 1 directional sun + hemi + ambient. No extra cheap lights.
       const ambient = new THREE.AmbientLight(0xffffff, 0.4);
       ambient.name = 'ambient';
       scene.add(ambient);
       
+      const shadowSize = qualityShadowSize();
       const sun = new THREE.DirectionalLight(0xffffff, 1);
       sun.name = 'sun';
       sun.position.set(50, 80, 60);
       sun.castShadow = true;
-      sun.shadow.mapSize.width = 4096;
-      sun.shadow.mapSize.height = 4096;
+      sun.shadow.mapSize.width = shadowSize;
+      sun.shadow.mapSize.height = shadowSize;
       sun.shadow.camera.near = 1;
-      sun.shadow.camera.far = 300;
-      sun.shadow.camera.left = -100;
-      sun.shadow.camera.right = 100;
-      sun.shadow.camera.top = 100;
-      sun.shadow.camera.bottom = -100;
-      sun.shadow.bias = -0.0005;
+      sun.shadow.camera.far = 200;
+      sun.shadow.camera.left = -48;
+      sun.shadow.camera.right = 48;
+      sun.shadow.camera.top = 48;
+      sun.shadow.camera.bottom = -48;
+      sun.shadow.bias = -0.0008;
+      sun.shadow.normalBias = 0.04;
       scene.add(sun);
       
-      // Store sun reference to update with camera
       window.sunLight = sun;
       scene.add(sun.target);
       
       const hemi = new THREE.HemisphereLight(0x87CEEB, 0x3a5f3a, 0.3);
       hemi.name = 'hemi';
       scene.add(hemi);
+      
+      initBrickLightPool();
+      setupPostProcessing();
+      applyQuality(qualityPreset, { silent: true });
       
       // Large invisible ground plane for raycasting (infinite building)
       const groundGeo = new THREE.PlaneGeometry(2000, 2000);
@@ -4915,29 +5124,49 @@
     
     // ==================== POST-PROCESSING ====================
     function setupPostProcessing() {
+      if (composer) {
+        try { composer.dispose(); } catch (e) {}
+        composer = null;
+      }
+      ssaoPass = null;
+      bloomPass = null;
+      smaaPass = null;
+      vignettePass = null;
+      
+      if (!qualitySettings.post) {
+        composer = null;
+        return;
+      }
+      
       composer = new EffectComposer(renderer);
+      composer.addPass(new RenderPass(scene, camera));
       
-      // Basic render pass
-      const renderPass = new RenderPass(scene, camera);
-      composer.addPass(renderPass);
+      const allowSsao = qualitySettings.ssao && !isMobileGfx();
+      if (allowSsao) {
+        ssaoPass = new SSAOPass(scene, camera, innerWidth, innerHeight, 16);
+        ssaoPass.kernelRadius = 8;
+        ssaoPass.minDistance = 0.005;
+        ssaoPass.maxDistance = 0.12;
+        composer.addPass(ssaoPass);
+      }
       
-      // Bloom for glowing studs and highlights
-      bloomPass = new UnrealBloomPass(
-        new THREE.Vector2(window.innerWidth * 0.75, window.innerHeight * 0.75),
-        0.3,   // strength
-        0.4,   // radius
-        0.85   // threshold
-      );
-      composer.addPass(bloomPass);
+      if (qualitySettings.bloom) {
+        bloomPass = new UnrealBloomPass(
+          new THREE.Vector2(innerWidth * 0.5, innerHeight * 0.5),
+          0.22,
+          0.35,
+          0.88
+        );
+        composer.addPass(bloomPass);
+      }
       
-      // Vignette and color grading shader
       const vignetteShader = {
         uniforms: {
           'tDiffuse': { value: null },
-          'darkness': { value: 0.4 },
-          'offset': { value: 1.2 },
-          'saturation': { value: 1.1 },
-          'contrast': { value: 1.05 }
+          'darkness': { value: 0.28 },
+          'offset': { value: 1.15 },
+          'saturation': { value: 1.06 },
+          'contrast': { value: 1.03 }
         },
         vertexShader: `
           varying vec2 vUv;
@@ -4956,37 +5185,34 @@
           
           void main() {
             vec4 texel = texture2D(tDiffuse, vUv);
-            
-            // Vignette
             vec2 uv = (vUv - vec2(0.5)) * vec2(offset);
             float vign = clamp(1.0 - dot(uv, uv), 0.0, 1.0);
             texel.rgb *= mix(1.0 - darkness, 1.0, vign);
-            
-            // Saturation (plastic brick pop)
             float gray = dot(texel.rgb, vec3(0.299, 0.587, 0.114));
             texel.rgb = mix(vec3(gray), texel.rgb, saturation);
-            
-            // Contrast
             texel.rgb = (texel.rgb - 0.5) * contrast + 0.5;
-            
             gl_FragColor = texel;
           }
         `
       };
-      
-      const vignettePass = new ShaderPass(vignetteShader);
+      vignettePass = new ShaderPass(vignetteShader);
       composer.addPass(vignettePass);
       
-      // SMAA anti-aliasing (smoother than FXAA)
-      const smaaPass = new SMAAPass(window.innerWidth, window.innerHeight);
-      composer.addPass(smaaPass);
+      if (qualitySettings.smaa) {
+        smaaPass = new SMAAPass(innerWidth, innerHeight);
+        composer.addPass(smaaPass);
+      }
+      
+      composer.setSize(innerWidth, innerHeight);
     }
     
     // ==================== ENVIRONMENT MAP ====================
     function createEnvMap() {
-      // Create a simple procedural environment map for reflections
-      const pmremGenerator = new THREE.PMREMGenerator(renderer);
-      pmremGenerator.compileEquirectangularShader();
+      // One PMREM. Do not regenerate every frame or on time-of-day ticks.
+      if (!pmremGenerator) {
+        pmremGenerator = new THREE.PMREMGenerator(renderer);
+        pmremGenerator.compileEquirectangularShader();
+      }
       
       // Create a gradient sky scene for the env map
       const envScene = new THREE.Scene();
@@ -5030,7 +5256,9 @@
       const cubeCamera = new THREE.CubeCamera(0.1, 100, cubeRenderTarget);
       cubeCamera.update(renderer, envScene);
       
-      return pmremGenerator.fromCubemap(cubeRenderTarget.texture).texture;
+      const tex = pmremGenerator.fromCubemap(cubeRenderTarget.texture).texture;
+      cubeRenderTarget.dispose();
+      return tex;
     }
     
     // ==================== TIME OF DAY SYSTEM ====================
@@ -5052,18 +5280,11 @@
     };
     
     function updateTimeOfDay() {
-      // Skip time of day updates for special theme backgrounds
+      // Called when the time slider/preset changes — not every frame.
       const staticThemes = ['night', 'sunset', 'winter'];
       if (staticThemes.includes(currentBackgroundTheme)) {
-        return; // These themes have their own lighting
-      }
-      
-      // Throttle updates - only every 3 frames unless time changed significantly
-      _todCache.frameCounter++;
-      if (_todCache.frameCounter < 3 && Math.abs(timeOfDay - _todCache.lastTimeOfDay) < 0.001) {
         return;
       }
-      _todCache.frameCounter = 0;
       _todCache.lastTimeOfDay = timeOfDay;
       
       // timeOfDay: 0=midnight, 0.25=sunrise, 0.5=noon, 0.75=sunset
@@ -5116,7 +5337,7 @@
         const noonFactor = 1 - Math.abs(timeOfDay - 0.5) * 4; // Peak at noon
         _todCache.skyColor.copy(_todCache.daySky).lerp(_todCache.noonSky, noonFactor);
         _todCache.fogColor.copy(_todCache.skyColor);
-        _todCache.sunColor.copy(_todCache.whiteSun).lerp(new THREE.Color(0xffffff), noonFactor);
+        _todCache.sunColor.copy(_todCache.whiteSun).lerp(_noonWhite, noonFactor);
         sunIntensity = 1.2 + noonFactor * 0.5;
         ambientIntensity = 0.5 + noonFactor * 0.2;
         renderer.toneMappingExposure = 1.4 + noonFactor * 0.3;
@@ -5145,6 +5366,8 @@
       const timeStr = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
       const timeLabel = document.getElementById('timeLabel');
       if (timeLabel) timeLabel.textContent = timeStr;
+      updateShadowFrustum();
+      needsRender = true;
     }
     
     // ==================== WEATHER SYSTEM ====================
@@ -5367,6 +5590,7 @@
     
     function setWeather(type) {
       weatherType = type;
+      needsRender = true;
       
       // Hide all weather
       if (rainParticles) rainParticles.visible = false;
@@ -5415,7 +5639,7 @@
       }
       
       // Update weather button states
-      document.querySelectorAll('.weather-btn').forEach(btn => {
+      document.querySelectorAll('.weather-btn[data-weather]').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.weather === type);
       });
       
@@ -7703,21 +7927,24 @@
       
       const geometries = [];
       
-      // Body geometry
-      let bodyGeo;
-      if (t.round) {
+      if (t.slope) {
+        const slopeGeo = createSlopeGeometry(t.w * STUD, t.d * STUD, h, rot);
+        slopeGeo.translate(0, h / 2, 0);
+        geometries.push(slopeGeo);
+      } else if (t.cornerSlope || t.invCornerSlope) {
+        const cornerGeo = createCornerSlopeGeometry(t.w * STUD, t.d * STUD, h, rot, !!t.invCornerSlope);
+        cornerGeo.translate(0, h / 2, 0);
+        geometries.push(cornerGeo);
+      } else if (t.round) {
         const r = Math.min(width, depth) / 2 - 0.02;
-        bodyGeo = new THREE.CylinderGeometry(r, r, h, 16);
-        bodyGeo.translate(0, h/2, 0);
-      } else if (t.slope || t.cornerSlope || t.invCornerSlope) {
-        // For slopes, use box as approximation (instancing complex slopes is tricky)
-        bodyGeo = new THREE.BoxGeometry(width - 0.02, h, depth - 0.02);
-        bodyGeo.translate(0, h/2, 0);
+        const bodyGeo = new THREE.CylinderGeometry(r, r, h, 16);
+        bodyGeo.translate(0, h / 2, 0);
+        geometries.push(bodyGeo);
       } else {
-        bodyGeo = new THREE.BoxGeometry(width - 0.02, h, depth - 0.02);
-        bodyGeo.translate(0, h/2, 0);
+        const bodyGeo = new THREE.BoxGeometry(width - 0.02, h, depth - 0.02);
+        bodyGeo.translate(0, h / 2, 0);
+        geometries.push(bodyGeo);
       }
-      geometries.push(bodyGeo);
       
       // Stud geometries
       if (!t.noStuds && !t.slope && !t.cornerSlope && !t.invCornerSlope) {
@@ -7734,19 +7961,76 @@
             }
             
             const stud = studGeo.clone();
-            stud.translate(px, h + STUD_H/2, pz);
+            stud.translate(px, h + STUD_H / 2, pz);
             geometries.push(stud);
           }
         }
+        studGeo.dispose();
       }
       
-      // Merge all geometries
+      if (t.cornerSlope) {
+        const peakStud = new THREE.CylinderGeometry(STUD_R, STUD_R * 0.95, STUD_H, 8);
+        const cornerOffset = (t.w * STUD / 2) - STUD / 2;
+        const normalizedRot = ((Math.round(rot / 90) * 90) % 360 + 360) % 360;
+        let px = -cornerOffset, pz = -cornerOffset;
+        if (normalizedRot === 90) { px = cornerOffset; pz = -cornerOffset; }
+        else if (normalizedRot === 180) { px = cornerOffset; pz = cornerOffset; }
+        else if (normalizedRot === 270) { px = -cornerOffset; pz = cornerOffset; }
+        peakStud.translate(px, h + STUD_H / 2, pz);
+        geometries.push(peakStud);
+      }
+      
+      if (t.sideStuds && t.sideStuds.length) {
+        const sideStudGeo = new THREE.CylinderGeometry(STUD_R, STUD_R * 0.95, STUD_H, 8);
+        const rotatedSides = t.sideStuds.map(side => rotateSideName(side, rot));
+        const studY = h / 2;
+        for (const side of rotatedSides) {
+          if (side === 'front') {
+            for (let sx = 0; sx < w; sx++) {
+              const stud = sideStudGeo.clone();
+              stud.rotateX(Math.PI / 2);
+              stud.translate((sx - (w - 1) / 2) * STUD, studY, -depth / 2 - STUD_H / 2);
+              geometries.push(stud);
+            }
+          } else if (side === 'back') {
+            for (let sx = 0; sx < w; sx++) {
+              const stud = sideStudGeo.clone();
+              stud.rotateX(-Math.PI / 2);
+              stud.translate((sx - (w - 1) / 2) * STUD, studY, depth / 2 + STUD_H / 2);
+              geometries.push(stud);
+            }
+          } else if (side === 'left') {
+            for (let sz = 0; sz < d; sz++) {
+              const stud = sideStudGeo.clone();
+              stud.rotateZ(-Math.PI / 2);
+              stud.translate(-width / 2 - STUD_H / 2, studY, (sz - (d - 1) / 2) * STUD);
+              geometries.push(stud);
+            }
+          } else if (side === 'right') {
+            for (let sz = 0; sz < d; sz++) {
+              const stud = sideStudGeo.clone();
+              stud.rotateZ(Math.PI / 2);
+              stud.translate(width / 2 + STUD_H / 2, studY, (sz - (d - 1) / 2) * STUD);
+              geometries.push(stud);
+            }
+          }
+        }
+        sideStudGeo.dispose();
+      }
+      
       const mergedGeo = mergeBufferGeometries(geometries);
-      
-      // Clean up
       geometries.forEach(g => g.dispose());
-      
       return mergedGeo;
+    }
+    
+    function rotateSideName(side, rot) {
+      const r = ((rot % 360) + 360) % 360;
+      if (r === 0) return side;
+      const order = ['front', 'right', 'back', 'left'];
+      const i = order.indexOf(side);
+      if (i < 0) return side;
+      const steps = r === 90 ? 1 : r === 180 ? 2 : r === 270 ? 3 : 0;
+      return order[(i + steps) % 4];
     }
     
     // Simple geometry merge function
@@ -7812,12 +8096,16 @@
       return merged;
     }
     
+    function instancedGeoRot(type, rot) {
+      const t = types[type];
+      const normRot = ((rot % 360) + 360) % 360;
+      if (t && (t.slope || t.cornerSlope || t.invCornerSlope || t.sideStuds)) return normRot;
+      return (normRot === 90 || normRot === 270) ? 90 : 0;
+    }
+    
     // Get or create geometry for a brick type
     function getInstancedGeometry(type, rot) {
-      // Normalize rotation to 0, 90, 180, 270
-      const normRot = ((rot % 360) + 360) % 360;
-      // Only 0 and 90 matter for geometry (180/270 are same shape, just oriented)
-      const geoRot = (normRot === 90 || normRot === 270) ? 90 : 0;
+      const geoRot = instancedGeoRot(type, rot);
       const key = `${type}_${geoRot}`;
       
       if (!instancedSystem.geometryCache.has(key)) {
@@ -7827,34 +8115,58 @@
       return instancedSystem.geometryCache.get(key);
     }
     
+    function makeAbsMaterial(color, transparent, isLight) {
+      return new THREE.MeshPhysicalMaterial({
+        color: color,
+        roughness: transparent ? 0.12 : 0.32,
+        metalness: 0.0,
+        clearcoat: transparent ? 0.7 : 0.38,
+        clearcoatRoughness: transparent ? 0.12 : 0.22,
+        envMap: envMap,
+        envMapIntensity: transparent ? 0.7 : 0.42,
+        transparent: !!transparent,
+        opacity: transparent ? 0.5 : 1,
+        side: transparent ? THREE.DoubleSide : THREE.FrontSide,
+        emissive: isLight ? color : 0x000000,
+        emissiveIntensity: isLight ? 0.85 : 0
+      });
+    }
+    
     // Get or create material for a color/transparency combo
-    function getInstancedMaterial(color, transparent) {
-      const key = `${color}_${transparent}`;
+    function getInstancedMaterial(color, transparent, isLight = false) {
+      const key = `${color}_${transparent}_${isLight ? 'L' : 'P'}`;
       
       if (!instancedSystem.materialCache.has(key)) {
-        const mat = new THREE.MeshStandardMaterial({
-          color: color,
-          roughness: transparent ? 0.1 : 0.28,
-          metalness: 0.0,
-          envMap: envMap,
-          envMapIntensity: transparent ? 0.8 : 0.4,
-          transparent: transparent,
-          opacity: transparent ? 0.5 : 1,
-          side: transparent ? THREE.DoubleSide : THREE.FrontSide
-        });
-        instancedSystem.materialCache.set(key, mat);
+        instancedSystem.materialCache.set(key, makeAbsMaterial(color, transparent, isLight));
       }
       return instancedSystem.materialCache.get(key);
+    }
+    
+    const ghostMatCache = new Map();
+    function getGhostMaterial(color) {
+      const key = String(color);
+      if (!ghostMatCache.has(key)) {
+        ghostMatCache.set(key, new THREE.MeshStandardMaterial({
+          color: color,
+          roughness: 0.9,
+          metalness: 0,
+          transparent: true,
+          opacity: 0.65,
+          depthWrite: false
+        }));
+      }
+      return ghostMatCache.get(key);
     }
     
     // Get or create InstancedMesh for a specific combination
     function getInstancedMesh(type, rot, color, transparent) {
       const normRot = ((rot % 360) + 360) % 360;
-      const key = `${type}_${normRot}_${color}_${transparent}`;
+      const isLight = !!(types[type] && types[type].light);
+      const key = `${type}_${normRot}_${color}_${transparent}_${isLight ? 'L' : 'P'}`;
       
       if (!instancedSystem.meshes.has(key)) {
         const geo = getInstancedGeometry(type, rot);
-        const mat = getInstancedMaterial(color, transparent);
+        const mat = getInstancedMaterial(color, transparent, isLight);
         
         if (!geo || !mat) return null;
         
@@ -7888,12 +8200,10 @@
         growInstancedMesh(data);
       }
       
-      // Calculate the instance rotation
-      // The geometry already has dimensions swapped for 90/270 (geoRot=90)
-      // So we only need to apply the remaining rotation
+      // Geometry already has dimensions swapped (and full rot baked for slopes/SNOT)
       const normRot = ((rot % 360) + 360) % 360;
-      const geoRot = (normRot === 90 || normRot === 270) ? 90 : 0;
-      const instanceRot = normRot - geoRot; // 0, 90, 180, 270 → 0, 0, 180, 180
+      const geoRot = instancedGeoRot(type, rot);
+      const instanceRot = normRot - geoRot;
       
       // Set the transform matrix
       const dummy = instancedSystem.dummy;
@@ -7909,7 +8219,13 @@
       // Store mappings
       data.instances.set(brickId, index);
       data.reverseMap.set(index, brickId);
-      instancedSystem.brickLookup.set(brickId, { key: data.key, gridData: gridData });
+      instancedSystem.brickLookup.set(brickId, { key: data.key, gridData: gridData, type, color, rot, transparent, pos: pos.clone() });
+      
+      const tdef = types[type];
+      if (tdef && tdef.light) {
+        registerLampBrick(brickId, color, tdef.lightIntensity || 15, tdef.lightDistance || 25, pos);
+      }
+      updateShadowFrustum();
       
       return brickId;
     }
@@ -7949,6 +8265,7 @@
       // Decrement count
       data.mesh.count--;
       data.mesh.instanceMatrix.needsUpdate = true;
+      unregisterLampBrick(brickId);
       needsRender = true;
 
       // Remove from grid
@@ -8005,27 +8322,95 @@
       instancedSystem.meshes.clear();
       instancedSystem.brickLookup.clear();
       instancedSystem.nextId = 1;
+      lightSources.clear();
+      updateBrickLights(true);
+      updateShadowFrustum();
     }
     
-    // Check if a brick type should use instancing (not slopes, textured, etc.)
+    // Placed bricks go through InstancedMesh. Groups only for ghost/preview, textures, tilt, face panels.
     function shouldUseInstancing(type, options = {}) {
       const t = types[type];
       if (!t) return false;
-      if (options.texture) return false; // Textured tiles can't be instanced
-      if (options.pitch || options.roll) return false; // Tilted bricks need individual meshes
-      if (t.slope || t.cornerSlope || t.invCornerSlope) return false; // Complex geometry
-      if (t.light) return false; // Light bricks need individual point lights
+      if (options.texture) return false;
+      if (options.pitch || options.roll) return false;
+      if (options.facePanels) return false;
       return true;
+    }
+    
+    function fillGridFromData(g) {
+      for (let dx = 0; dx < g.w; dx++) {
+        for (let dz = 0; dz < g.d; dz++) {
+          const key = `${g.gx + dx},${g.gz + dz}`;
+          if (!grid.has(key)) grid.set(key, new Set());
+          for (let h = 0; h < g.hp; h++) grid.get(key).add(g.gy + h);
+        }
+      }
+    }
+    
+    function makeVirtualBrick(brickId, type, color, pos, rot, transparent, gridData, extra = {}) {
+      return {
+        isInstancedBrick: true,
+        instanceId: brickId,
+        userData: {
+          isBrick: true,
+          grid: gridData,
+          brickType: type,
+          type: type,
+          color: color,
+          rot: rot,
+          transparent: transparent,
+          pitch: extra.pitch || 0,
+          roll: extra.roll || 0,
+          hasLight: !!(types[type] && types[type].light)
+        },
+        position: pos.clone ? pos.clone() : pos
+      };
+    }
+    
+    function cachePickMeshes(obj) {
+      if (!obj || obj.isInstancedBrick || !obj.traverse) return;
+      const pick = [];
+      obj.traverse(o => { if (o.isMesh) pick.push(o); });
+      obj.userData.pickMeshes = pick;
+    }
+    
+    function commitPlacedBrick(type, color, pos, rot, options = {}, gridData) {
+      const transparent = options.transparent || false;
+      if (shouldUseInstancing(type, options) && !options.facePanels) {
+        const brickId = addInstancedBrick(type, color, pos, rot, transparent, gridData);
+        if (!brickId) return null;
+        fillGridFromData(gridData);
+        const virtual = makeVirtualBrick(brickId, type, color, pos, rot, transparent, gridData, options);
+        bricks.push(virtual);
+        needsRender = true;
+        return virtual;
+      }
+      const brick = createBrick(type, color, pos, rot, false, options);
+      if (!brick) return null;
+      addToGrid(gridData.gx, gridData.gz, gridData.w, gridData.d, gridData.gy, gridData.hp, brick);
+      cachePickMeshes(brick);
+      scene.add(brick);
+      bricks.push(brick);
+      if (types[type] && types[type].light) {
+        registerLampBrick('g' + bricks.length + '_' + Date.now(), color, types[type].lightIntensity || 15, types[type].lightDistance || 25, pos);
+      }
+      needsRender = true;
+      return brick;
     }
 
     // Helper to collect raycastable meshes from all bricks (regular + instanced)
     function collectBrickMeshes(includeInstanced = true) {
       const meshes = [];
-      bricks.forEach(b => {
-        if (!b.isInstancedBrick && b.traverse) {
+      for (let i = 0; i < bricks.length; i++) {
+        const b = bricks[i];
+        if (b.isInstancedBrick) continue;
+        const cached = b.userData && b.userData.pickMeshes;
+        if (cached) {
+          for (let j = 0; j < cached.length; j++) meshes.push(cached[j]);
+        } else if (b.traverse) {
           b.traverse(o => { if (o.isMesh) meshes.push(o); });
         }
-      });
+      }
       if (includeInstanced) {
         instancedSystem.meshes.forEach(data => {
           if (data.mesh.count > 0) meshes.push(data.mesh);
@@ -8043,6 +8428,21 @@
       const pitch = options.pitch || 0;
       const roll = options.roll || 0;
       const texture = options.texture || null; // Photo texture for tiles
+      
+      if (isGhost && !pitch && !roll && !texture) {
+        const geo = getInstancedGeometry(type, rot);
+        if (geo) {
+          const mesh = new THREE.Mesh(geo, getGhostMaterial(color));
+          const normRot = ((rot % 360) + 360) % 360;
+          const geoRot = instancedGeoRot(type, rot);
+          mesh.position.copy(pos);
+          mesh.rotation.y = (normRot - geoRot) * Math.PI / 180;
+          mesh.castShadow = false;
+          mesh.receiveShadow = false;
+          mesh.userData = { type, color, rot, pitch: 0, roll: 0, transparent: true, isBrick: false, isGhost: true };
+          return mesh;
+        }
+      }
       
       const group = new THREE.Group();
       
@@ -8311,35 +8711,15 @@
       // body.position.y = h/2 centers the body above the group origin
       group.position.copy(pos);
       
-      // Add light source for light bricks
+      // Lamp bricks: emissive only. Real PointLights come from the capped pool.
       if (t.light && !isGhost) {
-        // Make the brick material emissive (glowing)
-        body.material = new THREE.MeshStandardMaterial({
-          color: color,
-          emissive: color,
-          emissiveIntensity: 0.8,
-          roughness: 0.2,
-          metalness: 0.1,
-          transparent: transparent,
-          opacity: opacity
-        });
-        
-        // Create point light
-        const lightColor = color;
-        const lightIntensity = t.lightIntensity || 15;
-        const lightDistance = t.lightDistance || 25;
-        
-        const pointLight = new THREE.PointLight(lightColor, lightIntensity, lightDistance);
-        pointLight.position.set(0, h, 0); // Position light at top of brick
-        pointLight.castShadow = true;
-        pointLight.shadow.mapSize.width = 512;
-        pointLight.shadow.mapSize.height = 512;
-        pointLight.shadow.camera.near = 0.1;
-        pointLight.shadow.camera.far = lightDistance;
-        
-        group.add(pointLight);
+        if (body.material) {
+          body.material.emissive = new THREE.Color(color);
+          body.material.emissiveIntensity = 0.85;
+        }
         group.userData.hasLight = true;
-        group.userData.pointLight = pointLight;
+        group.userData.lightIntensity = t.lightIntensity || 15;
+        group.userData.lightDistance = t.lightDistance || 25;
       }
       
       // Apply multi-axis rotation (pitch and roll)
@@ -8359,76 +8739,61 @@
         // Preserve light properties if they exist
         pivot.userData = {
           type, color, rot, pitch, roll, transparent, isBrick: true,
-          hasLight: group.userData.hasLight || false,
-          pointLight: group.userData.pointLight || null
+          hasLight: group.userData.hasLight || false
         };
+        cachePickMeshes(pivot);
         return pivot;
       }
       
-      // Preserve light properties if they exist
       const hasLight = group.userData.hasLight || false;
-      const pointLight = group.userData.pointLight || null;
-      group.userData = {type, color, rot, pitch: 0, roll: 0, transparent, isBrick: true, hasLight, pointLight};
-      
+      group.userData = {type, color, rot, pitch: 0, roll: 0, transparent, isBrick: true, hasLight};
+      cachePickMeshes(group);
       return group;
     }
     
-    function createSlopeBody(origW, origD, h, mat, rot = 0) {
-      // Simpler approach: create geometry that matches the effective footprint
-      const normalizedRot = Math.round(rot / 90) * 90 % 360;
-      
-      // Get effective dimensions (matches grid collision)
+    function createSlopeGeometry(origW, origD, h, rot = 0) {
+      const normalizedRot = ((Math.round(rot / 90) * 90) % 360 + 360) % 360;
       const isRotated90 = (normalizedRot === 90 || normalizedRot === 270);
       const w = isRotated90 ? origD : origW;
       const d = isRotated90 ? origW : origD;
-      
       const hw = (w - 0.02) / 2;
       const hd = (d - 0.02) / 2;
       const hh = h / 2;
       const lowH = h * 0.25;
-      
-      // Create box geometry and modify it to be a slope
       const geo = new THREE.BoxGeometry(w - 0.02, h, d - 0.02);
       const pos = geo.attributes.position;
-      
-      // Modify top vertices based on slope direction
       for (let i = 0; i < pos.count; i++) {
         const y = pos.getY(i);
-        if (y > 0) { // Top vertices only
+        if (y > 0) {
           const x = pos.getX(i);
           const z = pos.getZ(i);
           let newY = hh;
-          
           if (normalizedRot === 0) {
-            // Slope rises toward -Z (back): low at +Z, high at -Z
-            const t = (z + hd) / (2 * hd); // 0 at -Z, 1 at +Z
+            const t = (z + hd) / (2 * hd);
             newY = hh - t * (hh - (-hh + lowH));
           } else if (normalizedRot === 180) {
-            // Slope rises toward +Z (front): low at -Z, high at +Z
-            const t = (-z + hd) / (2 * hd); // 0 at +Z, 1 at -Z
+            const t = (-z + hd) / (2 * hd);
             newY = hh - t * (hh - (-hh + lowH));
           } else if (normalizedRot === 90) {
-            // Slope rises toward -X (left): low at +X, high at -X
-            const t = (x + hw) / (2 * hw); // 0 at -X, 1 at +X
+            const t = (x + hw) / (2 * hw);
             newY = hh - t * (hh - (-hh + lowH));
-          } else { // 270
-            // Slope rises toward +X (right): low at -X, high at +X
-            const t = (-x + hw) / (2 * hw); // 0 at +X, 1 at -X
+          } else {
+            const t = (-x + hw) / (2 * hw);
             newY = hh - t * (hh - (-hh + lowH));
           }
-          
           pos.setY(i, newY);
         }
       }
-      
       geo.computeVertexNormals();
-      
-      return new THREE.Mesh(geo, mat);
+      return geo;
     }
     
-    // Create corner slope body for roof corners - pyramid style like classic bricks
-    function createCornerSlopeBody(origW, origD, h, mat, rot = 0, isInside = false) {
-      const normalizedRot = Math.round(rot / 90) * 90 % 360;
+    function createSlopeBody(origW, origD, h, mat, rot = 0) {
+      return new THREE.Mesh(createSlopeGeometry(origW, origD, h, rot), mat);
+    }
+    
+    function createCornerSlopeGeometry(origW, origD, h, rot = 0, isInside = false) {
+      const normalizedRot = ((Math.round(rot / 90) * 90) % 360 + 360) % 360;
       
       const size = origW - 0.02;
       const hs = size / 2;
@@ -8502,8 +8867,11 @@
       geo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
       geo.setIndex(indices);
       geo.computeVertexNormals();
-      
-      return new THREE.Mesh(geo, mat);
+      return geo;
+    }
+    
+    function createCornerSlopeBody(origW, origD, h, mat, rot = 0, isInside = false) {
+      return new THREE.Mesh(createCornerSlopeGeometry(origW, origD, h, rot, isInside), mat);
     }
     
     // ==================== GRID LOGIC ====================
@@ -8671,21 +9039,13 @@
       
       raycaster.setFromCamera(mouse, camera);
       
-      // Collect regular brick meshes (skip instanced bricks)
+      const allPick = collectBrickMeshes(true);
       const brickMeshes = [];
-      bricks.forEach(b => {
-        if (!b.isInstancedBrick && b.traverse) {
-          b.traverse(o => { if (o.isMesh) brickMeshes.push(o); });
-        }
-      });
-      
-      // Collect instanced meshes
       const instancedMeshes = [];
-      instancedSystem.meshes.forEach(data => {
-        if (data.mesh.count > 0) {
-          instancedMeshes.push(data.mesh);
-        }
-      });
+      for (let i = 0; i < allPick.length; i++) {
+        if (allPick[i].isInstancedMesh) instancedMeshes.push(allPick[i]);
+        else brickMeshes.push(allPick[i]);
+      }
       
       let hit = null;
       let hitBrick = null;
@@ -9408,18 +9768,7 @@
       
       raycaster.setFromCamera(mouse, camera);
       const groundHits = raycaster.intersectObject(groundPlane);
-      const brickMeshes = [];
-      bricks.forEach(b => {
-        if (!b.isInstancedBrick && b.traverse) {
-          b.traverse(o => { if (o.isMesh) brickMeshes.push(o); });
-        }
-      });
-      // Also collect instanced meshes for wall mode
-      const instancedMeshes = [];
-      instancedSystem.meshes.forEach(data => {
-        if (data.mesh.count > 0) instancedMeshes.push(data.mesh);
-      });
-      const brickHits = raycaster.intersectObjects([...brickMeshes, ...instancedMeshes], false);
+      const brickHits = raycaster.intersectObjects(collectBrickMeshes(true), false);
       
       let hit = brickHits.length > 0 ? brickHits[0] : (groundHits.length > 0 ? groundHits[0] : null);
       if (!hit) return;
@@ -9505,76 +9854,12 @@
       // Determine which color to use - light color for light bricks, regular color otherwise
       const placeColor = (t && t.light) ? selectedLightColor : selectedColor;
       
-      // Check if we can use instancing for this brick
-      if (shouldUseInstancing(selectedBrick, options)) {
-        // Use instanced rendering
-        const gridData = {gx: g.gx, gz: g.gz, w: g.w, d: g.d, gy: g.gy, hp: g.hp};
-        const brickId = addInstancedBrick(selectedBrick, placeColor, ghost.position.clone(), currentRotation, isTransparent, gridData);
-        
-        if (brickId) {
-          // Add to grid
-          for (let dx = 0; dx < g.w; dx++) {
-            for (let dz = 0; dz < g.d; dz++) {
-              const key = `${g.gx+dx},${g.gz+dz}`;
-              if (!grid.has(key)) grid.set(key, new Set());
-              for (let h = 0; h < g.hp; h++) grid.get(key).add(g.gy + h);
-            }
-          }
-          
-          // Create a virtual brick object for the bricks array (for deletion support)
-          const virtualBrick = {
-            isInstancedBrick: true,
-            instanceId: brickId,
-            userData: {
-              isBrick: true,
-              grid: gridData,
-              brickType: selectedBrick,
-              color: placeColor,
-              rot: currentRotation,
-              transparent: isTransparent
-            },
-            position: ghost.position.clone()
-          };
-          bricks.push(virtualBrick);
-          
-          hasUnsavedChanges = true;
-        }
-      } else {
-        // Use traditional mesh rendering (for slopes, textured tiles, tilted bricks, light bricks)
-        const brick = createBrick(selectedBrick, placeColor, ghost.position.clone(), currentRotation, false, options);
-        
-        // Store texture index in userData for save/load
-        if (brick && useTexture) {
-          brick.userData.textureIndex = selectedTexture;
-        }
-        
-        if (brick) {
-          addToGrid(g.gx, g.gz, g.w, g.d, g.gy, g.hp, brick);
-          scene.add(brick);
-          bricks.push(brick);
-          
-          // Auto-select newly placed brick if in prefab selection mode
-          if (isRecordingPrefab) {
-            toggleBrickForPrefab(brick);
-          }
-          
-          // Drop animation
-          const targetY = brick.position.y;
-          brick.position.y += 0.6;
-          brick.scale.set(0.85, 0.85, 0.85);
-          const start = performance.now();
-          const anim = () => {
-            const t = Math.min((performance.now() - start) / 150, 1);
-            const ease = 1 - Math.pow(1 - t, 3);
-            brick.position.y = targetY + 0.6 * (1 - ease);
-            const s = 0.85 + 0.15 * ease;
-            brick.scale.set(s, s, s);
-            if (t < 1) requestAnimationFrame(anim);
-          };
-          anim();
-          
-          hasUnsavedChanges = true;
-        }
+      const gridData = {gx: g.gx, gz: g.gz, w: g.w, d: g.d, gy: g.gy, hp: g.hp};
+      const brick = commitPlacedBrick(selectedBrick, placeColor, ghost.position.clone(), currentRotation, options, gridData);
+      if (brick) {
+        if (useTexture) brick.userData.textureIndex = selectedTexture;
+        if (isRecordingPrefab && !brick.isInstancedBrick) toggleBrickForPrefab(brick);
+        hasUnsavedChanges = true;
       }
       
       // Place mirrored bricks
@@ -9589,44 +9874,10 @@
               mgData.gz * STUD + (mgData.d * STUD) / 2
             );
             
-            if (shouldUseInstancing(selectedBrick, {transparent: isTransparent})) {
-              const gridData = {gx: mgData.gx, gz: mgData.gz, w: mgData.w, d: mgData.d, gy: mgData.gy, hp: mgData.hp};
-              const brickId = addInstancedBrick(selectedBrick, placeColor, mirrorPos, mgData.rot, isTransparent, gridData);
-              
-              if (brickId) {
-                for (let dx = 0; dx < mgData.w; dx++) {
-                  for (let dz = 0; dz < mgData.d; dz++) {
-                    const key = `${mgData.gx+dx},${mgData.gz+dz}`;
-                    if (!grid.has(key)) grid.set(key, new Set());
-                    for (let h = 0; h < mgData.hp; h++) grid.get(key).add(mgData.gy + h);
-                  }
-                }
-                
-                const virtualBrick = {
-                  isInstancedBrick: true,
-                  instanceId: brickId,
-                  userData: {
-                    isBrick: true,
-                    grid: gridData,
-                    brickType: selectedBrick,
-                    color: placeColor,
-                    rot: mgData.rot,
-                    transparent: isTransparent
-                  },
-                  position: mirrorPos.clone()
-                };
-                bricks.push(virtualBrick);
-              }
-            } else {
-              const mirrorBrick = createBrick(selectedBrick, placeColor, mirrorPos, mgData.rot, false, {
-                texture: useTexture
-              });
-              if (mirrorBrick) {
-                addToGrid(mgData.gx, mgData.gz, mgData.w, mgData.d, mgData.gy, mgData.hp, mirrorBrick);
-                scene.add(mirrorBrick);
-                bricks.push(mirrorBrick);
-              }
-            }
+            commitPlacedBrick(selectedBrick, placeColor, mirrorPos, mgData.rot, {
+              transparent: isTransparent,
+              texture: useTexture
+            }, {gx: mgData.gx, gz: mgData.gz, w: mgData.w, d: mgData.d, gy: mgData.gy, hp: mgData.hp});
           }
         }
       }
@@ -9639,25 +9890,14 @@
     function deleteBrick() {
       raycaster.setFromCamera(mouse, camera);
       
-      // Collect regular brick meshes
-      const meshes = [];
-      bricks.forEach(b => {
-        if (!b.isInstancedBrick && b.traverse) {
-          b.traverse(o => { if (o.isMesh) meshes.push(o); });
-        }
-      });
-      
-      // Collect instanced meshes
+      const allPick = collectBrickMeshes(true);
+      const regularMeshes = [];
       const instancedMeshes = [];
-      instancedSystem.meshes.forEach(data => {
-        if (data.mesh.count > 0) {
-          instancedMeshes.push(data.mesh);
-        }
-      });
-      
-      // Raycast against regular meshes
-      const regularHits = raycaster.intersectObjects(meshes, false);
-      // Raycast against instanced meshes
+      for (let i = 0; i < allPick.length; i++) {
+        if (allPick[i].isInstancedMesh) instancedMeshes.push(allPick[i]);
+        else regularMeshes.push(allPick[i]);
+      }
+      const regularHits = raycaster.intersectObjects(regularMeshes, false);
       const instancedHits = raycaster.intersectObjects(instancedMeshes, false);
       
       // Find the closest hit
@@ -9734,23 +9974,13 @@
     
     function pickColor() {
       raycaster.setFromCamera(mouse, camera);
-      
-      // Collect regular brick meshes
+      const allPick = collectBrickMeshes(true);
       const meshes = [];
-      bricks.forEach(b => {
-        if (!b.isInstancedBrick && b.traverse) {
-          b.traverse(o => { if (o.isMesh) meshes.push(o); });
-        }
-      });
-      
-      // Collect instanced meshes
       const instancedMeshes = [];
-      instancedSystem.meshes.forEach(data => {
-        if (data.mesh.count > 0) {
-          instancedMeshes.push(data.mesh);
-        }
-      });
-      
+      for (let i = 0; i < allPick.length; i++) {
+        if (allPick[i].isInstancedMesh) instancedMeshes.push(allPick[i]);
+        else meshes.push(allPick[i]);
+      }
       const regularHits = raycaster.intersectObjects(meshes, false);
       const instancedHits = raycaster.intersectObjects(instancedMeshes, false);
       
@@ -9950,13 +10180,7 @@
         }
       }
       
-      // No face panel hit - check for brick surfaces
-      const meshes = [];
-      bricks.forEach(b => {
-        if (!b.isInstancedBrick && b.traverse) {
-          b.traverse(o => { if (o.isMesh && !o.userData.isFacePanel) meshes.push(o); });
-        }
-      });
+      const meshes = collectBrickMeshes(false).filter(m => !m.userData.isFacePanel);
       
       const hits = raycaster.intersectObjects(meshes, false);
       for (const hit of hits) {
@@ -10119,15 +10343,10 @@
           data.gz * STUD + (data.d * STUD) / 2
         );
         
-        // Use item's transparent flag, or fall back to global isTransparent
         const useTransparent = data.transparent || isTransparent;
-        const brick = createBrick(data.type, data.color, pos, data.rot, false, {transparent: useTransparent});
-        if (brick) {
-          addToGrid(data.gx, data.gz, data.w, data.d, data.gy, data.hp, brick);
-          scene.add(brick);
-          bricks.push(brick);
-          placedCount++;
-        }
+        if (commitPlacedBrick(data.type, data.color, pos, data.rot, {transparent: useTransparent}, {
+          gx: data.gx, gz: data.gz, w: data.w, d: data.d, gy: data.gy, hp: data.hp
+        })) placedCount++;
       }
       
       // Place mirrored prefab bricks
@@ -10144,13 +10363,9 @@
           );
           
           const useTransparent = data.transparent || isTransparent;
-          const brick = createBrick(data.type, data.color, pos, data.rot, false, {transparent: useTransparent});
-          if (brick) {
-            addToGrid(data.gx, data.gz, data.w, data.d, data.gy, data.hp, brick);
-            scene.add(brick);
-            bricks.push(brick);
-            placedCount++;
-          }
+          if (commitPlacedBrick(data.type, data.color, pos, data.rot, {transparent: useTransparent}, {
+            gx: data.gx, gz: data.gz, w: data.w, d: data.d, gy: data.gy, hp: data.hp
+          })) placedCount++;
         }
       }
       
@@ -10598,13 +10813,9 @@
           data.gz * STUD + (dims.d * STUD) / 2
         );
         
-        const brick = createBrick(data.type, selectedColor, pos, 0, false, {transparent: isTransparent});
-        if (brick) {
-          addToGrid(data.gx, data.gz, dims.w, dims.d, data.gy, data.hp, brick);
-          scene.add(brick);
-          bricks.push(brick);
-          placedCount++;
-        }
+        if (commitPlacedBrick(data.type, selectedColor, pos, 0, {transparent: isTransparent}, {
+          gx: data.gx, gz: data.gz, w: dims.w, d: dims.d, gy: data.gy, hp: data.hp
+        })) placedCount++;
       }
       
       // Clear floor drag state
@@ -10998,16 +11209,9 @@
           data.gz * STUD + (data.d * STUD) / 2
         );
         
-        const brick = createBrick(data.type, selectedColor, pos, data.rot, false, {
-          transparent: isTransparent
-        });
-        
-        if (brick) {
-          addToGrid(data.gx, data.gz, data.w, data.d, data.gy, data.hp, brick);
-          scene.add(brick);
-          bricks.push(brick);
-          placedCount++;
-        }
+        if (commitPlacedBrick(data.type, selectedColor, pos, data.rot, {transparent: isTransparent}, {
+          gx: data.gx, gz: data.gz, w: data.w, d: data.d, gy: data.gy, hp: data.hp
+        })) placedCount++;
       }
       
       // Clear wall state
@@ -11305,98 +11509,12 @@
           roll: d.roll || 0
         };
         
-        // Use instancing for eligible bricks
-        if (shouldUseInstancing(d.type, options) && !d.facePanels) {
-          const gridData = {gx: gx, gz: gz, w: dims.w, d: dims.d, gy: gy, hp: hp};
-          const brickId = addInstancedBrick(d.type, d.color, pos, d.rot, d.transparent || false, gridData);
-          
-          if (brickId) {
-            for (let dx = 0; dx < dims.w; dx++) {
-              for (let dz = 0; dz < dims.d; dz++) {
-                const key = `${gx+dx},${gz+dz}`;
-                if (!grid.has(key)) grid.set(key, new Set());
-                for (let h = 0; h < hp; h++) grid.get(key).add(gy + h);
-              }
-            }
-            
-            const virtualBrick = {
-              isInstancedBrick: true,
-              instanceId: brickId,
-              userData: {
-                isBrick: true,
-                grid: gridData,
-                brickType: d.type,
-                color: d.color,
-                rot: d.rot,
-                transparent: d.transparent || false
-              },
-              position: pos.clone()
-            };
-            bricks.push(virtualBrick);
-          }
-        } else {
-          const brick = createBrick(d.type, d.color, pos, d.rot, false, options);
-          
-          if (brick) {
-            addToGrid(gx, gz, dims.w, dims.d, gy, hp, brick);
-            scene.add(brick);
-            bricks.push(brick);
-            
-            // Restore face panels if any
-            if (d.facePanels) {
-              brick.userData.facePanels = {};
-              const width = dims.w * STUD;
-              const depth = dims.d * STUD;
-              const height = hp * PLATE_H;
-              const offset = 0.01;
-              
-              for (const [face, color] of Object.entries(d.facePanels)) {
-                let panelWidth, panelHeight, position, rotation;
-                switch(face) {
-                  case 'right':
-                    panelWidth = depth; panelHeight = height;
-                    position = new THREE.Vector3(width/2 + offset, height/2, depth/2);
-                    rotation = new THREE.Euler(0, Math.PI/2, 0);
-                    break;
-                  case 'left':
-                    panelWidth = depth; panelHeight = height;
-                    position = new THREE.Vector3(-offset, height/2, depth/2);
-                    rotation = new THREE.Euler(0, -Math.PI/2, 0);
-                    break;
-                  case 'front':
-                    panelWidth = width; panelHeight = height;
-                    position = new THREE.Vector3(width/2, height/2, depth + offset);
-                    rotation = new THREE.Euler(0, 0, 0);
-                    break;
-                  case 'back':
-                    panelWidth = width; panelHeight = height;
-                    position = new THREE.Vector3(width/2, height/2, -offset);
-                    rotation = new THREE.Euler(0, Math.PI, 0);
-                    break;
-                }
-                
-                const panelGeo = new THREE.PlaneGeometry(panelWidth - 0.02, panelHeight - 0.02);
-                const panelMat = new THREE.MeshStandardMaterial({
-                  color: color,
-                  side: THREE.DoubleSide,
-                  roughness: 0.7,
-                  metalness: 0.1
-                });
-                const panel = new THREE.Mesh(panelGeo, panelMat);
-                panel.userData.isFacePanel = true;
-                panel.userData.face = face;
-                panel.position.copy(position);
-                panel.rotation.copy(rotation);
-                brick.add(panel);
-                
-                brick.userData.facePanels[face] = {
-                  mesh: panel,
-                  color: color,
-                  face: face
-                };
-              }
-            }
-          }
+        options.facePanels = d.facePanels;
+        const brick = commitPlacedBrick(d.type, d.color, pos, d.rot, options, {
+          gx: gx, gz: gz, w: dims.w, d: dims.d, gy: gy, hp: hp
+        });
+        if (brick && d.facePanels && !brick.isInstancedBrick) {
+          restoreFacePanelsFromData(brick, { w: dims.w, d: dims.d, hp: hp }, d.facePanels);
         }
       });
       updateStats();
@@ -11537,52 +11655,14 @@
             const options = {
               transparent: d.transparent || false,
               pitch: d.pitch || 0,
-              roll: d.roll || 0
+              roll: d.roll || 0,
+              facePanels: d.facePanels
             };
-            
-            // Use instancing for eligible bricks
-            if (shouldUseInstancing(d.type, options) && !d.facePanels) {
-              const gridData = {gx: d.grid.gx, gz: d.grid.gz, w: d.grid.w, d: d.grid.d, gy: d.grid.gy, hp: d.grid.hp};
-              const brickId = addInstancedBrick(d.type, d.color, pos, d.rot, d.transparent || false, gridData);
-              
-              if (brickId) {
-                // Add to grid
-                for (let dx = 0; dx < d.grid.w; dx++) {
-                  for (let dz = 0; dz < d.grid.d; dz++) {
-                    const key = `${d.grid.gx+dx},${d.grid.gz+dz}`;
-                    if (!grid.has(key)) grid.set(key, new Set());
-                    for (let h = 0; h < d.grid.hp; h++) grid.get(key).add(d.grid.gy + h);
-                  }
-                }
-                
-                const virtualBrick = {
-                  isInstancedBrick: true,
-                  instanceId: brickId,
-                  userData: {
-                    isBrick: true,
-                    grid: gridData,
-                    brickType: d.type,
-                    color: d.color,
-                    rot: d.rot,
-                    transparent: d.transparent || false
-                  },
-                  position: pos.clone()
-                };
-                bricks.push(virtualBrick);
-              }
-            } else {
-              // Use regular mesh for slopes, textured, face panels, etc.
-              const brick = createBrick(d.type, d.color, pos, d.rot, false, options);
-              if (brick) {
-                addToGrid(d.grid.gx, d.grid.gz, d.grid.w, d.grid.d, d.grid.gy, d.grid.hp, brick);
-                scene.add(brick);
-                bricks.push(brick);
-                
-                // Restore face panels if any
-                if (d.facePanels) {
-                  restoreFacePanelsFromData(brick, d.grid, d.facePanels);
-                }
-              }
+            const brick = commitPlacedBrick(d.type, d.color, pos, d.rot, options, {
+              gx: d.grid.gx, gz: d.grid.gz, w: d.grid.w, d: d.grid.d, gy: d.grid.gy, hp: d.grid.hp
+            });
+            if (brick && d.facePanels && !brick.isInstancedBrick) {
+              restoreFacePanelsFromData(brick, d.grid, d.facePanels);
             }
           }
         });
@@ -11817,6 +11897,7 @@
     function setupEvents() {
       // Mouse events
       renderer.domElement.addEventListener('mousemove', e => {
+        lastPointerMs = performance.now();
         mouse.x = (e.clientX / innerWidth) * 2 - 1;
         mouse.y = -(e.clientY / innerHeight) * 2 + 1;
         
@@ -12357,14 +12438,14 @@
         }
       });
       
-      // Window resize
       window.addEventListener('resize', () => {
         camera.aspect = innerWidth / innerHeight;
         camera.updateProjectionMatrix();
+        renderer.setPixelRatio(qualityDpr());
         renderer.setSize(innerWidth, innerHeight);
-        if (composer) {
-          composer.setSize(innerWidth, innerHeight);
-        }
+        if (composer) composer.setSize(innerWidth, innerHeight);
+        if (ssaoPass) ssaoPass.setSize(innerWidth, innerHeight);
+        needsRender = true;
       });
       
       // Track which keys are held for smooth panning
@@ -12387,6 +12468,7 @@
         const movement = new THREE.Vector3();
         movement.addScaledVector(right, dx * panSpeed);
         movement.addScaledVector(forward, dz * panSpeed);
+        needsRender = true;
         
         // Apply to both camera and target
         camera.position.add(movement);
@@ -12406,6 +12488,7 @@
         // Only apply if camera stays above ground
         if (newPos.y >= 0.5) {
           camera.position.copy(newPos);
+          needsRender = true;
         }
       }
       
@@ -13894,6 +13977,11 @@
       document.getElementById('timeSlider').addEventListener('input', (e) => {
         timeOfDay = e.target.value / 100;
         updateTimeOfDay();
+        needsRender = true;
+      });
+      
+      document.querySelectorAll('[data-quality]').forEach(btn => {
+        btn.addEventListener('click', () => applyQuality(btn.dataset.quality));
       });
       
       // Time presets
@@ -14017,47 +14105,35 @@
     }
     
     function capturePreview(canvasId) {
-      // Render the scene
-      renderer.render(scene, camera);
-      
+      renderFrame();
       const canvas = document.getElementById(canvasId);
       const ctx = canvas.getContext('2d');
-      
-      // Copy from renderer
       ctx.drawImage(renderer.domElement, 0, 0, canvas.width, canvas.height);
     }
     
     function captureScreenshot() {
       const scale = parseInt(document.getElementById('screenshotRes').value);
       const transparent = document.getElementById('screenshotTransparent').checked;
-      
-      // Store original background
       const originalBg = scene.background;
       if (transparent) {
         scene.background = null;
         renderer.setClearColor(0x000000, 0);
       }
-      
-      // Render at higher resolution
-      const origWidth = renderer.domElement.width;
-      const origHeight = renderer.domElement.height;
-      renderer.setSize(800 * scale, 600 * scale);
+      renderer.setPixelRatio(1);
+      renderer.setSize(800 * scale, 600 * scale, false);
       renderer.render(scene, camera);
-      
-      // Capture to canvas
       const canvas = document.getElementById('screenshotCanvas');
       canvas.width = 800 * scale;
       canvas.height = 600 * scale;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(renderer.domElement, 0, 0);
-      
-      // Restore
-      renderer.setSize(origWidth, origHeight);
+      renderer.setPixelRatio(qualityDpr());
+      renderer.setSize(innerWidth, innerHeight);
       if (transparent) {
         scene.background = originalBg;
         renderer.setClearColor(0x000000, 1);
       }
-      
+      needsRender = true;
       SoundSystem.playSuccess();
       toast('📸 Screenshot captured!', 'success');
     }
@@ -14072,8 +14148,7 @@
     }
     
     function saveToGallery() {
-      // Capture thumbnail
-      renderer.render(scene, camera);
+      renderFrame();
       const thumbCanvas = document.createElement('canvas');
       thumbCanvas.width = 200;
       thumbCanvas.height = 150;
@@ -14119,34 +14194,26 @@
       
       if (!confirm(`Load "${build.name}"? This will replace your current build.`)) return;
       
-      // Clear current scene
       saveUndo();
-      bricks.forEach(b => scene.remove(b));
+      bricks.forEach(b => { if (!b.isInstancedBrick) scene.remove(b); });
       bricks.length = 0;
       grid.clear();
+      clearInstancedBricks();
       
-      // Load build
       build.data.forEach(b => {
-        const hp = getBrickHeight(b.type);
+        const brickH = getBrickHeight(b.type);
         const dims = getEffectiveDims(b.type, b.rot || 0);
         const pos = new THREE.Vector3(
           b.grid.gx * STUD + (dims.w * STUD) / 2,
-          calcWorldY(b.grid.gy, hp),
+          calcWorldY(b.grid.gy, brickH),
           b.grid.gz * STUD + (dims.d * STUD) / 2
         );
-        
-        const brick = createBrick(b.type, b.color, pos, b.rot || 0, false, {
+        const brick = commitPlacedBrick(b.type, b.color, pos, b.rot || 0, {
           transparent: b.transparent,
           pitch: b.pitch,
           roll: b.roll
-        });
-        
-        if (brick) {
-          if (b.locked) brick.userData.locked = true;
-          addToGrid(b.grid.gx, b.grid.gz, dims.w, dims.d, b.grid.gy, b.grid.hp, brick);
-          scene.add(brick);
-          bricks.push(brick);
-        }
+        }, { gx: b.grid.gx, gz: b.grid.gz, w: dims.w, d: dims.d, gy: b.grid.gy, hp: b.grid.hp });
+        if (brick && b.locked) brick.userData.locked = true;
       });
       
       updateStats();
@@ -14174,10 +14241,10 @@
     
     function copyBuildCode() {
       const brickData = bricks.map(b => ({
-        t: b.userData.brickType,
+        t: b.userData.brickType || b.userData.type,
         c: b.userData.color,
         g: [b.userData.grid.gx, b.userData.grid.gz, b.userData.grid.gy],
-        r: b.userData.rotation || 0
+        r: b.userData.rot || b.userData.rotation || 0
       }));
       
       // Compress to base64
@@ -14196,10 +14263,10 @@
     
     function downloadBrickFile() {
       const brickData = bricks.map(b => ({
-        type: b.userData.brickType,
+        type: b.userData.brickType || b.userData.type,
         color: b.userData.color,
         grid: b.userData.grid,
-        rotation: b.userData.rotation || 0,
+        rotation: b.userData.rot || b.userData.rotation || 0,
         pitch: b.userData.pitch || 0,
         roll: b.userData.roll || 0,
         transparent: b.userData.transparent || false,
@@ -14235,28 +14302,23 @@
         
         if (!confirm(`Load build with ${brickData.length} bricks? This will replace your current build.`)) return;
         
-        // Clear current scene
         saveUndo();
-        bricks.forEach(b => scene.remove(b));
+        bricks.forEach(b => { if (!b.isInstancedBrick) scene.remove(b); });
         bricks.length = 0;
         grid.clear();
+        clearInstancedBricks();
         
-        // Load build
         brickData.forEach(b => {
-          const hp = getBrickHeight(b.t);
+          const hp = getHP(b.t);
           const dims = getEffectiveDims(b.t, b.r || 0);
           const pos = new THREE.Vector3(
             b.g[0] * STUD + (dims.w * STUD) / 2,
-            calcWorldY(b.g[2], hp),
+            calcWorldY(b.g[2], getBrickHeight(b.t)),
             b.g[1] * STUD + (dims.d * STUD) / 2
           );
-          
-          const brick = createBrick(b.t, b.c, pos, b.r || 0, false, {});
-          if (brick) {
-            addToGrid(b.g[0], b.g[1], dims.w, dims.d, b.g[2], hp, brick);
-            scene.add(brick);
-            bricks.push(brick);
-          }
+          commitPlacedBrick(b.t, b.c, pos, b.r || 0, {}, {
+            gx: b.g[0], gz: b.g[1], w: dims.w, d: dims.d, gy: b.g[2], hp: hp
+          });
         });
         
         updateStats();
@@ -15043,13 +15105,9 @@
         let placedCount = 0;
         
         for (const data of brickData) {
-          const brick = createBrick(data.type, data.color, data.pos.clone(), data.rot, false, {transparent: data.transparent});
-          if (brick) {
-            scene.add(brick);
-            bricks.push(brick);
-            addToGrid(data.gx, data.gz, data.w, data.d, data.gy, data.hp, brick);
-            placedCount++;
-          }
+          if (commitPlacedBrick(data.type, data.color, data.pos.clone(), data.rot, {transparent: data.transparent}, {
+            gx: data.gx, gz: data.gz, w: data.w, d: data.d, gy: data.gy, hp: data.hp
+          })) placedCount++;
         }
         
         if (placedCount > 0) {
@@ -15078,12 +15136,10 @@
       const worldY = calcWorldY(gy, brickH);
       const worldZ = gz * STUD + (dims.d * STUD) / 2;
       
-      // Create the brick
-      const brick = createBrick(selectedBrick, selectedColor, new THREE.Vector3(worldX, worldY, worldZ), currentRotation, false, {transparent: isTransparent});
+      const brick = commitPlacedBrick(selectedBrick, selectedColor, new THREE.Vector3(worldX, worldY, worldZ), currentRotation, {transparent: isTransparent}, {
+        gx, gz, w: dims.w, d: dims.d, gy, hp
+      });
       if (brick) {
-        scene.add(brick);
-        bricks.push(brick);
-        addToGrid(gx, gz, dims.w, dims.d, gy, hp, brick);
         updateUI();
         updateStats();
         
@@ -15398,68 +15454,76 @@
     let frames = 0, lastFPS = performance.now();
     let lastTime = performance.now();
     let needsRender = true;
-    const MIN_CAMERA_HEIGHT = 0.5; // Minimum height above ground
-    const MIN_TARGET_HEIGHT = 0; // Target can be at ground level
+    let hudDrawCalls = 0;
+    const MIN_CAMERA_HEIGHT = 0.5;
+    const MIN_TARGET_HEIGHT = 0;
+    
+    function renderFrame() {
+      if (renderer.info && typeof renderer.info.reset === 'function') renderer.info.reset();
+      if (composer && qualitySettings.post) {
+        composer.render();
+      } else {
+        renderer.render(scene, camera);
+      }
+      hudDrawCalls = renderer.info.render.calls;
+    }
     
     function animate() {
       requestAnimationFrame(animate);
       
       const now = performance.now();
-      const delta = (now - lastTime) / 1000;
+      const delta = Math.min((now - lastTime) / 1000, 0.05);
       lastTime = now;
       
-      // First-person mode camera update
+      const weatherOn = weatherType !== 'clear';
+      
       if (firstPersonMode) {
         updateFirstPersonCamera(delta);
         needsRender = true;
-      } else {
-        controls.update();
-        
-        // Prevent camera from going below ground
-        if (camera.position.y < MIN_CAMERA_HEIGHT) {
-          camera.position.y = MIN_CAMERA_HEIGHT;
-        }
-        
-        // Prevent orbit target from going below ground
-        if (controls.target.y < MIN_TARGET_HEIGHT) {
-          controls.target.y = MIN_TARGET_HEIGHT;
+      } else if (controls) {
+        if (controls.update()) needsRender = true;
+        if (camera.position.y < MIN_CAMERA_HEIGHT) camera.position.y = MIN_CAMERA_HEIGHT;
+        if (controls.target.y < MIN_TARGET_HEIGHT) controls.target.y = MIN_TARGET_HEIGHT;
+      }
+      
+      if (weatherOn) {
+        if (now - lastWeatherTick >= 33) {
+          updateWeather(delta);
+          if (window.animateParticles) window.animateParticles();
+          lastWeatherTick = now;
+          needsRender = true;
         }
       }
       
-      // Update ground studs as camera moves
-      maybeUpdateGround();
-      
-      // Update weather particles
-      updateWeather(delta);
-      
-      // Update background ambient particles (snow, fireflies, birds, etc.)
-      if (window.animateParticles) {
-        window.animateParticles();
-      }
-      
-      // Update sun position based on time and camera
-      updateTimeOfDay();
-      
-      if (ghost && !firstPersonMode) {
-        // Simplified pulsing without creating objects
-        const s = 0.97 + Math.sin(now * 0.003) * 0.03;
-        ghost.scale.setScalar(s);
+      if (ghost && !firstPersonMode && (now - lastPointerMs) < 280) {
+        ghost.scale.setScalar(0.97 + Math.sin(now * 0.003) * 0.03);
         needsRender = true;
       }
       
-      frames++;
-      if (performance.now() - lastFPS >= 1000) {
-        document.getElementById('fps').textContent = frames + ' FPS';
+      if (lightSources.size) updateBrickLights(false);
+      
+      if (now - lastFPS >= 1000) {
+        if (frames > 0) lastHudFps = frames;
+        const el = document.getElementById('fps');
+        if (el) {
+          let batches = 0;
+          instancedSystem.meshes.forEach(d => { if (d.mesh.count > 0) batches++; });
+          for (let i = 0; i < bricks.length; i++) if (!bricks[i].isInstancedBrick) batches++;
+          el.textContent = `${lastHudFps} FPS · ${bricks.length} bricks · ${hudDrawCalls || batches} draws`;
+        }
         frames = 0;
-        lastFPS = performance.now();
+        lastFPS = now;
       }
       
-      // Use composer for post-processing if available, else fallback to renderer
       if (needsRender) {
-        if (composer) {
-          composer.render();
-        } else {
+        frames++;
+        const skipPost = weatherOn && qualityPreset !== 'high';
+        if (skipPost) {
+          renderer.info.reset();
           renderer.render(scene, camera);
+          hudDrawCalls = renderer.info.render.calls;
+        } else {
+          renderFrame();
         }
         needsRender = false;
       }
@@ -15720,7 +15784,7 @@
     window.camera = camera;
     window.renderer = renderer;
     window.controls = controls;
-    window.bricks = bricks;
+    Object.defineProperty(window, 'bricks', { get: () => bricks });
     window.grid = grid;
     window.raycaster = raycaster;
     window.instancedSystem = instancedSystem;
@@ -15771,7 +15835,64 @@
     window.groundPlane = groundPlane;
     window.BRICK_HEIGHT = BRICK_H;
     window.PLATE_HEIGHT = PLATE_H;
-
+    window.commitPlacedBrick = commitPlacedBrick;
+    window.brixDebug = {
+      getStats() {
+        let groupBricks = 0;
+        let batches = 0;
+        for (let i = 0; i < bricks.length; i++) if (!bricks[i].isInstancedBrick) groupBricks++;
+        instancedSystem.meshes.forEach(d => { if (d.mesh.count > 0) batches++; });
+        batches += groupBricks;
+        return {
+          fps: lastHudFps,
+          bricks: bricks.length,
+          draws: hudDrawCalls,
+          batches,
+          triangles: renderer.info.render.triangles,
+          quality: qualityPreset,
+          dpr: renderer.getPixelRatio(),
+          shadow: window.sunLight ? window.sunLight.shadow.mapSize.width : 0,
+          instancedMeshes: instancedSystem.meshes.size,
+          groupBricks,
+          lamps: lightSources.size,
+          pointLights: scene.children.filter(o => o.isPointLight).length,
+          preserveDrawingBuffer: !!(renderer.getContextAttributes() || {}).preserveDrawingBuffer
+        };
+      },
+      setQuality(name) { applyQuality(name, { silent: true }); },
+      placeGrid(count, type = '2x4') {
+        const t = types[type] || types['2x4'];
+        const w = t.w, d = t.d, hp = getHP(type);
+        const brickH = getBrickHeight(type);
+        const cols = Math.ceil(Math.sqrt(count));
+        const origin = 32;
+        let n = 0;
+        for (let i = 0; i < count; i++) {
+          const col = i % cols;
+          const row = Math.floor(i / cols);
+          const gx = origin + col * w;
+          const gz = origin + row * d;
+          const pos = new THREE.Vector3(
+            gx * STUD + (w * STUD) / 2,
+            calcWorldY(0, brickH),
+            gz * STUD + (d * STUD) / 2
+          );
+          if (commitPlacedBrick(type, 0xe53935, pos, 0, {}, { gx, gz, w, d, gy: 0, hp })) n++;
+        }
+        updateStats();
+        needsRender = true;
+        return n;
+      },
+      clear() {
+        bricks.forEach(b => { if (!b.isInstancedBrick) scene.remove(b); });
+        bricks.length = 0;
+        grid.clear();
+        clearInstancedBricks();
+        updateStats();
+        needsRender = true;
+      },
+      orbitTick() { needsRender = true; }
+    };
 
   </script>
 </body>
