@@ -49,7 +49,7 @@
       display: flex; flex-direction: column; justify-content: center; align-items: center;
       z-index: 10000; transition: opacity 0.6s ease-out;
     }
-    #loadingScreen.hide { opacity: 0; pointer-events: none; }
+    #loadingScreen.hide { opacity: 0; pointer-events: none; visibility: hidden; }
     .loading-logo { 
       font-size: 80px; 
       animation: bounce 0.6s ease-in-out infinite;
@@ -5040,7 +5040,9 @@
       controls = new OrbitControls(camera, renderer.domElement);
       controls.addEventListener('change', () => { needsRender = true; });
       controls.enableDamping = true;
-      controls.dampingFactor = 0.08;
+      controls.dampingFactor = 0.12;
+      controls.rotateSpeed = 0.95;
+      controls.zoomSpeed = 1.1;
       controls.minPolarAngle = 0.1; // Prevent looking straight down
       controls.maxPolarAngle = Math.PI / 2.1; // Prevent going below horizon
       controls.minDistance = 3;
@@ -5115,9 +5117,13 @@
       updateTimeOfDay();
       
       setTimeout(() => {
-        document.getElementById('loadingScreen').classList.add('hide');
+        const boot = document.getElementById('loadingScreen');
+        if (boot) {
+          boot.classList.add('hide');
+          setTimeout(() => { boot.style.display = 'none'; }, 700);
+        }
         toast('🎉 96×96 stud baseplate ready! Build something amazing.', 'success');
-      }, 1800);
+      }, 400);
       
       updateUI();
     }

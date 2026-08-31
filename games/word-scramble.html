@@ -1097,6 +1097,7 @@ function submitGuess() {
     stats.wins++;
     stats.maxStreak = Math.max(stats.maxStreak, stats.streak);
     saveStats(stats);
+    try { localStorage.setItem('scramble_last_date', new Date().toISOString().slice(0, 10)); } catch (e) {}
     updateStatDisplay();
 
     gameOver = true;
@@ -1144,6 +1145,7 @@ function submitGuess() {
       }
       stats.played++;
       saveStats(stats);
+      try { localStorage.setItem('scramble_last_date', new Date().toISOString().slice(0, 10)); } catch (e) {}
       updateStatDisplay();
 
       gameOver = true;

@@ -3,7 +3,8 @@
 ## Hard rules
 - Do **not** drop `id="hamburger"` on game nav. Missing id used to throw before `init()` and blanked boards.
 - Pixle is a **5-letter gaming Wordle**. Do not list it as a screenshot game. Do not invent screenshot assets.
-- **Do not edit `games/brix3d.html`** while the BRIX renderer worktree owns it. Hub card / listing copy only.
+- **BRIX renderer is shipped.** `games/BRIX.md` is law. Feel-only edits (camera/ghost/place) are allowed. Do not reintroduce 4096 shadows or per-brick Mesh groups for the persistent scene.
+- Dream Machine is lab-only. Do not count it in the /games product total.
 - Isolation: CosmicGamesHub repo only. No Harborline, Rootweave source, or schedule-builder.
 - No 25th Wordle clone. No fake email list. No readable text in Imagine images.
 

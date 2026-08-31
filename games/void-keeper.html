@@ -93,8 +93,26 @@
   #lab-nav .back-btn:hover { color: #fff; background: rgba(0,0,0,0.65); }
   #lab-nav .site-link { color: rgba(255,255,255,0.3); letter-spacing: 0.1em; }
   #lab-nav .site-link:hover { color: rgba(255,255,255,0.6); }
+  #lab-nav .nav-right { pointer-events: auto; display:flex; align-items:center; gap:10px; }
+  .mute-btn, .vk-btn {
+    pointer-events: auto; font-family: system-ui, sans-serif; font-size: 12px;
+    letter-spacing: 0.06em; min-height: 44px; padding: 0 14px; border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.18); background: rgba(0,0,0,0.45); color: rgba(255,255,255,0.8);
+    cursor: pointer;
+  }
+  .vk-btn-row { display:flex; gap:0.7rem; margin-top: 0.4rem; }
+  .vk-btn.primary { background: rgba(34,211,238,0.18); border-color: rgba(34,211,238,0.55); color:#22D3EE; font-weight:700; min-width:160px; }
+  #share-toast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: rgba(34,211,238,0.15); border: 1px solid rgba(34,211,238,0.35);
+    color: #22D3EE; font-family: system-ui, sans-serif; font-size: 0.72rem;
+    letter-spacing: 0.08em; padding: 7px 18px; border-radius: 6px;
+    opacity: 0; transition: opacity 0.3s, transform 0.3s;
+    pointer-events: none; z-index: 200;
+  }
+  #share-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 </style>
-  <meta property="og:image" content="https://cosmicgameshub.com/images/game-voidkeeper.jpg">
+  <meta property="og:image" content="https://cosmicgameshub.com/images/game-voidkeeper-v2.jpg">
   <meta property="og:image:width" content="600">
   <meta property="og:image:height" content="260">
   <script type="application/ld+json">
@@ -104,7 +122,7 @@
   "name": "Void Keeper",
   "description": "Move your cursor to catch particles of light and avoid the noise. An ambient arcade experience.",
   "url": "https://cosmicgameshub.com/games/void-keeper",
-  "image": "https://cosmicgameshub.com/images/game-voidkeeper.jpg",
+  "image": "https://cosmicgameshub.com/images/game-voidkeeper-v2.jpg",
   "genre": "Arcade",
   "gamePlatform": "Web Browser",
   "applicationCategory": "Game",
@@ -126,7 +144,7 @@
   <meta name="twitter:site" content="@CosmicGamesHub">
   <meta name="twitter:title" content="Void Keeper — CosmicGamesHub">
   <meta name="twitter:description" content="Move your cursor to catch particles of light and avoid the noise. An ambient arcade experience.">
-  <meta name="twitter:image" content="https://cosmicgameshub.com/images/game-voidkeeper.jpg">
+  <meta name="twitter:image" content="https://cosmicgameshub.com/images/game-voidkeeper-v2.jpg">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="CosmicGamesHub">
   <meta property="og:url" content="https://cosmicgameshub.com/games/void-keeper">
@@ -135,7 +153,10 @@
 
 <div id="lab-nav">
   <a href="/games" class="back-btn">← All Games</a>
-  <a href="/" class="site-link">CosmicGamesHub</a>
+  <div class="nav-right">
+    <button type="button" class="mute-btn" id="btn-mute" aria-pressed="false">Sound on</button>
+    <a href="/" class="site-link">CosmicGamesHub</a>
+  </div>
 </div>
 
 <canvas id="c"></canvas>
@@ -158,8 +179,13 @@
   <div class="final-score" id="finalScore">0</div>
   <div class="final-label" id="finalLabel">thoughts kept</div>
   <div class="best-score-line" id="bestScoreLine"></div>
-  <div class="prompt" id="overlayPrompt">tap to begin</div>
+  <div class="prompt" id="overlayPrompt">move to collect light · 5 noise hits end the run</div>
+  <div class="vk-btn-row">
+    <button type="button" class="vk-btn primary" id="vk-play">Play</button>
+    <button type="button" class="vk-btn" id="vk-share" style="display:none">Share</button>
+  </div>
 </div>
+<div id="share-toast">Copied to clipboard</div>
 <script>
 (() => {
   const canvas = document.getElementById('c');
@@ -170,6 +196,19 @@
   const bestScoreLine = document.getElementById('bestScoreLine');
   const overlayPrompt = document.getElementById('overlayPrompt');
   const VK_BEST_KEY = 'vk_best';
+  const btnMute = document.getElementById('btn-mute');
+  const btnPlay = document.getElementById('vk-play');
+  const btnShare = document.getElementById('vk-share');
+  const shareToast = document.getElementById('share-toast');
+  let muted = false;
+  try { muted = localStorage.getItem('vk_mute') === '1'; } catch (e) {}
+  function syncMute() {
+    if (!btnMute) return;
+    btnMute.textContent = muted ? 'Muted' : 'Sound on';
+    btnMute.setAttribute('aria-pressed', muted ? 'true' : 'false');
+  }
+  syncMute();
+  function haptic(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
 
   // --- Audio ---
   let audioCtx = null;
@@ -177,7 +216,7 @@
     try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
   }
   function playTone(freq, dur, vol) {
-    if (!audioCtx) return;
+    if (muted || !audioCtx) return;
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.type = 'sine';
@@ -301,6 +340,8 @@
     my = H / 2;
     overlay.classList.add('hidden');
     if (!audioCtx) initAudio();
+    if (btnPlay) btnPlay.textContent = 'Play again';
+    if (btnShare) btnShare.style.display = 'none';
   }
 
   function showGameOver() {
@@ -317,7 +358,9 @@
       bestScoreLine.textContent = `best: ${prev}`;
     }
     bestScoreLine.classList.add('show');
-    overlayPrompt.textContent = 'tap to play again';
+    overlayPrompt.textContent = 'Play again or share';
+    if (btnShare) btnShare.style.display = '';
+    haptic(30);
 
     setTimeout(() => {
       overlay.classList.remove('hidden');
@@ -339,8 +382,40 @@
       init();
     }
   }
-  overlay.addEventListener('click', onClick);
-  overlay.addEventListener('touchstart', e => { e.preventDefault(); onClick(); });
+  overlay.addEventListener('click', function (e) {
+    if (e.target && e.target.closest && e.target.closest('button')) return;
+    onClick();
+  });
+  overlay.addEventListener('touchstart', e => {
+    if (e.target && e.target.closest && e.target.closest('button')) return;
+    e.preventDefault();
+    onClick();
+  });
+  if (btnPlay) btnPlay.addEventListener('click', function (e) { e.stopPropagation(); onClick(); });
+  if (btnMute) btnMute.addEventListener('click', function (e) {
+    e.stopPropagation();
+    muted = !muted;
+    try { localStorage.setItem('vk_mute', muted ? '1' : '0'); } catch (err) {}
+    if (!muted) initAudio();
+    syncMute();
+  });
+  function doShare() {
+    const best = parseInt(localStorage.getItem(VK_BEST_KEY) || '0', 10);
+    const text = 'Void Keeper — ' + score + ' thoughts kept' + (best ? ' · best ' + best : '') + '\ncosmicgameshub.com/games/void-keeper';
+    const go = function () {
+      if (shareToast) { shareToast.classList.add('show'); setTimeout(function () { shareToast.classList.remove('show'); }, 2200); }
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(go).catch(go);
+    else go();
+  }
+  if (btnShare) btnShare.addEventListener('click', function (e) { e.stopPropagation(); doShare(); });
+  (function showStartBest() {
+    const best = parseInt(localStorage.getItem(VK_BEST_KEY) || '0', 10);
+    if (best > 0) {
+      bestScoreLine.textContent = 'best: ' + best;
+      bestScoreLine.classList.add('show');
+    }
+  })();
 
   let lastTime = 0;
 
@@ -382,6 +457,7 @@
           edgeFlash = 1;
           score += p.type.points;
           playTone(p.type.freq, 0.3, 0.08);
+          haptic(18);
           if (noiseCount >= 5) {
             showGameOver();
           }
@@ -390,6 +466,7 @@
           addBurst(p.x, p.y, p.type.color, 12);
           addOrbiter(p.x, p.y, p.type);
           playTone(p.type.freq, 0.5, 0.06);
+          haptic(8);
         }
         particles.splice(i, 1);
       }

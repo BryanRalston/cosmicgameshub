@@ -84,7 +84,7 @@
 
 <canvas id="c"></canvas>
 <div id="cursor"></div>
-<div id="info">nudge gently — it has its own ideas</div>
+<div id="info">lab toy · not a daily · nudge the field</div>
 <div id="epoch"></div>
 
 <script>
@@ -288,7 +288,7 @@ ctx.fillRect(0, 0, W, H);
 // On touch devices users won't see a cursor — show the prompt sooner and longer
 const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 if (isTouch) {
-  infoEl.textContent = 'drag to nudge it — it has its own ideas';
+  infoEl.textContent = 'lab toy · not a daily · nudge the field';
 }
 setTimeout(() => infoEl.classList.add('visible'), isTouch ? 600 : 2000);
 setTimeout(() => infoEl.classList.remove('visible'), isTouch ? 14000 : 10000);

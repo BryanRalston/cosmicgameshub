@@ -59,16 +59,19 @@
       var ps = safeJSON('pixle-state-v1') || {};
       map.pixle = ps.dayIndex === dayIndex2026() && (ps.status === 'won' || ps.status === 'lost');
     } catch (e) { map.pixle = false; }
-    try {
-      var ss = safeJSON('scramble-state-v1') || {};
-      map['word-scramble'] = ss.status === 'won' || ss.status === 'lost';
-    } catch (e) { map['word-scramble'] = false; }
     map.sudoku = localStorage.getItem('sdk_solved_' + iso) === '1' || localStorage.getItem('sdk_solved_' + ymd) === '1';
     map.crossword = safeInt('cw_last_day', -1) === dayOfYear();
     map['price-guesser'] = safeInt('pg_last_day', -1) === dayOfYear();
     try {
+      var ss = safeJSON('scramble-state-v1') || {};
+      var scrambleIso = localStorage.getItem('scramble_last_date');
+      map['word-scramble'] = scrambleIso === iso || scrambleIso === ymd ||
+        (ss.dayIndex === unixDay() && (ss.status === 'won' || ss.status === 'lost'));
+    } catch (e) { map['word-scramble'] = false; }
+    try {
       var rs = safeJSON('rift_state_' + dayIndex2026());
-      map.rift = !!(rs && rs.zone >= 3);
+      if (!rs) rs = safeJSON('rift_state_' + dayOfYear());
+      map.rift = !!(rs && (rs.zone >= 3 || rs.chainDone && rs.growDone && rs.decodeDone));
     } catch (e) { map.rift = false; }
     try {
       var hist = safeJSON('cgx-dc-history') || [];

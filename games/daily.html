@@ -64,6 +64,11 @@
     .dh-next.show { display:inline-flex; }
     .dh-card { align-items: stretch; }
     .dh-thumb { width: 72px; height: 72px; object-fit: cover; border-radius: 12px; flex-shrink: 0; }
+    .dh-share-panel { display:none; margin:1.25rem auto 0; max-width:420px; background:rgba(0,0,0,.45); border:1px solid rgba(255,255,255,.1); border-radius:16px; padding:1rem; text-align:left; }
+    .dh-share-panel.show { display:block; }
+    .dh-share-panel img { width:100%; border-radius:12px; border:1px solid rgba(255,255,255,.08); }
+    .dh-share-actions { display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.75rem; }
+    .dh-share-actions .btn { min-height:44px; flex:1; }
 
     @media (max-width: 768px) {
       .dh-hero { padding: 1.5rem 1rem 1.25rem; }
@@ -120,6 +125,13 @@
       <div class="dh-ritual">
         <a class="btn btn--primary dh-next" id="dhNext" href="/games/gamerdle">Play next →</a>
         <button class="btn btn--outline" type="button" id="dhShare">Share today's set</button>
+      </div>
+      <div class="dh-share-panel" id="dhSharePanel" hidden>
+        <img id="dhShareImg" alt="Today's CosmicGamesHub daily set card" width="1080" height="1080"/>
+        <div class="dh-share-actions">
+          <button class="btn btn--primary" type="button" id="dhShareCopy">Copy caption</button>
+          <button class="btn btn--outline" type="button" id="dhShareDl">Download card</button>
+        </div>
       </div>
     </div>
 
@@ -219,15 +231,10 @@
         return { played: finished, streak: stats.streak || 0 };
       },
       'word-scramble'() {
-        // word-scramble uses Math.floor(Date.now()/86400000) % WORDS.length internally.
-        // For "played today" we just check the state's dayIndex matches today's unix-day-index.
-        const state = safeJSON('scramble-state-v1') || {};
         const stats = safeJSON('scramble-stats-v1') || {};
-        // word-scramble's DAY_INDEX is unix-day-index modulo WORDS.length, but the state stores
-        // the same modulo'd value. The simplest reliable check: state status finished + lastWinDay near today.
-        const finished = state.status === 'won' || state.status === 'lost';
-        const playedToday = finished && (typeof stats.lastWinDay === 'number' ? stats.lastWinDay >= dayIndexUnix - 1 : true);
-        return { played: !!playedToday, streak: stats.streak || 0 };
+        const last = localStorage.getItem('scramble_last_date');
+        const played = last === isoToday || last === yyyymmdd;
+        return { played: !!played, streak: stats.streak || 0 };
       },
       sudoku() {
         const iso = isoToday;
@@ -243,10 +250,10 @@
         return { played: last === dayOfYear, streak: safeInt('pg_streak') };
       },
       rift() {
-        const state = safeJSON(`rift_state_${dayIndex2026}`);
+        const state = safeJSON(`rift_state_${dayIndex2026}`) || safeJSON('rift_state_' + dayOfYear);
         const meta = safeJSON('rift_meta') || {};
-        const finished = state && state.zones && Object.values(state.zones).every(z => z && (z.completed || z.solved || z.status === 'done'));
-        return { played: !!finished, streak: meta.streak || 0 };
+        const finished = !!(state && (state.zone >= 3 || (state.chainDone && state.growDone && state.decodeDone)));
+        return { played: finished, streak: meta.streak || 0 };
       },
       'daily-challenge'() {
         const history = safeJSON('cgx-dc-history') || [];
@@ -354,11 +361,107 @@
   render();
 
   var shareBtn = document.getElementById('dhShare');
+  var sharePanel = document.getElementById('dhSharePanel');
+  var shareImg = document.getElementById('dhShareImg');
+  var lastShare = { text: '', blob: null, url: '' };
+
+  function buildShareCard() {
+    var a = adapters();
+    var played = 0;
+    var marks = GAMES.map(function (g) {
+      var st;
+      try { st = a[g.id](); } catch (e) { st = { played: false }; }
+      if (st.played) played++;
+      return { name: g.name, played: !!st.played };
+    });
+    var date = document.getElementById('dhDate').textContent;
+    var streak = document.getElementById('dhStreakSum').textContent;
+    var canvas = document.createElement('canvas');
+    canvas.width = 1080;
+    canvas.height = 1080;
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#09090f';
+    ctx.fillRect(0, 0, 1080, 1080);
+    var gdt = ctx.createLinearGradient(0, 0, 1080, 720);
+    gdt.addColorStop(0, 'rgba(0,212,255,0.16)');
+    gdt.addColorStop(1, 'rgba(168,85,247,0.08)');
+    ctx.fillStyle = gdt;
+    ctx.fillRect(0, 0, 1080, 1080);
+    ctx.fillStyle = '#00d4ff';
+    ctx.fillRect(0, 0, 1080, 10);
+    ctx.fillStyle = '#00d4ff';
+    ctx.font = '700 28px Outfit, system-ui, sans-serif';
+    ctx.fillText('COSMICGAMESHUB', 72, 96);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '900 72px Outfit, system-ui, sans-serif';
+    ctx.fillText('Daily set', 72, 186);
+    ctx.fillStyle = '#a8a8c0';
+    ctx.font = '500 30px Outfit, system-ui, sans-serif';
+    ctx.fillText(date, 72, 236);
+    var cols = 3, rows = 4, gap = 18, tileW = 300, tileH = 88;
+    var ox = 72, oy = 300;
+    marks.forEach(function (m, i) {
+      var x = ox + (i % cols) * (tileW + gap);
+      var y = oy + Math.floor(i / cols) * (tileH + gap);
+      ctx.fillStyle = m.played ? 'rgba(0,230,118,0.16)' : 'rgba(255,255,255,0.05)';
+      ctx.strokeStyle = m.played ? 'rgba(0,230,118,0.7)' : 'rgba(255,255,255,0.12)';
+      ctx.lineWidth = 2;
+      if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(x, y, tileW, tileH, 14); ctx.fill(); ctx.stroke(); }
+      else { ctx.fillRect(x, y, tileW, tileH); ctx.strokeRect(x, y, tileW, tileH); }
+      ctx.fillStyle = m.played ? '#00e676' : '#ffffff';
+      ctx.font = '700 26px Outfit, system-ui, sans-serif';
+      ctx.fillText(m.name, x + 18, y + 38);
+      ctx.fillStyle = m.played ? '#00e676' : '#8888a0';
+      ctx.font = '600 18px Outfit, system-ui, sans-serif';
+      ctx.fillText(m.played ? 'Played' : 'Open', x + 18, y + 66);
+    });
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '800 42px Outfit, system-ui, sans-serif';
+    ctx.fillText(played + ' / 12 played', 72, 980);
+    ctx.fillStyle = '#00d4ff';
+    ctx.font = '700 28px Outfit, system-ui, sans-serif';
+    ctx.fillText('Streak ' + streak + '  ·  cosmicgameshub.com/games/daily', 72, 1032);
+    var text = 'CosmicGamesHub Daily — ' + date + '\n' + played + '/12 played · streak ' + streak + '\ncosmicgameshub.com/games/daily';
+    return new Promise(function (resolve) {
+      canvas.toBlob(function (blob) {
+        if (lastShare.url) URL.revokeObjectURL(lastShare.url);
+        lastShare = { text: text, blob: blob, url: blob ? URL.createObjectURL(blob) : canvas.toDataURL('image/png') };
+        resolve(lastShare);
+      }, 'image/png');
+    });
+  }
+
+  function showSharePanel(data) {
+    if (!sharePanel || !shareImg) return;
+    shareImg.src = data.url;
+    sharePanel.hidden = false;
+    sharePanel.classList.add('show');
+  }
+
   if (shareBtn) shareBtn.addEventListener('click', function () {
-    var n = document.getElementById('dhPlayedCount').textContent;
-    var text = 'CosmicGamesHub Daily ' + document.getElementById('dhDate').textContent + '\n' + n + ' played\ncosmicgameshub.com/games/daily';
-    var p = (navigator.clipboard && navigator.clipboard.writeText) ? navigator.clipboard.writeText(text) : Promise.reject();
-    p.then(function () { shareBtn.textContent = 'Copied'; }).catch(function () { shareBtn.textContent = 'Copy failed'; });
+    buildShareCard().then(function (data) {
+      showSharePanel(data);
+      var p = (navigator.clipboard && navigator.clipboard.writeText) ? navigator.clipboard.writeText(data.text) : Promise.reject();
+      var file = data.blob ? new File([data.blob], 'cosmicgameshub-daily.png', { type: 'image/png' }) : null;
+      if (navigator.share && file && navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({ title: 'CosmicGamesHub Daily', text: data.text, url: 'https://cosmicgameshub.com/games/daily', files: [file] }).catch(function () {});
+      }
+      p.then(function () { shareBtn.textContent = 'Card ready'; }).catch(function () { shareBtn.textContent = 'Card ready'; });
+    });
+  });
+  var copyBtn = document.getElementById('dhShareCopy');
+  if (copyBtn) copyBtn.addEventListener('click', function () {
+    var t = lastShare.text || '';
+    if (!t) return;
+    navigator.clipboard.writeText(t).then(function () { copyBtn.textContent = 'Copied'; }).catch(function () { copyBtn.textContent = 'Copy failed'; });
+  });
+  var dlBtn = document.getElementById('dhShareDl');
+  if (dlBtn) dlBtn.addEventListener('click', function () {
+    if (!lastShare.url) return;
+    var a = document.createElement('a');
+    a.href = lastShare.url;
+    a.download = 'cosmicgameshub-daily.png';
+    a.click();
   });
 })();
 </script>
