@@ -1128,8 +1128,23 @@ const WORDSLONG = new Set([
   'CAPER','CAPERS','SCAPE','ESCAPED','ESCAPES','CAMPER','SCRAPE',
 ]);
 
+let RIFT_DICT = null;
+const RIFT_DICT_READY = fetch('/games/rift-words.json')
+  .then(function (r) { if (!r.ok) throw new Error('dict ' + r.status); return r.json(); })
+  .then(function (arr) {
+    RIFT_DICT = new Set(arr);
+    return RIFT_DICT;
+  })
+  .catch(function (e) {
+    console.warn('RIFT dictionary fetch failed, using built-in list', e);
+    RIFT_DICT = new Set();
+    return RIFT_DICT;
+  });
+
 function isValidWord(w) {
   w = w.toUpperCase().trim();
+  if (!w) return false;
+  if (RIFT_DICT && RIFT_DICT.has(w)) return true;
   if (w.length === 3) return WORDS3.has(w);
   if (w.length === 4) return WORDS4.has(w) || WORDSLONG.has(w);
   return WORDSLONG.has(w);
@@ -3044,6 +3059,11 @@ function renderChainLadder(p) {
 
 function submitChain() {
   if (STATE.chainDone) return;
+  if (!RIFT_DICT) {
+    showToast('Loading word list…', 'error');
+    RIFT_DICT_READY.then(submitChain);
+    return;
+  }
   const p = CHAIN_PUZZLES[getPuzzleIndex()];
   const input = document.getElementById('chainInput');
   const raw = input.value.trim().toUpperCase();
@@ -3168,6 +3188,11 @@ function growFail(msg) {
 
 function submitGrow() {
   try {
+    if (!RIFT_DICT) {
+      growFail('Loading word list…');
+      RIFT_DICT_READY.then(submitGrow);
+      return;
+    }
     if (STATE.growDone) { growFail('Zone already complete — continue to Decode'); return; }
     const input = document.getElementById('growInput');
     if (!input) return;
@@ -3616,6 +3641,7 @@ function checkGrowStopButton() {
 // ── INIT ─────────────────────────────────────────────────────
 
 function init() {
+  RIFT_DICT_READY.catch(function () {});
   // Load meta for stats display
   const meta = loadMeta();
   document.getElementById('statStreak').textContent = meta.streak || 0;
