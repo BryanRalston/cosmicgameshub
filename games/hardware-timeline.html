@@ -773,8 +773,10 @@
       fact: 'The LG 27GP950-B was among the first consumer monitors to support HDMI 2.1, enabling 4K 144Hz from next-gen consoles.' },
     { name: 'ASUS PG279QM',              year: 2021, category: 'Gaming Monitor',        icon: '🖥️',
       fact: 'The PG279QM brought 240Hz to a 1440p IPS panel for the first time, chasing esports framerates at higher resolution.' },
-    { name: 'LG C2 OLED',               year: 2022, category: 'Gaming Monitor',        icon: '🖥️',
-      fact: 'The LG C2 OLED became the most recommended gaming TV ever, offering near-zero response time with true blacks.' },
+    { name: 'LG C2 OLED',               year: 2022, category: 'Gaming TV',             icon: '📺',
+      fact: 'The LG C2 OLED became the most recommended gaming TV, not a 27-inch desktop monitor.' },
+    { name: 'LG C4 OLED',               year: 2024, category: 'Gaming TV',             icon: '📺',
+      fact: 'The 2024 C-series OLED TV. Console living-room panel, not a Superlight competitor.' },
 
     // Controllers
     { name: 'Xbox 360 Controller',       year: 2005, category: 'Game Controller',       icon: '🎮',
@@ -805,8 +807,14 @@
       fact: 'Planar-magnetic PS5 headset on PlayStation Link. Sony\'s serious follow-up to Pulse 3D.' },
     { name: 'HyperX Cloud III',          year: 2023, category: 'Gaming Headset',        icon: '🎧',
       fact: 'The Cloud line\'s 2023 refresh: still 53 mm drivers, still the comfort that made Cloud II famous.' },
-    { name: 'Nintendo Switch 2',         year: 2025, category: 'Game Controller',       icon: '🎮',
-      fact: 'Nintendo\'s successor hardware. Timeline questions treat the console generation, not a mouse.' },
+    { name: 'Nintendo Switch 2',         year: 2025, category: 'Gaming Console',        icon: '🕹️',
+      fact: 'Nintendo\'s successor to Switch. A handheld/console, not a pad.' },
+    { name: 'PlayStation 5',             year: 2020, category: 'Gaming Console',        icon: '🕹️',
+      fact: 'Sony\'s ninth-gen box. DualSense shipped with it; the console is not the controller.' },
+    { name: 'Xbox Series X',             year: 2020, category: 'Gaming Console',        icon: '🕹️',
+      fact: 'Microsoft\'s 4K-first ninth-gen console, launched the same week as PS5.' },
+    { name: 'Steam Deck',                year: 2022, category: 'Gaming Console',        icon: '🕹️',
+      fact: 'Valve\'s PC handheld. A console-shaped computer, still not a mouse or a gamepad SKU.' },
     { name: 'DualSense Edge',            year: 2023, category: 'Game Controller',       icon: '🎮',
       fact: 'Sony\'s pro pad: replaceable sticks, rear buttons, and profiles — Elite energy on PlayStation.' },
     { name: 'Razer BlackWidow V4 Pro',   year: 2023, category: 'Gaming Keyboard',       icon: '⌨️',
@@ -907,7 +915,7 @@
     var pool = [];
     for (var delta = -3; delta <= 3; delta++) {
       var y = correctYear + delta;
-      if (y !== correctYear && y >= 2000 && y <= 2024) {
+      if (y !== correctYear && y >= 2000 && y <= 2026) {
         pool.push(y);
       }
     }
@@ -1149,12 +1157,22 @@
       '\nScore: ' + score + '  Grade: ' + g +
       '\n' + emojiResults.join(' ') +
       '\ncosmicgameshub.com/games/hardware-timeline';
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(text).then(function () {
-        var btn = document.getElementById('btnShare');
-        btn.textContent = '✓ Copied!';
-        setTimeout(function () { btn.textContent = '📋 Share'; }, 2000);
-      }).catch(function () {});
+    var go = function () {
+      var btn = document.getElementById('btnShare');
+      if (btn) { btn.textContent = '✓ Copied + card'; setTimeout(function () { btn.textContent = '📋 Share'; }, 2000); }
+    };
+    if (window.CGSfx && window.CGSfx.shareNow) {
+      window.CGSfx.shareNow({
+        title: 'Timeline',
+        subtitle: dateLabel + '  ·  ' + g,
+        grid: emojiResults.join(' '),
+        lines: ['Score ' + score],
+        url: 'cosmicgameshub.com/games/hardware-timeline',
+        filename: 'hardware-timeline',
+        text: text
+      }).then(go).catch(go);
+    } else if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(go).catch(function () {});
     }
   });
 

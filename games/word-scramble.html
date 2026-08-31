@@ -1103,6 +1103,7 @@ function submitGuess() {
     gameState.attempts.push('win');
     gameState.status = 'won';
     saveState(gameState);
+    if (window.CGSfx) { window.CGSfx.play('correct'); window.CGSfx.haptic(12); window.CGSfx.juice(tilesEl, 'pop'); }
 
     const winIndex = gameState.attempts.length; // 1-6
     const yesterday = DAY_INDEX - 1;
@@ -1148,6 +1149,7 @@ function submitGuess() {
     // WRONG
     gameState.attempts.push('wrong');
     saveState(gameState);
+    if (window.CGSfx) { window.CGSfx.play('miss'); window.CGSfx.haptic(16); }
 
     inputEl.classList.add('shake', 'error');
     setTimeout(() => inputEl.classList.remove('shake', 'error'), 400);
@@ -1268,8 +1270,19 @@ function showResultModal(won, attemptNum) {
       emojiLine,
       'cosmicgameshub.com/games/word-scramble'
     ].join('\n');
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(text).then(() => showToast('Copied!'));
+    const go = () => showToast('Copied + card saved');
+    if (window.CGSfx && window.CGSfx.shareNow) {
+      window.CGSfx.shareNow({
+        title: 'Scramble',
+        subtitle: '#' + DAY_INDEX + '  ·  ' + guessLine,
+        grid: emojiLine,
+        lines: [won ? 'Solved' : 'X — ' + ANSWER],
+        url: 'cosmicgameshub.com/games/word-scramble',
+        filename: 'scramble-' + DAY_INDEX,
+        text: text
+      }).then(go).catch(go);
+    } else if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(go);
     } else {
       showToast('Copy manually above');
     }

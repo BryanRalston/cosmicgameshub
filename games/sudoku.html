@@ -480,10 +480,22 @@ function shareWin(){
   const m=Math.floor(timerSecs/60),s=timerSecs%60;
   const timeStr=`${m}:${s.toString().padStart(2,'0')}`;
   const text=`🧩 Sudoku (${diff}) — Solved in ${timeStr} with ${mistakes} mistake${mistakes!==1?'s':''}!\ncosmicgameshub.com/games/sudoku`;
-  navigator.clipboard.writeText(text).then(()=>{
+  const go=function(){
     const btn=document.getElementById('winShareBtn');
-    btn.textContent='✓ Copied!'; setTimeout(()=>btn.textContent='📋 Share',1800);
-  }).catch(()=>{ prompt('Copy this:',text); });
+    if(btn){ btn.textContent='✓ Copied + card'; setTimeout(()=>btn.textContent='📋 Share',1800); }
+  };
+  if(window.CGSfx&&window.CGSfx.shareNow){
+    window.CGSfx.shareNow({
+      title:'Sudoku',
+      subtitle:(diff||'daily')+'  ·  '+timeStr,
+      lines:['Mistakes '+mistakes+'/3','Solved'],
+      url:'cosmicgameshub.com/games/sudoku',
+      filename:'sudoku',
+      text:text
+    }).then(go).catch(go);
+  } else if(navigator.clipboard){
+    navigator.clipboard.writeText(text).then(go).catch(()=>{ prompt('Copy this:',text); });
+  }
 }
 
 function updateTimer(){

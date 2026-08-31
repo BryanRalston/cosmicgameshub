@@ -493,10 +493,22 @@
     const shareText = `Gaming Gear Price Guesser\n${d.toLocaleDateString()}\n${emoji}\nScore: ${totalScore}/500 (${grade})\n🎮 cosmicgameshub.com/games/price-guesser`;
     document.getElementById('shareBox').textContent = shareText;
     document.getElementById('shareBtn').addEventListener('click', () => {
-      navigator.clipboard.writeText(shareText).then(() => {
+      const go = () => {
         document.getElementById('shareCopied').style.display = 'block';
         setTimeout(() => document.getElementById('shareCopied').style.display = 'none', 2000);
-      });
+      };
+      if (window.CGSfx && window.CGSfx.shareNow) {
+        window.CGSfx.shareNow({
+          title: 'Price Guesser',
+          subtitle: d.toLocaleDateString() + '  ·  ' + grade,
+          lines: [emoji, 'Score ' + totalScore + '/500'],
+          url: 'cosmicgameshub.com/games/price-guesser',
+          filename: 'price-guesser',
+          text: shareText
+        }).then(go).catch(go);
+      } else if (navigator.clipboard) {
+        navigator.clipboard.writeText(shareText).then(go);
+      }
     });
 
     // Best score

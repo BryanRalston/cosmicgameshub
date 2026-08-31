@@ -1660,12 +1660,22 @@
       '\nScore: ' + score + ' pts  Grade: ' + g +
       '\n' + emojiResults.join('') +
       '\ncosmicgameshub.com/games/spec-match';
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(text).then(function() {
-        var btn = document.getElementById('btnShare');
-        btn.textContent = '✓ Copied!';
-        setTimeout(function(){ btn.textContent = '📋 Share'; }, 2000);
-      }).catch(function(){});
+    var go = function () {
+      var btn = document.getElementById('btnShare');
+      if (btn) { btn.textContent = '✓ Copied + card'; setTimeout(function () { btn.textContent = '📋 Share'; }, 2000); }
+    };
+    if (window.CGSfx && window.CGSfx.shareNow) {
+      window.CGSfx.shareNow({
+        title: 'Spec Match',
+        subtitle: dateLabel + '  ·  ' + g,
+        grid: emojiResults.join(''),
+        lines: ['Score ' + score + ' pts'],
+        url: 'cosmicgameshub.com/games/spec-match',
+        filename: 'spec-match',
+        text: text
+      }).then(go).catch(go);
+    } else if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(go).catch(function () {});
     }
   });
 
