@@ -2085,6 +2085,790 @@ const DECODE_PUZZLES = [
       { text: 'The next button', answer: 'CONTINUE' },
       { text: 'The report button', answer: 'REPORT' },
     ]
+  },
+  {
+    connection: 'SM64 MOVES',
+    gaming: true,
+    hint: 'The camera is Lakitu',
+    clues: [
+      { text: 'The long one off a slope', answer: 'LONGJUMP' },
+      { text: 'Three in a row', answer: 'TRIPLEJUMP' },
+      { text: 'Dive on the ground', answer: 'DIVE' },
+      { text: 'Ground ___', answer: 'POUND' },
+      { text: 'Wall ___', answer: 'KICK' },
+      { text: 'The backflip', answer: 'BACKFLIP' },
+      { text: 'Sideflip', answer: 'SIDEFLIP' },
+    ]
+  },
+  {
+    connection: 'OOT SONGS',
+    gaming: true,
+    hint: 'Ocarina tracks',
+    clues: [
+      { text: 'Saria\'s', answer: 'SARIA' },
+      { text: 'Zelda\'s lullaby', answer: 'LULLABY' },
+      { text: 'Song of time', answer: 'TIME' },
+      { text: 'Sun\'s song', answer: 'SUN' },
+      { text: 'Song of storms', answer: 'STORMS' },
+      { text: 'Prelude of light', answer: 'PRELUDE' },
+      { text: 'Bolero of fire', answer: 'BOLERO' },
+    ]
+  },
+  {
+    connection: 'POKEMON STATS',
+    gaming: true,
+    hint: 'The six',
+    clues: [
+      { text: 'Hit points', answer: 'HP' },
+      { text: 'Attack', answer: 'ATTACK' },
+      { text: 'Defense', answer: 'DEFENSE' },
+      { text: 'Special attack', answer: 'SPATK' },
+      { text: 'Special defense', answer: 'SPDEF' },
+      { text: 'Speed', answer: 'SPEED' },
+      { text: 'The hidden one', answer: 'IV' },
+    ]
+  },
+  {
+    connection: 'POKEMON BALLS',
+    gaming: true,
+    hint: 'What you throw',
+    clues: [
+      { text: 'The default', answer: 'POKEBALL' },
+      { text: 'Great', answer: 'GREATBALL' },
+      { text: 'Ultra', answer: 'ULTRABALL' },
+      { text: 'Master, you have one', answer: 'MASTERBALL' },
+      { text: 'Fast, for speedsters', answer: 'FASTBALL' },
+      { text: 'Heavy', answer: 'HEAVYBALL' },
+      { text: 'Friend', answer: 'FRIENDBALL' },
+    ]
+  },
+  {
+    connection: 'TETRIS PIECES',
+    gaming: true,
+    hint: 'The seven',
+    clues: [
+      { text: 'The long one', answer: 'I' },
+      { text: 'The square', answer: 'O' },
+      { text: 'The T', answer: 'T' },
+      { text: 'The L', answer: 'L' },
+      { text: 'The J', answer: 'J' },
+      { text: 'The S', answer: 'S' },
+      { text: 'The Z', answer: 'Z' },
+    ]
+  },
+  {
+    connection: 'CHESS PIECES',
+    gaming: true,
+    hint: 'Over the board, and in games',
+    clues: [
+      { text: 'The one that jumps', answer: 'KNIGHT' },
+      { text: 'The diagonal', answer: 'BISHOP' },
+      { text: 'The castle', answer: 'ROOK' },
+      { text: 'The most powerful', answer: 'QUEEN' },
+      { text: 'The one you protect', answer: 'KING' },
+      { text: 'The front line', answer: 'PAWN' },
+      { text: 'Castle, as a verb', answer: 'CASTLE' },
+    ]
+  },
+  {
+    connection: 'MONOPOLY SPACES',
+    gaming: true,
+    hint: 'Also a board-game night',
+    clues: [
+      { text: 'Go', answer: 'GO' },
+      { text: 'Jail', answer: 'JAIL' },
+      { text: 'Free parking', answer: 'PARKING' },
+      { text: 'Chance', answer: 'CHANCE' },
+      { text: 'Community chest', answer: 'CHEST' },
+      { text: 'Boardwalk', answer: 'BOARDWALK' },
+      { text: 'Income tax', answer: 'TAX' },
+    ]
+  },
+  {
+    connection: 'DND STATS',
+    gaming: true,
+    hint: 'The six abilities',
+    clues: [
+      { text: 'Strength', answer: 'STR' },
+      { text: 'Dexterity', answer: 'DEX' },
+      { text: 'Constitution', answer: 'CON' },
+      { text: 'Intelligence', answer: 'INT' },
+      { text: 'Wisdom', answer: 'WIS' },
+      { text: 'Charisma', answer: 'CHA' },
+      { text: 'Armor class', answer: 'AC' },
+    ]
+  },
+  {
+    connection: 'DND CLASSES',
+    gaming: true,
+    hint: 'What you pick at session zero',
+    clues: [
+      { text: 'Fighter', answer: 'FIGHTER' },
+      { text: 'Wizard', answer: 'WIZARD' },
+      { text: 'Rogue', answer: 'ROGUE' },
+      { text: 'Cleric', answer: 'CLERIC' },
+      { text: 'Ranger', answer: 'RANGER' },
+      { text: 'Paladin', answer: 'PALADIN' },
+      { text: 'Bard', answer: 'BARD' },
+    ]
+  },
+  {
+    connection: 'MTG COLORS',
+    gaming: true,
+    hint: 'The pentagon',
+    clues: [
+      { text: 'White', answer: 'WHITE' },
+      { text: 'Blue', answer: 'BLUE' },
+      { text: 'Black', answer: 'BLACK' },
+      { text: 'Red', answer: 'RED' },
+      { text: 'Green', answer: 'GREEN' },
+      { text: 'All five', answer: 'WUBRG' },
+      { text: 'None, artifacts', answer: 'COLORLESS' },
+    ]
+  },
+  {
+    connection: 'YGO TYPES',
+    gaming: true,
+    hint: 'What the card says',
+    clues: [
+      { text: 'Monster', answer: 'MONSTER' },
+      { text: 'Spell', answer: 'SPELL' },
+      { text: 'Trap', answer: 'TRAP' },
+      { text: 'Fusion', answer: 'FUSION' },
+      { text: 'Synchro', answer: 'SYNCHRO' },
+      { text: 'Xyz', answer: 'XYZ' },
+      { text: 'Link', answer: 'LINK' },
+    ]
+  },
+  {
+    connection: 'HEARTHSTONE KEYWORDS',
+    gaming: true,
+    hint: 'The minion text',
+    clues: [
+      { text: 'Taunt', answer: 'TAUNT' },
+      { text: 'Charge', answer: 'CHARGE' },
+      { text: 'Rush', answer: 'RUSH' },
+      { text: 'Divine shield', answer: 'SHIELD' },
+      { text: 'Lifesteal', answer: 'LIFESTEAL' },
+      { text: 'Poisonous', answer: 'POISONOUS' },
+      { text: 'Stealth', answer: 'STEALTH' },
+    ]
+  },
+  {
+    connection: 'CIVICS',
+    gaming: true,
+    hint: 'Sid Meier loop',
+    clues: [
+      { text: 'Science', answer: 'SCIENCE' },
+      { text: 'Culture', answer: 'CULTURE' },
+      { text: 'Gold', answer: 'GOLD' },
+      { text: 'Faith', answer: 'FAITH' },
+      { text: 'Production', answer: 'PRODUCTION' },
+      { text: 'Food', answer: 'FOOD' },
+      { text: 'Amenities', answer: 'AMENITIES' },
+    ]
+  },
+  {
+    connection: 'CIV WINS',
+    gaming: true,
+    hint: 'How the game ends',
+    clues: [
+      { text: 'Science', answer: 'SCIENCE' },
+      { text: 'Culture', answer: 'CULTURE' },
+      { text: 'Domination', answer: 'DOMINATION' },
+      { text: 'Religious', answer: 'RELIGIOUS' },
+      { text: 'Diplomatic', answer: 'DIPLOMATIC' },
+      { text: 'Score', answer: 'SCORE' },
+      { text: 'Time', answer: 'TIME' },
+    ]
+  },
+  {
+    connection: 'SIMS NEEDS',
+    gaming: true,
+    hint: 'The bars',
+    clues: [
+      { text: 'Hunger', answer: 'HUNGER' },
+      { text: 'Energy', answer: 'ENERGY' },
+      { text: 'Social', answer: 'SOCIAL' },
+      { text: 'Bladder', answer: 'BLADDER' },
+      { text: 'Fun', answer: 'FUN' },
+      { text: 'Hygiene', answer: 'HYGIENE' },
+      { text: 'Room', answer: 'ROOM' },
+    ]
+  },
+  {
+    connection: 'AC SEASONS',
+    gaming: true,
+    hint: 'Northern hemisphere default',
+    clues: [
+      { text: 'Spring', answer: 'SPRING' },
+      { text: 'Summer', answer: 'SUMMER' },
+      { text: 'Fall', answer: 'FALL' },
+      { text: 'Winter', answer: 'WINTER' },
+      { text: 'Cherry blossom', answer: 'BLOSSOM' },
+      { text: 'Bunny day', answer: 'BUNNYDAY' },
+      { text: 'Turkey day', answer: 'TURKEYDAY' },
+    ]
+  },
+  {
+    connection: 'STARDEW SKILLS',
+    gaming: true,
+    hint: 'The five',
+    clues: [
+      { text: 'Farming', answer: 'FARMING' },
+      { text: 'Mining', answer: 'MINING' },
+      { text: 'Foraging', answer: 'FORAGING' },
+      { text: 'Fishing', answer: 'FISHING' },
+      { text: 'Combat', answer: 'COMBAT' },
+      { text: 'Friendship', answer: 'FRIENDSHIP' },
+      { text: 'Luck', answer: 'LUCK' },
+    ]
+  },
+  {
+    connection: 'TERRARIA CLASSES',
+    gaming: true,
+    hint: 'What you armor for',
+    clues: [
+      { text: 'Melee', answer: 'MELEE' },
+      { text: 'Ranged', answer: 'RANGED' },
+      { text: 'Magic', answer: 'MAGIC' },
+      { text: 'Summoner', answer: 'SUMMONER' },
+      { text: 'Throwing, old', answer: 'THROWING' },
+      { text: 'Hybrid', answer: 'HYBRID' },
+      { text: 'Tank', answer: 'TANK' },
+    ]
+  },
+  {
+    connection: 'MINECRAFT TOOLS',
+    gaming: true,
+    hint: 'The five plus',
+    clues: [
+      { text: 'Pickaxe', answer: 'PICKAXE' },
+      { text: 'Axe', answer: 'AXE' },
+      { text: 'Shovel', answer: 'SHOVEL' },
+      { text: 'Hoe', answer: 'HOE' },
+      { text: 'Sword', answer: 'SWORD' },
+      { text: 'Shears', answer: 'SHEARS' },
+      { text: 'Flint and steel', answer: 'FLINT' },
+    ]
+  },
+  {
+    connection: 'MINECRAFT DIMENSIONS',
+    gaming: true,
+    hint: 'Where you go',
+    clues: [
+      { text: 'Overworld', answer: 'OVERWORLD' },
+      { text: 'Nether', answer: 'NETHER' },
+      { text: 'The End', answer: 'END' },
+      { text: 'Aether, if you mod', answer: 'AETHER' },
+      { text: 'Twilight forest', answer: 'TWILIGHT' },
+      { text: 'The void under', answer: 'VOID' },
+      { text: 'The superflat you made', answer: 'SUPERFLAT' },
+    ]
+  },
+  {
+    connection: 'CREATIVE MODES',
+    gaming: true,
+    hint: 'How you play',
+    clues: [
+      { text: 'Survival', answer: 'SURVIVAL' },
+      { text: 'Creative', answer: 'CREATIVE' },
+      { text: 'Adventure', answer: 'ADVENTURE' },
+      { text: 'Spectator', answer: 'SPECTATOR' },
+      { text: 'Hardcore', answer: 'HARDCORE' },
+      { text: 'Peaceful', answer: 'PEACEFUL' },
+      { text: 'Hard', answer: 'HARD' },
+    ]
+  },
+  {
+    connection: 'ESPORTS ROLES 2',
+    gaming: true,
+    hint: 'The desk, not just CS',
+    clues: [
+      { text: 'Player', answer: 'PLAYER' },
+      { text: 'Coach', answer: 'COACH' },
+      { text: 'Analyst', answer: 'ANALYST' },
+      { text: 'Manager', answer: 'MANAGER' },
+      { text: 'Substitute', answer: 'SUB' },
+      { text: 'Stand-in', answer: 'STANDIN' },
+      { text: 'Caster', answer: 'CASTER' },
+    ]
+  },
+  {
+    connection: 'TOURNAMENT BRACKET',
+    gaming: true,
+    hint: 'The tree',
+    clues: [
+      { text: 'Winners', answer: 'WINNERS' },
+      { text: 'Losers', answer: 'LOSERS' },
+      { text: 'Grand finals', answer: 'GF' },
+      { text: 'Reset', answer: 'RESET' },
+      { text: 'Top 8', answer: 'TOP8' },
+      { text: 'Pools', answer: 'POOLS' },
+      { text: 'Seeding', answer: 'SEED' },
+    ]
+  },
+  {
+    connection: 'FIGHT STICK PARTS',
+    gaming: true,
+    hint: 'What you smash',
+    clues: [
+      { text: 'The lever', answer: 'LEVER' },
+      { text: 'Sanwa buttons', answer: 'SANWA' },
+      { text: 'The gate', answer: 'GATE' },
+      { text: 'The Brook board', answer: 'BROOK' },
+      { text: 'Korean lever', answer: 'KOREAN' },
+      { text: 'The art on top', answer: 'CPO' },
+      { text: 'The cord', answer: 'CABLE' },
+    ]
+  },
+  {
+    connection: 'RHYTHM MODS',
+    gaming: true,
+    hint: 'How you read the chart',
+    clues: [
+      { text: 'Mirror', answer: 'MIRROR' },
+      { text: 'Random', answer: 'RANDOM' },
+      { text: 'Hidden', answer: 'HIDDEN' },
+      { text: 'Sudden', answer: 'SUDDEN' },
+      { text: 'Speed', answer: 'SPEED' },
+      { text: 'Auto', answer: 'AUTO' },
+      { text: 'No-fail', answer: 'NOFAIL' },
+    ]
+  },
+  {
+    connection: 'VR KNOBS',
+    gaming: true,
+    hint: 'What you set so you do not sick',
+    clues: [
+      { text: 'IPD', answer: 'IPD' },
+      { text: 'Snap turn', answer: 'SNAP' },
+      { text: 'Smooth turn', answer: 'SMOOTH' },
+      { text: 'Vignette', answer: 'VIGNETTE' },
+      { text: 'Refresh', answer: 'REFRESH' },
+      { text: 'Guardian', answer: 'GUARDIAN' },
+      { text: 'Passthrough', answer: 'PASSTHROUGH' },
+    ]
+  },
+  {
+    connection: 'STREAM OUTPUT',
+    gaming: true,
+    hint: 'What OBS is for',
+    clues: [
+      { text: 'Bitrate', answer: 'BITRATE' },
+      { text: 'Preset', answer: 'PRESET' },
+      { text: 'Encoder', answer: 'ENCODER' },
+      { text: 'Scene', answer: 'SCENE' },
+      { text: 'Alert', answer: 'ALERT' },
+      { text: 'Overlay', answer: 'OVERLAY' },
+      { text: 'VOD', answer: 'VOD' },
+    ]
+  },
+  {
+    connection: 'DISCORD PARTS',
+    gaming: true,
+    hint: 'The server anatomy',
+    clues: [
+      { text: 'Channel', answer: 'CHANNEL' },
+      { text: 'Category', answer: 'CATEGORY' },
+      { text: 'Role', answer: 'ROLE' },
+      { text: 'Voice', answer: 'VOICE' },
+      { text: 'Thread', answer: 'THREAD' },
+      { text: 'Webhook', answer: 'WEBHOOK' },
+      { text: 'Boost', answer: 'BOOST' },
+    ]
+  },
+  {
+    connection: 'STEAM DECK',
+    gaming: true,
+    hint: 'The handheld PC',
+    clues: [
+      { text: 'TDP', answer: 'TDP' },
+      { text: 'Gyro', answer: 'GYRO' },
+      { text: 'Trackpads', answer: 'TRACKPAD' },
+      { text: 'Verification', answer: 'VERIFIED' },
+      { text: 'Desktop mode', answer: 'DESKTOP' },
+      { text: 'Proton', answer: 'PROTON' },
+      { text: 'Frame limit', answer: 'LIMIT' },
+    ]
+  },
+  {
+    connection: 'PC BUILD PARTS',
+    gaming: true,
+    hint: 'What goes in the case',
+    clues: [
+      { text: 'CPU', answer: 'CPU' },
+      { text: 'GPU', answer: 'GPU' },
+      { text: 'RAM', answer: 'RAM' },
+      { text: 'SSD', answer: 'SSD' },
+      { text: 'PSU', answer: 'PSU' },
+      { text: 'Motherboard', answer: 'MOBO' },
+      { text: 'Cooler', answer: 'AIO' },
+    ]
+  },
+  {
+    connection: 'GPU BRANDS',
+    gaming: true,
+    hint: 'The three',
+    clues: [
+      { text: 'Nvidia', answer: 'NVIDIA' },
+      { text: 'AMD', answer: 'AMD' },
+      { text: 'Intel', answer: 'INTEL' },
+      { text: 'The laptop suffix', answer: 'MAXQ' },
+      { text: 'The super SKU', answer: 'SUPER' },
+      { text: 'The Ti', answer: 'TI' },
+      { text: 'The XT', answer: 'XT' },
+    ]
+  },
+  {
+    connection: 'MOUSE PARTS',
+    gaming: true,
+    hint: 'Under the shell',
+    clues: [
+      { text: 'Sensor', answer: 'SENSOR' },
+      { text: 'Switches', answer: 'SWITCH' },
+      { text: 'Skates', answer: 'SKATES' },
+      { text: 'Encoder', answer: 'ENCODER' },
+      { text: 'Battery', answer: 'BATTERY' },
+      { text: 'Dongle', answer: 'DONGLE' },
+      { text: 'Cable', answer: 'CABLE' },
+    ]
+  },
+  {
+    connection: 'KEYBOARD PARTS',
+    gaming: true,
+    hint: 'What enthusiasts argue',
+    clues: [
+      { text: 'Switches', answer: 'SWITCH' },
+      { text: 'Keycaps', answer: 'KEYCAPS' },
+      { text: 'Stabilizers', answer: 'STABS' },
+      { text: 'Plate', answer: 'PLATE' },
+      { text: 'PCB', answer: 'PCB' },
+      { text: 'Case', answer: 'CASE' },
+      { text: 'Foam', answer: 'FOAM' },
+    ]
+  },
+  {
+    connection: 'SWITCH COLORS',
+    gaming: true,
+    hint: 'Cherry and friends',
+    clues: [
+      { text: 'Red, linear', answer: 'RED' },
+      { text: 'Blue, clicky', answer: 'BLUE' },
+      { text: 'Brown, tactile', answer: 'BROWN' },
+      { text: 'Black, heavy linear', answer: 'BLACK' },
+      { text: 'Speed silver', answer: 'SILVER' },
+      { text: 'Silent red', answer: 'SILENT' },
+      { text: 'Hall effect', answer: 'HALL' },
+    ]
+  },
+  {
+    connection: 'HEADSET PARTS',
+    gaming: true,
+    hint: 'On your head',
+    clues: [
+      { text: 'Cups', answer: 'CUPS' },
+      { text: 'Headband', answer: 'HEADBAND' },
+      { text: 'Mic', answer: 'MIC' },
+      { text: 'Cable', answer: 'CABLE' },
+      { text: 'Dongle', answer: 'DONGLE' },
+      { text: 'Ear pads', answer: 'PADS' },
+      { text: 'Hinges', answer: 'HINGE' },
+    ]
+  },
+  {
+    connection: 'MONITOR SETTINGS',
+    gaming: true,
+    hint: 'The OSD',
+    clues: [
+      { text: 'Brightness', answer: 'BRIGHTNESS' },
+      { text: 'Contrast', answer: 'CONTRAST' },
+      { text: 'Overdrive', answer: 'OVERDRIVE' },
+      { text: 'Crosshair', answer: 'CROSSHAIR' },
+      { text: 'PiP', answer: 'PIP' },
+      { text: 'Black equalizer', answer: 'BLACK' },
+      { text: 'Refresh', answer: 'REFRESH' },
+    ]
+  },
+  {
+    connection: 'CONSOLE STORAGE',
+    gaming: true,
+    hint: 'Where the games live',
+    clues: [
+      { text: 'SSD', answer: 'SSD' },
+      { text: 'HDD', answer: 'HDD' },
+      { text: 'Expansion card', answer: 'EXPANSION' },
+      { text: 'Disc', answer: 'DISC' },
+      { text: 'Cartridge', answer: 'CART' },
+      { text: 'Cloud', answer: 'CLOUD' },
+      { text: 'USB', answer: 'USB' },
+    ]
+  },
+  {
+    connection: 'TROPHY TYPES',
+    gaming: true,
+    hint: 'PlayStation metal',
+    clues: [
+      { text: 'Bronze', answer: 'BRONZE' },
+      { text: 'Silver', answer: 'SILVER' },
+      { text: 'Gold', answer: 'GOLD' },
+      { text: 'Platinum', answer: 'PLATINUM' },
+      { text: 'Hidden', answer: 'HIDDEN' },
+      { text: 'Rare', answer: 'RARE' },
+      { text: '100 percent', answer: 'HUNDRED' },
+    ]
+  },
+  {
+    connection: 'XBOX LIVE',
+    gaming: true,
+    hint: 'The old overlay',
+    clues: [
+      { text: 'Gamertag', answer: 'GAMERTAG' },
+      { text: 'Gamerscore', answer: 'GAMERSCORE' },
+      { text: 'Achievement', answer: 'ACHIEVEMENT' },
+      { text: 'Gold', answer: 'GOLD' },
+      { text: 'Party', answer: 'PARTY' },
+      { text: 'Guide', answer: 'GUIDE' },
+      { text: 'Arcade', answer: 'ARCADE' },
+    ]
+  },
+  {
+    connection: 'SWITCH ONLINE',
+    gaming: true,
+    hint: 'The paid cloud',
+    clues: [
+      { text: 'N64', answer: 'N64' },
+      { text: 'GBA', answer: 'GBA' },
+      { text: 'Genesis', answer: 'GENESIS' },
+      { text: 'Save cloud', answer: 'CLOUD' },
+      { text: 'Family', answer: 'FAMILY' },
+      { text: 'Expansion pack', answer: 'EXPANSION' },
+      { text: 'App', answer: 'APP' },
+    ]
+  },
+  {
+    connection: 'MOBILE CONTROLS',
+    gaming: true,
+    hint: 'Thumbs',
+    clues: [
+      { text: 'Virtual stick', answer: 'STICK' },
+      { text: 'Gyro', answer: 'GYRO' },
+      { text: 'Touch', answer: 'TOUCH' },
+      { text: 'Auto fire', answer: 'AUTO' },
+      { text: 'Three fingers', answer: 'CLAW' },
+      { text: 'MFi controller', answer: 'MFI' },
+      { text: 'Haptics', answer: 'HAPTICS' },
+    ]
+  },
+  {
+    connection: 'CROSSPLAY',
+    gaming: true,
+    hint: 'Who you can queue with',
+    clues: [
+      { text: 'Enabled', answer: 'ON' },
+      { text: 'Disabled', answer: 'OFF' },
+      { text: 'Console only', answer: 'CONSOLE' },
+      { text: 'PC only', answer: 'PC' },
+      { text: 'Input based', answer: 'INPUT' },
+      { text: 'Forced', answer: 'FORCED' },
+      { text: 'Optional', answer: 'OPTIONAL' },
+    ]
+  },
+  {
+    connection: 'ACCESSIBILITY',
+    gaming: true,
+    hint: 'The pause menu that matters',
+    clues: [
+      { text: 'Subtitles', answer: 'SUBS' },
+      { text: 'Colorblind', answer: 'COLORBLIND' },
+      { text: 'Remap', answer: 'REMAP' },
+      { text: 'Auto aim', answer: 'AIMASSIST' },
+      { text: 'Toggles', answer: 'TOGGLE' },
+      { text: 'Text size', answer: 'SCALE' },
+      { text: 'Screen reader', answer: 'READER' },
+    ]
+  },
+  {
+    connection: 'DIFFICULTY NAMES',
+    gaming: true,
+    hint: 'What you pick, then regret',
+    clues: [
+      { text: 'Easy', answer: 'EASY' },
+      { text: 'Normal', answer: 'NORMAL' },
+      { text: 'Hard', answer: 'HARD' },
+      { text: 'Nightmare', answer: 'NIGHTMARE' },
+      { text: 'Hurt me plenty', answer: 'HURTME' },
+      { text: 'Ultra-Violence', answer: 'UV' },
+      { text: 'I\'m too young to die', answer: 'ITYTD' },
+    ]
+  },
+  {
+    connection: 'PAUSE MENU',
+    gaming: true,
+    hint: 'What you open',
+    clues: [
+      { text: 'Resume', answer: 'RESUME' },
+      { text: 'Options', answer: 'OPTIONS' },
+      { text: 'Save', answer: 'SAVE' },
+      { text: 'Load', answer: 'LOAD' },
+      { text: 'Quit', answer: 'QUIT' },
+      { text: 'Photo mode', answer: 'PHOTO' },
+      { text: 'Controls', answer: 'CONTROLS' },
+    ]
+  },
+  {
+    connection: 'HUD PIECES',
+    gaming: true,
+    hint: 'What you never turn off',
+    clues: [
+      { text: 'Health', answer: 'HP' },
+      { text: 'Ammo', answer: 'AMMO' },
+      { text: 'Minimap', answer: 'MINIMAP' },
+      { text: 'Compass', answer: 'COMPASS' },
+      { text: 'Quest tracker', answer: 'TRACKER' },
+      { text: 'Buff bar', answer: 'BUFFS' },
+      { text: 'Crosshair', answer: 'CROSSHAIR' },
+    ]
+  },
+  {
+    connection: 'DEATH SCREEN',
+    gaming: true,
+    hint: 'You died',
+    clues: [
+      { text: 'You died', answer: 'YOUDIED' },
+      { text: 'Wasted', answer: 'WASTED' },
+      { text: 'Respawn', answer: 'RESPAWN' },
+      { text: 'Load last', answer: 'LOAD' },
+      { text: 'Give up', answer: 'GIVEUP' },
+      { text: 'Spectate', answer: 'SPECTATE' },
+      { text: 'Report', answer: 'REPORT' },
+    ]
+  },
+  {
+    connection: 'VICTORY SCREEN',
+    gaming: true,
+    hint: 'The good one',
+    clues: [
+      { text: 'Victory', answer: 'VICTORY' },
+      { text: 'Flawless', answer: 'FLAWLESS' },
+      { text: 'Perfect', answer: 'PERFECT' },
+      { text: 'Ace', answer: 'ACE' },
+      { text: 'Clutch', answer: 'CLUTCH' },
+      { text: 'MVP', answer: 'MVP' },
+      { text: 'GG', answer: 'GG' },
+    ]
+  },
+  {
+    connection: 'CHAT COMMANDS',
+    gaming: true,
+    hint: 'What you type with a slash',
+    clues: [
+      { text: '/gg', answer: 'GG' },
+      { text: '/ff', answer: 'FF' },
+      { text: '/all', answer: 'ALL' },
+      { text: '/team', answer: 'TEAM' },
+      { text: '/whisper', answer: 'WHISPER' },
+      { text: '/emote', answer: 'EMOTE' },
+      { text: '/help', answer: 'HELP' },
+    ]
+  },
+  {
+    connection: 'EMOTE WHEEL',
+    gaming: true,
+    hint: 'The wheel you forget exists',
+    clues: [
+      { text: 'Wave', answer: 'WAVE' },
+      { text: 'Dance', answer: 'DANCE' },
+      { text: 'Sit', answer: 'SIT' },
+      { text: 'Point', answer: 'POINT' },
+      { text: 'Cheer', answer: 'CHEER' },
+      { text: 'Cry', answer: 'CRY' },
+      { text: 'T-pose', answer: 'TPOSE' },
+    ]
+  },
+  {
+    connection: 'PHOTO MODE',
+    gaming: true,
+    hint: 'The real endgame',
+    clues: [
+      { text: 'FOV', answer: 'FOV' },
+      { text: 'Tilt', answer: 'TILT' },
+      { text: 'Filter', answer: 'FILTER' },
+      { text: 'Hide HUD', answer: 'HIDEHUD' },
+      { text: 'Time of day', answer: 'TOD' },
+      { text: 'Depth of field', answer: 'DOF' },
+      { text: 'Pose', answer: 'POSE' },
+    ]
+  },
+  {
+    connection: 'NEW GAME PLUS',
+    gaming: true,
+    hint: 'The second loop',
+    clues: [
+      { text: 'NG+', answer: 'NG+' },
+      { text: 'Keep gear', answer: 'GEAR' },
+      { text: 'Harder enemies', answer: 'HARDER' },
+      { text: 'New ending', answer: 'ENDING' },
+      { text: 'Plus levels', answer: 'LEVELS' },
+      { text: 'Covenant', answer: 'COVENANT' },
+      { text: 'Journey 2', answer: 'JOURNEY' },
+    ]
+  },
+  {
+    connection: 'SAVE TYPES 2',
+    gaming: true,
+    hint: 'How it writes to disk',
+    clues: [
+      { text: 'Autosave', answer: 'AUTOSAVE' },
+      { text: 'Quicksave', answer: 'QUICKSAVE' },
+      { text: 'Manual', answer: 'MANUAL' },
+      { text: 'Cloud', answer: 'CLOUD' },
+      { text: 'Checkpoint', answer: 'CHECKPOINT' },
+      { text: 'Chapter', answer: 'CHAPTER' },
+      { text: 'Slot', answer: 'SLOT' },
+    ]
+  },
+  {
+    connection: 'CAMERA MODES',
+    gaming: true,
+    hint: 'How you see',
+    clues: [
+      { text: 'First person', answer: 'FIRST' },
+      { text: 'Third person', answer: 'THIRD' },
+      { text: 'Isometric', answer: 'ISO' },
+      { text: 'Top down', answer: 'TOPDOWN' },
+      { text: 'Side scroller', answer: 'SIDE' },
+      { text: 'Fixed', answer: 'FIXED' },
+      { text: 'Free cam', answer: 'FREE' },
+    ]
+  },
+  {
+    connection: 'MULTIPLAYER MODES',
+    gaming: true,
+    hint: 'The playlist',
+    clues: [
+      { text: 'Deathmatch', answer: 'DM' },
+      { text: 'Team deathmatch', answer: 'TDM' },
+      { text: 'Capture the flag', answer: 'CTF' },
+      { text: 'King of the hill', answer: 'KOTH' },
+      { text: 'Search and destroy', answer: 'SND' },
+      { text: 'Free for all', answer: 'FFA' },
+      { text: 'Co-op', answer: 'COOP' },
+    ]
+  },
+  {
+    connection: 'OBJECTIVE MODES',
+    gaming: true,
+    hint: 'Not just kills',
+    clues: [
+      { text: 'Plant', answer: 'PLANT' },
+      { text: 'Defuse', answer: 'DEFUSE' },
+      { text: 'Escort', answer: 'ESCORT' },
+      { text: 'Payload', answer: 'PAYLOAD' },
+      { text: 'Hardpoint', answer: 'HARDPOINT' },
+      { text: 'Uplink', answer: 'UPLINK' },
+      { text: 'Control', answer: 'CONTROL' },
+    ]
   }
 ];
 

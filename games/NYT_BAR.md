@@ -55,7 +55,7 @@ Not for BRIX, Beat Lab, Asteroid, Void, Aim. Those are a different sport.
 - Bank large enough that it does not loop every two weeks
 
 ## Validator
-`node games/validate-nyt.js` must pass before a flagship commit. It checks Pixle answer shape, Mini 5×5 checking, and Link uniqueness.
+`node games/validate-nyt.js` must pass before a flagship commit. Pixle answer shape + slang denylist, Mini 5×5 checking, Link uniqueness, Decode gaming-only count.
 
 ## Desk
 - `/games/daily` is a games desk, not an arcade banner

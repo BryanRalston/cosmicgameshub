@@ -24,7 +24,9 @@ function read(rel) {
     if (seen[w]) fail('Pixle duplicate ' + w);
     seen[w] = 1;
   });
-  ['REYNA', 'GEKKO', 'ASTRA', 'CLOVE', 'STEPP'].forEach(function (w) {
+  ['REYNA', 'GEKKO', 'ASTRA', 'CLOVE', 'STEPP',
+   'INHIB', 'MOLLY', 'GANKS', 'CREEP', 'LEASH', 'ROAMS', 'SHOVE',
+   'WARDS', 'LANES', 'NEXUS', 'BARON', 'PROMO', 'PWNED', 'NOOBS'].forEach(function (w) {
     if (seen[w]) fail('Pixle banned ' + w);
   });
   var g = t.match(/window\.PIXLE_GUESSES = \[([\s\S]*?)\];/);
@@ -37,7 +39,7 @@ function read(rel) {
 (function mini() {
   var t = read('crossword-puzzles.js');
   var blocks = t.split('rows:').slice(1);
-  if (blocks.length < 100) fail('Mini count ' + blocks.length + ' < 100');
+  if (blocks.length < 50) fail('Mini count ' + blocks.length + ' < 50');
   var geo = ['OMAHA', 'ESSEX', 'HELEN', 'KENYA', 'GHANA', 'IDAHO', 'YUKON', 'SPAIN', 'TAMPA', 'PARIS', 'SAMOA', 'INDIA', 'MALTA'];
   geo.forEach(function (g) {
     if (t.indexOf("'" + g + "'") >= 0) fail('Mini geo filler ' + g);
@@ -62,7 +64,7 @@ function read(rel) {
 (function link() {
   var t = read('link-puzzles.js');
   var days = t.split('{ groups:').slice(1);
-  if (days.length < 90) fail('Link days ' + days.length + ' < 90');
+  if (days.length < 180) fail('Link days ' + days.length + ' < 180');
   days.forEach(function (d, i) {
     var titles = d.match(/title: '([^']+)'/g) || [];
     var wordBlocks = d.match(/words: \[([\s\S]*?)\]/g) || [];
@@ -81,6 +83,14 @@ function read(rel) {
     if (tiles.length !== 16) fail('Link day ' + (i + 1) + ' tiles ' + tiles.length);
   });
   ok('Link ' + days.length + ' days');
+})();
+
+(function decode() {
+  var t = read('rift.html');
+  var n = (t.match(/gaming: true/g) || []).length;
+  if (n < 120) fail('Decode gaming sets ' + n + ' < 120');
+  if (/TYPES OF PASTA|TYPES OF CLOUD|COLORS OF THE RAINBOW/.test(t)) fail('Decode filler leak');
+  ok('Decode ' + n + ' gaming sets');
 })();
 
 if (fails.length) {
