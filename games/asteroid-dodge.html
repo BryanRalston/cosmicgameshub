@@ -13,7 +13,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <link rel="canonical" href="https://cosmicgameshub.com/games/asteroid-dodge"/>
   <title>Asteroid Dodge — CosmicGamesHub</title>
-  <meta name="description" content="Pilot your ship through an asteroid field that never stops growing. How long can you survive?" />
+  <meta name="description" content="Pilot a ship through an asteroid field. Shoot rocks until they split, grab orbs, ride shields. How long can you last?" />
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { width: 100%; height: 100%; overflow: hidden; background: #050508; }
@@ -43,6 +43,18 @@
     #lab-nav .site-link { color: rgba(255,255,255,0.3); letter-spacing: 0.1em; }
     #lab-nav .site-link:hover { color: rgba(255,255,255,0.6); }
     #lab-nav .nav-right { pointer-events: auto; display:flex; align-items:center; gap:10px; }
+    #btn-fire {
+      position: fixed; right: 18px; bottom: 22px; z-index: 90;
+      width: 72px; height: 72px; border-radius: 50%;
+      border: 2px solid rgba(34,211,238,0.65);
+      background: rgba(34,211,238,0.18); color: #A5F3FC;
+      font: 700 12px system-ui, sans-serif; letter-spacing: 0.08em;
+      display: none; align-items: center; justify-content: center;
+      touch-action: none; user-select: none;
+    }
+    @media (pointer: coarse) {
+      #btn-fire { display: flex; }
+    }
     .mute-btn, #btn-play {
       pointer-events: auto; font-family: system-ui, sans-serif; font-size: 12px;
       letter-spacing: 0.06em; min-height: 44px; padding: 0 14px; border-radius: 8px;
@@ -162,7 +174,7 @@
   "@context": "https://schema.org",
   "@type": "VideoGame",
   "name": "Asteroid Dodge",
-  "description": "Pilot your ship through an asteroid field that never stops growing. How long can you survive?",
+  "description": "Pilot a ship through an asteroid field. Shoot rocks until they split, grab orbs, ride shields. How long can you last?",
   "url": "https://cosmicgameshub.com/games/asteroid-dodge",
   "image": "https://cosmicgameshub.com/images/game-asteroid-dodge-v2.jpg",
   "genre": "Arcade",
@@ -185,7 +197,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:site" content="@CosmicGamesHub">
   <meta name="twitter:title" content="Asteroid Dodge — CosmicGamesHub">
-  <meta name="twitter:description" content="Pilot your ship through an asteroid field that never stops growing. How long can you survive?">
+  <meta name="twitter:description" content="Pilot a ship through an asteroid field. Shoot rocks until they split, grab orbs, ride shields.">
   <meta name="twitter:image" content="https://cosmicgameshub.com/images/game-asteroid-dodge-v2.jpg">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="CosmicGamesHub">
@@ -200,12 +212,13 @@
     <a href="/" class="site-link">CosmicGamesHub</a>
   </div>
 </div>
+<button type="button" id="btn-fire" aria-label="Fire">FIRE</button>
 
 <canvas id="c"></canvas>
 
 <div id="overlay">
   <h1>ASTEROID DODGE</h1>
-  <div class="sub">dodge</div>
+  <div class="sub">shoot · dodge · survive</div>
 
   <div id="stats-block">
     <div class="stat-row">
@@ -230,7 +243,7 @@
   <div class="btn-row" id="btn-row-start">
     <button class="btn btn-primary" id="btn-play" type="button">Play</button>
   </div>
-  <div class="prompt-line" id="start-prompt">move mouse or WASD · collect orbs · shield every 30s</div>
+  <div class="prompt-line" id="start-prompt">WASD or mouse · SPACE / click to shoot · orbs &amp; shield</div>
 </div>
 
 <div id="share-toast">Copied to clipboard!</div>
@@ -281,6 +294,14 @@
     btnMute.setAttribute('aria-pressed', muted ? 'true' : 'false');
   }
   syncMute();
+  const btnFire = document.getElementById('btn-fire');
+  if (btnFire) {
+    const fireOn = function (e) { e.preventDefault(); e.stopPropagation(); wantFire = true; tryFire(); };
+    const fireOff = function (e) { e.preventDefault(); wantFire = false; };
+    btnFire.addEventListener('pointerdown', fireOn);
+    btnFire.addEventListener('pointerup', fireOff);
+    btnFire.addEventListener('pointerleave', fireOff);
+  }
   if (btnMute) btnMute.addEventListener('click', function (e) {
     e.stopPropagation();
     muted = !muted;
@@ -321,8 +342,11 @@
   let score = 0;
   let elapsed = 0;           // seconds survived
   let asteroids = [];
+  let bullets = [];
   let orbs = [];
   let particles = [];
+  let fireCd = 0;
+  let wantFire = false;
   let shield = false;
   let shieldTimer = 0;       // countdown on active shield
   let shieldAnim = 0;        // visual anim phase
@@ -332,6 +356,7 @@
 
   // Wave config
   let waveTimer = 0;
+  let clearPause = 0;
   let maxAsteroids = 1;
   const MAX_WAVE = 15;
   const WAVE_INTERVAL = 5;   // seconds
@@ -353,21 +378,46 @@
   const SHIP_SIZE = 12;
   let ship = { x: 0, y: 0 };
   let targetX = 0, targetY = 0;  // mouse/touch target
-  let shipAngle = -Math.PI / 2;  // pointing up
+  let shipAngle = 0;  // 0 = nose up (drawShip local -y); fire uses angle - PI/2
   let shipVx = 0, shipVy = 0;
+  let shotScore = 0;
 
   // Keyboard
   const keys = {};
-  window.addEventListener('keydown', e => { keys[e.key] = true; });
-  window.addEventListener('keyup', e => { keys[e.key] = false; });
+  window.addEventListener('keydown', e => {
+    keys[e.key] = true;
+    keys[e.code] = true;
+    if (e.code === 'Space' || e.key === ' ') {
+      e.preventDefault();
+      wantFire = true;
+    }
+  });
+  window.addEventListener('keyup', e => {
+    keys[e.key] = false;
+    keys[e.code] = false;
+    if (e.code === 'Space' || e.key === ' ') wantFire = false;
+  });
 
-  // Mouse
-  let mouseActive = false;
+  // Mouse — pointer-steer expires so WASD is not permanently stolen
+  let pointerSteer = false;
+  let pointerIdle = 0;
   canvas.addEventListener('mousemove', e => {
-    mouseActive = true;
+    pointerSteer = true;
+    pointerIdle = 0;
     targetX = e.clientX;
     targetY = e.clientY;
   });
+  canvas.addEventListener('mousedown', e => {
+    if (e.button === 0) {
+      wantFire = true;
+      pointerSteer = true;
+      pointerIdle = 0;
+      targetX = e.clientX;
+      targetY = e.clientY;
+      e.preventDefault();
+    }
+  });
+  window.addEventListener('mouseup', () => { wantFire = false; });
 
   // Touch
   let touchActive = false;
@@ -386,7 +436,8 @@
     const dy = t.clientY - touchDragStart.y;
     targetX = touchDragStart.shipX + dx;
     targetY = touchDragStart.shipY + dy;
-    mouseActive = true;
+    pointerSteer = true;
+    pointerIdle = 0;
   }, { passive: false });
   canvas.addEventListener('touchend', e => {
     e.preventDefault();
@@ -489,14 +540,21 @@
     score = 0;
     elapsed = 0;
     asteroids = [];
+    bullets = [];
     orbs = [];
     particles = [];
+    fireCd = 0;
+    wantFire = false;
+    shotScore = 0;
+    pointerSteer = false;
+    pointerIdle = 0;
     lastShieldOrb = null;
     shield = false;
     shieldTimer = 0;
     shieldAnim = 0;
     shieldSpawnTimer = SHIELD_SPAWN_INTERVAL;
     waveTimer = 0;
+    clearPause = 0;
     maxAsteroids = 1;
     speedMult = 1;
     speedTimer = 0;
@@ -506,7 +564,7 @@
     ship.y = H / 2;
     targetX = W / 2;
     targetY = H / 2;
-    shipAngle = -Math.PI / 2;
+    shipAngle = 0;
     shipVx = 0;
     shipVy = 0;
 
@@ -585,23 +643,81 @@
   })();
 
   // ─── Update ───────────────────────────────────────────────────────────────
-  const SHIP_SPEED = 320; // px/s
+  const SHIP_SPEED = 640; // px/s  (old code applied dt twice — ~22 px/s crawl)
+  const SHIP_ACCEL = 3200;
+  const FIRE_CD = 0.12;
+  const BULLET_SPD = 820;
+
+  function tryFire() {
+    if (!gameStarted || gameOver || fireCd > 0) return;
+    fireCd = FIRE_CD;
+    const a = shipAngle - Math.PI / 2;
+    const nose = SHIP_SIZE + 4;
+    bullets.push({
+      x: ship.x + Math.cos(a) * nose,
+      y: ship.y + Math.sin(a) * nose,
+      vx: Math.cos(a) * BULLET_SPD,
+      vy: Math.sin(a) * BULLET_SPD,
+      life: 0.85,
+    });
+    beep(920, 0.05, 0.05);
+    haptic(6);
+  }
+
+  function splitAsteroid(a, i) {
+    shotScore += Math.floor(40 + a.r * 2);
+    burst(a.x, a.y, '#E8C840', 14, 4);
+    beep(220 + Math.random() * 80, 0.08, 0.06);
+    haptic(10);
+    shake = Math.max(shake, 4);
+    if (a.r > 20) {
+      for (let n = 0; n < 2; n++) {
+        const ang = Math.random() * Math.PI * 2;
+        const nr = a.r * 0.55;
+        asteroids.push({
+          x: a.x, y: a.y,
+          vx: Math.cos(ang) * (2.2 + Math.random()),
+          vy: Math.sin(ang) * (2.2 + Math.random()),
+          r: nr,
+          angle: Math.random() * Math.PI * 2,
+          rotSpeed: (Math.random() - 0.5) * 0.08,
+          shape: makeAsteroidShape(nr, 6 + Math.floor(Math.random() * 4)),
+          hue: a.hue,
+          lightness: a.lightness + 6,
+        });
+      }
+    }
+    asteroids.splice(i, 1);
+  }
 
   function update(dt) {
     if (!gameStarted || gameOver) return;
 
     elapsed += dt;
     shieldAnim += dt * 3;
+    fireCd = Math.max(0, fireCd - dt);
+    if (wantFire || keys[' '] || keys['Space'] || keys['z'] || keys['Z']) tryFire();
 
-    // Score: time-based with multiplier
+    // Score: time + shots (shots used to be wiped every frame by the time formula)
     const waveMult = 1 + (maxAsteroids - 1) * 0.1;
-    score = Math.floor(elapsed * 10 * waveMult);
+    score = Math.floor(elapsed * 10 * waveMult) + shotScore;
 
-    // Wave system: +1 asteroid every 5s, cap 15
+    // Wave system: +1 rock every 5s, cap 15. Shooting must thin the field —
+    // the old while-refill spawned a replacement the same frame you scored a hit.
     waveTimer += dt;
     if (waveTimer >= WAVE_INTERVAL && maxAsteroids < MAX_WAVE) {
       waveTimer = 0;
       maxAsteroids++;
+      spawnAsteroid();
+    }
+    if (asteroids.length === 0) {
+      clearPause += dt;
+      if (clearPause > 0.65) {
+        clearPause = 0;
+        for (let n = 0; n < maxAsteroids; n++) spawnAsteroid();
+      }
+    } else {
+      clearPause = 0;
     }
 
     // Speed increase: +10% every 10s
@@ -611,8 +727,29 @@
       speedMult *= 1.1;
     }
 
-    // Keep asteroid count at maxAsteroids
-    while (asteroids.length < maxAsteroids) spawnAsteroid();
+    // ── Bullets ──────────────────────────────────────────────────────────
+    for (let i = bullets.length - 1; i >= 0; i--) {
+      const b = bullets[i];
+      b.x += b.vx * dt;
+      b.y += b.vy * dt;
+      b.life -= dt;
+      if (b.life <= 0 || b.x < -20 || b.x > W + 20 || b.y < -20 || b.y > H + 20) {
+        bullets.splice(i, 1);
+        continue;
+      }
+      let hit = false;
+      for (let j = asteroids.length - 1; j >= 0; j--) {
+        const a = asteroids[j];
+        const dx = b.x - a.x, dy = b.y - a.y;
+        if (dx * dx + dy * dy < (a.r * 0.9) * (a.r * 0.9)) {
+          splitAsteroid(a, j);
+          bullets.splice(i, 1);
+          hit = true;
+          break;
+        }
+      }
+      if (hit) continue;
+    }
 
     // Shield spawn timer
     shieldSpawnTimer -= dt;
@@ -628,31 +765,50 @@
       spawnOrb();
     }
 
-    // ── Ship movement ──────────────────────────────────────────────────────
-    const kSpeed = SHIP_SPEED * dt;
-    if (keys['ArrowUp']    || keys['w'] || keys['W']) { shipVy -= kSpeed * 2; }
-    if (keys['ArrowDown']  || keys['s'] || keys['S']) { shipVy += kSpeed * 2; }
-    if (keys['ArrowLeft']  || keys['a'] || keys['A']) { shipVx -= kSpeed * 2; }
-    if (keys['ArrowRight'] || keys['d'] || keys['D']) { shipVx += kSpeed * 2; }
-
-    if (mouseActive) {
-      const dx = targetX - ship.x;
-      const dy = targetY - ship.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist > 2) {
-        const pull = Math.min(dist * 4, SHIP_SPEED) * dt;
-        shipVx += (dx / dist) * pull;
-        shipVy += (dy / dist) * pull;
-        if (dist > 8) shipAngle = Math.atan2(dy, dx) + Math.PI / 2;
-      }
+    // ── Ship movement (px/s, one dt — the old code applied dt twice) ─────
+    let ax = 0, ay = 0;
+    if (keys['ArrowUp']    || keys['w'] || keys['W']) ay -= 1;
+    if (keys['ArrowDown']  || keys['s'] || keys['S']) ay += 1;
+    if (keys['ArrowLeft']  || keys['a'] || keys['A']) ax -= 1;
+    if (keys['ArrowRight'] || keys['d'] || keys['D']) ax += 1;
+    const amag = Math.hypot(ax, ay);
+    if (amag > 0) {
+      ax /= amag; ay /= amag;
+      shipVx += ax * SHIP_ACCEL * dt;
+      shipVy += ay * SHIP_ACCEL * dt;
+      shipAngle = Math.atan2(shipVy, shipVx) + Math.PI / 2;
+      pointerSteer = false; // keyboard wins over stale mouse follow
     }
 
-    // Damping
-    shipVx *= 0.82;
-    shipVy *= 0.82;
+    if (pointerSteer) {
+      pointerIdle += dt;
+      if (pointerIdle > 0.22 && !touchActive) pointerSteer = false;
+    }
 
-    ship.x += shipVx * dt;
-    ship.y += shipVy * dt;
+    if (pointerSteer) {
+      const dx = targetX - ship.x;
+      const dy = targetY - ship.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist > 4) {
+        const follow = Math.min(1, 16 * dt);
+        ship.x += dx * follow;
+        ship.y += dy * follow;
+        shipVx = dx * 8;
+        shipVy = dy * 8;
+        shipAngle = Math.atan2(dy, dx) + Math.PI / 2;
+      }
+    } else {
+      if (amag === 0) {
+        const damp = Math.pow(0.08, dt);
+        shipVx *= damp;
+        shipVy *= damp;
+      }
+      const spd = Math.hypot(shipVx, shipVy);
+      const cap = SHIP_SPEED;
+      if (spd > cap) { shipVx *= cap / spd; shipVy *= cap / spd; }
+      ship.x += shipVx * dt;
+      ship.y += shipVy * dt;
+    }
 
     // Clamp to canvas
     ship.x = Math.max(SHIP_SIZE, Math.min(W - SHIP_SIZE, ship.x));
@@ -947,7 +1103,7 @@
     ctx.textAlign = 'center';
     ctx.font = '10px system-ui, sans-serif';
     ctx.fillStyle = 'rgba(200,204,208,0.22)';
-    ctx.fillText('WAVE ' + maxAsteroids, W / 2, H - 16);
+    ctx.fillText('WAVE ' + maxAsteroids + '  ·  SPACE / click fire', W / 2, H - 16);
 
     // Shield indicator — bottom left
     if (shield) {
@@ -985,6 +1141,22 @@
       ctx.fill();
       ctx.globalAlpha = 1;
     }
+
+    // Bullets — short cyan/gold streaks so they read at 820 px/s
+    ctx.save();
+    ctx.strokeStyle = '#FDE68A';
+    ctx.shadowColor = '#22D3EE';
+    ctx.shadowBlur = 10;
+    ctx.lineWidth = 2.4;
+    ctx.lineCap = 'round';
+    for (const b of bullets) {
+      const sp = Math.hypot(b.vx, b.vy) || 1;
+      ctx.beginPath();
+      ctx.moveTo(b.x, b.y);
+      ctx.lineTo(b.x - (b.vx / sp) * 14, b.y - (b.vy / sp) * 14);
+      ctx.stroke();
+    }
+    ctx.restore();
 
     // Asteroids
     for (const a of asteroids) drawAsteroid(a);
@@ -1029,6 +1201,14 @@
   drawStars();
 
   requestAnimationFrame(loop);
+
+  window.__adDebug = function () {
+    return {
+      gameStarted, gameOver, nBullets: bullets.length, shotScore,
+      shipX: ship.x, shipY: ship.y, shipVx, shipVy, shipAngle,
+      nRocks: asteroids.length, score, elapsed, fireCd, wantFire
+    };
+  };
 })();
 </script>
 <script src="/global.js" defer></script>
