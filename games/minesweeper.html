@@ -10,7 +10,7 @@
     gtag('config', 'G-D272MF8NQP');
   </script>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <title>Cosmic Minesweeper — Free Browser Game | CosmicGamesHub</title>
   <meta name="description" content="Play Cosmic Minesweeper free in your browser. Classic minesweeper with a space theme. Easy, Medium, Hard difficulties. No download needed."/>
   <link rel="canonical" href="https://cosmicgameshub.com/games/minesweeper"/>
@@ -25,7 +25,7 @@
     .ms-face:hover { transform:scale(1.15); }
 
     #msGrid { display:grid; border:2px solid rgba(0,212,255,0.4); border-radius:8px; overflow:hidden; max-width:min(600px,95vw); }
-    .ms-cell { width:100%; aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:clamp(0.65rem,2.5vw,0.95rem); font-weight:800; cursor:pointer; border:1px solid rgba(0,212,255,0.18); background:var(--bg-card); transition:background 0.1s; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; position:relative; }
+    .ms-cell { width:100%; aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:clamp(0.65rem,2.5vw,0.95rem); font-weight:800; cursor:pointer; border:1px solid rgba(0,212,255,0.18); background:linear-gradient(180deg, rgba(0,212,255,0.07), var(--bg-card)); transition:background 0.12s, transform .12s; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; position:relative; }
     .ms-cell:hover:not(.revealed):not(.flagged) { background:var(--bg-raised); }
     .ms-cell.revealed { background:var(--bg-void); cursor:default; }
     .ms-cell.flagged  { background:rgba(255,179,0,0.08); }
@@ -270,6 +270,7 @@ function handleClick(r,c){
   if(firstClick){ firstClick=false; placeMines(r,c); timerInt=setInterval(()=>{timerSec++;document.getElementById('timerDisp').textContent=timerSec;},1000); }
   if(grid[r][c]===-1){ explode(r,c); return; }
   flood(r,c); renderGrid(); checkWin();
+  try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) {}
 }
 
 function flood(r,c){

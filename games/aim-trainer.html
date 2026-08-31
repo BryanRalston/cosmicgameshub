@@ -697,6 +697,7 @@
         t.hitAt = performance.now();
         hits++;
         hudHits.textContent = hits;
+        try { if (navigator.vibrate) navigator.vibrate(10); } catch (err) {}
         const total = hits + misses;
         hudAcc.textContent = Math.round(hits / total * 100) + '%';
         hit = true;
