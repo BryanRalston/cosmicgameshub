@@ -524,7 +524,7 @@
         <li><a href="/games" class="active">Games</a></li>
         <li><a href="/tools/gaming-fps-calculator" class="nav__cta btn">Free Tools</a></li>
       </ul>
-      <button class="nav__hamburger" aria-label="Open menu" aria-expanded="false">
+      <button class="nav__hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
     </div>
@@ -683,9 +683,9 @@
       <a href="/games/pixle" class="rg-card">
         <img src="/images/game-pixle.jpg" alt="Pixle" loading="lazy" width="200" height="86">
         <div class="rg-info">
-          <div class="rg-tags"><span class="rg-tag">Daily</span><span class="rg-tag">Image</span></div>
+          <div class="rg-tags"><span class="rg-tag">Daily</span><span class="rg-tag">Word</span></div>
           <div class="rg-name">Pixle</div>
-          <div class="rg-desc">Identify the game from a blurring screenshot</div>
+          <div class="rg-desc">5-letter gaming Wordle</div>
         </div>
       </a>
       <a href="/games/gaming-trivia" class="rg-card">
@@ -1358,11 +1358,16 @@ document.querySelectorAll('.sc-modal-bg').forEach(bg => {
 });
 
 // Hamburger nav
-document.getElementById('hamburger').addEventListener('click', () => {
-  const nav = document.getElementById('navLinks');
-  const open = nav.classList.toggle('open');
-  document.getElementById('hamburger').setAttribute('aria-expanded', open);
-});
+(function(){
+  var h=document.getElementById('hamburger')||document.querySelector('.nav__hamburger');
+  var n=document.getElementById('navLinks');
+  if(!h||!n) return;
+  h.dataset.navInit='1';
+  h.addEventListener('click',function(){
+    var open=n.classList.toggle('open');
+    h.setAttribute('aria-expanded', String(open));
+  });
+})();
 
 // ═══════════════════════════════════════════════════
 // INIT

@@ -252,7 +252,7 @@
         <li><a href="/games" class="active">Games</a></li>
         <li><a href="/tools/gaming-fps-calculator" class="nav__cta btn">Free Tools</a></li>
       </ul>
-      <button class="nav__hamburger" aria-label="Open menu" aria-expanded="false">
+      <button class="nav__hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
     </div>
@@ -564,12 +564,12 @@
 </script>
 
 <script>
-  const hamburger = document.getElementById('hamburger');
+  const hamburger = document.getElementById('hamburger') || document.querySelector('.nav__hamburger');
   const navLinks = document.getElementById('navLinks');
-  hamburger.addEventListener('click', () => {
+  if (hamburger && navLinks) { hamburger.dataset.navInit='1'; hamburger.addEventListener('click', () => {
     const open = navLinks.classList.toggle('open');
     hamburger.setAttribute('aria-expanded', open);
-  });
+  }); }
 </script>
 <script src="/global.js" defer></script>
 

@@ -117,7 +117,7 @@
   /* ── Active nav link highlight ── */
   var path = window.location.pathname.replace(/\/$/, '');
   document.querySelectorAll('.nav__links a').forEach(function (a) {
-    var href = a.getAttribute('href').replace(/\/$/, '');
+    var href = (a.getAttribute('href') || '').replace(/\/$/, '');
     if (href && path.startsWith(href) && href !== '') {
       a.classList.add('active');
     }

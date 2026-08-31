@@ -85,7 +85,7 @@
           <li><a href="/versus">Comparisons</a></li>
           <li><a href="/tools/gaming-fps-calculator" class="nav__cta btn">Tools</a></li>
         </ul>
-        <button class="nav__hamburger" aria-label="Open menu" aria-expanded="false">
+        <button class="nav__hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
           <span></span><span></span><span></span>
         </button>
       </div>
@@ -115,7 +115,7 @@
       <div class="dh-section-label" id="dhTodoLabel">Today's 12</div>
       <div class="dh-grid" id="dhTodoGrid">
         <a class="dh-card" href="/games/gamerdle"><div class="dh-icon">🎮</div><div class="dh-meta"><div class="dh-name">Gamerdle</div><div class="dh-line"><span class="dh-status todo">Mystery video game</span></div></div><div class="dh-arrow">→</div></a>
-        <a class="dh-card" href="/games/pixle"><div class="dh-icon">🟩</div><div class="dh-meta"><div class="dh-name">Pixle</div><div class="dh-line"><span class="dh-status todo">Pixel screenshot</span></div></div><div class="dh-arrow">→</div></a>
+        <a class="dh-card" href="/games/pixle"><div class="dh-icon">🟩</div><div class="dh-meta"><div class="dh-name">Pixle</div><div class="dh-line"><span class="dh-status todo">5-letter Wordle</span></div></div><div class="dh-arrow">→</div></a>
         <a class="dh-card" href="/games/rift"><div class="dh-icon">🌀</div><div class="dh-meta"><div class="dh-name">RIFT</div><div class="dh-line"><span class="dh-status todo">3 word zones</span></div></div><div class="dh-arrow">→</div></a>
         <a class="dh-card" href="/games/hardware-timeline"><div class="dh-icon">📅</div><div class="dh-meta"><div class="dh-name">Hardware Timeline</div><div class="dh-line"><span class="dh-status todo">Guess the year</span></div></div><div class="dh-arrow">→</div></a>
         <a class="dh-card" href="/games/spec-match"><div class="dh-icon">🔍</div><div class="dh-meta"><div class="dh-name">Spec Match</div><div class="dh-line"><span class="dh-status todo">Specs → product</span></div></div><div class="dh-arrow">→</div></a>
@@ -248,7 +248,7 @@
   // ── Game registry — display order + metadata ─────────────────────────────
   const GAMES = [
     { id: 'gamerdle',           name: 'Gamerdle',          icon: '🎮', tag: 'Mystery video game',    href: '/games/gamerdle' },
-    { id: 'pixle',              name: 'Pixle',             icon: '🟩', tag: 'Pixel screenshot',      href: '/games/pixle' },
+    { id: 'pixle',              name: 'Pixle',             icon: '🟩', tag: '5-letter Wordle',      href: '/games/pixle' },
     { id: 'rift',               name: 'Rift',              icon: '🌀', tag: '3 word zones',          href: '/games/rift' },
     { id: 'hardware-timeline',  name: 'Hardware Timeline', icon: '📅', tag: 'Guess the year',        href: '/games/hardware-timeline' },
     { id: 'spec-match',         name: 'Spec Match',        icon: '🔍', tag: 'Specs → product',       href: '/games/spec-match' },

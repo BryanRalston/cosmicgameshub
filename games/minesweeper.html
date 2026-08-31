@@ -95,7 +95,7 @@
         <li><a href="/games" class="active">Games</a></li>
         <li><a href="/tools/gaming-fps-calculator" class="nav__cta btn">Free Tools</a></li>
       </ul>
-      <button class="nav__hamburger" aria-label="Open menu" aria-expanded="false">
+      <button class="nav__hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
     </div>
@@ -354,10 +354,16 @@ document.querySelectorAll('.difficulty-btn').forEach(btn=>{
     btn.classList.add('active'); initGame(btn.dataset.d);
   });
 });
-document.getElementById('hamburger').addEventListener('click',function(){
-  document.getElementById('navLinks').classList.toggle('open');
-  this.setAttribute('aria-expanded',document.getElementById('navLinks').classList.contains('open'));
-});
+(function(){
+  var h=document.getElementById('hamburger')||document.querySelector('.nav__hamburger');
+  var n=document.getElementById('navLinks');
+  if(!h||!n) return;
+  h.dataset.navInit='1';
+  h.addEventListener('click',function(){
+    var open=n.classList.toggle('open');
+    h.setAttribute('aria-expanded', String(open));
+  });
+})();
 window.addEventListener('resize',()=>{ if(!gameOver&&!firstClick) renderGrid(); });
 
 initGame();

@@ -3,7 +3,7 @@ const fs = require('fs');
 
 const gameData = {
   'gamerdle':        { name: 'Gamerdle', desc: 'Guess the mystery game in 6 tries', img: 'game-gamerdle.jpg', tags: ['Daily','Word'] },
-  'pixle':           { name: 'Pixle', desc: 'Identify the game from a blurring screenshot', img: 'game-pixle.jpg', tags: ['Daily','Image'] },
+  'pixle':           { name: 'Pixle', desc: '5-letter gaming Wordle — new word every day', img: 'game-pixle.jpg', tags: ['Daily','Word'] },
   'word-scramble':   { name: 'Word Scramble', desc: 'Unscramble the daily gaming word', img: 'game-wordscramble.jpg', tags: ['Daily','Word'] },
   'rift':            { name: 'RIFT', desc: 'Three daily word zones — chain, grow, decode', img: 'rift-hero.jpg', tags: ['Daily','Word'] },
   'gaming-trivia':   { name: 'Gaming Trivia', desc: '10 quiz questions, race the clock for bonus pts', img: 'game-trivia.jpg', tags: ['Daily','Trivia'] },
