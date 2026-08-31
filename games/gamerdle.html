@@ -437,6 +437,27 @@ const GAMES = [
   {name:"Valheim",                 genre:"Survival",    platform:"Multi",       year:2021, mode:"Co-op",        rating:"T", dev:"Iron Gate"},
   {name:"Phasmophobia",            genre:"Horror",      platform:"PC",          year:2020, mode:"Co-op",        rating:"T", dev:"Kinetic Games"},
   {name:"Lethal Company",          genre:"Horror",      platform:"PC",          year:2023, mode:"Co-op",        rating:"T", dev:"Zeekerss"},
+  {name:"Black Myth: Wukong",      genre:"Action",      platform:"Multi",       year:2024, mode:"Solo",         rating:"M", dev:"Game Science"},
+  {name:"Astro Bot",               genre:"Platformer",  platform:"PlayStation", year:2024, mode:"Solo",         rating:"E", dev:"Team Asobi"},
+  {name:"Metaphor: ReFantazio",    genre:"RPG",         platform:"Multi",       year:2024, mode:"Solo",         rating:"T", dev:"Atlus"},
+  {name:"Helldivers 2",            genre:"FPS",         platform:"Multi",       year:2024, mode:"Co-op",        rating:"M", dev:"Arrowhead Game Studios"},
+  {name:"Final Fantasy VII Rebirth",genre:"RPG",        platform:"PlayStation", year:2024, mode:"Solo",         rating:"T", dev:"Square Enix"},
+  {name:"Dragon Age: The Veilguard",genre:"RPG",       platform:"Multi",       year:2024, mode:"Solo",         rating:"M", dev:"BioWare"},
+  {name:"Silent Hill 2 Remake",    genre:"Horror",      platform:"Multi",       year:2024, mode:"Solo",         rating:"M", dev:"Bloober Team"},
+  {name:"Space Marine 2",          genre:"Action",      platform:"Multi",       year:2024, mode:"Co-op",        rating:"M", dev:"Saber Interactive"},
+  {name:"Marvel Rivals",           genre:"FPS",         platform:"Multi",       year:2024, mode:"Multiplayer",  rating:"T", dev:"NetEase"},
+  {name:"STALKER 2",               genre:"FPS",         platform:"PC",          year:2024, mode:"Solo",         rating:"M", dev:"GSC Game World"},
+  {name:"Indiana Jones and the Great Circle", genre:"Adventure", platform:"Multi", year:2024, mode:"Solo", rating:"T", dev:"MachineGames"},
+  {name:"Path of Exile 2",         genre:"RPG",         platform:"PC",          year:2024, mode:"Co-op",        rating:"M", dev:"Grinding Gear Games"},
+  {name:"Clair Obscur: Expedition 33", genre:"RPG",    platform:"Multi",       year:2025, mode:"Solo",         rating:"M", dev:"Sandfall Interactive"},
+  {name:"Monster Hunter Wilds",    genre:"Action",      platform:"Multi",       year:2025, mode:"Co-op",        rating:"T", dev:"Capcom"},
+  {name:"Split Fiction",           genre:"Platformer",  platform:"Multi",       year:2025, mode:"Co-op",        rating:"T", dev:"Hazelight Studios"},
+  {name:"DOOM: The Dark Ages",     genre:"FPS",         platform:"Multi",       year:2025, mode:"Solo",         rating:"M", dev:"id Software"},
+  {name:"Kingdom Come: Deliverance II", genre:"RPG",   platform:"Multi",       year:2025, mode:"Solo",         rating:"M", dev:"Warhorse Studios"},
+  {name:"Death Stranding 2",       genre:"Adventure",   platform:"PlayStation", year:2025, mode:"Solo",         rating:"M", dev:"Kojima Productions"},
+  {name:"Mario Kart World",        genre:"Racing",      platform:"Nintendo",    year:2025, mode:"Multiplayer",  rating:"E", dev:"Nintendo"},
+  {name:"Elden Ring Nightreign",   genre:"Action",      platform:"Multi",       year:2025, mode:"Co-op",        rating:"M", dev:"FromSoftware"},
+  {name:"Civ VII",                 genre:"Strategy",    platform:"Multi",       year:2025, mode:"Multiplayer",  rating:"E", dev:"Firaxis"},
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -678,6 +699,7 @@ function submitGuess() {
   guessedNames.add(match.name.toLowerCase());
   document.getElementById('guessInput').value = '';
   document.getElementById('acList').style.display = 'none';
+  if (window.CGSfx) { window.CGSfx.play('place'); window.CGSfx.haptic(8); }
 
   const won = match.name.toLowerCase() === TARGET.name.toLowerCase();
   if (won || guesses.length >= MAX_GUESSES) {
@@ -696,7 +718,10 @@ function submitGuess() {
     }
     stats.history[todayKey] = { done: true, won, guesses };
     localStorage.setItem('gamerdle-stats', JSON.stringify(stats));
-    if (won) setTimeout(confetti, 300);
+    if (won) {
+      if (window.CGSfx) window.CGSfx.play('correct');
+      setTimeout(confetti, 300);
+    }
   } else {
     stats.history[todayKey] = { done: false, won: false, guesses };
     localStorage.setItem('gamerdle-stats', JSON.stringify(stats));
@@ -789,6 +814,7 @@ renderAll();
   });
 })();
 </script>
+<script src="/games/cg-sfx.js"></script>
 <script src="/games/daily-kit.js" defer></script>
 <script src="/global.js" defer></script>
 

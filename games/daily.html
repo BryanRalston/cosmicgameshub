@@ -125,6 +125,7 @@
       <div class="dh-ritual">
         <a class="btn btn--primary dh-next" id="dhNext" href="/games/gamerdle">Play next →</a>
         <button class="btn btn--outline" type="button" id="dhShare">Share today's set</button>
+        <button class="btn btn--outline" type="button" id="dhMute">Sound on</button>
       </div>
       <div class="dh-share-panel" id="dhSharePanel" hidden>
         <img id="dhShareImg" alt="Today's CosmicGamesHub daily set card" width="1080" height="1080"/>
@@ -166,7 +167,8 @@
   <footer class="site-footer">
     <p>© 2026 CosmicGamesHub · <a href="/about">About</a> · <a href="/privacy">Privacy</a> · <a href="/games">Games</a> · <a href="/">Home</a></p>
   </footer>
-  <script src="/games/daily-kit.js" defer></script>
+  <script src="/games/cg-sfx.js"></script>
+<script src="/games/daily-kit.js" defer></script>
   <script src="/global.js" defer></script>
 
   <script type="application/ld+json">
@@ -326,11 +328,25 @@
     todoCards.forEach(c => dhTodoGrid.appendChild(c));
     doneCards.forEach(c => dhDoneGrid.appendChild(c));
 
+    const sub = document.querySelector('.dh-sub');
+    const left = todoCards.length;
     if (todoCards.length === 0) {
       dhTodoLabel.textContent = 'All caught up — come back tomorrow';
+      if (sub) sub.innerHTML = 'Set complete. Streak sits on this device. Next UTC day in <strong data-cd></strong>.';
+    } else if (playedCount > 0) {
+      dhTodoLabel.textContent = `You have ${left} left`;
+      if (sub) sub.innerHTML = `Welcome back. ${playedCount}/12 done today` + (streakSum ? `, ${streakSum} streak days lit` : '') + `. Next UTC day in <strong data-cd></strong>.`;
     } else {
       dhTodoLabel.textContent = `To Play (${todoCards.length})`;
     }
+    (function pwaOnce() {
+      try {
+        if (localStorage.getItem('cg_daily_hint') === '1') return;
+        const cta = document.querySelector('.dh-cta-title');
+        if (cta) cta.textContent = 'Bookmark this page — it is the daily desk';
+        localStorage.setItem('cg_daily_hint', '1');
+      } catch (e) {}
+    })();
     if (doneCards.length > 0) {
       dhDoneLabel.style.display = '';
       dhDoneLabel.textContent = `Played Today (${doneCards.length})`;
@@ -359,6 +375,17 @@
   document.getElementById('dhDate').textContent = `${dayName}, ${monthName} ${now.getDate()}, ${now.getFullYear()}`;
 
   render();
+  var muteBtn = document.getElementById('dhMute');
+  function syncDhMute() {
+    if (!muteBtn || !window.CGSfx) return;
+    muteBtn.textContent = window.CGSfx.isMuted() ? 'Muted' : 'Sound on';
+  }
+  syncDhMute();
+  if (muteBtn) muteBtn.addEventListener('click', function () {
+    if (!window.CGSfx) return;
+    window.CGSfx.setMuted(!window.CGSfx.isMuted());
+    syncDhMute();
+  });
 
   var shareBtn = document.getElementById('dhShare');
   var sharePanel = document.getElementById('dhSharePanel');
@@ -440,6 +467,7 @@
 
   if (shareBtn) shareBtn.addEventListener('click', function () {
     buildShareCard().then(function (data) {
+      if (window.CGSfx) window.CGSfx.play('share');
       showSharePanel(data);
       var p = (navigator.clipboard && navigator.clipboard.writeText) ? navigator.clipboard.writeText(data.text) : Promise.reject();
       var file = data.blob ? new File([data.blob], 'cosmicgameshub-daily.png', { type: 'image/png' }) : null;

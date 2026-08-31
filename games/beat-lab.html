@@ -71,6 +71,12 @@ canvas#gameCanvas {
   text-shadow: 0 0 12px var(--gold), 0 0 24px rgba(255,204,0,0.3);
   transition: transform 0.1s;
 }
+#combo-burst {
+  position: fixed; inset: 0; pointer-events: none; z-index: 8;
+  opacity: 0; background: radial-gradient(circle at 50% 80%, rgba(255,204,0,.28), transparent 55%);
+  transition: opacity .12s ease;
+}
+#combo-burst.flash { opacity: 1; }
 #combo-display.pulse {
   transform: scale(1.3);
 }
@@ -597,6 +603,7 @@ canvas#gameCanvas {
   <div id="hud-row">
     <div id="score-display">0</div>
     <div id="combo-display"></div>
+  <div id="combo-burst" aria-hidden="true"></div>
   </div>
   <div id="progress-bar-container"><div id="progress-bar"></div></div>
 </div>
@@ -1463,6 +1470,15 @@ function hitLane(laneIndex) {
 
   if (G.combo === 10 || G.combo === 20 || G.combo === 30) {
     AudioEngine.playComboMilestone(Math.floor(G.combo / 10) - 1);
+    var burst = document.getElementById('combo-burst');
+    if (burst) {
+      burst.classList.add('flash');
+      setTimeout(function () { burst.classList.remove('flash'); }, 180);
+    }
+    if (els.comboDisp) {
+      els.comboDisp.style.transform = 'scale(1.35)';
+      setTimeout(function () { els.comboDisp.style.transform = ''; }, 180);
+    }
   }
 
   updateHUD();

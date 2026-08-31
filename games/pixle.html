@@ -11,8 +11,8 @@
   </script>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Pixle — Daily Gaming Wordle | CosmicGamesHub</title>
-<meta name="description" content="Guess the 5-letter gaming word in 6 tries. A daily word game for gamers — new puzzle every day." />
+<title>Pixle — The Wordle for gamers | CosmicGamesHub</title>
+<meta name="description" content="The Wordle for gamers. Guess today's 5-letter gaming word in 6 tries. Spawn, melee, grind — not a screenshot game." />
 <link rel="canonical" href="https://cosmicgameshub.com/games/pixle" />
 <link rel="stylesheet" href="../styles.css" />
 <style>
@@ -408,7 +408,7 @@
   <div class="pixle-header">
     <div class="pixle-title-block">
       <h1>PIXLE</h1>
-      <div class="pixle-sub">Gaming Word · Daily</div>
+      <div class="pixle-sub">The Wordle for gamers · Daily</div>
     </div>
     <div class="pixle-stats">
       <div class="pixle-stat">
@@ -494,7 +494,7 @@
 <div class="pixle-modal-bg" id="help-modal">
   <div class="pixle-modal" style="text-align:left;">
     <h2 style="text-align:center;margin-bottom:1rem;">How to Play</h2>
-    <p class="how-text">Guess the <strong>5-letter gaming word</strong> in 6 tries. A new word drops every day. Only gaming vocabulary — spawn, dodge, grind, melee, and more.</p>
+    <p class="how-text"><strong>Pixle is the Wordle for gamers</strong> — not a screenshot puzzle. Guess the <strong>5-letter gaming word</strong> in 6 tries. Spawn, dodge, grind, melee. New word every UTC day.</p>
     <p class="how-text" style="margin-bottom:0.4rem;">After each guess, tiles reveal how close you were:</p>
 
     <div class="how-example">
@@ -555,6 +555,8 @@ const ANSWERS = [
   'PURGE','BLINK','GRAVE','CHAOS','CYCLE','LIMIT','GUARD','LANCE','BRAVE',
   'CLASH','LODGE','SWIPE','FLAIR','VALOR','VIGOR','AGILE','HASTE','BLIND',
   'STUN','RISKY','DREAD','GLARE','BLEED','BURNS','SHOCK','DECAY','DRAIN',
+  'HERTZ','GSYNC','MOUSE','BOARD','CLICK','SWIPE','SHARE',
+  'DAILY','STREAK','GUESS','PIXLE','RIFTS','HALLS','RAPID',
 ];
 
 // Remove duplicates and ensure clean list
@@ -886,6 +888,11 @@ function submitGuess() {
     setTimeout(() => {
       row.tiles[i].className = `pixle-tile ${res}`;
       row.tiles[i].textContent = guess[i];
+      if (window.CGSfx) {
+        window.CGSfx.play(res === 'correct' ? 'correct' : (res === 'present' ? 'place' : 'miss'));
+        window.CGSfx.juice(row.tiles[i], res === 'absent' ? 'miss' : 'pop');
+        if (res === 'correct') window.CGSfx.haptic(8);
+      }
     }, i * 80 + 200);
   });
 
@@ -1003,9 +1010,24 @@ function showResultModal(won) {
   document.getElementById('share-grid').textContent = grid;
 
   document.getElementById('share-btn').onclick = () => {
-    const text = `Pixle #${DAY_INDEX} ${guessLine}\n\n${grid}\n\ncosmicgameshub.com/games/pixle`;
+    const text = `Pixle #${DAY_INDEX} ${guessLine}\nThe Wordle for gamers\n\n${grid}\n\ncosmicgameshub.com/games/pixle`;
+    if (window.CGSfx) {
+      window.CGSfx.play('share');
+      window.CGSfx.shareCard({
+        title: 'Pixle',
+        subtitle: '#' + DAY_INDEX + '  ·  ' + guessLine,
+        grid: grid,
+        lines: [won ? 'Solved' : 'X — ' + ANSWER, 'The Wordle for gamers'],
+        url: 'cosmicgameshub.com/games/pixle'
+      }).then(function (card) {
+        var a = document.createElement('a');
+        a.href = card.url;
+        a.download = 'pixle-' + DAY_INDEX + '.png';
+        a.click();
+      });
+    }
     if (navigator.clipboard) {
-      navigator.clipboard.writeText(text).then(() => showToast('Copied!'));
+      navigator.clipboard.writeText(text).then(() => showToast('Copied + card saved'));
     } else {
       showToast('Copy manually above');
     }
@@ -1106,6 +1128,7 @@ document.addEventListener('keydown', function(e) {
   }
 });
 </script>
+<script src="/games/cg-sfx.js"></script>
 <script src="/games/daily-kit.js" defer></script>
 <script src="/global.js" defer></script>
 

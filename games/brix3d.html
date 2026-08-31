@@ -4002,7 +4002,7 @@
     let ghost = null;
     let mirrorGhosts = []; // Ghost previews for mirrored bricks
     let prefabGhosts = []; // Ghost previews for prefab bricks
-    let selectedBrick = '2x4';
+    let selectedBrick = (typeof window !== 'undefined' && window.innerWidth <= 768) ? '1x1' : '2x4';
     let selectedColor = 0xe53935;
     let selectedLightColor = 0xffdd44; // Default warm white for light bricks
     let isTransparent = false; // Whether current color is transparent
@@ -5133,7 +5133,11 @@
           boot.classList.add('hide');
           setTimeout(() => { boot.style.display = 'none'; }, 700);
         }
-        toast('🎉 96×96 stud baseplate ready! Build something amazing.', 'success');
+        if (window.innerWidth <= 768) {
+          toast('Tap the plate. The ghost is your 1×1. Drag to orbit.', 'success');
+        } else {
+          toast('🎉 96×96 stud baseplate ready! Build something amazing.', 'success');
+        }
       }, 400);
       
       updateUI();
@@ -12958,6 +12962,10 @@
           updateGhost();
         });
       });
+      document.querySelectorAll('.brick-btn').forEach(b => {
+        b.classList.toggle('selected', b.dataset.brick === selectedBrick);
+      });
+      if (typeof updateUI === 'function') updateUI();
       
       document.getElementById('colorPicker').addEventListener('input', e => {
         selectedColor = parseInt(e.target.value.slice(1), 16);

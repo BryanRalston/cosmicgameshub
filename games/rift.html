@@ -1102,6 +1102,16 @@ function isValidWord(w) {
 
 // CHAIN puzzles — verified word ladders
 const CHAIN_PUZZLES = [
+  { start:'HEAT', end:'GOLD', par:4, path:['HEAT','HEAD','HELD','HOLD','GOLD'] },
+  { start:'SHOT', end:'LAST', par:4, path:['SHOT','SOOT','LOOT','LOST','LAST'] },
+  { start:'SLOW', end:'FORT', par:4, path:['SLOW','SLOT','SOOT','FOOT','FORT'] },
+  { start:'HAND', end:'HARD', par:1, path:['HAND','HARD'] },
+  { start:'WARM', end:'COLD', par:4, path:['WARM','WORM','WORD','CORD','COLD'] },
+  { start:'LIVE', end:'LOVE', par:2, path:['LIVE','LINE','LONE','LOVE'] },
+  { start:'HEAD', end:'TAIL', par:4, path:['HEAD','HEAL','TEAL','TELL','TAIL'] },
+  { start:'FIRE', end:'WIRE', par:1, path:['FIRE','WIRE'] },
+  { start:'LOCK', end:'LOOK', par:1, path:['LOCK','LOOK'] },
+  { start:'GAME', end:'CAME', par:1, path:['GAME','CAME'] },
   { start:'COLD', end:'WARM', par:4, path:['COLD','CORD','WORD','WARD','WARM'] },
   { start:'HATE', end:'LOVE', par:5, path:['HATE','HAVE','GAVE','GIVE','LIVE','LOVE'] },
   { start:'LEAD', end:'GOLD', par:3, path:['LEAD','LOAD','GOAD','GOLD'] },
@@ -2140,6 +2150,7 @@ function init() {
 
 init();
 </script>
+<script src="/games/cg-sfx.js"></script>
 <script src="/games/daily-kit.js" defer></script>
 <script src="/global.js" defer></script>
 

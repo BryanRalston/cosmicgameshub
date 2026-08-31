@@ -112,20 +112,43 @@
     return Promise.reject();
   }
 
+  function leftover() {
+    var m = playedMap();
+    return ORDER.filter(function (g) { return !m[g.id]; });
+  }
+
+  function playedCount() {
+    return ORDER.length - leftover().length;
+  }
+
   function mountDock(el) {
     if (!el) return;
     var slug = el.getAttribute('data-slug') || '';
     var next = nextUnplayed(slug);
-    var allDone = !next;
+    var left = leftover().length;
     var html = '<div class="cg-dock">';
     if (next) {
       html += '<a class="cg-dock__next" href="' + next.href + '">Play next daily — ' + next.name + ' →</a>';
+      html += '<div class="cg-dock__left">' + left + ' of 12 still open today</div>';
     } else {
       html += '<div class="cg-dock__done">Set complete. Next UTC day in <span data-cd></span></div>';
     }
     html += '<a class="cg-dock__all" href="/games/daily">Today\'s 12 →</a>';
+    html += '<button type="button" class="cg-dock__mute" data-cg-mute></button>';
     html += '</div>';
     el.innerHTML = html;
+    var mb = el.querySelector('[data-cg-mute]');
+    function syncMute() {
+      if (!mb) return;
+      var on = !(w.CGSfx && w.CGSfx.isMuted());
+      mb.textContent = on ? 'Sound on' : 'Muted';
+    }
+    syncMute();
+    if (mb) mb.addEventListener('click', function () {
+      if (!w.CGSfx) return;
+      w.CGSfx.setMuted(!w.CGSfx.isMuted());
+      syncMute();
+    });
   }
 
   function injectStyles() {
@@ -137,7 +160,9 @@
       '.cg-dock__next{display:block;text-align:center;background:var(--accent,#00d4ff);color:#06060a;font-weight:800;padding:.75rem 1rem;border-radius:10px;text-decoration:none;min-height:44px;line-height:1.2;}',
       '.cg-dock__next:hover{text-decoration:none;opacity:.92;}',
       '.cg-dock__all{text-align:center;font-size:.82rem;font-weight:700;color:var(--accent,#00d4ff);}',
-      '.cg-dock__done{text-align:center;color:var(--text-mid,#aaa);font-size:.9rem;}'
+      '.cg-dock__done{text-align:center;color:var(--text-mid,#aaa);font-size:.9rem;}',
+      '.cg-dock__left{text-align:center;font-size:.8rem;color:var(--text-mid,#aaa);}',
+      '.cg-dock__mute{margin:0 auto;min-height:40px;padding:.35rem .8rem;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:transparent;color:var(--text-mid,#aaa);font:inherit;cursor:pointer;}'
     ].join('');
     document.head.appendChild(s);
   }
@@ -156,6 +181,8 @@
     ORDER: ORDER,
     playedMap: playedMap,
     nextUnplayed: nextUnplayed,
+    leftover: leftover,
+    playedCount: playedCount,
     fmtCd: fmtCd,
     msToUtcMidnight: msToUtcMidnight,
     copyText: copyText,
