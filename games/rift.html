@@ -814,12 +814,12 @@
       <div class="zone-badge z3-badge">Zone 3</div>
       <div class="zone-header-info">
         <h2>DECODE</h2>
-        <p>Find the hidden connection linking all 7 clues</p>
+        <p>Seven specific things. One set. Not “stuff every shooter has.”</p>
       </div>
     </div>
     <div class="zone-body">
       <div class="decode-progress">
-        <div class="decode-clue-count">Clues revealed: <strong id="decodeClueCount">1</strong>/7</div>
+        <div class="decode-clue-count">Clues revealed: <strong id="decodeClueCount">2</strong>/7</div>
         <div class="decode-score-stars" id="decodeStarRow">
           <span class="star">⭐</span>
           <span class="star">⭐</span>
@@ -1173,17 +1173,18 @@ const DECODE_PUZZLES = [
     ]
   },
   {
-    connection: 'FPS TERMS',
+    connection: 'L4D SPECIAL INFECTED',
+    aliases: ['L4D', 'LEFT 4 DEAD', 'SPECIAL INFECTED', 'INFECTED'],
     gaming: true,
-    hint: 'All are first-person-shooter terms',
+    hint: 'Left 4 Dead, the ones that are not common',
     clues: [
-      { text: 'Weapon kick after you fire', answer: 'RECOIL' },
-      { text: 'Invisible volume that registers a hit', answer: 'HITBOX' },
-      { text: 'Win a round when you should have lost', answer: 'CLUTCH' },
-      { text: 'A kill, especially with a grenade leftover slang', answer: 'FRAG' },
-      { text: 'Hold an angle and wait', answer: 'CAMP' },
-      { text: 'Aim down sights, abbreviated', answer: 'ADS' },
-      { text: 'Empty the mag without lifting', answer: 'SPRAY' },
+      { text: 'Pukes a bile cloud that draws a horde', answer: 'BOOMER' },
+      { text: 'Tongue snatch from a rooftop', answer: 'SMOKER' },
+      { text: 'Pounces, pin, slash', answer: 'HUNTER' },
+      { text: 'Huge, throws cars, the finale scare', answer: 'TANK' },
+      { text: 'Cry, then one-shot if you shine a light', answer: 'WITCH' },
+      { text: 'Rides your back, L4D2', answer: 'JOCKEY' },
+      { text: 'Bowling-ball charge into a wall, L4D2', answer: 'CHARGER' },
     ]
   },
   {
@@ -1313,17 +1314,18 @@ const DECODE_PUZZLES = [
     ]
   },
   {
-    connection: 'BATTLE ROYALE',
+    connection: 'APEX LEGENDS',
+    aliases: ['APEX', 'RESPAWN BR'],
     gaming: true,
-    hint: 'BR / extraction vocabulary',
+    hint: 'Respawn’s BR, not Fortnite',
     clues: [
-      { text: 'The shrinking circle', answer: 'ZONE' },
-      { text: 'Where you land off the bus', answer: 'DROP' },
-      { text: 'Guns and mats on the ground', answer: 'LOOT' },
-      { text: 'Third team crashes your 1v1', answer: 'THIRDPARTY' },
-      { text: 'Warzone jail after you die', answer: 'GULAG' },
-      { text: 'Saved gun + perks', answer: 'LOADOUT' },
-      { text: 'Last player standing title', answer: 'VICTORY' },
+      { text: 'You ping this to bring a teammate back', answer: 'BANNER' },
+      { text: 'The one who picks the drop', answer: 'JUMPMASTER' },
+      { text: 'Gold knockdown starts this revive', answer: 'SELFREVIVE' },
+      { text: 'The shrinking ring on Kings Canyon', answer: 'RING' },
+      { text: 'Care package legendary drop', answer: 'CAREPACKAGE' },
+      { text: 'Win screen title, not Victory Royale', answer: 'CHAMPION' },
+      { text: 'Recon legend scans this', answer: 'SURVEYBEACON' },
     ]
   },
   {
@@ -1859,17 +1861,18 @@ const DECODE_PUZZLES = [
     ]
   },
   {
-    connection: 'BATTLE ROYALE 2',
+    connection: 'FORTNITE POIS',
     gaming: true,
-    hint: 'Still the circle',
+    hint: 'Named drops, not the circle',
+    aliases: ['FORTNITE', 'POI', 'LOCATIONS'],
     clues: [
-      { text: 'The bus, plane, or ship', answer: 'DROP' },
-      { text: 'The circle', answer: 'ZONE' },
-      { text: 'Third team arrives', answer: 'THIRDPARTY' },
-      { text: 'Your saved guns', answer: 'LOADOUT' },
-      { text: 'Knocked, not dead', answer: 'DOWNED' },
-      { text: 'The banner you craft', answer: 'BANNER' },
-      { text: 'Last squad title', answer: 'CHICKEN' },
+      { text: 'The agency, the Grotto era', answer: 'AGENCY' },
+      { text: 'Tilted, the original tilted towers', answer: 'TILTED' },
+      { text: 'Pleasant, the suburb', answer: 'PLEASANT' },
+      { text: 'Retail, the row', answer: 'RETAIL' },
+      { text: 'Salty, the springs', answer: 'SALTY' },
+      { text: 'Lazy, the lake', answer: 'LAZY' },
+      { text: 'Loot, the lake', answer: 'LOOTLAKE' },
     ]
   },
   {
@@ -2069,31 +2072,33 @@ const DECODE_PUZZLES = [
     ]
   },
   {
-    connection: 'QUEUE TYPES',
+    connection: 'LEAGUE QUEUE TYPES',
+    aliases: ['LEAGUE', 'LOL', 'QUEUE'],
     gaming: true,
-    hint: 'What you click on the play button',
+    hint: 'What you click on the League play button',
     clues: [
-      { text: 'The one that matters', answer: 'RANKED' },
-      { text: 'The one that does not', answer: 'CASUAL' },
-      { text: 'With friends', answer: 'PREMADE' },
-      { text: 'Fill, any role', answer: 'FILL' },
-      { text: 'The arcade / rotating', answer: 'ARAM' },
-      { text: 'The custom', answer: 'CUSTOM' },
-      { text: 'The versus AI', answer: 'COOP' },
+      { text: 'Howling Abyss, random champs, one lane', answer: 'ARAM' },
+      { text: 'The ranked ladder that matters', answer: 'SOLODUO' },
+      { text: 'Five-stack ranked', answer: 'FLEX' },
+      { text: 'The rotating game mode, URF\'s cousin', answer: 'RGM' },
+      { text: 'Co-op vs AI, still a bot game', answer: 'INTRO' },
+      { text: 'Clash weekend tournament', answer: 'CLASH' },
+      { text: 'Arena, 2v2v2v2', answer: 'ARENA' },
     ]
   },
   {
-    connection: 'END SCREEN',
+    connection: 'SMASH RESULTS',
+    aliases: ['SMASH', 'SMASH BROS', 'GSP'],
     gaming: true,
-    hint: 'What you see when it is over',
+    hint: 'The results screen with the numbers, not Win/Loss',
     clues: [
-      { text: 'Victory', answer: 'WIN' },
-      { text: 'Defeat', answer: 'LOSS' },
-      { text: 'The scoreboard', answer: 'STATS' },
-      { text: 'The MVP', answer: 'MVP' },
-      { text: 'Watch it again', answer: 'REPLAY' },
-      { text: 'The next button', answer: 'CONTINUE' },
-      { text: 'The report button', answer: 'REPORT' },
+      { text: 'The percent that kills you', answer: 'PERCENT' },
+      { text: 'Sudden Death if you tied', answer: 'SUDDENDEATH' },
+      { text: 'The Final Smash meter', answer: 'SMASHBALL' },
+      { text: 'The blast zone', answer: 'BLASTZONE' },
+      { text: 'Stock, not timed', answer: 'STOCK' },
+      { text: 'The GSP number online', answer: 'GSP' },
+      { text: 'Elite Smash threshold', answer: 'ELITE' },
     ]
   },
   {
@@ -2657,17 +2662,18 @@ const DECODE_PUZZLES = [
     ]
   },
   {
-    connection: 'CROSSPLAY',
+    connection: 'VALORANT AGENTS',
+    aliases: ['VALORANT', 'AGENTS', 'RIOT'],
     gaming: true,
-    hint: 'Who you can queue with',
+    hint: 'The roster, not a crossplay toggle',
     clues: [
-      { text: 'Turned on in settings', answer: 'ENABLED' },
-      { text: 'Disabled', answer: 'OFF' },
-      { text: 'Console only', answer: 'CONSOLE' },
-      { text: 'PC only', answer: 'PC' },
-      { text: 'Input based', answer: 'INPUT' },
-      { text: 'Forced', answer: 'FORCED' },
-      { text: 'Optional', answer: 'OPTIONAL' },
+      { text: 'The duelist who dashes, default Jett', answer: 'JETT' },
+      { text: 'The controller, smokes from the sky', answer: 'OMEN' },
+      { text: 'The sentinel with a trip, Killjoy\'s rival', answer: 'CYPHER' },
+      { text: 'The initiator, the recon dart', answer: 'SOVA' },
+      { text: 'The healer, the resurrection', answer: 'SAGE' },
+      { text: 'The owl drone, Chamber is not this', answer: 'SKYE' },
+      { text: 'The marshal of the Kingdom, brimstone', answer: 'BRIMSTONE' },
     ]
   },
   {
@@ -2699,87 +2705,93 @@ const DECODE_PUZZLES = [
     ]
   },
   {
-    connection: 'PAUSE MENU',
+    connection: 'METAL GEAR CODE NAMES',
+    aliases: ['METAL GEAR', 'MGS', 'FOXHOUND'],
     gaming: true,
-    hint: 'What you open',
+    hint: 'Codec, not a pause menu',
     clues: [
-      { text: 'Resume', answer: 'RESUME' },
-      { text: 'Options', answer: 'OPTIONS' },
-      { text: 'Save', answer: 'SAVE' },
-      { text: 'Load', answer: 'LOAD' },
-      { text: 'Quit', answer: 'QUIT' },
-      { text: 'Photo mode', answer: 'PHOTO' },
-      { text: 'Controls', answer: 'CONTROLS' },
+      { text: 'Naked, the protagonist', answer: 'SNAKE' },
+      { text: 'The mentor on the codec, smoked', answer: 'MAJORZERO' },
+      { text: 'The woman who saves you, not a number', answer: 'MERYL' },
+      { text: 'Cypher, the rival', answer: 'OCELOT' },
+      { text: 'The tank-on-legs fight', answer: 'REX' },
+      { text: 'Kept you talking, FOXHOUND', answer: 'CAMPBELL' },
+      { text: 'The patriot AI, not a person', answer: 'GW' },
     ]
   },
   {
-    connection: 'HUD PIECES',
+    connection: 'PORTAL TEST ELEMENTS',
+    aliases: ['PORTAL', 'APERTURE'],
     gaming: true,
-    hint: 'What you never turn off',
+    hint: 'Aperture, not a HUD',
     clues: [
-      { text: 'Health', answer: 'HP' },
-      { text: 'Ammo', answer: 'AMMO' },
-      { text: 'Minimap', answer: 'MINIMAP' },
-      { text: 'Compass', answer: 'COMPASS' },
-      { text: 'Quest tracker', answer: 'TRACKER' },
-      { text: 'Buff bar', answer: 'BUFFS' },
-      { text: 'Crosshair', answer: 'CROSSHAIR' },
+      { text: 'The Weighted Storage one with a heart', answer: 'CUBE' },
+      { text: 'The red-eye Sentry that sings', answer: 'TURRET' },
+      { text: 'The emancipation ___ that fizzles portals', answer: 'GRILL' },
+      { text: 'Hard-light bridge in 2', answer: 'BRIDGE' },
+      { text: 'Repulsion gel, the blue bounce', answer: 'GEL' },
+      { text: 'The thermal discouragement beam', answer: 'LASER' },
+      { text: 'The cake, as promised', answer: 'CAKE' },
     ]
   },
   {
-    connection: 'DEATH SCREEN',
+    connection: 'FROM SOFTWARE FLASKS',
+    aliases: ['FROM SOFTWARE', 'ESTUS', 'SOULS', 'FLASKS'],
     gaming: true,
-    hint: 'You died',
+    hint: 'What you drink, not a death screen',
     clues: [
-      { text: 'You died', answer: 'YOUDIED' },
-      { text: 'Wasted', answer: 'WASTED' },
-      { text: 'Respawn', answer: 'RESPAWN' },
-      { text: 'Load last', answer: 'LOAD' },
-      { text: 'Give up', answer: 'GIVEUP' },
-      { text: 'Spectate', answer: 'SPECTATE' },
-      { text: 'Report', answer: 'REPORT' },
+      { text: 'The original orange sip, Lordran', answer: 'ESTUS' },
+      { text: 'Bloodborne\'s blood vial', answer: 'BLOODVIAL' },
+      { text: 'Sekiro\'s gourd', answer: 'GOURD' },
+      { text: 'Elden Ring\'s crimson tears', answer: 'FLASK' },
+      { text: 'The blue one, for spells', answer: 'ASHEN' },
+      { text: 'Kindle the bonfire to get more sips', answer: 'KINDLE' },
+      { text: 'The bonefire you sit at', answer: 'BONFIRE' },
     ]
   },
   {
-    connection: 'VICTORY SCREEN',
+    connection: 'STREET FIGHTER SUPER MOVES',
+    aliases: ['STREET FIGHTER', 'SF', 'HADOUKEN'],
     gaming: true,
-    hint: 'The good one',
+    hint: 'Named supers, not Ace/MVP',
     clues: [
-      { text: 'Victory', answer: 'VICTORY' },
-      { text: 'Flawless', answer: 'FLAWLESS' },
-      { text: 'Perfect', answer: 'PERFECT' },
-      { text: 'Ace', answer: 'ACE' },
-      { text: 'Clutch', answer: 'CLUTCH' },
-      { text: 'MVP', answer: 'MVP' },
-      { text: 'Play them again', answer: 'REMATCH' },
+      { text: 'Ryu\'s, the fireball', answer: 'HADOUKEN' },
+      { text: 'Ryu\'s, the dragon punch', answer: 'SHORYUKEN' },
+      { text: 'Ken\'s, the tatsu spin', answer: 'TATSUMAKI' },
+      { text: 'Guile\'s, the sonic boom', answer: 'SONICBOOM' },
+      { text: 'Chun-Li\'s, the lightning kicks', answer: 'HYAKURETSU' },
+      { text: 'Dhalsim\'s, the yoga fire', answer: 'YOGAFIRE' },
+      { text: 'Blanka\'s, the electricity', answer: 'ELECTRICITY' },
     ]
   },
   {
-    connection: 'CHAT COMMANDS',
+    connection: 'TF2 CLASSES',
+    aliases: ['TF2', 'TEAM FORTRESS', 'MERCENARIES'],
     gaming: true,
-    hint: 'What you type with a slash',
+    hint: 'Nine mercs, not /gg',
     clues: [
-      { text: '/gg', answer: 'GG' },
-      { text: '/ff', answer: 'FF' },
-      { text: '/all', answer: 'ALL' },
-      { text: '/team', answer: 'TEAM' },
-      { text: '/whisper', answer: 'WHISPER' },
-      { text: '/emote', answer: 'EMOTE' },
-      { text: '/help', answer: 'HELP' },
+      { text: 'The scattergun, sandwiches', answer: 'SCOUT' },
+      { text: 'The rocket launcher, the screaming', answer: 'SOLDIER' },
+      { text: 'The flamethrower, "Mmph"', answer: 'PYRO' },
+      { text: 'The stickybomb, the eyepatch', answer: 'DEMOMAN' },
+      { text: 'The minigun, "I am heavy weapons guy"', answer: 'HEAVY' },
+      { text: 'The wrench, the teleporter', answer: 'ENGINEER' },
+      { text: 'The bonesaw, Ubercharge', answer: 'MEDIC' },
     ]
   },
   {
-    connection: 'EMOTE WHEEL',
+    connection: 'HALO CAMPAIGNS',
+    aliases: ['HALO', 'BUNGIE'],
     gaming: true,
-    hint: 'The wheel you forget exists',
+    hint: 'The numbered wars, not an emote wheel',
     clues: [
-      { text: 'Wave', answer: 'WAVE' },
-      { text: 'Dance', answer: 'DANCE' },
-      { text: 'Sit', answer: 'SIT' },
-      { text: 'Point', answer: 'POINT' },
-      { text: 'Cheer', answer: 'CHEER' },
-      { text: 'Cry', answer: 'CRY' },
-      { text: 'T-pose', answer: 'TPOSE' },
+      { text: 'The Pillar of Autumn, 2001', answer: 'CE' },
+      { text: 'New Mombasa, the Chief finds Cortana missing', answer: 'HALO2' },
+      { text: 'The Ark, Warthog run', answer: 'HALO3' },
+      { text: 'Reach, the planet falls', answer: 'REACH' },
+      { text: 'ODST, the rookie', answer: 'ODST' },
+      { text: 'Master Chief Collection umbrella', answer: 'MCC' },
+      { text: 'Infinite, the Ring you\'re stuck on', answer: 'INFINITE' },
     ]
   },
   {
@@ -2853,17 +2865,18 @@ const DECODE_PUZZLES = [
     ]
   },
   {
-    connection: 'OBJECTIVE MODES',
+    connection: 'HALO MULTIPLAYER MODES',
+    aliases: ['HALO', 'SLAYER', 'BUNGIE MP'],
     gaming: true,
-    hint: 'Not just kills',
+    hint: 'Bungie playlists, not Plant/Defuse',
     clues: [
-      { text: 'Plant', answer: 'PLANT' },
-      { text: 'Defuse', answer: 'DEFUSE' },
-      { text: 'Escort', answer: 'ESCORT' },
-      { text: 'Payload', answer: 'PAYLOAD' },
-      { text: 'Hardpoint', answer: 'HARDPOINT' },
-      { text: 'Uplink', answer: 'UPLINK' },
-      { text: 'Control', answer: 'CONTROL' },
+      { text: 'Kill count, the default', answer: 'SLAYER' },
+      { text: 'Capture the flag on Blood Gulch', answer: 'CTF' },
+      { text: 'Hold the ball, don\'t shoot', answer: 'ODDBALL' },
+      { text: 'Humans vs Flood', answer: 'INFECTION' },
+      { text: 'King of the Hill', answer: 'KOTH' },
+      { text: 'Assault, plant the bomb', answer: 'ASSAULT' },
+      { text: 'Territories, lock the map', answer: 'TERRITORIES' },
     ]
   }
 ];
@@ -2894,7 +2907,7 @@ function getGrowSeed() {
   return GROW_SEEDS[DAY_INDEX % GROW_SEEDS.length];
 }
 
-const STORAGE_KEY = `rift_state_${DAY_INDEX}`;
+const STORAGE_KEY = `rift_state_${DAY_INDEX}_d2`;
 
 function loadState() {
   try {
@@ -2908,7 +2921,7 @@ function loadState() {
     chainDone: false,
     growWords: [],     // words in grow chain
     growDone: false,
-    decodeCluesShown: 1,
+    decodeCluesShown: 2,
     decodeGuesses: [],
     decodeDone: false,
     decodeWrongPenalty: 0,
@@ -3299,13 +3312,16 @@ function submitDecode() {
   input.value = '';
   if (!raw) { showToast('Type a guess first', 'error'); return; }
 
-  const correct = dp.connection.toUpperCase();
-
-  // Flexible matching: check if guess contains the answer or vice versa
-  const match = raw === correct ||
-                raw.includes(correct) ||
-                correct.includes(raw) ||
-                levenshtein(raw, correct) <= 1;
+  const norm = function (s) { return String(s || '').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim(); };
+  const guess = norm(raw);
+  const correct = norm(dp.connection);
+  const aliases = (dp.aliases || []).map(norm);
+  const match = !!(guess && (
+    guess === correct ||
+    guess.length >= 3 && (correct.includes(guess) || guess.includes(correct)) ||
+    aliases.some(function (a) { return a && (guess === a || guess.includes(a) || a.includes(guess)); }) ||
+    (guess.length >= 4 && levenshtein(guess.replace(/ /g,''), correct.replace(/ /g,'')) <= 2)
+  ));
 
   if (match) {
     // Win!
