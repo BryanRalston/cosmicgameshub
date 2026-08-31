@@ -131,6 +131,26 @@
     });
   }
 
+  function shareNow(opts) {
+    opts = opts || {};
+    play('share');
+    var text = opts.text || '';
+    if (text && navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).catch(function () {});
+    }
+    return shareCard(opts).then(function (card) {
+      if (card && card.url) {
+        var a = document.createElement('a');
+        a.href = card.url;
+        a.download = (opts.filename || 'cosmicgameshub-daily') + '.png';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
+      return card;
+    });
+  }
+
   document.addEventListener('pointerdown', function () { ac(); }, { once: true });
   injectCss();
 
@@ -141,6 +161,7 @@
     isMuted: function () { return mute; },
     juice: juice,
     shareCard: shareCard,
+    shareNow: shareNow,
     unlock: ac
   };
 })(window);

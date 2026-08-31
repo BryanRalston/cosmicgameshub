@@ -844,14 +844,29 @@
   document.getElementById('btn-reveal').addEventListener('click', revealLetter);
   document.getElementById('btn-clear').addEventListener('click', clearAll);
   document.getElementById('btn-share').addEventListener('click', () => {
+    const grade = getGrade(checkCount);
+    const grid = buildEmojiGrid();
     const text = 'CosmicGamesHub Gaming Crossword #' + (puzzleNum + 1) + '\n' +
-      getGrade(checkCount) + ' | ' + checkCount + ' check' + (checkCount === 1 ? '' : 's') + '\n\n' +
-      buildEmojiGrid() + '\n\ncosmicgameshub.com/games/crossword';
-    navigator.clipboard.writeText(text).then(() => {
+      grade + ' | ' + checkCount + ' check' + (checkCount === 1 ? '' : 's') + '\n\n' +
+      grid + '\n\ncosmicgameshub.com/games/crossword';
+    const go = function () {
       const btn = document.getElementById('btn-share');
-      btn.textContent = 'Copied!';
+      btn.textContent = 'Copied + card';
       setTimeout(() => btn.textContent = 'Share Result', 2000);
-    });
+    };
+    if (window.CGSfx && window.CGSfx.shareNow) {
+      window.CGSfx.shareNow({
+        title: 'Crossword',
+        subtitle: '#' + (puzzleNum + 1) + '  ·  ' + grade,
+        grid: grid,
+        lines: [checkCount + ' check' + (checkCount === 1 ? '' : 's')],
+        url: 'cosmicgameshub.com/games/crossword',
+        filename: 'crossword-' + (puzzleNum + 1),
+        text: text
+      }).then(go).catch(go);
+    } else if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(go);
+    }
   });
 
   // Init

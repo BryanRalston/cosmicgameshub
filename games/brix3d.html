@@ -5051,9 +5051,9 @@
       controls = new OrbitControls(camera, renderer.domElement);
       controls.addEventListener('change', () => { needsRender = true; });
       controls.enableDamping = true;
-      controls.dampingFactor = 0.12;
-      controls.rotateSpeed = 0.95;
-      controls.zoomSpeed = 1.1;
+      controls.dampingFactor = 0.1;
+      controls.rotateSpeed = 1.05;
+      controls.zoomSpeed = 1.15;
       controls.minPolarAngle = 0.1; // Prevent looking straight down
       controls.maxPolarAngle = Math.PI / 2.1; // Prevent going below horizon
       controls.minDistance = 3;
@@ -8172,7 +8172,7 @@
           roughness: 0.9,
           metalness: 0,
           transparent: true,
-          opacity: 0.65,
+          opacity: 0.78,
           depthWrite: false
         }));
       }
@@ -9340,13 +9340,8 @@
         // Search pattern: try nearby positions (prioritize same X/Z, different Y first)
         // Then try adjacent X/Z positions at various Y levels
         const searchOffsets = [
-          // Same position, different Y levels (column stacking)
-          {dx: 0, dz: 0, dyStart: 0, dyEnd: 30, dyStep: hp},
-          // Adjacent positions
-          {dx: -1, dz: 0, dyStart: 0, dyEnd: 15, dyStep: hp},
-          {dx: 1, dz: 0, dyStart: 0, dyEnd: 15, dyStep: hp},
-          {dx: 0, dz: -1, dyStart: 0, dyEnd: 15, dyStep: hp},
-          {dx: 0, dz: 1, dyStart: 0, dyEnd: 15, dyStep: hp},
+          // Stack in the same column only. Adjacent XZ jumps felt like the ghost teleporting.
+          {dx: 0, dz: 0, dyStart: 0, dyEnd: 30, dyStep: hp}
         ];
         
         for (const offset of searchOffsets) {

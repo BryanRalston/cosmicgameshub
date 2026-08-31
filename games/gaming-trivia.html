@@ -1010,12 +1010,27 @@ function showAlreadyPlayed(record) {
 // SHARE
 // ═══════════════════════════════════════════════════════════════════════════════
 function copyShare() {
-  navigator.clipboard.writeText(document.getElementById('shareBox').textContent).then(() => {
+  const text = document.getElementById('shareBox').textContent;
+  const go = function () {
     const btn = document.querySelector('[onclick="copyShare()"]');
-    const orig = btn.innerHTML;
-    btn.innerHTML = '✅ Copied!';
+    if (!btn) return;
+    const orig = '📋 Copy & Share';
+    btn.innerHTML = '✅ Copied + card';
     setTimeout(() => btn.innerHTML = orig, 2000);
-  });
+  };
+  if (window.CGSfx && window.CGSfx.shareNow) {
+    window.CGSfx.shareNow({
+      title: 'Trivia',
+      subtitle: '#' + dayNum,
+      grid: (document.getElementById('emojiRow') || {}).textContent || '',
+      lines: [(document.getElementById('resultsScore') || {}).textContent || '', (document.getElementById('resultsPts') || {}).textContent || ''],
+      url: 'cosmicgameshub.com/games/gaming-trivia',
+      filename: 'trivia-' + dayNum,
+      text: text
+    }).then(go).catch(go);
+  } else if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(go);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

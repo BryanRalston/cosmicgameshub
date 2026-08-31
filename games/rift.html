@@ -1105,18 +1105,14 @@ const CHAIN_PUZZLES = [
   { start:'HEAT', end:'GOLD', par:4, path:['HEAT','HEAD','HELD','HOLD','GOLD'] },
   { start:'SHOT', end:'LAST', par:4, path:['SHOT','SOOT','LOOT','LOST','LAST'] },
   { start:'SLOW', end:'FORT', par:4, path:['SLOW','SLOT','SOOT','FOOT','FORT'] },
-  { start:'HAND', end:'HARD', par:1, path:['HAND','HARD'] },
   { start:'WARM', end:'COLD', par:4, path:['WARM','WORM','WORD','CORD','COLD'] },
-  { start:'LIVE', end:'LOVE', par:2, path:['LIVE','LINE','LONE','LOVE'] },
+  { start:'LIVE', end:'LOVE', par:3, path:['LIVE','LINE','LONE','LOVE'] },
   { start:'HEAD', end:'TAIL', par:4, path:['HEAD','HEAL','TEAL','TELL','TAIL'] },
-  { start:'FIRE', end:'WIRE', par:1, path:['FIRE','WIRE'] },
-  { start:'LOCK', end:'LOOK', par:1, path:['LOCK','LOOK'] },
-  { start:'GAME', end:'CAME', par:1, path:['GAME','CAME'] },
   { start:'COLD', end:'WARM', par:4, path:['COLD','CORD','WORD','WARD','WARM'] },
   { start:'HATE', end:'LOVE', par:5, path:['HATE','HAVE','GAVE','GIVE','LIVE','LOVE'] },
   { start:'LEAD', end:'GOLD', par:3, path:['LEAD','LOAD','GOAD','GOLD'] },
   { start:'MORE', end:'LESS', par:4, path:['MORE','LORE','LOSE','LOSS','LESS'] },
-  { start:'CAT',  end:'DOG',  par:3, path:['CAT','COT','COG','DOG'] },          // day 4 — 3-letter
+  { start:'CAT',  end:'DOG',  par:3, path:['CAT','COT','COG','DOG'] },
   { start:'FIRE', end:'NICE', par:5, path:['FIRE','HIRE','HIKE','LIKE','LICE','NICE'] },
   { start:'PLAY', end:'CLAN', par:3, path:['PLAY','CLAY','CLAM','CLAN'] },
   { start:'FAME', end:'BORE', par:3, path:['FAME','FARE','BARE','BORE'] },
@@ -1126,63 +1122,28 @@ const CHAIN_PUZZLES = [
   { start:'LORE', end:'MUSE', par:5, path:['LORE','LURE','CURE','CUTE','MUTE','MUSE'] },
   { start:'BARE', end:'GAZE', par:5, path:['BARE','DARE','DATE','MATE','GATE','GAZE'] },
   { start:'CHIP', end:'CHOP', par:3, path:['CHIP','SHIP','SHOP','CHOP'] },
-  { start:'COLD', end:'BOLD', par:1, path:['COLD','BOLD'] },                     // day 14 — trivial bonus
-  { start:'BALE', end:'FINE', par:4, path:['BALE','TALE','TILE','FINE'] },
-  { start:'LOCK', end:'ROCK', par:1, path:['LOCK','ROCK'] },
+  { start:'BALE', end:'FINE', par:3, path:['BALE','TALE','TILE','FINE'] },
   { start:'SALE', end:'BILE', par:3, path:['SALE','TALE','TILE','BILE'] },
-  { start:'WINE', end:'MINE', par:1, path:['WINE','MINE'] },
-  { start:'KING', end:'RING', par:1, path:['KING','RING'] },
-  { start:'CORN', end:'HORN', par:1, path:['CORN','HORN'] },
-  { start:'FAST', end:'LAST', par:1, path:['FAST','LAST'] },
-  { start:'MALE', end:'TALE', par:1, path:['MALE','TALE'] },
-  { start:'CARE', end:'DARE', par:1, path:['CARE','DARE'] },
-  { start:'BONE', end:'BORE', par:2, path:['BONE','BORE'] },
-  { start:'HOLE', end:'MOLE', par:1, path:['HOLE','MOLE'] },
-  { start:'SELL', end:'BELL', par:1, path:['SELL','BELL'] },
-  { start:'LANE', end:'CANE', par:1, path:['LANE','CANE'] },
-  { start:'HIDE', end:'RIDE', par:1, path:['HIDE','RIDE'] },
-  { start:'TIDE', end:'SIDE', par:1, path:['TIDE','SIDE'] },
-  { start:'BOLD', end:'TOLD', par:1, path:['BOLD','TOLD'] },
-  { start:'MINE', end:'WINE', par:1, path:['MINE','WINE'] },
-  { start:'RING', end:'SING', par:1, path:['RING','SING'] },
-  { start:'FOLD', end:'GOLD', par:2, path:['FOLD','BOLD','GOLD'] },
-  { start:'WORE', end:'WORD', par:1, path:['WORE','WORD'] },
-  { start:'DARE', end:'CARE', par:1, path:['DARE','CARE'] },
-  { start:'WAKE','end':'CAKE', par:1, path:['WAKE','CAKE'] },
-  { start:'BARK', end:'DARK', par:1, path:['BARK','DARK'] },
-  { start:'LAME', end:'CAME', par:1, path:['LAME','CAME'] },
-  { start:'BARE', end:'BORE', par:2, path:['BARE','CORE','BORE'] },
-  { start:'CORE', end:'FORE', par:1, path:['CORE','FORE'] },
-  { start:'TIRE', end:'HIRE', par:1, path:['TIRE','HIRE'] },
-  { start:'LIME', end:'TIME', par:1, path:['LIME','TIME'] },
-  { start:'CANE', end:'LANE', par:1, path:['CANE','LANE'] },
-  { start:'DARE', end:'DATE', par:1, path:['DARE','DATE'] },
-  { start:'CAME', end:'FAME', par:1, path:['CAME','FAME'] },
-  { start:'LORE', end:'BORE', par:1, path:['LORE','BORE'] },
-  { start:'SAND', end:'BAND', par:1, path:['SAND','BAND'] },
-  { start:'WIRE', end:'FIRE', par:1, path:['WIRE','FIRE'] },
-  { start:'GATE', end:'MATE', par:1, path:['GATE','MATE'] },
-  { start:'SOLE', end:'ROLE', par:1, path:['SOLE','ROLE'] },
-  { start:'CAVE', end:'GAVE', par:1, path:['CAVE','GAVE'] },
-  { start:'MANE', end:'LANE', par:1, path:['MANE','LANE'] },
-  { start:'HIRE', end:'FIRE', par:1, path:['HIRE','FIRE'] },
-  { start:'LURE', end:'CURE', par:1, path:['LURE','CURE'] },
-  { start:'TOLD', end:'BOLD', par:1, path:['TOLD','BOLD'] },
-  { start:'MIST', end:'FIST', par:1, path:['MIST','FIST'] },
-  { start:'BONE', end:'TONE', par:1, path:['BONE','TONE'] },
-  { start:'CALL', end:'TALL', par:1, path:['CALL','TALL'] },
-  { start:'SAVE', end:'CAVE', par:1, path:['SAVE','CAVE'] },
-  { start:'LOAD', end:'ROAD', par:1, path:['LOAD','ROAD'] },
+  { start:'WORK', end:'COLD', par:4, path:['WORK','WORM','WORD','CORD','COLD'] },
+  { start:'MINE', end:'DATE', par:4, path:['MINE','MIRE','DIRE','DARE','DATE'] },
+  { start:'PORK', end:'RANK', par:4, path:['PORK','PARK','DARK','DANK','RANK'] },
+  { start:'SOUL', end:'MALE', par:5, path:['SOUL','SOIL','SAIL','MAIL','MALL','MALE'] },
+  { start:'WISH', end:'PATH', par:4, path:['WISH','WASH','BASH','BATH','PATH'] },
+  { start:'TREE', end:'FLED', par:3, path:['TREE','FREE','FLEE','FLED'] },
+  { start:'HARD', end:'DATE', par:5, path:['HARD','HAND','LAND','LANE','LATE','DATE'] },
+  { start:'WINE', end:'WORD', par:5, path:['WINE','WANE','WARE','WERE','WORE','WORD'] },
+  { start:'BEAR', end:'COLD', par:5, path:['BEAR','BEAT','BOAT','COAT','COLT','COLD'] },
+  { start:'WALK', end:'TIME', par:5, path:['WALK','TALK','TALL','TALE','TILE','TIME'] },
+  { start:'FOLD', end:'GOLD', par:3, path:['FOLD','BOLD','GOLD'] },
+  { start:'BARE', end:'BORE', par:3, path:['BARE','CARE','CORE','BORE'] }
 ];
 
 // GROW seeds — one per day
 const GROW_SEEDS = [
-  'ACE','EAR','ARE','ATE','OAR','ICE','APE','ORE','AGE','USE',
-  'AIM','ILL','ODD','AID','OWE','ACE','EAR','ARE','ATE','OAR',
-  'ICE','APE','ORE','AGE','USE','AIM','ILL','ODD','AID','OWE',
-  'ACE','EAR','ARE','ATE','OAR','ICE','APE','ORE','AGE','USE',
-  'AIM','ILL','ODD','AID','OWE','ACE','EAR','ARE','ATE','OAR',
-  'ICE','APE','ORE','AGE','USE','AIM','ILL','ODD','AID','OWE',
+  'ACE','AIM','APE','ARC','ARM','ART','ASH','BAT','BOW','BOX',
+  'BUG','CAP','CUP','DOT','EAR','ELF','FOG','GUN','HEX','ICE',
+  'JAM','KEY','LOG','MAP','NET','OAK','ORE','PAD','RAM','SAP',
+  'TAP','URN','VAN','WAX','WEB','ZAP','ODD','ILL','AID','OWE'
 ];
 
 // DECODE sets — 20 distinct
@@ -2062,11 +2023,24 @@ cosmicgameshub.com/games/rift`;
 }
 
 function copyShare() {
-  navigator.clipboard.writeText(window._shareText || '').then(() => {
-    showToast('Copied to clipboard!', 'success');
-  }).catch(() => {
-    showToast('Copy failed — select manually', 'error');
-  });
+  const text = window._shareText || '';
+  const go = function () { showToast('Copied + card saved', 'success'); };
+  if (window.CGSfx && window.CGSfx.shareNow) {
+    window.CGSfx.shareNow({
+      title: 'RIFT',
+      subtitle: '#' + DAY_INDEX,
+      lines: [
+        'CHAIN  ' + (['—','⭐','⭐⭐','⭐⭐⭐'][STATE.stars[0]] || '—'),
+        'GROW   ' + (['—','⭐','⭐⭐','⭐⭐⭐'][STATE.stars[1]] || '—'),
+        'DECODE ' + (['—','⭐','⭐⭐','⭐⭐⭐'][STATE.stars[2]] || '—')
+      ],
+      url: 'cosmicgameshub.com/games/rift',
+      filename: 'rift-' + DAY_INDEX,
+      text: text
+    }).then(go).catch(go);
+  } else if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(go).catch(() => showToast('Copy failed — select manually', 'error'));
+  }
 }
 
 function replayRift() {

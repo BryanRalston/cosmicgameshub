@@ -184,9 +184,22 @@
 
   document.getElementById('pkCopy').addEventListener('click', function () {
     var t = document.getElementById('pkShare').textContent;
-    if (window.CGDaily) window.CGDaily.copyText(t);
-    else if (navigator.clipboard) navigator.clipboard.writeText(t);
-    this.textContent = 'Copied';
+    var btn = this;
+    var go = function () { btn.textContent = 'Copied + card'; };
+    if (window.CGSfx && window.CGSfx.shareNow) {
+      window.CGSfx.shareNow({
+        title: 'Pro Kit Daily',
+        subtitle: iso,
+        lines: [t.split('\n')[1] || '', t.split('\n')[0] || ''],
+        url: 'cosmicgameshub.com/games/daily-challenge',
+        filename: 'pro-kit-' + iso,
+        text: t
+      }).then(go).catch(go);
+    } else if (window.CGDaily) {
+      window.CGDaily.copyText(t); btn.textContent = 'Copied';
+    } else if (navigator.clipboard) {
+      navigator.clipboard.writeText(t); btn.textContent = 'Copied';
+    }
   });
   renderStreak();
 })();
