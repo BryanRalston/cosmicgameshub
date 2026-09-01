@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-D272MF8NQP"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-D272MF8NQP');
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Gaming Gear Deals — Live Amazon Prices | CosmicGamesHub</title>
+  <meta name="description" content="Live Amazon offer prices for CosmicGamesHub gear, pulled once a day via Amazon's Product Advertising API. If we cannot fetch a live price, we do not invent one." />
+  <meta property="og:title" content="Gaming Gear Deals — Live Amazon Prices | CosmicGamesHub" />
+  <meta property="og:description" content="Once-a-day Amazon PA-API prices. Empty until a live offer exists. We will not invent a sale." />
+  <meta property="og:image" content="https://cosmicgameshub.com/images/guides-bg.jpg" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://cosmicgameshub.com/deals" />
+  <link rel="canonical" href="https://cosmicgameshub.com/deals" />
+  <link rel="stylesheet" href="/styles.css" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {"@type":"ListItem","position":1,"name":"Home","item":"https://cosmicgameshub.com/"},
+      {"@type":"ListItem","position":2,"name":"Gear","item":"https://cosmicgameshub.com/guides"},
+      {"@type":"ListItem","position":3,"name":"Deals","item":"https://cosmicgameshub.com/deals"}
+    ]
+  }
+  </script>
+  <style>
+    .deals-hero { position: relative; border-radius: 14px; overflow: hidden; margin: 0 0 1.25rem; padding: 2rem 1.25rem 1.4rem; background: url('/images/guides-bg.jpg') center 40%/cover no-repeat; }
+    .deals-hero::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(9,9,15,.68) 0%, rgba(9,9,15,.92) 100%); }
+    .deals-hero > * { position: relative; z-index: 1; }
+    .deals-meta { font-size: .88rem; color: var(--text-mid); margin: 0 0 1rem; }
+    .deals-empty { padding: 1.25rem 1.3rem; border-radius: 12px; border: 1px solid var(--border, rgba(255,255,255,.08)); background: var(--bg-card, #12121c); }
+    .deals-empty p { margin: 0; color: var(--text-mid); line-height: 1.55; }
+    .deals-toolbar { display: flex; flex-direction: column; gap: .75rem; margin: 0 0 1.25rem; }
+    .deals-filters { display: flex; flex-wrap: wrap; gap: .45rem; }
+    .deals-filter {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-height: 44px; padding: .5rem .9rem; border-radius: 999px;
+      border: 1px solid var(--border, rgba(255,255,255,.12));
+      background: rgba(255,255,255,.03); color: var(--text-hi, #fff);
+      font: inherit; font-size: .86rem; font-weight: 600; cursor: pointer;
+    }
+    .deals-filter[aria-pressed="true"] {
+      border-color: var(--accent, #00d4ff);
+      background: rgba(0,212,255,.12);
+      color: #fff;
+    }
+    .deals-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+    .deal-card { display: flex; flex-direction: column; background: var(--bg-card, #12121c); border: 1px solid var(--border, rgba(255,255,255,.08)); border-radius: 14px; overflow: hidden; }
+    .deal-card__img { aspect-ratio: 16/9; overflow: hidden; background: #0c0c12; }
+    .deal-card__img img { width: 100%; height: 100%; object-fit: cover; }
+    .deal-card__ph { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--text-lo); font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; }
+    .deal-card__body { padding: 1.1rem 1.15rem 1.2rem; display: flex; flex-direction: column; flex: 1; }
+    .deal-card__cat { font-size: .7rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--accent, #00d4ff); margin: 0 0 .35rem; }
+    .deal-card__name { margin: 0 0 .55rem; font-size: 1.05rem; line-height: 1.25; }
+    .deal-card__price { font-size: 1.45rem; font-weight: 800; color: var(--accent, #00d4ff); margin: 0 0 .25rem; line-height: 1; }
+    .deal-card__typical { margin: 0 0 .45rem; font-size: .82rem; color: var(--text-lo, #888); }
+    .deal-card__drop { display: inline-flex; align-items: center; min-height: 28px; margin: 0 0 .7rem; padding: .15rem .55rem; border-radius: 6px; background: rgba(0,230,118,.1); border: 1px solid rgba(0,230,118,.28); color: var(--green, #00e676); font-size: .8rem; font-weight: 700; }
+    .deal-card__cta { margin-top: auto; display: flex; flex-direction: column; align-items: stretch; gap: .4rem; }
+    .deal-card .btn--amazon { min-height: 44px; width: 100%; }
+    .deal-card .aff-note { margin: 0; font-size: .75rem; line-height: 1.4; color: var(--text-lo, #888); }
+    .deal-card__guide { min-height: 44px; display: inline-flex; align-items: center; font-size: .86rem; font-weight: 600; }
+    @media (max-width: 640px) {
+      .deals-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav" role="navigation" aria-label="Main navigation">
+  <div class="container">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo" aria-label="CosmicGamesHub home">
+        <span class="nav__logo-icon" aria-hidden="true">🎮</span>
+        <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
+      </a>
+      <ul class="nav__links" id="navLinks">
+        <li><a href="/games">Play</a></li>
+        <li><a href="/guides">Gear</a></li>
+        <li><a href="/deals">Deals</a></li>
+        <li><a href="/pros">Pros</a></li>
+        <li><a href="/games/daily">Daily</a></li>
+        <li><a href="/versus">Compare</a></li>
+      </ul>
+      <button class="nav__hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<main>
+  <div class="container">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+      <a href="/">Home</a>
+      <span class="sep">›</span>
+      <a href="/guides">Gear</a>
+      <span class="sep">›</span>
+      <span class="current">Deals</span>
+    </nav>
+
+    <section class="deals-hero">
+      <span class="section__eyebrow">Amazon · once a day</span>
+      <h1 style="margin-top:.5rem;">Deals</h1>
+      <p style="max-width:640px;color:var(--text-mid);margin:0;">
+        Live Amazon offer prices from the Product Advertising API, pulled once a day. Typical street on this page is editorial context only. If Amazon does not return a live offer, the card is not shown. <a href="/how-we-choose">How we choose</a>.
+      </p>
+    </section>
+
+    <p class="deals-meta" id="dealsUpdated" hidden></p>
+
+    <div class="deals-toolbar" id="dealsToolbar" hidden>
+      <div class="deals-filters" id="dealsFilters" role="group" aria-label="Filter deals"></div>
+    </div>
+
+    <div class="deals-empty" id="dealsStatus">
+      <p>Loading live Amazon prices…</p>
+    </div>
+
+    <div class="deals-grid product-grid glow-grid" id="dealsGrid" hidden></div>
+  </div>
+</main>
+
+<footer class="footer" role="contentinfo">
+  <div class="container">
+    <div class="footer__grid">
+      <div class="footer__brand">
+        <a href="/" class="nav__logo" style="justify-content:flex-start;">
+          <span class="nav__logo-icon" aria-hidden="true">🎮</span>
+          <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
+        </a>
+        <p>Independent gear guides. Live Amazon prices only on this page, once a day — not a lab.</p>
+      </div>
+      <div class="footer__col">
+        <h4>Trust</h4>
+        <ul>
+          <li><a href="/how-we-choose">How we choose</a></li>
+          <li><a href="/about">About</a></li>
+          <li><a href="/privacy">Privacy</a></li>
+          <li><a href="/tools/find-my-gear">Find My Gear</a></li>
+        </ul>
+      </div>
+      <div class="footer__col">
+        <h4>Guides</h4>
+        <ul>
+          <li><a href="/guides/best-gaming-mice-2026">Best Gaming Mice</a></li>
+          <li><a href="/guides/best-gaming-headsets-2026">Best Gaming Headsets</a></li>
+          <li><a href="/guides/best-gaming-keyboards-2026">Best Gaming Keyboards</a></li>
+          <li><a href="/guides/best-gaming-monitors-2026">Best Gaming Monitors</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <p class="footer__disclosure"><strong>Affiliate Disclosure:</strong> As an Amazon Associate I earn from qualifying purchases. Tag cosmicgameshu-20. Live prices here come from Amazon PA-API. Typical street elsewhere is not live.</p>
+      <p class="footer__legal">© 2026 CosmicGamesHub. All rights reserved. · <a href="/about" style="color:var(--text-mid);">About</a> · <a href="/privacy" style="color:var(--text-mid);">Privacy</a></p>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var EMPTY = "No live Amazon prices yet. The daily feed uses Amazon's Product Advertising API. We will not invent a sale.";
+  var AFF = "We may earn a commission if you buy through our links. This doesn't affect the pick.";
+  var statusEl = document.getElementById("dealsStatus");
+  var grid = document.getElementById("dealsGrid");
+  var toolbar = document.getElementById("dealsToolbar");
+  var filtersEl = document.getElementById("dealsFilters");
+  var updatedEl = document.getElementById("dealsUpdated");
+  var filter = "all";
+  var items = [];
+  var FILTERS = [
+    ["all", "All"],
+    ["under50", "Under $50"],
+    ["under100", "Under $100"],
+    ["under200", "Under $200"],
+    ["mice", "Mice"],
+    ["headsets", "Headsets"],
+    ["keyboards", "Keyboards"],
+    ["monitors", "Monitors"],
+    ["chairs", "Chairs"]
+  ];
+
+  function buildFilters() {
+    if (filtersEl.dataset.ready) return;
+    filtersEl.innerHTML = FILTERS.map(function (row, i) {
+      return '<button type="button" class="deals-filter" data-filter="' + row[0] + '" aria-pressed="' + (i === 0 ? "true" : "false") + '">' + row[1] + "</button>";
+    }).join("");
+    filtersEl.dataset.ready = "1";
+  }
+
+  function money(n) {
+    if (typeof n !== "number" || !isFinite(n)) return "";
+    return n.toLocaleString("en-US", { style: "currency", currency: "USD" });
+  }
+
+  function dropAmount(item) {
+    if (!item.belowTypical) return 0;
+    if (typeof item.typicalStreet !== "number" || typeof item.price !== "number") return 0;
+    return Math.round((item.typicalStreet - item.price) * 100) / 100;
+  }
+
+  function sortItems(list) {
+    return list.slice().sort(function (a, b) {
+      var aDrop = a.belowTypical ? 1 : 0;
+      var bDrop = b.belowTypical ? 1 : 0;
+      if (bDrop !== aDrop) return bDrop - aDrop;
+      var aPct = typeof a.savingPct === "number" ? a.savingPct : -1;
+      var bPct = typeof b.savingPct === "number" ? b.savingPct : -1;
+      if (bPct !== aPct) return bPct - aPct;
+      var aOff = dropAmount(a);
+      var bOff = dropAmount(b);
+      if (bOff !== aOff) return bOff - aOff;
+      return (a.price || 0) - (b.price || 0);
+    });
+  }
+
+  function matches(item) {
+    var price = item.price;
+    if (filter === "all") return true;
+    if (filter === "under50") return typeof price === "number" && price < 50;
+    if (filter === "under100") return typeof price === "number" && price < 100;
+    if (filter === "under200") return typeof price === "number" && price < 200;
+    return item.category === filter;
+  }
+
+  function escapeHtml(s) {
+    return String(s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function showEmpty() {
+    items = [];
+    grid.hidden = true;
+    grid.innerHTML = "";
+    toolbar.hidden = true;
+    updatedEl.hidden = true;
+    updatedEl.textContent = "";
+    statusEl.hidden = false;
+    statusEl.innerHTML = "<p>" + EMPTY + "</p>";
+  }
+
+  function render() {
+    var visible = sortItems(items.filter(matches));
+    if (!visible.length) {
+      grid.hidden = true;
+      grid.innerHTML = "";
+      statusEl.hidden = false;
+      statusEl.innerHTML = "<p>No live Amazon offers in this filter. We will not invent a sale.</p>";
+      return;
+    }
+    statusEl.hidden = true;
+    grid.hidden = false;
+    grid.innerHTML = visible.map(function (item) {
+      var price = money(item.price);
+      if (!price) return "";
+      var img = item.image
+        ? '<div class="deal-card__img"><img src="' + escapeHtml(item.image) + '" alt="' + escapeHtml(item.name) + '" width="640" height="360" loading="lazy"></div>'
+        : '<div class="deal-card__img"><div class="deal-card__ph">' + escapeHtml(item.category || "gear") + "</div></div>";
+      var typical = typeof item.typicalStreet === "number"
+        ? '<p class="deal-card__typical">Typical street ~' + money(item.typicalStreet) + " · editorial, not live</p>"
+        : "";
+      var drop = "";
+      if (item.belowTypical && typeof item.typicalStreet === "number") {
+        var off = dropAmount(item);
+        if (off >= 5) {
+          drop = '<div class="deal-card__drop">↓ ' + money(off) + " below typical</div>";
+        }
+      }
+      var guide = item.guide
+        ? '<a class="deal-card__guide" href="' + escapeHtml(item.guide) + '">Our guide →</a>'
+        : "";
+      return (
+        '<article class="deal-card product-card">' +
+          img +
+          '<div class="deal-card__body">' +
+            '<div class="deal-card__cat">' + escapeHtml(item.category || "") + "</div>" +
+            "<h2 class=\"deal-card__name\">" + escapeHtml(item.name) + "</h2>" +
+            '<div class="deal-card__price">' + price + "</div>" +
+            typical +
+            drop +
+            '<div class="deal-card__cta">' +
+              '<a class="btn btn--amazon" href="' + escapeHtml(item.url) + '" target="_blank" rel="noopener sponsored nofollow">Check price on Amazon</a>' +
+              '<p class="aff-note">' + AFF + "</p>" +
+              guide +
+            "</div>" +
+          "</div>" +
+        "</article>"
+      );
+    }).join("");
+  }
+
+  toolbar.addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-filter]");
+    if (!btn) return;
+    filter = btn.getAttribute("data-filter") || "all";
+    toolbar.querySelectorAll("[data-filter]").forEach(function (el) {
+      el.setAttribute("aria-pressed", el === btn ? "true" : "false");
+    });
+    render();
+  });
+
+  fetch("/data/deals.json")
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (data) {
+      var list = data && Array.isArray(data.items) ? data.items : [];
+      var live = list.filter(function (item) {
+        return item && typeof item.price === "number" && isFinite(item.price) && item.url;
+      });
+      if (!live.length) {
+        showEmpty();
+        return;
+      }
+      items = live;
+      statusEl.hidden = true;
+      buildFilters();
+      toolbar.hidden = false;
+      if (data.updatedAt) {
+        var when = new Date(data.updatedAt);
+        if (!isNaN(when.getTime())) {
+          updatedEl.hidden = false;
+          updatedEl.textContent = "Last updated " + when.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) + " · Amazon PA-API, once a day";
+        }
+      }
+      render();
+    })
+    .catch(function () {
+      showEmpty();
+    });
+})();
+</script>
+<script src="/global.js" defer></script>
+</body>
+</html>

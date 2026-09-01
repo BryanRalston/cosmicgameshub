@@ -15,6 +15,7 @@
     navLinks.innerHTML =
       '<li><a href="/games">Play</a></li>' +
       '<li><a href="/guides">Gear</a></li>' +
+      '<li><a href="/deals">Deals</a></li>' +
       '<li><a href="/pros">Pros</a></li>' +
       '<li><a href="/games/daily">Daily</a></li>' +
       '<li><a href="/versus">Compare</a></li>' +

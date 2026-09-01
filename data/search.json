@@ -1147,6 +1147,18 @@
     ]
   },
   {
+    "title": "Deals",
+    "url": "/deals",
+    "type": "page",
+    "tags": [
+      "deals",
+      "amazon",
+      "prices",
+      "gear",
+      "sale"
+    ]
+  },
+  {
     "title": "How We Choose",
     "url": "/how-we-choose",
     "type": "page",

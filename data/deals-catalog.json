@@ -1,0 +1,228 @@
+{
+  "_doc": "Editorial catalog for the daily PA-API deals feed. typicalStreet is a Cosmic baseline (guides, Find My Gear, Price Guesser), not a live Amazon price. Omit typicalStreet when the site has no honest number. Search-only Amazon URLs are excluded — no ASIN.",
+  "tag": "cosmicgameshu-20",
+  "items": [
+    {
+      "asin": "B0DG2XJPTC",
+      "name": "Logitech G Pro X Superlight 2 DEX",
+      "category": "mice",
+      "typicalStreet": 159,
+      "image": "/images/review-superlight-2-dex.jpg",
+      "guide": "/reviews/logitech-g-pro-x-superlight-2-dex-review"
+    },
+    {
+      "asin": "B0C6J9WNQX",
+      "name": "Logitech G Pro X Superlight 2",
+      "category": "mice",
+      "typicalStreet": 140,
+      "image": "/images/product-mouse-superlight2.jpg",
+      "guide": "/versus/logitech-g-pro-x-superlight-2-vs-razer-viper-v3-pro"
+    },
+    {
+      "asin": "B0CW1HW1QH",
+      "name": "Razer Viper V3 Pro",
+      "category": "mice",
+      "typicalStreet": 119,
+      "image": "/images/product-mouse-viper-v3-pro.jpg",
+      "guide": "/reviews/razer-viper-v3-pro-review"
+    },
+    {
+      "asin": "B0GMLBSSTD",
+      "name": "Razer Viper V4 Pro",
+      "category": "mice",
+      "image": null,
+      "guide": "/guides/best-gaming-mice-2026"
+    },
+    {
+      "asin": "B07W5KMKJV",
+      "name": "Logitech G305 LIGHTSPEED",
+      "category": "mice",
+      "typicalStreet": 39,
+      "image": "/images/product-mouse-g305.jpg",
+      "guide": "/guides/best-gaming-mouse-for-valorant-2026"
+    },
+    {
+      "asin": "B0BBSVDBVZ",
+      "name": "Razer DeathAdder V3 Pro",
+      "category": "mice",
+      "typicalStreet": 150,
+      "image": "/images/versus-mouse-superlight2-dav3pro.jpg",
+      "guide": "/versus/logitech-g-pro-x-superlight-2-vs-razer-deathadder-v3-pro"
+    },
+    {
+      "asin": "B0B7WQCTBS",
+      "name": "Razer DeathAdder V3",
+      "category": "mice",
+      "typicalStreet": 69,
+      "image": "/images/product-mouse-deathadder.jpg",
+      "guide": "/guides/best-gaming-mice-2026"
+    },
+    {
+      "asin": "B0BCHWGM62",
+      "name": "Razer DeathAdder V3",
+      "category": "mice",
+      "typicalStreet": 69,
+      "image": "/images/product-mouse-deathadder.jpg",
+      "guide": "/guides/best-gaming-mice-2026"
+    },
+    {
+      "asin": "B09GXNS1HJ",
+      "name": "Zowie EC2-C",
+      "category": "mice",
+      "typicalStreet": 89,
+      "image": null,
+      "guide": "/guides/best-gaming-mice-for-fps-2026"
+    },
+    {
+      "asin": "B0G12HGHGM",
+      "name": "Logitech G PRO X2 SUPERSTRIKE",
+      "category": "mice",
+      "typicalStreet": 180,
+      "image": "/images/versus-superlight2-superstrike.jpg",
+      "guide": "/versus/logitech-g-pro-x-superlight-2-vs-logitech-g-pro-x2-superstrike"
+    },
+    {
+      "asin": "B0GVSDM5CL",
+      "name": "Logitech G305 X SUPERLIGHT",
+      "category": "mice",
+      "typicalStreet": 80,
+      "image": "/images/product-mouse-g305x.jpg",
+      "guide": "/guides/best-gaming-mice-2026"
+    },
+    {
+      "asin": "B07W4QH2NT",
+      "name": "Logitech G203 LIGHTSYNC",
+      "category": "mice",
+      "typicalStreet": 29,
+      "image": "/images/product-mouse-g203.jpg",
+      "guide": "/guides/best-gaming-mice-2026"
+    },
+    {
+      "asin": "B0BQRTV5DR",
+      "name": "Wooting 60HE",
+      "category": "keyboards",
+      "image": "/images/versus-wooting-80he-60he.jpg",
+      "guide": "/versus/wooting-60he-vs-razer-huntsman-v3-pro-tkl"
+    },
+    {
+      "asin": "B0CN7JQ1KN",
+      "name": "SteelSeries Apex Pro TKL",
+      "category": "keyboards",
+      "typicalStreet": 179,
+      "image": "/images/product-keyboard-steelseries-apex.jpg",
+      "guide": "/versus/corsair-k100-rgb-vs-steelseries-apex-pro-tkl"
+    },
+    {
+      "asin": "B0CHKYQ51X",
+      "name": "Razer Huntsman V3 Pro TKL",
+      "category": "keyboards",
+      "typicalStreet": 219,
+      "image": "/images/versus-keyboard-wooting-huntsman.jpg",
+      "guide": "/versus/wooting-60he-vs-razer-huntsman-v3-pro-tkl"
+    },
+    {
+      "asin": "B016MAK38U",
+      "name": "Redragon K552 KUMARA",
+      "category": "keyboards",
+      "typicalStreet": 35,
+      "image": "/images/product-keyboard-redragon-k552.jpg",
+      "guide": "/guides/best-gaming-keyboards-2026"
+    },
+    {
+      "asin": "B07YMHGP86",
+      "name": "HyperX Alloy Origins Core",
+      "category": "keyboards",
+      "typicalStreet": 69,
+      "image": "/images/product-keyboard-hyperx-alloy.jpg",
+      "guide": "/versus/hyperx-alloy-origins-core-vs-steelseries-apex-pro"
+    },
+    {
+      "asin": "B0F3QDLZKG",
+      "name": "Razer BlackShark V3 Pro",
+      "category": "headsets",
+      "typicalStreet": 250,
+      "image": "/images/product-headset-blackshark-v3.jpg",
+      "guide": "/versus/razer-blackshark-v2-pro-vs-razer-blackshark-v3-pro"
+    },
+    {
+      "asin": "B0C2V9NFK8",
+      "name": "Razer BlackShark V2 Pro",
+      "category": "headsets",
+      "typicalStreet": 170,
+      "image": "/images/product-headset-blackshark.jpg",
+      "guide": "/versus/razer-blackshark-v2-pro-vs-razer-blackshark-v3-pro"
+    },
+    {
+      "asin": "B00SAYCXWG",
+      "name": "HyperX Cloud II",
+      "category": "headsets",
+      "typicalStreet": 80,
+      "image": "/images/versus-headset-cloud2-nova7.jpg",
+      "guide": "/guides/best-gaming-headset-for-cs2-2026"
+    },
+    {
+      "asin": "B0BHBNHQJM",
+      "name": "HyperX Cloud Alpha Wireless",
+      "category": "headsets",
+      "typicalStreet": 149,
+      "image": "/images/versus-corsair-hs65-wireless-vs-hyperx-cloud-alpha-wireless.jpg",
+      "guide": "/guides/best-gaming-headset-for-cs2-2026"
+    },
+    {
+      "asin": "B0B1JH9Y2H",
+      "name": "SteelSeries Arctis Nova Pro Wireless",
+      "category": "headsets",
+      "typicalStreet": 350,
+      "image": "/images/product-headset-arctis-nova-pro.jpg",
+      "guide": "/guides/best-gaming-headset-for-cs2-2026"
+    },
+    {
+      "asin": "B0B7M8QCFJ",
+      "name": "HyperX Cloud Stinger (Gen 2)",
+      "category": "headsets",
+      "typicalStreet": 49,
+      "image": "/images/product-headset-cloud-stinger.jpg",
+      "guide": "/guides/best-gaming-headsets-2026"
+    },
+    {
+      "asin": "B0B7X5KSSV",
+      "name": "SteelSeries Arctis Nova 3",
+      "category": "headsets",
+      "typicalStreet": 99,
+      "image": "/images/product-headset-arctis-nova3.jpg",
+      "guide": "/versus/hyperx-cloud-stinger-vs-steelseries-arctis-nova-3"
+    },
+    {
+      "asin": "B0B3F8V4JG",
+      "name": "Logitech G Pro X 2 LIGHTSPEED",
+      "category": "headsets",
+      "typicalStreet": 160,
+      "image": "/images/versus-headset-nova-pro-gpx2.jpg",
+      "guide": "/versus/steelseries-arctis-nova-pro-wireless-vs-logitech-g-pro-x-2"
+    },
+    {
+      "asin": "B0CV24GQ9W",
+      "name": "ASUS ROG Strix XG27ACS",
+      "category": "monitors",
+      "typicalStreet": 200,
+      "image": "/images/product-monitor-xg27acs.jpg",
+      "guide": "/guides/best-gaming-monitors-2026"
+    },
+    {
+      "asin": "B0G53VCGQB",
+      "name": "MSI MAG 272QP QD-OLED X24",
+      "category": "monitors",
+      "typicalStreet": 350,
+      "image": "/images/product-monitor-oled-1440.jpg",
+      "guide": "/guides/best-oled-gaming-monitors-2026"
+    },
+    {
+      "asin": "B08DLCQ3N2",
+      "name": "AOC C24G1A",
+      "category": "monitors",
+      "typicalStreet": 149,
+      "image": "/images/product-monitor-aoc-c24.jpg",
+      "guide": "/guides/best-gaming-monitors-2026"
+    }
+  ]
+}

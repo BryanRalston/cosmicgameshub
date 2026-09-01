@@ -1,0 +1,53 @@
+name: Deals feed
+
+on:
+  schedule:
+    - cron: "0 14 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch Amazon deals
+        env:
+          PAAPI_ACCESS_KEY: ${{ secrets.PAAPI_ACCESS_KEY }}
+          PAAPI_SECRET_KEY: ${{ secrets.PAAPI_SECRET_KEY }}
+          PAAPI_PARTNER_TAG: ${{ secrets.PAAPI_PARTNER_TAG }}
+        run: |
+          if [ -z "$PAAPI_ACCESS_KEY" ] || [ -z "$PAAPI_SECRET_KEY" ]; then
+            echo "PA-API secrets not set. Skipping live fetch. We do not invent prices."
+          fi
+          python scripts/fetch-deals.py
+
+      - name: Commit live prices
+        run: |
+          STATUS=$(python -c "import json; print(json.load(open('data/deals.json', encoding='utf-8')).get('status',''))")
+          echo "Feed status: $STATUS"
+          if [ "$STATUS" = "no-credentials" ]; then
+            echo "No PA-API credentials. Not committing. We do not invent prices."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/deals.json
+          if git diff --cached --quiet; then
+            echo "No deals.json change."
+            exit 0
+          fi
+          DATE=$(date -u +%Y-%m-%d)
+          git commit -m "Deals: Amazon prices ${DATE}."
+          git push
