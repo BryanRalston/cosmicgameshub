@@ -1177,5 +1177,41 @@
       "daily",
       "puzzles"
     ]
+  },
+  {
+    "title": "Valorant Gear Hub",
+    "url": "/guides/valorant-gear",
+    "type": "gear",
+    "tags": ["valorant", "fps", "mouse", "pros"]
+  },
+  {
+    "title": "CS2 Gear Hub",
+    "url": "/guides/cs2-gear",
+    "type": "gear",
+    "tags": ["cs2", "counter-strike", "fps"]
+  },
+  {
+    "title": "Fortnite Gear Hub",
+    "url": "/guides/fortnite-gear",
+    "type": "gear",
+    "tags": ["fortnite", "battle royale"]
+  },
+  {
+    "title": "Apex Legends Gear Hub",
+    "url": "/guides/apex-gear",
+    "type": "gear",
+    "tags": ["apex", "legends", "fps"]
+  },
+  {
+    "title": "Compare Pro Setups",
+    "url": "/pros/compare",
+    "type": "pro",
+    "tags": ["compare", "tenz", "aspas", "edpi"]
+  },
+  {
+    "title": "Find Pros by Gear",
+    "url": "/pros/by-gear",
+    "type": "pro",
+    "tags": ["superlight", "viper", "wooting", "search"]
   }
 ]
