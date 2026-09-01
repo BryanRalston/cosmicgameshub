@@ -10,7 +10,7 @@
     gtag('config', 'G-D272MF8NQP');
   </script>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Color Memory — CosmicGamesHub</title>
   <meta name="description" content="Simon Says color memory game. Watch the sequence, repeat it back. How long can your memory streak go?" />
   <meta property="og:title" content="Color Memory — CosmicGamesHub" />
@@ -19,6 +19,7 @@
   <link rel="canonical" href="https://cosmicgameshub.com/games/color-memory" />
   <link rel="stylesheet" href="../styles.css" />
   <style>
+    html { overflow-x: hidden; }
     .cm-wrap {
       max-width: 480px;
       margin: 0 auto;
@@ -73,7 +74,7 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 14px;
-      width: 280px;
+      width: min(320px, calc(100vw - 32px));
       margin: 0 auto 1.5rem;
     }
     .cm-btn {
@@ -146,6 +147,7 @@
       font-family: inherit;
       transition: opacity 0.15s;
       margin-bottom: 0.75rem;
+      min-height: 44px;
     }
     .cm-start-btn:hover { opacity: 0.9; }
     .cm-result {
@@ -191,6 +193,15 @@
       cursor: pointer;
       font-family: inherit;
       transition: opacity 0.15s;
+      min-height: 44px;
+    }
+    @media (max-width: 480px) {
+      main { padding: 0.5rem 0 2rem !important; }
+      .cm-back { display: none; }
+      .cm-title { font-size: 1.2rem; }
+      .cm-subtitle { margin-bottom: 0.8rem; font-size: 0.82rem; }
+      .cm-hud { margin-bottom: 0.8rem; }
+      .cm-wrap { padding: 0 0.6rem; }
     }
     .cm-btn-action--primary { background: var(--accent); color: #000; border: none; }
     .cm-btn-action--secondary { background: transparent; border: 1px solid rgba(255,255,255,0.15); color: var(--text-secondary); }

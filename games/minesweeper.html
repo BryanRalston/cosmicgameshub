@@ -16,7 +16,8 @@
   <link rel="canonical" href="https://cosmicgameshub.com/games/minesweeper"/>
   <link rel="stylesheet" href="../styles.css"/>
   <style>
-    .ms-wrap { display:flex; flex-direction:column; align-items:center; padding:1.5rem 0 3rem; }
+    html { overflow-x: hidden; }
+    .ms-wrap { display:flex; flex-direction:column; align-items:center; padding:1.5rem 0 3rem; max-width:100%; }
     .ms-header { display:flex; align-items:center; justify-content:space-between; width:100%; max-width:600px; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); padding:0.75rem 1.25rem; margin-bottom:1rem; gap:1rem; flex-wrap:wrap; }
     .ms-stat { display:flex; flex-direction:column; align-items:center; gap:0.1rem; }
     .ms-stat__val { font-size:1.5rem; font-weight:800; color:var(--accent); font-variant-numeric:tabular-nums; line-height:1; }
@@ -24,8 +25,8 @@
     .ms-face { font-size:1.8rem; cursor:pointer; transition:transform 0.15s; background:none; border:none; line-height:1; }
     .ms-face:hover { transform:scale(1.15); }
 
-    #msGrid { display:grid; border:2px solid rgba(0,212,255,0.4); border-radius:8px; overflow:hidden; max-width:min(600px,95vw); }
-    .ms-cell { width:100%; aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:clamp(0.65rem,2.5vw,0.95rem); font-weight:800; cursor:pointer; border:1px solid rgba(0,212,255,0.18); background:linear-gradient(180deg, rgba(0,212,255,0.07), var(--bg-card)); transition:background 0.12s, transform .12s; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; position:relative; }
+    #msGrid { display:grid; border:2px solid rgba(0,212,255,0.4); border-radius:8px; overflow:hidden; max-width:min(600px,100%); touch-action: manipulation; }
+    .ms-cell { width:100%; aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:clamp(0.65rem,2.5vw,0.95rem); font-weight:800; cursor:pointer; border:1px solid rgba(0,212,255,0.18); background:linear-gradient(180deg, rgba(0,212,255,0.07), var(--bg-card)); transition:background 0.12s, transform .12s; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; position:relative; touch-action: manipulation; }
     .ms-cell:hover:not(.revealed):not(.flagged) { background:var(--bg-raised); }
     .ms-cell.revealed { background:var(--bg-void); cursor:default; }
     .ms-cell.flagged  { background:rgba(255,179,0,0.08); }
@@ -35,12 +36,23 @@
     .n5{color:#ff6b81;} .n6{color:#00cec9;} .n7{color:#fd79a8;} .n8{color:#b2bec3;}
 
     .diff-row { display:flex; gap:0.5rem; margin-bottom:1rem; flex-wrap:wrap; justify-content:center; }
-    .ms-result { display:none; background:var(--bg-card); border:1px solid var(--border-mid); border-radius:var(--radius); padding:1.5rem 2rem; text-align:center; margin-top:1rem; max-width:400px; }
+    .difficulty-btn { min-height:44px; padding:0.55rem 0.95rem; font-size:0.85rem; font-weight:700; background:var(--bg-card); border:1px solid var(--border); color:var(--text-mid); border-radius:var(--radius-sm); cursor:pointer; font-family:inherit; }
+    .difficulty-btn.active { border-color:var(--accent); color:var(--accent); background:var(--accent-dim); }
+    .ms-face { min-width:44px; min-height:44px; }
+    .ms-result { display:none; background:var(--bg-card); border:1px solid var(--border-mid); border-radius:var(--radius); padding:1.5rem 2rem; text-align:center; margin-top:1rem; max-width:min(400px, calc(100vw - 24px)); }
     .ms-result.show { display:block; }
     .ms-best { font-size:0.8rem; color:var(--text-lo); margin-bottom:0.75rem; }
     .ms-best span { color:var(--accent); font-weight:700; }
-    .btn-share { background:transparent; border:1px solid rgba(255,255,255,0.15); color:var(--text-mid); border-radius:var(--radius-sm); padding:0.45rem 1rem; font-size:0.82rem; cursor:pointer; font-family:inherit; transition:all 0.15s; margin-left:0.5rem; }
+    .btn-share { background:transparent; border:1px solid rgba(255,255,255,0.15); color:var(--text-mid); border-radius:var(--radius-sm); padding:0.55rem 1rem; font-size:0.82rem; cursor:pointer; font-family:inherit; transition:all 0.15s; margin-left:0.5rem; min-height:44px; }
     .btn-share:hover { border-color:var(--accent); color:var(--accent); }
+    @media (max-width: 480px) {
+      .container { padding-left: 6px; padding-right: 6px; }
+      .ms-wrap { padding: 0.5rem 0 2rem; }
+      .ms-header { padding: 0.5rem 0.75rem; max-width: 100%; }
+      .ms-intro { padding: 0.5rem 0 0.35rem !important; }
+      .ms-intro h1 { font-size: 1.2rem; }
+      .ms-intro p { font-size: 0.78rem !important; }
+    }
   </style>
   <meta property="og:image" content="https://cosmicgameshub.com/images/game-minesweeper-v2.jpg">
   <meta property="og:image:width" content="600">
@@ -104,7 +116,7 @@
 
 <main>
   <div class="container">
-    <div style="padding:1.5rem 0 1rem;text-align:center;">
+    <div class="ms-intro" style="padding:1.5rem 0 1rem;text-align:center;">
       <span class="section__eyebrow">Puzzle Game</span>
       <h1 style="margin-top:0.4rem;margin-bottom:0.25rem;">☄️ Cosmic Minesweeper</h1>
       <p style="color:var(--text-mid);font-size:0.9rem;">Tap to reveal · long-press (or right-click) to flag. Clear the field without hitting a meteor.</p>
@@ -239,7 +251,9 @@ function placeMines(safeR, safeC) {
 
 function renderGrid() {
   const el=document.getElementById('msGrid');
-  const cellSize = Math.min(Math.floor((Math.min(window.innerWidth-32, 600))/cfg.cols), 38);
+  const avail = Math.min(window.innerWidth - (window.innerWidth <= 480 ? 16 : 48), 600);
+  const maxCell = cfg.cols <= 9 ? 44 : (cfg.cols <= 16 ? 32 : 20);
+  const cellSize = Math.max(10, Math.min(maxCell, Math.floor(avail / cfg.cols)));
   el.style.gridTemplateColumns=`repeat(${cfg.cols},${cellSize}px)`;
   el.innerHTML='';
   for(let r=0;r<cfg.rows;r++) for(let c=0;c<cfg.cols;c++){
@@ -259,13 +273,15 @@ function renderGrid() {
     cell.addEventListener('click',()=>handleClick(r,c));
     cell.addEventListener('contextmenu',e=>{e.preventDefault();handleRightClick(r,c);});
     cell.addEventListener('touchstart',handleTouchStart,{passive:true});
-    cell.addEventListener('touchend',e=>handleTouchEnd(e,r,c));
+    cell.addEventListener('touchmove',handleTouchMove,{passive:true});
+    cell.addEventListener('touchend',handleTouchEnd,{passive:false});
     cell._r=r; cell._c=c;
     el.appendChild(cell);
   }
 }
 
 function handleClick(r,c){
+  if(suppressClick){ suppressClick=false; return; }
   if(gameOver||flagged[r][c]||revealed[r][c]) return;
   if(firstClick){ firstClick=false; placeMines(r,c); timerInt=setInterval(()=>{timerSec++;document.getElementById('timerDisp').textContent=timerSec;},1000); }
   if(grid[r][c]===-1){ explode(r,c); return; }
@@ -287,9 +303,25 @@ function handleRightClick(r,c){
   renderGrid();
 }
 
-let touchTimer=null;
-function handleTouchStart(){ touchTimer=setTimeout(()=>{ touchTimer=null; },500); }
-function handleTouchEnd(e,r,c){ if(touchTimer===null){ e.preventDefault(); handleRightClick(r,c); } else { clearTimeout(touchTimer); touchTimer=null; } }
+let touchTimer=null, longPressFired=false, suppressClick=false;
+function handleTouchStart(){
+  longPressFired=false;
+  const r=this._r, c=this._c;
+  touchTimer=setTimeout(()=>{
+    touchTimer=null;
+    longPressFired=true;
+    suppressClick=true;
+    handleRightClick(r,c);
+    try { if (navigator.vibrate) navigator.vibrate(14); } catch(_) {}
+  }, 420);
+}
+function handleTouchMove(){
+  if(touchTimer){ clearTimeout(touchTimer); touchTimer=null; }
+}
+function handleTouchEnd(e){
+  if(touchTimer){ clearTimeout(touchTimer); touchTimer=null; }
+  if(longPressFired) e.preventDefault();
+}
 
 function explode(r,c){
   gameOver=true; clearInterval(timerInt);
@@ -365,7 +397,7 @@ document.querySelectorAll('.difficulty-btn').forEach(btn=>{
     h.setAttribute('aria-expanded', String(open));
   });
 })();
-window.addEventListener('resize',()=>{ if(!gameOver&&!firstClick) renderGrid(); });
+window.addEventListener('resize',()=>{ renderGrid(); });
 
 initGame();
 document.addEventListener('keydown', function(e){

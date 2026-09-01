@@ -10,14 +10,14 @@
     gtag('config', 'G-D272MF8NQP');
   </script>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
   <link rel="canonical" href="https://cosmicgameshub.com/games/asteroid-dodge"/>
   <title>Asteroid Dodge — CosmicGamesHub</title>
   <meta name="description" content="Classic Asteroids in the browser. Turn, thrust, shoot. Rocks wrap and split. Three lives." />
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; overflow: hidden; background: #050508; }
-    canvas { display: block; cursor: crosshair; touch-action: none; }
+    html, body { width: 100%; height: 100%; overflow: hidden; overflow-x: hidden; background: #050508; }
+    canvas { display: block; width: 100%; height: 100%; cursor: crosshair; touch-action: none; }
 
     #lab-nav {
       position: fixed; top: 0; left: 0; right: 0; z-index: 100;
@@ -41,11 +41,16 @@
     #lab-nav .back-btn:hover { color: #fff; background: rgba(0,0,0,0.65); }
     #lab-nav .site-link { color: rgba(255,255,255,0.3); letter-spacing: 0.1em; }
     #lab-nav .site-link:hover { color: rgba(255,255,255,0.6); }
-    #lab-nav .nav-right { pointer-events: auto; display:flex; align-items:center; gap:10px; }
+    #lab-nav .nav-right { pointer-events: auto; display:flex; align-items:center; gap:8px; min-width: 0; }
+    @media (max-width: 480px) {
+      #lab-nav { padding: 10px 10px; gap: 8px; }
+      #lab-nav .site-link { display: none; }
+      #lab-nav .back-btn { min-height: 44px; display: inline-flex; align-items: center; }
+    }
 
     #btn-fire, #btn-thrust {
-      position: fixed; bottom: 22px; z-index: 90;
-      width: 72px; height: 72px; border-radius: 50%;
+      position: fixed; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 90;
+      width: 72px; height: 72px; min-width: 72px; min-height: 72px; border-radius: 50%;
       border: 2px solid rgba(34,211,238,0.65);
       background: rgba(34,211,238,0.18); color: #A5F3FC;
       font: 700 12px system-ui, sans-serif; letter-spacing: 0.08em;
@@ -80,13 +85,18 @@
       font-family: 'Inter', system-ui, sans-serif;
       color: #c8ccd0;
       pointer-events: auto;
+      overflow-x: hidden;
+      overflow-y: auto;
+      padding: 72px 12px 24px;
+      text-align: center;
+      max-width: 100%;
     }
     #overlay.hidden { display: none; }
 
     #overlay h1 {
-      font-size: clamp(1.6rem, 8vw, 2.6rem); font-weight: 300; letter-spacing: 0.14em;
+      font-size: clamp(1.35rem, 7vw, 2.6rem); font-weight: 300; letter-spacing: 0.08em;
       color: #e0e4e8; margin-bottom: 0.3rem; padding: 0 0.5rem;
-      max-width: 100%; word-break: keep-all;
+      max-width: 100%; overflow-wrap: anywhere;
     }
     #overlay .sub {
       font-size: 0.8rem; opacity: 0.45; letter-spacing: 0.14em;
@@ -135,6 +145,7 @@
       letter-spacing: 0.1em; text-transform: uppercase;
       padding: 8px 20px; border-radius: 6px; border: none;
       cursor: pointer; transition: all 0.18s;
+      min-height: 44px;
     }
     .btn-primary {
       background: rgba(34,211,238,0.15);
@@ -150,7 +161,8 @@
     .btn-secondary:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.8); }
 
     .prompt-line {
-      font-size: 0.68rem; opacity: 0.28; letter-spacing: 0.1em; margin-top: 1.4rem;
+      font-size: 0.68rem; opacity: 0.28; letter-spacing: 0.08em; margin-top: 1.4rem;
+      max-width: 92%; text-align: center;
     }
 
     #share-toast {
@@ -260,6 +272,9 @@
   const btnRestart = document.getElementById('btn-restart');
   const btnShare = document.getElementById('btn-share');
   const startPrompt = document.getElementById('start-prompt');
+  if (startPrompt && window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
+    startPrompt.textContent = 'drag to aim · THRUST · FIRE · 3 lives';
+  }
   const shareToast = document.getElementById('share-toast');
   const btnPlay = document.getElementById('btn-play');
   const btnRowStart = document.getElementById('btn-row-start');
@@ -1015,7 +1030,10 @@
     ctx.textAlign = 'center';
     ctx.font = '10px system-ui, sans-serif';
     ctx.fillStyle = 'rgba(200,204,208,0.22)';
-    ctx.fillText('WAVE ' + wave + '  ·  A/D turn  ·  W thrust  ·  SPACE fire', W / 2, H - 16);
+    const hudHint = (window.matchMedia && window.matchMedia('(pointer: coarse)').matches)
+      ? ('WAVE ' + wave + '  ·  drag aim  ·  THRUST  ·  FIRE')
+      : ('WAVE ' + wave + '  ·  A/D turn  ·  W thrust  ·  SPACE fire');
+    ctx.fillText(hudHint, W / 2, H - 16);
 
     if (shield) {
       ctx.textAlign = 'left';

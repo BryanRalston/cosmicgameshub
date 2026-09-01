@@ -10,7 +10,7 @@
     gtag('config', 'G-D272MF8NQP');
   </script>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Reaction Time Trainer — CosmicGamesHub</title>
   <meta name="description" content="Test your gaming reaction time. Click when it turns green. Get your average, grade (S/A/B/C/D), and compare your score." />
   <meta property="og:title" content="Reaction Time Trainer — CosmicGamesHub" />
@@ -19,6 +19,7 @@
   <link rel="canonical" href="https://cosmicgameshub.com/games/reaction-trainer" />
   <link rel="stylesheet" href="../styles.css" />
   <style>
+    html { overflow-x: hidden; }
     .rt-wrap {
       max-width: 560px;
       margin: 0 auto;
@@ -218,6 +219,23 @@
       border: none;
       font-family: inherit;
       transition: opacity 0.15s, transform 0.1s;
+      min-height: 44px;
+    }
+    @media (max-width: 480px) {
+      main { padding: 0.35rem 0 1.5rem !important; }
+      .rt-back { display: none; }
+      .rt-title { font-size: 1.1rem; margin-bottom: 0.35rem; }
+      .rt-subtitle { display: none; }
+      .rt-wrap { padding: 0 0.5rem; }
+      .rt-rounds { margin-bottom: 0.6rem; }
+      .rt-target-wrap, .rt-target {
+        width: min(100%, calc(100vw - 24px));
+        height: min(52vh, 420px);
+        max-width: none;
+        border-radius: 20px;
+      }
+      .rt-label { font-size: 1.15rem; }
+      .rt-label--time { font-size: 2rem; }
     }
     .rt-btn:active { transform: scale(0.97); }
     .rt-btn--primary {

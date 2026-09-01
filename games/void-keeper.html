@@ -10,31 +10,35 @@
     gtag('config', 'G-D272MF8NQP');
   </script>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
   <link rel="canonical" href="https://cosmicgameshub.com/games/void-keeper"/>
 <title>Void Keeper — CosmicGamesHub</title>
 <meta name="description" content="Move your cursor to catch particles of light and avoid the noise. An ambient arcade experience." />
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body { width: 100%; height: 100%; overflow: hidden; background: #050508; }
-  canvas { display: block; cursor: none; }
+  html, body { width: 100%; height: 100%; overflow: hidden; overflow-x: hidden; background: #050508; }
+  canvas { display: block; width: 100%; height: 100%; cursor: none; touch-action: none; }
   #overlay {
     position: fixed; inset: 0; display: flex; flex-direction: column;
     align-items: center; justify-content: center; z-index: 10;
     background: rgba(5,5,8,0.92); opacity: 1; transition: opacity 0.8s;
     font-family: 'Inter', system-ui, sans-serif; color: #c8ccd0;
     pointer-events: auto; cursor: pointer;
+    overflow-x: hidden; overflow-y: auto;
+    padding: 64px 12px 24px; text-align: center; max-width: 100%;
   }
   #overlay.hidden { opacity: 0; pointer-events: none; }
   #overlay h1 {
-    font-size: 2.4rem; font-weight: 300; letter-spacing: 0.15em;
+    font-size: clamp(1.5rem, 7vw, 2.4rem); font-weight: 300; letter-spacing: 0.08em;
     color: #e0e4e8; margin-bottom: 0.5rem;
+    max-width: 100%; overflow-wrap: anywhere;
   }
   #overlay .sub {
     font-size: 0.85rem; opacity: 0.5; letter-spacing: 0.08em; margin-bottom: 1.4rem;
   }
   #overlay .how-to {
-    display: flex; gap: 1rem; margin-bottom: 1.6rem; flex-wrap: wrap; justify-content: center;
+    display: flex; gap: 0.7rem; margin-bottom: 1.2rem; flex-wrap: wrap; justify-content: center;
+    max-width: 100%;
   }
   #overlay .ht-item {
     display: flex; align-items: center; gap: 0.45rem;
@@ -93,7 +97,11 @@
   #lab-nav .back-btn:hover { color: #fff; background: rgba(0,0,0,0.65); }
   #lab-nav .site-link { color: rgba(255,255,255,0.3); letter-spacing: 0.1em; }
   #lab-nav .site-link:hover { color: rgba(255,255,255,0.6); }
-  #lab-nav .nav-right { pointer-events: auto; display:flex; align-items:center; gap:10px; }
+  #lab-nav .nav-right { pointer-events: auto; display:flex; align-items:center; gap:8px; min-width:0; }
+  @media (max-width: 480px) {
+    #lab-nav .site-link { display: none; }
+    #lab-nav .back-btn { min-height: 44px; display: inline-flex; align-items: center; }
+  }
   .mute-btn, .vk-btn {
     pointer-events: auto; font-family: system-ui, sans-serif; font-size: 12px;
     letter-spacing: 0.06em; min-height: 44px; padding: 0 14px; border-radius: 8px;

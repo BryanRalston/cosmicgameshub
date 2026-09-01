@@ -30,6 +30,7 @@
 html, body {
   width: 100%; height: 100%;
   overflow: hidden;
+  overflow-x: hidden;
   background: var(--bg);
   color: #fff;
   font-family: 'Courier New', monospace;
@@ -46,9 +47,11 @@ html, body {
 }
 
 canvas#gameCanvas {
-  flex: 1;
-  width: 100%;
+  position: fixed; inset: 0;
+  width: 100%; height: 100%;
   display: block;
+  touch-action: none;
+  z-index: 1;
 }
 
 /* ── HUD Overlay ── */
@@ -104,6 +107,7 @@ canvas#gameCanvas {
 .lane-btn {
   flex: 1;
   height: 68px;
+  min-height: 44px;
   border: none; border-radius: 12px;
   font-size: 28px;
   cursor: pointer;
@@ -140,12 +144,16 @@ canvas#gameCanvas {
   position: fixed; inset: 0; z-index: 100;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   background: var(--bg);
-  padding: 20px;
+  padding: 56px 12px 20px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  touch-action: pan-y;
+  max-width: 100%;
 }
 #title-screen h1 {
-  font-size: clamp(48px, 12vw, 96px);
+  font-size: clamp(2.1rem, 12vw, 96px);
   font-weight: 900;
-  letter-spacing: 8px;
+  letter-spacing: 0.08em;
   background: linear-gradient(135deg, var(--magenta), var(--cyan), var(--lime), var(--gold), var(--magenta));
   background-size: 400% 400%;
   -webkit-background-clip: text; background-clip: text;
@@ -171,7 +179,7 @@ canvas#gameCanvas {
   font-size: 18px; font-family: 'Courier New', monospace; font-weight: bold;
   cursor: pointer; background: transparent; color: #fff;
   transition: all 0.15s;
-  min-width: 110px; text-align: center;
+  min-width: 110px; min-height: 44px; text-align: center;
 }
 .player-btn:hover, .player-btn:active {
   transform: scale(1.06);
@@ -195,7 +203,7 @@ canvas#gameCanvas {
   font-size: 18px; font-family: 'Courier New', monospace; font-weight: bold;
   cursor: pointer; background: transparent; color: #fff;
   transition: all 0.15s;
-  min-width: 110px; text-align: center;
+  min-width: 110px; min-height: 44px; text-align: center;
   animation: parentFadeIn 0.4s ease backwards;
 }
 .parent-btn:nth-child(1) { animation-delay: 0s; }
@@ -261,6 +269,7 @@ canvas#gameCanvas {
   font-size: 16px; font-family: 'Courier New', monospace; font-weight: bold;
   cursor: pointer; background: transparent; color: #fff;
   transition: all 0.15s;
+  min-height: 44px;
 }
 .diff-btn:hover, .diff-btn:active { background: rgba(255,255,255,0.08); transform: scale(1.06); }
 .diff-btn.easy { border-color: var(--lime); color: var(--lime); }
@@ -349,6 +358,7 @@ canvas#gameCanvas {
   font-size: 16px; font-family: 'Courier New', monospace; font-weight: bold;
   cursor: pointer; background: transparent; color: var(--cyan);
   transition: all 0.15s;
+  min-height: 44px;
 }
 .results-btn:hover, .results-btn:active { background: rgba(34,211,238,0.15); transform: scale(1.05); }
 .results-btn.primary { background: rgba(34,211,238,0.15); }
@@ -393,6 +403,10 @@ canvas#gameCanvas {
 #lab-nav .back-btn:hover { color: #fff; }
 #lab-nav .site-link { color: rgba(255,255,255,0.2); letter-spacing: 0.1em; }
 #lab-nav .site-link:hover { color: rgba(255,255,255,0.5); }
+@media (max-width: 480px) {
+  #lab-nav .site-link { display: none; }
+  #lab-nav .back-btn { min-height: 44px; display: inline-flex; align-items: center; }
+}
 
 /* ── iPad / Tablet Optimization ── */
 @media (min-width: 700px) {
@@ -489,6 +503,15 @@ canvas#gameCanvas {
   pointer-events: none; z-index: 11;
   display: none;
 }
+@media (pointer: coarse) {
+  .lane-btn { height: 68px; min-height: 44px; }
+  #lane-buttons.active { display: flex; }
+  #keyboard-hint { display: none !important; }
+}
+@media (max-width: 480px) {
+  #title-screen h1 { letter-spacing: 0.04em; }
+  #btnMute { min-height: 44px; padding: 0.55rem 1rem; }
+}
 </style>
   <meta property="og:image" content="https://cosmicgameshub.com/images/game-beatlab-v2.jpg">
   <meta property="og:image:width" content="600">
@@ -548,14 +571,14 @@ canvas#gameCanvas {
       <li>Build combos for bonus multipliers</li>
       <li>Unlock Pro Mode by completing songs</li>
     </ul>
-    <button onclick="document.getElementById('beatHelp').style.display='none'" style="width:100%;padding:0.65rem;background:#22d3ee;color:#000;border:none;border-radius:8px;font-weight:700;cursor:pointer;">Let's Play!</button>
+    <button onclick="document.getElementById('beatHelp').style.display='none'" style="width:100%;min-height:44px;padding:0.65rem;background:#22d3ee;color:#000;border:none;border-radius:8px;font-weight:700;cursor:pointer;">Let's Play!</button>
   </div>
 </div>
 
 <!-- Title Screen -->
 <div id="title-screen">
   <h1>BEAT LAB</h1>
-  <div class="subtitle">choose your fighter &nbsp;<button onclick="document.getElementById('beatHelp').style.display='flex'" style="background:none;border:1px solid rgba(34,211,238,0.4);color:#22d3ee;border-radius:50%;width:22px;height:22px;font-size:0.75rem;cursor:pointer;padding:0;line-height:1;vertical-align:middle;" title="How to Play">?</button></div>
+  <div class="subtitle">choose your fighter &nbsp;<button type="button" onclick="document.getElementById('beatHelp').style.display='flex'" style="background:none;border:1px solid rgba(34,211,238,0.4);color:#22d3ee;border-radius:50%;width:44px;height:44px;min-width:44px;min-height:44px;font-size:1rem;cursor:pointer;padding:0;line-height:1;vertical-align:middle;" title="How to Play">?</button></div>
   <div style="text-align:center;font-size:.7rem;color:rgba(200,204,208,0.45);letter-spacing:.08em;margin-top:.3rem;font-family:'Courier New',monospace;">— picks your color theme · all play the same —</div>
 
   <div class="player-select" id="player-select">
@@ -642,11 +665,16 @@ canvas#gameCanvas {
    CosmicGamesHub.com
    ═══════════════════════════════════════════════════════════ */
 
-document.addEventListener('touchmove', function(e) { e.preventDefault(); }, { passive: false });
+document.addEventListener('touchmove', function(e) {
+  if (e.target.closest('#title-screen') || e.target.closest('#results-screen') || e.target.closest('#beatHelp')) return;
+  e.preventDefault();
+}, { passive: false });
 document.addEventListener('touchstart', function(e) {
   if (e.target.closest('.lane-btn') || e.target.closest('.player-btn') ||
       e.target.closest('.diff-btn') || e.target.closest('.results-btn') ||
-      e.target.closest('.parent-btn') || e.target.closest('#title-screen h1')) return;
+      e.target.closest('.parent-btn') || e.target.closest('#title-screen h1') ||
+      e.target.closest('#title-screen') || e.target.closest('#results-screen') ||
+      e.target.closest('#beatHelp')) return;
   e.preventDefault();
 }, { passive: false });
 
@@ -1171,6 +1199,8 @@ function showTitle() {
   els.title.style.display = 'flex';
   els.results.style.display = 'none';
   els.hud.style.display = 'none';
+  var labNavTitle = document.getElementById('lab-nav');
+  if (labNavTitle) labNavTitle.style.display = '';
   els.laneButtons.classList.remove('active');
   els.kbHint.style.display = 'none';
   els.diffSelect.style.display = 'none';
@@ -1386,13 +1416,18 @@ function startGame() {
   }
 
   els.hud.style.display = 'block';
+  var labNav = document.getElementById('lab-nav');
+  if (labNav) labNav.style.display = 'none';
   els.laneButtons.classList.add('active');
   els.scoreDisp.textContent = '0';
   els.comboDisp.textContent = '';
   els.progressBar.style.width = '0%';
 
-  if (!('ontouchstart' in window)) {
+  var coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+  if (!('ontouchstart' in window) && !coarse) {
     els.kbHint.style.display = 'block';
+  } else {
+    els.kbHint.style.display = 'none';
   }
 
   resize();
@@ -1621,6 +1656,8 @@ function endGame(gameOver) {
   els.hud.style.display = 'none';
   els.laneButtons.classList.remove('active');
   els.kbHint.style.display = 'none';
+  var labNavEnd = document.getElementById('lab-nav');
+  if (labNavEnd) labNavEnd.style.display = '';
 
   if (gameOver) {
     AudioEngine.playGameOver();

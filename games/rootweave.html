@@ -10,7 +10,7 @@
     gtag('config', 'G-D272MF8NQP');
   </script>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Rootweave — Regenerative Farm Sim | CosmicGamesHub</title>
   <meta name="description" content="Heal a dying valley with real regenerative practice. Free isometric farm sim in the browser. Early build: Home Patch is playable. No download, no login." />
   <link rel="canonical" href="https://cosmicgameshub.com/games/rootweave" />
@@ -29,6 +29,7 @@
   <meta name="twitter:description" content="Heal a dying valley with real regenerative practice. Free isometric farm sim in the browser." />
   <meta name="twitter:image" content="https://cosmicgameshub.com/images/game-rootweave-v2.jpg" />
   <style>
+    html { overflow-x: hidden; }
     .rw-wrap { max-width: 860px; margin: 0 auto; padding: 0 1rem; }
     .rw-hero {
       width: 100%;
@@ -93,7 +94,17 @@
     }
     .rw-meta a { color: var(--text-mid); }
     @media (max-width: 640px) {
-      .rw-frame-wrap iframe { height: 70vh; }
+      main { padding: 0.4rem 0 1.25rem !important; }
+      .rw-hero { display: none; }
+      .rw-shots { display: none; }
+      .rw-note { display: none; }
+      .rw-support { display: none; }
+      .rw-lede { display: none; }
+      .rw-wrap { padding: 0 0.6rem; }
+      .rw-cta-row { margin-bottom: 0.6rem; }
+      .rw-frame-wrap iframe { height: calc(100dvh - 160px); min-height: 480px; }
+      .rw-frame-wrap { margin-bottom: 1rem; }
+      .rw-meta { display: none; }
     }
   </style>
   <script type="application/ld+json">
@@ -155,7 +166,7 @@
     <div style="padding:0 0 0.85rem;">
       <span class="section__eyebrow">Farm sim · Free in the browser</span>
       <h1 style="margin-top:0.4rem;margin-bottom:0.35rem;">Rootweave</h1>
-      <p style="color:var(--text-mid);margin:0;font-size:0.95rem;line-height:1.6;">Heal a dying valley. Live build in the frame below — if a browser blocks the embed, use the button. Early: Home Patch only.</p>
+      <p class="rw-lede" style="color:var(--text-mid);margin:0;font-size:0.95rem;line-height:1.6;">Heal a dying valley. Live build in the frame below — if a browser blocks the embed, use the button. Early: Home Patch only.</p>
     </div>
 
     <div class="rw-hero">
