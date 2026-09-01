@@ -12,11 +12,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name='impact-site-verification' value='7d4a28cc-892b-47ec-a78e-5088bd3133b7'>
-  <title>CosmicGamesHub — Best Gaming Gear Guides & Free Games 2026</title>
-  <meta name="description" content="Expert gaming gear guides, honest reviews, and free original games. 29 gear guides, 38 head-to-head comparisons, 3 reviews, and 23 free games. Updated August 2026." />
-  <meta name="keywords" content="best gaming gear, gaming headsets, gaming mice, gaming keyboards, gaming chairs, gaming monitors, free browser games" />
-  <meta property="og:title" content="CosmicGamesHub — Best Gaming Gear Guides & Free Games 2026" />
-  <meta property="og:description" content="Expert gear guides, honest reviews, and original free games for every type of gamer." />
+  <title>CosmicGamesHub — Play. Compete. Discover your setup.</title>
+  <meta name="description" content="The gaming hub for better games, better gear, and better setups. Free browser games, 60 pro setups, and honest gear guides. Always free." />
+  <meta name="keywords" content="free browser games, pro gaming setups, best gaming gear, gaming headsets, gaming mice, daily puzzles" />
+  <meta property="og:title" content="CosmicGamesHub — Play. Compete. Discover your setup." />
+  <meta property="og:description" content="The gaming hub for better games, better gear, and better setups." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://cosmicgameshub.com/" />
   <link rel="canonical" href="https://cosmicgameshub.com/" />
@@ -31,21 +31,26 @@
   <div class="ticker-bar__inner">
     <span class="ticker-bar__live" aria-hidden="true">LIVE</span>
     <div class="ticker-bar__track">
-      <span>Day #47 is live</span>
+      <span id="tickerDay">Today's dailies are live</span>
       <span class="ticker-sep">·</span>
-      <span>BRIX 3D — build in your browser, no download</span>
+      <span>RIFT, Gamerdle, Pixle, Crossword</span>
       <span class="ticker-sep">·</span>
-      <span>RIFT: all three zones open</span>
+      <span id="tickerGamerdle">Gamerdle: new mystery game</span>
       <span class="ticker-sep">·</span>
-      <span>Gamerdle: mystery game #47</span>
-      <span class="ticker-sep">·</span>
-      <span>Daily Challenge: unlocked</span>
-      <span class="ticker-sep">·</span>
-      <span>Rootweave — heal a dying valley in the browser</span>
+      <span>Play today's dailies — same UTC board for everyone</span>
     </div>
-    <a href="/games/rift" class="ticker-bar__cta">Play now →</a>
+    <a href="/games/daily" class="ticker-bar__cta">Play today's dailies →</a>
   </div>
 </div>
+<script>
+(function () {
+  var day = Math.floor((Date.now() - Date.UTC(2026, 0, 1)) / 86400000);
+  var d = document.getElementById('tickerDay');
+  var g = document.getElementById('tickerGamerdle');
+  if (d) d.textContent = 'Day #' + day + ' is live';
+  if (g) g.textContent = 'Gamerdle: mystery game #' + day;
+})();
+</script>
 
 <!-- ─── Navigation ─────────────────────────────────── -->
 <nav class="nav nav--hero" id="mainNav" role="navigation" aria-label="Main navigation">
@@ -56,12 +61,11 @@
         <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
       </a>
       <ul class="nav__links" id="navLinks">
+        <li><a href="/games">Play</a></li>
+        <li><a href="/guides">Gear</a></li>
         <li><a href="/pros">Pros</a></li>
-        <li><a href="/games">Games</a></li>
         <li><a href="/games/daily">Daily</a></li>
-        <li><a href="/guides">Guides</a></li>
-        <li><a href="/versus">Comparisons</a></li>
-        <li><a href="/tools/gaming-fps-calculator" class="nav__cta btn">Tools</a></li>
+        <li><a href="/versus">Compare</a></li>
       </ul>
       <button class="nav__hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
         <span></span><span></span><span></span>
@@ -73,24 +77,12 @@
 <!-- ─── Category Sub-Nav ─────────────────────────────── -->
 <div class="cat-subnav" id="catSubnav" aria-label="Browse by category">
   <nav class="cat-subnav__list">
-    <a href="/" class="cat-subnav__link cat-subnav__link--active">Home</a>
-    <div class="cat-subnav__divider"></div>
-    <a href="/guides/best-gaming-headsets-2026" class="cat-subnav__link">Headsets</a>
-    <a href="/guides/best-gaming-mice-2026" class="cat-subnav__link">Mice</a>
-    <a href="/guides/best-gaming-keyboards-2026" class="cat-subnav__link">Keyboards</a>
-    <a href="/guides/best-budget-gaming-chairs" class="cat-subnav__link">Chairs</a>
-    <a href="/guides/best-gaming-monitors-2026" class="cat-subnav__link">Monitors</a>
-    <div class="cat-subnav__divider"></div>
-    <a href="/games/rift" class="cat-subnav__link">RIFT</a>
-    <a href="/games/gamerdle" class="cat-subnav__link">Gamerdle</a>
-    <a href="/games/pixle" class="cat-subnav__link">Pixle</a>
-    <a href="/games/crossword" class="cat-subnav__link">Crossword</a>
-    <a href="/games" class="cat-subnav__link">All Games</a>
-    <div class="cat-subnav__divider"></div>
-    <a href="/tools/gaming-fps-calculator" class="cat-subnav__link">FPS Calc</a>
-    <a href="/tools/monitor-hz-calculator" class="cat-subnav__link">Hz Calc</a>
-    <a href="/games/aim-trainer" class="cat-subnav__link">Aim Trainer</a>
-    <a href="/games/reaction-trainer" class="cat-subnav__link">Reaction Test</a>
+    <a href="/games" class="cat-subnav__link">Play</a>
+    <a href="/guides" class="cat-subnav__link">Gear</a>
+    <a href="/pros" class="cat-subnav__link">Pros</a>
+    <a href="/games/daily" class="cat-subnav__link">Daily</a>
+    <a href="/tools/find-my-gear.html" class="cat-subnav__link">Find My Gear</a>
+    <a href="/how-we-choose" class="cat-subnav__link">How we choose</a>
   </nav>
 </div>
 
@@ -104,28 +96,22 @@
   </div>
 
   <div class="hero__content container" id="heroContent">
-    <span class="hero__eyebrow">What the Pros Actually Use</span>
+    <span class="hero__eyebrow">Play · Gear · Pros</span>
 
     <h1 class="hero__title">
-      Find the Gear<br>
-      <em>Pros Actually Use</em>
+      Play. Compete.<br>
+      <em>Discover your setup.</em>
     </h1>
 
     <p class="hero__sub">
-      A live database of the mouse, keyboard, headset, monitor and settings 60
-      Valorant, CS2, Apex Legends, and Fortnite pros run in 2026 — plus August-updated
-      gear guides. Spec analysis and public share, not a fake lab. No sponsored opinions.
+      The gaming hub for better games, better gear, and better setups.
     </p>
 
     <div class="hero__actions">
-      <a href="/pros" class="btn btn--primary">Browse Pro Setups →</a>
-      <a href="/guides" class="btn btn--outline">View Gear Guides</a>
+      <a href="/games" class="btn btn--primary hero__door">Play Games</a>
+      <a href="/guides" class="btn btn--primary hero__door">Find Gaming Gear</a>
+      <a href="/pros" class="btn btn--primary hero__door">See What Pros Use</a>
     </div>
-    <p class="hero__alt-cta">
-      Just want to play? <a href="/games/daily">Today's daily puzzles →</a>
-      &nbsp;·&nbsp;
-      Building a kit? <a href="/build">Pick your game →</a>
-    </p>
 
     <!-- Live preview — proves the database is real before the visitor has to trust the promise -->
     <div class="hero__preview" id="heroPreview" hidden>
@@ -136,12 +122,17 @@
     <div class="hero__stats">
       <div class="hero__stat">
         <span class="hero__stat-num">60</span>
-        <span class="hero__stat-label">Pros tracked (updated August 2026)</span>
+        <span class="hero__stat-label">Pros tracked</span>
       </div>
       <div class="hero__stat-sep"></div>
       <div class="hero__stat">
         <span class="hero__stat-num">4</span>
-        <span class="hero__stat-label">Games — Valorant, CS2, Apex, Fortnite</span>
+        <span class="hero__stat-label">Titles — Valorant, CS2, Apex, Fortnite</span>
+      </div>
+      <div class="hero__stat-sep"></div>
+      <div class="hero__stat">
+        <span class="hero__stat-num">23</span>
+        <span class="hero__stat-label">Free games</span>
       </div>
       <div class="hero__stat-sep"></div>
       <div class="hero__stat">
@@ -150,9 +141,108 @@
       </div>
     </div>
   </div>
+</section>
 
-  <div class="hero__scroll" aria-hidden="true">
-    <div class="hero__scroll-dot"></div>
+<!-- ─── What are you looking for? ──────────────────── -->
+<section class="section start-here" aria-label="What are you looking for?">
+  <div class="container">
+    <div class="section__header js-reveal">
+      <span class="section__eyebrow">Start here</span>
+      <h2 class="section__title">What are you looking for?</h2>
+    </div>
+    <div class="start-here__row">
+      <a href="/games/daily" class="start-here__card js-reveal">
+        <div class="start-here__kicker">Play</div>
+        <div class="start-here__title">I want something to play</div>
+        <p class="start-here__sub">Daily games, puzzles, arcade</p>
+      </a>
+      <a href="/guides" class="start-here__card js-reveal">
+        <div class="start-here__kicker">Gear</div>
+        <div class="start-here__title">I'm building a gaming setup</div>
+        <p class="start-here__sub">Headsets, mice, keyboards, chairs, monitors</p>
+      </a>
+      <a href="/pros" class="start-here__card js-reveal">
+        <div class="start-here__kicker">Pros</div>
+        <div class="start-here__title">I want to copy the pros</div>
+        <p class="start-here__sub">60 real setups across four titles</p>
+      </a>
+      <a href="/guides/best-gaming-setup-under-500" class="start-here__card js-reveal">
+        <div class="start-here__kicker">Deal</div>
+        <div class="start-here__title">I want the best deal</div>
+        <p class="start-here__sub">A full gaming setup under $500</p>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ─── Play ──────────────────────────────────────── -->
+<section class="section section--alt" aria-label="Play">
+  <div class="container">
+    <div class="section__header js-reveal">
+      <span class="section__eyebrow">Free in the browser</span>
+      <h2 class="section__title">Play</h2>
+      <p class="section__sub">Today's flagships — dailies, a puzzle, and arcade. No download, no account.</p>
+    </div>
+
+    <div class="play-grid">
+      <a href="/games/rift" class="play-card js-reveal" title="Play RIFT">
+        <img src="/images/game-rift-v2.jpg" alt="RIFT — three daily word zones" class="play-card__img" loading="lazy" width="1280" height="720" />
+        <span class="play-card__badge play-card__badge--daily">Daily</span>
+        <div class="play-card__body">
+          <div class="play-card__name">RIFT</div>
+          <div class="play-card__time">~8 min</div>
+          <div class="play-card__play">PLAY</div>
+        </div>
+      </a>
+      <a href="/games/gamerdle" class="play-card js-reveal" title="Play Gamerdle">
+        <img src="/images/game-gamerdle-v2.jpg" alt="Gamerdle — guess the video game" class="play-card__img" loading="lazy" width="1280" height="720" />
+        <span class="play-card__badge play-card__badge--daily">Daily</span>
+        <div class="play-card__body">
+          <div class="play-card__name">Gamerdle</div>
+          <div class="play-card__time">~3 min</div>
+          <div class="play-card__play">PLAY</div>
+        </div>
+      </a>
+      <a href="/games/pixle" class="play-card js-reveal" title="Play Pixle">
+        <img src="/images/game-pixle-v2.jpg" alt="Pixle — daily 5-letter gaming Wordle" class="play-card__img" loading="lazy" width="1280" height="720" />
+        <span class="play-card__badge play-card__badge--daily">Daily</span>
+        <div class="play-card__body">
+          <div class="play-card__name">Pixle</div>
+          <div class="play-card__time">~3 min</div>
+          <div class="play-card__play">PLAY</div>
+        </div>
+      </a>
+      <a href="/games/crossword" class="play-card js-reveal" title="Play Crossword">
+        <img src="/images/game-crossword-v2.jpg" alt="Gaming Crossword — daily 5x5 puzzle" class="play-card__img" loading="lazy" width="1280" height="720" />
+        <span class="play-card__badge play-card__badge--puzzle">Puzzle</span>
+        <div class="play-card__body">
+          <div class="play-card__name">Crossword</div>
+          <div class="play-card__time">~5 min</div>
+          <div class="play-card__play">PLAY</div>
+        </div>
+      </a>
+      <a href="/games/aim-trainer" class="play-card js-reveal" title="Play Aim Trainer">
+        <img src="/images/game-aim-trainer-v2.jpg" alt="FPS Aim Trainer" class="play-card__img" loading="lazy" width="1280" height="720" />
+        <span class="play-card__badge play-card__badge--arcade">Arcade</span>
+        <div class="play-card__body">
+          <div class="play-card__name">Aim Trainer</div>
+          <div class="play-card__time">30–90 sec</div>
+          <div class="play-card__play">PLAY</div>
+        </div>
+      </a>
+      <a href="/games/asteroid-dodge" class="play-card js-reveal" title="Play Asteroid Dodge">
+        <img src="/images/game-asteroid-dodge-v2.jpg" alt="Asteroid Dodge — arcade ship" class="play-card__img" loading="lazy" width="1280" height="720" />
+        <span class="play-card__badge play-card__badge--arcade">Arcade</span>
+        <div class="play-card__body">
+          <div class="play-card__name">Asteroid Dodge</div>
+          <div class="play-card__time">Anytime</div>
+          <div class="play-card__play">PLAY</div>
+        </div>
+      </a>
+    </div>
+    <div class="play-more js-reveal">
+      <a href="/games" class="btn btn--outline">All games →</a>
+    </div>
   </div>
 </section>
 
@@ -160,8 +250,8 @@
 <section class="section" aria-label="Gear categories">
   <div class="container">
     <div class="section__header js-reveal">
-      <span class="section__eyebrow">Browse by Category</span>
-      <h2 class="section__title">Best Gaming Gear Guides</h2>
+      <span class="section__eyebrow">Gear</span>
+      <h2 class="section__title">Gear</h2>
       <p class="section__sub">Every guide researched, tested, and updated for 2026.</p>
     </div>
 
@@ -205,151 +295,48 @@
   </div>
 </section>
 
-<!-- ─── Games Section ──────────────────────────────────── -->
-<section class="section section--alt" aria-label="Games and puzzles">
+<!-- ─── Pros ─────────────────────────────────────────── -->
+<section class="section section--alt" aria-label="Pro setups">
   <div class="container">
-
     <div class="section__header js-reveal">
-      <span class="section__eyebrow">Play Free · No Signup · New Every 24 Hours</span>
-      <h2 class="section__title">Games & Daily Puzzles</h2>
-      <p class="section__sub">23 games — twelve dailies, arcade, aim training, gear quiz, and more. Compete against yourself. Share your results.</p>
+      <span class="section__eyebrow">Pros</span>
+      <h2 class="section__title">Pros</h2>
     </div>
+    <div class="pros-strip__inner js-reveal">
+      <p class="pros-strip__copy">60 setups across Valorant, CS2, Apex, Fortnite</p>
+      <div class="pros-strip__actions">
+        <a href="/pros" class="btn btn--primary">See What Pros Use</a>
+        <a href="/tools/find-my-gear.html" class="btn btn--outline">Find My Gear</a>
+      </div>
+    </div>
+  </div>
+</section>
 
-    <!-- Editorial: BRIX 3D featured left + sidebar right -->
-    <div class="games-feature">
-      <a href="/games/brix3d" class="games-feature__main js-reveal" title="Play BRIX 3D — browser brick builder">
-        <img src="/images/game-brix3d-v2.jpg" alt="BRIX 3D — glowing 3D brick builder in your browser" class="games-feature__img" loading="lazy" />
-        <div class="games-feature__body">
-          <div class="img-card__tag" style="color:#00d4ff;margin-bottom:0.6rem;">3D Builder · Free · No Download</div>
-          <div class="games-feature__title">BRIX 3D</div>
-          <div class="games-feature__desc">Build anything in 3D — right in your browser. Place colorful interlocking bricks, orbit the camera, undo mistakes. No install, no account. Just build.</div>
-          <div class="games-feature__meta">
-            <span class="games-feature__badge" style="background:rgba(0,212,255,0.15);color:#00d4ff;border-color:rgba(0,212,255,0.3);">NEW</span>
-            <span>AI-assisted · Built with Three.js</span>
-          </div>
-          <div class="img-card__play" style="color:#00d4ff;border-color:rgba(0,212,255,0.3);background:rgba(0,212,255,0.06);width:fit-content;">▶ Play BRIX 3D — Free</div>
+<!-- ─── On the desk today ────────────────────────────── -->
+<section class="section" aria-label="On the desk today">
+  <div class="container">
+    <div class="section__header js-reveal">
+      <span class="section__eyebrow">Trending · Honest</span>
+      <h2 class="section__title">On the desk today</h2>
+      <p class="section__sub">Today's dailies plus one current pick. No fake live player counts.</p>
+    </div>
+    <div class="desk-today">
+      <a href="/games/daily" class="desk-today__card js-reveal">
+        <img src="/images/game-daily-hub-v2.jpg" alt="Today's daily games desk" class="desk-today__img" loading="lazy" width="640" height="360" />
+        <div>
+          <div class="desk-today__kicker">Dailies</div>
+          <h3 class="desk-today__title">Play today's board</h3>
+          <p class="desk-today__sub">RIFT, Gamerdle, Pixle, Crossword — same UTC puzzles for everyone.</p>
         </div>
       </a>
-
-      <div class="games-feature__sidebar">
-        <a href="/games/rift" class="games-feature__side-card js-reveal" title="Play RIFT" style="transition-delay:0.07s">
-          <img src="/images/rift-hero.jpg" alt="RIFT — three cosmic word zones: chain, grow, decode" class="games-feature__side-img" loading="lazy" />
-          <div class="games-feature__side-body">
-            <div class="img-card__tag img-card__tag--cyan" style="font-size:0.65rem;">Word Game · Daily · 3 Zones</div>
-            <div class="games-feature__side-title">RIFT</div>
-            <div class="games-feature__side-desc">Chain a word, grow a word, decode a connection. Three zones, one daily score.</div>
-            <div class="img-card__play img-card__play--cyan">▶ Play Today's</div>
-          </div>
-        </a>
-        <a href="/games/gamerdle" class="games-feature__side-card js-reveal" title="Play Gamerdle" style="transition-delay:0.14s">
-          <img src="/images/game-gamerdle.jpg" alt="Gamerdle — cosmic question mark orbited by gaming icons" class="games-feature__side-img" loading="lazy" />
-          <div class="games-feature__side-body">
-            <div class="img-card__tag img-card__tag--amber" style="font-size:0.65rem;">Trivia · Daily · 6 Tries</div>
-            <div class="games-feature__side-title">Gamerdle</div>
-            <div class="games-feature__side-desc">Guess the mystery video game in 6 tries. New puzzle every day.</div>
-            <div class="img-card__play img-card__play--amber">▶ Play</div>
-          </div>
-        </a>
-      </div>
-    </div>
-
-    <!-- Arcade strip: secondary content -->
-    <div class="arcade-strip js-reveal">
-      <span class="arcade-strip__label">More from the arcade</span>
-      <div class="arcade-strip__items">
-        <a href="/games/crossword" class="arcade-strip__item">
-          <svg class="arcade-strip__icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="3" y="3" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="11" y="3" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="3" y="11" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="11" y="11" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>
-          Daily Crossword
-          <span class="arcade-strip__badge">New today</span>
-        </a>
-        <a href="/games/aim-trainer" class="arcade-strip__item">
-          <svg class="arcade-strip__icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="1" fill="currentColor"/></svg>
-          Aim Trainer
-        </a>
-        <a href="/games/reaction-trainer" class="arcade-strip__item">
-          <svg class="arcade-strip__icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 3v3M10 14v3M3 10h3M14 10h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.5"/></svg>
-          Reaction Test
-        </a>
-        <a href="/games/word-scramble" class="arcade-strip__item">
-          <svg class="arcade-strip__icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 6h12M4 10h8M4 14h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-          Word Scramble
-        </a>
-        <a href="/games/price-guesser" class="arcade-strip__item">
-          <svg class="arcade-strip__icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 3v2M10 15v2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M3 10h2M15 10h2M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.5"/></svg>
-          Price Guesser
-          <span class="arcade-strip__badge">Daily</span>
-        </a>
-        <a href="/games" class="arcade-strip__item">
-          <svg class="arcade-strip__icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 10a7 7 0 1014 0A7 7 0 003 10z" stroke="currentColor" stroke-width="1.5"/><path d="M10 7v6M7 10h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-          All 23 Games →
-          <span class="arcade-strip__badge">Hub</span>
-        </a>
-      </div>
-    </div>
-
-  </div>
-</section>
-
-<!-- ─── Email Capture ──────────────────────────────────── -->
-<section class="section email-band" aria-label="Newsletter">
-  <div class="container">
-    <div class="email-band__inner">
-      <div class="email-band__left">
-        <div class="email-band__eyebrow">Not collecting emails yet</div>
-        <h2 class="email-band__title">A daily-puzzle email is planned</h2>
-        <p class="email-band__sub">We want reminders for RIFT, Gamerdle, and Pixle plus a weekly gear-deal note. There is no list today, so there is nothing to join.</p>
-        <p class="email-band__note" style="margin-top:0;">See <a href="/privacy" style="color:var(--accent);">Privacy</a> for analytics and Amazon Associates. We do not sell emails.</p>
-      </div>
-      <div>
-        <p class="email-band__title" style="font-size:1.15rem;margin-bottom:0.4rem;">Coming soon</p>
-        <p class="email-band__sub">The signup is not wired. We will not pretend you joined a list we cannot send. Questions: <a href="mailto:hello@cosmicgameshub.com">hello@cosmicgameshub.com</a>.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ─── AI Gaming Teaser ──────────────────────────────── -->
-<section class="section" aria-label="AI game development">
-  <div class="container">
-    <div class="ai-gaming-banner js-reveal" style="
-      background: linear-gradient(135deg, rgba(124,58,237,0.08), rgba(0,212,255,0.05));
-      border: 1px solid rgba(124,58,237,0.2);
-      border-radius: 20px;
-      padding: 2.5rem;
-      display: flex; gap: 2.5rem; align-items: center; flex-wrap: wrap;
-    ">
-      <div style="flex-shrink:0; font-size:3.5rem; line-height:1;">⚡</div>
-      <div style="flex:1; min-width:240px;">
-        <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.15em; color:#a78bfa; margin-bottom:0.5rem;">New Section</div>
-        <h2 style="font-size:clamp(1.3rem,3vw,1.9rem); font-weight:800; color:var(--text-hi); margin:0 0 0.6rem; line-height:1.2;">Build Games with AI — Anyone Can Ship</h2>
-        <p style="font-size:0.93rem; color:var(--text-mid); line-height:1.7; margin:0 0 1.4rem; max-width:560px;">The complete toolkit for building browser games with AI in 2026 — code assistants, image generators, audio tools, and real workflows. See how the games on this site were actually built.</p>
-        <div style="display:flex; gap:0.8rem; flex-wrap:wrap;">
-          <a href="/ai-gaming" style="
-            display:inline-flex; align-items:center; gap:0.4rem;
-            background:linear-gradient(135deg,#7c3aed,#4f46e5);
-            color:#fff; padding:0.7rem 1.4rem;
-            border-radius:10px; font-weight:700; font-size:0.9rem;
-            text-decoration:none;
-          ">⚡ See the Toolkit</a>
-          <a href="/ai-gaming#prompts" style="
-            display:inline-flex; align-items:center; gap:0.4rem;
-            background:rgba(255,255,255,0.04); border:1px solid var(--border);
-            color:var(--text-mid); padding:0.7rem 1.4rem;
-            border-radius:10px; font-weight:600; font-size:0.9rem;
-            text-decoration:none;
-          ">📋 Starter Prompts</a>
+      <a href="/versus/razer-blackshark-v2-pro-vs-razer-blackshark-v3-pro" class="desk-today__card js-reveal">
+        <img src="/images/versus-blackshark-v2-v3.jpg" alt="Razer BlackShark V2 Pro vs V3 Pro" class="desk-today__img" loading="lazy" width="640" height="360" />
+        <div>
+          <div class="desk-today__kicker">Top pick</div>
+          <h3 class="desk-today__title">BlackShark V2 Pro vs V3 Pro</h3>
+          <p class="desk-today__sub">The headset we keep recommending, side by side with the one it replaced.</p>
         </div>
-      </div>
-      <div style="flex-shrink:0; display:flex; flex-direction:column; gap:0.7rem; min-width:160px;">
-        <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:10px; padding:0.8rem 1rem; text-align:center;">
-          <div style="font-size:1.6rem; font-weight:800; color:var(--text-hi); line-height:1;">1–3 <span style="color:var(--accent);">days</span></div>
-          <div style="font-size:0.72rem; color:var(--text-lo); text-transform:uppercase; letter-spacing:0.08em; margin-top:0.25rem;">To ship a game</div>
-        </div>
-        <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:10px; padding:0.8rem 1rem; text-align:center;">
-          <div style="font-size:1.6rem; font-weight:800; color:var(--text-hi); line-height:1;"><span style="color:#a78bfa;">$0</span></div>
-          <div style="font-size:0.72rem; color:var(--text-lo); text-transform:uppercase; letter-spacing:0.08em; margin-top:0.25rem;">To get started</div>
-        </div>
-      </div>
+      </a>
     </div>
   </div>
 </section>
@@ -698,6 +685,70 @@
         </div>
         <h3 style="font-size:1rem;margin-bottom:0.5rem;">Updated Regularly</h3>
         <p style="font-size:0.85rem;">Guides are refreshed when new products launch or prices shift. No year-old picks presented as current.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── Email Capture ──────────────────────────────────── -->
+<section class="section email-band" aria-label="Newsletter">
+  <div class="container">
+    <div class="email-band__inner">
+      <div class="email-band__left">
+        <div class="email-band__eyebrow">Not collecting emails yet</div>
+        <h2 class="email-band__title">A daily-puzzle email is planned</h2>
+        <p class="email-band__sub">We want reminders for RIFT, Gamerdle, and Pixle plus a weekly gear-deal note. There is no list today, so there is nothing to join.</p>
+        <p class="email-band__note" style="margin-top:0;">See <a href="/privacy" style="color:var(--accent);">Privacy</a> for analytics and Amazon Associates. We do not sell emails.</p>
+      </div>
+      <div>
+        <p class="email-band__title" style="font-size:1.15rem;margin-bottom:0.4rem;">Coming soon</p>
+        <p class="email-band__sub">The signup is not wired. We will not pretend you joined a list we cannot send. Questions: <a href="mailto:hello@cosmicgameshub.com">hello@cosmicgameshub.com</a>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── Explore: AI Gaming ────────────────────────────── -->
+<section class="section" aria-label="Explore AI game development">
+  <div class="container">
+    <div class="ai-gaming-banner js-reveal" style="
+      background: linear-gradient(135deg, rgba(124,58,237,0.08), rgba(0,212,255,0.05));
+      border: 1px solid rgba(124,58,237,0.2);
+      border-radius: 20px;
+      padding: 2.5rem;
+      display: flex; gap: 2.5rem; align-items: center; flex-wrap: wrap;
+    ">
+      <div style="flex-shrink:0; font-size:3.5rem; line-height:1;">⚡</div>
+      <div style="flex:1; min-width:240px;">
+        <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.15em; color:#a78bfa; margin-bottom:0.5rem;">Explore</div>
+        <h2 style="font-size:clamp(1.3rem,3vw,1.9rem); font-weight:800; color:var(--text-hi); margin:0 0 0.6rem; line-height:1.2;">Build Games with AI — Anyone Can Ship</h2>
+        <p style="font-size:0.93rem; color:var(--text-mid); line-height:1.7; margin:0 0 1.4rem; max-width:560px;">The complete toolkit for building browser games with AI in 2026 — code assistants, image generators, audio tools, and real workflows. See how the games on this site were actually built.</p>
+        <div style="display:flex; gap:0.8rem; flex-wrap:wrap;">
+          <a href="/ai-gaming" style="
+            display:inline-flex; align-items:center; gap:0.4rem;
+            background:linear-gradient(135deg,#7c3aed,#4f46e5);
+            color:#fff; padding:0.7rem 1.4rem;
+            border-radius:10px; font-weight:700; font-size:0.9rem;
+            text-decoration:none; min-height:44px;
+          ">⚡ See the Toolkit</a>
+          <a href="/ai-gaming#prompts" style="
+            display:inline-flex; align-items:center; gap:0.4rem;
+            background:rgba(255,255,255,0.04); border:1px solid var(--border);
+            color:var(--text-mid); padding:0.7rem 1.4rem;
+            border-radius:10px; font-weight:600; font-size:0.9rem;
+            text-decoration:none; min-height:44px;
+          ">📋 Starter Prompts</a>
+        </div>
+      </div>
+      <div style="flex-shrink:0; display:flex; flex-direction:column; gap:0.7rem; min-width:160px;">
+        <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:10px; padding:0.8rem 1rem; text-align:center;">
+          <div style="font-size:1.6rem; font-weight:800; color:var(--text-hi); line-height:1;">1–3 <span style="color:var(--accent);">days</span></div>
+          <div style="font-size:0.72rem; color:var(--text-lo); text-transform:uppercase; letter-spacing:0.08em; margin-top:0.25rem;">To ship a game</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:10px; padding:0.8rem 1rem; text-align:center;">
+          <div style="font-size:1.6rem; font-weight:800; color:var(--text-hi); line-height:1;"><span style="color:#a78bfa;">$0</span></div>
+          <div style="font-size:0.72rem; color:var(--text-lo); text-transform:uppercase; letter-spacing:0.08em; margin-top:0.25rem;">To get started</div>
+        </div>
       </div>
     </div>
   </div>

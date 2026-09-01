@@ -1,0 +1,1181 @@
+[
+  {
+    "title": "FPS Aim Trainer",
+    "url": "/games/aim-trainer",
+    "type": "game",
+    "tags": [
+      "aim",
+      "fps",
+      "skill",
+      "arcade",
+      "trainer"
+    ]
+  },
+  {
+    "title": "Asteroid Dodge",
+    "url": "/games/asteroid-dodge",
+    "type": "game",
+    "tags": [
+      "arcade",
+      "space",
+      "shooter"
+    ]
+  },
+  {
+    "title": "Beat Lab",
+    "url": "/games/beat-lab",
+    "type": "game",
+    "tags": [
+      "arcade",
+      "rhythm",
+      "music"
+    ]
+  },
+  {
+    "title": "BRIX 3D",
+    "url": "/games/brix3d",
+    "type": "game",
+    "tags": [
+      "arcade",
+      "builder",
+      "3d",
+      "bricks"
+    ]
+  },
+  {
+    "title": "Color Memory",
+    "url": "/games/color-memory",
+    "type": "game",
+    "tags": [
+      "memory",
+      "skill",
+      "simon"
+    ]
+  },
+  {
+    "title": "Gaming Crossword",
+    "url": "/games/crossword",
+    "type": "game",
+    "tags": [
+      "daily",
+      "puzzle",
+      "crossword",
+      "word"
+    ]
+  },
+  {
+    "title": "Pro Kit Daily",
+    "url": "/games/daily-challenge",
+    "type": "game",
+    "tags": [
+      "daily",
+      "pros",
+      "gear",
+      "quiz"
+    ]
+  },
+  {
+    "title": "Gamerdle",
+    "url": "/games/gamerdle",
+    "type": "game",
+    "tags": [
+      "daily",
+      "trivia",
+      "wordle",
+      "games"
+    ]
+  },
+  {
+    "title": "Gaming Trivia",
+    "url": "/games/gaming-trivia",
+    "type": "game",
+    "tags": [
+      "daily",
+      "trivia",
+      "quiz"
+    ]
+  },
+  {
+    "title": "Gear Knowledge Quiz",
+    "url": "/games/gear-quiz",
+    "type": "game",
+    "tags": [
+      "daily",
+      "gear",
+      "quiz",
+      "trivia"
+    ]
+  },
+  {
+    "title": "Hardware Timeline",
+    "url": "/games/hardware-timeline",
+    "type": "game",
+    "tags": [
+      "daily",
+      "gear",
+      "history",
+      "trivia"
+    ]
+  },
+  {
+    "title": "Link",
+    "url": "/games/link",
+    "type": "game",
+    "tags": [
+      "daily",
+      "puzzle",
+      "connections",
+      "groups"
+    ]
+  },
+  {
+    "title": "Memory Match",
+    "url": "/games/memory-match",
+    "type": "game",
+    "tags": [
+      "puzzle",
+      "memory",
+      "cards"
+    ]
+  },
+  {
+    "title": "Cosmic Minesweeper",
+    "url": "/games/minesweeper",
+    "type": "game",
+    "tags": [
+      "puzzle",
+      "minesweeper",
+      "classic"
+    ]
+  },
+  {
+    "title": "Pixle",
+    "url": "/games/pixle",
+    "type": "game",
+    "tags": [
+      "daily",
+      "puzzle",
+      "wordle",
+      "word"
+    ]
+  },
+  {
+    "title": "Price Guesser",
+    "url": "/games/price-guesser",
+    "type": "game",
+    "tags": [
+      "daily",
+      "gear",
+      "prices"
+    ]
+  },
+  {
+    "title": "Reaction Time Trainer",
+    "url": "/games/reaction-trainer",
+    "type": "game",
+    "tags": [
+      "skill",
+      "reaction",
+      "trainer"
+    ]
+  },
+  {
+    "title": "RIFT",
+    "url": "/games/rift",
+    "type": "game",
+    "tags": [
+      "daily",
+      "puzzle",
+      "word",
+      "chain"
+    ]
+  },
+  {
+    "title": "Rootweave",
+    "url": "/games/rootweave",
+    "type": "game",
+    "tags": [
+      "sim",
+      "farm",
+      "builder"
+    ]
+  },
+  {
+    "title": "Spec Match",
+    "url": "/games/spec-match",
+    "type": "game",
+    "tags": [
+      "daily",
+      "gear",
+      "specs",
+      "trivia"
+    ]
+  },
+  {
+    "title": "Sudoku",
+    "url": "/games/sudoku",
+    "type": "game",
+    "tags": [
+      "daily",
+      "puzzle",
+      "numbers"
+    ]
+  },
+  {
+    "title": "Type Racer",
+    "url": "/games/type-racer",
+    "type": "game",
+    "tags": [
+      "skill",
+      "typing",
+      "wpm"
+    ]
+  },
+  {
+    "title": "Void Keeper",
+    "url": "/games/void-keeper",
+    "type": "game",
+    "tags": [
+      "arcade",
+      "ambient"
+    ]
+  },
+  {
+    "title": "Word Scramble",
+    "url": "/games/word-scramble",
+    "type": "game",
+    "tags": [
+      "puzzle",
+      "word",
+      "anagram"
+    ]
+  },
+  {
+    "title": "Best 1440p Gaming Monitors 2026",
+    "url": "/guides/best-1440p-gaming-monitors-2026",
+    "type": "gear",
+    "tags": [
+      "guide",
+      "gear",
+      "monitors",
+      "1440p"
+    ]
+  },
+  {
+    "title": "Best Budget Gaming Chairs",
+    "url": "/guides/best-budget-gaming-chairs",
+    "type": "gear",
+    "tags": [
+      "guide",
+      "gear",
+      "chairs",
+      "budget"
+    ]
+  },
+  {
+    "title": "Best Budget Gaming Headsets 2026",
+    "url": "/guides/best-budget-gaming-headsets-2026",
+    "type": "gear",
+    "tags": [
+      "guide",
+      "gear",
+      "headsets",
+      "budget"
+    ]
+  },
+  {
+    "title": "Best Gaming Chairs 2026",
+    "url": "/guides/best-gaming-chairs-2026",
+    "type": "gear",
+    "tags": [
+      "guide",
+      "gear",
+      "chairs"
+    ]
+  },
+  {
+    "title": "Best Gaming Headset For CS2 2026",
+    "url": "/guides/best-gaming-headset-for-cs2-2026",
+    "type": "gear",
+    "tags": [
+      "guide",
+      "gear",
+      "headsets",
+      "cs2"
+    ]
+  },
+  {
+    "title": "Best Gaming Headsets 2026",
+    "url": "/guides/best-gaming-headsets-2026",
+    "type": "gear",
+    "tags": [
+      "guide",
+      "gear",
+      "headsets"
+    ]
+  },
+  {
+    "title": "Best Gaming Headsets For PC 2026",
+    "url": "/guides/best-gaming-headsets-for-pc-2026",
+    "type": "gear",
+    "tags": [
+      "guide",
+      "gear",
+      "headsets",
+      "pc"
+    ]
+  },
+  {
+    "title": "Best Gaming Headsets For PS5 2026",
+    "url": "/guides/best-gaming-headsets-for-ps5-2026",
+    "type": "gear",
+    "tags": [
+      "guide",
+      "gear",
+      "headsets",
+      "ps5"
+    ]
+  },
+  {
+    "title": "Best Gaming Headsets For Xbox 2026",
+    "url": "/guides/best-gaming-headsets-for-xbox-2026",
+    "type": "gear",
+    "tags": [
+      "guide",
+      "gear",
+      "headsets",
+      "xbox"
+    ]
+  },
+  {
+    "title": "Best Gaming Keyboard For Minecraft 2026",
+    "url": "/guides/best-gaming-keyboard-for-minecraft-2026",
+    "type": "gear",
+    "tags": [
+      "guide",
+      "gear",
+      "keyboards",
+      "minecraft"
+    ]
+  },
+  {
+    "title": "Best Gaming Keyboards 2026",
+    "url": "/guides/best-gaming-keyboards-2026",
+    "type": "gear",
+    "tags": [
+      "guide",
+      "gear",
+      "keyboards"
+    ]
+  },
+  {
+    "title": "Best Gaming Mice 2026",
+    "url": "/guides/best-gaming-mice-2026",
+    "type": "gear",
+    "tags": [
+      "guide",
+      "gear",
+      "mice"
+    ]
+  },
+  {
+    "title": "Best Gaming Mice For FPS 2026",
+    "url": "/guides/best-gaming-mice-for-fps-2026",
+    "type": "gear",
+    "tags": [
+      "guide",
+      "gear",
+      "mice",
+      "fps"
+    ]
+  },
+  {
+    "title": "Best Gaming Monitor For Apex Legends 2026",
+    "url": "/guides/best-gaming-monitor-for-apex-legends-2026",
+    "type": "gear",
+    "tags": [
+      "guide",
+      "gear",
+      "monitors",
+      "apex"
+    ]
+  },
+  {
+    "title": "Best Gaming Monitors 2026",
+    "url": "/guides/best-gaming-monitors-2026",
+    "type": "gear",
+    "tags": [
+      "guide",
+      "gear",
+      "monitors"
+    ]
+  },
+  {
+    "title": "Best Gaming Monitors For PS5 2026",
+    "url": "/guides/best-gaming-monitors-for-ps5-2026",
+    "type": "gear",
+    "tags": [
+      "guide",
+      "gear",
+      "monitors",
+      "ps5"
+    ]
+  },
+  {
+    "title": "Best Gaming Mouse For Fortnite 2026",
+    "url": "/guides/best-gaming-mouse-for-fortnite-2026",
+    "type": "gear",
+    "tags": [
+      "guide",
+      "gear",
+      "mice",
+      "fortnite"
+    ]
+  },
+  {
+    "title": "Best Gaming Mouse For Valorant 2026",
+    "url": "/guides/best-gaming-mouse-for-valorant-2026",
+    "type": "gear",
+    "tags": [
+      "guide",
+      "gear",
+      "mice",
+      "valorant"
+    ]
+  },
+  {
+    "title": "Best Gaming Setup Under 500",
+    "url": "/guides/best-gaming-setup-under-500",
+    "type": "gear",
+    "tags": [
+      "guide",
+      "gear",
+      "setup"
+    ]
+  },
+  {
+    "title": "Best Gear For Competitive FPS",
+    "url": "/guides/best-gear-for-competitive-fps",
+    "type": "gear",
+    "tags": [
+      "guide",
+      "gear",
+      "fps"
+    ]
+  },
+  {
+    "title": "Best Hall Effect Gaming Keyboards 2026",
+    "url": "/guides/best-hall-effect-gaming-keyboards-2026",
+    "type": "gear",
+    "tags": [
+      "guide",
+      "gear",
+      "keyboards",
+      "hall-effect"
+    ]
+  },
+  {
+    "title": "Best OLED Gaming Monitors 2026",
+    "url": "/guides/best-oled-gaming-monitors-2026",
+    "type": "gear",
+    "tags": [
+      "guide",
+      "gear",
+      "monitors",
+      "oled"
+    ]
+  },
+  {
+    "title": "Best Wireless Gaming Headsets 2026",
+    "url": "/guides/best-wireless-gaming-headsets-2026",
+    "type": "gear",
+    "tags": [
+      "guide",
+      "gear",
+      "headsets",
+      "wireless"
+    ]
+  },
+  {
+    "title": "Best Wireless Gaming Mice 2026",
+    "url": "/guides/best-wireless-gaming-mice-2026",
+    "type": "gear",
+    "tags": [
+      "guide",
+      "gear",
+      "mice",
+      "wireless"
+    ]
+  },
+  {
+    "title": "Gaming Headset Buying Guide",
+    "url": "/guides/gaming-headset-buying-guide",
+    "type": "gear",
+    "tags": [
+      "guide",
+      "gear",
+      "headsets",
+      "buying-guide"
+    ]
+  },
+  {
+    "title": "Gaming Keyboard Switches Guide",
+    "url": "/guides/gaming-keyboard-switches-guide",
+    "type": "gear",
+    "tags": [
+      "guide",
+      "gear",
+      "keyboards",
+      "switches"
+    ]
+  },
+  {
+    "title": "Gaming Monitor Buying Guide",
+    "url": "/guides/gaming-monitor-buying-guide",
+    "type": "gear",
+    "tags": [
+      "guide",
+      "gear",
+      "monitors",
+      "buying-guide"
+    ]
+  },
+  {
+    "title": "Gaming Mouse Buying Guide",
+    "url": "/guides/gaming-mouse-buying-guide",
+    "type": "gear",
+    "tags": [
+      "guide",
+      "gear",
+      "mice",
+      "buying-guide"
+    ]
+  },
+  {
+    "title": "Gaming Mouse Shape Guide",
+    "url": "/guides/gaming-mouse-shape-guide",
+    "type": "gear",
+    "tags": [
+      "guide",
+      "gear",
+      "mice"
+    ]
+  },
+  {
+    "title": "Gear Guides",
+    "url": "/guides",
+    "type": "gear",
+    "tags": [
+      "guides",
+      "gear",
+      "headsets",
+      "mice",
+      "keyboards",
+      "chairs",
+      "monitors"
+    ]
+  },
+  {
+    "title": "AOC 27g2 vs Gigabyte G27q",
+    "url": "/versus/aoc-27g2-vs-gigabyte-g27q",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus"
+    ]
+  },
+  {
+    "title": "Asus Rog Swift Pg279qm vs Dell S2722dgm",
+    "url": "/versus/asus-rog-swift-pg279qm-vs-dell-s2722dgm",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus"
+    ]
+  },
+  {
+    "title": "Asus Vg279qm vs LG 27gp850 B",
+    "url": "/versus/asus-vg279qm-vs-lg-27gp850-b",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus"
+    ]
+  },
+  {
+    "title": "Corsair Hs65 Wireless vs Hyperx Cloud Alpha Wireless",
+    "url": "/versus/corsair-hs65-wireless-vs-hyperx-cloud-alpha-wireless",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus",
+      "wireless"
+    ]
+  },
+  {
+    "title": "Corsair Hs65 Wireless vs Logitech G435",
+    "url": "/versus/corsair-hs65-wireless-vs-logitech-g435",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus",
+      "wireless"
+    ]
+  },
+  {
+    "title": "Corsair Hs80 vs Razer Blackshark V2 Pro",
+    "url": "/versus/corsair-hs80-vs-razer-blackshark-v2-pro",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus"
+    ]
+  },
+  {
+    "title": "Corsair K100 RGB vs Steelseries Apex Pro TKL",
+    "url": "/versus/corsair-k100-rgb-vs-steelseries-apex-pro-tkl",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus"
+    ]
+  },
+  {
+    "title": "Hyperx Alloy Origins Core vs Steelseries Apex Pro",
+    "url": "/versus/hyperx-alloy-origins-core-vs-steelseries-apex-pro",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus"
+    ]
+  },
+  {
+    "title": "Hyperx Cloud II vs Steelseries Arctis Nova 7",
+    "url": "/versus/hyperx-cloud-ii-vs-steelseries-arctis-nova-7",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus"
+    ]
+  },
+  {
+    "title": "Hyperx Cloud Stinger vs Steelseries Arctis Nova 3",
+    "url": "/versus/hyperx-cloud-stinger-vs-steelseries-arctis-nova-3",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus"
+    ]
+  },
+  {
+    "title": "Head-to-Head Comparisons",
+    "url": "/versus",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus",
+      "gear"
+    ]
+  },
+  {
+    "title": "Keychron K8 Pro vs Steelseries Apex 7",
+    "url": "/versus/keychron-k8-pro-vs-steelseries-apex-7",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus"
+    ]
+  },
+  {
+    "title": "LG 27gp850 vs Samsung Odyssey G5",
+    "url": "/versus/lg-27gp850-vs-samsung-odyssey-g5",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus"
+    ]
+  },
+  {
+    "title": "LG 27gp950 B vs Samsung Odyssey G7 28",
+    "url": "/versus/lg-27gp950-b-vs-samsung-odyssey-g7-28",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus"
+    ]
+  },
+  {
+    "title": "LG 27gp950 B vs Samsung Odyssey G7",
+    "url": "/versus/lg-27gp950-b-vs-samsung-odyssey-g7",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus"
+    ]
+  },
+  {
+    "title": "LG C3 OLED vs Samsung Odyssey OLED G8",
+    "url": "/versus/lg-c3-oled-vs-samsung-odyssey-oled-g8",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus",
+      "oled"
+    ]
+  },
+  {
+    "title": "Logitech G Pro X Superlight 2 vs Logitech G Pro X2 Superstrike",
+    "url": "/versus/logitech-g-pro-x-superlight-2-vs-logitech-g-pro-x2-superstrike",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus"
+    ]
+  },
+  {
+    "title": "Logitech G Pro X Superlight 2 vs Razer Deathadder V3 Pro",
+    "url": "/versus/logitech-g-pro-x-superlight-2-vs-razer-deathadder-v3-pro",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus"
+    ]
+  },
+  {
+    "title": "Logitech G Pro X Superlight 2 vs Razer Viper V3 Pro",
+    "url": "/versus/logitech-g-pro-x-superlight-2-vs-razer-viper-v3-pro",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus"
+    ]
+  },
+  {
+    "title": "Logitech G305 vs G Pro X Superlight 2",
+    "url": "/versus/logitech-g305-vs-g-pro-x-superlight-2",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus"
+    ]
+  },
+  {
+    "title": "Logitech G305 vs Razer Deathadder V3 Hyperspeed",
+    "url": "/versus/logitech-g305-vs-razer-deathadder-v3-hyperspeed",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus"
+    ]
+  },
+  {
+    "title": "Logitech G403 vs Razer Deathadder V3",
+    "url": "/versus/logitech-g403-vs-razer-deathadder-v3",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus"
+    ]
+  },
+  {
+    "title": "Logitech G502 X vs G Pro X Superlight 2",
+    "url": "/versus/logitech-g502-x-vs-g-pro-x-superlight-2",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus"
+    ]
+  },
+  {
+    "title": "Logitech G502 X vs Razer Basilisk V3",
+    "url": "/versus/logitech-g502-x-vs-razer-basilisk-v3",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus"
+    ]
+  },
+  {
+    "title": "Logitech G915 TKL vs Corsair K65 RGB Wireless",
+    "url": "/versus/logitech-g915-tkl-vs-corsair-k65-rgb-wireless",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus",
+      "wireless"
+    ]
+  },
+  {
+    "title": "Razer Basilisk V3 Pro vs Logitech G502 X Plus",
+    "url": "/versus/razer-basilisk-v3-pro-vs-logitech-g502-x-plus",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus"
+    ]
+  },
+  {
+    "title": "Razer Blackshark V2 Pro vs Razer Blackshark V3 Pro",
+    "url": "/versus/razer-blackshark-v2-pro-vs-razer-blackshark-v3-pro",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus"
+    ]
+  },
+  {
+    "title": "Razer Deathadder V3 vs Logitech G Pro X Superlight 2",
+    "url": "/versus/razer-deathadder-v3-vs-logitech-g-pro-x-superlight-2",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus"
+    ]
+  },
+  {
+    "title": "Razer Huntsman V3 Pro vs Wooting 60he",
+    "url": "/versus/razer-huntsman-v3-pro-vs-wooting-60he",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus"
+    ]
+  },
+  {
+    "title": "Razer Kraken V3 vs Corsair Hs65 Wireless",
+    "url": "/versus/razer-kraken-v3-vs-corsair-hs65-wireless",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus",
+      "wireless"
+    ]
+  },
+  {
+    "title": "Razer Viper V2 Pro vs Logitech G502 X Plus",
+    "url": "/versus/razer-viper-v2-pro-vs-logitech-g502-x-plus",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus"
+    ]
+  },
+  {
+    "title": "Secretlab Titan Evo vs Dxracer Formula",
+    "url": "/versus/secretlab-titan-evo-vs-dxracer-formula",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus"
+    ]
+  },
+  {
+    "title": "Sony Pulse 3d vs Sony Pulse Explore",
+    "url": "/versus/sony-pulse-3d-vs-sony-pulse-explore",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus"
+    ]
+  },
+  {
+    "title": "Steelseries Apex 3 TKL vs Redragon K552",
+    "url": "/versus/steelseries-apex-3-tkl-vs-redragon-k552",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus"
+    ]
+  },
+  {
+    "title": "Steelseries Arctis Nova 7 vs Hyperx Cloud Alpha Wireless",
+    "url": "/versus/steelseries-arctis-nova-7-vs-hyperx-cloud-alpha-wireless",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus",
+      "wireless"
+    ]
+  },
+  {
+    "title": "Steelseries Arctis Nova Pro vs Sony Pulse 3d",
+    "url": "/versus/steelseries-arctis-nova-pro-vs-sony-pulse-3d",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus"
+    ]
+  },
+  {
+    "title": "Steelseries Arctis Nova Pro Wireless vs Logitech G Pro X 2",
+    "url": "/versus/steelseries-arctis-nova-pro-wireless-vs-logitech-g-pro-x-2",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus",
+      "wireless"
+    ]
+  },
+  {
+    "title": "Wooting 60he vs Razer Huntsman V3 Pro TKL",
+    "url": "/versus/wooting-60he-vs-razer-huntsman-v3-pro-tkl",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus"
+    ]
+  },
+  {
+    "title": "Wooting 80he vs Wooting 60he V2",
+    "url": "/versus/wooting-80he-vs-wooting-60he-v2",
+    "type": "compare",
+    "tags": [
+      "compare",
+      "versus"
+    ]
+  },
+  {
+    "title": "Pro Setups",
+    "url": "/pros",
+    "type": "pro",
+    "tags": [
+      "pros",
+      "setups",
+      "valorant",
+      "cs2",
+      "apex",
+      "fortnite"
+    ]
+  },
+  {
+    "title": "TenZ setup",
+    "url": "/pros/tenz",
+    "type": "pro",
+    "tags": [
+      "pro",
+      "valorant",
+      "Pulsar TenZ Signature Edition"
+    ]
+  },
+  {
+    "title": "Demon1 setup",
+    "url": "/pros/demon1",
+    "type": "pro",
+    "tags": [
+      "pro",
+      "valorant",
+      "ASUS ROG Harpe Ace 2"
+    ]
+  },
+  {
+    "title": "aspas setup",
+    "url": "/pros/aspas",
+    "type": "pro",
+    "tags": [
+      "pro",
+      "valorant",
+      "Logitech G Pro X Superlight 2"
+    ]
+  },
+  {
+    "title": "Derke setup",
+    "url": "/pros/derke",
+    "type": "pro",
+    "tags": [
+      "pro",
+      "valorant",
+      "Logitech G Pro X Superlight 2"
+    ]
+  },
+  {
+    "title": "s1mple setup",
+    "url": "/pros/s1mple",
+    "type": "pro",
+    "tags": [
+      "pro",
+      "cs2",
+      "Logitech G Pro X Superlight 2 Cyan"
+    ]
+  },
+  {
+    "title": "m0NESY setup",
+    "url": "/pros/m0nesy",
+    "type": "pro",
+    "tags": [
+      "pro",
+      "cs2",
+      "Logitech G Pro X Superlight 2 White"
+    ]
+  },
+  {
+    "title": "donk setup",
+    "url": "/pros/donk",
+    "type": "pro",
+    "tags": [
+      "pro",
+      "cs2",
+      "ZOWIE x donk Mouse"
+    ]
+  },
+  {
+    "title": "ZywOo setup",
+    "url": "/pros/zywoo",
+    "type": "pro",
+    "tags": [
+      "pro",
+      "cs2",
+      "Pulsar ZywOo The Chosen Mouse Gen.2"
+    ]
+  },
+  {
+    "title": "ImperialHal setup",
+    "url": "/pros/imperialhal",
+    "type": "pro",
+    "tags": [
+      "pro",
+      "apex",
+      "Finalmouse Starlight Pro"
+    ]
+  },
+  {
+    "title": "Sweetdreams setup",
+    "url": "/pros/sweetdreams",
+    "type": "pro",
+    "tags": [
+      "pro",
+      "apex",
+      "Finalmouse Starlight-12 Poseidon"
+    ]
+  },
+  {
+    "title": "Zer0 setup",
+    "url": "/pros/zer0",
+    "type": "pro",
+    "tags": [
+      "pro",
+      "apex",
+      "Razer Viper V4 Pro"
+    ]
+  },
+  {
+    "title": "Reps setup",
+    "url": "/pros/reps",
+    "type": "pro",
+    "tags": [
+      "pro",
+      "apex",
+      "Logitech G Pro Wireless"
+    ]
+  },
+  {
+    "title": "Bugha setup",
+    "url": "/pros/bugha",
+    "type": "pro",
+    "tags": [
+      "pro",
+      "fortnite",
+      "Logitech G Pro X Superlight 2"
+    ]
+  },
+  {
+    "title": "Mongraal setup",
+    "url": "/pros/mongraal",
+    "type": "pro",
+    "tags": [
+      "pro",
+      "fortnite",
+      "Logitech G402"
+    ]
+  },
+  {
+    "title": "Peterbot setup",
+    "url": "/pros/peterbot",
+    "type": "pro",
+    "tags": [
+      "pro",
+      "fortnite",
+      "Logitech G Pro X Superlight 2"
+    ]
+  },
+  {
+    "title": "Clix setup",
+    "url": "/pros/clix",
+    "type": "pro",
+    "tags": [
+      "pro",
+      "fortnite",
+      "Finalmouse Ultralight X Sakura"
+    ]
+  },
+  {
+    "title": "About CosmicGamesHub",
+    "url": "/about",
+    "type": "page",
+    "tags": [
+      "about",
+      "trust"
+    ]
+  },
+  {
+    "title": "Daily Games Desk",
+    "url": "/games/daily",
+    "type": "page",
+    "tags": [
+      "daily",
+      "puzzles",
+      "arcade"
+    ]
+  },
+  {
+    "title": "Build a Setup",
+    "url": "/build",
+    "type": "page",
+    "tags": [
+      "build",
+      "setup",
+      "gear"
+    ]
+  },
+  {
+    "title": "AI Gaming Toolkit",
+    "url": "/ai-gaming",
+    "type": "page",
+    "tags": [
+      "ai",
+      "gamedev",
+      "explore"
+    ]
+  },
+  {
+    "title": "How We Choose",
+    "url": "/how-we-choose",
+    "type": "page",
+    "tags": [
+      "method",
+      "trust",
+      "picks"
+    ]
+  },
+  {
+    "title": "Find My Gear",
+    "url": "/tools/find-my-gear",
+    "type": "page",
+    "tags": [
+      "quiz",
+      "gear",
+      "setup",
+      "finder"
+    ]
+  },
+  {
+    "title": "All Games",
+    "url": "/games",
+    "type": "game",
+    "tags": [
+      "play",
+      "arcade",
+      "daily",
+      "puzzles"
+    ]
+  }
+]
