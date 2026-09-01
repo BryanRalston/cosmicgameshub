@@ -10,7 +10,7 @@
     gtag('config', 'G-D272MF8NQP');
   </script>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Scramble — Daily Gaming Word Unscramble | CosmicGamesHub</title>
   <meta name="description" content="Unscramble the daily gaming word in 6 tries. Gaming terms, titles, and characters — new puzzle every day." />
   <link rel="canonical" href="https://cosmicgameshub.com/games/word-scramble" />
@@ -467,6 +467,12 @@
   .sc-tile { width: 40px; height: 44px; font-size: 1.3rem; }
   .sc-modal { padding: 1.5rem 1.25rem; }
   .sc-mstat__num { font-size: 1.5rem; }
+  .scramble-header { padding: 0.45rem 0 0.4rem; }
+  .scramble-title-block h1 { font-size: 1.2rem; }
+  .btn-guess, .btn-shuffle, .sc-share-btn, .sc-modal-close { min-height: 44px; box-sizing: border-box; }
+  .sc-share-btn { width: 100%; justify-content: center; }
+  #scramble-input { font-size: 16px; min-height: 44px; }
+  .scramble-wrap { padding: 0 0.75rem max(1.5rem, env(safe-area-inset-bottom)); }
 }
   </style>
   <meta property="og:image" content="https://cosmicgameshub.com/images/game-wordscramble.jpg">
@@ -618,6 +624,7 @@
     </div>
     <div class="sc-share-grid" id="sc-share-grid" aria-label="Result grid"></div>
     <button class="sc-share-btn" id="sc-share-btn">📋 Share Result</button>
+    <div class="cg-daily-dock" data-slug="word-scramble"></div>
     <div class="sc-next-timer">Next Scramble in <span id="sc-countdown">00:00:00</span></div>
 
     <div style="margin-top:1.1rem;padding-top:1.1rem;border-top:1px solid rgba(255,255,255,0.08);text-align:left;">

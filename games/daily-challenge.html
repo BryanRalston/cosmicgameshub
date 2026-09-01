@@ -14,9 +14,15 @@
   <meta property="og:image" content="https://cosmicgameshub.com/images/game-dailychallenge-v2.jpg"/>
   <meta property="og:url" content="https://cosmicgameshub.com/games/daily-challenge"/>
   <style>
-    .pk-wrap { max-width: 560px; margin: 0 auto; padding: 0 1rem 3rem; }
+    .pk-wrap { max-width: 560px; margin: 0 auto; padding: 0 1rem max(3rem, env(safe-area-inset-bottom)); }
     .pk-hero { text-align:center; padding: 1.5rem 0 1rem; }
     .pk-hero img { width:100%; height:140px; object-fit:cover; border-radius:14px; border:1px solid var(--border); margin-bottom:1rem; }
+    @media (max-width: 480px) {
+      .pk-hero { padding: 0.7rem 0 0.5rem; }
+      .pk-hero img { height: 88px; margin-bottom: 0.65rem; }
+      .pk-hero p { font-size: 0.82rem; }
+      #pkCopy { min-height: 44px; width: 100%; }
+    }
     .pk-clue { background: var(--bg-card); border:1px solid var(--border); border-radius:16px; padding:1.25rem; margin-bottom:1rem; }
     .pk-k { font-size:.68rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); margin-bottom:.35rem; }
     .pk-v { font-size:1.15rem; font-weight:800; color:#fff; font-family:'Outfit',sans-serif; margin-bottom:.85rem; }
@@ -72,7 +78,7 @@
       <p id="pkMsg" style="color:var(--text-mid);"></p>
       <p><a id="pkProLink" href="/pros">Open the pro page →</a></p>
       <div class="pk-share" id="pkShare"></div>
-      <button class="btn btn--primary" type="button" id="pkCopy">Copy share</button>
+      <button class="btn btn--primary" type="button" id="pkCopy" style="min-height:44px;width:100%;">Copy share</button>
       <div class="cg-daily-dock" data-slug="daily-challenge"></div>
     </div>
   </div>
@@ -132,6 +138,8 @@
     document.getElementById('pkShare').textContent = share;
     document.getElementById('pkResult').classList.add('show');
     if (window.CGDaily) window.CGDaily.mountAll();
+    var res = document.getElementById('pkResult');
+    if (res && res.scrollIntoView) setTimeout(function () { res.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 50);
   }
 
   fetch('/data/pros.json').then(function (r) { return r.json(); }).then(function (pros) {

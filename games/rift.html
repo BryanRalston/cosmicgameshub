@@ -10,7 +10,7 @@
     gtag('config', 'G-D272MF8NQP');
   </script>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <title>RIFT — Daily Word Game | CosmicGamesHub</title>
   <meta name="description" content="RIFT: Three daily word zones — Chain, Grow, Decode. Change one letter at a time, grow words letter by letter, and crack hidden connections. Free daily puzzle."/>
   <link rel="canonical" href="https://cosmicgameshub.com/games/rift"/>
@@ -31,6 +31,12 @@
       background: radial-gradient(ellipse 80% 60% at 50% -5%, rgba(0,212,255,0.07) 0%, transparent 70%);
       border-bottom: 1px solid var(--border);
       margin-bottom: 2rem;
+    }
+    @media (max-width: 480px) {
+      .rift-header { padding: 0.85rem 0 0.7rem; margin-bottom: 0.85rem; }
+      .rift-title { font-size: 1.7rem; letter-spacing: 0.12em; }
+      .rift-sub { margin-bottom: 0.65rem; }
+      .zone-dots { gap: 1rem; margin-bottom: 0.55rem; }
     }
     .rift-title {
       font-size: clamp(2.2rem, 6vw, 3.5rem);
@@ -237,13 +243,15 @@
       border: 1px solid var(--border-mid);
       border-radius: var(--radius-sm);
       color: var(--text-hi);
-      font-size: 1.2rem;
+      font-size: 16px;
       font-weight: 700;
       font-family: 'JetBrains Mono', 'Courier New', monospace;
       padding: 0.6rem 1rem;
       text-transform: uppercase;
       letter-spacing: 0.14em;
       text-align: center;
+      min-height: 44px;
+      box-sizing: border-box;
     }
     .chain-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,212,255,0.12); }
 
@@ -411,9 +419,11 @@
       border: 1px solid var(--border-mid);
       border-radius: var(--radius-sm);
       color: var(--text-hi);
-      font-size: 1rem;
+      font-size: 16px;
+      min-height: 44px;
       padding: 0.65rem 1rem;
       font-family: inherit;
+      box-sizing: border-box;
     }
     .rift-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,212,255,0.1); }
     .rift-input.violet:focus { border-color: #a855f7; box-shadow: 0 0 0 3px rgba(168,85,247,0.1); }
@@ -580,7 +590,7 @@
       .chain-input-row .btn,
       .grow-input-row .btn,
       .decode-connection-input-row .btn { width: 100%; min-height: 48px; font-size: 1rem; }
-      .chain-input { font-size: 1.1rem; padding: 0.75rem 0.85rem; letter-spacing: 0.1em; }
+      .chain-input, .grow-input, .decode-connection-input-row input { font-size: 16px; min-height: 44px; padding: 0.75rem 0.85rem; letter-spacing: 0.1em; }
     }
 
     /* mobile nav */
@@ -724,7 +734,7 @@
       </div>
     </div>
     <div class="share-card" id="shareCard"></div>
-    <button class="btn btn-zone1" id="shareCopyBtn" onclick="copyShare()">📋 Copy Result</button>
+    <button class="btn btn-zone1" id="shareCopyBtn" onclick="copyShare()" style="min-height:44px;width:100%;">📋 Copy Result</button>
     <button class="btn" style="margin-top:0.75rem;background:var(--bg-surface);border:1px solid var(--border-mid);color:var(--text-hi);" onclick="replayRift()">↺ Play Again</button>
 
     <div style="margin-top:1.25rem;padding-top:1.1rem;border-top:1px solid rgba(255,255,255,0.06);">

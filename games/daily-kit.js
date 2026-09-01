@@ -110,6 +110,69 @@
     return Promise.reject();
   }
 
+  function absUrl(url) {
+    if (!url) return 'https://cosmicgameshub.com';
+    if (url.indexOf('http') === 0) return url;
+    return 'https://' + String(url).replace(/^\/\//, '');
+  }
+
+  function shareResult(opts) {
+    opts = typeof opts === 'string' ? { text: opts } : (opts || {});
+    var text = opts.text || '';
+    var url = absUrl(opts.url);
+    if (text && text.indexOf('cosmicgameshub.com') === -1) {
+      text = text.replace(/\s+$/, '') + '\n' + url.replace(/^https?:\/\//, '');
+    }
+    function fallback() {
+      if (w.CGSfx && w.CGSfx.shareNow && !w.CGSfx.__phoneShare) {
+        return w.CGSfx.shareNow(Object.assign({}, opts, { text: text, url: url }));
+      }
+      return copyText(text);
+    }
+    if (navigator.share) {
+      return navigator.share({
+        title: opts.title || 'CosmicGamesHub',
+        text: text,
+        url: url
+      }).catch(function (err) {
+        if (err && err.name === 'AbortError') return null;
+        return fallback();
+      });
+    }
+    return fallback();
+  }
+
+  function ensureViewportFit() {
+    var meta = document.querySelector('meta[name="viewport"]');
+    if (!meta) return;
+    var c = meta.getAttribute('content') || '';
+    if (!/viewport-fit\s*=\s*cover/i.test(c)) {
+      meta.setAttribute('content', c.replace(/\s*$/, '') + ', viewport-fit=cover');
+    }
+  }
+
+  function patchShareNow() {
+    if (!w.CGSfx || typeof w.CGSfx.shareNow !== 'function' || w.CGSfx.__phoneShare) return;
+    var orig = w.CGSfx.shareNow.bind(w.CGSfx);
+    w.CGSfx.shareNow = function (opts) {
+      opts = opts || {};
+      var text = opts.text || '';
+      var url = absUrl(opts.url);
+      if (navigator.share) {
+        return navigator.share({
+          title: opts.title || 'CosmicGamesHub',
+          text: text,
+          url: url
+        }).catch(function (err) {
+          if (err && err.name === 'AbortError') return null;
+          return orig(opts);
+        });
+      }
+      return orig(opts);
+    };
+    w.CGSfx.__phoneShare = true;
+  }
+
   function leftover() {
     var m = playedMap();
     return ORDER.filter(function (g) { return !m[g.id]; });
@@ -154,13 +217,21 @@
     var s = document.createElement('style');
     s.id = 'cg-daily-kit-css';
     s.textContent = [
-      '.cg-dock{margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:.55rem;}',
-      '.cg-dock__next{display:block;text-align:center;background:var(--accent,#00d4ff);color:#06060a;font-weight:800;padding:.75rem 1rem;border-radius:10px;text-decoration:none;min-height:44px;line-height:1.2;}',
+      '.cg-dock{margin-top:1rem;padding-top:1rem;padding-bottom:max(0.35rem,env(safe-area-inset-bottom,0px));border-top:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:.55rem;}',
+      '.cg-dock__next{display:flex;align-items:center;justify-content:center;text-align:center;background:var(--accent,#00d4ff);color:#06060a;font-weight:800;padding:.75rem 1rem;border-radius:10px;text-decoration:none;min-height:44px;line-height:1.2;box-sizing:border-box;}',
       '.cg-dock__next:hover{text-decoration:none;opacity:.92;}',
-      '.cg-dock__all{text-align:center;font-size:.82rem;font-weight:700;color:var(--accent,#00d4ff);}',
+      '.cg-dock__all{text-align:center;font-size:.82rem;font-weight:700;color:var(--accent,#00d4ff);min-height:44px;display:flex;align-items:center;justify-content:center;}',
       '.cg-dock__done{text-align:center;color:var(--text-mid,#aaa);font-size:.9rem;}',
       '.cg-dock__left{text-align:center;font-size:.8rem;color:var(--text-mid,#aaa);}',
-      '.cg-dock__mute{margin:0 auto;min-height:40px;padding:.35rem .8rem;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:transparent;color:var(--text-mid,#aaa);font:inherit;cursor:pointer;}'
+      '.cg-dock__mute{margin:0 auto;min-height:44px;padding:.35rem .8rem;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:transparent;color:var(--text-mid,#aaa);font:inherit;cursor:pointer;}',
+      'html{overflow-x:clip;}',
+      '@media (max-width:480px){',
+      'body{padding-bottom:max(0.5rem,env(safe-area-inset-bottom,0px));}',
+      '.breadcrumb{display:none;}',
+      'input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=range]),select,textarea{font-size:16px!important;}',
+      '.kb-key{height:44px;min-height:44px;box-sizing:border-box;}',
+      '.share-btn,.sc-share-btn,.cw-share-btn,.lk-btn,.pg-share-btn,.pg-submit,.pg-play-again,.pg-next-btn,.gq-btn,.sm-btn,.ht-btn,.btn-guess,.btn-shuffle,.btn-share,#pkCopy,#guessBtn,.cw-controls button,.num-btn,.diff-btn,.answer-btn,.gq-choice,.sm-choice,.ht-choice,.pk-choice{min-height:44px;box-sizing:border-box;}',
+      '}'
     ].join('');
     document.head.appendChild(s);
   }
@@ -196,6 +267,8 @@
 
   function mountAll() {
     injectStyles();
+    ensureViewportFit();
+    patchShareNow();
     document.querySelectorAll('.cg-daily-dock').forEach(mountDock);
     ensurePlayer();
   }
@@ -214,6 +287,7 @@
     fmtCd: fmtCd,
     msToUtcMidnight: msToUtcMidnight,
     copyText: copyText,
+    shareResult: shareResult,
     mountAll: mountAll,
     isoToday: isoToday,
     syncPlayer: syncPlayer
@@ -227,5 +301,6 @@
   setInterval(function () {
     tickCountdowns();
     if (w.CGPlayer) syncPlayer();
+    patchShareNow();
   }, 1000);
 })(window);

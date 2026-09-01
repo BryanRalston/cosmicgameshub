@@ -10,7 +10,7 @@
     gtag('config', 'G-D272MF8NQP');
   </script>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Sudoku — Daily Puzzle + Free Play | CosmicGamesHub</title>
   <meta name="description" content="Free daily Sudoku puzzle with multiple difficulty levels. Classic 9x9 grid with timer, hints, notes mode, and mistake tracking." />
   <link rel="canonical" href="https://cosmicgameshub.com/games/sudoku" />
@@ -63,7 +63,7 @@
     .fail-banner h2 { color:#ff4757; margin-bottom:0.5rem; }
     .sdk-best { font-size:0.8rem; color:var(--text-lo); margin:0.4rem 0 1rem; }
     .sdk-best span { color:var(--accent); font-weight:700; }
-    .btn-share { background:transparent; border:1px solid rgba(255,255,255,0.15); color:var(--text-mid); border-radius:var(--radius-sm); padding:0.45rem 1rem; font-size:0.82rem; cursor:pointer; font-family:inherit; transition:all 0.15s; margin-left:0.5rem; }
+    .btn-share { background:transparent; border:1px solid rgba(255,255,255,0.15); color:var(--text-mid); border-radius:var(--radius-sm); padding:0.45rem 1rem; font-size:0.82rem; cursor:pointer; font-family:inherit; transition:all 0.15s; margin-left:0.5rem; min-height:44px; }
     .btn-share:hover { border-color:var(--accent); color:var(--accent); }
   </style>
   <meta property="og:image" content="https://cosmicgameshub.com/images/game-sudoku.jpg">
@@ -141,13 +141,14 @@
           <h2>🎉 Puzzle Solved!</h2>
           <p id="winMsg" style="color:var(--text-mid);margin-bottom:0.25rem;"></p>
           <p class="sdk-best" id="winBest"></p>
-          <button class="btn btn--primary" onclick="newGame()">New Puzzle</button>
+          <button class="btn btn--primary" onclick="newGame()" style="min-height:44px;">Play again</button>
           <button class="btn-share" id="winShareBtn" onclick="shareWin()">📋 Share</button>
         </div>
         <div class="fail-banner" id="failBanner">
           <h2>💥 Too Many Mistakes</h2>
           <p style="color:var(--text-mid);margin-bottom:1rem;">3 mistakes made. Better luck next time!</p>
-          <button class="btn btn--primary" onclick="newGame()">New Puzzle</button>
+          <button class="btn btn--primary" onclick="newGame()">Play again</button>
+          <button class="btn-share" type="button" onclick="shareWin()">📋 Share</button>
         </div>
       </div>
 
@@ -229,15 +230,19 @@
 
 /* Mobile: numpad above difficulty/info so users see it without scrolling */
 @media (max-width: 720px) {
-  .sidebar { width: 100%; max-width: min(450px, 92vw); }
+  .sidebar { width: 100%; max-width: min(450px, 92vw); display: flex; flex-direction: column; }
   .sidebar > .diff-row { order: 3; }
   .sidebar > .info-row:nth-of-type(1) { order: 4; }
   .sidebar > .info-row:nth-of-type(2) { order: 5; }
   .sidebar > .info-row:nth-of-type(3) { order: 6; }
   .sidebar > .numpad { order: 1; }
   .sidebar > .action-btns { order: 2; margin-bottom: 0.5rem; }
-  .numpad { grid-template-columns: repeat(10, 1fr); gap: 0.3rem; }
-  .num-btn { aspect-ratio: 1; font-size: 1rem; }
+  .numpad { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.35rem; }
+  .num-btn { aspect-ratio: auto; min-height: 44px; font-size: 1rem; }
+  .diff-btn { min-height: 44px; padding: 0.45rem 0.3rem; }
+  .action-btns .btn { min-height: 44px; }
+  .container > div[style*="padding:1.5rem"] { padding: 0.7rem 0 0.25rem !important; }
+  .container > div[style*="padding:1.5rem"] h1 { font-size: 1.35rem; margin-top: 0.2rem !important; }
 }
 </style>
 <footer class="footer"><div class="container"><div class="footer__bottom">

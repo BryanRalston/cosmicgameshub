@@ -16,7 +16,7 @@
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-D272MF8NQP"></script>
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-D272MF8NQP');</script>
   <style>
-    .dh-wrap { max-width: 980px; margin: 0 auto; padding: 0 1rem 4rem; }
+    .dh-wrap { max-width: 980px; margin: 0 auto; padding: 0 1rem max(4rem, env(safe-area-inset-bottom)); }
     .dh-hero { text-align: center; padding: 1.6rem 1rem 1.15rem; position: relative; overflow: hidden; background: #09090f; }
     .dh-hero::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(9,9,15,0.55) 0%, rgba(9,9,15,0.92) 100%), url('/images/game-daily-hub-v2.jpg') center 40% / cover no-repeat; opacity: 0.28; pointer-events: none; }
     .dh-hero > * { position: relative; z-index: 1; }
@@ -79,6 +79,10 @@
       .dh-grid { grid-template-columns: 1fr; }
       .dh-card { padding: .85rem 1rem; min-height: 44px; }
       .dh-icon { width: 44px; height: 44px; font-size: 1.7rem; }
+      .dh-hero { padding: 0.9rem 0.75rem 0.85rem; }
+      .dh-sub { display: none; }
+      .dh-empty-hint { margin-top: 0.5rem !important; font-size: .8rem !important; }
+      .dh-stat-lbl { white-space: normal; }
     }
   </style>
 </head>

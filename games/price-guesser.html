@@ -4,7 +4,7 @@
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-D272MF8NQP"></script>
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-D272MF8NQP');</script>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Gaming Gear Price Guesser — How Well Do You Know Gear Prices? | CosmicGamesHub</title>
   <meta name="description" content="Guess the price of gaming peripherals — 5 rounds, daily picks. The closer you are without going over, the more points you score. Free browser game." />
   <link rel="canonical" href="https://cosmicgameshub.com/games/price-guesser" />
@@ -13,6 +13,14 @@
     :root { --g-a: #00d4ff; --g-b: #a855f7; --g-c: #4ade80; --g-w: #f87171; }
     .pg-wrap { max-width: 620px; margin: 0 auto; padding: 0 1rem 3rem; }
     .pg-header { text-align: center; padding: 2.5rem 1rem 1.5rem; }
+    @media (max-width: 480px) {
+      .pg-header { padding: 0.7rem 0.75rem 0.45rem; }
+      .pg-header p { display: none; }
+      .pg-wrap { padding: 0 0.75rem max(2rem, env(safe-area-inset-bottom)); }
+      .pg-input-row { flex-wrap: nowrap; }
+      .pg-share-btn, .pg-play-again, .pg-next-btn { width: 100%; min-height: 44px; }
+      .pg-product { padding: 1rem; margin-bottom: 0.75rem; }
+    }
     .pg-header h1 { font-size: clamp(1.5rem, 4vw, 2.2rem); font-weight: 800; color: #fff; margin: 0 0 .4rem; }
     .pg-header p { color: #aaa; font-size: .92rem; margin: 0; }
     .pg-streak { display: inline-flex; align-items: center; gap: .4rem; background: rgba(255,179,0,.1); border: 1px solid rgba(255,179,0,.3); border-radius: 99px; font-size: .78rem; font-weight: 700; color: #ffb300; padding: .25rem .8rem; margin-top: .75rem; }
@@ -39,10 +47,10 @@
 
     /* Input */
     .pg-input-row { display: flex; gap: .75rem; align-items: center; margin-bottom: .75rem; flex-wrap: wrap; }
-    .pg-price-input { flex: 1; min-width: 130px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12); border-radius: 8px; color: #fff; font-size: 1.3rem; font-weight: 700; padding: .65rem 1rem; font-family: inherit; }
+    .pg-price-input { flex: 1; min-width: 130px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12); border-radius: 8px; color: #fff; font-size: 16px; font-weight: 700; padding: .65rem 1rem; font-family: inherit; min-height: 44px; box-sizing: border-box; }
     .pg-price-input:focus { outline: none; border-color: var(--g-a); }
     .pg-price-input::placeholder { color: #444; font-size: 1rem; font-weight: 400; }
-    .pg-submit { background: var(--g-a); color: #000; font-weight: 700; font-size: .95rem; padding: .7rem 1.6rem; border: none; border-radius: 8px; cursor: pointer; transition: background .2s, transform .1s; white-space: nowrap; }
+    .pg-submit { background: var(--g-a); color: #000; font-weight: 700; font-size: .95rem; padding: .7rem 1.6rem; border: none; border-radius: 8px; cursor: pointer; transition: background .2s, transform .1s; white-space: nowrap; min-height: 44px; }
     .pg-submit:hover { background: #00b8db; }
     .pg-submit:active { transform: scale(.97); }
     .pg-submit:disabled { opacity: .4; cursor: default; }
@@ -64,7 +72,7 @@
     .pg-result-message { font-size: .9rem; color: #ccc; margin: 0 0 .4rem; }
     .pg-result-actual { font-size: .82rem; color: #888; }
     .pg-result-pts { font-size: .78rem; font-weight: 700; color: #ffb300; margin-top: .3rem; }
-    .pg-next-btn { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12); color: #fff; font-weight: 700; font-size: .9rem; padding: .6rem 1.6rem; border-radius: 8px; cursor: pointer; transition: all .2s; margin-top: .75rem; }
+    .pg-next-btn { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12); color: #fff; font-weight: 700; font-size: .9rem; padding: .6rem 1.6rem; border-radius: 8px; cursor: pointer; transition: all .2s; margin-top: .75rem; min-height: 44px; }
     .pg-next-btn:hover { background: rgba(255,255,255,.12); }
 
     /* End screen */
@@ -81,10 +89,10 @@
     .pg-grade-F { color: var(--g-w); }
     .pg-grade-desc { font-size: .88rem; color: #aaa; margin: 0 0 1.5rem; }
     .pg-share-box { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 10px; padding: 1rem; font-size: .82rem; color: #aaa; font-family: 'JetBrains Mono', monospace; white-space: pre-wrap; margin: 1rem 0; }
-    .pg-share-btn { background: var(--g-a); color: #000; font-weight: 700; padding: .65rem 1.6rem; border: none; border-radius: 8px; cursor: pointer; font-size: .9rem; transition: background .2s; }
+    .pg-share-btn { background: var(--g-a); color: #000; font-weight: 700; padding: .65rem 1.6rem; border: none; border-radius: 8px; cursor: pointer; font-size: .9rem; transition: background .2s; min-height: 44px; }
     .pg-share-btn:hover { background: #00b8db; }
     .pg-share-copied { display: none; color: var(--g-c); font-size: .8rem; margin-top: .5rem; }
-    .pg-play-again { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); color: #ccc; font-weight: 700; padding: .6rem 1.4rem; border-radius: 8px; cursor: pointer; font-size: .88rem; transition: all .2s; margin-top: .5rem; }
+    .pg-play-again { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); color: #ccc; font-weight: 700; padding: .6rem 1.4rem; border-radius: 8px; cursor: pointer; font-size: .88rem; transition: all .2s; margin-top: .5rem; min-height: 44px; }
     .pg-play-again:hover { background: rgba(255,255,255,.1); color: #fff; }
     .pg-tomorrow { font-size: .8rem; color: #666; margin-top: 1rem; }
     .pg-countdown { color: var(--g-a); font-weight: 700; }

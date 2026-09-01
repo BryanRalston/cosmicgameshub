@@ -10,7 +10,7 @@
     gtag('config', 'G-D272MF8NQP');
   </script>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <title>Gaming Trivia — Daily Quiz | CosmicGamesHub</title>
   <meta name="description" content="10 gaming trivia questions per day. Race the clock for bonus points. Multiple choice, daily rotation. Free to play on CosmicGamesHub."/>
   <link rel="canonical" href="https://cosmicgameshub.com/games/gaming-trivia"/>
@@ -112,6 +112,7 @@
       display:flex;
       align-items:flex-start;
       gap:0.6rem;
+      min-height:44px;
     }
     .answer-btn:hover:not(:disabled) {
       border-color:var(--accent);
@@ -313,8 +314,23 @@
 
     @media(max-width:480px){
       .answer-grid { grid-template-columns:1fr; }
-      .question-card { padding:1.25rem 1.1rem 1.1rem; }
+      .question-card { padding:1rem 0.9rem 0.9rem; }
       .results-screen { padding:1.5rem 1.1rem; }
+      .trivia-wrap > div[style*="text-align:center"] { padding: 0.4rem 0 0.2rem !important; }
+      .trivia-wrap > div[style*="text-align:center"] h1 { font-size: 1.35rem !important; }
+      .trivia-wrap > div[style*="text-align:center"] p { display: none; }
+      .tv-meta { margin-bottom: 0.5rem; gap: 0.4rem; }
+      .answer-btn { min-height: 44px; }
+      #nextBtn, .results-screen .btn { min-height: 44px; width: 100%; }
+      .next-row.show {
+        display: block;
+        position: sticky;
+        bottom: 0;
+        margin-top: 0.75rem;
+        padding: 0.4rem 0 max(0.4rem, env(safe-area-inset-bottom));
+        background: var(--bg-card);
+        z-index: 3;
+      }
     }
   </style>
   <meta property="og:image" content="https://cosmicgameshub.com/images/game-trivia.jpg">
@@ -433,7 +449,8 @@
       </div>
     </div>
     <div class="share-box" id="shareBox"></div>
-    <button class="btn btn--primary" onclick="copyShare()" style="width:100%;margin-bottom:0.65rem;">📋 Copy &amp; Share</button>
+    <button class="btn btn--primary" onclick="copyShare()" style="width:100%;margin-bottom:0.65rem;min-height:44px;">📋 Copy &amp; Share</button>
+    <div class="cg-daily-dock" data-slug="gaming-trivia"></div>
     <p style="font-size:0.78rem;color:var(--text-lo);margin:0.5rem 0 0;">New quiz every day. Come back tomorrow!</p>
   </div>
 

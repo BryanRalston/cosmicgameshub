@@ -17,7 +17,7 @@
   <link rel="stylesheet" href="../styles.css"/>
   <style>
     /* ── Layout ── */
-    .gamerdle-wrap { max-width:780px; margin:0 auto; padding:1rem 0 3rem; }
+    .gamerdle-wrap { max-width:780px; margin:0 auto; padding:1rem 0 max(3rem, env(safe-area-inset-bottom)); }
 
     /* ── Header stats ── */
     .gd-meta { display:flex; gap:0.75rem; justify-content:center; flex-wrap:wrap; margin-bottom:1.25rem; }
@@ -86,15 +86,19 @@
     .gd-close-toast strong { color: #00e676; }
 
     @media(max-width:600px){
-      .attr-header,.guess-row,.guess-empty { grid-template-columns:1.2fr repeat(5,minmax(52px,1fr)); }
-      .cell { min-height:44px; font-size:0.68rem; }
-      .cell-name { font-size:0.68rem; }
+      .attr-header,.guess-row,.guess-empty { grid-template-columns:minmax(0,1.2fr) repeat(5,minmax(0,1fr)); }
+      .cell { min-height:44px; font-size:0.68rem; overflow:hidden; }
+      .cell-name { font-size:0.68rem; word-break:break-word; }
       .attr-col { font-size:0.55rem; letter-spacing:0.04em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding:0.3rem 2px; }
+      .gamerdle-wrap > div[style*="text-align:center"] { padding: 0.65rem 0 0.5rem !important; }
+      .gamerdle-wrap > div[style*="text-align:center"] h1 { font-size: 1.45rem !important; }
+      .gd-meta { margin-bottom: 0.75rem; }
+      #guessBtn { min-height: 44px; }
     }
     @media(max-width:420px){
-      .attr-header,.guess-row,.guess-empty { grid-template-columns:1.2fr repeat(5,minmax(44px,1fr)); gap:2px; }
+      .attr-header,.guess-row,.guess-empty { grid-template-columns:minmax(0,1.15fr) repeat(5,minmax(0,1fr)); gap:2px; }
       .attr-col { font-size:0.5rem; padding:0.25rem 1px; }
-      .cell { min-height:42px; font-size:0.62rem; padding:0.35rem 0.2rem; }
+      .cell { min-height:44px; font-size:0.62rem; padding:0.35rem 0.15rem; }
     }
   </style>
   <meta property="og:image" content="https://cosmicgameshub.com/images/game-gamerdle.jpg">
@@ -177,7 +181,7 @@
   <!-- Input -->
   <div class="guess-form">
     <input id="guessInput" type="text" placeholder="Type a game name…" autocomplete="off" spellcheck="false"/>
-    <button class="btn btn--primary" id="guessBtn" onclick="submitGuess()" style="white-space:nowrap;">Guess</button>
+    <button class="btn btn--primary" id="guessBtn" onclick="submitGuess()" style="white-space:nowrap;min-height:44px;">Guess</button>
     <div class="autocomplete-list" id="acList" style="display:none;"></div>
   </div>
 
@@ -211,9 +215,10 @@
     </div>
     <div class="result-emoji-grid" id="emojiGrid"></div>
     <div class="share-box" id="shareBox"></div>
-    <button class="btn btn--primary" onclick="copyShare()" style="margin-bottom:0.75rem;">📋 Copy &amp; Share</button>
+    <button class="btn btn--primary" onclick="copyShare()" style="margin-bottom:0.75rem;min-height:44px;width:100%;">📋 Copy &amp; Share</button>
+    <div class="cg-daily-dock" data-slug="gamerdle"></div>
     <br>
-    <button class="btn" style="margin-top:0.5rem;width:100%;background:var(--bg-surface);border:1px solid var(--border-mid);color:var(--text-hi);" onclick="this.closest('.result-panel').classList.remove('show');window.scrollTo(0,0);">↑ Back to Guesses</button>
+    <button class="btn" style="margin-top:0.5rem;width:100%;min-height:44px;background:var(--bg-surface);border:1px solid var(--border-mid);color:var(--text-hi);" onclick="this.closest('.result-panel').classList.remove('show');window.scrollTo(0,0);">↑ Back to Guesses</button>
 
     <!-- Cross-game CTA: keep them on the site after they finish today's puzzle -->
     <div style="margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid rgba(255,255,255,0.06);">

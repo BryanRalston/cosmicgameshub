@@ -10,7 +10,7 @@
     gtag('config', 'G-D272MF8NQP');
   </script>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Spec Match — Identify the Gaming Gear | CosmicGamesHub</title>
   <meta name="description" content="Read the specs, name the product. 5 daily hardware identification rounds — mice, headsets, keyboards, monitors. Speed scoring, streak bonus, S–F grade." />
   <meta property="og:title" content="Spec Match — Identify the Gaming Gear | CosmicGamesHub" />
@@ -179,6 +179,7 @@
       padding: 0.75rem 0.9rem;
       cursor: pointer;
       font-size: 0.86rem;
+      min-height: 44px;
       color: var(--text-primary, #fff);
       font-family: inherit;
       text-align: left;
@@ -379,6 +380,10 @@
       border: none;
       font-family: inherit;
       transition: opacity 0.15s, transform 0.1s;
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
     .sm-btn:active { transform: scale(0.97); }
     .sm-btn--primary {
@@ -457,6 +462,8 @@
       .sm-stats { grid-template-columns: repeat(3, 1fr); }
       .sm-title { font-size: 1.35rem; }
       .sm-spec-label { width: 90px; }
+      .sm-choice { min-height: 44px; }
+      .sm-back { display: none; }
     }
   </style>
   <script type="application/ld+json">

@@ -10,7 +10,7 @@
     gtag('config', 'G-D272MF8NQP');
   </script>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Gaming Gear Knowledge Quiz — CosmicGamesHub</title>
   <meta name="description" content="Test your gaming gear IQ. 10 daily questions about real headsets, mice, keyboards, monitors, and chairs. Speed bonus scoring, S–F grade, personal best tracking." />
   <meta property="og:title" content="Gaming Gear Knowledge Quiz — CosmicGamesHub" />
@@ -155,6 +155,7 @@
       padding: 0.7rem 0.9rem;
       cursor: pointer;
       font-size: 0.88rem;
+      min-height: 44px;
       color: var(--text-primary, #fff);
       font-family: inherit;
       text-align: left;
@@ -343,6 +344,10 @@
       border: none;
       font-family: inherit;
       transition: opacity 0.15s, transform 0.1s;
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
     .gq-btn:active { transform: scale(0.97); }
     .gq-btn--primary {
@@ -422,6 +427,11 @@
       .gq-choices { grid-template-columns: 1fr; }
       .gq-stats { grid-template-columns: repeat(3, 1fr); }
       .gq-title { font-size: 1.35rem; }
+      .gq-start__sub, .gq-subtitle { margin-bottom: 0.85rem; }
+      .gq-rules { margin-bottom: 1rem; padding: 0.75rem 1rem; }
+      .gq-wrap { padding-bottom: max(1.5rem, env(safe-area-inset-bottom)); }
+      .gq-back { display: none; }
+      .gq-subtitle { display: none; }
     }
   </style>
   <script type="application/ld+json">

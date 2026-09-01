@@ -10,7 +10,7 @@
     gtag('config', 'G-D272MF8NQP');
   </script>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Pixle — The Wordle for gamers | CosmicGamesHub</title>
 <meta name="description" content="The Wordle for gamers. Guess today's 5-letter gaming word in 6 tries. Spawn, melee, grind — not a screenshot game." />
 <link rel="canonical" href="https://cosmicgameshub.com/games/pixle" />
@@ -290,6 +290,7 @@
 .share-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
   background: var(--accent);
   color: #000;
@@ -303,6 +304,8 @@
   transition: opacity 0.15s;
   text-transform: uppercase;
   margin-top: 0.5rem;
+  min-height: 44px;
+  box-sizing: border-box;
 }
 .share-btn:hover { opacity: 0.85; }
 .next-timer {
@@ -347,22 +350,24 @@ body.pixle-cb .kb-key.present::after { content:''; position:absolute; width:12px
 .how-check { display:flex; gap:0.5rem; align-items:center; font-size:0.82rem; color:var(--text-mid); margin:0.35rem 0; }
 @media (max-width: 400px) {
   .pixle-wrap { padding: 0 0.45rem 0.4rem; }
-  .pixle-header { padding: 0.45rem 0 0.35rem; }
+  .pixle-header { padding: 0.35rem 0 0.25rem; }
   .pixle-title-block h1 { font-size: 1.15rem; }
+  .pixle-title-block .pixle-sub { font-size: 0.62rem; }
   .pixle-board {
-    margin: 0.4rem auto 0.45rem;
+    margin: 0.35rem auto 0.4rem;
     max-width: min(320px, calc(100vw - 1.1rem));
     max-height: calc(100dvh - 16.5rem);
   }
   .pixle-keyboard {
     position: sticky;
     bottom: 0;
-    padding: 6px 2px max(8px, env(safe-area-inset-bottom));
+    padding: 6px 2px max(10px, env(safe-area-inset-bottom));
     background: var(--bg-void, #09090f);
     z-index: 4;
   }
-  .kb-key { height: 42px; min-width: 28px; font-size: 0.7rem; }
-  .kb-key.wide { min-width: 44px; }
+  .kb-key { height: 44px; min-height: 44px; min-width: 28px; font-size: 0.72rem; }
+  .kb-key.wide { min-width: 48px; }
+  .share-btn { width: 100%; }
 }
 </style>
   <meta property="og:image" content="https://cosmicgameshub.com/images/game-pixle.jpg">
@@ -488,7 +493,7 @@ body.pixle-cb .kb-key.present::after { content:''; position:absolute; width:12px
     <button class="share-btn" id="share-btn">Share</button>
     <div class="next-timer">Next Pixle in <span id="next-countdown">00:00:00</span></div>
     <div class="cg-daily-dock" data-slug="pixle"></div>
-    <button onclick="document.getElementById('result-modal').classList.remove('open')" style="margin-top:0.75rem;background:none;border:1px solid rgba(255,255,255,0.15);color:var(--text-mid);border-radius:8px;padding:0.5rem 1.25rem;cursor:pointer;font-size:0.85rem;width:100%;">Close</button>
+    <button onclick="document.getElementById('result-modal').classList.remove('open')" style="margin-top:0.75rem;background:none;border:1px solid rgba(255,255,255,0.15);color:var(--text-mid);border-radius:8px;padding:0.5rem 1.25rem;cursor:pointer;font-size:0.85rem;width:100%;min-height:44px;">Close</button>
   </div>
 </div>
 

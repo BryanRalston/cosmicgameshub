@@ -19,7 +19,7 @@
   <meta name="twitter:title" content="Link — Daily gaming groups" />
   <meta name="twitter:image" content="https://cosmicgameshub.com/images/game-link-v2.jpg" />
   <style>
-    .lk-wrap { max-width: 520px; margin: 0 auto; padding: 0 0.75rem 2rem; }
+    .lk-wrap { max-width: 520px; margin: 0 auto; padding: 0 0.75rem max(2rem, env(safe-area-inset-bottom)); }
     .lk-header { display:flex; justify-content:space-between; align-items:center; padding:0.85rem 0 0.55rem; border-bottom:1px solid var(--border); margin-bottom:0.85rem; }
     .lk-header h1 { font-size:1.35rem; font-weight:800; letter-spacing:0.14em; margin:0; }
     .lk-sub { font-size:0.7rem; color:var(--text-lo); letter-spacing:0.08em; text-transform:uppercase; }
@@ -58,7 +58,9 @@
     .how-p { text-align:left; font-size:0.85rem; color:var(--text-mid); line-height:1.5; }
     @media (max-width:400px) {
       .lk-tile { min-height:58px; font-size:0.7rem; }
+      .lk-header { padding: 0.5rem 0 0.4rem; margin-bottom: 0.55rem; }
       .lk-header h1 { font-size:1.15rem; }
+      .lk-icon { width:44px; height:44px; }
     }
     body.lk-cb .lk-group.y::before, body.lk-cb .lk-tile.sel::after { }
     body.lk-cb .lk-group.y { box-shadow: inset 0 0 0 3px #111; }
