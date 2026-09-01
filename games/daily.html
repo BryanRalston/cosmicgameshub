@@ -117,10 +117,11 @@
       <p class="dh-sub">Twelve constructed dailies. Same board for every player this UTC day. Next in <strong data-cd>——:——:——</strong>.</p>
 
       <div class="dh-strip">
-        <div class="dh-stat"><div class="dh-stat-val" id="dhPlayedCount">0/12</div><div class="dh-stat-lbl">Played Today</div></div>
-        <div class="dh-stat"><div class="dh-stat-val" id="dhStreakSum">0</div><div class="dh-stat-lbl">Total Streak</div></div>
-        <div class="dh-stat"><div class="dh-stat-val" id="dhPercent">0%</div><div class="dh-stat-lbl">Completion</div></div>
+        <div class="dh-stat"><div class="dh-stat-val" id="dhPlayedCount">0/12</div><div class="dh-stat-lbl">Of today's dailies</div></div>
+        <div class="dh-stat"><div class="dh-stat-val" id="dhStreakSum">0</div><div class="dh-stat-lbl">Streak · this device</div></div>
+        <div class="dh-stat"><div class="dh-stat-val" id="dhPercent">Lv 1</div><div class="dh-stat-lbl">Level / XP · this device</div></div>
       </div>
+      <p class="dh-empty-hint" id="dhEmptyHint" style="margin:0.85rem auto 0;max-width:420px;color:var(--text-lo,#888);font-size:.85rem;">Play a daily to start a streak on this device.</p>
       <div class="dh-progress" aria-hidden="true"><span id="dhBar"></span></div>
       <div class="dh-ritual">
         <a class="btn btn--primary dh-next" id="dhNext" href="/games/gamerdle">Play next →</a>
@@ -168,7 +169,8 @@
     <p>© 2026 CosmicGamesHub · <a href="/about">About</a> · <a href="/privacy">Privacy</a> · <a href="/games">Games</a> · <a href="/">Home</a></p>
   </footer>
   <script src="/games/cg-sfx.js"></script>
-<script src="/games/daily-kit.js" defer></script>
+  <script src="/games/cg-player.js"></script>
+  <script src="/games/daily-kit.js" defer></script>
   <script src="/global.js" defer></script>
 
   <script type="application/ld+json">
@@ -295,15 +297,18 @@
     const dhTodoLabel = document.getElementById('dhTodoLabel');
 
     let playedCount = 0;
-    let streakSum = 0;
     const todoCards = [];
     const doneCards = [];
+
+    var playedMap = (window.CGDaily && typeof window.CGDaily.playedMap === 'function')
+      ? window.CGDaily.playedMap()
+      : null;
 
     GAMES.forEach(g => {
       let status;
       try { status = a[g.id](); } catch (_) { status = { played: false, streak: 0 }; }
+      if (playedMap && g.id in playedMap) status.played = !!playedMap[g.id];
       if (status.played) playedCount++;
-      streakSum += status.streak || 0;
 
       const streakHtml = fmtStreak(status.streak);
       const card = document.createElement('a');
@@ -328,6 +333,12 @@
     todoCards.forEach(c => dhTodoGrid.appendChild(c));
     doneCards.forEach(c => dhDoneGrid.appendChild(c));
 
+    if (window.CGPlayer && typeof window.CGPlayer.syncFromPlayedMap === 'function') {
+      window.CGPlayer.syncFromPlayedMap();
+    }
+    var snap = window.CGPlayer && window.CGPlayer.snapshot ? window.CGPlayer.snapshot() : null;
+    var deviceStreak = snap ? snap.streak : 0;
+
     const sub = document.querySelector('.dh-sub');
     const left = todoCards.length;
     if (todoCards.length === 0) {
@@ -335,7 +346,7 @@
       if (sub) sub.innerHTML = 'Set complete. Streak sits on this device. Next UTC day in <strong data-cd></strong>.';
     } else if (playedCount > 0) {
       dhTodoLabel.textContent = `You have ${left} left`;
-      if (sub) sub.innerHTML = `Welcome back. ${playedCount}/12 done today` + (streakSum ? `, ${streakSum} streak days lit` : '') + `. Next UTC day in <strong data-cd></strong>.`;
+      if (sub) sub.innerHTML = `Welcome back. ${playedCount}/12 done today` + (deviceStreak ? `, streak ${deviceStreak} on this device` : '') + `. Next UTC day in <strong data-cd></strong>.`;
     } else {
       dhTodoLabel.textContent = `To Play (${todoCards.length})`;
     }
@@ -353,8 +364,12 @@
     }
 
     document.getElementById('dhPlayedCount').textContent = `${playedCount}/${GAMES.length}`;
-    document.getElementById('dhStreakSum').textContent = streakSum;
-    document.getElementById('dhPercent').textContent = `${Math.round(playedCount / GAMES.length * 100)}%`;
+    document.getElementById('dhStreakSum').textContent = String(deviceStreak);
+    document.getElementById('dhPercent').textContent = snap
+      ? `Lv ${snap.level} · ${snap.xp} XP`
+      : 'Lv 1 · 0 XP';
+    var hint = document.getElementById('dhEmptyHint');
+    if (hint) hint.hidden = deviceStreak > 0;
     const bar = document.getElementById('dhBar');
     if (bar) bar.style.width = Math.round(playedCount / GAMES.length * 100) + '%';
     const nextBtn = document.getElementById('dhNext');
@@ -374,7 +389,19 @@
   const monthName = now.toLocaleDateString('en-US', { month: 'long' });
   document.getElementById('dhDate').textContent = `${dayName}, ${monthName} ${now.getDate()}, ${now.getFullYear()}`;
 
-  render();
+  function startRender(tries) {
+    tries = tries || 0;
+    if (!window.CGDaily && tries < 40) {
+      setTimeout(function () { startRender(tries + 1); }, 25);
+      return;
+    }
+    render();
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startRender);
+  } else {
+    setTimeout(startRender, 0);
+  }
   var muteBtn = document.getElementById('dhMute');
   function syncDhMute() {
     if (!muteBtn || !window.CGSfx) return;
@@ -447,8 +474,8 @@
     ctx.fillText(played + ' / 12 played', 72, 980);
     ctx.fillStyle = '#00d4ff';
     ctx.font = '700 28px Outfit, system-ui, sans-serif';
-    ctx.fillText('Streak ' + streak + '  ·  cosmicgameshub.com/games/daily', 72, 1032);
-    var text = 'CosmicGamesHub Daily — ' + date + '\n' + played + '/12 played · streak ' + streak + '\ncosmicgameshub.com/games/daily';
+    ctx.fillText('Streak ' + streak + ' on this device  ·  cosmicgameshub.com/games/daily', 72, 1032);
+    var text = 'CosmicGamesHub Daily — ' + date + '\n' + played + '/12 played · streak ' + streak + ' on this device\ncosmicgameshub.com/games/daily';
     return new Promise(function (resolve) {
       canvas.toBlob(function (blob) {
         if (lastShare.url) URL.revokeObjectURL(lastShare.url);

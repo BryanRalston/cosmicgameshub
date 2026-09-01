@@ -165,9 +165,39 @@
     document.head.appendChild(s);
   }
 
+  function syncPlayer() {
+    if (!w.CGPlayer || typeof w.CGPlayer.record !== 'function') return;
+    var map = playedMap();
+    Object.keys(map).forEach(function (id) {
+      if (map[id]) w.CGPlayer.record(id, { daily: true });
+    });
+  }
+
+  function ensurePlayer() {
+    if (w.CGPlayer) {
+      syncPlayer();
+      return;
+    }
+    if (w.__cgPlayerLoading) return;
+    var existing = document.querySelector('script[src*="cg-player.js"]');
+    function go() { if (w.CGPlayer) syncPlayer(); }
+    if (existing) {
+      existing.addEventListener('load', go);
+      setTimeout(go, 40);
+      return;
+    }
+    w.__cgPlayerLoading = true;
+    var s = document.createElement('script');
+    s.src = '/games/cg-player.js';
+    s.onload = function () { w.__cgPlayerLoading = false; syncPlayer(); };
+    s.onerror = function () { w.__cgPlayerLoading = false; };
+    document.head.appendChild(s);
+  }
+
   function mountAll() {
     injectStyles();
     document.querySelectorAll('.cg-daily-dock').forEach(mountDock);
+    ensurePlayer();
   }
 
   function tickCountdowns() {
@@ -185,7 +215,8 @@
     msToUtcMidnight: msToUtcMidnight,
     copyText: copyText,
     mountAll: mountAll,
-    isoToday: isoToday
+    isoToday: isoToday,
+    syncPlayer: syncPlayer
   };
 
   if (document.readyState === 'loading') {
@@ -193,5 +224,8 @@
   } else {
     mountAll(); tickCountdowns();
   }
-  setInterval(tickCountdowns, 1000);
+  setInterval(function () {
+    tickCountdowns();
+    if (w.CGPlayer) syncPlayer();
+  }, 1000);
 })(window);

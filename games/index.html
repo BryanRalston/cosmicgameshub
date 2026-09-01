@@ -72,20 +72,8 @@
       min-height: 44px;
     }
     .gh-search:focus { outline: none; border-color: var(--accent, #00d4ff); }
+    .gh-toolbar { display: flex; flex-direction: column; gap: 0.7rem; align-items: center; }
     .gh-card__time { font-size: 0.7rem; color: var(--text-lo, #888); margin: 0 0 0.55rem; }
-    .gh-dual {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2.5rem;
-    }
-    .gh-dual a {
-      display: flex; flex-direction: column; justify-content: center;
-      text-decoration: none; border-radius: 16px; padding: 1.25rem 1.4rem;
-      border: 1px solid var(--border);
-      min-height: 140px;
-    }
-    .gh-dual a:hover { border-color: var(--accent, #00d4ff); }
-    .gh-dual__k { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.4rem; }
-    .gh-dual__t { font-size: 1.35rem; font-weight: 800; color: #fff; font-family: 'Outfit', sans-serif; margin: 0 0 0.35rem; }
-    .gh-dual__d { font-size: 0.85rem; color: var(--text-mid); line-height: 1.5; margin: 0; }
     /* ─── Filter tabs ─── */
     .gh-filters {
       display: flex; gap: 0.45rem; justify-content: center; flex-wrap: wrap;
@@ -100,6 +88,7 @@
       color: var(--text-mid);
       font-size: 0.85rem; font-weight: 600;
       cursor: pointer; transition: all 0.15s;
+      min-height: 44px;
     }
     .gh-filter.active, .gh-filter:hover {
       background: rgba(99,102,241,0.15);
@@ -110,6 +99,22 @@
       font-size: 0.7rem; background: rgba(255,255,255,0.08);
       padding: 1px 5px; border-radius: 8px;
       color: var(--text-lo);
+    }
+    .gh-sort {
+      display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: center;
+    }
+    .gh-sort-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-height: 44px; padding: 0.4rem 0.95rem;
+      border-radius: 22px; border: 1px solid var(--border);
+      background: transparent; color: var(--text-mid);
+      font-size: 0.82rem; font-weight: 600; cursor: pointer;
+      font-family: inherit;
+    }
+    .gh-sort-btn.active, .gh-sort-btn:hover {
+      background: rgba(0,212,255,0.12);
+      border-color: rgba(0,212,255,0.4);
+      color: #7dd3fc;
     }
     /* ─── Stats bar ─── */
     .gh-stats {
@@ -125,46 +130,14 @@
     .gh-stat__num { font-size: 1.5rem; font-weight: 800; color: var(--text-hi); }
     .gh-stat__num span { color: var(--accent); }
     .gh-stat__label { font-size: 0.7rem; color: var(--text-lo); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.15rem; }
+    .gh-stats-empty {
+      text-align: center; font-size: 0.85rem; color: var(--text-lo);
+      margin: 0; padding: 0.7rem 1rem 0.9rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,0.015);
+    }
     /* ─── Main layout ─── */
     .gh-main { max-width: 1180px; margin: 0 auto; padding: 2.5rem 1.5rem 5rem; }
-    /* ─── Featured banner ─── */
-    .gh-featured {
-      display: grid; grid-template-columns: 1fr 1fr;
-      gap: 0; border-radius: 18px; overflow: hidden;
-      border: 1px solid rgba(0,212,255,0.2);
-      margin-bottom: 3rem;
-      text-decoration: none;
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-    .gh-featured:hover {
-      border-color: rgba(0,212,255,0.5);
-      box-shadow: 0 0 48px rgba(0,212,255,0.07);
-    }
-    .gh-featured__img {
-      width: 100%; height: 280px; object-fit: cover;
-      display: block;
-    }
-    .gh-featured__body {
-      background: linear-gradient(135deg, #0a1628, #0d2245);
-      padding: 2rem 2rem 2rem;
-      display: flex; flex-direction: column; justify-content: center;
-    }
-    .gh-featured__tag {
-      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em;
-      text-transform: uppercase; color: #00d4ff; margin-bottom: 0.6rem;
-    }
-    .gh-featured__title {
-      font-size: 2.2rem; font-weight: 900; color: #fff;
-      letter-spacing: -0.02em; margin-bottom: 0.6rem; line-height: 1.1;
-    }
-    .gh-featured__desc {
-      font-size: 0.92rem; color: rgba(255,255,255,0.6);
-      line-height: 1.6; margin-bottom: 1.4rem; flex: 1;
-    }
-    .gh-featured__meta {
-      display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap;
-      margin-bottom: 1.4rem;
-    }
     .gh-badge {
       display: inline-flex; align-items: center; gap: 0.25rem;
       font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em;
@@ -172,18 +145,37 @@
       border-radius: 6px;
     }
     .gh-badge--new { background: rgba(0,212,255,0.15); color: #00d4ff; border: 1px solid rgba(0,212,255,0.3); }
-    .gh-badge--ai { background: rgba(139,92,246,0.15); color: #a78bfa; border: 1px solid rgba(139,92,246,0.3); }
-    .gh-badge--hot { background: rgba(249,115,22,0.15); color: #fb923c; border: 1px solid rgba(249,115,22,0.3); }
-    .gh-featured__cta {
-      display: inline-flex; align-items: center; gap: 0.4rem;
-      background: #00d4ff; color: #000; font-weight: 800;
-      padding: 0.75rem 1.6rem; border-radius: 10px; font-size: 0.95rem;
-      align-self: flex-start; transition: background 0.18s, box-shadow 0.18s;
+    /* ─── Daily desk ─── */
+    .gh-desk { margin-bottom: 2.5rem; }
+    .gh-desk__lead {
+      color: var(--text-mid); font-size: 0.95rem;
+      margin: -0.35rem 0 1.1rem; line-height: 1.55; max-width: 640px;
     }
-    .gh-featured:hover .gh-featured__cta {
-      background: #33ddff;
-      box-shadow: 0 0 24px rgba(0,212,255,0.4);
+    .gh-desk__row {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 0.85rem;
     }
+    .gh-desk-card {
+      background: rgba(255,255,255,0.025);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+    .gh-desk-card__imgwrap {
+      display: block; position: relative; height: 128px; overflow: hidden;
+      background: #08080f; text-decoration: none;
+    }
+    .gh-desk-card__imgwrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .gh-desk-card__body {
+      padding: 0.85rem 0.9rem 1rem;
+      display: flex; flex-direction: column; gap: 0.4rem; flex: 1;
+    }
+    .gh-desk-card__title { font-weight: 800; color: #fff; font-size: 1rem; }
+    .gh-desk-card__meta { font-size: 0.72rem; color: var(--text-lo); }
+    .gh-desk__more { margin: 0.95rem 0 0; text-align: center; }
+    .gh-desk__more a { font-weight: 700; color: var(--accent, #00d4ff); }
     /* ─── Section label ─── */
     .gh-section-label {
       display: flex; align-items: center; gap: 0.8rem;
@@ -195,6 +187,8 @@
       content: ''; flex: 1; height: 1px; background: var(--border);
     }
     .gh-section-label .sl-accent { color: var(--accent); }
+    .gh-grid > .gh-section-label { grid-column: 1 / -1; margin: 1.1rem 0 0.2rem; }
+    .gh-grid > .gh-section-label:first-child { margin-top: 0; }
     /* ─── Game grid ─── */
     .gh-grid {
       display: grid;
@@ -208,7 +202,6 @@
       border: 1px solid var(--border);
       border-radius: 16px;
       overflow: hidden;
-      text-decoration: none;
       display: flex; flex-direction: column;
       transition: border-color 0.2s, transform 0.18s, box-shadow 0.2s;
       position: relative;
@@ -218,11 +211,11 @@
       transform: translateY(-3px);
       box-shadow: 0 8px 32px rgba(0,0,0,0.3);
     }
-    /* thumbnail */
     .gh-card__thumb {
       position: relative; overflow: hidden;
-      height: 160px; flex-shrink: 0;
+      height: 180px; flex-shrink: 0;
       background: #08080f;
+      display: block; text-decoration: none; color: inherit;
     }
     .gh-card__img {
       width: 100%; height: 100%; object-fit: cover;
@@ -235,6 +228,7 @@
       display: flex; align-items: center; justify-content: center;
       background: rgba(0,0,0,0);
       transition: background 0.2s;
+      pointer-events: none;
     }
     .gh-card:hover .gh-card__play-overlay { background: rgba(0,0,0,0.35); }
     .gh-card__play-btn {
@@ -247,7 +241,6 @@
       transition: opacity 0.2s, transform 0.2s;
     }
     .gh-card:hover .gh-card__play-btn { opacity: 1; transform: scale(1); }
-    /* badge on thumbnail */
     .gh-card__badge {
       position: absolute; top: 10px; left: 10px;
       font-size: 0.65rem; font-weight: 800; letter-spacing: 0.1em;
@@ -257,13 +250,16 @@
     .gh-card__badge--new { background: rgba(0,212,255,0.85); color: #000; }
     .gh-card__badge--hot { background: rgba(249,115,22,0.85); color: #fff; }
     .gh-card__badge--daily { background: rgba(16,185,129,0.85); color: #fff; }
-    /* card body */
+    .gh-card__badge--arcade { background: rgba(245,158,11,0.9); color: #111; }
+    .gh-card__badge--puzzle { background: rgba(99,102,241,0.9); color: #fff; }
+    .gh-card__badge--skill { background: rgba(52,211,153,0.9); color: #062016; }
+    .gh-card__badge--3d { background: rgba(0,212,255,0.9); color: #000; }
     .gh-card__body {
-      padding: 1rem 1.1rem 1.2rem;
+      padding: 1rem 1.1rem 1.15rem;
       flex: 1; display: flex; flex-direction: column;
     }
     .gh-card__tags {
-      display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.6rem;
+      display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.55rem;
     }
     .gh-tag {
       font-size: 0.68rem; padding: 0.18rem 0.6rem;
@@ -276,50 +272,71 @@
     .gt-typing { background:rgba(14,165,233,0.12); color:#7dd3fc; border:1px solid rgba(14,165,233,0.2); }
     .gt-music  { background:rgba(168,85,247,0.12); color:#d8b4fe; border:1px solid rgba(168,85,247,0.2); }
     .gt-builder{ background:rgba(0,212,255,0.12); color:#00d4ff; border:1px solid rgba(0,212,255,0.2); }
-    .gh-lab-note { margin: 0.35rem 0 0; font-size: 0.82rem; color: var(--text-lo, #888); line-height: 1.5; }
-    .gh-lab-note a { color: var(--accent, #00d4ff); font-weight: 700; }
     .gt-skill  { background:rgba(52,211,153,0.12); color:#6ee7b7; border:1px solid rgba(52,211,153,0.2); }
     .gt-sim    { background:rgba(34,197,94,0.12); color:#86efac; border:1px solid rgba(34,197,94,0.2); }
+    .gt-aim    { background:rgba(244,63,94,0.12); color:#fb7185; border:1px solid rgba(244,63,94,0.2); }
+    .gt-new    { background:rgba(0,212,255,0.12); color:#67e8f9; border:1px solid rgba(0,212,255,0.25); }
+    .gh-lab-note { margin: 0.35rem 0 0; font-size: 0.82rem; color: var(--text-lo, #888); line-height: 1.5; }
+    .gh-lab-note a { color: var(--accent, #00d4ff); font-weight: 700; }
     .gh-card__title {
-      font-size: 1rem; font-weight: 700; color: var(--text-hi);
-      margin: 0 0 0.45rem;
+      font-size: 1.05rem; font-weight: 800; color: var(--text-hi);
+      margin: 0 0 0.35rem; text-decoration: none; display: block;
     }
+    .gh-card__title:hover { color: #fff; }
+    .gh-card__meta {
+      display: flex; gap: 0.45rem; flex-wrap: wrap; align-items: center;
+      font-size: 0.72rem; color: var(--text-lo); margin: 0 0 0.5rem;
+    }
+    .gh-diff { font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+    .gh-diff--easy { color: #4ade80; }
+    .gh-diff--medium { color: #fbbf24; }
+    .gh-diff--hard { color: #f87171; }
     .gh-card__desc {
       font-size: 0.83rem; color: var(--text-mid);
-      line-height: 1.55; flex: 1; margin: 0 0 0.9rem;
+      line-height: 1.55; flex: 1; margin: 0 0 0.75rem;
     }
-    .gh-card__cta {
-      font-size: 0.82rem; font-weight: 700;
-      color: #818cf8; display: flex; align-items: center; gap: 0.3rem;
-      transition: color 0.15s;
+    .gh-card__device {
+      font-size: 0.72rem; font-weight: 700; color: #4ade80;
+      margin: 0 0 0.65rem;
     }
-    .gh-card:hover .gh-card__cta { color: #a5b4fc; }
-    /* hidden state for filter */
+    .gh-card__play {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 44px; width: 100%;
+      margin-top: auto;
+      background: #00d4ff; color: #000;
+      font-weight: 800; font-size: 0.92rem; letter-spacing: 0.04em;
+      border-radius: 10px; text-decoration: none;
+      transition: background 0.15s, box-shadow 0.15s;
+    }
+    .gh-card__play:hover {
+      background: #33ddff;
+      box-shadow: 0 0 20px rgba(0,212,255,0.35);
+    }
     .gh-card[hidden] { display: none; }
-    /* ─── Empty state ─── */
     .gh-empty {
       grid-column: 1/-1;
       text-align: center; padding: 3rem;
       color: var(--text-lo); font-size: 0.9rem;
     }
-    /* ─── Responsive ─── */
+    @media (max-width: 960px) {
+      .gh-desk__row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
     @media (max-width: 768px) {
       .gh-hero { padding: 1.5rem 1rem 1.25rem; }
-      .gh-featured { grid-template-columns: 1fr; }
-      .gh-featured__img { height: 180px; }
-      .gh-featured__body { padding: 1.2rem; }
-      .gh-featured__title { font-size: 1.6rem; }
-      .gh-card__thumb { height: 140px; }
-      .gh-dual { grid-template-columns: 1fr; }
+      .gh-card__thumb { height: 160px; }
       .gh-main { padding: 1.5rem 1rem 3rem; }
-      .gh-filter { min-height: 44px; }
-      .gh-stat { flex: 1 1 42%; border-right: 0; border-bottom: 1px solid var(--border); }
+      .gh-filter, .gh-sort-btn { min-height: 44px; }
+      .gh-stat { flex: 1 1 30%; border-right: 1px solid var(--border); border-bottom: none; }
     }
     @media (max-width: 480px) {
       .gh-grid { grid-template-columns: 1fr; gap: 0.85rem; }
-      .gh-card__thumb { height: 140px; }
+      .gh-desk__row { grid-template-columns: 1fr; }
+      .gh-card__thumb { height: 180px; }
       .gh-card__body { padding: 0.9rem 1rem 1.1rem; }
-      .gh-card__title { font-size: 1rem; }
+      .gh-card__title { font-size: 1.05rem; }
+      .gh-card__play { width: 100%; }
+      .gh-stat { flex: 1 1 100%; border-right: 0; border-bottom: 1px solid var(--border); }
+      .gh-stat:last-child { border-bottom: none; }
     }
   </style>
   <script type="application/ld+json">
@@ -392,392 +409,517 @@
 <!-- ─── Hero ─────────────────────────────────── -->
 <div class="gh-hero">
   <div class="gh-hero__eyebrow">
-    <span class="live-dot"></span> Arcade · Updated August 2026
+    <span class="live-dot"></span> Daily desk · 24 games · this device
   </div>
   <h1 class="gh-hero__title">Free Browser Games</h1>
-  <p class="gh-hero__sub">24 games, no download, no login. Twelve daily puzzles share one UTC board per day. Arcade and skill trainers run anytime.</p>
+  <p class="gh-hero__sub">Today’s desk first — RIFT, Gamerdle, Pixle, Mini Crossword, Link. Twelve dailies share one UTC board. Arcade, skill, and 3D anytime. Streaks stay on this device.</p>
   <input type="search" id="ghSearch" class="gh-search" placeholder="Search games…" autocomplete="off" aria-label="Search games">
-  <div class="gh-filters" id="ghFilters" role="tablist" aria-label="Filter games by category">
-    <button class="gh-filter active" data-filter="all" role="tab" aria-selected="true">All <span class="gh-filter-count">24</span></button>
-    <button class="gh-filter" data-filter="daily" role="tab" aria-selected="false">Daily <span class="gh-filter-count">12</span></button>
-    <button class="gh-filter" data-filter="skill" role="tab" aria-selected="false">Skill <span class="gh-filter-count">5</span></button>
-    <button class="gh-filter" data-filter="arcade" role="tab" aria-selected="false">Arcade <span class="gh-filter-count">3</span></button>
-    <button class="gh-filter" data-filter="creative" role="tab" aria-selected="false">3D &amp; Lab <span class="gh-filter-count">2</span></button>
-    <button class="gh-filter" data-filter="puzzle" role="tab" aria-selected="false">Classics <span class="gh-filter-count">2</span></button>
+  <div class="gh-toolbar">
+    <div class="gh-filters" id="ghFilters" role="tablist" aria-label="Filter games by category">
+      <button class="gh-filter active" data-filter="all" role="tab" aria-selected="true">All <span class="gh-filter-count">24</span></button>
+      <button class="gh-filter" data-filter="daily" role="tab" aria-selected="false">Daily <span class="gh-filter-count">12</span></button>
+      <button class="gh-filter" data-filter="skill" role="tab" aria-selected="false">Skill <span class="gh-filter-count">5</span></button>
+      <button class="gh-filter" data-filter="arcade" role="tab" aria-selected="false">Arcade <span class="gh-filter-count">3</span></button>
+      <button class="gh-filter" data-filter="creative" role="tab" aria-selected="false">3D <span class="gh-filter-count">2</span></button>
+      <button class="gh-filter" data-filter="classics" role="tab" aria-selected="false">Classics <span class="gh-filter-count">3</span></button>
+      <button class="gh-filter" data-filter="puzzle" role="tab" aria-selected="false">Puzzle <span class="gh-filter-count">7</span></button>
+      <button class="gh-filter" data-filter="aim" role="tab" aria-selected="false">Aim <span class="gh-filter-count">1</span></button>
+      <button class="gh-filter" data-filter="word" role="tab" aria-selected="false">Word <span class="gh-filter-count">5</span></button>
+      <button class="gh-filter" data-filter="new" role="tab" aria-selected="false">New <span class="gh-filter-count">3</span></button>
+    </div>
+    <div class="gh-sort" role="group" aria-label="Sort games">
+      <button type="button" class="gh-sort-btn active" data-sort="recommended" aria-pressed="true">Recommended</button>
+      <button type="button" class="gh-sort-btn" data-sort="new" aria-pressed="false">New</button>
+      <button type="button" class="gh-sort-btn" data-sort="az" aria-pressed="false">A–Z</button>
+      <button type="button" class="gh-sort-btn" data-sort="device" aria-pressed="false">On this device</button>
+    </div>
   </div>
 </div>
 
 <!-- ─── Stats bar ─────────────────────────────── -->
-<div class="gh-stats">
-  <div class="gh-stat"><div class="gh-stat__num">24</div><div class="gh-stat__label">Games</div></div>
-  <div class="gh-stat"><div class="gh-stat__num"><span>12</span></div><div class="gh-stat__label">Dailies</div></div>
-  <div class="gh-stat"><div class="gh-stat__num"><span>$0</span></div><div class="gh-stat__label">Cost</div></div>
-  <div class="gh-stat"><div class="gh-stat__num"><span>0</span></div><div class="gh-stat__label">Downloads</div></div>
+<div class="gh-stats" id="ghPlayerStats">
+  <div class="gh-stat">
+    <div class="gh-stat__num" id="ghStatPlays">0</div>
+    <div class="gh-stat__label">Games on this device</div>
+  </div>
+  <div class="gh-stat">
+    <div class="gh-stat__num" id="ghStatStreak">0</div>
+    <div class="gh-stat__label">Daily streak · this device</div>
+  </div>
+  <div class="gh-stat">
+    <div class="gh-stat__num" id="ghStatLevel">Lv 1 · 0 XP</div>
+    <div class="gh-stat__label">Level / XP · this device</div>
+  </div>
 </div>
+<p class="gh-stats-empty" id="ghStatsEmpty">Play a daily to start a streak on this device.</p>
 
 <!-- ─── Main ──────────────────────────────────── -->
 <main class="gh-main" id="ghMain">
 
-  <div class="gh-dual">
-    <a href="/games/daily" data-category="daily" style="background:linear-gradient(135deg,rgba(0,212,255,0.08),rgba(0,212,255,0.02));border-color:rgba(0,212,255,0.28);">
-      <div class="gh-dual__k">Play today</div>
-      <div class="gh-dual__t">12 daily puzzles</div>
-      <p class="gh-dual__d">Same UTC puzzle for every player. Streaks live on this device. Open the daily desk or pick a card below.</p>
-    </a>
-    <a href="/games/brix3d" data-category="creative" class="gh-featured-mini" style="background:linear-gradient(135deg,#0a1628,#0d2245);border-color:rgba(0,212,255,0.22);">
-      <div class="gh-dual__k">3D · Anytime</div>
-      <div class="gh-dual__t">BRIX 3D</div>
-      <p class="gh-dual__d">Place bricks, orbit the camera, save a build. Browser Three.js editor — not a daily puzzle.</p>
-    </a>
-  </div>
+  <section class="gh-desk" id="ghDesk">
+    <div class="gh-section-label"><span class="sl-accent">◆</span> Today’s desk</div>
+    <p class="gh-desk__lead">Five flagship dailies. Same UTC puzzle for every player. PLAY NOW — streaks and scores stay on this device.</p>
+    <div class="gh-desk__row">
+      <article class="gh-desk-card">
+        <a class="gh-desk-card__imgwrap" href="/games/rift">
+          <img src="/images/game-rift-v2.jpg" alt="RIFT word game" />
+          <span class="gh-card__badge gh-card__badge--daily">Daily</span>
+        </a>
+        <div class="gh-desk-card__body">
+          <div class="gh-desk-card__title">RIFT</div>
+          <div class="gh-desk-card__meta">5–10 min · Medium</div>
+          <a class="gh-card__play" href="/games/rift">PLAY NOW</a>
+        </div>
+      </article>
+      <article class="gh-desk-card">
+        <a class="gh-desk-card__imgwrap" href="/games/gamerdle">
+          <img src="/images/game-gamerdle-v2.jpg" alt="Gamerdle — guess the video game" />
+          <span class="gh-card__badge gh-card__badge--daily">Daily</span>
+        </a>
+        <div class="gh-desk-card__body">
+          <div class="gh-desk-card__title">Gamerdle</div>
+          <div class="gh-desk-card__meta">3–6 min · Medium</div>
+          <a class="gh-card__play" href="/games/gamerdle">PLAY NOW</a>
+        </div>
+      </article>
+      <article class="gh-desk-card">
+        <a class="gh-desk-card__imgwrap" href="/games/pixle">
+          <img src="/images/game-pixle-v2.jpg" alt="Pixle — daily 5-letter gaming Wordle" />
+          <span class="gh-card__badge gh-card__badge--daily">Daily</span>
+        </a>
+        <div class="gh-desk-card__body">
+          <div class="gh-desk-card__title">Pixle</div>
+          <div class="gh-desk-card__meta">2–5 min · Medium</div>
+          <a class="gh-card__play" href="/games/pixle">PLAY NOW</a>
+        </div>
+      </article>
+      <article class="gh-desk-card">
+        <a class="gh-desk-card__imgwrap" href="/games/crossword">
+          <img src="/images/game-crossword-v2.jpg" alt="Gaming Crossword — daily 5x5 puzzle" />
+          <span class="gh-card__badge gh-card__badge--daily">Daily</span>
+        </a>
+        <div class="gh-desk-card__body">
+          <div class="gh-desk-card__title">Mini Crossword</div>
+          <div class="gh-desk-card__meta">3–6 min · Medium</div>
+          <a class="gh-card__play" href="/games/crossword">PLAY NOW</a>
+        </div>
+      </article>
+      <article class="gh-desk-card">
+        <a class="gh-desk-card__imgwrap" href="/games/link">
+          <img src="/images/game-link-v2.jpg" alt="Link — four groups of four" />
+          <span class="gh-card__badge gh-card__badge--daily">Daily</span>
+        </a>
+        <div class="gh-desk-card__body">
+          <div class="gh-desk-card__title">Link</div>
+          <div class="gh-desk-card__meta">3–6 min · Hard</div>
+          <a class="gh-card__play" href="/games/link">PLAY NOW</a>
+        </div>
+      </article>
+    </div>
+    <p class="gh-desk__more"><a href="/games/daily">Open the full daily desk — 12 puzzles →</a></p>
+  </section>
 
-  <!-- ── Daily Puzzles ── -->
-  <div class="gh-section-label"><span class="sl-accent">◆</span> Daily Puzzles — New Every Day</div>
   <div class="gh-grid" id="ghGrid">
 
-    <a href="/games/rift" class="gh-card js-reveal" data-category="daily" data-search="rift word chain grow decode daily" style="transition-delay:0.04s">
-      <div class="gh-card__thumb">
+    <div class="gh-section-label"><span class="sl-accent">◆</span> Daily puzzles</div>
+
+    <article class="gh-card js-reveal" data-id="rift" data-name="RIFT" data-category="daily puzzle word" data-search="rift word chain grow decode daily" data-new="0">
+      <a class="gh-card__thumb" href="/games/rift">
         <img src="/images/game-rift-v2.jpg" alt="RIFT word game" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
-        <span class="gh-card__badge gh-card__badge--daily">DAILY</span>
-      </div>
+        <span class="gh-card__badge gh-card__badge--daily">Daily</span>
+      </a>
       <div class="gh-card__body">
         <div class="gh-card__tags"><span class="gh-tag gt-daily">Daily</span><span class="gh-tag gt-puzzle">Word Puzzle</span></div>
-        <div class="gh-card__title">RIFT</div>
+        <a class="gh-card__title" href="/games/rift">RIFT</a>
+        <div class="gh-card__meta"><span>5–10 min</span><span class="gh-diff gh-diff--medium">Medium</span></div>
         <p class="gh-card__desc">Three daily word challenges in one: Chain (change a letter), Grow (add a letter), Decode (guess from clues). One shared puzzle per day.</p>
-        <div class="gh-card__cta">Play today's puzzle →</div>
+        <div class="gh-card__device" hidden></div>
+        <a class="gh-card__play" href="/games/rift">PLAY NOW</a>
       </div>
-    </a>
+    </article>
 
-    <a href="/games/gamerdle" class="gh-card js-reveal" data-category="daily" style="transition-delay:0.08s">
-      <div class="gh-card__thumb">
+    <article class="gh-card js-reveal" data-id="gamerdle" data-name="Gamerdle" data-category="daily word" data-search="gamerdle guess video game daily" data-new="0">
+      <a class="gh-card__thumb" href="/games/gamerdle">
         <img src="/images/game-gamerdle-v2.jpg" alt="Gamerdle — guess the video game" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
-        <span class="gh-card__badge gh-card__badge--daily">DAILY</span>
-      </div>
+        <span class="gh-card__badge gh-card__badge--daily">Daily</span>
+      </a>
       <div class="gh-card__body">
         <div class="gh-card__tags"><span class="gh-tag gt-daily">Daily</span><span class="gh-tag gt-trivia">Gaming</span></div>
-        <div class="gh-card__title">Gamerdle</div>
+        <a class="gh-card__title" href="/games/gamerdle">Gamerdle</a>
+        <div class="gh-card__meta"><span>3–6 min</span><span class="gh-diff gh-diff--medium">Medium</span></div>
         <p class="gh-card__desc">Guess the mystery video game in 6 tries. Each guess reveals which attributes match — genre, platform, year, publisher. New game every day.</p>
-        <div class="gh-card__cta">Guess today's game →</div>
+        <div class="gh-card__device" hidden></div>
+        <a class="gh-card__play" href="/games/gamerdle">PLAY NOW</a>
       </div>
-    </a>
+    </article>
 
-    <a href="/games/pixle" class="gh-card js-reveal" data-category="daily" style="transition-delay:0.12s">
-      <div class="gh-card__thumb">
+    <article class="gh-card js-reveal" data-id="pixle" data-name="Pixle" data-category="daily puzzle word" data-search="pixle wordle five letter gaming daily" data-new="0">
+      <a class="gh-card__thumb" href="/games/pixle">
         <img src="/images/game-pixle-v2.jpg" alt="Pixle — daily 5-letter gaming Wordle" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
-        <span class="gh-card__badge gh-card__badge--daily">DAILY</span>
-      </div>
+        <span class="gh-card__badge gh-card__badge--daily">Daily</span>
+      </a>
       <div class="gh-card__body">
         <div class="gh-card__tags"><span class="gh-tag gt-daily">Daily</span><span class="gh-tag gt-puzzle">Word</span></div>
-        <div class="gh-card__title">Pixle</div>
+        <a class="gh-card__title" href="/games/pixle">Pixle</a>
+        <div class="gh-card__meta"><span>2–5 min</span><span class="gh-diff gh-diff--medium">Medium</span></div>
         <p class="gh-card__desc">The Wordle for gamers. Five letters, six tries, gaming vocabulary — not a screenshot game. New word every UTC day.</p>
-        <div class="gh-card__cta">Try today's Pixle →</div>
+        <div class="gh-card__device" hidden></div>
+        <a class="gh-card__play" href="/games/pixle">PLAY NOW</a>
       </div>
-    </a>
+    </article>
 
-    <a href="/games/link" class="gh-card js-reveal" data-category="daily" style="transition-delay:0.16s">
-      <div class="gh-card__thumb">
-        <img src="/images/game-link-v2.jpg" alt="Link — four groups of four" class="gh-card__img" loading="lazy" />
-        <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
-        <span class="gh-card__badge gh-card__badge--daily">DAILY</span>
-      </div>
-      <div class="gh-card__body">
-        <div class="gh-card__tags"><span class="gh-tag gt-daily">Daily</span><span class="gh-tag gt-puzzle">Groups</span></div>
-        <div class="gh-card__title">Link</div>
-        <p class="gh-card__desc">Four groups of four. Hand-written gaming categories. Four mistakes. Same board for everyone this UTC day.</p>
-        <div class="gh-card__cta">Play today's Link →</div>
-      </div>
-    </a>
-
-    <a href="/games/word-scramble" class="gh-card js-reveal" data-category="puzzle" style="transition-delay:0.17s">
-      <div class="gh-card__thumb">
-        <img src="/images/game-wordscramble-v2.jpg" alt="Word Scramble — unscramble gaming words" class="gh-card__img" loading="lazy" />
-        <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
-      </div>
-      <div class="gh-card__body">
-        <div class="gh-card__tags"><span class="gh-tag gt-puzzle">Anytime</span><span class="gh-tag gt-puzzle">Word</span></div>
-        <div class="gh-card__title">Word Scramble</div>
-        <p class="gh-card__desc">Unscramble a gaming word — titles, characters, studios, terms. Anytime puzzle. Streak tracking stays.</p>
-        <div class="gh-card__cta">Unscramble a word →</div>
-      </div>
-    </a>
-
-    <a href="/games/gaming-trivia" class="gh-card js-reveal" data-category="daily" style="transition-delay:0.2s">
-      <div class="gh-card__thumb">
-        <img src="/images/game-trivia-v2.jpg" alt="Gaming Trivia — 10 questions daily" class="gh-card__img" loading="lazy" />
-        <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
-        <span class="gh-card__badge gh-card__badge--daily">DAILY</span>
-      </div>
-      <div class="gh-card__body">
-        <div class="gh-card__tags"><span class="gh-tag gt-daily">Daily</span><span class="gh-tag gt-trivia">Trivia</span></div>
-        <div class="gh-card__title">Gaming Trivia</div>
-        <p class="gh-card__desc">10 gaming questions per day. Answer fast — more points with time remaining on the 15-second timer. Aim for an S rank.</p>
-        <div class="gh-card__cta">Start today's quiz →</div>
-      </div>
-    </a>
-
-    <a href="/games/crossword" class="gh-card js-reveal" data-category="daily" style="transition-delay:0.24s">
-      <div class="gh-card__thumb">
+    <article class="gh-card js-reveal" data-id="crossword" data-name="Gaming Crossword" data-category="daily puzzle" data-search="crossword mini 5x5 gaming daily" data-new="0">
+      <a class="gh-card__thumb" href="/games/crossword">
         <img src="/images/game-crossword-v2.jpg" alt="Gaming Crossword — daily 5x5 puzzle" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
-        <span class="gh-card__badge gh-card__badge--daily">DAILY</span>
-      </div>
+        <span class="gh-card__badge gh-card__badge--daily">Daily</span>
+      </a>
       <div class="gh-card__body">
         <div class="gh-card__tags"><span class="gh-tag gt-daily">Daily</span><span class="gh-tag gt-puzzle">Crossword</span></div>
-        <div class="gh-card__title">Gaming Crossword</div>
+        <a class="gh-card__title" href="/games/crossword">Gaming Crossword</a>
+        <div class="gh-card__meta"><span>3–6 min</span><span class="gh-diff gh-diff--medium">Medium</span></div>
         <p class="gh-card__desc">Daily 5×5 mini-crossword with gaming terms and industry clues. Same puzzle for everyone each day. Track streaks and share results.</p>
-        <div class="gh-card__cta">Solve today's puzzle →</div>
+        <div class="gh-card__device" hidden></div>
+        <a class="gh-card__play" href="/games/crossword">PLAY NOW</a>
       </div>
-    </a>
+    </article>
 
-    <a href="/games/price-guesser" class="gh-card js-reveal" data-category="daily" style="transition-delay:0.28s">
-      <div class="gh-card__thumb">
+    <article class="gh-card js-reveal" data-id="link" data-name="Link" data-category="daily puzzle word" data-search="link groups four connections daily" data-new="0">
+      <a class="gh-card__thumb" href="/games/link">
+        <img src="/images/game-link-v2.jpg" alt="Link — four groups of four" class="gh-card__img" loading="lazy" />
+        <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
+        <span class="gh-card__badge gh-card__badge--daily">Daily</span>
+      </a>
+      <div class="gh-card__body">
+        <div class="gh-card__tags"><span class="gh-tag gt-daily">Daily</span><span class="gh-tag gt-puzzle">Groups</span></div>
+        <a class="gh-card__title" href="/games/link">Link</a>
+        <div class="gh-card__meta"><span>3–6 min</span><span class="gh-diff gh-diff--hard">Hard</span></div>
+        <p class="gh-card__desc">Four groups of four. Hand-written gaming categories. Four mistakes. Same board for everyone this UTC day.</p>
+        <div class="gh-card__device" hidden></div>
+        <a class="gh-card__play" href="/games/link">PLAY NOW</a>
+      </div>
+    </article>
+
+    <article class="gh-card js-reveal" data-id="gaming-trivia" data-name="Gaming Trivia" data-category="daily" data-search="gaming trivia quiz daily questions" data-new="0">
+      <a class="gh-card__thumb" href="/games/gaming-trivia">
+        <img src="/images/game-trivia-v2.jpg" alt="Gaming Trivia — 10 questions daily" class="gh-card__img" loading="lazy" />
+        <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
+        <span class="gh-card__badge gh-card__badge--daily">Daily</span>
+      </a>
+      <div class="gh-card__body">
+        <div class="gh-card__tags"><span class="gh-tag gt-daily">Daily</span><span class="gh-tag gt-trivia">Trivia</span></div>
+        <a class="gh-card__title" href="/games/gaming-trivia">Gaming Trivia</a>
+        <div class="gh-card__meta"><span>3–5 min</span><span class="gh-diff gh-diff--medium">Medium</span></div>
+        <p class="gh-card__desc">10 gaming questions per day. Answer fast — more points with time remaining on the 15-second timer. Aim for an S rank.</p>
+        <div class="gh-card__device" hidden></div>
+        <a class="gh-card__play" href="/games/gaming-trivia">PLAY</a>
+      </div>
+    </article>
+
+    <article class="gh-card js-reveal" data-id="price-guesser" data-name="Price Guesser" data-category="daily" data-search="price guesser amazon gear daily" data-new="0">
+      <a class="gh-card__thumb" href="/games/price-guesser">
         <img src="/images/game-priceguesser-v2.jpg" alt="Price Guesser — guess gaming gear prices" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
-        <span class="gh-card__badge gh-card__badge--daily">DAILY</span>
-      </div>
+        <span class="gh-card__badge gh-card__badge--daily">Daily</span>
+      </a>
       <div class="gh-card__body">
         <div class="gh-card__tags"><span class="gh-tag gt-daily">Daily</span><span class="gh-tag gt-arcade">Gear</span></div>
-        <div class="gh-card__title">Price Guesser</div>
+        <a class="gh-card__title" href="/games/price-guesser">Price Guesser</a>
+        <div class="gh-card__meta"><span>2–4 min</span><span class="gh-diff gh-diff--easy">Easy</span></div>
         <p class="gh-card__desc">Five daily gaming peripherals. Guess each Amazon price — closest without going over wins. The Price is Right, gaming edition.</p>
-        <div class="gh-card__cta">Guess today's prices →</div>
+        <div class="gh-card__device" hidden></div>
+        <a class="gh-card__play" href="/games/price-guesser">PLAY</a>
       </div>
-    </a>
+    </article>
 
-    <a href="/games/daily-challenge" class="gh-card js-reveal" data-category="daily" style="transition-delay:0.32s">
-      <div class="gh-card__thumb">
+    <article class="gh-card js-reveal" data-id="daily-challenge" data-name="Pro Kit Daily" data-category="daily" data-search="pro kit daily guess pro gear" data-new="0">
+      <a class="gh-card__thumb" href="/games/daily-challenge">
         <img src="/images/game-dailychallenge-v2.jpg" alt="Pro Kit Daily — guess the pro from their gear" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
-        <span class="gh-card__badge gh-card__badge--daily">DAILY</span>
-      </div>
+        <span class="gh-card__badge gh-card__badge--daily">Daily</span>
+      </a>
       <div class="gh-card__body">
         <div class="gh-card__tags"><span class="gh-tag gt-daily">Daily</span><span class="gh-tag gt-puzzle">Pros</span></div>
-        <div class="gh-card__title">Pro Kit Daily</div>
+        <a class="gh-card__title" href="/games/daily-challenge">Pro Kit Daily</a>
+        <div class="gh-card__meta"><span>~1 min</span><span class="gh-diff gh-diff--easy">Easy</span></div>
         <p class="gh-card__desc">One UTC puzzle from the 60-pro database. See a mouse, DPI, and game — guess which pro it is. Playable in 30 seconds.</p>
-        <div class="gh-card__cta">Guess today's pro →</div>
+        <div class="gh-card__device" hidden></div>
+        <a class="gh-card__play" href="/games/daily-challenge">PLAY</a>
       </div>
-    </a>
+    </article>
 
-    <a href="/games/gear-quiz" class="gh-card js-reveal" data-category="daily" style="transition-delay:0.36s">
-      <div class="gh-card__thumb">
+    <article class="gh-card js-reveal" data-id="gear-quiz" data-name="Gear Knowledge Quiz" data-category="daily" data-search="gear knowledge quiz headsets mice daily" data-new="0">
+      <a class="gh-card__thumb" href="/games/gear-quiz">
         <img src="/images/game-gear-quiz-v2.jpg" alt="Gaming Gear Knowledge Quiz — headsets, mice, keyboards, monitors" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
-        <span class="gh-card__badge gh-card__badge--daily">DAILY</span>
-      </div>
+        <span class="gh-card__badge gh-card__badge--daily">Daily</span>
+      </a>
       <div class="gh-card__body">
         <div class="gh-card__tags"><span class="gh-tag gt-daily">Daily</span><span class="gh-tag gt-trivia">Gear</span></div>
-        <div class="gh-card__title">Gear Knowledge Quiz</div>
+        <a class="gh-card__title" href="/games/gear-quiz">Gear Knowledge Quiz</a>
+        <div class="gh-card__meta"><span>3–5 min</span><span class="gh-diff gh-diff--medium">Medium</span></div>
         <p class="gh-card__desc">10 daily questions about real gaming gear — headsets, mice, keyboards, monitors, chairs. Speed bonus scoring. How well do you know your specs?</p>
-        <div class="gh-card__cta">Test your gear IQ →</div>
+        <div class="gh-card__device" hidden></div>
+        <a class="gh-card__play" href="/games/gear-quiz">PLAY</a>
       </div>
-    </a>
+    </article>
 
-    <a href="/games/spec-match" class="gh-card js-reveal" data-category="daily" style="transition-delay:0.40s">
-      <div class="gh-card__thumb">
+    <article class="gh-card js-reveal" data-id="spec-match" data-name="Spec Match" data-category="daily" data-search="spec match identify gear daily" data-new="0">
+      <a class="gh-card__thumb" href="/games/spec-match">
         <img src="/images/game-spec-match-v2.jpg" alt="Spec Match — identify gaming gear from specs" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
-        <span class="gh-card__badge gh-card__badge--daily">DAILY</span>
-      </div>
+        <span class="gh-card__badge gh-card__badge--daily">Daily</span>
+      </a>
       <div class="gh-card__body">
         <div class="gh-card__tags"><span class="gh-tag gt-daily">Daily</span><span class="gh-tag gt-trivia">Gear</span></div>
-        <div class="gh-card__title">Spec Match</div>
+        <a class="gh-card__title" href="/games/spec-match">Spec Match</a>
+        <div class="gh-card__meta"><span>2–4 min</span><span class="gh-diff gh-diff--medium">Medium</span></div>
         <p class="gh-card__desc">Read the raw specs — weight, sensor, panel type, battery — and identify the product from 4 choices. 5 rounds, speed scoring, streak bonus.</p>
-        <div class="gh-card__cta">Match the specs →</div>
+        <div class="gh-card__device" hidden></div>
+        <a class="gh-card__play" href="/games/spec-match">PLAY</a>
       </div>
-    </a>
+    </article>
 
-    <a href="/games/hardware-timeline" class="gh-card js-reveal" data-category="daily" style="transition-delay:0.48s">
-      <div class="gh-card__thumb">
+    <article class="gh-card js-reveal" data-id="hardware-timeline" data-name="Hardware Timeline" data-category="daily" data-search="hardware timeline release year daily" data-new="0">
+      <a class="gh-card__thumb" href="/games/hardware-timeline">
         <img src="/images/game-hardware-timeline-v2.jpg" alt="Hardware Timeline — guess the release year of iconic gaming gear" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
-        <span class="gh-card__badge gh-card__badge--daily">DAILY</span>
-      </div>
+        <span class="gh-card__badge gh-card__badge--daily">Daily</span>
+      </a>
       <div class="gh-card__body">
         <div class="gh-card__tags"><span class="gh-tag gt-daily">Daily</span><span class="gh-tag gt-trivia">Gear</span></div>
-        <div class="gh-card__title">Hardware Timeline</div>
+        <a class="gh-card__title" href="/games/hardware-timeline">Hardware Timeline</a>
+        <div class="gh-card__meta"><span>2–4 min</span><span class="gh-diff gh-diff--medium">Medium</span></div>
         <p class="gh-card__desc">A legendary product name — guess the year it launched from 4 options. 5 daily rounds of gaming history, streak bonus, S–F grade.</p>
-        <div class="gh-card__cta">Place it in time →</div>
+        <div class="gh-card__device" hidden></div>
+        <a class="gh-card__play" href="/games/hardware-timeline">PLAY</a>
       </div>
-    </a>
+    </article>
 
-    <a href="/games/sudoku" class="gh-card js-reveal" data-category="daily" data-search="sudoku daily numbers 9x9" style="transition-delay:0.5s">
-      <div class="gh-card__thumb">
+    <article class="gh-card js-reveal" data-id="sudoku" data-name="Sudoku" data-category="daily puzzle" data-search="sudoku daily numbers 9x9" data-new="0">
+      <a class="gh-card__thumb" href="/games/sudoku">
         <img src="/images/game-sudoku-v2.jpg" alt="Sudoku — number grid puzzle" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
-        <span class="gh-card__badge gh-card__badge--daily">DAILY</span>
-      </div>
+        <span class="gh-card__badge gh-card__badge--daily">Daily</span>
+      </a>
       <div class="gh-card__body">
         <div class="gh-card__tags"><span class="gh-tag gt-daily">Daily</span><span class="gh-tag gt-puzzle">Logic</span></div>
-        <div class="gh-card__title">Sudoku</div>
-        <p class="gh-card__time">~8 min · date-seeded</p>
+        <a class="gh-card__title" href="/games/sudoku">Sudoku</a>
+        <div class="gh-card__meta"><span>8–12 min</span><span class="gh-diff gh-diff--hard">Hard</span></div>
         <p class="gh-card__desc">Fill the 9×9 so every row, column, and box is 1–9. Notes mode, hints, same puzzle for the UTC day.</p>
-        <div class="gh-card__cta">Solve today's grid →</div>
+        <div class="gh-card__device" hidden></div>
+        <a class="gh-card__play" href="/games/sudoku">PLAY</a>
       </div>
-    </a>
+    </article>
 
-  </div>
+    <div class="gh-section-label"><span class="sl-accent">◆</span> Skill trainers</div>
 
-  <!-- ── Skill ── -->
-  <div class="gh-section-label"><span class="sl-accent">◆</span> Skill trainers</div>
-  <div class="gh-grid">
-
-    <a href="/games/type-racer" class="gh-card js-reveal" data-category="skill" data-search="type racer wpm typing" style="transition-delay:0.04s">
-      <div class="gh-card__thumb">
+    <article class="gh-card js-reveal" data-id="type-racer" data-name="Type Racer" data-category="skill" data-search="type racer wpm typing" data-new="0">
+      <a class="gh-card__thumb" href="/games/type-racer">
         <img src="/images/game-typeracer-v2.jpg" alt="Type Racer — test your WPM" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
-      </div>
+        <span class="gh-card__badge gh-card__badge--skill">Skill</span>
+      </a>
       <div class="gh-card__body">
-        <div class="gh-card__tags"><span class="gh-tag gt-typing">Typing</span><span class="gh-tag gt-arcade">Speed</span></div>
-        <div class="gh-card__title">Type Racer</div>
+        <div class="gh-card__tags"><span class="gh-tag gt-typing">Typing</span><span class="gh-tag gt-skill">Skill</span></div>
+        <a class="gh-card__title" href="/games/type-racer">Type Racer</a>
+        <div class="gh-card__meta"><span>1–2 min</span><span class="gh-diff gh-diff--medium">Medium</span></div>
         <p class="gh-card__desc">Type gaming quotes and phrases as fast as you can. 30/60/90 second modes with WPM tracking, accuracy score, and personal bests.</p>
-        <div class="gh-card__cta">Test your WPM →</div>
+        <div class="gh-card__device" hidden></div>
+        <a class="gh-card__play" href="/games/type-racer">PLAY</a>
       </div>
-    </a>
+    </article>
 
-    <a href="/games/asteroid-dodge" class="gh-card js-reveal" data-category="arcade" data-search="asteroid dodge ship space" style="transition-delay:0.08s">
-      <div class="gh-card__thumb">
-        <img src="/images/game-asteroid-dodge-v2.jpg" alt="Asteroid Dodge — pilot through space" class="gh-card__img" loading="lazy" />
-        <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
-      </div>
-      <div class="gh-card__body">
-        <div class="gh-card__tags"><span class="gh-tag gt-arcade">Arcade</span></div>
-        <div class="gh-card__title">Asteroid Dodge</div>
-        <p class="gh-card__desc">Turn, thrust, shoot. Rocks wrap and split. Three lives.</p>
-        <div class="gh-card__cta">Launch ship →</div>
-      </div>
-    </a>
-
-    <a href="/games/beat-lab" class="gh-card js-reveal" data-category="arcade" data-search="beat lab rhythm music" style="transition-delay:0.12s">
-      <div class="gh-card__thumb">
-        <img src="/images/game-beatlab-v2.jpg" alt="Beat Lab — rhythm game" class="gh-card__img" loading="lazy" />
-        <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
-      </div>
-      <div class="gh-card__body">
-        <div class="gh-card__tags"><span class="gh-tag gt-music">Music</span><span class="gh-tag gt-arcade">Rhythm</span></div>
-        <div class="gh-card__title">Beat Lab</div>
-        <p class="gh-card__desc">4-lane rhythm game. Hit notes as they reach the target using D/F/J/K. Chain combos for multipliers. How high can you score?</p>
-        <div class="gh-card__cta">Hit the beat →</div>
-      </div>
-    </a>
-
-    <a href="/games/void-keeper" class="gh-card js-reveal" data-category="arcade" data-search="void keeper particles ambient" style="transition-delay:0.16s">
-      <div class="gh-card__thumb">
-        <img src="/images/game-voidkeeper-v2.jpg" alt="Void Keeper — collect light, avoid noise" class="gh-card__img" loading="lazy" />
-        <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
-      </div>
-      <div class="gh-card__body">
-        <div class="gh-card__tags"><span class="gh-tag gt-arcade">Arcade</span><span class="gh-tag gt-skill">Ambient</span></div>
-        <div class="gh-card__title">Void Keeper</div>
-        <p class="gh-card__desc">Move your cursor to collect glowing light particles drifting across the void. Avoid the dark noise — 5 hits and it's over. Addictive and beautiful.</p>
-        <div class="gh-card__cta">Enter the void →</div>
-      </div>
-    </a>
-
-    <a href="/games/reaction-trainer" class="gh-card js-reveal" data-category="skill" data-search="reaction time reflexes" style="transition-delay:0.2s">
-      <div class="gh-card__thumb">
+    <article class="gh-card js-reveal" data-id="reaction-trainer" data-name="Reaction Time" data-category="skill" data-search="reaction time reflexes" data-new="0">
+      <a class="gh-card__thumb" href="/games/reaction-trainer">
         <img src="/images/game-reaction-trainer-v2.jpg" alt="Reaction Time Trainer" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
-      </div>
+        <span class="gh-card__badge gh-card__badge--skill">Skill</span>
+      </a>
       <div class="gh-card__body">
         <div class="gh-card__tags"><span class="gh-tag gt-skill">Skill</span></div>
-        <div class="gh-card__title">Reaction Time</div>
+        <a class="gh-card__title" href="/games/reaction-trainer">Reaction Time</a>
+        <div class="gh-card__meta"><span>~1 min</span><span class="gh-diff gh-diff--easy">Easy</span></div>
         <p class="gh-card__desc">Wait for green — then click. 5 rounds, instant feedback. Get your average reaction time and a letter grade from S to F.</p>
-        <div class="gh-card__cta">Test your reflexes →</div>
+        <div class="gh-card__device" hidden></div>
+        <a class="gh-card__play" href="/games/reaction-trainer">PLAY</a>
       </div>
-    </a>
+    </article>
 
-    <a href="/games/aim-trainer" class="gh-card js-reveal" data-category="skill" data-search="aim trainer fps targets" style="transition-delay:0.24s">
-      <div class="gh-card__thumb">
+    <article class="gh-card js-reveal" data-id="aim-trainer" data-name="FPS Aim Trainer" data-category="skill aim" data-search="aim trainer fps targets" data-new="0">
+      <a class="gh-card__thumb" href="/games/aim-trainer">
         <img src="/images/game-aim-trainer-v2.jpg" alt="FPS Aim Trainer" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
-      </div>
+        <span class="gh-card__badge gh-card__badge--skill">Skill</span>
+      </a>
       <div class="gh-card__body">
-        <div class="gh-tag gt-skill" style="display:inline-flex;font-size:0.68rem;padding:0.18rem 0.6rem;border-radius:8px;font-weight:600;margin-bottom:0.6rem;">Skill</div>
-        <div class="gh-card__title">FPS Aim Trainer</div>
+        <div class="gh-card__tags"><span class="gh-tag gt-skill">Skill</span><span class="gh-tag gt-aim">Aim</span></div>
+        <a class="gh-card__title" href="/games/aim-trainer">FPS Aim Trainer</a>
+        <div class="gh-card__meta"><span>1–2 min</span><span class="gh-diff gh-diff--hard">Hard</span></div>
         <p class="gh-card__desc">Click moving targets before they expire. Track accuracy %, hits per second, and personal bests. 30s / 60s / 90s modes.</p>
-        <div class="gh-card__cta">Train your aim →</div>
+        <div class="gh-card__device" hidden></div>
+        <a class="gh-card__play" href="/games/aim-trainer">PLAY</a>
       </div>
-    </a>
+    </article>
 
-    <a href="/games/color-memory" class="gh-card js-reveal" data-category="skill" data-search="color memory simon sequence" style="transition-delay:0.28s">
-      <div class="gh-card__thumb">
+    <article class="gh-card js-reveal" data-id="color-memory" data-name="Color Memory" data-category="skill" data-search="color memory simon sequence" data-new="0">
+      <a class="gh-card__thumb" href="/games/color-memory">
         <img src="/images/game-color-memory-v2.jpg" alt="Color Memory — Simon Says style" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
-      </div>
+        <span class="gh-card__badge gh-card__badge--skill">Skill</span>
+      </a>
       <div class="gh-card__body">
         <div class="gh-card__tags"><span class="gh-tag gt-skill">Memory</span></div>
-        <div class="gh-card__title">Color Memory</div>
+        <a class="gh-card__title" href="/games/color-memory">Color Memory</a>
+        <div class="gh-card__meta"><span>2–5 min</span><span class="gh-diff gh-diff--easy">Easy</span></div>
         <p class="gh-card__desc">Watch the color sequence flash, then repeat it back. Simon Says style — each round adds one more color. How long is your streak?</p>
-        <div class="gh-card__cta">Test your memory →</div>
+        <div class="gh-card__device" hidden></div>
+        <a class="gh-card__play" href="/games/color-memory">PLAY</a>
       </div>
-    </a>
+    </article>
 
-  </div>
-
-  <!-- ── 3D & Lab ── -->
-  <div class="gh-section-label"><span class="sl-accent">◆</span> 3D, sim &amp; lab</div>
-  <div class="gh-grid">
-    <a href="/games/brix3d" class="gh-card js-reveal" data-category="creative" data-search="brix 3d bricks builder three">
-      <div class="gh-card__thumb">
-        <img src="/images/game-brix3d-v2.jpg" alt="BRIX 3D brick builder" class="gh-card__img" loading="lazy" />
-        <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
-      </div>
-      <div class="gh-card__body">
-        <div class="gh-card__tags"><span class="gh-tag gt-builder">3D</span></div>
-        <div class="gh-card__title">BRIX 3D</div>
-        <p class="gh-card__time">Anytime · editor</p>
-        <p class="gh-card__desc">Place interlocking bricks, orbit the camera, undo, save. Browser Three.js builder.</p>
-        <div class="gh-card__cta">Open the builder →</div>
-      </div>
-    </a>
-    <a href="/games/rootweave" class="gh-card js-reveal" data-category="creative" data-search="rootweave farm sim valley">
-      <div class="gh-card__thumb">
-        <img src="/images/game-rootweave-v2.jpg" alt="Rootweave farm sim" class="gh-card__img" loading="lazy" />
-        <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
-      </div>
-      <div class="gh-card__body">
-        <div class="gh-card__tags"><span class="gh-tag gt-sim">Live sim</span></div>
-        <div class="gh-card__title">Rootweave</div>
-        <p class="gh-card__time">Opens the live build</p>
-        <p class="gh-card__desc">Wrapper to the live isometric farm sim. Early Home Patch — not a finished 3D editor like BRIX.</p>
-        <div class="gh-card__cta">Open live sim →</div>
-      </div>
-    </a>
-  </div>
-    <p class="gh-lab-note">Lab (not in the 24): <a href="/games/dream-machine">Dream Machine</a> — generative particle field, no score, no daily. Also on <a href="/lab">/lab</a>.</p>
-
-  <!-- ── Classics ── -->
-  <div class="gh-section-label"><span class="sl-accent">◆</span> Classics</div>
-  <div class="gh-grid">
-    <a href="/games/minesweeper" class="gh-card js-reveal" data-category="puzzle" data-search="minesweeper mines flag">
-      <div class="gh-card__thumb">
-        <img src="/images/game-minesweeper-v2.jpg" alt="Minesweeper" class="gh-card__img" loading="lazy" />
-        <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
-      </div>
-      <div class="gh-card__body">
-        <div class="gh-card__tags"><span class="gh-tag gt-puzzle">Classic</span></div>
-        <div class="gh-card__title">Minesweeper</div>
-        <p class="gh-card__time">Anytime · first click is safe</p>
-        <p class="gh-card__desc">Flag the mines. First click never dies. Long-press to flag on a phone.</p>
-        <div class="gh-card__cta">Clear the field →</div>
-      </div>
-    </a>
-    <a href="/games/memory-match" class="gh-card js-reveal" data-category="skill" data-search="memory match pairs cards">
-      <div class="gh-card__thumb">
+    <article class="gh-card js-reveal" data-id="memory-match" data-name="Memory Match" data-category="skill classics" data-search="memory match pairs cards" data-new="0">
+      <a class="gh-card__thumb" href="/games/memory-match">
         <img src="/images/game-memory-match-v2.jpg" alt="Memory Match" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
-      </div>
+        <span class="gh-card__badge gh-card__badge--skill">Skill</span>
+      </a>
       <div class="gh-card__body">
         <div class="gh-card__tags"><span class="gh-tag gt-skill">Memory</span></div>
-        <div class="gh-card__title">Memory Match</div>
-        <p class="gh-card__time">~3 min</p>
+        <a class="gh-card__title" href="/games/memory-match">Memory Match</a>
+        <div class="gh-card__meta"><span>~3 min</span><span class="gh-diff gh-diff--easy">Easy</span></div>
         <p class="gh-card__desc">Flip cards, find pairs. Works on a phone. No daily seed.</p>
-        <div class="gh-card__cta">Start matching →</div>
+        <div class="gh-card__device" hidden></div>
+        <a class="gh-card__play" href="/games/memory-match">PLAY</a>
       </div>
-    </a>
+    </article>
+
+    <div class="gh-section-label"><span class="sl-accent">◆</span> Arcade</div>
+
+    <article class="gh-card js-reveal" data-id="asteroid-dodge" data-name="Asteroid Dodge" data-category="arcade new" data-search="asteroid dodge ship space" data-new="1">
+      <a class="gh-card__thumb" href="/games/asteroid-dodge">
+        <img src="/images/game-asteroid-dodge-v2.jpg" alt="Asteroid Dodge — pilot through space" class="gh-card__img" loading="lazy" />
+        <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
+        <span class="gh-card__badge gh-card__badge--arcade">Arcade</span>
+      </a>
+      <div class="gh-card__body">
+        <div class="gh-card__tags"><span class="gh-tag gt-arcade">Arcade</span><span class="gh-tag gt-new">New on the hub</span></div>
+        <a class="gh-card__title" href="/games/asteroid-dodge">Asteroid Dodge</a>
+        <div class="gh-card__meta"><span>2–5 min</span><span class="gh-diff gh-diff--medium">Medium</span></div>
+        <p class="gh-card__desc">Turn, thrust, shoot. Rocks wrap and split. Three lives.</p>
+        <div class="gh-card__device" hidden></div>
+        <a class="gh-card__play" href="/games/asteroid-dodge">PLAY</a>
+      </div>
+    </article>
+
+    <article class="gh-card js-reveal" data-id="beat-lab" data-name="Beat Lab" data-category="arcade" data-search="beat lab rhythm music" data-new="0">
+      <a class="gh-card__thumb" href="/games/beat-lab">
+        <img src="/images/game-beatlab-v2.jpg" alt="Beat Lab — rhythm game" class="gh-card__img" loading="lazy" />
+        <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
+        <span class="gh-card__badge gh-card__badge--arcade">Arcade</span>
+      </a>
+      <div class="gh-card__body">
+        <div class="gh-card__tags"><span class="gh-tag gt-music">Music</span><span class="gh-tag gt-arcade">Rhythm</span></div>
+        <a class="gh-card__title" href="/games/beat-lab">Beat Lab</a>
+        <div class="gh-card__meta"><span>2–4 min</span><span class="gh-diff gh-diff--medium">Medium</span></div>
+        <p class="gh-card__desc">4-lane rhythm game. Hit notes as they reach the target using D/F/J/K. Chain combos for multipliers. How high can you score?</p>
+        <div class="gh-card__device" hidden></div>
+        <a class="gh-card__play" href="/games/beat-lab">PLAY</a>
+      </div>
+    </article>
+
+    <article class="gh-card js-reveal" data-id="void-keeper" data-name="Void Keeper" data-category="arcade" data-search="void keeper particles ambient" data-new="0">
+      <a class="gh-card__thumb" href="/games/void-keeper">
+        <img src="/images/game-voidkeeper-v2.jpg" alt="Void Keeper — collect light, avoid noise" class="gh-card__img" loading="lazy" />
+        <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
+        <span class="gh-card__badge gh-card__badge--arcade">Arcade</span>
+      </a>
+      <div class="gh-card__body">
+        <div class="gh-card__tags"><span class="gh-tag gt-arcade">Arcade</span><span class="gh-tag gt-skill">Ambient</span></div>
+        <a class="gh-card__title" href="/games/void-keeper">Void Keeper</a>
+        <div class="gh-card__meta"><span>2–5 min</span><span class="gh-diff gh-diff--easy">Easy</span></div>
+        <p class="gh-card__desc">Move your cursor to collect glowing light particles drifting across the void. Avoid the dark noise — 5 hits and it's over. Addictive and beautiful.</p>
+        <div class="gh-card__device" hidden></div>
+        <a class="gh-card__play" href="/games/void-keeper">PLAY</a>
+      </div>
+    </article>
+
+    <div class="gh-section-label"><span class="sl-accent">◆</span> 3D &amp; sim</div>
+
+    <article class="gh-card js-reveal" data-id="brix3d" data-name="BRIX 3D" data-category="creative new" data-search="brix 3d bricks builder three" data-new="1">
+      <a class="gh-card__thumb" href="/games/brix3d">
+        <img src="/images/game-brix3d-v2.jpg" alt="BRIX 3D brick builder" class="gh-card__img" loading="lazy" />
+        <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
+        <span class="gh-card__badge gh-card__badge--3d">3D</span>
+      </a>
+      <div class="gh-card__body">
+        <div class="gh-card__tags"><span class="gh-tag gt-builder">3D</span><span class="gh-tag gt-new">New on the hub</span></div>
+        <a class="gh-card__title" href="/games/brix3d">BRIX 3D</a>
+        <div class="gh-card__meta"><span>Open-ended</span><span class="gh-diff gh-diff--easy">Easy</span></div>
+        <p class="gh-card__desc">Place interlocking bricks, orbit the camera, undo, save. Browser Three.js builder.</p>
+        <div class="gh-card__device" hidden></div>
+        <a class="gh-card__play" href="/games/brix3d">PLAY</a>
+      </div>
+    </article>
+
+    <article class="gh-card js-reveal" data-id="rootweave" data-name="Rootweave" data-category="creative new" data-search="rootweave farm sim valley" data-new="1">
+      <a class="gh-card__thumb" href="/games/rootweave">
+        <img src="/images/game-rootweave-v2.jpg" alt="Rootweave farm sim" class="gh-card__img" loading="lazy" />
+        <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
+        <span class="gh-card__badge gh-card__badge--3d">3D</span>
+      </a>
+      <div class="gh-card__body">
+        <div class="gh-card__tags"><span class="gh-tag gt-sim">Live sim</span><span class="gh-tag gt-new">New on the hub</span></div>
+        <a class="gh-card__title" href="/games/rootweave">Rootweave</a>
+        <div class="gh-card__meta"><span>Open-ended</span><span class="gh-diff gh-diff--easy">Easy</span></div>
+        <p class="gh-card__desc">Wrapper to the live isometric farm sim. Early Home Patch — not a finished 3D editor like BRIX.</p>
+        <div class="gh-card__device" hidden></div>
+        <a class="gh-card__play" href="/games/rootweave">PLAY</a>
+      </div>
+    </article>
+
+    <div class="gh-section-label"><span class="sl-accent">◆</span> Classics &amp; puzzles</div>
+
+    <article class="gh-card js-reveal" data-id="minesweeper" data-name="Minesweeper" data-category="puzzle classics" data-search="minesweeper mines flag" data-new="0">
+      <a class="gh-card__thumb" href="/games/minesweeper">
+        <img src="/images/game-minesweeper-v2.jpg" alt="Minesweeper" class="gh-card__img" loading="lazy" />
+        <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
+        <span class="gh-card__badge gh-card__badge--puzzle">Puzzle</span>
+      </a>
+      <div class="gh-card__body">
+        <div class="gh-card__tags"><span class="gh-tag gt-puzzle">Classic</span></div>
+        <a class="gh-card__title" href="/games/minesweeper">Minesweeper</a>
+        <div class="gh-card__meta"><span>3–10 min</span><span class="gh-diff gh-diff--medium">Medium</span></div>
+        <p class="gh-card__desc">Flag the mines. First click never dies. Long-press to flag on a phone.</p>
+        <div class="gh-card__device" hidden></div>
+        <a class="gh-card__play" href="/games/minesweeper">PLAY</a>
+      </div>
+    </article>
+
+    <article class="gh-card js-reveal" data-id="word-scramble" data-name="Word Scramble" data-category="puzzle word classics" data-search="word scramble unscramble gaming" data-new="0">
+      <a class="gh-card__thumb" href="/games/word-scramble">
+        <img src="/images/game-wordscramble-v2.jpg" alt="Word Scramble — unscramble gaming words" class="gh-card__img" loading="lazy" />
+        <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
+        <span class="gh-card__badge gh-card__badge--puzzle">Puzzle</span>
+      </a>
+      <div class="gh-card__body">
+        <div class="gh-card__tags"><span class="gh-tag gt-puzzle">Anytime</span><span class="gh-tag gt-puzzle">Word</span></div>
+        <a class="gh-card__title" href="/games/word-scramble">Word Scramble</a>
+        <div class="gh-card__meta"><span>1–3 min</span><span class="gh-diff gh-diff--easy">Easy</span></div>
+        <p class="gh-card__desc">Unscramble a gaming word — titles, characters, studios, terms. Anytime puzzle. Streak tracking stays.</p>
+        <div class="gh-card__device" hidden></div>
+        <a class="gh-card__play" href="/games/word-scramble">PLAY</a>
+      </div>
+    </article>
+
+    <p class="gh-empty" id="ghEmpty" hidden>No games match that filter.</p>
+
   </div>
+
+  <p class="gh-lab-note">Lab (not in the 24): <a href="/games/dream-machine">Dream Machine</a> — generative particle field, no score, no daily. Also on <a href="/lab">/lab</a>.</p>
 
 </main>
 
@@ -834,32 +976,102 @@
   </div>
 </footer>
 
+<script src="/games/cg-player.js"></script>
+<script src="/games/daily-kit.js" defer></script>
 <script src="/global.js" defer></script>
 <script>
 (function () {
   var filters = document.querySelectorAll('.gh-filter');
-  var cards = document.querySelectorAll('.gh-card');
   var search = document.getElementById('ghSearch');
+  var grid = document.getElementById('ghGrid');
+  var cards = grid ? Array.from(grid.querySelectorAll('.gh-card')) : [];
+  var originalKids = grid ? Array.from(grid.children) : [];
   var active = 'all';
+  var sort = 'recommended';
+  var deskFilters = { all: 1, daily: 1, puzzle: 1, word: 1 };
+
+  cards.forEach(function (c, i) {
+    if (!c.dataset.rec) c.dataset.rec = String(i);
+  });
+
+  function catOk(card, filt) {
+    if (filt === 'all') return true;
+    var cat = ' ' + (card.dataset.category || '') + ' ';
+    return cat.indexOf(' ' + filt + ' ') !== -1;
+  }
+
+  function updateLabels() {
+    if (!grid) return;
+    var labels = grid.querySelectorAll('.gh-section-label');
+    labels.forEach(function (label) {
+      if (sort !== 'recommended') {
+        label.style.display = 'none';
+        return;
+      }
+      var el = label.nextElementSibling;
+      var vis = false;
+      while (el && !el.classList.contains('gh-section-label')) {
+        if (el.classList.contains('gh-card') && !el.hasAttribute('hidden')) vis = true;
+        el = el.nextElementSibling;
+      }
+      label.style.display = vis ? '' : 'none';
+    });
+  }
 
   function apply() {
     var q = (search && search.value || '').trim().toLowerCase();
+    var shown = 0;
     cards.forEach(function (card) {
-      var cat = card.dataset.category || '';
       var blob = ((card.dataset.search || '') + ' ' + card.textContent).toLowerCase();
-      var catOk = active === 'all' || cat === active;
-      var qOk = !q || blob.indexOf(q) !== -1;
-      if (catOk && qOk) card.removeAttribute('hidden');
-      else card.setAttribute('hidden', '');
+      var ok = catOk(card, active) && (!q || blob.indexOf(q) !== -1);
+      if (ok) {
+        card.removeAttribute('hidden');
+        shown++;
+      } else {
+        card.setAttribute('hidden', '');
+      }
     });
-    document.querySelectorAll('.gh-section-label').forEach(function (label) {
-      var next = label.nextElementSibling;
-      if (!next) return;
-      var visible = Array.from(next.querySelectorAll('.gh-card')).some(function (c) {
-        return !c.hasAttribute('hidden');
+    var desk = document.getElementById('ghDesk');
+    if (desk) desk.hidden = !(deskFilters[active] && !q);
+    var empty = document.getElementById('ghEmpty');
+    if (empty) empty.hidden = shown > 0;
+    updateLabels();
+  }
+
+  function restoreOrder() {
+    if (!grid) return;
+    originalKids.forEach(function (n) { grid.appendChild(n); });
+  }
+
+  function applySort() {
+    if (!grid) return;
+    if (sort === 'recommended') {
+      restoreOrder();
+      apply();
+      return;
+    }
+    var list = cards.slice();
+    if (sort === 'az') {
+      list.sort(function (a, b) {
+        return (a.dataset.name || '').localeCompare(b.dataset.name || '', 'en', { sensitivity: 'base' });
       });
-      label.style.display = visible ? '' : 'none';
-    });
+    } else if (sort === 'new') {
+      list.sort(function (a, b) {
+        var na = a.dataset.new === '1' ? 0 : 1;
+        var nb = b.dataset.new === '1' ? 0 : 1;
+        if (na !== nb) return na - nb;
+        return (+a.dataset.rec || 0) - (+b.dataset.rec || 0);
+      });
+    } else if (sort === 'device') {
+      list.sort(function (a, b) {
+        var pa = +a.dataset.plays || 0;
+        var pb = +b.dataset.plays || 0;
+        if (pb !== pa) return pb - pa;
+        return (+a.dataset.rec || 0) - (+b.dataset.rec || 0);
+      });
+    }
+    list.forEach(function (c) { grid.appendChild(c); });
+    apply();
   }
 
   filters.forEach(function (btn) {
@@ -875,6 +1087,74 @@
     });
   });
   if (search) search.addEventListener('input', apply);
+
+  document.querySelectorAll('.gh-sort-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      sort = btn.dataset.sort;
+      document.querySelectorAll('.gh-sort-btn').forEach(function (b) {
+        b.classList.remove('active');
+        b.setAttribute('aria-pressed', 'false');
+      });
+      btn.classList.add('active');
+      btn.setAttribute('aria-pressed', 'true');
+      applySort();
+    });
+  });
+
+  function paintDevices() {
+    var snap = window.CGPlayer && window.CGPlayer.snapshot ? window.CGPlayer.snapshot() : null;
+    var by = (snap && snap.byGame) || {};
+    var unique = 0;
+    Object.keys(by).forEach(function (id) {
+      if (by[id] && by[id].plays > 0) unique++;
+    });
+    var playsEl = document.getElementById('ghStatPlays');
+    var streakEl = document.getElementById('ghStatStreak');
+    var levelEl = document.getElementById('ghStatLevel');
+    var emptyEl = document.getElementById('ghStatsEmpty');
+    if (playsEl) playsEl.textContent = String(unique);
+    if (streakEl) streakEl.textContent = String(snap ? snap.streak : 0);
+    if (levelEl) {
+      var xp = snap ? snap.xp : 0;
+      var lv = snap ? snap.level : 1;
+      levelEl.textContent = 'Lv ' + lv + ' · ' + xp + ' XP';
+    }
+    if (emptyEl) emptyEl.hidden = !!(snap && snap.streak > 0);
+    cards.forEach(function (card) {
+      var id = card.dataset.id;
+      var slot = card.querySelector('.gh-card__device');
+      var g = id && by[id];
+      var plays = g && g.plays ? g.plays : 0;
+      card.dataset.plays = String(plays);
+      if (!slot) return;
+      if (!g || !plays) {
+        slot.hidden = true;
+        slot.textContent = '';
+        return;
+      }
+      var bits = [];
+      if (g.streak > 0) bits.push('Streak ' + g.streak);
+      if ((+g.best || 0) > 0) bits.push('Best ' + g.best);
+      if (!bits.length) bits.push(plays === 1 ? '1 play' : plays + ' plays');
+      bits.push('on this device');
+      slot.hidden = false;
+      slot.textContent = bits.join(' · ');
+    });
+  }
+
+  function bootPlayer(tries) {
+    tries = tries || 0;
+    if (window.CGPlayer && window.CGDaily && window.CGPlayer.syncFromPlayedMap) {
+      window.CGPlayer.syncFromPlayedMap();
+    }
+    paintDevices();
+    if ((!window.CGDaily || !window.CGPlayer) && tries < 25) {
+      setTimeout(function () { bootPlayer(tries + 1); }, 50);
+    }
+  }
+
+  apply();
+  bootPlayer();
 })();
 </script>
 </body>
