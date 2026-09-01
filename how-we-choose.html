@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-D272MF8NQP"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-D272MF8NQP');
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>How We Choose Gaming Gear — CosmicGamesHub Methodology</title>
+  <meta name="description" content="How CosmicGamesHub picks products: spec sheets, a 60-player public pro-share table, owner reviews we cite, and typical street prices. No paid lab, no sponsored rankings, no fake review stamps." />
+  <meta property="og:title" content="How We Choose Gaming Gear — CosmicGamesHub" />
+  <meta property="og:description" content="Honest methodology: specs, public pro-share, cited owner reviews, typical street prices. Not a lab. Not a sponsored ranking." />
+  <meta property="og:image" content="https://cosmicgameshub.com/images/about-hero-v2.jpg" />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://cosmicgameshub.com/how-we-choose" />
+  <link rel="canonical" href="https://cosmicgameshub.com/how-we-choose" />
+  <link rel="stylesheet" href="styles.css" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {"@type":"ListItem","position":1,"name":"Home","item":"https://cosmicgameshub.com/"},
+      {"@type":"ListItem","position":2,"name":"Gear","item":"https://cosmicgameshub.com/guides"},
+      {"@type":"ListItem","position":3,"name":"How we choose"}
+    ]
+  }
+  </script>
+  <style>
+    .meth-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1.5rem 0 2rem; }
+    .meth-card { padding: 1.15rem 1.2rem; border-radius: 12px; background: var(--bg-card, #12121c); border: 1px solid var(--border, rgba(255,255,255,.08)); }
+    .meth-card h3 { margin: 0 0 .55rem; font-size: 1rem; }
+    .meth-card ul { margin: 0; padding-left: 1.15rem; }
+    .meth-card li { margin: .3rem 0; color: var(--text-mid); font-size: .92rem; }
+    .meth-do { border-left: 3px solid #3dd68c; }
+    .meth-dont { border-left: 3px solid #ff6b7a; }
+    .weight-table td:first-child { white-space: nowrap; font-weight: 700; }
+    .cta-row { display: flex; flex-wrap: wrap; gap: .75rem; margin: 1.5rem 0 2.5rem; }
+    @media (max-width: 700px) { .meth-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<nav class="nav" role="navigation" aria-label="Main navigation">
+  <div class="container">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo" aria-label="CosmicGamesHub home">
+        <span class="nav__logo-icon" aria-hidden="true">🎮</span>
+        <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
+      </a>
+      <ul class="nav__links" id="navLinks">
+        <li><a href="/pros">Pros</a></li>
+        <li><a href="/games">Games</a></li>
+        <li><a href="/games/daily">Daily</a></li>
+        <li><a href="/guides">Guides</a></li>
+        <li><a href="/versus">Comparisons</a></li>
+        <li><a href="/tools/find-my-gear" class="nav__cta btn">Find My Gear</a></li>
+      </ul>
+      <button class="nav__hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<main class="article">
+  <div class="container--narrow">
+
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+      <a href="/">Home</a>
+      <span class="sep">›</span>
+      <a href="/guides">Gear</a>
+      <span class="sep">›</span>
+      <span class="current">How we choose</span>
+    </nav>
+
+    <div style="border-radius:12px;overflow:hidden;margin-bottom:1.75rem;aspect-ratio:16/7;">
+      <img src="/images/about-hero-v2.jpg" alt="Editorial cosmic gaming atelier" style="width:100%;height:100%;object-fit:cover;" width="1920" height="1080" fetchpriority="high" decoding="async" />
+    </div>
+
+    <h1>How we choose products</h1>
+    <p class="article__intro">
+      Updated September 2026. CosmicGamesHub is not a test lab and we do not sell rankings. A pick is an editorial call built from manufacturer specs, a public pro-share table we actually count, owner reviews we can cite, and typical street prices. If we cannot show the work, we do not stamp a fake number on it.
+    </p>
+
+    <div class="cta-row">
+      <a href="/tools/find-my-gear" class="btn">Find My Gear →</a>
+      <a href="/guides" class="btn">Browse gear guides →</a>
+      <a href="/about" class="btn">About the site →</a>
+    </div>
+
+    <div class="meth-grid">
+      <div class="meth-card meth-do">
+        <h3>What we do</h3>
+        <ul>
+          <li>Read spec sheets: weight, sensor, polling, battery, switch/actuation, panel, ports.</li>
+          <li>Count public pro share from <a href="/data/pros.json"><code>data/pros.json</code></a> — 60 players as of August 2026, each with a <code>lastVerified</code> month.</li>
+          <li>Use owner reviews (Amazon, Reddit, enthusiast forums) as a <em>signal</em>: what breaks, what is still praised at six months.</li>
+          <li>Compare inside a price band. A good $80 mouse does not beat a $30 mouse by existing.</li>
+          <li>Date every guide. If the market moved, the intro says when.</li>
+        </ul>
+      </div>
+      <div class="meth-card meth-dont">
+        <h3>What we don’t</h3>
+        <ul>
+          <li>No paid Cosmic lab. We do not run click testers, anechoic chambers, or panel uniformity benches.</li>
+          <li>No sponsored rankings. Brands cannot pay to be #1, or to be on the list.</li>
+          <li>No fake “12,400 reviews” stamps presented as ours. Amazon’s live count is Amazon’s. We do not mint Cosmic review totals.</li>
+          <li>No fake “X% of tracked pros” unless that X is computed from <code>pros.json</code>.</li>
+          <li>No live Amazon price tracker. We do not have a feed. We say <strong>typical street price</strong> (for example ~$250).</li>
+          <li>No email list. We do not collect signups to drip product pitches.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>How specs are weighted</h2>
+    <p>Marketing copy is ignored. Hard numbers are not equal. Category weights below are the editorial defaults — a game hub can tilt them (Valorant cares more about mouse weight than chair lumbar).</p>
+    <div class="table-wrap" role="region" tabindex="0">
+      <table class="weight-table">
+        <thead>
+          <tr><th>Category</th><th>What we actually weigh</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Mice</td><td>Shape/fit first, then weight, sensor consistency (not max DPI), click type, polling, battery if wireless. Honeycomb is a cleanliness penalty, not a free weight bonus.</td></tr>
+          <tr><td>Keyboards</td><td>Actuation (Hall Effect Rapid Trigger vs MX), layout (80% vs 60% vs TKL), software, build, whether it is wired-only. Analog retail boards are judged against Wooting, not against 2019 Bluetooth 60%.</td></tr>
+          <tr><td>Headsets</td><td>Positional stereo, mic, clamp/weight, wireless stack (2.4 vs BT vs both), battery claim vs platform support. Virtual 7.1 is treated as marketing unless hardware-based.</td></tr>
+          <tr><td>Monitors</td><td>Resolution × refresh the GPU can feed, panel type, response, ports (HDMI 2.1 for consoles), stand. HDR400 stickers do not count as HDR.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>How public owner feedback is used</h2>
+    <p>
+      Owner reviews are a <strong>signal, not a Cosmic star</strong>. We look for repeated failure modes (scroll wheels, ear-pad peel, wireless dongle dropouts) and for praise that survives the honeymoon. We do not average Amazon stars into a “Cosmic 4.7.” When we quote a customer rating, it is labeled as an Amazon customer rating with a source — not as our score. Editorial verdicts on roundups are written as <strong>Cosmic editorial /10</strong> and tagged editorial on purpose.
+    </p>
+
+    <h2>Pro-share: counted, not invented</h2>
+    <p>
+      The live table is <a href="/pros">/pros</a>, sourced from <a href="/data/pros.json">data/pros.json</a>. As of the August 2026 snapshot that file holds <strong>60 players</strong> (20 VALORANT, 19 CS2, 10 Apex, 11 Fortnite). Examples we can actually compute from that file:
+    </p>
+    <ul>
+      <li><strong>14 of 60</strong> (23.3%) list a Logitech G Pro X Superlight 2 variant as their mouse.</li>
+      <li><strong>0 of 60</strong> currently list a Razer Viper V3 Pro — three list a Viper V4 Pro. We can still <em>recommend</em> V3 Pro as a 2026 buy (shape, 54g, street price) without pretending it leads this table.</li>
+      <li><strong>15 of 60</strong> (25%) list a Wooting keyboard; 80HE-family is 6/60, 60HE-family is 9/60.</li>
+      <li><strong>11 of 60</strong> (18.3%) list a HyperX Cloud II. Razer BlackShark V3 Pro is 2/60 in this table.</li>
+      <li><strong>44 of 60</strong> (73.3%) list a ZOWIE monitor. Our 2026 LCD buy is still the ASUS XG27ACS — that is a buyer pick, not a pro-share pick, and we say so.</li>
+    </ul>
+    <p>
+      Tools: <a href="/pros/compare">compare two or three players</a> · <a href="/pros/by-gear">find players using a product</a>. If a SKU is not in the JSON, we do not invent a percentage for it.
+    </p>
+
+    <h2>Pricing</h2>
+    <p>
+      Prices on this site are <strong>typical street</strong>, written as ~$250, not a live tracker. We do not have an Amazon price feed. If a listing is messy (Wooting 80HE on Amazon US), we say so and still link with our tag. Check the live Amazon page before you buy.
+    </p>
+
+    <h2>Update cadence</h2>
+    <p>
+      Each guide is dated in the intro (for example “Updated August 2026”). We revisit a roundup when a launch, a discontinuation, or a street-price collapse would change the #1 we would send a friend — not on a fake 14-day robot cycle. If a page is stale, email <a href="mailto:hello@cosmicgameshub.com">hello@cosmicgameshub.com</a>.
+    </p>
+
+    <h2>Affiliates</h2>
+    <p>
+      CosmicGamesHub is a participant in the Amazon Services LLC Associates Program. Amazon links use tag <code>cosmicgameshu-20</code>. If you buy through those links, we may earn a commission at no extra cost to you. <strong>Recommendations are not sold.</strong> A higher commission does not move a product up the list. The one-liner next to buy buttons is the same sentence: we may earn a commission if you buy through our links; that does not affect the pick.
+    </p>
+
+    <h2>How products get dropped</h2>
+    <p>A product leaves a “best of” list when it is discontinued, replaced by a clearer default, or no longer honest to recommend as current.</p>
+    <ul>
+      <li><strong>Anne Pro 2</strong> — 2019 Bluetooth 60%. It is gone from the 2026 keyboard list. Hall Effect Rapid Trigger (Wooting 80HE / 60HE v2) is the competitive default now; a six-year-old membrane-adjacent compact board is history, not a budget pick.</li>
+      <li><strong>LG 27GP850 as the 2026 default</strong> — it was the 1440p reference for years. It is not the 2026 LCD we would send a friend. The ASUS ROG Strix XG27ACS (27" 1440p 180Hz Fast IPS, typical street around $200) is. Keep a 27GP850 if you already own one or find it cheaper used. Dedicated 1440p nostalgia still lives on the <a href="/guides/best-1440p-gaming-monitors-2026">older 1440p roundup</a> and versus pages; the flagship monitor guide does not pretend 2021 is 2026.</li>
+    </ul>
+
+    <h2>Where this lands on the site</h2>
+    <ul>
+      <li><a href="/tools/find-my-gear">Find My Gear</a> — a recommender, not the <a href="/games/gear-quiz">gear trivia quiz</a>.</li>
+      <li>Title hubs: <a href="/guides/valorant-gear">Valorant</a>, <a href="/guides/cs2-gear">CS2</a>, <a href="/guides/fortnite-gear">Fortnite</a>, <a href="/guides/apex-gear">Apex</a> — only linking guides that already exist.</li>
+      <li>Flagship roundups: mice, headsets, keyboards, monitors each have a “Why we picked it” box under the current #1, with Cosmic editorial scores labeled as editorial.</li>
+    </ul>
+
+    <div class="disclosure" style="margin-top:3rem;" role="note">
+      <strong>Affiliate Disclosure:</strong> CosmicGamesHub is a participant in the Amazon Services LLC Associates Program. As an Amazon Associate we earn from qualifying purchases. Tag: cosmicgameshu-20. Prices shown elsewhere on the site are typical street, not a live tracker.
+    </div>
+  </div>
+</main>
+
+<footer class="footer" role="contentinfo">
+  <div class="container">
+    <div class="footer__grid">
+      <div class="footer__brand">
+        <a href="/" class="nav__logo" style="justify-content:flex-start;">
+          <span class="nav__logo-icon" aria-hidden="true">🎮</span>
+          <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
+        </a>
+        <p>Independent gear guides. Specs, public pro-share, typical street prices — not a lab.</p>
+      </div>
+      <div class="footer__col">
+        <h4>Trust</h4>
+        <ul>
+          <li><a href="/how-we-choose">How we choose</a></li>
+          <li><a href="/about">About</a></li>
+          <li><a href="/privacy">Privacy</a></li>
+          <li><a href="/tools/find-my-gear">Find My Gear</a></li>
+        </ul>
+      </div>
+      <div class="footer__col">
+        <h4>Guides</h4>
+        <ul>
+          <li><a href="/guides/best-gaming-mice-2026">Best Gaming Mice</a></li>
+          <li><a href="/guides/best-gaming-headsets-2026">Best Gaming Headsets</a></li>
+          <li><a href="/guides/best-gaming-keyboards-2026">Best Gaming Keyboards</a></li>
+          <li><a href="/guides/best-gaming-monitors-2026">Best Gaming Monitors</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <p class="footer__disclosure"><strong>Affiliate Disclosure:</strong> As an Amazon Associate I earn from qualifying purchases.</p>
+      <p class="footer__legal">© 2026 CosmicGamesHub. All rights reserved. · <a href="/about" style="color:var(--text-mid);">About</a> · <a href="/privacy" style="color:var(--text-mid);">Privacy</a></p>
+    </div>
+  </div>
+</footer>
+
+<script>
+  document.getElementById('hamburger').addEventListener('click', function() {
+    const nav = document.getElementById('navLinks');
+    const open = nav.classList.toggle('open');
+    this.setAttribute('aria-expanded', open);
+  });
+</script>
+<script src="/global.js" defer></script>
+</body>
+</html>

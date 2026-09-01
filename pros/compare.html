@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-D272MF8NQP"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-D272MF8NQP');</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Compare Pro Setups — Mouse, DPI, Sens, eDPI | CosmicGamesHub</title>
+  <meta name="description" content="Pick 2–3 players from our public pros.json table and compare mouse, DPI, sens, eDPI, keyboard, headset, monitor, and resolution side by side. Not a lab." />
+  <meta property="og:title" content="Compare Pro Setups — CosmicGamesHub" />
+  <meta property="og:image" content="https://cosmicgameshub.com/images/pros-bg.jpg" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://cosmicgameshub.com/pros/compare" />
+  <link rel="canonical" href="https://cosmicgameshub.com/pros/compare" />
+  <link rel="stylesheet" href="../styles.css" />
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
+    {"@type":"ListItem","position":1,"name":"Home","item":"https://cosmicgameshub.com/"},
+    {"@type":"ListItem","position":2,"name":"Gear","item":"https://cosmicgameshub.com/guides"},
+    {"@type":"ListItem","position":3,"name":"Compare pro setups"}
+  ]}
+  </script>
+  <style>
+    .cmp-hero { position:relative; border-radius:14px; overflow:hidden; margin:0 0 1.25rem; padding:2rem 1.25rem 1.3rem; background:url('/images/pros-bg.jpg') center 40%/cover no-repeat; }
+    .cmp-hero::before { content:''; position:absolute; inset:0; background:linear-gradient(180deg,rgba(9,9,15,.7),rgba(9,9,15,.94)); }
+    .cmp-hero > * { position:relative; z-index:1; }
+    .cmp-picks { display:grid; grid-template-columns:repeat(3,1fr); gap:.75rem; margin:1rem 0; }
+    .cmp-picks label { font-size:.8rem; font-weight:700; display:block; margin-bottom:.35rem; }
+    .cmp-table-wrap { overflow-x:auto; }
+    .cmp-table { width:100%; border-collapse:collapse; font-size:.88rem; }
+    .cmp-table th, .cmp-table td { border:1px solid rgba(255,255,255,.08); padding:.65rem .7rem; text-align:left; vertical-align:top; }
+    .cmp-table th { background:rgba(0,212,255,.06); color:var(--accent); }
+    .cmp-table td.null { color:var(--text-lo); font-style:italic; }
+    .cmp-err { color:#ff6b7a; }
+    .cmp-presets { display:flex; flex-wrap:wrap; gap:.45rem; margin:.5rem 0 1rem; }
+    @media (max-width:700px) { .cmp-picks { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+<nav class="nav" role="navigation" aria-label="Main navigation">
+  <div class="container">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo" aria-label="CosmicGamesHub home">
+        <span class="nav__logo-icon" aria-hidden="true">🎮</span>
+        <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
+      </a>
+      <ul class="nav__links" id="navLinks">
+        <li><a href="/pros" class="active">Pros</a></li>
+        <li><a href="/games">Games</a></li>
+        <li><a href="/guides">Guides</a></li>
+        <li><a href="/versus">Comparisons</a></li>
+        <li><a href="/tools/find-my-gear" class="nav__cta btn">Find My Gear</a></li>
+      </ul>
+      <button class="nav__hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</nav>
+
+<main class="article">
+  <div class="container--narrow">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+      <a href="/">Home</a><span class="sep">›</span>
+      <a href="/guides">Gear</a><span class="sep">›</span>
+      <span class="current">Compare pro setups</span>
+    </nav>
+
+    <section class="cmp-hero">
+      <span class="section__eyebrow">Public share · data/pros.json</span>
+      <h1 style="margin-top:.45rem;">Compare pro setups</h1>
+      <p style="margin:0;max-width:640px;color:var(--text-mid);">Pick 2–3 players. We load mouse, DPI, sens, eDPI, keyboard, headset, monitor, and resolution from the same JSON the rest of the site uses. Empty cells mean not listed — not a guess. <a href="/pros/by-gear">Find players by gear</a> · <a href="/how-we-choose">How we choose</a>.</p>
+    </section>
+
+    <p id="cmpStatus">Loading player list…</p>
+    <div class="cmp-presets" id="cmpPresets" hidden>
+      <button type="button" class="btn" data-ids="tenz,aspas,zekken">TenZ vs aspas vs zekken</button>
+      <button type="button" class="btn" data-ids="m0nesy,zywoo,donk">m0NESY vs ZywOo vs donk</button>
+      <button type="button" class="btn" data-ids="tenz,m0nesy,bugha">TenZ vs m0NESY vs Bugha</button>
+    </div>
+    <div class="cmp-picks">
+      <div>
+        <label for="p1">Player 1</label>
+        <select id="p1"><option value="">—</option></select>
+      </div>
+      <div>
+        <label for="p2">Player 2</label>
+        <select id="p2"><option value="">—</option></select>
+      </div>
+      <div>
+        <label for="p3">Player 3 (optional)</label>
+        <select id="p3"><option value="">—</option></select>
+      </div>
+    </div>
+    <div class="cmp-table-wrap" role="region" tabindex="0">
+      <table class="cmp-table" id="cmpTable" hidden>
+        <thead><tr id="cmpHead"></tr></thead>
+        <tbody id="cmpBody"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<footer class="footer" role="contentinfo">
+  <div class="container">
+    <div class="footer__bottom">
+      <p class="footer__disclosure">Public share only. lastVerified is a month stamp, not a lab date. Amazon tag cosmicgameshu-20 lives on product pages, not here.</p>
+      <p class="footer__legal">© 2026 CosmicGamesHub · <a href="/pros" style="color:var(--text-mid);">All pros</a></p>
+    </div>
+  </div>
+</footer>
+<script>
+  document.getElementById('hamburger').addEventListener('click', function(){ var n=document.getElementById('navLinks'); this.setAttribute('aria-expanded', n.classList.toggle('open')); });
+
+  var PROS = [];
+  var BY_ID = {};
+  var FIELDS = [
+    ['name', 'Player'],
+    ['game', 'Title'],
+    ['team', 'Team'],
+    ['mouse', 'Mouse'],
+    ['dpi', 'DPI'],
+    ['sensitivity', 'Sens'],
+    ['edpi', 'eDPI'],
+    ['pollingHz', 'Polling'],
+    ['keyboard', 'Keyboard'],
+    ['headset', 'Headset'],
+    ['monitor', 'Monitor'],
+    ['resolution', 'Resolution'],
+    ['refreshHz', 'Refresh'],
+    ['mousepad', 'Mousepad'],
+    ['lastVerified', 'Last verified']
+  ];
+
+  function fillSelect(sel) {
+    var keep = sel.value;
+    sel.innerHTML = '<option value="">—</option>';
+    PROS.forEach(function (p) {
+      var o = document.createElement('option');
+      o.value = p.id;
+      o.textContent = p.name + ' (' + p.game + ')';
+      sel.appendChild(o);
+    });
+    if (keep && BY_ID[keep]) sel.value = keep;
+  }
+
+  function cell(v) {
+    if (v === null || v === undefined || v === '') return '<td class="null">Not listed</td>';
+    return '<td>' + String(v).replace(/</g, '&lt;') + '</td>';
+  }
+
+  function render() {
+    var ids = [document.getElementById('p1').value, document.getElementById('p2').value, document.getElementById('p3').value]
+      .filter(function (id, i, arr) { return id && arr.indexOf(id) === i; });
+    var table = document.getElementById('cmpTable');
+    if (ids.length < 2) { table.hidden = true; return; }
+    var players = ids.map(function (id) { return BY_ID[id]; }).filter(Boolean);
+    var head = '<th>Field</th>' + players.map(function (p) {
+      return '<th><a href="/pros/' + p.id + '">' + p.name + '</a></th>';
+    }).join('');
+    document.getElementById('cmpHead').innerHTML = head;
+    document.getElementById('cmpBody').innerHTML = FIELDS.map(function (pair) {
+      return '<tr><th>' + pair[1] + '</th>' + players.map(function (p) { return cell(p[pair[0]]); }).join('') + '</tr>';
+    }).join('');
+    table.hidden = false;
+  }
+
+  function setIds(ids) {
+    document.getElementById('p1').value = ids[0] || '';
+    document.getElementById('p2').value = ids[1] || '';
+    document.getElementById('p3').value = ids[2] || '';
+    render();
+  }
+
+  fetch('/data/pros.json').then(function (r) { return r.json(); }).then(function (data) {
+    PROS = data.slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
+    PROS.forEach(function (p) { BY_ID[p.id] = p; });
+    fillSelect(document.getElementById('p1'));
+    fillSelect(document.getElementById('p2'));
+    fillSelect(document.getElementById('p3'));
+    document.getElementById('cmpStatus').textContent = PROS.length + ' players loaded from data/pros.json. yay is not in this table.';
+    document.getElementById('cmpPresets').hidden = false;
+    var params = new URLSearchParams(location.search);
+    var q = (params.get('ids') || '').split(',').filter(Boolean);
+    if (q.length >= 2) setIds(q);
+    else setIds(['tenz', 'aspas', 'zekken']);
+  }).catch(function () {
+    document.getElementById('cmpStatus').innerHTML = '<span class="cmp-err">Could not load /data/pros.json.</span>';
+  });
+
+  ['p1', 'p2', 'p3'].forEach(function (id) {
+    document.getElementById(id).addEventListener('change', render);
+  });
+  document.getElementById('cmpPresets').addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-ids]');
+    if (!btn) return;
+    setIds(btn.getAttribute('data-ids').split(','));
+  });
+</script>
+<script src="/global.js" defer></script>
+</body>
+</html>

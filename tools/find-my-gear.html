@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-D272MF8NQP"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-D272MF8NQP');
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Find My Gear — Gaming Setup Recommender | CosmicGamesHub</title>
+  <meta name="description" content="Answer six questions. Get a mouse, keyboard, headset, and monitor from products CosmicGamesHub already covers — with guide, versus, and Amazon links. Not a trivia quiz." />
+  <meta property="og:title" content="Find My Gear — CosmicGamesHub" />
+  <meta property="og:description" content="A setup recommender using gear already on the site. Typical street prices, not a live tracker." />
+  <meta property="og:image" content="https://cosmicgameshub.com/images/tools-hero.jpg" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://cosmicgameshub.com/tools/find-my-gear" />
+  <link rel="canonical" href="https://cosmicgameshub.com/tools/find-my-gear" />
+  <link rel="stylesheet" href="../styles.css" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {"@type":"ListItem","position":1,"name":"Home","item":"https://cosmicgameshub.com/"},
+      {"@type":"ListItem","position":2,"name":"Gear","item":"https://cosmicgameshub.com/guides"},
+      {"@type":"ListItem","position":3,"name":"Find My Gear"}
+    ]
+  }
+  </script>
+  <style>
+    .fmg-hero { position: relative; border-radius: 14px; overflow: hidden; margin: 0 0 1.25rem; padding: 2rem 1.25rem 1.35rem; background: url('/images/tools-hero.jpg') center 40%/cover no-repeat; }
+    .fmg-hero::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(9,9,15,.68) 0%, rgba(9,9,15,.92) 100%); }
+    .fmg-hero > * { position: relative; z-index: 1; }
+    .fmg-q { margin-bottom: 1.35rem; }
+    .fmg-q legend { font-weight: 800; font-size: .95rem; margin-bottom: .55rem; color: var(--text-hi); }
+    .fmg-opts { display: flex; flex-wrap: wrap; gap: .45rem; }
+    .fmg-opts label { display: inline-flex; align-items: center; gap: .4rem; padding: .5rem .85rem; border-radius: 999px; border: 1px solid var(--border); background: rgba(255,255,255,.03); cursor: pointer; font-size: .86rem; min-height: 44px; }
+    .fmg-opts input { accent-color: var(--accent, #00d4ff); }
+    .fmg-opts label:has(input:checked) { border-color: var(--accent, #00d4ff); background: rgba(0,212,255,.1); color: #fff; }
+    .fmg-actions { display: flex; flex-wrap: wrap; gap: .65rem; margin: 1rem 0 0; }
+    .fmg-note { font-size: .82rem; color: var(--text-lo); margin: .75rem 0 0; }
+    .fmg-setup { display: none; margin-top: 1.5rem; }
+    .fmg-setup.is-on { display: block; }
+    .fmg-kit { display: grid; gap: 1rem; }
+    .fmg-item { display: grid; grid-template-columns: 140px 1fr; gap: 1rem; padding: 1rem; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-card, #12121c); }
+    .fmg-item img { width: 100%; height: 90px; object-fit: cover; border-radius: 8px; }
+    .fmg-item h3 { margin: 0 0 .2rem; font-size: 1.05rem; }
+    .fmg-role { font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+    .fmg-price { font-size: .9rem; color: var(--text-mid); margin: .15rem 0 .4rem; }
+    .fmg-why { font-size: .88rem; color: var(--text-mid); margin: 0 0 .7rem; }
+    .fmg-links { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+    .fmg-total { margin: 1rem 0; padding: .9rem 1rem; border-radius: 10px; background: rgba(0,212,255,.06); border: 1px solid rgba(0,212,255,.2); }
+    .fmg-skip { font-size: .85rem; color: var(--text-lo); font-style: italic; }
+    @media (max-width: 640px) { .fmg-item { grid-template-columns: 1fr; } .fmg-item img { height: 140px; } }
+  </style>
+</head>
+<body>
+
+<nav class="nav" role="navigation" aria-label="Main navigation">
+  <div class="container">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo" aria-label="CosmicGamesHub home">
+        <span class="nav__logo-icon" aria-hidden="true">🎮</span>
+        <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
+      </a>
+      <ul class="nav__links" id="navLinks">
+        <li><a href="/pros">Pros</a></li>
+        <li><a href="/games">Games</a></li>
+        <li><a href="/games/daily">Daily</a></li>
+        <li><a href="/guides">Guides</a></li>
+        <li><a href="/versus">Comparisons</a></li>
+        <li><a href="/tools/find-my-gear" class="nav__cta btn">Find My Gear</a></li>
+      </ul>
+      <button class="nav__hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<main>
+  <div class="container--narrow">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+      <a href="/">Home</a>
+      <span class="sep">›</span>
+      <a href="/guides">Gear</a>
+      <span class="sep">›</span>
+      <span class="current">Find My Gear</span>
+    </nav>
+
+    <section class="fmg-hero">
+      <span class="section__eyebrow">Recommender · not trivia</span>
+      <h1 style="margin-top:.5rem;">Find My Gear</h1>
+      <p style="max-width:640px;color:var(--text-mid);margin:0;">
+        Six questions. One setup built from products already on this site — Viper V3 Pro, Superlight 2, BlackShark V3 Pro, Wooting 80HE, XG27ACS, and the budget line. This is not <a href="/games/gear-quiz">Gear Quiz</a>. Prices are typical street, not a live Amazon feed. <a href="/how-we-choose">How we choose</a>.
+      </p>
+    </section>
+
+    <div class="tool-card">
+      <form id="fmgForm" class="tool-form" onsubmit="return false;">
+        <fieldset class="fmg-q">
+          <legend>1. What do you play?</legend>
+          <div class="fmg-opts">
+            <label><input type="radio" name="game" value="valorant" required> Valorant</label>
+            <label><input type="radio" name="game" value="cs2"> CS2</label>
+            <label><input type="radio" name="game" value="apex"> Apex</label>
+            <label><input type="radio" name="game" value="fortnite"> Fortnite</label>
+            <label><input type="radio" name="game" value="variety" checked> Variety</label>
+          </div>
+        </fieldset>
+        <fieldset class="fmg-q">
+          <legend>2. Budget for this kit (mouse + keyboard + headset + monitor)</legend>
+          <div class="fmg-opts">
+            <label><input type="radio" name="budget" value="low"> Under ~$250</label>
+            <label><input type="radio" name="budget" value="mid" checked> ~$250–$600</label>
+            <label><input type="radio" name="budget" value="high"> $600+ / no ceiling</label>
+          </div>
+        </fieldset>
+        <fieldset class="fmg-q">
+          <legend>3. Wired or wireless?</legend>
+          <div class="fmg-opts">
+            <label><input type="radio" name="wire" value="wired"> Prefer wired</label>
+            <label><input type="radio" name="wire" value="wireless" checked> Prefer wireless</label>
+            <label><input type="radio" name="wire" value="either"> Either</label>
+          </div>
+        </fieldset>
+        <fieldset class="fmg-q">
+          <legend>4. Competitive or casual?</legend>
+          <div class="fmg-opts">
+            <label><input type="radio" name="intent" value="competitive" checked> Competitive</label>
+            <label><input type="radio" name="intent" value="casual"> Casual</label>
+          </div>
+        </fieldset>
+        <fieldset class="fmg-q">
+          <legend>5. Platform</legend>
+          <div class="fmg-opts">
+            <label><input type="radio" name="platform" value="pc" checked> PC</label>
+            <label><input type="radio" name="platform" value="ps5"> PS5</label>
+            <label><input type="radio" name="platform" value="xbox"> Xbox</label>
+          </div>
+        </fieldset>
+        <fieldset class="fmg-q">
+          <legend>6. Priority</legend>
+          <div class="fmg-opts">
+            <label><input type="radio" name="priority" value="weight" checked> Weight / flick speed</label>
+            <label><input type="radio" name="priority" value="comfort"> Comfort</label>
+            <label><input type="radio" name="priority" value="sound"> Sound / footsteps</label>
+            <label><input type="radio" name="priority" value="battery"> Battery life</label>
+          </div>
+        </fieldset>
+        <div class="fmg-actions">
+          <button type="button" class="btn btn--primary" id="fmgGo">Build my setup</button>
+          <button type="button" class="btn" id="fmgReset">Start over</button>
+        </div>
+        <p class="fmg-note">We only recommend SKUs that already have a guide, review, versus page, or Amazon link on CosmicGamesHub. Console kits skip a dedicated mouse/keyboard unless you said PC.</p>
+      </form>
+
+      <div class="fmg-setup" id="fmgOut" hidden></div>
+    </div>
+
+    <p style="font-size:.85rem;color:var(--text-mid);margin:0 0 3rem;">
+      Title hubs: <a href="/guides/valorant-gear">Valorant</a> · <a href="/guides/cs2-gear">CS2</a> · <a href="/guides/fortnite-gear">Fortnite</a> · <a href="/guides/apex-gear">Apex</a>
+      · <a href="/games/gear-quiz">Gear trivia quiz</a> (different tool)
+    </p>
+  </div>
+</main>
+
+<footer class="footer" role="contentinfo">
+  <div class="container">
+    <div class="footer__bottom">
+      <p class="footer__disclosure"><strong>Affiliate Disclosure:</strong> As an Amazon Associate I earn from qualifying purchases. Tag cosmicgameshu-20. Typical street prices, not live Amazon prices.</p>
+      <p class="footer__legal">© 2026 CosmicGamesHub · <a href="/how-we-choose" style="color:var(--text-mid);">How we choose</a> · <a href="/about" style="color:var(--text-mid);">About</a> · <a href="/privacy" style="color:var(--text-mid);">Privacy</a></p>
+    </div>
+  </div>
+</footer>
+
+<script>
+  document.getElementById('hamburger').addEventListener('click', function () {
+    var nav = document.getElementById('navLinks');
+    var open = nav.classList.toggle('open');
+    this.setAttribute('aria-expanded', open);
+  });
+
+  var TAG = 'cosmicgameshu-20';
+  var AFF = "We may earn a commission if you buy through our links. This doesn't affect the pick.";
+
+  var MICE = [
+    { id: 'g203', name: 'Logitech G203 LIGHTSYNC', price: 29, wired: true, wireless: false, weight: 85, competitive: 3, casual: 9, comfort: 6, battery: 0,
+      img: '/images/product-mouse-g203.jpg', amazon: 'https://www.amazon.com/dp/B07W4QH2NT?tag=' + TAG,
+      guide: '/guides/best-gaming-mice-2026#budget', why: 'Honest $29 sensor. Wired only.' },
+    { id: 'g305', name: 'Logitech G305 LIGHTSPEED', price: 39, wired: false, wireless: true, weight: 99, competitive: 4, casual: 8, comfort: 6, battery: 6,
+      img: '/images/product-mouse-g305.jpg', amazon: 'https://www.amazon.com/dp/B07W5KMKJV?tag=' + TAG,
+      guide: '/guides/best-gaming-mouse-for-valorant-2026', why: 'Cheapest LIGHTSPEED wireless still worth using.' },
+    { id: 'dav3', name: 'Razer DeathAdder V3', price: 69, wired: true, wireless: false, weight: 59, competitive: 7, casual: 7, comfort: 9, battery: 0,
+      img: '/images/product-mouse-deathadder.jpg', amazon: 'https://www.amazon.com/dp/B0BCHWGM62?tag=' + TAG,
+      guide: '/guides/best-gaming-mice-2026#mid', versus: '/versus/razer-deathadder-v3-vs-logitech-g-pro-x-superlight-2',
+      why: '59g ergo. Best wired comfort pick on the site.' },
+    { id: 'g305x', name: 'Logitech G305 X SUPERLIGHT', price: 80, wired: false, wireless: true, weight: 59, competitive: 6, casual: 7, comfort: 7, battery: 7,
+      img: '/images/product-mouse-g305x.jpg', amazon: 'https://www.amazon.com/dp/B0GVSDM5CL?tag=' + TAG,
+      guide: '/guides/best-gaming-mice-2026#wireless-entry', why: 'Budget Superlight-class wireless. Typical street ~$80.' },
+    { id: 'viper', name: 'Razer Viper V3 Pro', price: 119, wired: false, wireless: true, weight: 54, competitive: 10, casual: 5, comfort: 6, battery: 5,
+      img: '/images/product-mouse-viper-v3-pro.jpg', amazon: 'https://www.amazon.com/dp/B0CW1HW1QH?tag=' + TAG,
+      guide: '/guides/best-gaming-mice-2026#performance', review: '/reviews/razer-viper-v3-pro-review',
+      versus: '/versus/logitech-g-pro-x-superlight-2-vs-razer-viper-v3-pro',
+      why: '54g ambi, 8K, optical clicks. Cosmic competitive default — 0/60 in our pro table list V3 Pro (V4 Pro is 3/60).' },
+    { id: 'sl2', name: 'Logitech G Pro X Superlight 2', price: 140, wired: false, wireless: true, weight: 60, competitive: 9, casual: 6, comfort: 8, battery: 8,
+      img: '/images/product-mouse-superlight2.jpg', amazon: 'https://www.amazon.com/dp/B0C6J9WNQX?tag=' + TAG,
+      guide: '/guides/best-gaming-mice-2026#premium',
+      versus: '/versus/logitech-g-pro-x-superlight-2-vs-razer-viper-v3-pro',
+      why: '14 of 60 tracked pros use a Superlight 2 variant (23.3%). CS2 default in our table.' }
+  ];
+
+  var KEYS = [
+    { id: 'k552', name: 'Redragon K552 KUMARA', price: 35, wired: true, wireless: false, competitive: 3, casual: 8, he: false,
+      img: '/images/product-keyboard-redragon-k552.jpg', amazon: 'https://www.amazon.com/dp/B016MAK38U?tag=' + TAG,
+      guide: '/guides/best-gaming-keyboards-2026#budget', why: 'Mechanical on a budget. Loud blues.' },
+    { id: 'alloy', name: 'HyperX Alloy Origins Core', price: 69, wired: true, wireless: false, competitive: 5, casual: 8, he: false,
+      img: '/images/product-keyboard-hyperx-alloy.jpg', amazon: 'https://www.amazon.com/dp/B07YMHGP86?tag=' + TAG,
+      guide: '/guides/best-gaming-keyboards-2026#mid', versus: '/versus/hyperx-alloy-origins-core-vs-steelseries-apex-pro',
+      why: 'Aluminum TKL. Best non-HE mid.' },
+    { id: '60he', name: 'Wooting 60HE v2', price: 180, wired: true, wireless: false, competitive: 9, casual: 4, he: true,
+      img: '/images/product-keyboard-wooting-80he.jpg', amazon: 'https://www.amazon.com/s?k=Wooting+60HE+v2&tag=' + TAG,
+      guide: '/guides/best-hall-effect-gaming-keyboards-2026', versus: '/versus/wooting-80he-vs-wooting-60he-v2',
+      why: '9 of 60 tracked pros list a 60HE-family board. Max mouse space.' },
+    { id: 'huntsman', name: 'Razer Huntsman V3 Pro TKL', price: 219, wired: true, wireless: false, competitive: 8, casual: 5, he: true,
+      img: '/images/versus-keyboard-wooting-huntsman.jpg', amazon: 'https://www.amazon.com/dp/B0CHKYQ51X?tag=' + TAG,
+      guide: '/guides/best-gaming-keyboards-2026#wireless', versus: '/versus/wooting-60he-vs-razer-huntsman-v3-pro-tkl',
+      why: 'Retail analog Rapid Trigger if you want Razer on a shelf.' },
+    { id: '80he', name: 'Wooting 80HE', price: 200, wired: true, wireless: false, competitive: 10, casual: 6, he: true,
+      img: '/images/product-keyboard-wooting-80he.jpg', amazon: 'https://www.amazon.com/s?k=Wooting+80HE&tag=' + TAG,
+      guide: '/guides/best-gaming-keyboards-2026#premium', review: '/reviews/wooting-80he-review',
+      versus: '/versus/wooting-80he-vs-wooting-60he-v2',
+      why: 'Cosmic pro-default 80%. 6 of 60 list an 80HE-family board; 15 of 60 list any Wooting.' }
+  ];
+
+  var HEADS = [
+    { id: 'stinger', name: 'HyperX Cloud Stinger (Gen 2)', price: 49, wired: true, wireless: false, sound: 5, comfort: 6, battery: 0, platforms: ['pc', 'ps5', 'xbox'],
+      img: '/images/product-headset-cloud-stinger.jpg', amazon: 'https://www.amazon.com/dp/B0B7M8QCFJ?tag=' + TAG,
+      guide: '/guides/best-gaming-headsets-2026#budget', versus: '/versus/hyperx-cloud-stinger-vs-steelseries-arctis-nova-3',
+      why: 'Multi-platform wired under $50.' },
+    { id: 'nova3', name: 'SteelSeries Arctis Nova 3', price: 99, wired: true, wireless: false, sound: 7, comfort: 8, battery: 0, platforms: ['pc', 'ps5', 'xbox'],
+      img: '/images/product-headset-arctis-nova3.jpg', amazon: 'https://www.amazon.com/dp/B0B7X5KSSV?tag=' + TAG,
+      guide: '/guides/best-gaming-headsets-2026#mid', versus: '/versus/hyperx-cloud-stinger-vs-steelseries-arctis-nova-3',
+      why: 'Wired all-rounder with a usable mic.' },
+    { id: 'cloud2', name: 'HyperX Cloud II', price: 80, wired: true, wireless: false, sound: 8, comfort: 8, battery: 0, platforms: ['pc', 'ps5', 'xbox'],
+      img: '/images/versus-headset-cloud2-nova7.jpg', amazon: 'https://www.amazon.com/s?k=HyperX+Cloud+II&tag=' + TAG,
+      guide: '/guides/best-gaming-headset-for-cs2-2026', versus: '/versus/hyperx-cloud-ii-vs-steelseries-arctis-nova-7',
+      why: '11 of 60 tracked pros still list Cloud II — the stubborn CS2 wired pick.' },
+    { id: 'gpx2', name: 'Logitech G Pro X 2 LIGHTSPEED', price: 160, wired: false, wireless: true, sound: 8, comfort: 7, battery: 7, platforms: ['pc', 'ps5'],
+      img: '/images/versus-headset-nova-pro-gpx2.jpg', amazon: 'https://www.amazon.com/dp/B0B3F8V4JG?tag=' + TAG,
+      guide: '/guides/best-gaming-headsets-2026#value', versus: '/versus/steelseries-arctis-nova-pro-wireless-vs-logitech-g-pro-x-2',
+      why: 'Esports wireless. PC/PS5, not a native Xbox dongle story.' },
+    { id: 'bsv2', name: 'Razer BlackShark V2 Pro (2023)', price: 170, wired: false, wireless: true, sound: 8, comfort: 7, battery: 9, platforms: ['pc', 'ps5', 'xbox'],
+      img: '/images/product-headset-blackshark.jpg', amazon: 'https://www.amazon.com/dp/B0C2V9NFK8?tag=' + TAG,
+      guide: '/guides/best-gaming-headsets-2026#performance', versus: '/versus/razer-blackshark-v2-pro-vs-razer-blackshark-v3-pro',
+      why: 'Last-gen aviation cups, long battery, now cheaper than V3.' },
+    { id: 'bsv3', name: 'Razer BlackShark V3 Pro', price: 250, wired: false, wireless: true, sound: 9, comfort: 7, battery: 9, platforms: ['pc', 'ps5', 'xbox'],
+      img: '/images/product-headset-blackshark-v3.jpg', amazon: 'https://www.amazon.com/dp/B0F3QDLZKG?tag=' + TAG,
+      guide: '/guides/best-gaming-headsets-2026#premium', versus: '/versus/razer-blackshark-v2-pro-vs-razer-blackshark-v3-pro',
+      why: 'Cosmic 2026 wireless default (~$250 typical street). 2 of 60 in our table list V3 Pro.' }
+  ];
+
+  var MONS = [
+    { id: 'c24', name: 'AOC C24G1A', price: 149, hz: 165, res: '1080p', oled: false, hdmi21: false, platforms: ['pc', 'ps5', 'xbox'],
+      img: '/images/product-monitor-aoc-c24.jpg', amazon: 'https://www.amazon.com/dp/B08DLCQ3N2?tag=' + TAG,
+      guide: '/guides/best-gaming-monitors-2026#budget', why: '165Hz 1080p VA on a tight budget.' },
+    { id: 'xg27', name: 'ASUS ROG Strix XG27ACS', price: 200, hz: 180, res: '1440p', oled: false, hdmi21: false, platforms: ['pc'],
+      img: '/images/product-monitor-xg27acs.jpg', amazon: 'https://www.amazon.com/dp/B0CV24GQ9W?tag=' + TAG,
+      guide: '/guides/best-gaming-monitors-2026#sweet-spot',
+      why: '2026 LCD default. 27" 1440p 180Hz. 27GP850 is not the 2026 pick. 0/60 tracked pros use this SKU — they use ZOWIE.' },
+    { id: 'oled', name: 'MSI MAG 272QP QD-OLED X24', price: 350, hz: 240, res: '1440p', oled: true, hdmi21: true, platforms: ['pc', 'ps5', 'xbox'],
+      img: '/images/product-monitor-oled-1440.jpg', amazon: 'https://www.amazon.com/dp/B0G53VCGQB?tag=' + TAG,
+      guide: '/guides/best-oled-gaming-monitors-2026', why: 'Picture upgrade. Typical street mid-$300s. HDMI 2.1.' },
+    { id: 'gp950', name: 'LG 27GP950-B', price: 450, hz: 144, res: '4K', oled: false, hdmi21: true, platforms: ['pc', 'ps5', 'xbox'],
+      img: '/images/product-monitor-lg-4k.jpg', amazon: 'https://www.amazon.com/s?k=LG+27GP950-B&tag=' + TAG,
+      guide: '/guides/best-gaming-monitors-for-ps5-2026', versus: '/versus/lg-27gp950-b-vs-samsung-odyssey-g7',
+      why: '4K HDMI 2.1 for consoles. Not the FPS LCD sweet spot.' }
+  ];
+
+  function ans() {
+    var f = document.getElementById('fmgForm');
+    return {
+      game: f.game.value,
+      budget: f.budget.value,
+      wire: f.wire.value,
+      intent: f.intent.value,
+      platform: f.platform.value,
+      priority: f.priority.value
+    };
+  }
+
+  function scoreMouse(m, a) {
+    var s = 0;
+    if (a.budget === 'low') s += m.price <= 45 ? 8 : m.price <= 85 ? 3 : -6;
+    if (a.budget === 'mid') s += m.price >= 60 && m.price <= 130 ? 6 : m.price < 60 ? 2 : 1;
+    if (a.budget === 'high') s += m.price >= 100 ? 6 : 1;
+    if (a.wire === 'wired') s += m.wired ? 5 : -4;
+    if (a.wire === 'wireless') s += m.wireless ? 5 : -4;
+    s += a.intent === 'competitive' ? m.competitive : m.casual;
+    if (a.priority === 'weight') s += (110 - m.weight) / 8;
+    if (a.priority === 'comfort') s += m.comfort;
+    if (a.priority === 'battery') s += m.battery;
+    if (a.game === 'valorant' && m.id === 'viper') s += 3;
+    if (a.game === 'valorant' && m.id === 'sl2') s += 2;
+    if (a.game === 'cs2' && m.id === 'sl2') s += 5;
+    if (a.game === 'fortnite' && m.id === 'sl2') s += 4;
+    if (a.game === 'fortnite' && m.id === 'viper') s += 2;
+    if (a.game === 'apex' && m.id === 'sl2') s += 2;
+    if (a.intent === 'casual' && (m.id === 'g203' || m.id === 'g305')) s += 2;
+    return s;
+  }
+
+  function scoreKey(k, a) {
+    var s = 0;
+    if (a.budget === 'low') s += k.price <= 40 ? 8 : k.price <= 80 ? 2 : -8;
+    if (a.budget === 'mid') s += k.price >= 60 && k.price <= 90 ? 5 : k.he ? 1 : 2;
+    if (a.budget === 'high') s += k.he ? 6 : 1;
+    if (a.intent === 'competitive') s += k.competitive + (k.he ? 3 : 0);
+    else s += k.casual + (k.he ? -2 : 2);
+    if (a.game === 'valorant' && k.id === '60he') s += 4;
+    if (a.game === 'cs2' && k.id === '80he') s += 5;
+    if (a.game === 'fortnite' && k.id === '80he') s += 3;
+    if (a.wire === 'wireless') s += 0;
+    return s;
+  }
+
+  function scoreHead(h, a) {
+    var s = 0;
+    if (h.platforms.indexOf(a.platform) === -1) return -99;
+    if (a.budget === 'low') s += h.price <= 55 ? 8 : h.price <= 100 ? 3 : -6;
+    if (a.budget === 'mid') s += h.price >= 80 && h.price <= 180 ? 5 : h.price < 80 ? 2 : 0;
+    if (a.budget === 'high') s += h.price >= 150 ? 6 : 2;
+    if (a.wire === 'wired') s += h.wired ? 5 : -4;
+    if (a.wire === 'wireless') s += h.wireless ? 5 : -3;
+    if (a.priority === 'sound') s += h.sound;
+    if (a.priority === 'comfort') s += h.comfort;
+    if (a.priority === 'battery') s += h.battery;
+    if (a.game === 'cs2' && h.id === 'cloud2') s += 4;
+    if (a.game === 'cs2' && h.id === 'gpx2' && a.wire !== 'wired') s += 3;
+    if (a.intent === 'competitive' && h.id === 'bsv3' && a.budget === 'high') s += 3;
+    return s;
+  }
+
+  function scoreMon(m, a) {
+    var s = 0;
+    if (m.platforms.indexOf(a.platform) === -1 && a.platform !== 'pc') return -99;
+    if (a.platform !== 'pc' && !m.hdmi21) s -= 8;
+    if (a.budget === 'low') s += m.price <= 160 ? 8 : m.price <= 220 ? 4 : -5;
+    if (a.budget === 'mid') s += m.id === 'xg27' ? 8 : m.price <= 220 ? 5 : 1;
+    if (a.budget === 'high') s += m.oled || m.hdmi21 ? 6 : 3;
+    if (a.game === 'apex' && (m.id === 'xg27' || m.id === 'oled')) s += 3;
+    if (a.intent === 'competitive' && m.hz >= 180) s += 3;
+    if (a.platform === 'ps5' && m.hdmi21) s += 5;
+    if (a.platform === 'xbox' && m.hdmi21) s += 5;
+    return s;
+  }
+
+  function pick(list, scorer, a) {
+    return list.slice().sort(function (x, y) { return scorer(y, a) - scorer(x, a); })[0];
+  }
+
+  function links(p) {
+    var html = '';
+    if (p.guide) html += '<a class="btn" href="' + p.guide + '">Guide</a>';
+    if (p.review) html += '<a class="btn" href="' + p.review + '">Review</a>';
+    if (p.versus) html += '<a class="btn" href="' + p.versus + '">Versus</a>';
+    if (p.amazon) {
+      html += '<a class="btn btn--amazon" href="' + p.amazon + '" target="_blank" rel="noopener sponsored">Check price on Amazon</a>';
+      html += '<p class="aff-note">' + AFF + '</p>';
+    }
+    return html;
+  }
+
+  function card(role, p) {
+    return '<article class="fmg-item"><img src="' + p.img + '" alt="' + p.name + '" width="280" height="160" />' +
+      '<div><div class="fmg-role">' + role + '</div><h3>' + p.name + '</h3>' +
+      '<div class="fmg-price">Typical street ~$' + p.price + ' · not a live tracker</div>' +
+      '<p class="fmg-why">' + p.why + '</p><div class="fmg-links">' + links(p) + '</div></div></article>';
+  }
+
+  function build() {
+    var a = ans();
+    var mouse = pick(MICE, scoreMouse, a);
+    var key = pick(KEYS, scoreKey, a);
+    var head = pick(HEADS, scoreHead, a);
+    var mon = pick(MONS, scoreMon, a);
+    var parts = [];
+    var total = 0;
+    var consoleKit = a.platform !== 'pc';
+
+    if (!consoleKit) {
+      parts.push(card('Mouse', mouse)); total += mouse.price;
+      parts.push(card('Keyboard', key)); total += key.price;
+    } else {
+      parts.push('<p class="fmg-skip">Mouse and keyboard omitted for ' + a.platform.toUpperCase() + ' — use the controller, or buy a PC kit if you play MKB titles.</p>');
+    }
+    parts.push(card('Headset', head)); total += head.price;
+    parts.push(card('Monitor', mon)); total += mon.price;
+
+    var hub = {
+      valorant: '/guides/valorant-gear',
+      cs2: '/guides/cs2-gear',
+      fortnite: '/guides/fortnite-gear',
+      apex: '/guides/apex-gear'
+    }[a.game];
+
+    var extra = '';
+    if (a.game === 'valorant') extra = ' <a href="/guides/best-gaming-mouse-for-valorant-2026">Valorant mouse guide</a>.';
+    if (a.game === 'cs2') extra = ' <a href="/guides/best-gaming-headset-for-cs2-2026">CS2 headset guide</a>.';
+    if (a.game === 'fortnite') extra = ' <a href="/guides/best-gaming-mouse-for-fortnite-2026">Fortnite mouse guide</a>.';
+    if (a.game === 'apex') extra = ' <a href="/guides/best-gaming-monitor-for-apex-legends-2026">Apex monitor guide</a>.';
+    if (a.platform === 'ps5') extra += ' Also: <a href="/guides/best-gaming-headsets-for-ps5-2026">PS5 headsets</a>, <a href="/guides/best-gaming-monitors-for-ps5-2026">PS5 monitors</a>.';
+    if (a.platform === 'xbox') extra += ' Also: <a href="/guides/best-gaming-headsets-for-xbox-2026">Xbox headsets</a>.';
+
+    var box = document.getElementById('fmgOut');
+    box.hidden = false;
+    box.classList.add('is-on');
+    box.innerHTML = '<h2 style="margin-top:0;">Your setup</h2>' +
+      '<div class="fmg-total"><strong>Typical street total ~$' + total + '</strong> for the listed pieces. Not a live price. ' +
+      (hub ? 'Title hub: <a href="' + hub + '">' + a.game + ' gear</a>.' : 'Variety: start at <a href="/guides">guides</a>.') + extra +
+      ' Warm up on the <a href="/games/aim-trainer">aim trainer</a>.</div>' +
+      '<div class="fmg-kit">' + parts.join('') + '</div>' +
+      '<p class="fmg-note">Picks follow <a href="/how-we-choose">how we choose</a>. Pro-share figures are counted from <a href="/data/pros.json">data/pros.json</a> (60 players, last verified 2026-08).</p>';
+    box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  document.getElementById('fmgGo').addEventListener('click', build);
+  document.getElementById('fmgReset').addEventListener('click', function () {
+    document.getElementById('fmgForm').reset();
+    var box = document.getElementById('fmgOut');
+    box.hidden = true;
+    box.classList.remove('is-on');
+    box.innerHTML = '';
+  });
+</script>
+<script src="/js/affiliate-note.js" defer></script>
+<script src="/global.js" defer></script>
+</body>
+</html>
