@@ -1,29 +1,35 @@
-# Daily Amazon deals feed
+# Daily Amazon deals feed (parked)
 
-`/deals` shows **live Amazon offer prices** from Product Advertising API 5.0, pulled once a day. If we cannot fetch a live price, we show nothing. We do not invent a sale.
+`/deals` is built to show **live Amazon offer prices**. It stays empty until Amazon Associates is **fully accepted** and **Creators API** (the 2026 replacement for PA-API) is allowed. We do not invent a sale.
 
-Affiliate tag on every URL: `cosmicgameshu-20`.
+Affiliate tag on every URL: `cosmicgameshu-20`. Links on guides still work without the API.
 
-## GitHub secrets Bryan must paste
+## Why keys are blocked
 
-Repo → Settings → Secrets and variables → Actions → New repository secret:
+Creators API requires:
+
+1. An Associates account that has been **reviewed and finally accepted** (not just a tracking ID).
+2. Qualifying sales. In 2026 this is commonly **~10 qualifying sales in the last 30 days**.
+
+If Associates Central shows “Have an Approved Associates Account ❌”, skip the API. Drive real clicks from guides. After sales land, request final acceptance via Associates Contact Us if needed. Then Tools → Creators API.
+
+## After Amazon unlocks it
+
+Repo → Settings → Secrets and variables → Actions:
 
 | Secret | Value |
 |---|---|
-| `PAAPI_ACCESS_KEY` | Access key from Amazon Associates → Product Advertising API |
-| `PAAPI_SECRET_KEY` | Secret key from the same screen |
+| `PAAPI_ACCESS_KEY` | Creators API / PA-API access key |
+| `PAAPI_SECRET_KEY` | Secret |
 | `PAAPI_PARTNER_TAG` | `cosmicgameshu-20` |
 
-Create the keys at [Amazon Associates](https://affiliate-program.amazon.com/) → Product Advertising API (PA-API). The store must be Amazon.com. The partner tag must match `cosmicgameshu-20`.
+Then run the **Deals feed** workflow (or wait for 14:00 UTC cron). Until those secrets exist, the Action no-ops and `/deals` stays empty.
 
-Until those three secrets exist, `.github/workflows/deals.yml` no-ops: it prints a skip message, writes `data/deals.json` as `status: no-credentials`, does **not** commit fake prices, and `/deals` stays empty. That is correct.
+## What is already in the repo
 
-## What runs
-
-- Catalog: `data/deals-catalog.json` (ASINs from `product-links.json` `/dp/` links + `tools/find-my-gear.html`; search URLs ignored).
-- Fetcher: `scripts/fetch-deals.py` (Python 3.12, stdlib, AWS SigV4, 10 ASINs per GetItems call, 1.1s between batches).
-- Output: `data/deals.json` — live `price` only. ASINs with no offer are skipped.
-- Schedule: `0 14 * * *` (14:00 UTC) plus `workflow_dispatch`.
+- Catalog: `data/deals-catalog.json` (ASINs only; search URLs ignored)
+- Fetcher: `scripts/fetch-deals.py`
+- Schedule: `.github/workflows/deals.yml`
 
 Local check without keys (must exit 0):
 

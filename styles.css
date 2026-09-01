@@ -1937,6 +1937,7 @@ body:has(.ticker-bar) .nav {
 }
 .budget-table tbody tr:nth-child(even) { background: rgba(255,255,255,0.02); }
 .budget-table tbody tr:hover { background: rgba(0,212,255,0.04); }
+.budget-table .btn-amazon { min-height: 44px; padding: 0.4rem 0.75rem; font-size: 0.8rem; }
 .budget-note {
   font-size: 0.82rem;
   color: var(--text-lo);
@@ -2781,9 +2782,32 @@ body.search-open { overflow: hidden; }
 }
 .desk-today__sub { margin: 0; font-size: 0.84rem; color: var(--text-mid); }
 
+.buy-today { margin-top: 2.2rem; }
+.buy-today__label {
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 0.4rem;
+}
+.buy-today__sub { font-size: 0.85rem; color: var(--text-mid); margin: 0 0 1rem; max-width: 52rem; }
+.buy-today__row {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem;
+}
+.buy-today__card {
+  display: flex; flex-direction: column; gap: 0.45rem;
+  padding: 1.15rem 1.2rem; border-radius: var(--radius);
+  border: 1px solid var(--border); background: var(--bg-card);
+}
+.buy-today__kicker {
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--accent);
+}
+.buy-today__name { margin: 0; font-size: 1.15rem; color: var(--text-hi); }
+.buy-today__meta { margin: 0 0 0.35rem; font-size: 0.84rem; color: var(--text-mid); }
+.buy-today__card .btn { min-height: 44px; width: 100%; justify-content: center; }
+
 @media (max-width: 900px) {
   .start-here__row,
-  .play-grid { grid-template-columns: repeat(2, minmax(220px, 1fr)); }
+  .play-grid,
+  .buy-today__row { grid-template-columns: repeat(2, minmax(220px, 1fr)); }
   .desk-today { grid-template-columns: 1fr; }
 }
 @media (max-width: 768px) {

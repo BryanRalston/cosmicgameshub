@@ -106,10 +106,10 @@
     </nav>
 
     <section class="deals-hero">
-      <span class="section__eyebrow">Amazon · once a day</span>
+      <span class="section__eyebrow">Parked · no live feed yet</span>
       <h1 style="margin-top:.5rem;">Deals</h1>
       <p style="max-width:640px;color:var(--text-mid);margin:0;">
-        Live Amazon offer prices from the Product Advertising API, pulled once a day. Typical street on this page is editorial context only. If Amazon does not return a live offer, the card is not shown. <a href="/how-we-choose">How we choose</a>.
+        A daily Amazon price pull is built, but it stays empty until Associates is fully accepted and Creators API unlocks. We will not invent a sale. For a real buy: <a href="/guides/best-gaming-setup-under-500">setup under $500</a> or <a href="/how-we-choose">how we choose</a>.
       </p>
     </section>
 
@@ -165,7 +165,7 @@
 
 <script>
 (function () {
-  var EMPTY = "No live Amazon prices yet. The daily feed uses Amazon's Product Advertising API. We will not invent a sale.";
+  var EMPTY = "Deals are parked. Amazon has not given this Associates account Creators API access yet (the account has to be fully accepted, then earn qualifying sales). Until that exists we will not invent a sale. Use a gear guide and check the live Amazon listing.";
   var AFF = "We may earn a commission if you buy through our links. This doesn't affect the pick.";
   var statusEl = document.getElementById("dealsStatus");
   var grid = document.getElementById("dealsGrid");
