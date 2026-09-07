@@ -2835,8 +2835,8 @@ body.search-open { overflow: hidden; }
 
 /* ─── Guide next-hop (above-the-fold, compact) ───────── */
 .next-hop {
-  margin: 0.85rem 0 1.15rem;
-  padding: 0.7rem 0.85rem;
+  margin: 0.65rem 0 1rem;
+  padding: 0.55rem 0.7rem;
   background: rgba(255,255,255,0.03);
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 10px;
