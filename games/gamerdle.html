@@ -811,6 +811,7 @@ function showResult() {
 
   const shareText = `🎮 Gamerdle #${dayNum} — ${won?guesses.length+'/6':'X/6'}\n${grid.trim()}\n\ncosmicgameshub.com/games/gamerdle`;
   document.getElementById('shareBox').textContent = shareText;
+  if (window.CGDaily && window.CGDaily.mountStreakHints) window.CGDaily.mountStreakHints();
 }
 
 function copyShare() {

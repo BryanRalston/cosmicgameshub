@@ -1078,6 +1078,7 @@ function showResultModal(won) {
   if (loop) { loop.hidden = false; }
   var email = document.getElementById('pixleEmailCapture');
   if (email) { email.hidden = false; }
+  if (window.CGDaily && window.CGDaily.mountStreakHints) window.CGDaily.mountStreakHints();
   startCountdown();
 }
 

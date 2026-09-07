@@ -3585,6 +3585,7 @@ cosmicgameshub.com/games/rift`;
   window._shareText = shareText;
 
   document.getElementById('resultScreen').classList.add('show');
+  if (window.CGDaily && window.CGDaily.mountStreakHints) window.CGDaily.mountStreakHints();
 
   STATE.zone = 3;
   saveState(STATE);
