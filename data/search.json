@@ -1094,7 +1094,7 @@
     "tags": [
       "pro",
       "fortnite",
-      "Logitech G Pro X Superlight 2"
+      "Logitech G Pro X2 SUPERSTRIKE"
     ]
   },
   {
@@ -1105,6 +1105,86 @@
       "pro",
       "fortnite",
       "Finalmouse Ultralight X Sakura"
+    ]
+  },
+  {
+    "title": "Hakis setup",
+    "url": "/pros/hakis",
+    "type": "pro",
+    "tags": [
+      "pro",
+      "apex",
+      "Razer Viper V4 Pro"
+    ]
+  },
+  {
+    "title": "Monsoon setup",
+    "url": "/pros/monsoon",
+    "type": "pro",
+    "tags": [
+      "pro",
+      "apex",
+      "Razer Viper V3 Pro"
+    ]
+  },
+  {
+    "title": "iiTzTimmy setup",
+    "url": "/pros/iitztimmy",
+    "type": "pro",
+    "tags": [
+      "pro",
+      "apex",
+      "ASUS ROG Harpe Ace Extreme"
+    ]
+  },
+  {
+    "title": "Veno setup",
+    "url": "/pros/veno",
+    "type": "pro",
+    "tags": [
+      "pro",
+      "fortnite",
+      "Razer Viper V3 Pro"
+    ]
+  },
+  {
+    "title": "Malibuca setup",
+    "url": "/pros/malibuca",
+    "type": "pro",
+    "tags": [
+      "pro",
+      "fortnite",
+      "Logitech G Pro X2 SUPERSTRIKE"
+    ]
+  },
+  {
+    "title": "w0nderful setup",
+    "url": "/pros/w0nderful",
+    "type": "pro",
+    "tags": [
+      "pro",
+      "cs2",
+      "Logitech G Pro X2 SUPERSTRIKE"
+    ]
+  },
+  {
+    "title": "leaf setup",
+    "url": "/pros/leaf",
+    "type": "pro",
+    "tags": [
+      "pro",
+      "valorant",
+      "Logitech G Pro X Superlight 2"
+    ]
+  },
+  {
+    "title": "t3xture setup",
+    "url": "/pros/t3xture",
+    "type": "pro",
+    "tags": [
+      "pro",
+      "valorant",
+      "Logitech G Pro X Superlight 2"
     ]
   },
   {
