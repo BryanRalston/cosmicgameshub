@@ -174,6 +174,30 @@
       pointer-events: none; z-index: 200;
     }
     #share-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    .gear-hop {
+      max-width: 360px; width: 100%; margin: 1rem auto 0; text-align: left;
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px; padding: 0.75rem 0.85rem 0.8rem; position: relative;
+    }
+    .gear-hop__eyebrow { font-size: .68rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #22D3EE; margin-bottom: .3rem; }
+    .gear-hop__name { font-size: .92rem; font-weight: 800; color: #fff; margin-bottom: .2rem; }
+    .gear-hop__blurb { font-size: .75rem; color: #aaa; line-height: 1.5; margin: 0 0 .55rem; }
+    .gear-hop__actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+    .gear-hop .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      text-decoration: none; border-radius: 8px; font-family: inherit;
+      font-size: 0.78rem; font-weight: 700; padding: 0.45rem 0.75rem;
+      min-height: 40px; letter-spacing: 0; text-transform: none;
+    }
+    .gear-hop .btn--outline { background: transparent; border: 1px solid rgba(255,255,255,0.18); color: #ddd; }
+    .gear-hop .btn--amazon-sm { background: #ff9900; border: 1px solid #ff9900; color: #111; }
+    .gear-hop__dismiss {
+      position: absolute; top: 0.35rem; right: 0.4rem; background: none; border: 0;
+      color: #777; cursor: pointer; font-size: 1.2rem; line-height: 1;
+      padding: 0.25rem 0.45rem; min-height: 32px;
+    }
+    .gear-hop__dismiss:hover { color: #fff; }
   </style>
   <meta property="og:image" content="https://cosmicgameshub.com/images/game-asteroid-dodge-v2.jpg">
   <meta property="og:image:width" content="600">
@@ -249,6 +273,16 @@
     <button class="btn btn-primary" id="btn-restart">Play Again</button>
     <button class="btn btn-secondary" id="btn-share">Share</button>
   </div>
+  <aside class="gear-hop" id="adGearHop" style="display:none" aria-label="Recommended gear">
+    <button type="button" class="gear-hop__dismiss" aria-label="Dismiss gear suggestion" onclick="this.closest('.gear-hop').hidden = true">&times;</button>
+    <div class="gear-hop__eyebrow">Upgrade Your Mouse</div>
+    <div class="gear-hop__name">Logitech G Pro X Superlight 2 DEX</div>
+    <p class="gear-hop__blurb">Run over. One hop to the mice guide, or the Superlight listing we already use.</p>
+    <div class="gear-hop__actions">
+      <a href="/guides/gaming-mouse-buying-guide" class="btn btn--outline">Mouse buying guide →</a>
+      <a href="https://www.amazon.com/dp/B0DG2XJPTC?tag=cosmicgameshu-20" class="btn btn--amazon-sm" target="_blank" rel="nofollow sponsored noopener">Check price on Amazon</a>
+    </div>
+  </aside>
 
   <div class="btn-row" id="btn-row-start">
     <button class="btn btn-primary" id="btn-play" type="button">Play</button>
@@ -577,6 +611,8 @@
 
     if (btnRowStart) btnRowStart.style.display = 'none';
     overlay.classList.add('hidden');
+    var hopHide = document.getElementById('adGearHop');
+    if (hopHide) hopHide.style.display = 'none';
     initAudio();
     beep(520, 0.12, 0.08);
     haptic(8);
@@ -597,6 +633,8 @@
     btnRowGameover.style.display = 'flex';
     if (btnRowStart) btnRowStart.style.display = 'none';
     startPrompt.style.display = 'none';
+    var hop = document.getElementById('adGearHop');
+    if (hop) hop.style.display = hop.hidden ? 'none' : 'block';
     beep(140, 0.35, 0.1);
     haptic(40);
     shake = 12;

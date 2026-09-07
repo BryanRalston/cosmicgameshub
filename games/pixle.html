@@ -247,6 +247,8 @@
   padding: 2rem;
   max-width: 360px;
   width: 90%;
+  max-height: 92vh;
+  overflow-y: auto;
   text-align: center;
   transform: scale(0.92);
   transition: transform 0.25s;
@@ -494,6 +496,16 @@ body.pixle-cb .kb-key.present::after { content:''; position:absolute; width:12px
     <div class="next-timer">Next Pixle in <span id="next-countdown">00:00:00</span></div>
     <div class="cg-daily-dock" data-slug="pixle"></div>
     <button onclick="document.getElementById('result-modal').classList.remove('open')" style="margin-top:0.75rem;background:none;border:1px solid rgba(255,255,255,0.15);color:var(--text-mid);border-radius:8px;padding:0.5rem 1.25rem;cursor:pointer;font-size:0.85rem;width:100%;min-height:44px;">Close</button>
+    <aside class="gear-hop gear-hop--compact" id="pixleGearHop" style="display:none;" aria-label="Recommended gear">
+      <button type="button" class="gear-hop__dismiss" aria-label="Dismiss gear suggestion" onclick="this.closest('.gear-hop').hidden = true">&times;</button>
+      <div class="gear-hop__eyebrow">Upgrade Your Mouse</div>
+      <div class="gear-hop__name">Logitech G Pro X Superlight 2 DEX</div>
+      <p class="gear-hop__blurb">Word locked in. One hop to the mice guide, or the Superlight listing we already use.</p>
+      <div class="gear-hop__actions">
+        <a href="/guides/gaming-mouse-buying-guide" class="btn btn--outline">Mouse buying guide →</a>
+        <a href="https://www.amazon.com/dp/B0DG2XJPTC?tag=cosmicgameshu-20" class="btn btn--amazon-sm" target="_blank" rel="nofollow sponsored noopener">Check price on Amazon</a>
+      </div>
+    </aside>
   </div>
 </div>
 
@@ -1058,6 +1070,8 @@ function showResultModal(won) {
   };
 
   modal.classList.add('open');
+  var hop = document.getElementById('pixleGearHop');
+  if (hop) { hop.style.display = 'block'; hop.hidden = false; }
   startCountdown();
 }
 
@@ -1127,6 +1141,8 @@ document.getElementById('stats-btn').addEventListener('click', () => {
         return '<div class="pixle-bar"><span>' + i + '</span><i style="width:' + Math.max(8, Math.round(v/max*100)) + '%">' + v + '</i></div>';
       }).join('');
     }
+    var hopHide = document.getElementById('pixleGearHop');
+    if (hopHide) hopHide.style.display = 'none';
     document.getElementById('result-modal').classList.add('open');
   }
 });

@@ -49,7 +49,7 @@
     .lk-toast.show { opacity:1; }
     .lk-modal-bg { position:fixed; inset:0; background:rgba(0,0,0,0.75); display:flex; align-items:center; justify-content:center; z-index:200; opacity:0; pointer-events:none; }
     .lk-modal-bg.open { opacity:1; pointer-events:auto; }
-    .lk-modal { background:var(--bg-card,#12121c); border:1px solid var(--border); border-radius:16px; padding:1.4rem; width:min(360px,92vw); text-align:center; }
+    .lk-modal { background:var(--bg-card,#12121c); border:1px solid var(--border); border-radius:16px; padding:1.4rem; width:min(360px,92vw); max-height:92vh; overflow-y:auto; text-align:center; }
     .lk-modal h2 { margin:0 0 0.5rem; }
     .lk-share { font-size:1.2rem; line-height:1.35; margin:0.8rem 0; }
     .lk-statrow { display:flex; justify-content:center; gap:1.4rem; margin:0.8rem 0; }
@@ -149,6 +149,16 @@
     <button class="lk-btn primary" id="lkShareBtn">Share</button>
     <div class="cg-daily-dock" data-slug="link" style="margin-top:1rem;"></div>
     <button class="lk-btn" id="lkResClose" style="margin-top:0.6rem;width:100%;">Close</button>
+    <aside class="gear-hop gear-hop--compact" id="lkGearHop" style="display:none;" aria-label="Recommended gear">
+      <button type="button" class="gear-hop__dismiss" aria-label="Dismiss gear suggestion" onclick="this.closest('.gear-hop').hidden = true">&times;</button>
+      <div class="gear-hop__eyebrow">Upgrade Your Mouse</div>
+      <div class="gear-hop__name">Logitech G Pro X Superlight 2 DEX</div>
+      <p class="gear-hop__blurb">Groups done. One hop to the mice guide, or the Superlight listing we already use.</p>
+      <div class="gear-hop__actions">
+        <a href="/guides/gaming-mouse-buying-guide" class="btn btn--outline">Mouse buying guide →</a>
+        <a href="https://www.amazon.com/dp/B0DG2XJPTC?tag=cosmicgameshu-20" class="btn btn--amazon-sm" target="_blank" rel="nofollow sponsored noopener">Check price on Amazon</a>
+      </div>
+    </aside>
   </div>
 </div>
 
@@ -326,6 +336,11 @@
     document.getElementById('lkSWin').textContent = stats.played ? Math.round(stats.wins / stats.played * 100) + '%' : '0%';
     document.getElementById('lkSStreak').textContent = stats.streak;
     document.getElementById('lkResult').classList.add('open');
+    var hop = document.getElementById('lkGearHop');
+    if (hop) {
+      hop.hidden = false;
+      hop.style.display = (state.status === 'playing') ? 'none' : 'block';
+    }
     if (window.CGDaily && window.CGDaily.mountAll) window.CGDaily.mountAll();
   }
 

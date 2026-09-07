@@ -117,6 +117,7 @@
       justify-content: center;
       background: rgba(7,7,15,0.92);
       backdrop-filter: blur(4px);
+      overflow-y: auto;
     }
     .at-overlay.hidden { display: none; }
     .at-overlay__title {
@@ -173,7 +174,7 @@
       text-align: center;
       padding: 1rem;
       width: 100%;
-      max-width: 320px;
+      max-width: 360px;
     }
     .at-grade {
       font-size: 3.5rem;
@@ -355,6 +356,16 @@
             <button class="at-btn" id="btnPlayAgain">Play Again</button>
             <button class="at-result-btn-sec" id="btnShare">📋 Share</button>
           </div>
+          <aside class="gear-hop gear-hop--compact" aria-label="Recommended gear">
+            <button type="button" class="gear-hop__dismiss" aria-label="Dismiss gear suggestion" onclick="this.closest('.gear-hop').hidden = true">&times;</button>
+            <div class="gear-hop__eyebrow">Upgrade Your Mouse</div>
+            <div class="gear-hop__name">Logitech G Pro X Superlight 2 DEX</div>
+            <p class="gear-hop__blurb">You just trained aim. One hop to the Valorant mice guide, or the Superlight listing we already use.</p>
+            <div class="gear-hop__actions">
+              <a href="/guides/best-gaming-mouse-for-valorant-2026" class="btn btn--outline">Valorant mouse guide →</a>
+              <a href="https://www.amazon.com/dp/B0DG2XJPTC?tag=cosmicgameshu-20" class="btn btn--amazon-sm" target="_blank" rel="nofollow sponsored noopener">Check price on Amazon</a>
+            </div>
+          </aside>
         </div>
       </div>
     </div>
