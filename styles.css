@@ -2970,6 +2970,7 @@ body.search-open { overflow: hidden; }
   min-height: 32px;
 }
 .gear-hop__dismiss:hover { color: #fff; }
+.gear-hop[hidden] { display: none !important; }
 
 /* Homepage soft-landing strip under Start here */
 .soft-land {
