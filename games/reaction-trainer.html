@@ -373,6 +373,15 @@
       <button class="rt-btn rt-btn--primary" id="btnAgain">Try Again</button>
       <button class="rt-btn rt-btn--secondary" id="btnShare">📋 Share</button>
     </div>
+    <aside class="gear-hop" id="rtGearHop" style="display:none;" aria-label="Recommended gear">
+      <div class="gear-hop__eyebrow">Upgrade Your Mouse</div>
+      <div class="gear-hop__name">Logitech G Pro X Superlight 2 DEX</div>
+      <p class="gear-hop__blurb">Five rounds in. One hop to the mice guide, or the Superlight listing we already use.</p>
+      <div class="gear-hop__actions">
+        <a href="/guides/gaming-mouse-buying-guide" class="btn btn--outline">Mouse buying guide →</a>
+        <a href="https://www.amazon.com/dp/B0DG2XJPTC?tag=cosmicgameshu-20" class="btn btn--amazon-sm" target="_blank" rel="nofollow sponsored noopener">Check price on Amazon</a>
+      </div>
+    </aside>
 
     <div class="rt-hint" id="rtHint"></div>
 
@@ -578,6 +587,8 @@
 
     resultsEl.classList.add('show');
     btnsEl.style.display = 'flex';
+    var hop = document.getElementById('rtGearHop');
+    if (hop) hop.style.display = 'block';
     showAllTime();
   }
 
@@ -602,6 +613,8 @@
     resultsEl.classList.remove('show');
     document.getElementById('resBestBanner').classList.remove('show');
     btnsEl.style.display = 'none';
+    var hopHide = document.getElementById('rtGearHop');
+    if (hopHide) hopHide.style.display = 'none';
     updateDots();
     showAllTime();
   }

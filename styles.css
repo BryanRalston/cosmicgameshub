@@ -2911,6 +2911,67 @@ body.search-open { overflow: hidden; }
   margin-bottom: 0;
 }
 
+/* ─── Post-play gear hop (same card as Price Guesser / Gear Quiz / Spec Match) ─ */
+.gear-hop {
+  max-width: 420px;
+  margin: 1.25rem auto 0;
+  text-align: left;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
+  padding: 1.1rem 1.2rem;
+  position: relative;
+}
+.gear-hop__eyebrow {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent, #00d4ff);
+  margin-bottom: 0.35rem;
+}
+.gear-hop__name {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 0.35rem;
+}
+.gear-hop__blurb {
+  font-size: 0.82rem;
+  color: var(--text-muted, #aaa);
+  line-height: 1.5;
+  margin: 0 0 0.85rem;
+}
+.gear-hop__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-start;
+}
+.gear-hop__actions .btn { width: auto; }
+.gear-hop--compact {
+  max-width: 100%;
+  margin: 0.85rem auto 0;
+  padding: 0.75rem 0.85rem 0.8rem;
+}
+.gear-hop--compact .gear-hop__name { font-size: 0.92rem; margin-bottom: 0.2rem; }
+.gear-hop--compact .gear-hop__blurb { font-size: 0.75rem; margin: 0 0 0.55rem; }
+.gear-hop__dismiss {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.4rem;
+  background: none;
+  border: 0;
+  color: #777;
+  cursor: pointer;
+  font-size: 1.2rem;
+  line-height: 1;
+  padding: 0.25rem 0.45rem;
+  min-height: 32px;
+}
+.gear-hop__dismiss:hover { color: #fff; }
+.gear-hop[hidden] { display: none !important; }
+
 /* Homepage soft-landing strip under Start here */
 .soft-land {
   display: flex;
