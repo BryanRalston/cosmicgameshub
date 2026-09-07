@@ -208,7 +208,7 @@ def detail_page(p: dict, links: dict, n_pros: int) -> str:
                     "@type": "Article",
                     "headline": f"{name} Settings 2026",
                     "description": desc,
-                    "dateModified": "2026-08-30",
+                    "dateModified": "2026-09-07",
                     "author": {
                         "@type": "Organization",
                         "name": "CosmicGamesHub",
@@ -391,7 +391,7 @@ def main() -> None:
         sitemap_entries.append(
             "  <url>\n"
             f"    <loc>https://cosmicgameshub.com/pros/{p['id']}</loc>\n"
-            "    <lastmod>2026-08-30</lastmod>\n"
+            "    <lastmod>2026-09-07</lastmod>\n"
             "    <changefreq>monthly</changefreq>\n"
             "    <priority>0.7</priority>\n"
             "  </url>"
