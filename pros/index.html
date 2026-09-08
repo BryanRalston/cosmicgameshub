@@ -1941,7 +1941,15 @@
 
   <script src="/global.js" defer></script>
   <script>
+  /* Shareable filters (written with history.replaceState):
+   *   /pros?game=valorant&q=superlight
+   *   game   = valorant | cs2 | apex | fortnite  (omit or "all" = every game)
+   *   q      = case-insensitive substring against each card's data-search
+   *            (player, team, mouse, keyboard, headset, monitor, mousepad)
+   *   search = alias for q (normalized to q in the address bar)
+   */
   (function() {
+    const GAMES = { valorant: 1, cs2: 1, apex: 1, fortnite: 1 };
     let filterGame = 'all';
     let searchQ = '';
 
@@ -1963,12 +1971,33 @@
       document.getElementById('phEmpty').hidden = n > 0;
     }
 
-    function setGame(game) {
-      filterGame = game;
+    function syncUrl() {
+      const params = new URLSearchParams();
+      if (filterGame !== 'all') params.set('game', filterGame);
+      if (searchQ) params.set('q', searchQ);
+      const qs = params.toString();
+      const next = location.pathname + (qs ? '?' + qs : '') + location.hash;
+      const cur = location.pathname + location.search + location.hash;
+      if (next !== cur) history.replaceState(null, '', next);
+    }
+
+    function setGame(game, skipSync) {
+      filterGame = GAMES[game] ? game : 'all';
       document.querySelectorAll('.ph-pill').forEach(b => {
-        b.classList.toggle('is-active', b.dataset.game === game);
+        b.classList.toggle('is-active', b.dataset.game === filterGame);
       });
       render();
+      if (!skipSync) syncUrl();
+    }
+
+    function applyFromLocation() {
+      const params = new URLSearchParams(location.search);
+      const gameRaw = (params.get('game') || '').toLowerCase();
+      const q = (params.get('q') || params.get('search') || '').trim();
+      searchQ = q;
+      document.getElementById('phSearch').value = q;
+      setGame(GAMES[gameRaw] ? gameRaw : 'all', true);
+      syncUrl();
     }
 
     document.querySelectorAll('.ph-pill').forEach(btn => {
@@ -1977,14 +2006,16 @@
     document.getElementById('phSearch').addEventListener('input', e => {
       searchQ = e.target.value.trim();
       render();
+      syncUrl();
     });
     document.getElementById('phReset').addEventListener('click', () => {
       searchQ = '';
       document.getElementById('phSearch').value = '';
       setGame('all');
     });
+    window.addEventListener('popstate', applyFromLocation);
 
-    render();
+    applyFromLocation();
   })();
   </script>
 </body>

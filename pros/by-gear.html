@@ -114,6 +114,15 @@
     return found;
   }
 
+  function syncUrl() {
+    var raw = (document.getElementById('q').value || '').trim();
+    var params = new URLSearchParams();
+    if (raw) params.set('q', raw);
+    var qs = params.toString();
+    var next = location.pathname + (qs ? '?' + qs : '');
+    if (next !== location.pathname + location.search) history.replaceState(null, '', next);
+  }
+
   function render() {
     var q = (document.getElementById('q').value || '').trim().toLowerCase();
     var countEl = document.getElementById('count');
@@ -121,6 +130,7 @@
     document.querySelectorAll('#chips button').forEach(function (b) {
       b.classList.toggle('is-on', b.getAttribute('data-q').toLowerCase() === q);
     });
+    syncUrl();
     if (q.length < 2) {
       countEl.textContent = PROS.length + ' players in the table. Type at least 2 characters, or tap a chip.';
       grid.innerHTML = '';

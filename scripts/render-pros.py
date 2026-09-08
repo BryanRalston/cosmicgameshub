@@ -10,6 +10,7 @@ import html
 import json
 import re
 from pathlib import Path
+from urllib.parse import urlencode
 
 ROOT = Path(__file__).resolve().parents[1]
 PROS_PATH = ROOT / "data" / "pros.json"
@@ -146,18 +147,59 @@ def product_val(name, links: dict, as_product: bool) -> str:
     return f'<span class="ph-detail-val">{esc(name)}</span>'
 
 
-def extra_links(name, links: dict) -> str:
-    resolved = resolve_product(name, links) if name else None
-    if not resolved:
-        return ""
+FAMILY_TOKENS = (
+    "superlight",
+    "superstrike",
+    "viper",
+    "deathadder",
+    "harpe",
+    "starlight",
+    "wooting",
+    "apex pro",
+    "huntsman",
+    "cloud ii",
+    "cloud iii",
+    "blackshark",
+    "arctis nova",
+    "inzone",
+)
+
+
+def gear_query(name: str | None) -> str | None:
+    """Short shareable /pros?q= token that still hits similar SKUs."""
+    if not name:
+        return None
+    lower = name.lower()
+    for token in FAMILY_TOKENS:
+        if token in lower:
+            return token
+    cleaned = re.sub(r"\b(edition|white|cyan|wireless)\b", " ", lower)
+    words = [w for w in re.split(r"\W+", cleaned) if w]
+    if words:
+        return " ".join(words[:3])
+    return name.strip() or None
+
+
+def extra_links(name, links: dict, game: str | None = None) -> str:
     bits = []
-    internal = resolved.get("internal")
-    amazon = resolved.get("amazon")
-    if internal:
-        bits.append(f'<a class="pp-extra" href="{esc(internal)}">Read our page →</a>')
-    if amazon:
+    resolved = resolve_product(name, links) if name else None
+    if resolved:
+        internal = resolved.get("internal")
+        amazon = resolved.get("amazon")
+        if internal:
+            bits.append(f'<a class="pp-extra" href="{esc(internal)}">Read our page →</a>')
+        if amazon:
+            bits.append(
+                f'<a class="pp-extra" href="{esc(amazon)}" rel="nofollow sponsored" target="_blank">Amazon →</a>'
+            )
+    q = gear_query(name)
+    if q:
+        params = {}
+        if game in GAME_LABEL:
+            params["game"] = game
+        params["q"] = q
         bits.append(
-            f'<a class="pp-extra" href="{esc(amazon)}" rel="nofollow sponsored" target="_blank">Amazon →</a>'
+            f'<a class="pp-extra" href="/pros?{esc(urlencode(params))}">More pros with this mouse →</a>'
         )
     if not bits:
         return ""
@@ -198,7 +240,7 @@ def detail_page(p: dict, links: dict, n_pros: int) -> str:
         f"Last verified {p.get('lastVerified') or '2026'}."
     )
     verified = p.get("lastVerified") or ""
-    extra = extra_links(p.get("mouse"), links)
+    extra = extra_links(p.get("mouse"), links, p.get("game"))
     page_url = f"https://cosmicgameshub.com/pros/{p['id']}"
     json_ld = json.dumps(
         {
