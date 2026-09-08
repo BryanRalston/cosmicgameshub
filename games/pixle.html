@@ -493,7 +493,9 @@ body.pixle-cb .kb-key.present::after { content:''; position:absolute; width:12px
     <div class="pixle-dist" id="guess-dist"></div>
     <div class="share-grid" id="share-grid"></div>
     <button class="share-btn" id="share-btn">Share</button>
-    <div class="next-timer">Next Pixle in <span id="next-countdown">00:00:00</span></div>
+    <div class="result-loop" id="pixleResultLoop" data-cg-streak-hint data-streak-source="pixle" hidden></div>
+    <aside class="email-capture email-capture--modal" id="pixleEmailCapture" data-cg-email aria-label="Newsletter" hidden></aside>
+    <div class="next-timer">Next Pixle (UTC) in <span id="next-countdown" data-cd>00:00:00</span></div>
     <div class="cg-daily-dock" data-slug="pixle"></div>
     <aside class="gear-hop gear-hop--compact" id="pixleGearHop" style="display:none;" aria-label="Recommended gear">
       <button type="button" class="gear-hop__dismiss" aria-label="Dismiss gear suggestion" onclick="var h=this.closest('.gear-hop'); h.hidden=true; h.style.display='none';">&times;</button>
@@ -1072,21 +1074,35 @@ function showResultModal(won) {
   modal.classList.add('open');
   var hop = document.getElementById('pixleGearHop');
   if (hop) { hop.style.display = 'block'; hop.hidden = false; }
+  var loop = document.getElementById('pixleResultLoop');
+  if (loop) { loop.hidden = false; }
+  var email = document.getElementById('pixleEmailCapture');
+  if (email) { email.hidden = false; }
+  if (window.CGDaily && window.CGDaily.mountStreakHints) window.CGDaily.mountStreakHints();
   startCountdown();
 }
 
 function startCountdown() {
+  function utcLeft() {
+    var n = new Date();
+    return Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate() + 1) - n.getTime();
+  }
+  function fmt(ms) {
+    if (ms < 0) ms = 0;
+    var s = Math.floor(ms / 1000);
+    var h = Math.floor(s / 3600);
+    var m = Math.floor((s % 3600) / 60);
+    var sec = s % 60;
+    return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m + ':' + (sec < 10 ? '0' : '') + sec;
+  }
   function tick() {
-    const now = new Date();
-    const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(0, 0, 0, 0);
-    const diff = tomorrow - now;
-    const h = String(Math.floor(diff / 3600000)).padStart(2, '0');
-    const m = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
-    const s = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
-    const el = document.getElementById('next-countdown');
-    if (el) el.textContent = `${h}:${m}:${s}`;
+    var el = document.getElementById('next-countdown');
+    if (!el) return;
+    if (window.CGDaily && window.CGDaily.fmtCd) {
+      el.textContent = window.CGDaily.fmtCd(window.CGDaily.msToUtcMidnight());
+      return;
+    }
+    el.textContent = fmt(utcLeft());
   }
   tick();
   setInterval(tick, 1000);
@@ -1143,6 +1159,10 @@ document.getElementById('stats-btn').addEventListener('click', () => {
     }
     var hopHide = document.getElementById('pixleGearHop');
     if (hopHide) hopHide.style.display = 'none';
+    var loopHide = document.getElementById('pixleResultLoop');
+    if (loopHide) loopHide.hidden = true;
+    var emailHide = document.getElementById('pixleEmailCapture');
+    if (emailHide) emailHide.hidden = true;
     document.getElementById('result-modal').classList.add('open');
   }
 });

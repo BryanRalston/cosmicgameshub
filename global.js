@@ -409,6 +409,39 @@
         window.scrollTo({ top: 0, behavior: 'smooth' });
       });
     }
+
+    mountEmailCaptures();
+  }
+
+  var BD_EMBED = 'https://buttondown.com/api/emails/embed-subscribe/cosmicgameshub';
+  var emailUid = 0;
+
+  function emailCaptureHTML() {
+    emailUid += 1;
+    var id = 'bd-email-' + emailUid;
+    return (
+      '<div class="email-band__eyebrow">Free · Unsubscribe anytime</div>' +
+      '<p class="email-band__title">Get a daily puzzle ping</p>' +
+      '<p class="email-band__sub">Daily puzzle reminder + occasional FPS gear note. Confirm the email Buttondown sends — we will not pretend you joined before that.</p>' +
+      '<form class="email-band__form embeddable-buttondown-form" action="' + BD_EMBED + '" method="post">' +
+        '<label class="visually-hidden" for="' + id + '">Email address</label>' +
+        '<div class="email-band__input-wrap">' +
+          '<input type="email" name="email" id="' + id + '" class="email-band__input" placeholder="you@email.com" required autocomplete="email" />' +
+          '<button type="submit" class="btn btn--primary email-band__btn">Get updates</button>' +
+        '</div>' +
+        '<input type="hidden" name="embed" value="1" />' +
+        '<p class="email-band__note">Hosted by <a href="https://buttondown.com/cosmicgameshub">Buttondown</a>. See <a href="/privacy">Privacy</a>. We do not sell emails.</p>' +
+      '</form>'
+    );
+  }
+
+  function mountEmailCaptures() {
+    document.querySelectorAll('[data-cg-email]').forEach(function (el) {
+      if (el.getAttribute('data-cg-email-ready')) return;
+      el.setAttribute('data-cg-email-ready', '1');
+      if (!el.classList.contains('email-capture')) el.classList.add('email-capture');
+      el.innerHTML = emailCaptureHTML();
+    });
   }
 
   onReady(initSiteChrome);

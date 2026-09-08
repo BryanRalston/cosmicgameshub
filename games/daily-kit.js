@@ -178,6 +178,55 @@
     return ORDER.filter(function (g) { return !m[g.id]; });
   }
 
+  function readGameStreak(source) {
+    if (source === 'rift') {
+      var rm = safeJSON('rift_meta') || {};
+      return +rm.streak || 0;
+    }
+    if (source === 'gamerdle') {
+      var gs = safeJSON('gamerdle-stats') || {};
+      return +gs.streak || 0;
+    }
+    if (source === 'pixle') {
+      var ps = safeJSON('pixle-stats-v1') || {};
+      return +ps.streak || 0;
+    }
+    if (w.CGPlayer && typeof w.CGPlayer.snapshot === 'function') {
+      return +w.CGPlayer.snapshot().streak || 0;
+    }
+    return 0;
+  }
+
+  function streakLabel(source) {
+    var streak = readGameStreak(source);
+    return streak > 0
+      ? '🔥 Streak ' + streak + ' ' + (streak === 1 ? 'day' : 'days')
+      : '🔥 Streak starts today';
+  }
+
+  function fillStreakHint(el) {
+    if (!el) return;
+    var source = el.getAttribute('data-streak-source') || '';
+    el.innerHTML =
+      '<div class="result-loop__streak" data-streak-label>' + streakLabel(source) + '</div>' +
+      '<div class="result-loop__hint">Come back tomorrow. Next UTC puzzle in <span class="result-loop__cd" data-cd></span></div>';
+  }
+
+  function mountStreakHints() {
+    document.querySelectorAll('[data-cg-streak-hint]').forEach(function (el) {
+      var source = el.getAttribute('data-streak-source') || '';
+      if (!el.getAttribute('data-cg-streak-ready')) {
+        el.setAttribute('data-cg-streak-ready', '1');
+        if (!el.classList.contains('result-loop')) el.classList.add('result-loop');
+        fillStreakHint(el);
+        return;
+      }
+      var lab = el.querySelector('[data-streak-label]');
+      var next = streakLabel(source);
+      if (lab && lab.textContent !== next) lab.textContent = next;
+    });
+  }
+
   function playedCount() {
     return ORDER.length - leftover().length;
   }
@@ -270,6 +319,7 @@
     ensureViewportFit();
     patchShareNow();
     document.querySelectorAll('.cg-daily-dock').forEach(mountDock);
+    mountStreakHints();
     ensurePlayer();
   }
 
@@ -289,6 +339,7 @@
     copyText: copyText,
     shareResult: shareResult,
     mountAll: mountAll,
+    mountStreakHints: mountStreakHints,
     isoToday: isoToday,
     syncPlayer: syncPlayer
   };
@@ -300,6 +351,7 @@
   }
   setInterval(function () {
     tickCountdowns();
+    mountStreakHints();
     if (w.CGPlayer) syncPlayer();
     patchShareNow();
   }, 1000);

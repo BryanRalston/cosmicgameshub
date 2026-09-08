@@ -219,6 +219,8 @@
     <div class="cg-daily-dock" data-slug="gamerdle"></div>
     <br>
     <button class="btn" style="margin-top:0.5rem;width:100%;min-height:44px;background:var(--bg-surface);border:1px solid var(--border-mid);color:var(--text-hi);" onclick="this.closest('.result-panel').classList.remove('show');window.scrollTo(0,0);">↑ Back to Guesses</button>
+    <div class="result-loop" data-cg-streak-hint data-streak-source="gamerdle"></div>
+    <aside class="email-capture" data-cg-email aria-label="Newsletter"></aside>
     <aside class="gear-hop" aria-label="Recommended gear">
       <div class="gear-hop__eyebrow">Upgrade Your Mouse</div>
       <div class="gear-hop__name">Logitech G Pro X Superlight 2 DEX</div>
@@ -256,7 +258,7 @@
       </div>
     </div>
 
-    <p style="font-size:0.78rem;color:var(--text-lo);margin:0.75rem 0 0;">New puzzle tomorrow. Come back daily to keep your streak!</p>
+    <p style="font-size:0.78rem;color:var(--text-lo);margin:0.75rem 0 0;">New puzzle at UTC midnight. Streak stays on this device.</p>
   </div>
 
   <!-- How to play -->
@@ -809,6 +811,7 @@ function showResult() {
 
   const shareText = `🎮 Gamerdle #${dayNum} — ${won?guesses.length+'/6':'X/6'}\n${grid.trim()}\n\ncosmicgameshub.com/games/gamerdle`;
   document.getElementById('shareBox').textContent = shareText;
+  if (window.CGDaily && window.CGDaily.mountStreakHints) window.CGDaily.mountStreakHints();
 }
 
 function copyShare() {
