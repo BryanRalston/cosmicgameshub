@@ -198,6 +198,13 @@
           <li><a class="next-hop__buy" href="https://www.amazon.com/dp/B0DG2XJPTC?tag=cosmicgameshu-20" rel="nofollow sponsored">DEX on Amazon</a></li>
         </ul>
       </aside>
+      <aside class="next-hop" aria-label="Pros using this gear">
+        <p class="next-hop__label">Pros using this</p>
+        <ul class="next-hop__links">
+          <li><a href="/pros?game=valorant&amp;q=superlight">Valorant pros on Superlight</a></li>
+          <li><a href="/pros?game=valorant&amp;q=viper">Valorant pros on Viper</a></li>
+        </ul>
+      </aside>
     </header>
 
     <div class="vg-wrap">
@@ -535,7 +542,10 @@
           });
           if (!matches.length) return;
           const names = matches.slice(0, 4).map(p => p.name).join(', ');
-          const more = matches.length > 4 ? ` <a href="/pros">+${matches.length - 4} more →</a>` : ' <a href="/pros">See setups →</a>';
+          const tokens = ['superlight', 'viper', 'deathadder', 'harpe', 'g305'];
+          const qToken = tokens.find(t => cardLower.includes(t)) || cardLower;
+          const href = '/pros?q=' + encodeURIComponent(qToken);
+          const more = matches.length > 4 ? ` <a href="${href}">+${matches.length - 4} more →</a>` : ` <a href="${href}">See setups →</a>`;
           const line = document.createElement('div');
           line.className = 'vg-pros-line';
           line.innerHTML = `🎮 <strong>${matches.length} of ${pros.length} ${TOTAL_LABEL}</strong> use this — <span class="vg-pros-names">${names}</span>${more}`;

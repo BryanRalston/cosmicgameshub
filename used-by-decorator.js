@@ -35,6 +35,28 @@
     document.head.appendChild(s);
   }
 
+  var FAMILY_TOKENS = [
+    'superlight', 'superstrike', 'viper', 'deathadder', 'harpe', 'starlight',
+    'wooting', 'apex pro', 'huntsman', 'cloud ii', 'cloud iii', 'blackshark',
+    'arctis nova', 'inzone'
+  ];
+
+  function gearQuery(title) {
+    var t = (title || '').toLowerCase();
+    var i;
+    for (i = 0; i < FAMILY_TOKENS.length; i++) {
+      if (t.indexOf(FAMILY_TOKENS[i]) !== -1) return FAMILY_TOKENS[i];
+    }
+    return (title || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function prosListHref(title) {
+    var params = [];
+    if (window.UB_GAME) params.push('game=' + encodeURIComponent(window.UB_GAME));
+    params.push('q=' + encodeURIComponent(gearQuery(title)));
+    return '/pros?' + params.join('&');
+  }
+
   function decorate(pros) {
     var FIELD = window.UB_FIELD;
     // Try both card structures
@@ -52,9 +74,10 @@
       });
       if (!matches.length) return;
       var names = matches.slice(0, 4).map(function (p) { return p.name; }).join(', ');
+      var href = prosListHref(titleEl.textContent.trim());
       var more = matches.length > 4
-        ? ' <a href="/pros">+' + (matches.length - 4) + ' more →</a>'
-        : ' <a href="/pros">See setups →</a>';
+        ? ' <a href="' + href + '">+' + (matches.length - 4) + ' more →</a>'
+        : ' <a href="' + href + '">See setups →</a>';
       var line = document.createElement('div');
       line.className = 'ub-pros-line';
       line.innerHTML = THEME.emoji + ' <strong>' + matches.length + ' of ' + pros.length + ' tracked pros</strong> use this — <span class="ub-names">' + names + '</span>' + more;
