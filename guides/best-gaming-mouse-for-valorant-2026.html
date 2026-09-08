@@ -544,7 +544,7 @@
           const names = matches.slice(0, 4).map(p => p.name).join(', ');
           const tokens = ['superlight', 'viper', 'deathadder', 'harpe', 'g305'];
           const qToken = tokens.find(t => cardLower.includes(t)) || cardLower;
-          const href = '/pros?game=valorant&q=' + encodeURIComponent(qToken);
+          const href = '/pros?q=' + encodeURIComponent(qToken);
           const more = matches.length > 4 ? ` <a href="${href}">+${matches.length - 4} more →</a>` : ` <a href="${href}">See setups →</a>`;
           const line = document.createElement('div');
           line.className = 'vg-pros-line';
