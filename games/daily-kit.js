@@ -111,7 +111,7 @@
   }
 
   function absUrl(url) {
-    if (!url) return 'https://cosmicgameshub.com';
+    if (!url) return 'https://www.cosmicgameshub.com';
     if (url.indexOf('http') === 0) return url;
     return 'https://' + String(url).replace(/^\/\//, '');
   }
