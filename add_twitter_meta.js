@@ -1,6 +1,6 @@
 'use strict';
 const fs = require('fs');
-const BASE = 'https://cosmicgameshub.com';
+const BASE = 'https://www.cosmicgameshub.com';
 
 const gameImages = {
   'aim-trainer': 'game-aim-trainer.jpg',

@@ -9,9 +9,9 @@
   <meta property="og:title" content="Daily Puzzles — CosmicGamesHub">
   <meta property="og:description" content="Today's gaming puzzles in one place. Track your streak. New every day.">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://cosmicgameshub.com/games/daily">
-  <meta property="og:image" content="https://cosmicgameshub.com/images/game-daily-hub.jpg">
-  <link rel="canonical" href="https://cosmicgameshub.com/games/daily">
+  <meta property="og:url" content="https://www.cosmicgameshub.com/games/daily">
+  <meta property="og:image" content="https://www.cosmicgameshub.com/images/game-daily-hub.jpg">
+  <link rel="canonical" href="https://www.cosmicgameshub.com/games/daily">
   <link rel="stylesheet" href="../styles.css">
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-D272MF8NQP"></script>
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-D272MF8NQP');</script>
@@ -183,7 +183,7 @@
     "@type": "CollectionPage",
     "name": "Daily Puzzles",
     "description": "Today's set of free daily gaming puzzles — Gamerdle, Pixle, Hardware Timeline, Gaming Trivia, Sudoku, Crossword, and more.",
-    "url": "https://cosmicgameshub.com/games/daily"
+    "url": "https://www.cosmicgameshub.com/games/daily"
   }
   </script>
 
@@ -503,7 +503,7 @@
       var p = (navigator.clipboard && navigator.clipboard.writeText) ? navigator.clipboard.writeText(data.text) : Promise.reject();
       var file = data.blob ? new File([data.blob], 'cosmicgameshub-daily.png', { type: 'image/png' }) : null;
       if (navigator.share && file && navigator.canShare && navigator.canShare({ files: [file] })) {
-        navigator.share({ title: 'CosmicGamesHub Daily', text: data.text, url: 'https://cosmicgameshub.com/games/daily', files: [file] }).catch(function () {});
+        navigator.share({ title: 'CosmicGamesHub Daily', text: data.text, url: 'https://www.cosmicgameshub.com/games/daily', files: [file] }).catch(function () {});
       }
       p.then(function () { shareBtn.textContent = 'Card ready'; }).catch(function () { shareBtn.textContent = 'Card ready'; });
     });

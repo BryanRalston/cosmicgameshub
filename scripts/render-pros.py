@@ -17,6 +17,8 @@ PROS_PATH = ROOT / "data" / "pros.json"
 LINKS_PATH = ROOT / "data" / "product-links.json"
 INDEX_PATH = ROOT / "pros" / "index.html"
 SITEMAP_PATH = ROOT / "sitemap.xml"
+# Public host matches hosting (apex 307s to www). Keep generated canonicals on www.
+SITE_ORIGIN = "https://www.cosmicgameshub.com"
 
 GAME_LABEL = {
     "valorant": "Valorant",
@@ -241,7 +243,7 @@ def detail_page(p: dict, links: dict, n_pros: int) -> str:
     )
     verified = p.get("lastVerified") or ""
     extra = extra_links(p.get("mouse"), links, p.get("game"))
-    page_url = f"https://cosmicgameshub.com/pros/{p['id']}"
+    page_url = f"{SITE_ORIGIN}/pros/{p['id']}"
     json_ld = json.dumps(
         {
             "@context": "https://schema.org",
@@ -254,7 +256,7 @@ def detail_page(p: dict, links: dict, n_pros: int) -> str:
                     "author": {
                         "@type": "Organization",
                         "name": "CosmicGamesHub",
-                        "url": "https://cosmicgameshub.com",
+                        "url": SITE_ORIGIN,
                     },
                     "mainEntityOfPage": page_url,
                 },
@@ -265,13 +267,13 @@ def detail_page(p: dict, links: dict, n_pros: int) -> str:
                             "@type": "ListItem",
                             "position": 1,
                             "name": "Home",
-                            "item": "https://cosmicgameshub.com/",
+                            "item": f"{SITE_ORIGIN}/",
                         },
                         {
                             "@type": "ListItem",
                             "position": 2,
                             "name": "Pro Gear & Settings",
-                            "item": "https://cosmicgameshub.com/pros",
+                            "item": f"{SITE_ORIGIN}/pros",
                         },
                         {
                             "@type": "ListItem",
@@ -296,8 +298,8 @@ def detail_page(p: dict, links: dict, n_pros: int) -> str:
   <meta property="og:title" content="{esc(name)} Pro Settings — {esc(game_label)} 2026">
   <meta property="og:description" content="{esc(desc)}">
   <meta property="og:type" content="article">
-  <meta property="og:url" content="https://cosmicgameshub.com/pros/{esc(p['id'])}">
-  <link rel="canonical" href="https://cosmicgameshub.com/pros/{esc(p['id'])}">
+  <meta property="og:url" content="{SITE_ORIGIN}/pros/{esc(p['id'])}">
+  <link rel="canonical" href="{SITE_ORIGIN}/pros/{esc(p['id'])}">
   <script type="application/ld+json">{json_ld}</script>
   <link rel="icon" href="/favicon.ico">
   <link rel="stylesheet" href="/styles.css">
@@ -432,7 +434,7 @@ def main() -> None:
     for p in pros:
         sitemap_entries.append(
             "  <url>\n"
-            f"    <loc>https://cosmicgameshub.com/pros/{p['id']}</loc>\n"
+            f"    <loc>{SITE_ORIGIN}/pros/{p['id']}</loc>\n"
             "    <lastmod>2026-09-07</lastmod>\n"
             "    <changefreq>monthly</changefreq>\n"
             "    <priority>0.7</priority>\n"
