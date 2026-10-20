@@ -9,7 +9,7 @@
   var WORLD_W = 1600;
   var WORLD_H = 900;
   var COLS = 21;
-  var DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday'];
+  var DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
   var SHIFT_NAMES = ['Open', 'Mid', 'Close'];
   var SHIFT_HOURS = ['8–12', '12–4', '4–8'];
   var STATIONS = ['reg1', 'reg2', 'floor', 'freight'];
@@ -26,7 +26,7 @@
     payBudget: 640,
     rate: 16,
     rateMgr: 26,
-    goals: [4400, 5400, 6200],
+    goals: [6400, 7600, 9000],
     sprite: 78,
     custCap: 14,
     spawn: [0.64, 0.94, 0.72],
@@ -38,8 +38,42 @@
     walkSpeed: 210,
     staffSpeed: 245,
     baseActions: 3,
-    actionRegen: 9
+    actionRegen: 9,
+    comboWindow: 3.4,
+    comboMax: 10,
+    star1: 0.75,
+    star2: 1,
+    star3: 1.2,
+    earnRate: 0.1
   };
+
+  var SHIFT_COUNT = 15;
+  var WEEK_LABELS = ['Week 1', 'Week 2', 'Week 3'];
+  var SHIFT_DEFS = (function () {
+    var defs = [];
+    for (var i = 0; i < SHIFT_COUNT; i++) {
+      var t = i / (SHIFT_COUNT - 1);
+      defs.push({
+        name: DAY_NAMES[i % 5],
+        short: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'][i % 5],
+        week: WEEK_LABELS[(i / 5) | 0],
+        label: WEEK_LABELS[(i / 5) | 0] + ' · ' + DAY_NAMES[i % 5],
+        goal: Math.round(7500 * Math.pow(1.062, i)),
+        spawn: +(0.86 + t * 0.52).toFixed(3),
+        patience: +(1.12 - t * 0.46).toFixed(3),
+        rushAt: +(0.58 - t * 0.1).toFixed(3)
+      });
+    }
+    return defs;
+  })();
+
+  var UPGRADES = [
+    { id: 'stock', name: 'Faster stocking', max: 3, costs: [500, 950, 1600], icon: 'truck', blurb: 'The truck unloads faster and shelves refill between sales.' },
+    { id: 'register', name: 'Extra register', max: 2, costs: [750, 1500], icon: 'line', blurb: 'A backup cashier. Both lines check out faster.' },
+    { id: 'patience', name: 'Patience boost', max: 3, costs: [450, 850, 1400], icon: 'break', blurb: 'Shoppers wait longer before they walk out.' },
+    { id: 'hustle', name: 'Quicker actions', max: 2, costs: [600, 1100], icon: 'boss', blurb: 'Manager actions come back sooner.' },
+    { id: 'baskets', name: 'Upsell baskets', max: 2, costs: [650, 1200], icon: 'price', blurb: 'Every checkout rings a little higher.' }
+  ];
 
   var STAFF = [
     { id: 'staff_mgr', name: 'Maren Cole', role: 'manager', blurb: 'Key carrier. Covers any station. Costs more.' },
@@ -122,7 +156,23 @@
 
   function blankShift() { return { reg1: null, reg2: null, floor: null, freight: null }; }
   function blankDay() { return [blankShift(), blankShift(), blankShift()]; }
-  function blankWeek() { return [blankDay(), blankDay(), blankDay()]; }
+  function blankCampaign() {
+    var days = [];
+    for (var i = 0; i < SHIFT_COUNT; i++) days.push(blankDay());
+    return days;
+  }
+  function shiftDef(index) {
+    if (index < 0) index = 0;
+    if (index >= SHIFT_DEFS.length) index = SHIFT_DEFS.length - 1;
+    return SHIFT_DEFS[index];
+  }
+  function shiftLabel(index) { return shiftDef(index).label; }
+  function upgradeLevel(run, id) {
+    if (!run || !run.upgrades) return 0;
+    var n = +run.upgrades[id] || 0;
+    if (n < 0) return 0;
+    return n;
+  }
 
   function clone(obj) { return JSON.parse(JSON.stringify(obj)); }
 
@@ -225,36 +275,35 @@
   function newRun(ymd) {
     var rng = mulberry32(hashStr('hr:' + ymd));
     var days = [];
-    for (var d = 0; d < 3; d++) {
-      var ids = shuffleIds(rng, EVENT_IDS).slice(0, 3 + d);
-      var goal = Math.round(CONFIG.goals[d] * (1 - 0.05 + rng() * 0.1));
+    for (var d = 0; d < SHIFT_COUNT; d++) {
+      var prof = shiftDef(d);
+      var nEvents = Math.min(5, 2 + Math.floor(d / 4));
+      var ids = shuffleIds(rng, EVENT_IDS).slice(0, nEvents);
+      var wobble = 0.98 + rng() * 0.04;
+      var goal = Math.round(prof.goal * wobble);
       days.push({ avail: rollAvail(rng), goal: goal, events: ids, callout: null });
     }
-    var cday = rng() < 0.5 ? 1 : 2;
+    var cday = 5 + Math.floor(rng() * 7);
     var pool = STAFF.filter(function (s) { return s.role !== 'manager'; });
     var who = pool[Math.floor(rng() * pool.length)];
     days[cday].callout = who.id;
     days[cday].avail[who.id] = [0, 0, 0];
     days[cday].events = days[cday].events.filter(function (id) { return id !== 'callout'; });
-    if (days[cday].events.length < 4) {
-      EVENT_IDS.forEach(function (id) {
-        if (days[cday].events.length >= 4) return;
-        if (id !== 'callout' && days[cday].events.indexOf(id) < 0) days[cday].events.push(id);
-      });
-    }
     for (var et = 0; et < days.length; et++) days[et].eventTimes = rushSlots(days[et].events.length);
     return {
-      v: 2,
+      v: 3,
       ymd: ymd,
       day: 0,
-      phase: 'intro',
-      schedule: blankWeek(),
+      phase: 'sim',
+      schedule: blankCampaign(),
       perks: [],
-      morale: 74,
+      upgrades: {},
+      morale: 78,
       history: [],
       callouts: 0,
-      acked: [false, false, false],
-      calloutCounted: [false, false, false],
+      acked: [],
+      calloutCounted: [],
+      suggested: [],
       days: days,
       celebrated: false
     };
@@ -402,37 +451,37 @@
   }
 
   function heatOf(sim, run) {
-    var day = run && typeof run.day === 'number' ? run.day : 0;
-    if (day < 0) day = 0;
-    if (day > 2) day = 2;
+    var idx = run && typeof run.day === 'number' ? run.day : 0;
+    var prof = shiftDef(idx);
     var seg = (sim.duration || CONFIG.daySeconds) / 3;
     var local = seg > 0 ? (sim.t % seg) / seg : 0;
+    var rushAt = prof.rushAt > 0.3 ? prof.rushAt : 0.58;
     var wave;
     var rush = false;
-    if (local < 0.58) wave = 0.68 + (local / 0.58) * 0.42;
+    if (local < rushAt) wave = 0.68 + (local / rushAt) * 0.42;
     else {
       rush = true;
-      var r = (local - 0.58) / 0.42;
+      var span = 1 - rushAt;
+      var r = span > 0 ? (local - rushAt) / span : 1;
       if (r < 0) r = 0;
       if (r > 1) r = 1;
-      wave = 1.08 + Math.sin(r * Math.PI) * 1.02;
+      wave = 1.08 + Math.sin(r * Math.PI) * (0.92 + idx * 0.012);
     }
     var close = sim.duration ? sim.t / sim.duration : 0;
     if (close > 0.84) {
       rush = true;
-      wave *= 1.14;
+      wave *= 1.1 + Math.min(0.08, idx * 0.006);
     }
-    var daySpawn = [0.86, 1.05, 1.24][day];
-    var dayPat = [1.12, 0.9, 0.74][day];
-    var patience = dayPat * (rush ? 0.82 : 1);
-    var drain = (1 / dayPat) * (rush ? 1.34 : 0.92);
+    var patience = prof.patience * (rush ? 0.82 : 1);
+    patience *= 1 + 0.11 * upgradeLevel(run, 'patience');
+    var drain = (1 / Math.max(0.55, prof.patience)) * (rush ? 1.34 : 0.92);
     if (sim.coachHold) {
       wave *= 0.5;
       rush = false;
-      patience = dayPat > 1 ? dayPat : 1;
+      patience = prof.patience > 1 ? prof.patience : 1;
       drain = 0.45;
     }
-    return { spawn: daySpawn * wave, patience: patience, drain: drain, rush: rush, wave: wave, day: day };
+    return { spawn: prof.spawn * wave, patience: patience, drain: drain, rush: rush, wave: wave, day: idx };
   }
 
   function comboMult(n) {
@@ -471,6 +520,7 @@
     if (sim.you && sim.you.station === station && sim.t < sim.you.until) {
       p += skillMul(sim.you, station, run, sim);
     }
+    if (station === 'reg1' || station === 'reg2') p += 0.62 * upgradeLevel(run, 'register');
     return p;
   }
 
@@ -645,20 +695,19 @@
   }
 
   function goalStars(pct) {
-    if (pct >= 1) return 3;
-    if (pct >= 0.7) return 2;
-    if (pct >= 0.4) return 1;
+    if (pct >= CONFIG.star3) return 3;
+    if (pct >= CONFIG.star2) return 2;
+    if (pct >= CONFIG.star1) return 1;
     return 0;
   }
 
   function paceStars(sim) {
     if (!sim || sim.sales <= 0) return 0;
-    var elapsed = clamp(sim.duration ? sim.t / sim.duration : 0, 0.12, 1);
+    if (sim.goal && sim.sales >= sim.goal * CONFIG.star3) return 3;
+    var elapsed = clamp(sim.duration ? sim.t / sim.duration : 0, 0.16, 1);
     var projected = sim.sales / elapsed;
     var ratio = sim.goal ? projected / sim.goal : 0;
-    if (ratio >= 1.02 || sim.sales >= sim.goal) return 3;
-    if (ratio >= 0.7) return 2;
-    return 1;
+    return goalStars(ratio);
   }
 
   function note(sim, text) { sim.notes.push(text); }
@@ -904,9 +953,11 @@
     if (stationPower(sim, run, 'floor') > 0.55) basket *= 1.1;
     if (sim.stock < 0.28) basket *= 0.64;
     if (sim.t < sim.discountUntil) basket *= 0.86;
+    basket *= 1 + 0.09 * upgradeLevel(run, 'baskets');
     var gap = sim.t - (sim.lastSaleAt == null ? -999 : sim.lastSaleAt);
-    if (gap <= 3.4 && (sim.combo || 0) >= 1) sim.combo += 1;
-    else sim.combo = 1;
+    if (gap <= CONFIG.comboWindow && (sim.combo || 0) >= 1) {
+      if (sim.combo < CONFIG.comboMax) sim.combo += 1;
+    } else sim.combo = 1;
     sim.lastSaleAt = sim.t;
     if (sim.combo > (sim.bestCombo || 0)) sim.bestCombo = sim.combo;
     var mult = comboMult(sim.combo);
@@ -1403,11 +1454,12 @@
     }
     updateCustomers(sim, run, used);
     var fp = stationPower(sim, run, 'freight');
-    var regen = CONFIG.freightRegen * fp * (hasPerk(run, 'freight') ? 1.6 : 1);
+    var stockLv = upgradeLevel(run, 'stock');
+    var regen = CONFIG.freightRegen * fp * (hasPerk(run, 'freight') ? 1.6 : 1) * (1 + 0.45 * stockLv);
     if (sim.truck) {
       sim.stock = Math.max(0, sim.stock - used * 0.01);
       if (fp > 0.35) sim.truckWork += used * fp;
-      if (sim.truckWork > 5.5) {
+      if (sim.truckWork > 5.5 / (1 + 0.25 * stockLv)) {
         sim.truck = 0;
         sim.stock = clamp(sim.stock + 0.12, 0, 1);
         note(sim, 'Truck is cleared.');
@@ -1444,9 +1496,10 @@
     var maxA = sim.actionMax || (CONFIG.baseActions + 1);
     if (sim.actions < maxA) {
       sim.actionFrac = (sim.actionFrac || 0) + used;
-      if (sim.actionFrac >= CONFIG.actionRegen) {
-        var gain = Math.floor(sim.actionFrac / CONFIG.actionRegen);
-        sim.actionFrac -= gain * CONFIG.actionRegen;
+      var regenNeed = CONFIG.actionRegen / (1 + 0.28 * upgradeLevel(run, 'hustle'));
+      if (sim.actionFrac >= regenNeed) {
+        var gain = Math.floor(sim.actionFrac / regenNeed);
+        sim.actionFrac -= gain * regenNeed;
         sim.actions = Math.min(maxA, sim.actions + gain);
       }
     }
@@ -1695,7 +1748,7 @@
       var hadTruck = sim.truck > 0;
       sim.truck = 0;
       sim.hornPlayed = false;
-      sim.stock = clamp(sim.stock + 0.22, 0, 1);
+      sim.stock = clamp(sim.stock + 0.22 + 0.06 * upgradeLevel(run, 'stock'), 0, 1);
       sim.you = makeActor('staff_mgr', SPOTS.truck.x, SPOTS.truck.y + 36);
       sim.you.kind = 'you';
       sim.you.role = 'manager';
@@ -1755,20 +1808,60 @@
     return 0;
   }
 
-  function simulate(ymd, mode) {
+  function driveActive(sim, run) {
+    if (!sim || sim.done) return;
+    if (sim.paused && sim.pending) {
+      resolvePending(sim, run, smartChoice(sim.pending, sim));
+      return;
+    }
+    if (sim.pings && sim.pings.length) resolvePing(sim, sim.pings[0]);
+    if (sim.actions <= 0) return;
+    if ((sim._nextAct || 0) > sim.t) return;
+    sim._nextAct = sim.t + 0.45;
+    if (sim.truck || sim.stock < 0.34) {
+      doAction(sim, run, 'freight');
+      return;
+    }
+    var upset = null;
+    var low = 1e9;
+    for (var i = 0; i < sim.customers.length; i++) {
+      var c = sim.customers[i];
+      if (c.dead || c.state === 'leave' || !c.maxPatience) continue;
+      if (c.patience < low) { low = c.patience; upset = c; }
+    }
+    if (upset && upset.patience < upset.maxPatience * 0.42) {
+      doAction(sim, run, 'calm', { cust: upset });
+      return;
+    }
+    var q1 = queueOf(sim, 'reg1').length;
+    var q2 = queueOf(sim, 'reg2').length;
+    if (q1 + q2 >= 3) doAction(sim, run, 'pull');
+    else if (sim.stock < 0.55) doAction(sim, run, 'freight');
+    else doAction(sim, run, 'cover', { station: q1 >= q2 ? 'reg1' : 'reg2' });
+  }
+
+  function simulate(ymd, mode, onlyShift) {
     var run = newRun(ymd || '2026-10-19');
+    if (mode === 'upgraded') {
+      run.upgrades = { stock: 3, register: 2, patience: 3, hustle: 2, baskets: 2 };
+    }
+    if (mode === 'mid') run.upgrades = { stock: 1, register: 1, patience: 1 };
+    var indexes = onlyShift == null ? [0, 4, 9, 14] : [onlyShift];
     var history = [];
-    for (var d = 0; d < 3; d++) {
+    for (var n = 0; n < indexes.length; n++) {
+      var d = indexes[n];
       run.day = d;
       run.schedule[d] = mode === 'empty' ? blankDay() : greedy(run, d);
-      if (mode === 'empty') {
-        /* one person so the doors can open in the UI; the empty sim is truly empty */
-      }
       var sim = startDay(run);
       if (mode === 'empty') sim.staff = [];
+      if (mode === 'active' || mode === 'upgraded' || mode === 'mid') {
+        sim.live = true;
+        primeShift(sim, run);
+      }
       var guard = 0;
-      while (!sim.done && guard < 8000) {
-        if (sim.paused && sim.pending) {
+      while (!sim.done && guard < 9000) {
+        if (mode === 'active' || mode === 'upgraded' || mode === 'mid') driveActive(sim, run);
+        else if (sim.paused && sim.pending) {
           var pick = mode === 'smart' ? smartChoice(sim.pending, sim) : autoChoice(sim.pending, sim);
           resolvePending(sim, run, pick);
         }
@@ -1779,10 +1872,10 @@
       snap.done = sim.done;
       snap.guard = guard;
       snap.staff = sim.staff.length;
+      snap.shiftStars = goalStars(snap.goalPct);
+      snap.shift = d;
       history.push(snap);
       run.morale = sim.morale;
-      if (mode === 'smart' && d === 0) run.perks.push('action', 'freight');
-      if (mode === 'smart' && d === 1 && run.perks.indexOf('key') < 0) run.perks.push('key');
     }
     return history;
   }
@@ -1879,6 +1972,22 @@
     });
   }
 
+  function campaignDefault() {
+    return { v: 1, stars: [], bestEarn: [], bank: 0, upgrades: {}, seen: false, current: 0 };
+  }
+  function campaignGet() {
+    var c = readJSON('hr_campaign_v1');
+    if (!c || c.v !== 1) c = campaignDefault();
+    if (!c.stars) c.stars = [];
+    if (!c.bestEarn) c.bestEarn = [];
+    if (!c.upgrades) c.upgrades = {};
+    return c;
+  }
+  function campaignPut(c) { writeJSON('hr_campaign_v1', c); }
+  function shiftUnlocked(camp, index) {
+    if (index <= 0) return true;
+    return (camp.stars[index - 1] || 0) >= 1;
+  }
   function readJSON(key) {
     try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) { return null; }
   }
@@ -1936,6 +2045,8 @@
       plan: document.getElementById('hr-plan'),
       sim: document.getElementById('hr-sim'),
       score: document.getElementById('hr-score'),
+      shop: document.getElementById('hr-shop'),
+      map: document.getElementById('hr-map'),
       final: document.getElementById('hr-final'),
       toast: document.getElementById('hr-toast'),
       modal: document.getElementById('hr-modal'),
@@ -2018,7 +2129,13 @@
       els.plan.hidden = which !== 'plan';
       els.sim.hidden = which !== 'sim';
       els.score.hidden = which !== 'score' && which !== 'perk';
+      if (els.shop) els.shop.hidden = which !== 'shop';
+      if (els.map) els.map.hidden = which !== 'map';
       els.final.hidden = which !== 'final';
+      if (which !== 'sim') {
+        els.event.hidden = true;
+        els.modal.hidden = true;
+      }
       document.body.dataset.hrPhase = which;
       if (which !== 'sim') stopLoop();
     }
@@ -2336,18 +2453,37 @@
         '<span class="hr-pips" aria-hidden="true">' + pips + '</span></button>';
     }
 
-    function beginFresh() {
+    function applyCampaign(runObj) {
+      var camp = campaignGet();
+      runObj.upgrades = camp.upgrades || {};
+      return camp;
+    }
+
+    function beginShift(index) {
       coach = null;
-      run = newRun(ymd);
+      if (!run || !run.days || run.days.length !== SHIFT_COUNT) run = newRun(ymd);
+      if (index < 0) index = 0;
+      if (index >= SHIFT_COUNT) index = SHIFT_COUNT - 1;
+      var camp = applyCampaign(run);
+      if (!shiftUnlocked(camp, index)) {
+        toast('Clear the previous shift first.');
+        renderMap();
+        return;
+      }
+      run.day = index;
       run.phase = 'sim';
-      run.schedule[0] = greedy(run, 0);
-      run.acked[0] = true;
-      run.suggested = [true, false, false];
+      run.schedule[index] = greedy(run, index);
+      run.simState = null;
       sim = startDay(run);
+      camp.seen = true;
+      camp.current = index;
+      campaignPut(camp);
       saveRun();
-      track('holiday_rush_start', { seed: ymd });
+      track('holiday_rush_day_start', { seed: ymd, day: index + 1 });
       renderSim({ resume: false });
     }
+
+    function beginFresh() { beginShift(0); }
 
     function ensureSuggested() {
       if (!run.suggested) run.suggested = [false, false, false];
@@ -2363,10 +2499,12 @@
         beginFresh();
         return;
       }
-      if (run.phase === 'plan') {
-        ensureSuggested();
-        planEditing = true;
-        renderPlan();
+      if (run.phase === 'plan' || run.phase === 'perk') {
+        renderMap();
+      } else if (run.phase === 'shop') {
+        renderShop();
+      } else if (run.phase === 'map') {
+        renderMap();
       } else if (run.phase === 'sim') {
         var snap = run.simState;
         if (snap && typeof snap.t === 'number' && !snap.done) {
@@ -2384,11 +2522,8 @@
           renderSim({ resume: false });
         }
       } else if (run.phase === 'score' || run.phase === 'perk') renderScore();
-      else if (run.phase === 'final') renderFinal();
-      else {
-        ensureSuggested();
-        renderPlan();
-      }
+      else if (run.phase === 'final') renderMap();
+      else renderMap();
       saveRun();
     }
 
@@ -2609,7 +2744,7 @@
         clock.classList.toggle('rush', rushing);
       }
       var salesLab = salesText.parentNode && salesText.parentNode.querySelector('span');
-      if (salesLab) salesLab.textContent = DAY_NAMES[run.day] + ' · ' + SHIFT_NAMES[shiftIndex(sim)] + (rushing ? ' rush' : '');
+      if (salesLab) salesLab.textContent = shiftLabel(run.day) + ' · ' + SHIFT_NAMES[shiftIndex(sim)] + (rushing ? ' rush' : '');
       if (sim._paintSales != null && sim.sales > sim._paintSales && root.CGSfx && root.CGSfx.juice) {
         root.CGSfx.juice(salesText, 'pop');
       }
@@ -2625,7 +2760,10 @@
         var showCombo = (sim.combo || 0) > 1;
         comboEl.hidden = !showCombo;
         if (showCombo) {
-          var comboLabel = 'x' + sim.combo;
+          var comboLabel = multLabel(sim.combo);
+          var atCap = sim.combo >= CONFIG.comboMax || comboMult(sim.combo) >= 4;
+          comboEl.classList.toggle('is-max', atCap);
+          comboEl.setAttribute('aria-label', atCap ? 'Combo capped at ×4 pay' : 'Combo ' + comboLabel);
           if (comboEl.textContent !== comboLabel) {
             comboEl.textContent = comboLabel;
             if (!reduceMotion && root.CGSfx && root.CGSfx.juice) root.CGSfx.juice(comboEl, 'pop');
@@ -2649,8 +2787,9 @@
       var act = document.getElementById('hr-actline');
       if (act) {
         var maxA = sim.actionMax || CONFIG.baseActions;
-        var fill = sim.actions >= maxA ? 1 : clamp((sim.actionFrac || 0) / CONFIG.actionRegen, 0, 1);
-        act.textContent = sim.actions + ' / ' + maxA + ' actions · refills every ' + CONFIG.actionRegen + 's' + (sim.actions < maxA ? ' · ' + Math.round(fill * 100) + '% to the next' : '');
+        var regenSec = CONFIG.actionRegen / (1 + 0.28 * upgradeLevel(run, 'hustle'));
+        var fill = sim.actions >= maxA ? 1 : clamp((sim.actionFrac || 0) / regenSec, 0, 1);
+        act.textContent = sim.actions + ' / ' + maxA + ' actions · refills every ' + (Math.round(regenSec * 10) / 10) + 's' + (sim.actions < maxA ? ' · ' + Math.round(fill * 100) + '% to the next' : '');
       }
       var buttons = els.sim.querySelectorAll('[data-act]');
       for (var i = 0; i < buttons.length; i++) buttons[i].disabled = !!sim.pending;
@@ -2684,56 +2823,161 @@
       if (els.live) els.live.textContent = card.title + '. ' + card.body;
     }
 
+    function bankShift(snap) {
+      var camp = campaignGet();
+      var stars = goalStars(snap.goalPct);
+      var prevStars = camp.stars[run.day] || 0;
+      if (stars > prevStars) camp.stars[run.day] = stars;
+      var earned = Math.round((snap.sales || 0) * CONFIG.earnRate);
+      var prevEarn = camp.bestEarn[run.day] || 0;
+      var gain = Math.max(0, earned - prevEarn);
+      if (earned > prevEarn) camp.bestEarn[run.day] = earned;
+      camp.bank = (camp.bank || 0) + gain;
+      camp.seen = true;
+      camp.current = run.day;
+      if (!camp.playedDay || camp.playedDay !== run.ymd) {
+        bumpStreak(run.ymd);
+        camp.playedDay = run.ymd;
+        paintMeta();
+      }
+      campaignPut(camp);
+      snap.shiftStars = Math.max(prevStars, stars);
+      snap.earned = gain;
+      snap.bank = camp.bank;
+      snap.bestComboLabel = (snap.bestCombo || 0) > 1 ? multLabel(snap.bestCombo) : '';
+      return snap;
+    }
+
     function finishDay() {
       var snap = scoreSnapshot(sim);
       snap.bestCombo = sim.bestCombo || 0;
       hooks.fanfare();
+      bankShift(snap);
       run.history.push(snap);
       run.morale = clamp(sim.morale, 0, 100);
-      run.phase = run.day >= 2 ? 'final' : 'score';
+      run.phase = 'score';
       run.simState = null;
+      run.lastSnap = snap;
       coach = null;
       sim = null;
       saveRun();
       sfx('correct');
-      if (run.phase === 'final') renderFinal();
-      else renderScore();
+      var totalStars = 0;
+      var camp = campaignGet();
+      for (var i = 0; i < SHIFT_COUNT; i++) totalStars += camp.stars[i] ? 1 : 0;
+      if (totalStars >= SHIFT_COUNT && !run.celebrated) {
+        run.celebrated = true;
+        if (root.CGPlayer && root.CGPlayer.record) root.CGPlayer.record('holiday-rush', { score: snap.points, daily: true });
+      }
+      renderScore();
     }
 
     function renderScore() {
       show('score');
-      var snap = run.history[run.history.length - 1];
-      var perkBlock = '';
-      if (run.phase === 'score') {
-        var left = PERKS.filter(function (p) { return run.perks.indexOf(p.id) < 0; });
-        perkBlock = '<h3>Pick a perk</h3><div class="hr-perks">' + left.map(function (p) {
-          return '<article class="hr-perk"><span class="hr-icon" style="' + iconStyle(p.icon, 56) + '"></span><h4>' + esc(p.name) + '</h4><p>' + esc(p.body) + '</p><button type="button" class="btn btn--primary" data-perk="' + p.id + '">Take this</button></article>';
-        }).join('') + '</div>';
-      }
+      var snap = run.lastSnap || run.history[run.history.length - 1];
+      var pct = Math.round(snap.goalPct * 100);
+      var comboBit = snap.bestComboLabel || ((snap.bestCombo || 0) > 1 ? multLabel(snap.bestCombo) : '—');
       els.score.innerHTML =
-        '<p class="hr-kicker">' + DAY_NAMES[run.day] + ' scorecard</p>' +
-        '<div class="hr-grade">' + snap.grade + '</div>' +
-        '<p class="hr-stars hr-stars--big">' + starGlyph(goalStars(snap.goalPct)) + '</p>' +
-        '<p class="hr-lead">Best combo ' + ((snap.bestCombo || 0) > 1 ? 'x' + snap.bestCombo : '—') + ' · ' + (snap.walkouts || 0) + ' walkouts</p>' +
-        scoreTable([snap], run.day) +
+        '<p class="hr-kicker">' + esc(shiftLabel(run.day)) + '</p>' +
+        '<h2>' + pct + '% of goal</h2>' +
+        '<p class="hr-stars hr-stars--big">' + starGlyph(snap.shiftStars || goalStars(snap.goalPct)) + '</p>' +
+        '<p class="hr-thresholds">1★ ' + Math.round(CONFIG.star1 * 100) + '% · 2★ ' + Math.round(CONFIG.star2 * 100) + '% · 3★ ' + Math.round(CONFIG.star3 * 100) + '%</p>' +
+        '<p class="hr-lead">Best combo ' + esc(comboBit) + ' · ' + (snap.walkouts || 0) + ' walkouts · ' + money(snap.sales) + ' / ' + money(snap.goal) + '</p>' +
+        '<p class="hr-bank">' + (snap.earned > 0 ? '+' + money(snap.earned) + ' banked' : 'No new earnings') + '</p>' +
         '<p class="hr-scorebig">' + snap.points + ' pts</p>' +
-        perkBlock;
-      if (run.phase === 'score') {
-        els.score.querySelector('.hr-perks').addEventListener('click', function (ev) {
-          var btn = ev.target.closest('[data-perk]');
-          if (!btn) return;
-          var id = btn.getAttribute('data-perk');
-          if (run.perks.indexOf(id) < 0) run.perks.push(id);
-          if (id === 'cocoa') run.morale = clamp(run.morale + 10, 0, 100);
-          run.day += 1;
-          run.phase = 'plan';
-          ensureSuggested();
-          planEditing = true;
-          saveRun();
-          sfx('correct');
-          renderPlan();
-        });
+        '<div class="hr-cta">' +
+        '<button type="button" class="btn btn--primary" id="hr-retry">Retry shift</button>' +
+        '<button type="button" class="btn" id="hr-to-shop">Upgrades</button>' +
+        '<button type="button" class="btn" id="hr-to-map">Shift map</button>' +
+        '</div>';
+      document.getElementById('hr-retry').addEventListener('click', function () {
+        beginShift(run.day);
+      });
+      document.getElementById('hr-to-shop').addEventListener('click', function () {
+        run.phase = 'shop';
+        saveRun();
+        renderShop();
+      });
+      document.getElementById('hr-to-map').addEventListener('click', function () {
+        run.phase = 'map';
+        saveRun();
+        renderMap();
+      });
+    }
+
+    function renderShop() {
+      show('shop');
+      var camp = campaignGet();
+      if (run) run.upgrades = camp.upgrades;
+      var cards = UPGRADES.map(function (u) {
+        var lvl = camp.upgrades[u.id] || 0;
+        var maxed = lvl >= u.max;
+        var cost = maxed ? 0 : u.costs[lvl];
+        var afford = !maxed && camp.bank >= cost;
+        var pips = '';
+        for (var i = 0; i < u.max; i++) pips += '<i' + (i < lvl ? ' class="on"' : '') + '></i>';
+        return '<article class="hr-upgrade"><span class="hr-icon" style="' + iconStyle(u.icon, 48) + '"></span><div><h3>' + esc(u.name) + '</h3><p>' + esc(u.blurb) + '</p><span class="hr-pips" aria-label="Level ' + lvl + ' of ' + u.max + '">' + pips + '</span></div><button type="button" class="btn btn--primary" data-buy="' + u.id + '"' + (afford ? '' : ' disabled') + '>' + (maxed ? 'Maxed' : money(cost)) + '</button></article>';
+      }).join('');
+      els.shop.innerHTML =
+        '<p class="hr-kicker">Between shifts</p>' +
+        '<h2>Upgrade shop</h2>' +
+        '<p class="hr-bank">Bank ' + money(camp.bank) + '</p>' +
+        '<p class="hr-lead">Spend what the floor earned. Upgrades stay on this device.</p>' +
+        '<div class="hr-shop" id="hr-shop-list">' + cards + '</div>' +
+        '<div class="hr-cta"><button type="button" class="btn btn--primary" id="hr-shop-map">Shift map</button></div>';
+      document.getElementById('hr-shop-list').addEventListener('click', function (ev) {
+        var btn = ev.target.closest('[data-buy]');
+        if (!btn || btn.disabled) return;
+        var id = btn.getAttribute('data-buy');
+        var def = null;
+        for (var i = 0; i < UPGRADES.length; i++) if (UPGRADES[i].id === id) def = UPGRADES[i];
+        if (!def) return;
+        var live = campaignGet();
+        var lvl = live.upgrades[id] || 0;
+        if (lvl >= def.max) return;
+        var cost = def.costs[lvl];
+        if (live.bank < cost) { toast('Not enough in the bank.'); return; }
+        live.bank -= cost;
+        live.upgrades[id] = lvl + 1;
+        campaignPut(live);
+        if (run) run.upgrades = live.upgrades;
+        sfx('correct');
+        toast(def.name + ' upgraded.');
+        renderShop();
+      });
+      document.getElementById('hr-shop-map').addEventListener('click', function () {
+        if (run) { run.phase = 'map'; saveRun(); }
+        renderMap();
+      });
+    }
+
+    function renderMap() {
+      show('map');
+      var camp = campaignGet();
+      var html = '<p class="hr-kicker">Holiday Rush Mart</p><h2>Shift map</h2><p class="hr-lead">Clear a shift with at least one star to unlock the next. Replay any open shift for a better rating.</p><p class="hr-bank">Bank ' + money(camp.bank) + '</p><div class="hr-map">';
+      var week = '';
+      for (var i = 0; i < SHIFT_COUNT; i++) {
+        var def = shiftDef(i);
+        if (def.week !== week) {
+          week = def.week;
+          html += '<div class="hr-week">' + esc(week) + '</div>';
+        }
+        var open = shiftUnlocked(camp, i);
+        var stars = camp.stars[i] || 0;
+        var next = open && !(camp.stars[i] > 0) && (i === 0 || (camp.stars[i - 1] || 0) >= 1);
+        html += '<button type="button" class="hr-node' + (open ? '' : ' is-locked') + (next ? ' is-next' : '') + '" data-shift="' + i + '"' + (open ? '' : ' disabled') + '><b>' + esc(def.short) + '</b><small>' + (i + 1) + '</small><span class="hr-stars">' + starGlyph(stars) + '</span></button>';
       }
+      html += '</div><div class="hr-cta"><button type="button" class="btn" id="hr-map-shop">Upgrades</button></div>';
+      els.map.innerHTML = html;
+      els.map.querySelector('.hr-map').addEventListener('click', function (ev) {
+        var btn = ev.target.closest('[data-shift]');
+        if (!btn || btn.disabled) return;
+        beginShift(+btn.getAttribute('data-shift'));
+      });
+      document.getElementById('hr-map-shop').addEventListener('click', function () {
+        if (run) { run.phase = 'shop'; saveRun(); }
+        renderShop();
+      });
     }
 
     function scoreTable(rows, startIndex) {
@@ -2741,7 +2985,7 @@
       return '<table class="hr-table"><thead><tr><th>Day</th><th>Sales</th><th>Goal</th><th>Payroll</th><th>Morale</th><th>Stars</th></tr></thead><tbody>' +
         rows.map(function (snap, i) {
           var pct = Math.round(snap.goalPct * 100);
-          return '<tr><td>' + DAY_NAMES[start + i] + '</td><td>' + money(snap.sales) + ' · ' + pct + '%</td><td>' + money(snap.goal) + '</td><td>' + money(snap.payroll) + '</td><td>' + snap.morale + '</td><td>' + snap.stars.toFixed(1) + '</td></tr>';
+          return '<tr><td>' + esc(shiftLabel(start + i)) + '</td><td>' + money(snap.sales) + ' · ' + pct + '%</td><td>' + money(snap.goal) + '</td><td>' + money(snap.payroll) + '</td><td>' + snap.morale + '</td><td>' + snap.stars.toFixed(1) + '</td></tr>';
         }).join('') + '</tbody></table>';
     }
 
@@ -3410,7 +3654,7 @@
         liveAcc += dt;
         if (liveAcc > 5 && els.live) {
           liveAcc = 0;
-          els.live.textContent = DAY_NAMES[run.day] + ' ' + clockLabel(sim.t, sim.duration) + ', sales ' + money(sim.sales) + ' of ' + money(sim.goal) + ', morale ' + Math.round(sim.morale) + ', ' + (Math.round(sim.stars * 10) / 10) + ' stars.';
+          els.live.textContent = shiftLabel(run.day) + ' ' + clockLabel(sim.t, sim.duration) + ', sales ' + money(sim.sales) + ' of ' + money(sim.goal) + ', morale ' + Math.round(sim.morale) + '.';
         }
         if (hooks.heat) hooks.heat(sim.customers.length, !!(sim._heat && sim._heat.rush && !sim.coachHold));
         if (sim.done) finishDay();
@@ -3653,13 +3897,22 @@
       bakeFloors();
       resize();
       var saved = readJSON('hr_run_v1');
-      if (saved && saved.ymd === ymd && saved.phase && saved.phase !== 'intro') {
+      var campBoot = campaignGet();
+      var resumable = saved && saved.v === 3 && saved.ymd === ymd && saved.phase && saved.phase !== 'intro' && saved.days && saved.days.length === SHIFT_COUNT;
+      if (resumable) {
         run = saved;
-        if (!run.suggested) run.suggested = [false, false, false];
+        applyCampaign(run);
+        if (!run.suggested) run.suggested = [];
         track('holiday_rush_resume', { seed: ymd });
         enterPhase();
+      } else if (!campBoot.seen) {
+        beginShift(0);
       } else {
-        beginFresh();
+        run = newRun(ymd);
+        applyCampaign(run);
+        run.day = campBoot.current || 0;
+        run.phase = 'map';
+        renderMap();
       }
       track('holiday_rush_open', { seed: ymd });
     }).catch(function () {
@@ -3710,21 +3963,41 @@
 
   if (typeof process !== 'undefined' && process.argv && process.argv.indexOf('--self-test') >= 0) {
     var atlas = verifyAtlases();
-    var greedyRun = simulate('2026-10-19', 'greedy');
-    var emptyRun = simulate('2026-10-19', 'empty');
+    var active0 = simulate('2026-10-19', 'active', 0)[0];
+    var greedy0 = simulate('2026-10-19', 'greedy', 0)[0];
+    var empty0 = simulate('2026-10-19', 'empty', 0)[0];
+    var active8 = simulate('2026-10-19', 'active', 8)[0];
+    var active14 = simulate('2026-10-19', 'active', 14)[0];
+    var up14 = simulate('2026-10-19', 'upgraded', 14)[0];
+    var mid8 = simulate('2026-10-19', 'mid', 8)[0];
     var bad = false;
-    function check(list, label) {
-      list.forEach(function (row, i) {
-        if (!row.done || !isFinite(row.points) || row.points < 0) bad = true;
-        console.log(label, i, 'sales', row.sales, 'goal', row.goal, 'pct', Math.round(row.goalPct * 100), 'pts', row.points, 'out', row.walkouts, 'in', row.checkouts, 'morale', row.morale, 'stars', row.stars, 'pay', row.payroll);
-      });
+    function line(label, row) {
+      if (!row.done || !isFinite(row.points) || row.points < 0) bad = true;
+      console.log(label, 'shift', row.shift, 'sales', row.sales, 'goal', row.goal, 'pct', Math.round(row.goalPct * 100), 'stars', row.shiftStars, 'out', row.walkouts, 'in', row.checkouts);
     }
     console.log('atlas', JSON.stringify(atlas));
-    check(greedyRun, 'greedy');
-    check(emptyRun, 'empty');
-    var gPct = greedyRun.reduce(function (s, r) { return s + r.goalPct; }, 0) / 3;
-    var ePct = emptyRun.reduce(function (s, r) { return s + r.goalPct; }, 0) / 3;
-    console.log('avgPct', Math.round(gPct * 100), Math.round(ePct * 100), 'bad', bad);
-    if (bad || gPct < 0.9 || ePct > 0.45 || ePct > gPct) process.exit(1);
+    line('active0', active0);
+    line('greedy0', greedy0);
+    line('empty0', empty0);
+    line('active8', active8);
+    line('active14', active14);
+    line('up14', up14);
+    line('mid8', mid8);
+    if (comboMult(10) !== 4 || comboMult(40) !== 4 || multLabel(10) !== '×4' || multLabel(24) !== '×4') bad = true;
+    if (goalStars(0.74) !== 0 || goalStars(0.75) !== 1 || goalStars(1) !== 2 || goalStars(1.2) !== 3) bad = true;
+    if (SHIFT_COUNT < 15) bad = true;
+    var impliedGood = greedy0.goalPct * 1.45;
+    if (greedy0.goalPct < 0.78 || greedy0.goalPct > 0.94) bad = true;
+    if (impliedGood < 1.1 || impliedGood > 1.32) bad = true;
+    if (!(active0.goalPct > greedy0.goalPct)) bad = true;
+    if (active0.goalPct > 1.32) bad = true;
+    if (empty0.goalPct > 0.45) bad = true;
+    if (!(active14.goal > active0.goal * 1.5)) bad = true;
+    if (!(active14.goalPct < active0.goalPct - 0.15)) bad = true;
+    if (up14.goalPct < 1) bad = true;
+    if (mid8.goalPct < 0.9) bad = true;
+    console.log('impliedGood', Math.round(impliedGood * 100));
+    console.log('combo', multLabel(10), 'bad', bad);
+    if (bad) process.exit(1);
   }
 })(typeof window !== 'undefined' ? window : globalThis);
