@@ -1,0 +1,506 @@
+{
+ "staff_mgr_neutral": [
+  "staff",
+  0,
+  0,
+  256,
+  256
+ ],
+ "staff_mgr_happy": [
+  "staff",
+  256,
+  0,
+  256,
+  256
+ ],
+ "staff_mgr_stressed": [
+  "staff",
+  512,
+  0,
+  256,
+  256
+ ],
+ "staff_mgr_angry": [
+  "staff",
+  768,
+  0,
+  256,
+  256
+ ],
+ "staff_mgr_sick": [
+  "staff",
+  1024,
+  0,
+  256,
+  256
+ ],
+ "staff_mgr_proud": [
+  "staff",
+  1280,
+  0,
+  256,
+  256
+ ],
+ "staff_reg1_neutral": [
+  "staff",
+  0,
+  256,
+  256,
+  256
+ ],
+ "staff_reg1_happy": [
+  "staff",
+  256,
+  256,
+  256,
+  256
+ ],
+ "staff_reg1_stressed": [
+  "staff",
+  512,
+  256,
+  256,
+  256
+ ],
+ "staff_reg1_angry": [
+  "staff",
+  768,
+  256,
+  256,
+  256
+ ],
+ "staff_reg1_sick": [
+  "staff",
+  1024,
+  256,
+  256,
+  256
+ ],
+ "staff_reg1_proud": [
+  "staff",
+  1280,
+  256,
+  256,
+  256
+ ],
+ "staff_reg2_neutral": [
+  "staff",
+  0,
+  512,
+  256,
+  256
+ ],
+ "staff_reg2_happy": [
+  "staff",
+  256,
+  512,
+  256,
+  256
+ ],
+ "staff_reg2_stressed": [
+  "staff",
+  512,
+  512,
+  256,
+  256
+ ],
+ "staff_reg2_angry": [
+  "staff",
+  768,
+  512,
+  256,
+  256
+ ],
+ "staff_reg2_sick": [
+  "staff",
+  1024,
+  512,
+  256,
+  256
+ ],
+ "staff_reg2_proud": [
+  "staff",
+  1280,
+  512,
+  256,
+  256
+ ],
+ "staff_frt1_neutral": [
+  "staff",
+  0,
+  768,
+  256,
+  256
+ ],
+ "staff_frt1_happy": [
+  "staff",
+  256,
+  768,
+  256,
+  256
+ ],
+ "staff_frt1_stressed": [
+  "staff",
+  512,
+  768,
+  256,
+  256
+ ],
+ "staff_frt1_angry": [
+  "staff",
+  768,
+  768,
+  256,
+  256
+ ],
+ "staff_frt1_sick": [
+  "staff",
+  1024,
+  768,
+  256,
+  256
+ ],
+ "staff_frt1_proud": [
+  "staff",
+  1280,
+  768,
+  256,
+  256
+ ],
+ "staff_frt2_neutral": [
+  "staff",
+  0,
+  1024,
+  256,
+  256
+ ],
+ "staff_frt2_happy": [
+  "staff",
+  256,
+  1024,
+  256,
+  256
+ ],
+ "staff_frt2_stressed": [
+  "staff",
+  512,
+  1024,
+  256,
+  256
+ ],
+ "staff_frt2_angry": [
+  "staff",
+  768,
+  1024,
+  256,
+  256
+ ],
+ "staff_frt2_sick": [
+  "staff",
+  1024,
+  1024,
+  256,
+  256
+ ],
+ "staff_frt2_proud": [
+  "staff",
+  1280,
+  1024,
+  256,
+  256
+ ],
+ "staff_flr1_neutral": [
+  "staff",
+  0,
+  1280,
+  256,
+  256
+ ],
+ "staff_flr1_happy": [
+  "staff",
+  256,
+  1280,
+  256,
+  256
+ ],
+ "staff_flr1_stressed": [
+  "staff",
+  512,
+  1280,
+  256,
+  256
+ ],
+ "staff_flr1_angry": [
+  "staff",
+  768,
+  1280,
+  256,
+  256
+ ],
+ "staff_flr1_sick": [
+  "staff",
+  1024,
+  1280,
+  256,
+  256
+ ],
+ "staff_flr1_proud": [
+  "staff",
+  1280,
+  1280,
+  256,
+  256
+ ],
+ "staff_flr2_neutral": [
+  "staff",
+  0,
+  1536,
+  256,
+  256
+ ],
+ "staff_flr2_happy": [
+  "staff",
+  256,
+  1536,
+  256,
+  256
+ ],
+ "staff_flr2_stressed": [
+  "staff",
+  512,
+  1536,
+  256,
+  256
+ ],
+ "staff_flr2_angry": [
+  "staff",
+  768,
+  1536,
+  256,
+  256
+ ],
+ "staff_flr2_sick": [
+  "staff",
+  1024,
+  1536,
+  256,
+  256
+ ],
+ "staff_flr2_proud": [
+  "staff",
+  1280,
+  1536,
+  256,
+  256
+ ],
+ "staff_flr3_neutral": [
+  "staff",
+  0,
+  1792,
+  256,
+  256
+ ],
+ "staff_flr3_happy": [
+  "staff",
+  256,
+  1792,
+  256,
+  256
+ ],
+ "staff_flr3_stressed": [
+  "staff",
+  512,
+  1792,
+  256,
+  256
+ ],
+ "staff_flr3_angry": [
+  "staff",
+  768,
+  1792,
+  256,
+  256
+ ],
+ "staff_flr3_sick": [
+  "staff",
+  1024,
+  1792,
+  256,
+  256
+ ],
+ "staff_flr3_proud": [
+  "staff",
+  1280,
+  1792,
+  256,
+  256
+ ],
+ "cust_mom_neutral": [
+  "customers",
+  0,
+  0,
+  256,
+  256
+ ],
+ "cust_mom_impatient": [
+  "customers",
+  256,
+  0,
+  256,
+  256
+ ],
+ "cust_mom_angry": [
+  "customers",
+  512,
+  0,
+  256,
+  256
+ ],
+ "cust_mom_delighted": [
+  "customers",
+  768,
+  0,
+  256,
+  256
+ ],
+ "cust_grandpa_neutral": [
+  "customers",
+  0,
+  256,
+  256,
+  256
+ ],
+ "cust_grandpa_impatient": [
+  "customers",
+  256,
+  256,
+  256,
+  256
+ ],
+ "cust_grandpa_angry": [
+  "customers",
+  512,
+  256,
+  256,
+  256
+ ],
+ "cust_grandpa_delighted": [
+  "customers",
+  768,
+  256,
+  256,
+  256
+ ],
+ "cust_kid_neutral": [
+  "customers",
+  0,
+  512,
+  256,
+  256
+ ],
+ "cust_kid_impatient": [
+  "customers",
+  256,
+  512,
+  256,
+  256
+ ],
+ "cust_kid_angry": [
+  "customers",
+  512,
+  512,
+  256,
+  256
+ ],
+ "cust_kid_delighted": [
+  "customers",
+  768,
+  512,
+  256,
+  256
+ ],
+ "cust_biz_neutral": [
+  "customers",
+  0,
+  768,
+  256,
+  256
+ ],
+ "cust_biz_impatient": [
+  "customers",
+  256,
+  768,
+  256,
+  256
+ ],
+ "cust_biz_angry": [
+  "customers",
+  512,
+  768,
+  256,
+  256
+ ],
+ "cust_biz_delighted": [
+  "customers",
+  768,
+  768,
+  256,
+  256
+ ],
+ "cust_teen_neutral": [
+  "customers",
+  0,
+  1024,
+  256,
+  256
+ ],
+ "cust_teen_impatient": [
+  "customers",
+  256,
+  1024,
+  256,
+  256
+ ],
+ "cust_teen_angry": [
+  "customers",
+  512,
+  1024,
+  256,
+  256
+ ],
+ "cust_teen_delighted": [
+  "customers",
+  768,
+  1024,
+  256,
+  256
+ ],
+ "cust_karen_neutral": [
+  "customers",
+  0,
+  1280,
+  256,
+  256
+ ],
+ "cust_karen_impatient": [
+  "customers",
+  256,
+  1280,
+  256,
+  256
+ ],
+ "cust_karen_angry": [
+  "customers",
+  512,
+  1280,
+  256,
+  256
+ ],
+ "cust_karen_delighted": [
+  "customers",
+  768,
+  1280,
+  256,
+  256
+ ]
+}

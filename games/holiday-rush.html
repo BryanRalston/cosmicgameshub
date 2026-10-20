@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-D272MF8NQP"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-D272MF8NQP', { content_group: 'holiday_rush' });
+  </script>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>Holiday Rush: Store Manager — Free Browser Game | CosmicGamesHub</title>
+  <meta name="description" content="Play Holiday Rush: Store Manager free in the browser. Schedule a fictional holiday store, run three rushed days, and beat your best on today's seed. No download."/>
+  <link rel="canonical" href="https://www.cosmicgameshub.com/games/holiday-rush"/>
+  <link rel="stylesheet" href="../styles.css"/>
+  <meta property="og:type" content="website"/>
+  <meta property="og:site_name" content="CosmicGamesHub"/>
+  <meta property="og:title" content="Holiday Rush: Store Manager — Free Browser Game"/>
+  <meta property="og:description" content="Schedule the floor, survive three holiday days, and share your score. A free store-manager game. No download."/>
+  <meta property="og:url" content="https://www.cosmicgameshub.com/games/holiday-rush"/>
+  <meta property="og:image" content="https://www.cosmicgameshub.com/games/holiday-rush/store_layout_1600.webp"/>
+  <meta property="og:image:width" content="1600"/>
+  <meta property="og:image:height" content="900"/>
+  <meta name="twitter:card" content="summary_large_image"/>
+  <meta name="twitter:site" content="@CosmicGamesHub"/>
+  <meta name="twitter:title" content="Holiday Rush: Store Manager — Free Browser Game"/>
+  <meta name="twitter:description" content="Schedule the floor, survive three holiday days, and share your score."/>
+  <meta name="twitter:image" content="https://www.cosmicgameshub.com/games/holiday-rush/store_layout_1600.webp"/>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "VideoGame",
+    "name": "Holiday Rush: Store Manager",
+    "description": "A free browser management game. Schedule fictional staff, run a three-day holiday rush, and chase a daily best score.",
+    "url": "https://www.cosmicgameshub.com/games/holiday-rush",
+    "image": "https://www.cosmicgameshub.com/games/holiday-rush/store_layout_1600.webp",
+    "genre": "Simulation",
+    "gamePlatform": "Web Browser",
+    "applicationCategory": "Game",
+    "operatingSystem": "Any",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD", "availability": "https://schema.org/InStock" },
+    "author": { "@type": "Organization", "name": "CosmicGamesHub", "url": "https://www.cosmicgameshub.com" }
+  }
+  </script>
+  <style>
+    body { background: var(--bg-void); }
+    .hr-wrap { max-width: 980px; margin: 0 auto; padding: 0.5rem 1rem 3rem; }
+    .hr-hero { text-align: center; padding: 1rem 0 0.4rem; }
+    .hr-hero h1 { font-size: clamp(1.7rem, 4vw, 2.5rem); margin: 0.2rem 0; }
+    .hr-hero p { color: var(--text-mid); margin: 0; font-size: 0.92rem; }
+    .hr-pills { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin: 0.75rem 0 0.4rem; }
+    .hr-pill { background: var(--bg-card); border: 1px solid var(--border); border-radius: 999px; padding: 0.28rem 0.75rem; font-size: 0.78rem; font-weight: 700; color: var(--text-mid); }
+    .hr-pill b { color: #e0a322; }
+    .hr-kicker { font-size: 0.75rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #e0a322; margin: 0 0 0.4rem; }
+    .hr-lead { color: var(--text-mid); font-size: 0.95rem; }
+    .hr-fine { color: var(--text-lo); font-size: 0.78rem; margin-top: 0.6rem; }
+    .hr-steps { margin: 0.8rem 0 1rem; padding-left: 1.2rem; color: var(--text-mid); }
+    .hr-steps li { margin: 0.35rem 0; }
+    .hr-cta, .hr-plan__actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.8rem; }
+    .hr-cta .btn, .hr-plan__actions .btn, .hr-choices button, .hr-perk .btn { min-height: 44px; }
+    h2 { margin-top: 0; }
+    .hr-plan__head h2, .hr-score h2, #hr-final h2 { font-size: clamp(1.35rem, 3vw, 1.8rem); margin: 0 0 0.25rem; }
+    .hr-plan__head { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: flex-end; margin-bottom: 0.8rem; }
+    .hr-plan__head p { margin: 0; color: var(--text-mid); font-size: 0.88rem; max-width: 38rem; }
+    .hr-meters { display: flex; gap: 0.8rem; flex-wrap: wrap; }
+    .hr-meters span, .hr-stat span, .hr-sales__top span { display: block; font-size: 0.65rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-lo); font-weight: 700; }
+    .hr-meters strong, .hr-stat strong { color: var(--text-hi); font-size: 0.95rem; }
+    .hr-bar { height: 8px; border-radius: 99px; background: rgba(255,255,255,0.08); overflow: hidden; margin-top: 0.25rem; min-width: 88px; }
+    .hr-bar i { display: block; height: 100%; width: 0; background: #2f9e57; border-radius: 99px; }
+    .hr-bar--pay i { background: #e0a322; }
+    .hr-grid { display: grid; grid-template-columns: 108px repeat(3, minmax(120px, 1fr)); gap: 6px; min-width: 520px; }
+    .hr-grid-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 0.3rem; }
+    .hr-grid__head, .hr-grid__label, .hr-grid__corner { font-size: 0.75rem; font-weight: 800; color: var(--text-mid); display: flex; align-items: center; }
+    .hr-grid__head { flex-direction: column; align-items: flex-start; justify-content: flex-end; }
+    .hr-grid__head small { font-weight: 600; color: var(--text-lo); }
+    .hr-grid__label i { width: 8px; height: 18px; border-radius: 3px; display: inline-block; margin-right: 6px; }
+    .hr-drop { min-height: 64px; background: rgba(90, 52, 32, 0.45); border: 1px dashed rgba(244, 228, 196, 0.28); border-radius: 10px; }
+    .hr-cell { width: 100%; min-height: 64px; border: 0; background: transparent; color: rgba(244,228,196,0.55); font: inherit; font-size: 0.78rem; cursor: pointer; border-radius: 10px; }
+    .hr-drop.stamped { animation: hrStamp 0.35s ease; }
+    .hr-drop.shake { animation: hrShake 0.28s ease; }
+    @keyframes hrStamp { 50% { transform: scale(0.96); background: rgba(224,163,34,0.35); } }
+    @keyframes hrShake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+    .hr-tray { display: flex; gap: 8px; overflow-x: auto; padding: 0.7rem 0; -webkit-overflow-scrolling: touch; }
+    .hr-chip { display: flex; align-items: center; gap: 8px; min-height: 44px; border-radius: 12px; border: 1px solid var(--border-mid); background: var(--bg-surface); color: var(--text-hi); padding: 4px 8px 4px 4px; cursor: grab; font: inherit; text-align: left; touch-action: none; user-select: none; flex: 0 0 auto; }
+    .hr-chip.armed, .hr-chip:focus-visible { outline: 2px solid #e0a322; }
+    .hr-chip--out { opacity: 0.55; cursor: not-allowed; }
+    .hr-chip__name { display: block; font-weight: 800; font-size: 0.82rem; }
+    .hr-chip__role { display: flex; align-items: center; gap: 4px; font-size: 0.68rem; color: var(--text-lo); text-transform: capitalize; }
+    .hr-chip__role b { width: 14px; height: 14px; border-radius: 3px; color: #1a120c; display: inline-grid; place-items: center; font-size: 0.62rem; }
+    .hr-avatar, .hr-portrait, .hr-icon { display: inline-block; background-repeat: no-repeat; border-radius: 8px; flex: 0 0 auto; }
+    .hr-avatar { border-radius: 8px; }
+    .hr-pips { display: flex; flex-direction: column; gap: 3px; }
+    .hr-pips i { width: 8px; height: 8px; border-radius: 99px; background: rgba(255,255,255,0.15); display: block; }
+    .hr-pips i.on { background: #e0a322; }
+    .role-register { box-shadow: inset 3px 0 0 #d64545; }
+    .role-freight { box-shadow: inset 3px 0 0 #3b78d0; }
+    .role-floor { box-shadow: inset 3px 0 0 #2f9e57; }
+    .role-manager { box-shadow: inset 3px 0 0 #e0a322; }
+    .hr-ghost { position: fixed; z-index: 80; pointer-events: none; transform: translate(-30%, -40%); }
+    .hr-hud { display: flex; gap: 0.7rem; align-items: center; flex-wrap: wrap; padding: 0.45rem 0; }
+    .hr-clock { width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; background: conic-gradient(#e0a322 calc(var(--p, 0) * 1turn), rgba(255,255,255,0.12) 0); flex: 0 0 auto; }
+    .hr-clock span { width: 46px; height: 46px; border-radius: 50%; background: #141018; display: grid; place-items: center; font-size: 0.62rem; font-weight: 800; color: #fff; text-align: center; line-height: 1.1; }
+    .hr-sales { flex: 1 1 180px; min-width: 140px; }
+    .hr-sales__top { display: flex; justify-content: space-between; gap: 0.4rem; }
+    .hr-sales__top strong, .hr-stat strong { color: var(--text-hi); font-size: 0.92rem; }
+    .hr-stage { position: relative; width: 100%; height: clamp(220px, 52vh, 640px); background: #1a1412; border-radius: 14px; overflow: hidden; touch-action: none; border: 1px solid rgba(224,163,34,0.25); }
+    #hr-canvas { display: block; width: 100%; height: 100%; }
+    .hr-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+    .hr-actions button { min-height: 44px; border-radius: 10px; border: 1px solid rgba(224,163,34,0.45); background: #2a2118; color: #f6f0e4; font: inherit; font-weight: 750; font-weight: 700; font-size: 0.92rem; cursor: pointer; }
+    .hr-actions button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .hr-hint { color: var(--text-lo); font-size: 0.78rem; margin: 0.4rem 0 0; }
+    .hr-modal { position: fixed; inset: 0; z-index: 40; background: rgba(8,6,8,0.72); display: flex; align-items: flex-end; justify-content: center; padding: 1rem; }
+    .hr-modal[hidden] { display: none !important; }
+    .hr-card { width: min(420px, 100%); background: #f6f0e4; color: #2b1d2e; border-radius: 16px; padding: 1rem 1rem 1.1rem; box-shadow: 0 16px 50px rgba(0,0,0,0.45); }
+    .hr-card h2, .hr-card h3 { color: #2b1d2e; margin: 0.2rem 0 0.35rem; font-size: 1.25rem; }
+    .hr-card p { color: #3c2a30; font-size: 0.95rem; margin: 0 0 0.7rem; }
+    .hr-card .hr-fine { color: #6d5848; }
+    .hr-card__art { display: flex; gap: 8px; align-items: flex-end; }
+    .hr-portrait { border-radius: 12px; background-color: rgba(43,29,46,0.06); }
+    .hr-choices { display: flex; flex-direction: column; gap: 8px; }
+    .hr-choices button { width: 100%; text-align: left; border-radius: 10px; border: 2px solid #2b1d2e; background: #fff; color: #2b1d2e; font: inherit; font-weight: 750; font-weight: 700; font-size: 0.95rem; padding: 0.55rem 0.75rem; cursor: pointer; }
+    .hr-choices button:disabled { opacity: 0.45; }
+    .hr-grade { font-family: Outfit, Inter, sans-serif; font-size: 3rem; font-weight: 800; color: #e0a322; line-height: 1; }
+    .hr-scorebig { font-family: Outfit, Inter, sans-serif; font-size: clamp(2rem, 6vw, 3rem); font-weight: 800; color: var(--text-hi); margin: 0.2rem 0; }
+    .hr-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin: 0.6rem 0 1rem; }
+    .hr-table th, .hr-table td { text-align: left; padding: 0.4rem 0.35rem; border-bottom: 1px solid var(--border); color: var(--text-mid); }
+    .hr-table th { font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-lo); }
+    .hr-table td:first-child, .hr-table th:first-child { color: var(--text-hi); font-weight: 700; }
+    .hr-perks { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.7rem; }
+    .hr-perk { background: #f6f0e4; color: #2b1d2e; border-radius: 14px; padding: 0.8rem; }
+    .hr-perk h4 { margin: 0.35rem 0; color: #2b1d2e; font-size: 1rem; }
+    .hr-perk p { color: #3c2a30; font-size: 0.85rem; margin: 0 0 0.6rem; }
+    .share-box { background: var(--bg-void); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; color: var(--text-mid); white-space: pre-wrap; font-size: 0.82rem; }
+    .hr-more { display: flex; gap: 0.8rem; flex-wrap: wrap; margin-top: 0.8rem; font-weight: 700; }
+    #hr-toast { position: fixed; left: 50%; bottom: 1rem; transform: translateX(-50%) translateY(12px); background: #2b1d2e; color: #f6f0e4; border-radius: 999px; padding: 0.55rem 0.9rem; font-size: 0.85rem; font-weight: 700; opacity: 0; pointer-events: none; transition: 0.2s ease; z-index: 70; max-width: min(92vw, 420px); text-align: center; }
+    #hr-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    @media (max-width: 640px) {
+      .hr-wrap { padding: 0.25rem 0.7rem 2.5rem; }
+      .hr-hero { padding-top: 0.6rem; }
+      .hr-actions { grid-template-columns: 1fr 1fr; }
+      .hr-modal { align-items: flex-end; padding: 0.5rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .hr-drop.stamped, .hr-drop.shake { animation: none; }
+    }
+  </style>
+</head>
+<body>
+<nav class="nav" role="navigation" aria-label="Main navigation">
+  <div class="container">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo" aria-label="CosmicGamesHub home">
+        <span class="nav__logo-icon">🎮</span>
+        <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
+      </a>
+      <ul class="nav__links" id="navLinks">
+        <li><a href="/pros">Pros</a></li>
+        <li><a href="/games" class="active">Games</a></li>
+        <li><a href="/games/daily">Daily</a></li>
+        <li><a href="/guides">Guides</a></li>
+        <li><a href="/versus">Comparisons</a></li>
+        <li><a href="/tools/gaming-fps-calculator" class="nav__cta btn">Tools</a></li>
+      </ul>
+      <button class="nav__hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<main>
+  <div class="hr-wrap" id="hr-app">
+    <header class="hr-hero">
+      <span class="section__eyebrow">Daily store sim</span>
+      <h1>Holiday Rush: Store Manager</h1>
+      <p>Three days at Holiday Rush Mart. Schedule the floor, then survive the rush.</p>
+      <div class="hr-pills">
+        <div class="hr-pill">Seed <b id="hr-seed">—</b></div>
+        <div class="hr-pill">Streak <b id="hr-streak">0</b></div>
+        <div class="hr-pill">Best <b id="hr-best">—</b></div>
+      </div>
+    </header>
+
+    <section id="hr-intro" aria-label="How to play">
+      <p class="hr-lead">Stocking the shelves…</p>
+    </section>
+    <section id="hr-plan" class="hr-grid-scroll" hidden></section>
+    <section id="hr-sim" hidden>
+      <div class="hr-hud"></div>
+      <div class="hr-stage" id="hr-stage">
+        <canvas id="hr-canvas" width="800" height="450" aria-hidden="true"></canvas>
+      </div>
+      <p class="hr-hint">Drag the floor to look around. Four buttons, limited uses. Cards pause the clock.</p>
+      <div class="hr-actions"></div>
+    </section>
+    <section id="hr-score" hidden></section>
+    <section id="hr-final" hidden>
+      <div id="hr-final-body"></div>
+      <div class="result-loop" data-cg-streak-hint data-streak-source="holiday-rush"></div>
+      <aside class="email-capture" data-cg-email aria-label="Newsletter"></aside>
+      <div class="cg-daily-dock" data-slug="holiday-rush"></div>
+    </section>
+    <div id="hr-live" class="visually-hidden" aria-live="polite"></div>
+  </div>
+</main>
+
+<div id="hr-modal" class="hr-modal" hidden></div>
+<div id="hr-event" class="hr-modal" hidden></div>
+<div id="hr-toast" role="status"></div>
+
+<script src="/games/holiday-rush.js"></script>
+<script src="/games/cg-sfx.js"></script>
+<script src="/games/daily-kit.js" defer></script>
+<script src="/global.js" defer></script>
+</body>
+</html>
