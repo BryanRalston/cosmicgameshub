@@ -191,6 +191,10 @@
       var ps = safeJSON('pixle-stats-v1') || {};
       return +ps.streak || 0;
     }
+    if (source === 'holiday-rush') {
+      var hm = safeJSON('hr_meta_v1') || {};
+      return +hm.streak || 0;
+    }
     if (w.CGPlayer && typeof w.CGPlayer.snapshot === 'function') {
       return +w.CGPlayer.snapshot().streak || 0;
     }
