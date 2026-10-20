@@ -116,9 +116,9 @@
     .hr-sales__top { display: flex; justify-content: space-between; gap: 0.4rem; }
     .hr-sales__top strong, .hr-stat strong { color: var(--text-hi); font-size: 0.92rem; }
     .hr-stage { position: relative; width: 100%; height: clamp(300px, 58vh, 680px); background: #1a1412; border-radius: 14px; overflow: hidden; touch-action: none; border: 1px solid rgba(224,163,34,0.25); }
-    .hr-skip { position: absolute; z-index: 5; top: 8px; right: 8px; min-width: 72px; min-height: 44px; border: 0; border-radius: 999px; background: #f6f0e4; color: #2b1d2e; font: inherit; font-weight: 800; padding: 0 14px; cursor: pointer; touch-action: manipulation; }
-    .hr-coach { position: absolute; z-index: 4; top: 8px; left: 8px; right: 88px; margin: 0; pointer-events: none; background: rgba(43,29,46,0.9); color: #f6f0e4; border-radius: 12px; min-height: 44px; display: flex; align-items: center; padding: 0.4rem 0.75rem; font-weight: 800; font-size: 0.95rem; }
-    .hr-coach[hidden], .hr-skip[hidden] { display: none !important; }
+    #hr-skip { position: absolute; z-index: 5; top: 8px; right: 8px; min-width: 72px; min-height: 44px; border: 0; border-radius: 999px; background: #f6f0e4; color: #2b1d2e; font: inherit; font-weight: 800; padding: 0 14px; cursor: pointer; touch-action: manipulation; }
+    #hr-coach { position: absolute; z-index: 4; top: 8px; left: 8px; right: 88px; margin: 0; pointer-events: none; background: rgba(43,29,46,0.9); color: #f6f0e4; border-radius: 12px; min-height: 44px; display: flex; align-items: center; padding: 0.4rem 0.75rem; font-weight: 800; font-size: 0.95rem; }
+    #hr-coach[hidden], #hr-skip[hidden] { display: none !important; }
     .hr-stars { color: rgba(255,255,255,0.28); letter-spacing: 0.14em; font-size: 1.15rem; font-weight: 800; }
     .hr-stars i { font-style: normal; }
     .hr-stars i.on { color: #e0a322; }
@@ -182,6 +182,18 @@
       .hr-hero { padding-top: 0.6rem; }
       .hr-actions { grid-template-columns: 1fr 1fr; }
       .hr-modal { align-items: flex-end; padding: 0.5rem; }
+    }
+    @media (max-height: 520px) {
+      body:has(#hr-sim:not([hidden])) .nav { display: none; }
+      body:has(#hr-sim:not([hidden])) .hr-hero,
+      body:has(#hr-sim:not([hidden])) .hr-actline { display: none; }
+      body:has(#hr-sim:not([hidden])) .hr-wrap { padding: 4px 8px 6px; }
+      body:has(#hr-sim:not([hidden])) .hr-hud { padding: 2px 0; gap: 6px; }
+      body:has(#hr-sim:not([hidden])) .hr-clock { width: 44px; height: 44px; }
+      body:has(#hr-sim:not([hidden])) .hr-clock span { width: 34px; height: 34px; font-size: 0.55rem; }
+      body:has(#hr-sim:not([hidden])) .hr-stage { height: 188px; }
+      body:has(#hr-sim:not([hidden])) .hr-actions { margin-top: 4px; gap: 6px; }
+      body:has(#hr-sim:not([hidden])) .hr-actions button { min-height: 44px; }
     }
     @media (prefers-reduced-motion: reduce) {
       .hr-drop.stamped, .hr-drop.shake, .cg-pop, .cg-shake, .cg-flash { animation: none !important; }
