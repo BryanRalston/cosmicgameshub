@@ -26,7 +26,7 @@
     payBudget: 640,
     rate: 16,
     rateMgr: 26,
-    goals: [1860, 2240, 2500],
+    goals: [4400, 5400, 6200],
     sprite: 78,
     custCap: 14,
     spawn: [0.64, 0.94, 0.72],
@@ -226,7 +226,7 @@
     var rng = mulberry32(hashStr('hr:' + ymd));
     var days = [];
     for (var d = 0; d < 3; d++) {
-      var ids = shuffleIds(rng, EVENT_IDS).slice(0, 4);
+      var ids = shuffleIds(rng, EVENT_IDS).slice(0, 3 + d);
       var goal = Math.round(CONFIG.goals[d] * (1 - 0.05 + rng() * 0.1));
       days.push({ avail: rollAvail(rng), goal: goal, events: ids, callout: null });
     }
@@ -242,8 +242,9 @@
         if (id !== 'callout' && days[cday].events.indexOf(id) < 0) days[cday].events.push(id);
       });
     }
+    for (var et = 0; et < days.length; et++) days[et].eventTimes = rushSlots(days[et].events.length);
     return {
-      v: 1,
+      v: 2,
       ymd: ymd,
       day: 0,
       phase: 'intro',
@@ -384,6 +385,68 @@
     return 2;
   }
 
+  function rushSlots(count) {
+    var seg = CONFIG.daySeconds / 3;
+    var peaks = [
+      seg * 0.8,
+      seg + seg * 0.8,
+      seg * 2 + seg * 0.8,
+      seg * 0.46,
+      seg + seg * 0.42
+    ];
+    var times = [];
+    var n = count > peaks.length ? peaks.length : count;
+    for (var i = 0; i < n; i++) times.push(Math.round(peaks[i] * 10) / 10);
+    times.sort(function (a, b) { return a - b; });
+    return times;
+  }
+
+  function heatOf(sim, run) {
+    var day = run && typeof run.day === 'number' ? run.day : 0;
+    if (day < 0) day = 0;
+    if (day > 2) day = 2;
+    var seg = (sim.duration || CONFIG.daySeconds) / 3;
+    var local = seg > 0 ? (sim.t % seg) / seg : 0;
+    var wave;
+    var rush = false;
+    if (local < 0.58) wave = 0.68 + (local / 0.58) * 0.42;
+    else {
+      rush = true;
+      var r = (local - 0.58) / 0.42;
+      if (r < 0) r = 0;
+      if (r > 1) r = 1;
+      wave = 1.08 + Math.sin(r * Math.PI) * 1.02;
+    }
+    var close = sim.duration ? sim.t / sim.duration : 0;
+    if (close > 0.84) {
+      rush = true;
+      wave *= 1.14;
+    }
+    var daySpawn = [0.86, 1.05, 1.24][day];
+    var dayPat = [1.12, 0.9, 0.74][day];
+    var patience = dayPat * (rush ? 0.82 : 1);
+    var drain = (1 / dayPat) * (rush ? 1.34 : 0.92);
+    if (sim.coachHold) {
+      wave *= 0.5;
+      rush = false;
+      patience = dayPat > 1 ? dayPat : 1;
+      drain = 0.45;
+    }
+    return { spawn: daySpawn * wave, patience: patience, drain: drain, rush: rush, wave: wave, day: day };
+  }
+
+  function comboMult(n) {
+    if (n <= 1) return 1;
+    var m = 1 + (n - 1) * 0.35;
+    return m > 4 ? 4 : m;
+  }
+
+  function multLabel(n) {
+    var tenths = Math.round(comboMult(n) * 10) / 10;
+    if (Math.abs(tenths - Math.round(tenths)) < 0.05) return '×' + Math.round(tenths);
+    return '×' + tenths.toFixed(1);
+  }
+
   function hasPerk(run, id) { return run.perks.indexOf(id) >= 0; }
 
   function skillMul(actor, station, run, sim) {
@@ -431,8 +494,22 @@
   var hooks = {
     kaching: function () {},
     horn: function () {},
-    tap: function () {}
+    tap: function () {},
+    sale: function () {},
+    coin: function () {},
+    angry: function () {},
+    goal: function () {},
+    fanfare: function () {},
+    rush: function () {},
+    action: function () {},
+    alert: function () {},
+    heat: function () {}
   };
+
+  var reduceMotion = false;
+  try {
+    if (typeof matchMedia === 'function') reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  } catch (e1) {}
 
   function burstCoins(sim, x, y) {
     if (!sim.coins) sim.coins = [];
@@ -452,6 +529,119 @@
     if (!sim.fx) sim.fx = [];
     if (sim.fx.length > 24) sim.fx.shift();
     sim.fx.push({ x: x, y: y, life: 0.38 });
+  }
+
+  function addShake(sim, mag) {
+    if (!sim || reduceMotion) return;
+    sim.shake = Math.max(sim.shake || 0, mag);
+  }
+
+  function addPunch(sim, sec, tint) {
+    if (!sim) return;
+    sim.punch = Math.max(sim.punch || 0, reduceMotion ? Math.min(sec, 0.035) : sec);
+    sim.flash = Math.max(sim.flash || 0, reduceMotion ? 0.18 : 0.55);
+    sim.flashTint = tint || 'gold';
+  }
+
+  function spawnConfetti(sim, x, y) {
+    if (!sim.confetti) sim.confetti = [];
+    var n = reduceMotion ? 8 : 40;
+    var colors = ['#d64545', '#2f9e57', '#e0a322', '#f6f0e4', '#7ec8ff'];
+    for (var i = 0; i < n; i++) {
+      if (sim.confetti.length > 48) sim.confetti.shift();
+      var ang = (i / n) * Math.PI * 2;
+      var speed = reduceMotion ? 0 : 150 + (i % 5) * 34;
+      sim.confetti.push({
+        x: x,
+        y: y,
+        vx: Math.cos(ang) * speed,
+        vy: Math.sin(ang) * speed - (reduceMotion ? 0 : 70),
+        life: reduceMotion ? 0.55 : 1.2,
+        color: colors[i % colors.length],
+        rot: ang,
+        vr: reduceMotion ? 0 : (i % 2 ? 7 : -7),
+        w: 5 + (i % 3) * 3,
+        h: 8 + (i % 2) * 3
+      });
+    }
+  }
+
+  function markGoal(sim, x, y) {
+    if (!sim || sim.goalBurst) return;
+    if (!(sim.goal > 0) || sim.sales < sim.goal) return;
+    sim.goalBurst = true;
+    var gx = x || SPOTS.reg1.x;
+    var gy = y || (SPOTS.reg1.y - 30);
+    spawnConfetti(sim, gx, gy);
+    addShake(sim, 16);
+    addPunch(sim, 0.14, 'gold');
+    floater(sim, gx, gy - 78, 'GOAL', '#fff4c2', true);
+    hooks.goal();
+  }
+
+  function tapFx(sim, x, y) {
+    if (!sim) return;
+    if (!sim.taps) sim.taps = [];
+    if (sim.taps.length > 12) sim.taps.shift();
+    sim.taps.push({ x: x, y: y, life: 0.32 });
+  }
+
+  function decayFx(sim, used) {
+    if (!sim || !(used > 0)) return;
+    if (sim.shake > 0) sim.shake = Math.max(0, sim.shake - used * 22);
+    if (sim.flash > 0) sim.flash = Math.max(0, sim.flash - used * 1.7);
+    if (sim.floats) {
+      for (var f = sim.floats.length - 1; f >= 0; f--) {
+        sim.floats[f].life -= used;
+        sim.floats[f].y -= used * 36;
+        if (sim.floats[f].life <= 0) sim.floats.splice(f, 1);
+      }
+    }
+    if (sim.coins) {
+      for (var ci = sim.coins.length - 1; ci >= 0; ci--) {
+        var coin = sim.coins[ci];
+        coin.life -= used;
+        coin.x += coin.vx * used;
+        coin.y += coin.vy * used;
+        coin.vy += 50 * used;
+        if (coin.life <= 0) sim.coins.splice(ci, 1);
+      }
+    }
+    if (sim.fx) {
+      for (var fi = sim.fx.length - 1; fi >= 0; fi--) {
+        sim.fx[fi].life -= used;
+        if (sim.fx[fi].life <= 0) sim.fx.splice(fi, 1);
+      }
+    }
+    if (sim.confetti) {
+      for (var k = sim.confetti.length - 1; k >= 0; k--) {
+        var bit = sim.confetti[k];
+        bit.life -= used;
+        bit.x += bit.vx * used;
+        bit.y += bit.vy * used;
+        bit.vy += (reduceMotion ? 0 : 280) * used;
+        bit.rot += bit.vr * used;
+        if (bit.life <= 0) sim.confetti.splice(k, 1);
+      }
+    }
+    if (sim.taps) {
+      for (var ti = sim.taps.length - 1; ti >= 0; ti--) {
+        sim.taps[ti].life -= used;
+        if (sim.taps[ti].life <= 0) sim.taps.splice(ti, 1);
+      }
+    }
+    if (sim.pings) {
+      for (var pp = 0; pp < sim.pings.length; pp++) {
+        if (sim.pings[pp].pop > 0) sim.pings[pp].pop = Math.max(0, sim.pings[pp].pop - used * 2.4);
+      }
+    }
+    function coolPop(a) {
+      if (a && a.pop > 0) a.pop = Math.max(0, a.pop - used * 2.4);
+      if (a && a.heart > 0) a.heart = Math.max(0, a.heart - used);
+    }
+    if (sim.staff) for (var sp = 0; sp < sim.staff.length; sp++) coolPop(sim.staff[sp]);
+    if (sim.customers) for (var cp = 0; cp < sim.customers.length; cp++) coolPop(sim.customers[cp]);
+    coolPop(sim.you);
   }
 
   function goalStars(pct) {
@@ -529,7 +719,7 @@
       pending: null,
       events: day.events.slice(),
       eventIndex: 0,
-      eventTimes: [8.5, 22, 36, 49],
+      eventTimes: (day.eventTimes && day.eventTimes.length) ? day.eventTimes.slice() : rushSlots(day.events.length || 4),
       removed: {},
       override: {},
       overrideShift: {},
@@ -546,6 +736,18 @@
       nextPing: 5,
       live: false,
       coachHold: false,
+      combo: 0,
+      bestCombo: 0,
+      lastSaleAt: -99,
+      goalBurst: false,
+      shake: 0,
+      flash: 0,
+      flashTint: 'gold',
+      punch: 0,
+      confetti: [],
+      taps: [],
+      rushOn: false,
+      rushTold: false,
       rng: mulberry32(hashStr(run.ymd + ':day:' + run.day))
     };
     var tiredN = 0;
@@ -653,7 +855,8 @@
     var bag = ['cust_mom', 'cust_teen', 'cust_biz', 'cust_mom', 'cust_kid', 'cust_grandpa', 'cust_teen', 'cust_karen', 'cust_biz'];
     var id = bag[Math.floor(sim.rng() * bag.length)];
     var shelf = SHELVES[Math.floor(sim.rng() * SHELVES.length)];
-    var patience = 0.86 + sim.rng() * 0.28;
+    var heat = sim._heat || { patience: 1, rush: false };
+    var patience = (0.86 + sim.rng() * 0.28) * heat.patience;
     if (id === 'cust_karen') patience *= 0.7;
     if (id === 'cust_kid') patience *= 0.88;
     if (id === 'cust_grandpa') patience *= 1.18;
@@ -678,11 +881,19 @@
     sim.walkouts++;
     sim.stars = clamp(sim.stars - 0.075, 1, 5);
     sim.morale = clamp(sim.morale - 1.25, 0, 100);
-    floater(sim, c.x, c.y - 50, 'left', '#ff8d8d');
+    var broke = (sim.combo || 0) > 1;
+    sim.combo = 0;
+    sim.lastSaleAt = -99;
+    floater(sim, c.x, c.y - 50, broke ? 'Walkout' : 'Left', '#ff8d8d', true);
+    if (broke) floater(sim, c.x, c.y - 80, 'Combo lost', '#ffb4b4');
+    addShake(sim, broke ? 12 : 8);
+    addPunch(sim, 0.08, 'red');
+    hooks.angry();
     c.state = 'leave';
     c.path = pathVia(c.x, c.y, SPOTS.door.x, SPOTS.door.y);
     c.pathI = 0;
     c.bubble = 'angry';
+    c.pop = 1;
   }
 
   function completeSale(sim, run, c) {
@@ -693,16 +904,28 @@
     if (stationPower(sim, run, 'floor') > 0.55) basket *= 1.1;
     if (sim.stock < 0.28) basket *= 0.64;
     if (sim.t < sim.discountUntil) basket *= 0.86;
-    basket = Math.round(basket);
+    var gap = sim.t - (sim.lastSaleAt == null ? -999 : sim.lastSaleAt);
+    if (gap <= 3.4 && (sim.combo || 0) >= 1) sim.combo += 1;
+    else sim.combo = 1;
+    sim.lastSaleAt = sim.t;
+    if (sim.combo > (sim.bestCombo || 0)) sim.bestCombo = sim.combo;
+    var mult = comboMult(sim.combo);
+    basket = Math.round(basket * mult);
     sim.sales += basket;
     sim.checkouts++;
     sim.stock = Math.max(0, sim.stock - CONFIG.stockPerSale);
     sim.stars = clamp(sim.stars + 0.014, 1, 5);
     c.pop = 1;
-    floater(sim, c.x, c.y - 70, '+$' + basket, '#ffe08a', true);
+    var tag = '+$' + basket + (sim.combo > 1 ? '  ' + multLabel(sim.combo) : '');
+    floater(sim, c.x, c.y - 70, tag, sim.combo >= 4 ? '#ffd0e8' : '#ffe08a', true);
     burstCoins(sim, c.x, c.y - 40);
     flashAt(sim, c.x, c.y - 20);
-    hooks.kaching();
+    hooks.sale(sim.combo);
+    if (sim.combo >= 3) {
+      addShake(sim, 6 + Math.min(8, sim.combo));
+      addPunch(sim, 0.05 + Math.min(0.06, sim.combo * 0.012), 'gold');
+    }
+    markGoal(sim, c.x, c.y - 30);
     c.state = 'leave';
     c.bubble = 'price';
     c.path = pathVia(c.x, c.y, SPOTS.door.x + 20, SPOTS.door.y);
@@ -736,6 +959,7 @@
     }
     var speed = CONFIG.walkSpeed * (sim.t < sim.spillUntil ? 0.6 : 1);
     var cocoa = hasPerk(run, 'cocoa') ? 0.82 : 1;
+    var drainMul = (sim._heat && sim._heat.drain) ? sim._heat.drain : 1;
     for (var n = 0; n < sim.customers.length; n++) {
       var cust = sim.customers[n];
       if (cust.dead) continue;
@@ -752,7 +976,7 @@
       } else if (cust.state === 'browse') {
         cust.anim = 'idle';
         cust.browseT -= dt * (stationPower(sim, run, 'floor') > 0.5 ? 1.25 : 1);
-        cust.patience -= dt * 0.012 * cocoa;
+        cust.patience -= dt * 0.012 * cocoa * drainMul;
         if (cust.patience <= 0) walkout(sim, cust);
         else if (cust.browseT <= 0) {
           if (sim.stock <= 0.04) walkout(sim, cust);
@@ -775,7 +999,7 @@
         var power = stationPower(sim, run, cust.reg);
         var drain = (power > 0.45 ? 0.042 : 0.105) * cocoa;
         if (cust.qIndex > 0) drain += 0.01 * cust.qIndex;
-        cust.patience -= dt * drain;
+        cust.patience -= dt * drain * drainMul;
         if (cust.patience <= 0) walkout(sim, cust);
         else if (cust.qIndex === 0 && at) {
           cust.state = 'checkout';
@@ -1136,6 +1360,13 @@
   function step(sim, run, dt) {
     if (!sim || sim.done || sim.paused) return sim;
     if (!(dt > 0)) return sim;
+    if (sim.punch > 0) {
+      var held = Math.min(sim.punch, dt);
+      sim.punch -= held;
+      decayFx(sim, held);
+      dt -= held;
+      if (dt <= 1e-4) return sim;
+    }
     var limit = sim.duration;
     if (sim.eventIndex < sim.events.length) {
       var when = sim.eventTimes[sim.eventIndex];
@@ -1150,6 +1381,15 @@
       if (!sim.paused && sim.t >= sim.duration - 1e-4) sim.done = true;
       return sim;
     }
+    sim._heat = heatOf(sim, run);
+    if (sim._heat.rush && !sim.rushOn) {
+      sim.rushOn = true;
+      hooks.rush();
+      if (!sim.rushTold && sim.live) {
+        sim.rushTold = true;
+        note(sim, 'Rush hour. Lines grow and patience drops.');
+      }
+    } else if (!sim._heat.rush) sim.rushOn = false;
     var sh = shiftIndex(sim);
     if (sh !== sim.lastShift) {
       sim.lastShift = sh;
@@ -1183,7 +1423,7 @@
       }
     } else sim.spillClean = 0;
     sim.morale = clamp(sim.morale + used * 0.03, 0, 100);
-    var rate = CONFIG.spawn[sh];
+    var rate = CONFIG.spawn[sh] * (sim._heat ? sim._heat.spawn : 1);
     if (sim.t < sim.rushUntil) rate *= 1.72;
     if (sim.t < sim.slowUntil) rate *= 0.62;
     rate *= 0.74 + Math.min(stationPower(sim, run, 'floor'), 1.6) * 0.2;
@@ -1195,35 +1435,12 @@
       spawnCustomer(sim, run);
       guard++;
     }
-    for (var f = sim.floats.length - 1; f >= 0; f--) {
-      sim.floats[f].life -= used;
-      sim.floats[f].y -= used * 36;
-      if (sim.floats[f].life <= 0) sim.floats.splice(f, 1);
-    }
-    if (!sim.coins) sim.coins = [];
-    for (var ci = sim.coins.length - 1; ci >= 0; ci--) {
-      var coin = sim.coins[ci];
-      coin.life -= used;
-      coin.x += coin.vx * used;
-      coin.y += coin.vy * used;
-      coin.vy += 50 * used;
-      if (coin.life <= 0) sim.coins.splice(ci, 1);
-    }
-    if (!sim.fx) sim.fx = [];
-    for (var fi = sim.fx.length - 1; fi >= 0; fi--) {
-      sim.fx[fi].life -= used;
-      if (sim.fx[fi].life <= 0) sim.fx.splice(fi, 1);
-    }
+    decayFx(sim, used);
     if (!sim.pings) sim.pings = [];
     for (var pi = sim.pings.length - 1; pi >= 0; pi--) {
       sim.pings[pi].life -= used;
-      if (sim.pings[pi].pop > 0) sim.pings[pi].pop = Math.max(0, sim.pings[pi].pop - used * 2.4);
       if (sim.pings[pi].life <= 0 || sim.pings[pi].dead) sim.pings.splice(pi, 1);
     }
-    function coolPop(a) { if (a && a.pop > 0) a.pop = Math.max(0, a.pop - used * 2.4); if (a && a.heart > 0) a.heart = Math.max(0, a.heart - used); }
-    for (var sp = 0; sp < sim.staff.length; sp++) coolPop(sim.staff[sp]);
-    for (var cp = 0; cp < sim.customers.length; cp++) coolPop(sim.customers[cp]);
-    coolPop(sim.you);
     var maxA = sim.actionMax || (CONFIG.baseActions + 1);
     if (sim.actions < maxA) {
       sim.actionFrac = (sim.actionFrac || 0) + used;
@@ -1273,7 +1490,8 @@
       sim.checkouts++;
       burstCoins(sim, ping.x, ping.y);
       floater(sim, ping.x, ping.y - 28, '+$' + amt, '#ffe08a', true);
-      hooks.kaching();
+      hooks.coin();
+      markGoal(sim, ping.x, ping.y);
       return;
     }
     if (ping.kind === 'box') {
@@ -1370,6 +1588,11 @@
       _primed: !!sim._primed,
       live: !!sim.live,
       coachHold: !!sim.coachHold,
+      combo: sim.combo || 0,
+      bestCombo: sim.bestCombo || 0,
+      lastSaleAt: sim.lastSaleAt == null ? -99 : sim.lastSaleAt,
+      goalBurst: !!sim.goalBurst,
+      rushTold: !!sim.rushTold,
       rngState: sim.rng && sim.rng.state ? sim.rng.state() : 0,
       pendingMeta: pendingMeta
     }));
@@ -1384,6 +1607,14 @@
     sim.coins = sim.coins || [];
     sim.fx = sim.fx || [];
     sim.pings = sim.pings || [];
+    sim.confetti = [];
+    sim.taps = [];
+    sim.shake = 0;
+    sim.flash = 0;
+    sim.punch = 0;
+    sim.combo = sim.combo || 0;
+    sim.bestCombo = sim.bestCombo || 0;
+    if (sim.lastSaleAt == null) sim.lastSaleAt = -99;
     sim.pending = null;
     sim.paused = false;
     if (data.pendingMeta && data.pendingMeta.id) {
@@ -1739,7 +1970,6 @@
     var planEditing = false;
     var loadCount = 0;
     var actx = null;
-    var reduceMotion = false;
     try { reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
 
     els.seed.textContent = ymd;
@@ -1810,40 +2040,266 @@
       return actx;
     }
 
-    function tone(a, freq, t, dur, type, vol) {
-      var o = a.createOscillator();
-      var g = a.createGain();
-      o.type = type;
-      o.frequency.setValueAtTime(Math.max(40, freq), t);
-      g.gain.setValueAtTime(vol, t);
-      g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-      o.connect(g);
-      g.connect(a.destination);
-      o.start(t);
-      o.stop(t + dur + 0.02);
+    var music = { timer: 0, next: 0, step: 0, master: null, crowd: null, rush: false, started: false };
+    var TUNE = [
+      523.25, 659.25, 783.99, 659.25, 587.33, 523.25, 440, 523.25,
+      392, 493.88, 587.33, 493.88, 440, 392, 349.23, 392,
+      523.25, 659.25, 783.99, 880, 783.99, 659.25, 587.33, 523.25,
+      493.88, 523.25, 587.33, 659.25, 587.33, 523.25, 440, 392
+    ];
+    var BASS = [130.81, 110, 174.61, 146.83];
+
+    function audioMuted() {
+      if (root.CGSfx && root.CGSfx.isMuted) return !!root.CGSfx.isMuted();
+      return false;
     }
 
-    hooks.kaching = function () {
+    function tone(a, freq, t, dur, type, vol, slide, dest) {
+      var o = a.createOscillator();
+      var g = a.createGain();
+      o.type = type || 'sine';
+      o.frequency.setValueAtTime(Math.max(40, freq), t);
+      if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, slide), t + Math.max(0.02, dur));
+      g.gain.setValueAtTime(Math.max(0.0001, vol || 0.03), t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      o.connect(g);
+      g.connect(dest || a.destination);
+      o.start(t);
+      o.stop(t + dur + 0.03);
+    }
+
+    function noiseBurst(a, t, dur, vol, freq, dest) {
+      var frames = Math.max(1, Math.floor(a.sampleRate * dur));
+      var buf = a.createBuffer(1, frames, a.sampleRate);
+      var data = buf.getChannelData(0);
+      for (var i = 0; i < frames; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / frames);
+      var src = a.createBufferSource();
+      src.buffer = buf;
+      var filter = a.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(freq || 1400, t);
+      filter.Q.value = 0.7;
+      var g = a.createGain();
+      g.gain.setValueAtTime(Math.max(0.0001, vol), t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      src.connect(filter);
+      filter.connect(g);
+      g.connect(dest || a.destination);
+      src.start(t);
+      src.stop(t + dur + 0.02);
+    }
+
+    function heard(name) {
+      if (!root.__hrSfx) root.__hrSfx = {};
+      root.__hrSfx[name] = (root.__hrSfx[name] || 0) + 1;
+    }
+
+    function paintMute() {
+      var btn = document.getElementById('hr-mute');
+      if (!btn) return;
+      var off = audioMuted();
+      btn.setAttribute('aria-pressed', off ? 'true' : 'false');
+      btn.setAttribute('aria-label', off ? 'Unmute sound' : 'Mute sound');
+      btn.textContent = off ? 'Muted' : 'Sound';
+    }
+
+    function scheduleMusic() {
+      var a = hrAudio();
+      if (!a || !music.master || audioMuted()) return;
+      var horizon = a.currentTime + 0.4;
+      var eighth = music.rush ? 0.21 : 0.28;
+      var guard = 0;
+      while (music.next < horizon && guard < 8) {
+        guard++;
+        var i = music.step % TUNE.length;
+        var t = music.next;
+        var freq = TUNE[i];
+        tone(a, freq, t, 0.24, 'sine', 0.042, freq * 0.5, music.master);
+        tone(a, freq * 2.01, t, 0.1, 'triangle', 0.016, null, music.master);
+        if (i % 8 === 0) {
+          var bass = BASS[Math.floor(i / 8) % BASS.length];
+          tone(a, bass, t, eighth * 7.2, 'triangle', 0.055, null, music.master);
+          tone(a, freq * 1.5, t, 0.07, 'sine', 0.02, null, music.master);
+        }
+        if (music.rush && i % 2 === 0) tone(a, 1240, t, 0.035, 'square', 0.01, null, music.master);
+        music.next += eighth;
+        music.step++;
+      }
+    }
+
+    function ensureMusic() {
+      if (audioMuted()) return;
       var a = hrAudio();
       if (!a) return;
-      var t = a.currentTime;
-      tone(a, 1480, t, 0.06, 'square', 0.045);
-      tone(a, 1980, t + 0.055, 0.08, 'square', 0.04);
-      tone(a, 2960, t + 0.1, 0.05, 'sine', 0.03);
+      if (music.started) {
+        if (music.master) music.master.gain.setTargetAtTime(0.9, a.currentTime, 0.04);
+        if (!music.timer) music.timer = setInterval(scheduleMusic, 120);
+        return;
+      }
+      try {
+        music.master = a.createGain();
+        music.master.gain.setValueAtTime(0.9, a.currentTime);
+        music.master.connect(a.destination);
+        var frames = a.sampleRate;
+        var buf = a.createBuffer(1, frames, a.sampleRate);
+        var data = buf.getChannelData(0);
+        for (var i = 0; i < frames; i++) data[i] = Math.random() * 2 - 1;
+        var src = a.createBufferSource();
+        src.buffer = buf;
+        src.loop = true;
+        var low = a.createBiquadFilter();
+        low.type = 'lowpass';
+        low.frequency.value = 380;
+        music.crowd = a.createGain();
+        music.crowd.gain.setValueAtTime(0.0001, a.currentTime);
+        src.connect(low);
+        low.connect(music.crowd);
+        music.crowd.connect(music.master);
+        src.start();
+        music.started = true;
+        heard('music');
+        music.next = a.currentTime + 0.06;
+        music.timer = setInterval(scheduleMusic, 120);
+        scheduleMusic();
+      } catch (err) {}
+    }
+
+    function setAudioMuted(flag) {
+      var off = !!flag;
+      if (root.CGSfx && root.CGSfx.setMuted) root.CGSfx.setMuted(off);
+      if (off) {
+        if (music.timer) { clearInterval(music.timer); music.timer = 0; }
+        if (music.master && actx) {
+          try { music.master.gain.setTargetAtTime(0.0001, actx.currentTime, 0.03); } catch (e2) {}
+        }
+      } else {
+        ensureMusic();
+      }
+      paintMute();
+    }
+
+    hooks.heat = function (customers, rush) {
+      music.rush = !!rush;
+      if (!music.crowd || !actx || audioMuted()) return;
+      var target = Math.min(0.05, 0.008 + customers * 0.0026 + (rush ? 0.02 : 0));
+      try { music.crowd.gain.setTargetAtTime(target, actx.currentTime, 0.25); } catch (e3) {}
     };
+    hooks.sale = function (combo) {
+      var a = hrAudio();
+      if (!a) return;
+      heard('scan');
+      heard('coin');
+      heard(combo > 1 ? 'combo' : 'sale');
+      var t = a.currentTime;
+      noiseBurst(a, t, 0.045, 0.05, 2200);
+      tone(a, 980, t + 0.02, 0.04, 'square', 0.03);
+      tone(a, 1560, t + 0.05, 0.07, 'sine', 0.04);
+      tone(a, 2080, t + 0.09, 0.08, 'triangle', 0.028);
+      tone(a, 1480, t + 0.01, 0.06, 'square', 0.032);
+      tone(a, 1960, t + 0.07, 0.09, 'square', 0.026);
+      if (combo > 1) {
+        var f = 520 * Math.pow(1.09, Math.min(combo, 12));
+        tone(a, f, t + 0.11, 0.12, 'triangle', 0.05);
+        tone(a, f * 1.25, t + 0.16, 0.1, 'sine', 0.03);
+      }
+    };
+    hooks.coin = function () {
+      var a = hrAudio();
+      if (!a) return;
+      heard('coin');
+      var t = a.currentTime;
+      tone(a, 1760, t, 0.05, 'sine', 0.04);
+      tone(a, 2340, t + 0.045, 0.07, 'triangle', 0.03);
+    };
+    hooks.kaching = function () { hooks.sale(1); };
     hooks.horn = function () {
       var a = hrAudio();
       if (!a) return;
+      heard('truck');
       var t = a.currentTime;
-      tone(a, 180, t, 0.18, 'sawtooth', 0.05);
-      tone(a, 140, t + 0.08, 0.22, 'square', 0.04);
-      tone(a, 180, t + 0.28, 0.16, 'sawtooth', 0.045);
+      tone(a, 180, t, 0.18, 'sawtooth', 0.045, 120);
+      tone(a, 140, t + 0.08, 0.22, 'square', 0.035);
+      tone(a, 180, t + 0.28, 0.16, 'sawtooth', 0.04, 90);
     };
     hooks.tap = function () {
       var a = hrAudio();
       if (!a) return;
-      tone(a, 740, a.currentTime, 0.035, 'triangle', 0.035);
+      tone(a, 740, a.currentTime, 0.035, 'triangle', 0.03);
     };
+    hooks.angry = function () {
+      var a = hrAudio();
+      if (!a) return;
+      heard('angry');
+      var t = a.currentTime;
+      tone(a, 246, t, 0.18, 'sawtooth', 0.04, 90);
+      tone(a, 185, t + 0.04, 0.22, 'square', 0.03, 70);
+    };
+    hooks.goal = function () {
+      var a = hrAudio();
+      if (!a) return;
+      heard('goal');
+      var t = a.currentTime;
+      tone(a, 523, t, 0.1, 'triangle', 0.05);
+      tone(a, 659, t + 0.08, 0.12, 'triangle', 0.05);
+      tone(a, 784, t + 0.16, 0.16, 'sine', 0.05);
+      tone(a, 1046, t + 0.24, 0.22, 'sine', 0.045);
+    };
+    hooks.fanfare = function () {
+      var a = hrAudio();
+      if (!a) return;
+      heard('fanfare');
+      var t = a.currentTime;
+      var notes = [523, 659, 784, 1046];
+      for (var i = 0; i < notes.length; i++) {
+        tone(a, notes[i], t + i * 0.11, 0.2, 'triangle', 0.05);
+        tone(a, notes[i] * 2, t + i * 0.11, 0.12, 'sine', 0.02);
+      }
+      noiseBurst(a, t + 0.05, 0.08, 0.03, 3200);
+    };
+    hooks.rush = function () {
+      var a = hrAudio();
+      if (!a) return;
+      heard('rush');
+      var t = a.currentTime;
+      tone(a, 196, t, 0.32, 'sawtooth', 0.02, 392);
+      tone(a, 294, t + 0.08, 0.28, 'triangle', 0.025, 588);
+      for (var i = 0; i < 4; i++) tone(a, 1480, t + i * 0.1, 0.03, 'square', 0.016);
+    };
+    hooks.alert = function () {
+      var a = hrAudio();
+      if (!a) return;
+      var t = a.currentTime;
+      tone(a, 660, t, 0.07, 'triangle', 0.035);
+      tone(a, 880, t + 0.08, 0.09, 'sine', 0.03);
+    };
+    hooks.action = function (name) {
+      var a = hrAudio();
+      if (!a) return;
+      heard(name || 'action');
+      var t = a.currentTime;
+      if (name === 'freight') {
+        noiseBurst(a, t, 0.08, 0.04, 240);
+        tone(a, 160, t, 0.12, 'triangle', 0.04, 90);
+        return;
+      }
+      if (name === 'calm') {
+        tone(a, 520, t, 0.08, 'sine', 0.035);
+        tone(a, 780, t + 0.06, 0.12, 'triangle', 0.03);
+        return;
+      }
+      if (name === 'pull') {
+        tone(a, 420, t, 0.05, 'triangle', 0.035, 760);
+        tone(a, 640, t + 0.05, 0.06, 'sine', 0.03);
+        return;
+      }
+      noiseBurst(a, t, 0.06, 0.035, 500);
+      tone(a, 300, t, 0.08, 'triangle', 0.035, 180);
+    };
+
+    document.addEventListener('pointerdown', function (ev) {
+      if (ev.target && ev.target.closest && ev.target.closest('#hr-mute')) return;
+      ensureMusic();
+    });
 
     function portraitStyle(id, expr, size) {
       if (!assets) return '';
@@ -2103,12 +2559,18 @@
         '<div class="hr-clock" id="hr-clock" style="--p:0"><span id="hr-clock-label">8:00 AM</span></div>' +
         '<div class="hr-sales"><div class="hr-sales__top"><span>Sales</span><strong id="hr-sales-text"></strong></div><div class="hr-bar"><i id="hr-sales-bar"></i></div></div>' +
         '<div class="hr-stat hr-stat--stars"><span>Stars</span><strong id="hr-star-text" class="hr-stars"></strong></div>' +
-        (ops ? '<div class="hr-stat"><span>Payroll</span><strong id="hr-pay-text"></strong></div><div class="hr-stat"><span>Morale</span><strong id="hr-mor-text"></strong></div>' : '');
+        '<div class="hr-combo" id="hr-combo" hidden>x2</div>' +
+        '<div class="hr-rush" id="hr-rush" hidden>RUSH</div>' +
+        (ops ? '<div class="hr-stat"><span>Payroll</span><strong id="hr-pay-text"></strong></div><div class="hr-stat"><span>Morale</span><strong id="hr-mor-text"></strong></div>' : '') +
+        '<button type="button" id="hr-mute" class="hr-mute" aria-pressed="false" aria-label="Mute sound">Sound</button>';
+      function actButton(name, label, icon) {
+        return '<button type="button" data-act="' + name + '"><span class="hr-icon" style="' + iconStyle(icon, 28) + '" aria-hidden="true"></span><span>' + label + '</span></button>';
+      }
       var actions =
-        '<button type="button" data-act="cover">Cover a gap</button>' +
-        '<button type="button" data-act="pull">Pull to register</button>' +
-        '<button type="button" data-act="freight">Work freight</button>' +
-        '<button type="button" data-act="calm">Calm a customer</button>';
+        actButton('cover', 'Cover a gap', 'boss') +
+        actButton('pull', 'Pull to register', 'line') +
+        actButton('freight', 'Work freight', 'truck') +
+        actButton('calm', 'Calm a customer', 'angry');
       els.sim.querySelector('.hr-hud').innerHTML = hud;
       els.sim.querySelector('.hr-actions').innerHTML = actions;
       sim.live = true;
@@ -2121,6 +2583,7 @@
       else if (opts.resume && run.day === 0 && !tutDone()) beginCoach();
       else paintCoach();
       paintHud();
+      paintMute();
       draw();
       saveRun();
       if (!root.__hrReadyAt) root.__hrReadyAt = root.performance ? root.performance.now() : 0;
@@ -2140,14 +2603,43 @@
       var salesText = document.getElementById('hr-sales-text');
       if (!label || !salesText) return;
       label.textContent = clockLabel(sim.t, sim.duration);
-      if (clock) clock.style.setProperty('--p', String(clamp(sim.t / sim.duration, 0, 1)));
+      var rushing = !!(sim._heat && sim._heat.rush && !sim.coachHold);
+      if (clock) {
+        clock.style.setProperty('--p', String(clamp(sim.t / sim.duration, 0, 1)));
+        clock.classList.toggle('rush', rushing);
+      }
+      var salesLab = salesText.parentNode && salesText.parentNode.querySelector('span');
+      if (salesLab) salesLab.textContent = DAY_NAMES[run.day] + ' · ' + SHIFT_NAMES[shiftIndex(sim)] + (rushing ? ' rush' : '');
       if (sim._paintSales != null && sim.sales > sim._paintSales && root.CGSfx && root.CGSfx.juice) {
         root.CGSfx.juice(salesText, 'pop');
       }
       sim._paintSales = sim.sales;
       salesText.textContent = money(sim.sales) + ' / ' + money(sim.goal);
       var bar = document.getElementById('hr-sales-bar');
-      if (bar) bar.style.width = Math.min(100, sim.goal ? (sim.sales / sim.goal) * 100 : 0) + '%';
+      if (bar) {
+        bar.style.width = Math.min(100, sim.goal ? (sim.sales / sim.goal) * 100 : 0) + '%';
+        bar.style.background = sim.goalBurst ? '#e0a322' : '#2f9e57';
+      }
+      var comboEl = document.getElementById('hr-combo');
+      if (comboEl) {
+        var showCombo = (sim.combo || 0) > 1;
+        comboEl.hidden = !showCombo;
+        if (showCombo) {
+          var comboLabel = 'x' + sim.combo;
+          if (comboEl.textContent !== comboLabel) {
+            comboEl.textContent = comboLabel;
+            if (!reduceMotion && root.CGSfx && root.CGSfx.juice) root.CGSfx.juice(comboEl, 'pop');
+          }
+        }
+      }
+      var rushEl = document.getElementById('hr-rush');
+      if (rushEl) rushEl.hidden = !rushing;
+      if (els.stage) {
+        els.stage.dataset.rush = rushing ? '1' : '0';
+        els.stage.dataset.combo = String(sim.combo || 0);
+        els.stage.dataset.sales = String(Math.round(sim.sales));
+        els.stage.dataset.clock = label.textContent;
+      }
       var payEl = document.getElementById('hr-pay-text');
       var morEl = document.getElementById('hr-mor-text');
       if (payEl) payEl.textContent = money(sim.payroll);
@@ -2179,6 +2671,7 @@
         return '<button type="button" data-choice="' + i + '"' + (disabled ? ' disabled' : '') + '>' + cost + '<span>' + esc(ch.label) + '</span></button>';
       }).join('');
       els.event.innerHTML = '<div class="hr-card" role="dialog" aria-modal="true" aria-labelledby="hr-ev-title"><div class="hr-card__art">' + art + '</div><h2 id="hr-ev-title">' + esc(card.title) + '</h2><p>' + esc(card.body) + '</p><div class="hr-choices">' + buttons + '</div><p class="hr-fine">Paused. You have ' + sim.actions + ' action' + (sim.actions === 1 ? '' : 's') + '. They refill every ' + CONFIG.actionRegen + ' seconds. The cost is on each option.</p></div>';
+      hooks.alert();
       els.event.querySelector('.hr-choices').addEventListener('click', function (ev) {
         var btn = ev.target.closest('[data-choice]');
         if (!btn) return;
@@ -2193,6 +2686,8 @@
 
     function finishDay() {
       var snap = scoreSnapshot(sim);
+      snap.bestCombo = sim.bestCombo || 0;
+      hooks.fanfare();
       run.history.push(snap);
       run.morale = clamp(sim.morale, 0, 100);
       run.phase = run.day >= 2 ? 'final' : 'score';
@@ -2219,6 +2714,7 @@
         '<p class="hr-kicker">' + DAY_NAMES[run.day] + ' scorecard</p>' +
         '<div class="hr-grade">' + snap.grade + '</div>' +
         '<p class="hr-stars hr-stars--big">' + starGlyph(goalStars(snap.goalPct)) + '</p>' +
+        '<p class="hr-lead">Best combo ' + ((snap.bestCombo || 0) > 1 ? 'x' + snap.bestCombo : '—') + ' · ' + (snap.walkouts || 0) + ' walkouts</p>' +
         scoreTable([snap], run.day) +
         '<p class="hr-scorebig">' + snap.points + ' pts</p>' +
         perkBlock;
@@ -2450,8 +2946,10 @@
       markInput();
       if (!sim) return;
       var point = target.point || { x: SPOTS.reg1.x, y: SPOTS.reg1.y };
+      tapFx(sim, point.x, point.y);
       flashAt(sim, point.x, point.y);
       hooks.tap();
+      hooks.action(name);
       var res = doAction(sim, run, name, {
         station: target.station,
         cust: target.cust,
@@ -2496,7 +2994,7 @@
 
     function pickHit(ev) {
       var best = null;
-      var bestD = 36;
+      var bestD = 50;
       for (var i = 0; i < sim.customers.length; i++) {
         var c = sim.customers[i];
         if (c.dead || c.state === 'leave') continue;
@@ -2518,7 +3016,7 @@
         { station: 'floor', x: SPOTS.floor.x, y: SPOTS.floor.y }
       ];
       var zone = null;
-      var zoneD = 44;
+      var zoneD = 56;
       for (var z = 0; z < zones.length; z++) {
         var dist = screenDist(zones[z].x, zones[z].y, ev);
         if (dist < zoneD) { zoneD = dist; zone = zones[z]; }
@@ -2532,8 +3030,10 @@
       var w = eventWorld(ev);
       var hit = pickHit(ev);
       if (hit && hit.ping) {
+        tapFx(sim, hit.ping.x, hit.ping.y);
         flashAt(sim, hit.ping.x, hit.ping.y);
         hooks.tap();
+        hooks.coin();
         resolvePing(sim, hit.ping);
         paintHud();
         draw();
@@ -2541,6 +3041,7 @@
         return;
       }
       if (!hit) {
+        tapFx(sim, w.x, w.y);
         flashAt(sim, w.x, w.y);
         floater(sim, w.x, w.y - 24, '…', '#f6f0e4');
         hooks.tap();
@@ -2571,8 +3072,8 @@
     }
 
     function drawPatience(x, y, p) {
-      var r = 16;
-      ctx.lineWidth = 4;
+      var r = 20;
+      ctx.lineWidth = 5;
       ctx.strokeStyle = 'rgba(246,240,228,0.28)';
       ctx.beginPath();
       ctx.arc(x, y, r, 0, Math.PI * 2);
@@ -2612,17 +3113,30 @@
       for (var i = 0; i < regs.length; i++) {
         var n = queueOf(sim, regs[i]).length;
         if (n >= 3) {
-          drawIconAt('line', SPOTS[regs[i]].x, SPOTS[regs[i]].y - 108, 36);
-          drawTag('Line ' + n, SPOTS[regs[i]].x, SPOTS[regs[i]].y - 132);
+          drawIconAt('line', SPOTS[regs[i]].x, SPOTS[regs[i]].y - 112, 44);
+          drawTag('Line ' + n, SPOTS[regs[i]].x, SPOTS[regs[i]].y - 142);
         }
       }
       if (sim.truck) {
-        drawIconAt('truck', SPOTS.truck.x, SPOTS.truck.y - 24, 40);
-        drawTag('Truck', SPOTS.truck.x, SPOTS.truck.y - 52);
+        var need = 5.5;
+        var done = clamp((sim.truckWork || 0) / need, 0, 1);
+        var left = Math.max(0, need - (sim.truckWork || 0));
+        var fp = stationPower(sim, run, 'freight');
+        drawIconAt('truck', SPOTS.truck.x, SPOTS.truck.y - 24, 44);
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = 'rgba(246,240,228,0.4)';
+        ctx.beginPath();
+        ctx.arc(SPOTS.truck.x, SPOTS.truck.y - 24, 30, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.strokeStyle = '#7ec8ff';
+        ctx.beginPath();
+        ctx.arc(SPOTS.truck.x, SPOTS.truck.y - 24, 30, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * done);
+        ctx.stroke();
+        drawTag(fp > 0.35 ? left.toFixed(1) + 's' : 'Unload', SPOTS.truck.x, SPOTS.truck.y - 68);
       }
       if (sim.stock < 0.34) {
-        drawIconAt('outstock', SHELVES[0].x, SHELVES[0].y - 70, 34);
-        drawTag('Low', SHELVES[0].x, SHELVES[0].y - 96);
+        drawIconAt('outstock', SHELVES[0].x, SHELVES[0].y - 78, 40);
+        drawTag('Low stock', SHELVES[0].x, SHELVES[0].y - 108);
       }
     }
 
@@ -2707,15 +3221,27 @@
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.fillStyle = '#1a1412';
       ctx.fillRect(0, 0, els.canvas.width, els.canvas.height);
-      ctx.setTransform(dpr * scale, 0, 0, dpr * scale, -cam.x * dpr * scale, -cam.y * dpr * scale);
+      var shakeX = 0;
+      var shakeY = 0;
+      if (sim && sim.shake > 0 && !reduceMotion) {
+        var buzz = Date.now() / 16;
+        shakeX = Math.sin(buzz) * sim.shake;
+        shakeY = Math.cos(buzz * 1.3) * sim.shake * 0.65;
+      }
+      ctx.setTransform(dpr * scale, 0, 0, dpr * scale, (-cam.x + shakeX) * dpr * scale, (-cam.y + shakeY) * dpr * scale);
       var band = !sim ? 2 : sim.stock < 0.34 ? 0 : sim.stock < 0.67 ? 1 : 2;
       if (floors[band]) ctx.drawImage(floors[band], 0, 0);
       if (sim) {
         SHELVES.forEach(function (sh) {
-          ctx.fillStyle = 'rgba(43,29,46,0.35)';
-          ctx.fillRect(sh.x - 28, sh.y - 46, 56, 8);
+          var pct = Math.round(clamp(sim.stock, 0, 1) * 100);
+          ctx.fillStyle = 'rgba(20,12,16,0.78)';
+          ctx.fillRect(sh.x - 36, sh.y - 62, 72, 18);
           ctx.fillStyle = sim.stock > 0.66 ? '#2f9e57' : sim.stock > 0.33 ? '#e0a322' : '#d64545';
-          ctx.fillRect(sh.x - 28, sh.y - 46, 56 * clamp(sim.stock, 0, 1), 8);
+          ctx.fillRect(sh.x - 34, sh.y - 60, 68 * clamp(sim.stock, 0, 1), 14);
+          ctx.font = '800 13px Outfit, Inter, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillStyle = '#f6f0e4';
+          ctx.fillText(pct + '%', sh.x, sh.y - 68);
         });
         var drawList = [];
         for (var s = 0; s < sim.staff.length; s++) if (!sim.staff[s].hidden) drawList.push(sim.staff[s]);
@@ -2747,8 +3273,32 @@
             ctx.strokeStyle = '#ffe08a';
             ctx.lineWidth = 4;
             ctx.beginPath();
-            ctx.arc(burst.x, burst.y, 10 + u * 36, 0, Math.PI * 2);
+            ctx.arc(burst.x, burst.y, reduceMotion ? 22 : 10 + u * 36, 0, Math.PI * 2);
             ctx.stroke();
+          }
+        }
+        if (sim.taps) {
+          for (var ti = 0; ti < sim.taps.length; ti++) {
+            var tapRing = sim.taps[ti];
+            var tu = 1 - clamp(tapRing.life / 0.32, 0, 1);
+            ctx.globalAlpha = clamp(tapRing.life / 0.32, 0, 0.9);
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(tapRing.x, tapRing.y, reduceMotion ? 18 : 8 + tu * 30, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+        }
+        if (sim.confetti) {
+          for (var ck = 0; ck < sim.confetti.length; ck++) {
+            var bit = sim.confetti[ck];
+            ctx.save();
+            ctx.globalAlpha = clamp(bit.life, 0, 1);
+            ctx.translate(bit.x, bit.y);
+            if (!reduceMotion) ctx.rotate(bit.rot);
+            ctx.fillStyle = bit.color;
+            ctx.fillRect(-bit.w / 2, -bit.h / 2, bit.w, bit.h);
+            ctx.restore();
           }
         }
         ctx.globalAlpha = 1;
@@ -2770,6 +3320,23 @@
           drawHand(focus.x, focus.y);
           publishCoach(focus);
         } else publishCoach(null);
+        ctx.globalAlpha = 1;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        if (sim.flash > 0) {
+          var alpha = Math.min(0.22, sim.flash * 0.45);
+          ctx.fillStyle = sim.flashTint === 'red' ? 'rgba(214,69,69,' + alpha + ')' : 'rgba(255,224,138,' + alpha + ')';
+          if (reduceMotion) ctx.fillRect(0, 0, view.cssW, 8);
+          else ctx.fillRect(0, 0, view.cssW, view.cssH);
+        }
+        if (sim._heat && sim._heat.rush && !sim.coachHold) {
+          ctx.font = '800 22px Outfit, Inter, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillStyle = 'rgba(20,12,16,0.72)';
+          var rushW = 92;
+          ctx.fillRect(view.cssW / 2 - rushW / 2, 8, rushW, 28);
+          ctx.fillStyle = '#ffb4b4';
+          ctx.fillText('RUSH', view.cssW / 2, 28);
+        }
       }
     }
 
@@ -2789,7 +3356,10 @@
         var squash = 1 + Math.sin(a.frame * 1.4) * 0.05;
         ctx.scale(1, squash);
       }
-      if (!reduceMotion && a.pop > 0) ctx.scale(1 + a.pop * 0.22, 1 + a.pop * 0.22);
+      if (a.pop > 0) {
+        var popS = 1 + a.pop * (reduceMotion ? 0.08 : 0.28);
+        ctx.scale(popS, popS);
+      }
       if (a.role && ROLE_COLOR[a.role]) {
         ctx.fillStyle = ROLE_COLOR[a.role];
         ctx.globalAlpha = 0.9;
@@ -2806,7 +3376,8 @@
       if (a.bubble) {
         var ir = assets.icons['icons/' + a.bubble + '.png'];
         if (ir) {
-          ctx.drawImage(assets.img.icons, ir[0], ir[1], ir[2], ir[3], a.x - 16, a.y - size - 46, 32, 32);
+          var iconPx = a.bubble === 'angry' ? 44 : 34;
+          ctx.drawImage(assets.img.icons, ir[0], ir[1], ir[2], ir[3], a.x - iconPx / 2, a.y - size - 18 - iconPx, iconPx, iconPx);
         }
       }
       if (a.kind === 'staff' && a.id) {
@@ -2841,6 +3412,7 @@
           liveAcc = 0;
           els.live.textContent = DAY_NAMES[run.day] + ' ' + clockLabel(sim.t, sim.duration) + ', sales ' + money(sim.sales) + ' of ' + money(sim.goal) + ', morale ' + Math.round(sim.morale) + ', ' + (Math.round(sim.stars * 10) / 10) + ' stars.';
         }
+        if (hooks.heat) hooks.heat(sim.customers.length, !!(sim._heat && sim._heat.rush && !sim.coachHold));
         if (sim.done) finishDay();
         simSaveAcc += dt;
         if (simSaveAcc > 1) { simSaveAcc = 0; saveRun(); }
@@ -2914,6 +3486,11 @@
     });
 
     els.sim.addEventListener('click', function (ev) {
+      if (ev.target.closest('#hr-mute')) {
+        ev.preventDefault();
+        setAudioMuted(!audioMuted());
+        return;
+      }
       var btn = ev.target.closest('[data-act]');
       if (!btn || !sim) return;
       if (root.CGSfx && root.CGSfx.juice) root.CGSfx.juice(btn, 'pop');

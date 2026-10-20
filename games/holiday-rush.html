@@ -128,7 +128,13 @@
     .hr-choice-cost--free { background: #2f9e57; }
     #hr-canvas { display: block; width: 100%; height: 100%; }
     .hr-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
-    .hr-actions button { min-height: 48px; border-radius: 10px; border: 1px solid rgba(224,163,34,0.45); background: #2a2118; color: #f6f0e4; font: inherit; font-weight: 750; font-weight: 700; font-size: 0.92rem; cursor: pointer; touch-action: manipulation; }
+    .hr-actions button { min-height: 48px; border-radius: 10px; border: 1px solid rgba(224,163,34,0.45); background: #2a2118; color: #f6f0e4; font: inherit; font-weight: 700; font-size: 0.88rem; cursor: pointer; touch-action: manipulation; display: flex; align-items: center; justify-content: flex-start; gap: 8px; padding: 0 10px; text-align: left; }
+    .hr-combo, .hr-rush { min-width: 52px; min-height: 44px; display: grid; place-items: center; padding: 0 10px; border-radius: 12px; font-weight: 800; letter-spacing: 0.04em; }
+    .hr-combo { background: #e0a322; color: #1a120c; font-size: 1.25rem; }
+    .hr-rush { background: #d64545; color: #fff; font-size: 0.82rem; }
+    .hr-combo[hidden], .hr-rush[hidden] { display: none !important; }
+    .hr-mute { min-width: 64px; min-height: 44px; border-radius: 999px; border: 1px solid rgba(224,163,34,0.45); background: #2a2118; color: #f6f0e4; font: inherit; font-weight: 800; font-size: 0.78rem; cursor: pointer; touch-action: manipulation; padding: 0 12px; }
+    .hr-clock.rush { box-shadow: 0 0 0 3px #d64545; }
     .hr-actions button:disabled { opacity: 0.4; cursor: not-allowed; }
     .hr-hint { color: var(--text-lo); font-size: 0.78rem; margin: 0.4rem 0 0; }
     .hr-modal { position: fixed; inset: 0; z-index: 40; background: rgba(8,6,8,0.72); display: flex; align-items: flex-end; justify-content: center; padding: 1rem; }
@@ -178,7 +184,7 @@
       .hr-modal { align-items: flex-end; padding: 0.5rem; }
     }
     @media (prefers-reduced-motion: reduce) {
-      .hr-drop.stamped, .hr-drop.shake { animation: none; }
+      .hr-drop.stamped, .hr-drop.shake, .cg-pop, .cg-shake, .cg-flash { animation: none !important; }
     }
   </style>
 </head>
@@ -233,7 +239,7 @@
         <p id="hr-coach" hidden>Tap the long line</p>
         <button type="button" id="hr-skip" hidden>Skip</button>
       </div>
-      <p class="hr-hint">Tap a line, the truck, or a shopper. Buttons do the same thing.</p>
+      <p class="hr-hint">Tap a line, the truck, or a shopper. Chain checkouts for a combo. Rush hour hits near the end of Open, Mid, and Close.</p>
       <div class="hr-actions"></div>
       <p class="hr-actline" id="hr-actline"></p>
     </section>
