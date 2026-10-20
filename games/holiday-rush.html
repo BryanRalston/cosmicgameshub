@@ -136,6 +136,21 @@
     .hr-more { display: flex; gap: 0.8rem; flex-wrap: wrap; margin-top: 0.8rem; font-weight: 700; }
     #hr-toast { position: fixed; left: 50%; bottom: 1rem; transform: translateX(-50%) translateY(12px); background: #2b1d2e; color: #f6f0e4; border-radius: 999px; padding: 0.55rem 0.9rem; font-size: 0.85rem; font-weight: 700; opacity: 0; pointer-events: none; transition: 0.2s ease; z-index: 70; max-width: min(92vw, 420px); text-align: center; }
     #hr-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    @media (max-height: 860px) {
+      body:has(#hr-sim:not([hidden])) .hr-hero { padding: 0.1rem 0 0; }
+      body:has(#hr-sim:not([hidden])) .hr-hero p,
+      body:has(#hr-sim:not([hidden])) .section__eyebrow,
+      body:has(#hr-sim:not([hidden])) .hr-hint { display: none; }
+      body:has(#hr-sim:not([hidden])) .hr-hero h1 { font-size: 1.25rem; margin: 0; }
+      body:has(#hr-sim:not([hidden])) .hr-pills { margin: 0.25rem 0 0; }
+      body:has(#hr-sim:not([hidden])) .hr-stage { height: min(40vh, 340px); }
+    }
+    @media (max-width: 720px) {
+      body:has(#hr-sim:not([hidden])) .hr-hero h1 { font-size: 1.05rem; }
+      body:has(#hr-sim:not([hidden])) .hr-hud { padding: 0.15rem 0; gap: 0.45rem; }
+      body:has(#hr-sim:not([hidden])) .hr-stage { height: min(34vh, 280px); }
+      body:has(#hr-sim:not([hidden])) .hr-wrap { padding-bottom: 0.6rem; }
+    }
     @media (max-width: 640px) {
       .hr-wrap { padding: 0.25rem 0.7rem 2.5rem; }
       .hr-hero { padding-top: 0.6rem; }
