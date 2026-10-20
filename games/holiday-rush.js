@@ -37,7 +37,8 @@
     freightRegen: 0.011,
     walkSpeed: 210,
     staffSpeed: 245,
-    baseActions: 3
+    baseActions: 3,
+    actionRegen: 9
   };
 
   var STAFF = [
@@ -107,13 +108,16 @@
   }
 
   function mulberry32(a) {
-    return function () {
-      a |= 0;
-      a = (a + 0x6D2B79F5) | 0;
-      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    var state = a | 0;
+    function next() {
+      state = (state + 0x6D2B79F5) | 0;
+      var t = Math.imul(state ^ (state >>> 15), 1 | state);
       t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
       return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
+    }
+    next.state = function () { return state >>> 0; };
+    next.setState = function (s) { state = s | 0; };
+    return next;
   }
 
   function blankShift() { return { reg1: null, reg2: null, floor: null, freight: null }; }
@@ -418,9 +422,53 @@
     return list;
   }
 
-  function floater(sim, x, y, text, color) {
+  function floater(sim, x, y, text, color, big) {
+    if (!sim.floats) sim.floats = [];
     if (sim.floats.length > 16) sim.floats.shift();
-    sim.floats.push({ x: x, y: y, text: text, color: color || '#ffe08a', life: 1.05 });
+    sim.floats.push({ x: x, y: y, text: text, color: color || '#ffe08a', life: big ? 1.25 : 1.05, big: !!big });
+  }
+
+  var hooks = {
+    kaching: function () {},
+    horn: function () {},
+    tap: function () {}
+  };
+
+  function burstCoins(sim, x, y) {
+    if (!sim.coins) sim.coins = [];
+    for (var i = 0; i < 5; i++) {
+      if (sim.coins.length > 28) sim.coins.shift();
+      sim.coins.push({
+        x: x + (i - 2) * 6,
+        y: y,
+        vx: (i - 2) * 42,
+        vy: -110 - (i % 3) * 16,
+        life: 0.9
+      });
+    }
+  }
+
+  function flashAt(sim, x, y) {
+    if (!sim.fx) sim.fx = [];
+    if (sim.fx.length > 24) sim.fx.shift();
+    sim.fx.push({ x: x, y: y, life: 0.38 });
+  }
+
+  function goalStars(pct) {
+    if (pct >= 1) return 3;
+    if (pct >= 0.7) return 2;
+    if (pct >= 0.4) return 1;
+    return 0;
+  }
+
+  function paceStars(sim) {
+    if (!sim || sim.sales <= 0) return 0;
+    var elapsed = clamp(sim.duration ? sim.t / sim.duration : 0, 0.12, 1);
+    var projected = sim.sales / elapsed;
+    var ratio = sim.goal ? projected / sim.goal : 0;
+    if (ratio >= 1.02 || sim.sales >= sim.goal) return 3;
+    if (ratio >= 0.7) return 2;
+    return 1;
   }
 
   function note(sim, text) { sim.notes.push(text); }
@@ -460,6 +508,8 @@
       stars: 4.05,
       stock: CONFIG.stockStart,
       actions: CONFIG.baseActions + (hasPerk(run, 'action') ? 1 : 0),
+      actionMax: CONFIG.baseActions + (hasPerk(run, 'action') ? 1 : 0) + 1,
+      actionFrac: 0,
       truck: 0,
       truckWork: 0,
       rushUntil: 0,
@@ -489,6 +539,13 @@
       you: null,
       done: false,
       lastShift: 0,
+      coins: [],
+      fx: [],
+      pings: [],
+      hornPlayed: false,
+      nextPing: 5,
+      live: false,
+      coachHold: false,
       rng: mulberry32(hashStr(run.ymd + ':day:' + run.day))
     };
     var tiredN = 0;
@@ -498,6 +555,17 @@
       if (n > 0) ensureStaff(sim, run, s.id, SPOTS.stock.x + (tiredN * 18), SPOTS.stock.y);
     });
     sim.morale = clamp(sim.morale - tiredN * 3, 8, 100);
+    for (var si = 0; si < sim.staff.length; si++) {
+      var actor = sim.staff[si];
+      var stNow = effectiveStation(sim, run, actor.id);
+      if (stNow && SPOTS[stNow]) {
+        actor.x = SPOTS[stNow].x;
+        actor.y = SPOTS[stNow].y;
+        actor.station = stNow;
+        actor.arrived = true;
+        actor.hidden = false;
+      }
+    }
     return sim;
   }
 
@@ -550,9 +618,13 @@
       if (sim.truck) loop = [SPOTS.truck];
       target = loop[a.shelfI % loop.length];
     }
-    var speed = CONFIG.staffSpeed;
+    var speed = CONFIG.staffSpeed * (a.rush > 1 ? a.rush : 1);
     if (!a.arrived) {
-      if (moveToward(a, target.x, target.y, dt, speed)) a.arrived = true;
+      if (moveToward(a, target.x, target.y, dt, speed)) {
+        a.arrived = true;
+        a.rush = 0;
+        a.pop = 1;
+      }
     } else {
       a.anim = 'work';
       a.workT += dt;
@@ -626,7 +698,11 @@
     sim.checkouts++;
     sim.stock = Math.max(0, sim.stock - CONFIG.stockPerSale);
     sim.stars = clamp(sim.stars + 0.014, 1, 5);
-    floater(sim, c.x, c.y - 56, '+$' + basket, '#ffe08a');
+    c.pop = 1;
+    floater(sim, c.x, c.y - 70, '+$' + basket, '#ffe08a', true);
+    burstCoins(sim, c.x, c.y - 40);
+    flashAt(sim, c.x, c.y - 20);
+    hooks.kaching();
     c.state = 'leave';
     c.bubble = 'price';
     c.path = pathVia(c.x, c.y, SPOTS.door.x + 20, SPOTS.door.y);
@@ -663,6 +739,9 @@
     for (var n = 0; n < sim.customers.length; n++) {
       var cust = sim.customers[n];
       if (cust.dead) continue;
+      if (sim.coachHold && cust.maxPatience && cust.state !== 'leave' && cust.patience < cust.maxPatience * 0.24) {
+        cust.patience = cust.maxPatience * 0.24;
+      }
       if (cust.state === 'enter') {
         if (follow(cust, dt, speed)) {
           cust.state = 'browse';
@@ -735,7 +814,8 @@
 
   function choice(label, cost, apply) { return { label: label, cost: cost, apply: apply }; }
 
-  function buildEvent(id, sim, run) {
+  function buildEvent(id, sim, run, forced) {
+    forced = forced || null;
     var card = { id: id, icon: id === 'upset' ? 'angry' : id, title: '', body: '', who: null, expr: 'neutral', choices: [] };
     if (id === 'callout') {
       var ids = workingIds(sim, run);
@@ -746,7 +826,7 @@
         card.choices = [choice('Back to the floor', 0, function () { sim.morale = clamp(sim.morale + 1, 0, 100); })];
         return card;
       }
-      var who = ids[Math.floor(sim.rng() * ids.length)];
+      var who = forced && forced.who ? forced.who : ids[Math.floor(sim.rng() * ids.length)];
       card.who = who;
       card.expr = 'sick';
       card.title = firstName(who) + ' is sick';
@@ -879,7 +959,7 @@
     }
     if (id === 'break') {
       var idsB = workingIds(sim, run);
-      var whoB = idsB.length ? idsB[Math.floor(sim.rng() * idsB.length)] : null;
+      var whoB = forced && forced.who ? forced.who : (idsB.length ? idsB[Math.floor(sim.rng() * idsB.length)] : null);
       card.who = whoB;
       card.expr = 'stressed';
       card.title = whoB ? firstName(whoB) + ' needs a break' : 'Break request';
@@ -1042,6 +1122,7 @@
   }
 
   function maybeEvent(sim, run) {
+    if (sim.coachHold) return;
     if (sim.paused || sim.pending) return;
     if (sim.eventIndex >= sim.events.length) return;
     var when = sim.eventTimes[sim.eventIndex];
@@ -1116,70 +1197,309 @@
     }
     for (var f = sim.floats.length - 1; f >= 0; f--) {
       sim.floats[f].life -= used;
-      sim.floats[f].y -= used * 26;
+      sim.floats[f].y -= used * 36;
       if (sim.floats[f].life <= 0) sim.floats.splice(f, 1);
     }
+    if (!sim.coins) sim.coins = [];
+    for (var ci = sim.coins.length - 1; ci >= 0; ci--) {
+      var coin = sim.coins[ci];
+      coin.life -= used;
+      coin.x += coin.vx * used;
+      coin.y += coin.vy * used;
+      coin.vy += 50 * used;
+      if (coin.life <= 0) sim.coins.splice(ci, 1);
+    }
+    if (!sim.fx) sim.fx = [];
+    for (var fi = sim.fx.length - 1; fi >= 0; fi--) {
+      sim.fx[fi].life -= used;
+      if (sim.fx[fi].life <= 0) sim.fx.splice(fi, 1);
+    }
+    if (!sim.pings) sim.pings = [];
+    for (var pi = sim.pings.length - 1; pi >= 0; pi--) {
+      sim.pings[pi].life -= used;
+      if (sim.pings[pi].pop > 0) sim.pings[pi].pop = Math.max(0, sim.pings[pi].pop - used * 2.4);
+      if (sim.pings[pi].life <= 0 || sim.pings[pi].dead) sim.pings.splice(pi, 1);
+    }
+    function coolPop(a) { if (a && a.pop > 0) a.pop = Math.max(0, a.pop - used * 2.4); if (a && a.heart > 0) a.heart = Math.max(0, a.heart - used); }
+    for (var sp = 0; sp < sim.staff.length; sp++) coolPop(sim.staff[sp]);
+    for (var cp = 0; cp < sim.customers.length; cp++) coolPop(sim.customers[cp]);
+    coolPop(sim.you);
+    var maxA = sim.actionMax || (CONFIG.baseActions + 1);
+    if (sim.actions < maxA) {
+      sim.actionFrac = (sim.actionFrac || 0) + used;
+      if (sim.actionFrac >= CONFIG.actionRegen) {
+        var gain = Math.floor(sim.actionFrac / CONFIG.actionRegen);
+        sim.actionFrac -= gain * CONFIG.actionRegen;
+        sim.actions = Math.min(maxA, sim.actions + gain);
+      }
+    }
+    if (sim.truck && !sim.hornPlayed) {
+      sim.hornPlayed = true;
+      hooks.horn();
+      if (sim.live) floater(sim, SPOTS.truck.x, SPOTS.truck.y - 36, 'Truck', '#ffe08a', true);
+    } else if (!sim.truck) sim.hornPlayed = false;
+    maybePing(sim);
     maybeEvent(sim, run);
     if (!sim.paused && sim.t >= sim.duration - 1e-4) sim.done = true;
     return sim;
   }
 
-  function doAction(sim, run, name) {
+  function maybePing(sim) {
+    if (!sim.live || sim.coachHold || sim.paused || sim.done) return;
+    if (!sim.pings) sim.pings = [];
+    if (!sim.nextPing) sim.nextPing = sim.t + 4;
+    if (sim.t + 1e-4 < sim.nextPing) return;
+    sim.nextPing = sim.t + 6.5;
+    if (sim.pings.length >= 2) return;
+    var kinds = ['basket', 'box', 'help'];
+    var kind = kinds[Math.floor(sim.rng() * kinds.length)];
+    var spot = kind === 'basket'
+      ? { x: SPOTS.reg1.x + 78, y: SPOTS.reg1.y + 8 }
+      : kind === 'box'
+        ? { x: SPOTS.truck.x + 16, y: SPOTS.truck.y + 78 }
+        : SHELVES[Math.floor(sim.rng() * SHELVES.length)];
+    sim.pings.push({ kind: kind, x: spot.x, y: spot.y, life: 14, pop: 1, dead: false });
+    flashAt(sim, spot.x, spot.y);
+  }
+
+  function resolvePing(sim, ping) {
+    if (!ping || ping.dead) return;
+    ping.dead = true;
+    ping.pop = 1;
+    flashAt(sim, ping.x, ping.y);
+    if (ping.kind === 'basket') {
+      var amt = 18 + Math.round(sim.rng() * 18);
+      sim.sales += amt;
+      sim.checkouts++;
+      burstCoins(sim, ping.x, ping.y);
+      floater(sim, ping.x, ping.y - 28, '+$' + amt, '#ffe08a', true);
+      hooks.kaching();
+      return;
+    }
+    if (ping.kind === 'box') {
+      sim.stock = clamp(sim.stock + 0.1, 0, 1);
+      floater(sim, ping.x, ping.y - 28, 'Stocked', '#b6f0c8', true);
+      return;
+    }
+    var best = null;
+    var bestD = 1e9;
+    for (var i = 0; i < sim.customers.length; i++) {
+      var c = sim.customers[i];
+      if (c.dead || c.state === 'leave') continue;
+      var dx = c.x - ping.x;
+      var dy = c.y - ping.y;
+      var d = dx * dx + dy * dy;
+      if (d < bestD) { bestD = d; best = c; }
+    }
+    if (best) {
+      best.patience = best.maxPatience;
+      best.pop = 1;
+      best.heart = 0.8;
+      best.bubble = null;
+    }
+    sim.morale = clamp(sim.morale + 2, 0, 100);
+    floater(sim, ping.x, ping.y - 28, 'Helped', '#b6f0c8', true);
+  }
+
+  function primeShift(sim, run) {
+    if (!sim || sim._primed) return;
+    sim._primed = true;
+    sim.live = true;
+    var reg = 'reg1';
+    if (stationPower(sim, run, 'reg1') < 0.2 && stationPower(sim, run, 'reg2') > 0.2) reg = 'reg2';
+    var ids = ['cust_mom', 'cust_teen', 'cust_biz', 'cust_karen'];
+    for (var i = 0; i < 4; i++) {
+      var c = makeActor(ids[i], QUEUE[reg].x, QUEUE[reg].y + i * QUEUE[reg].dy);
+      c.kind = 'cust';
+      c.state = i === 0 ? 'checkout' : 'queue';
+      c.reg = reg;
+      c.patience = 0.96;
+      c.maxPatience = 1;
+      c.seq = sim.seq++;
+      c.qIndex = i;
+      c.checkT = i === 0 ? 0.32 : null;
+      sim.customers.push(c);
+    }
+  }
+
+  function exportSim(sim) {
+    var pendingMeta = sim.pending ? { id: sim.pending.id, who: sim.pending.who || null } : null;
+    return JSON.parse(JSON.stringify({
+      t: sim.t,
+      duration: sim.duration,
+      sales: sim.sales,
+      goal: sim.goal,
+      payroll: sim.payroll,
+      morale: sim.morale,
+      stars: sim.stars,
+      stock: sim.stock,
+      actions: sim.actions,
+      actionMax: sim.actionMax,
+      actionFrac: sim.actionFrac || 0,
+      truck: sim.truck,
+      truckWork: sim.truckWork,
+      rushUntil: sim.rushUntil,
+      slowUntil: sim.slowUntil,
+      discountUntil: sim.discountUntil,
+      spillUntil: sim.spillUntil,
+      spillClean: sim.spillClean,
+      customers: sim.customers,
+      staff: sim.staff,
+      floats: sim.floats,
+      coins: sim.coins || [],
+      fx: sim.fx || [],
+      pings: sim.pings || [],
+      spawnAcc: sim.spawnAcc,
+      seq: sim.seq,
+      walkouts: sim.walkouts,
+      checkouts: sim.checkouts,
+      events: sim.events,
+      eventIndex: sim.eventIndex,
+      eventTimes: sim.eventTimes,
+      removed: sim.removed,
+      override: sim.override,
+      overrideShift: sim.overrideShift,
+      overrideAll: sim.overrideAll,
+      breakUntil: sim.breakUntil,
+      tired: sim.tired,
+      you: sim.you,
+      done: sim.done,
+      lastShift: sim.lastShift,
+      hornPlayed: !!sim.hornPlayed,
+      nextPing: sim.nextPing || 0,
+      _primed: !!sim._primed,
+      live: !!sim.live,
+      coachHold: !!sim.coachHold,
+      rngState: sim.rng && sim.rng.state ? sim.rng.state() : 0,
+      pendingMeta: pendingMeta
+    }));
+  }
+
+  function restoreSim(data, run) {
+    var sim = data;
+    sim.notes = [];
+    sim.rng = mulberry32(1);
+    if (sim.rng.setState) sim.rng.setState(data.rngState || 1);
+    sim.floats = sim.floats || [];
+    sim.coins = sim.coins || [];
+    sim.fx = sim.fx || [];
+    sim.pings = sim.pings || [];
+    sim.pending = null;
+    sim.paused = false;
+    if (data.pendingMeta && data.pendingMeta.id) {
+      sim.pending = buildEvent(data.pendingMeta.id, sim, run, { who: data.pendingMeta.who });
+      sim.paused = true;
+    }
+    return sim;
+  }
+
+  function doAction(sim, run, name, target) {
+    target = target || {};
     if (!sim || sim.done) return { ok: false, msg: 'The day is over.' };
     if (sim.paused && sim.pending) return { ok: false, msg: 'Answer the card first.' };
-    if (sim.actions <= 0) return { ok: false, msg: 'No manager actions left.' };
-    if (name === 'cover') {
-      var worst = 'reg1';
-      var worstScore = 1e9;
-      var options = ['reg1', 'reg2', 'floor', 'freight'];
-      for (var i = 0; i < options.length; i++) {
-        var st = options[i];
-        var score = stationPower(sim, run, st);
-        if (st === 'freight' && (sim.truck || sim.stock < 0.35)) score -= 0.8;
-        if ((st === 'reg1' || st === 'reg2') && queueOf(sim, st).length >= 2) score -= 0.5;
-        if (score < worstScore) { worstScore = score; worst = st; }
-      }
-      sim.actions--;
-      sim.you = makeActor('staff_mgr', SPOTS.stock.x, SPOTS.stock.y);
-      sim.you.kind = 'you'; sim.you.role = 'manager'; sim.you.station = worst; sim.you.until = sim.t + 12;
-      return { ok: true, msg: 'Covering ' + STATION_LABEL[worst] + '.' };
-    }
+    var free = !!target.free;
+    if (!free && sim.actions <= 0) return { ok: false, msg: 'Actions are refilling.' };
+    function spend() { if (!free) sim.actions--; }
     if (name === 'pull') {
+      var reg = (target.station === 'reg1' || target.station === 'reg2') ? target.station
+        : (queueOf(sim, 'reg1').length >= queueOf(sim, 'reg2').length ? 'reg1' : 'reg2');
       var pull = null;
       for (var p = 0; p < sim.staff.length; p++) {
-        if (sim.staff[p].station === 'floor' || sim.staff[p].station === 'freight') { pull = sim.staff[p]; break; }
+        var cand = sim.staff[p];
+        if (!cand.id || sim.removed[cand.id]) continue;
+        if (cand.station === reg) continue;
+        if (cand.station === 'floor' || cand.station === 'freight' || cand.station === 'reg1' || cand.station === 'reg2') {
+          pull = cand;
+          if (cand.station === 'floor' || cand.station === 'freight') break;
+        }
       }
-      if (!pull) return { ok: false, msg: 'Nobody on the floor or truck to pull.' };
-      var reg = queueOf(sim, 'reg1').length >= queueOf(sim, 'reg2').length ? 'reg1' : 'reg2';
-      sim.actions--;
-      sim.override[pull.id] = reg;
-      sim.overrideShift[pull.id] = shiftIndex(sim);
-      pull.arrived = false;
-      return { ok: true, msg: firstName(pull.id) + ' is heading to ' + STATION_LABEL[reg] + '.' };
+      if (!pull) {
+        name = 'cover';
+        target = { station: reg, free: free };
+      } else {
+        spend();
+        sim.override[pull.id] = reg;
+        sim.overrideShift[pull.id] = shiftIndex(sim);
+        pull.arrived = false;
+        pull.path = null;
+        pull.rush = 3.4;
+        pull.pop = 1;
+        var dest = SPOTS[reg];
+        floater(sim, pull.x, pull.y - 48, firstName(pull.id) + ' →', '#b6f0c8', true);
+        floater(sim, dest.x, dest.y - 48, 'Till', '#e0a322', true);
+        flashAt(sim, pull.x, pull.y);
+        flashAt(sim, dest.x, dest.y);
+        return { ok: true, msg: firstName(pull.id) + ' is heading to ' + STATION_LABEL[reg] + '.' };
+      }
+    }
+    if (name === 'cover') {
+      var worst = target.station;
+      if (!worst || !SPOTS[worst]) {
+        worst = 'reg1';
+        var worstScore = 1e9;
+        var options = ['reg1', 'reg2', 'floor', 'freight'];
+        for (var i = 0; i < options.length; i++) {
+          var st = options[i];
+          var score = stationPower(sim, run, st);
+          if (st === 'freight' && (sim.truck || sim.stock < 0.35)) score -= 0.8;
+          if ((st === 'reg1' || st === 'reg2') && queueOf(sim, st).length >= 2) score -= 0.5;
+          if (score < worstScore) { worstScore = score; worst = st; }
+        }
+      }
+      spend();
+      var spot = SPOTS[worst];
+      sim.you = makeActor('staff_mgr', spot.x, spot.y);
+      sim.you.kind = 'you';
+      sim.you.role = 'manager';
+      sim.you.station = worst;
+      sim.you.until = sim.t + 12;
+      sim.you.arrived = true;
+      sim.you.pop = 1;
+      floater(sim, spot.x, spot.y - 52, 'Cover', '#e0a322', true);
+      flashAt(sim, spot.x, spot.y);
+      return { ok: true, msg: 'You are on ' + STATION_LABEL[worst] + '.' };
     }
     if (name === 'freight') {
-      sim.actions--;
+      spend();
+      var hadTruck = sim.truck > 0;
       sim.truck = 0;
-      sim.stock = clamp(sim.stock + 0.2, 0, 1);
-      sim.you = makeActor('staff_mgr', SPOTS.truck.x - 20, SPOTS.truck.y + 30);
-      sim.you.kind = 'you'; sim.you.role = 'manager'; sim.you.station = 'freight'; sim.you.until = sim.t + 8; sim.you.arrived = true;
-      return { ok: true, msg: 'You worked the freight.' };
+      sim.hornPlayed = false;
+      sim.stock = clamp(sim.stock + 0.22, 0, 1);
+      sim.you = makeActor('staff_mgr', SPOTS.truck.x, SPOTS.truck.y + 36);
+      sim.you.kind = 'you';
+      sim.you.role = 'manager';
+      sim.you.station = 'freight';
+      sim.you.until = sim.t + 8;
+      sim.you.arrived = true;
+      sim.you.pop = 1;
+      if (sim.pings) {
+        for (var bx = 0; bx < sim.pings.length; bx++) if (sim.pings[bx].kind === 'box') sim.pings[bx].dead = true;
+      }
+      floater(sim, SPOTS.truck.x, SPOTS.truck.y - 20, hadTruck ? 'Unloaded' : 'Stocked', '#ffe08a', true);
+      flashAt(sim, SPOTS.truck.x, SPOTS.truck.y);
+      return { ok: true, msg: hadTruck ? 'You cleared the truck.' : 'You stocked the shelf.' };
     }
     if (name === 'calm') {
-      var upset = null;
-      var low = 1e9;
-      for (var c = 0; c < sim.customers.length; c++) {
-        var cust = sim.customers[c];
-        if (cust.state === 'leave' || cust.dead) continue;
-        if (cust.patience < low) { low = cust.patience; upset = cust; }
+      var upset = target.cust || null;
+      if (upset && (upset.dead || upset.state === 'leave')) upset = null;
+      if (!upset) {
+        var low = 1e9;
+        for (var c = 0; c < sim.customers.length; c++) {
+          var cust = sim.customers[c];
+          if (cust.state === 'leave' || cust.dead) continue;
+          if (cust.patience < low) { low = cust.patience; upset = cust; }
+        }
       }
       if (!upset) return { ok: false, msg: 'Nobody needs calming.' };
-      sim.actions--;
+      spend();
       upset.patience = upset.maxPatience;
       upset.bubble = null;
+      upset.pop = 1;
+      upset.heart = 0.9;
       sim.stars = clamp(sim.stars + 0.06, 1, 5);
       sim.morale = clamp(sim.morale + 2, 0, 100);
-      floater(sim, upset.x, upset.y - 40, 'ok', '#b6f0c8');
+      floater(sim, upset.x, upset.y - 56, 'Calm', '#b6f0c8', true);
+      flashAt(sim, upset.x, upset.y);
       return { ok: true, msg: 'You calmed a shopper.' };
     }
     return { ok: false, msg: 'Unknown action.' };
@@ -1310,17 +1630,19 @@
     });
   }
 
+  var onAsset = function () {};
+
   function loadJSON(url) {
     return fetch(url).then(function (r) {
       if (!r.ok) throw new Error(url);
       return r.json();
-    });
+    }).then(function (data) { onAsset(); return data; });
   }
 
   function loadImage(url) {
     return new Promise(function (resolve, reject) {
       var img = new Image();
-      img.onload = function () { resolve(img); };
+      img.onload = function () { onAsset(); resolve(img); };
       img.onerror = function () { reject(new Error(url)); };
       img.src = url;
     });
@@ -1412,6 +1734,11 @@
     var floors = [];
     var toastTimer = 0;
     var liveAcc = 0;
+    var simSaveAcc = 0;
+    var coach = null;
+    var planEditing = false;
+    var loadCount = 0;
+    var actx = null;
     var reduceMotion = false;
     try { reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
 
@@ -1433,6 +1760,8 @@
     }
 
     function showFatal(msg) {
+      var loading = document.getElementById('hr-loading');
+      if (loading) loading.hidden = true;
       els.intro.hidden = false;
       els.intro.innerHTML = '<p class="hr-lead">' + esc(msg) + '</p>';
     }
@@ -1446,17 +1775,75 @@
 
     function saveRun() {
       if (!run) return;
+      if (sim && run.phase === 'sim' && !sim.done) {
+        try { run.simState = exportSim(sim); } catch (e) { run.simState = null; }
+      }
       writeJSON('hr_run_v1', run);
     }
 
     function show(which) {
+      var loading = document.getElementById('hr-loading');
+      if (loading) loading.hidden = true;
       els.intro.hidden = which !== 'intro';
       els.plan.hidden = which !== 'plan';
       els.sim.hidden = which !== 'sim';
       els.score.hidden = which !== 'score' && which !== 'perk';
       els.final.hidden = which !== 'final';
+      document.body.dataset.hrPhase = which;
       if (which !== 'sim') stopLoop();
     }
+
+    function tutDone() {
+      try { return localStorage.getItem('hr_tut_done') === '1'; } catch (e) { return false; }
+    }
+
+    function hrAudio() {
+      if (root.CGSfx && root.CGSfx.isMuted && root.CGSfx.isMuted()) return null;
+      var AC = root.AudioContext || root.webkitAudioContext;
+      if (!AC) return null;
+      if (!actx) {
+        try { actx = new AC(); } catch (e) { return null; }
+      }
+      if (actx.state === 'suspended') {
+        try { actx.resume(); } catch (e2) {}
+      }
+      return actx;
+    }
+
+    function tone(a, freq, t, dur, type, vol) {
+      var o = a.createOscillator();
+      var g = a.createGain();
+      o.type = type;
+      o.frequency.setValueAtTime(Math.max(40, freq), t);
+      g.gain.setValueAtTime(vol, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      o.connect(g);
+      g.connect(a.destination);
+      o.start(t);
+      o.stop(t + dur + 0.02);
+    }
+
+    hooks.kaching = function () {
+      var a = hrAudio();
+      if (!a) return;
+      var t = a.currentTime;
+      tone(a, 1480, t, 0.06, 'square', 0.045);
+      tone(a, 1980, t + 0.055, 0.08, 'square', 0.04);
+      tone(a, 2960, t + 0.1, 0.05, 'sine', 0.03);
+    };
+    hooks.horn = function () {
+      var a = hrAudio();
+      if (!a) return;
+      var t = a.currentTime;
+      tone(a, 180, t, 0.18, 'sawtooth', 0.05);
+      tone(a, 140, t + 0.08, 0.22, 'square', 0.04);
+      tone(a, 180, t + 0.28, 0.16, 'sawtooth', 0.045);
+    };
+    hooks.tap = function () {
+      var a = hrAudio();
+      if (!a) return;
+      tone(a, 740, a.currentTime, 0.035, 'triangle', 0.035);
+    };
 
     function portraitStyle(id, expr, size) {
       if (!assets) return '';
@@ -1493,51 +1880,59 @@
         '<span class="hr-pips" aria-hidden="true">' + pips + '</span></button>';
     }
 
-    function renderIntro() {
-      show('intro');
-      var saved = readJSON('hr_run_v1');
-      var resume = saved && saved.ymd === ymd && saved.phase && saved.phase !== 'intro';
-      var best = bestGet(ymd);
-      var m = metaGet();
-      els.intro.innerHTML =
-        '<p class="hr-kicker">Daily seed ' + esc(ymd) + ' · best ' + (best ? esc(String(best)) : '—') + ' · streak ' + m.streak + '</p>' +
-        '<ol class="hr-steps">' +
-        '<li><strong>Plan the day.</strong> Drag staff onto Open, Mid, and Close. You have ' + CONFIG.hoursBudget + ' hours. Role colors matter.</li>' +
-        '<li><strong>Run about a minute.</strong> Shoppers and a truck will not wait. Call-outs, lines, and a district visit show up as cards.</li>' +
-        '<li><strong>Spend manager actions.</strong> Cover a gap, pull someone to a till, work freight, or calm a shopper. Sales, payroll, morale, and stars all count.</li>' +
-        '</ol>' +
-        '<div class="hr-cta">' +
-        (resume ? '<button type="button" class="btn btn--primary" id="hr-resume">Resume this week</button>' : '') +
-        '<button type="button" class="btn btn--primary" id="hr-start">' + (resume ? 'Start over' : 'Open Monday') + '</button>' +
-        '</div>' +
-        '<p class="hr-fine">Holiday Rush Mart is fictional. Scores stay on this device. No account.</p>';
-      var start = document.getElementById('hr-start');
-      var resumeBtn = document.getElementById('hr-resume');
-      if (resumeBtn) resumeBtn.addEventListener('click', function () {
-        run = saved;
-        saveRun();
-        track('holiday_rush_resume', { seed: ymd });
-        enterPhase();
-      });
-      start.addEventListener('click', function () {
-        run = newRun(ymd);
-        saveRun();
-        track('holiday_rush_start', { seed: ymd });
-        enterPhase();
-      });
+    function beginFresh() {
+      coach = null;
+      run = newRun(ymd);
+      run.phase = 'sim';
+      run.schedule[0] = greedy(run, 0);
+      run.acked[0] = true;
+      run.suggested = [true, false, false];
+      sim = startDay(run);
+      saveRun();
+      track('holiday_rush_start', { seed: ymd });
+      renderSim({ resume: false });
+    }
+
+    function ensureSuggested() {
+      if (!run.suggested) run.suggested = [false, false, false];
+      if (run.day === 0) return;
+      if (run.suggested[run.day]) return;
+      if (hoursOf(run.schedule[run.day]) === 0) run.schedule[run.day] = greedy(run, run.day);
+      run.suggested[run.day] = true;
     }
 
     function enterPhase() {
       if (!run) return;
-      if (run.phase === 'intro') run.phase = 'plan';
-      if (run.phase === 'plan') renderPlan();
-      else if (run.phase === 'sim') {
-        sim = startDay(run);
-        renderSim();
-        toast('The day restarted at open.');
+      if (run.phase === 'intro') {
+        beginFresh();
+        return;
+      }
+      if (run.phase === 'plan') {
+        ensureSuggested();
+        planEditing = true;
+        renderPlan();
+      } else if (run.phase === 'sim') {
+        var snap = run.simState;
+        if (snap && typeof snap.t === 'number' && !snap.done) {
+          try {
+            sim = restoreSim(snap, run);
+            renderSim({ resume: true });
+            if (snap.t > 0.4) toast('Shift resumed.');
+          } catch (err) {
+            sim = startDay(run);
+            renderSim({ resume: false });
+          }
+        } else {
+          if (run.day === 0 && hoursOf(run.schedule[0]) < 1) run.schedule[0] = greedy(run, 0);
+          sim = startDay(run);
+          renderSim({ resume: false });
+        }
       } else if (run.phase === 'score' || run.phase === 'perk') renderScore();
       else if (run.phase === 'final') renderFinal();
-      else renderPlan();
+      else {
+        ensureSuggested();
+        renderPlan();
+      }
       saveRun();
     }
 
@@ -1546,7 +1941,7 @@
       stopLoop();
       var day = run.day;
       var info = run.days[day];
-      if (info.callout && !run.acked[day]) {
+      if (day > 0 && info.callout && !run.acked[day]) {
         var person = BY_ID[info.callout];
         els.modal.hidden = false;
         els.modal.innerHTML =
@@ -1598,18 +1993,51 @@
           tray += '<div class="hr-chip hr-chip--out role-' + s.role + '"><span class="hr-avatar" style="' + portraitStyle(s.id, 'sick', 40) + '"></span><span class="hr-chip__text"><span class="hr-chip__name">' + esc(s.name) + '</span><span class="hr-chip__role">Out today</span></span></div>';
         } else tray += chipHTML(s.id, null);
       });
+      var planTitle = day === 0 ? 'Monday crew' : 'Plan tomorrow';
+      var planBlurb = day === 0
+        ? 'Monday can open with any crew. Tap a name, then a cell.'
+        : DAY_NAMES[day] + ' · goal ' + money(info.goal) + '. Auto-schedule fills the board, or edit the crew, then open.';
+      var gated = day > 0 && hours < CONFIG.slotHours;
+      var showBoard = day === 0 || planEditing;
       els.plan.innerHTML =
-        '<div class="hr-plan__head"><div><h2>' + DAY_NAMES[day] + ' board</h2><p>Drag a name onto a shift, or tap a name and then a cell. ' + CONFIG.hoursBudget + ' hours max. Two shifts max per person.</p></div>' +
+        '<div class="hr-plan__head"><div><h2>' + planTitle + '</h2><p>' + esc(planBlurb) + '</p></div>' +
         '<div class="hr-meters"><div><span>Hours</span><strong id="hr-hours">' + hours + ' / ' + CONFIG.hoursBudget + '</strong><div class="hr-bar"><i style="width:' + Math.min(100, hours / CONFIG.hoursBudget * 100) + '%"></i></div></div>' +
         '<div><span>Payroll</span><strong>' + money(pay) + ' / ' + money(CONFIG.payBudget) + '</strong><div class="hr-bar hr-bar--pay"><i style="width:' + Math.min(100, pay / CONFIG.payBudget * 100) + '%"></i></div></div>' +
         '<div><span>Morale</span><strong>' + Math.round(run.morale) + '</strong></div></div></div>' +
-        '<div class="hr-grid" id="hr-grid">' + cells + '</div>' +
-        '<div class="hr-tray" id="hr-tray">' + tray + '</div>' +
+        '<p class="hr-legend"><span class="hr-pips" aria-hidden="true"><i class="on"></i><i class="on"></i><i></i></span><span>All 8 people are on this board. Dots run Open, Mid, Close. A gold dot means that shift will take them. A gray dot will refuse the placement. Two shifts max.</span></p>' +
+        '<p class="hr-plan-note" id="hr-plan-note" hidden></p>' +
+        (showBoard
+          ? '<div class="hr-grid" id="hr-grid">' + cells + '</div><div class="hr-tray" id="hr-tray">' + tray + '</div>'
+          : '<div class="hr-crew" id="hr-crew">' + [0, 1, 2].map(function (sh) {
+            var names = [];
+            STATIONS.forEach(function (st) {
+              var id = run.schedule[day][sh][st];
+              if (id && BY_ID[id]) names.push(firstName(id));
+            });
+            return '<div><b>' + SHIFT_NAMES[sh] + '</b><span>' + (names.length ? esc(names.join(' · ')) : 'Empty') + '</span></div>';
+          }).join('') + '</div>') +
         '<div class="hr-plan__actions">' +
+        '<button type="button" class="btn" id="hr-auto">Auto-schedule</button>' +
+        '<button type="button" class="btn" id="hr-edit">' + (showBoard ? 'Hide schedule' : 'Edit schedule') + '</button>' +
         '<button type="button" class="btn" id="hr-copy"' + (day === 0 ? ' disabled' : '') + '>Copy yesterday</button>' +
         '<button type="button" class="btn" id="hr-clear">Clear</button>' +
-        '<button type="button" class="btn btn--primary" id="hr-open"' + (hours < CONFIG.slotHours ? ' disabled' : '') + '>Open ' + DAY_NAMES[day] + '</button>' +
+        '<button type="button" class="btn btn--primary" id="hr-open"' + (gated ? ' disabled' : '') + '>Open ' + DAY_NAMES[day] + '</button>' +
         '</div>';
+      document.getElementById('hr-auto').addEventListener('click', function () {
+        undo = clone(run.schedule[day]);
+        run.schedule[day] = greedy(run, day);
+        if (!run.suggested) run.suggested = [false, false, false];
+        run.suggested[day] = true;
+        planEditing = true;
+        saveRun();
+        renderPlan();
+        toast('Schedule filled.');
+        sfx('place');
+      });
+      document.getElementById('hr-edit').addEventListener('click', function () {
+        planEditing = !planEditing;
+        renderPlan();
+      });
       document.getElementById('hr-copy').addEventListener('click', copyYesterday);
       document.getElementById('hr-clear').addEventListener('click', function () {
         undo = clone(run.schedule[day]);
@@ -1655,26 +2083,27 @@
     }
 
     function openDoors() {
-      if (hoursOf(run.schedule[run.day]) < CONFIG.slotHours) return;
+      if (run.day > 0 && hoursOf(run.schedule[run.day]) < CONFIG.slotHours) return;
       run.phase = 'sim';
+      run.simState = null;
       sim = startDay(run);
       saveRun();
       track('holiday_rush_day_start', { seed: run.ymd, day: run.day + 1 });
       sfx('correct');
-      renderSim();
+      renderSim({ resume: false });
     }
 
-    function renderSim() {
+    function renderSim(opts) {
+      opts = opts || {};
       show('sim');
       els.modal.hidden = true;
       els.event.hidden = true;
+      var ops = run.day >= 1;
       var hud =
         '<div class="hr-clock" id="hr-clock" style="--p:0"><span id="hr-clock-label">8:00 AM</span></div>' +
         '<div class="hr-sales"><div class="hr-sales__top"><span>Sales</span><strong id="hr-sales-text"></strong></div><div class="hr-bar"><i id="hr-sales-bar"></i></div></div>' +
-        '<div class="hr-stat"><span>Payroll</span><strong id="hr-pay-text"></strong></div>' +
-        '<div class="hr-stat"><span>Morale</span><strong id="hr-mor-text"></strong></div>' +
-        '<div class="hr-stat"><span>Stars</span><strong id="hr-star-text"></strong></div>' +
-        '<div class="hr-stat"><span>Actions</span><strong id="hr-act-text"></strong></div>';
+        '<div class="hr-stat hr-stat--stars"><span>Stars</span><strong id="hr-star-text" class="hr-stars"></strong></div>' +
+        (ops ? '<div class="hr-stat"><span>Payroll</span><strong id="hr-pay-text"></strong></div><div class="hr-stat"><span>Morale</span><strong id="hr-mor-text"></strong></div>' : '');
       var actions =
         '<button type="button" data-act="cover">Cover a gap</button>' +
         '<button type="button" data-act="pull">Pull to register</button>' +
@@ -1682,10 +2111,26 @@
         '<button type="button" data-act="calm">Calm a customer</button>';
       els.sim.querySelector('.hr-hud').innerHTML = hud;
       els.sim.querySelector('.hr-actions').innerHTML = actions;
+      sim.live = true;
+      primeShift(sim, run);
+      if (tutDone()) sim.coachHold = false;
       resize();
-      requestAnimationFrame(resize);
+      requestAnimationFrame(function () { resize(); if (sim && !els.sim.hidden) draw(); });
+      focusCam(SPOTS.reg1.x, QUEUE.reg1.y);
+      if (!opts.resume && run.day === 0 && !tutDone()) beginCoach();
+      else if (opts.resume && run.day === 0 && !tutDone()) beginCoach();
+      else paintCoach();
       paintHud();
+      draw();
+      saveRun();
+      if (!root.__hrReadyAt) root.__hrReadyAt = root.performance ? root.performance.now() : 0;
       startLoop();
+    }
+
+    function starGlyph(n) {
+      var s = '';
+      for (var i = 0; i < 3; i++) s += '<i' + (i < n ? ' class="on"' : '') + '>★</i>';
+      return s;
     }
 
     function paintHud() {
@@ -1696,15 +2141,27 @@
       if (!label || !salesText) return;
       label.textContent = clockLabel(sim.t, sim.duration);
       if (clock) clock.style.setProperty('--p', String(clamp(sim.t / sim.duration, 0, 1)));
+      if (sim._paintSales != null && sim.sales > sim._paintSales && root.CGSfx && root.CGSfx.juice) {
+        root.CGSfx.juice(salesText, 'pop');
+      }
+      sim._paintSales = sim.sales;
       salesText.textContent = money(sim.sales) + ' / ' + money(sim.goal);
       var bar = document.getElementById('hr-sales-bar');
       if (bar) bar.style.width = Math.min(100, sim.goal ? (sim.sales / sim.goal) * 100 : 0) + '%';
-      document.getElementById('hr-pay-text').textContent = money(sim.payroll);
-      document.getElementById('hr-mor-text').textContent = String(Math.round(sim.morale));
-      document.getElementById('hr-star-text').textContent = (Math.round(sim.stars * 10) / 10).toFixed(1);
-      document.getElementById('hr-act-text').textContent = String(sim.actions);
+      var payEl = document.getElementById('hr-pay-text');
+      var morEl = document.getElementById('hr-mor-text');
+      if (payEl) payEl.textContent = money(sim.payroll);
+      if (morEl) morEl.textContent = String(Math.round(sim.morale));
+      var starEl = document.getElementById('hr-star-text');
+      if (starEl) starEl.innerHTML = starGlyph(paceStars(sim));
+      var act = document.getElementById('hr-actline');
+      if (act) {
+        var maxA = sim.actionMax || CONFIG.baseActions;
+        var fill = sim.actions >= maxA ? 1 : clamp((sim.actionFrac || 0) / CONFIG.actionRegen, 0, 1);
+        act.textContent = sim.actions + ' / ' + maxA + ' actions · refills every ' + CONFIG.actionRegen + 's' + (sim.actions < maxA ? ' · ' + Math.round(fill * 100) + '% to the next' : '');
+      }
       var buttons = els.sim.querySelectorAll('[data-act]');
-      for (var i = 0; i < buttons.length; i++) buttons[i].disabled = sim.actions <= 0 || !!sim.pending;
+      for (var i = 0; i < buttons.length; i++) buttons[i].disabled = !!sim.pending;
     }
 
     function renderEvent() {
@@ -1716,9 +2173,12 @@
       art += '<span class="hr-icon" style="' + iconStyle(card.icon, 72) + '"></span>';
       var buttons = card.choices.map(function (ch, i) {
         var disabled = ch.cost && sim.actions < ch.cost;
-        return '<button type="button" data-choice="' + i + '"' + (disabled ? ' disabled' : '') + '>' + esc(ch.label) + (ch.cost ? ' · 1 action' : '') + '</button>';
+        var cost = ch.cost
+          ? '<span class="hr-choice-cost">1 action</span>'
+          : '<span class="hr-choice-cost hr-choice-cost--free">Free</span>';
+        return '<button type="button" data-choice="' + i + '"' + (disabled ? ' disabled' : '') + '>' + cost + '<span>' + esc(ch.label) + '</span></button>';
       }).join('');
-      els.event.innerHTML = '<div class="hr-card" role="dialog" aria-modal="true" aria-labelledby="hr-ev-title"><div class="hr-card__art">' + art + '</div><h2 id="hr-ev-title">' + esc(card.title) + '</h2><p>' + esc(card.body) + '</p><div class="hr-choices">' + buttons + '</div><p class="hr-fine">The floor is paused. Actions left: ' + sim.actions + '.</p></div>';
+      els.event.innerHTML = '<div class="hr-card" role="dialog" aria-modal="true" aria-labelledby="hr-ev-title"><div class="hr-card__art">' + art + '</div><h2 id="hr-ev-title">' + esc(card.title) + '</h2><p>' + esc(card.body) + '</p><div class="hr-choices">' + buttons + '</div><p class="hr-fine">Paused. You have ' + sim.actions + ' action' + (sim.actions === 1 ? '' : 's') + '. They refill every ' + CONFIG.actionRegen + ' seconds. The cost is on each option.</p></div>';
       els.event.querySelector('.hr-choices').addEventListener('click', function (ev) {
         var btn = ev.target.closest('[data-choice]');
         if (!btn) return;
@@ -1736,6 +2196,8 @@
       run.history.push(snap);
       run.morale = clamp(sim.morale, 0, 100);
       run.phase = run.day >= 2 ? 'final' : 'score';
+      run.simState = null;
+      coach = null;
       sim = null;
       saveRun();
       sfx('correct');
@@ -1756,6 +2218,7 @@
       els.score.innerHTML =
         '<p class="hr-kicker">' + DAY_NAMES[run.day] + ' scorecard</p>' +
         '<div class="hr-grade">' + snap.grade + '</div>' +
+        '<p class="hr-stars hr-stars--big">' + starGlyph(goalStars(snap.goalPct)) + '</p>' +
         scoreTable([snap], run.day) +
         '<p class="hr-scorebig">' + snap.points + ' pts</p>' +
         perkBlock;
@@ -1768,6 +2231,8 @@
           if (id === 'cocoa') run.morale = clamp(run.morale + 10, 0, 100);
           run.day += 1;
           run.phase = 'plan';
+          ensureSuggested();
+          planEditing = true;
           saveRun();
           sfx('correct');
           renderPlan();
@@ -1833,11 +2298,7 @@
         }
       });
       document.getElementById('hr-again').addEventListener('click', function () {
-        var next = newRun(ymd);
-        next.phase = 'plan';
-        run = next;
-        saveRun();
-        renderPlan();
+        beginFresh();
       });
       if (root.CGDaily && root.CGDaily.mountAll) root.CGDaily.mountAll();
       else if (root.CGDaily && root.CGDaily.mountStreakHints) root.CGDaily.mountStreakHints();
@@ -1873,10 +2334,339 @@
       els.canvas._dpr = dpr;
     }
 
+    function showPlanNote(text) {
+      var note = document.getElementById('hr-plan-note');
+      if (!note) return;
+      note.hidden = !text;
+      note.textContent = text || '';
+    }
+
+    function markInput() {
+      if (!root.__hrInputAt && root.performance) root.__hrInputAt = root.performance.now();
+    }
+
+    function focusCam(x, y) {
+      var view = viewSize();
+      cam.x = clamp(x - view.viewW * 0.5, 0, Math.max(0, WORLD_W - view.viewW));
+      cam.y = clamp(y - view.viewH * 0.62, 0, Math.max(0, WORLD_H - view.viewH));
+    }
+
+    function coachFocus() {
+      if (!coach || !sim) return null;
+      if (coach.step === 0) return { x: SPOTS.reg1.x, y: QUEUE.reg1.y + 20, label: 'Tap the long line' };
+      if (coach.step === 1) return { x: SPOTS.truck.x, y: SPOTS.truck.y + 30, label: 'Tap the truck' };
+      var angry = null;
+      for (var i = 0; i < sim.customers.length; i++) {
+        var c = sim.customers[i];
+        if (c.dead || c.state === 'leave') continue;
+        if (c.bubble === 'angry' || (c.maxPatience && c.patience < c.maxPatience * 0.4)) angry = c;
+      }
+      if (angry) return { x: angry.x, y: angry.y - 10, label: 'Tap the angry shopper' };
+      return { x: SPOTS.reg1.x, y: QUEUE.reg1.y, label: 'Tap the angry shopper' };
+    }
+
+    function paintCoach() {
+      var cap = document.getElementById('hr-coach');
+      var skip = document.getElementById('hr-skip');
+      var focus = coach ? coachFocus() : null;
+      if (cap) {
+        cap.hidden = !focus;
+        if (focus) cap.textContent = focus.label;
+      }
+      if (skip) skip.hidden = !coach;
+      if (sim) sim.coachHold = !!coach;
+      if (focus && els.live) els.live.textContent = focus.label + '. Skip is available.';
+    }
+
+    function beginCoach() {
+      if (!sim || tutDone() || run.day !== 0) {
+        coach = null;
+        paintCoach();
+        return;
+      }
+      coach = { step: 0 };
+      sim.coachHold = true;
+      paintCoach();
+      focusCam(SPOTS.reg1.x, QUEUE.reg1.y);
+    }
+
+    function endCoach() {
+      coach = null;
+      if (sim) {
+        sim.coachHold = false;
+        sim.nextPing = sim.t + 3;
+      }
+      try { localStorage.setItem('hr_tut_done', '1'); } catch (e) {}
+      paintCoach();
+      cam.follow = true;
+      saveRun();
+    }
+
+    function angerSomeone() {
+      var pick = null;
+      for (var i = 0; i < sim.customers.length; i++) {
+        var c = sim.customers[i];
+        if (c.dead || c.state === 'leave') continue;
+        pick = c;
+        if (c.charId === 'cust_karen') break;
+      }
+      if (!pick) return;
+      pick.patience = pick.maxPatience * 0.32;
+      pick.bubble = 'angry';
+      if (pick.state !== 'checkout') pick.state = pick.reg ? 'queue' : 'browse';
+      pick.pop = 1;
+    }
+
+    function onCoachProgress(name) {
+      if (!coach) return;
+      var step = coach.step;
+      var ok = (step === 0 && (name === 'pull' || name === 'cover')) ||
+        (step === 1 && name === 'freight') ||
+        (step === 2 && name === 'calm');
+      if (!ok) return;
+      coach.step++;
+      if (coach.step === 1) {
+        sim.truck = 1;
+        sim.truckWork = 0;
+        sim.hornPlayed = false;
+      } else if (coach.step === 2) angerSomeone();
+      else endCoach();
+      var next = coach ? coachFocus() : null;
+      if (next) focusCam(next.x, next.y);
+      paintCoach();
+      draw();
+    }
+
+    function coachMatches(name) {
+      if (!coach) return false;
+      if (coach.step === 0 && (name === 'pull' || name === 'cover')) return true;
+      if (coach.step === 1 && name === 'freight') return true;
+      if (coach.step === 2 && name === 'calm') return true;
+      return false;
+    }
+
+    function playerAct(name, target) {
+      target = target || {};
+      markInput();
+      if (!sim) return;
+      var point = target.point || { x: SPOTS.reg1.x, y: SPOTS.reg1.y };
+      flashAt(sim, point.x, point.y);
+      hooks.tap();
+      var res = doAction(sim, run, name, {
+        station: target.station,
+        cust: target.cust,
+        free: coachMatches(name),
+        point: point
+      });
+      if (res.ok) {
+        if (res.msg) toast(res.msg);
+        sfx('place');
+        buzz(12);
+        onCoachProgress(name);
+      } else {
+        floater(sim, point.x, point.y - 36, res.msg || 'Nope', '#ffb4b4', true);
+        sfx('miss');
+        if (res.msg) toast(res.msg);
+      }
+      paintHud();
+      draw();
+      saveRun();
+    }
+
+    function eventWorld(ev) {
+      var rect = els.canvas.getBoundingClientRect();
+      var view = viewSize();
+      var scale = view.cssW / view.viewW;
+      return {
+        x: (ev.clientX - rect.left) / scale + cam.x,
+        y: (ev.clientY - rect.top) / scale + cam.y
+      };
+    }
+
+    function screenDist(wx, wy, ev) {
+      var rect = els.canvas.getBoundingClientRect();
+      var view = viewSize();
+      var scale = view.cssW / view.viewW;
+      var sx = (wx - cam.x) * scale + rect.left;
+      var sy = (wy - cam.y) * scale + rect.top;
+      var dx = ev.clientX - sx;
+      var dy = ev.clientY - sy;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    function pickHit(ev) {
+      var best = null;
+      var bestD = 36;
+      for (var i = 0; i < sim.customers.length; i++) {
+        var c = sim.customers[i];
+        if (c.dead || c.state === 'leave') continue;
+        var d = screenDist(c.x, c.y - 36, ev);
+        if (d < bestD) { bestD = d; best = { cust: c }; }
+      }
+      if (best) return best;
+      if (sim.pings) {
+        for (var p = 0; p < sim.pings.length; p++) {
+          var ping = sim.pings[p];
+          if (ping.dead) continue;
+          if (screenDist(ping.x, ping.y, ev) < 40) return { ping: ping };
+        }
+      }
+      var zones = [
+        { station: 'reg1', x: SPOTS.reg1.x, y: (SPOTS.reg1.y + QUEUE.reg1.y) * 0.5 },
+        { station: 'reg2', x: SPOTS.reg2.x, y: (SPOTS.reg2.y + QUEUE.reg2.y) * 0.5 },
+        { station: 'freight', x: SPOTS.truck.x, y: SPOTS.truck.y + 20 },
+        { station: 'floor', x: SPOTS.floor.x, y: SPOTS.floor.y }
+      ];
+      var zone = null;
+      var zoneD = 44;
+      for (var z = 0; z < zones.length; z++) {
+        var dist = screenDist(zones[z].x, zones[z].y, ev);
+        if (dist < zoneD) { zoneD = dist; zone = zones[z]; }
+      }
+      return zone;
+    }
+
+    function onStageTap(ev) {
+      if (!sim || els.sim.hidden) return;
+      markInput();
+      var w = eventWorld(ev);
+      var hit = pickHit(ev);
+      if (hit && hit.ping) {
+        flashAt(sim, hit.ping.x, hit.ping.y);
+        hooks.tap();
+        resolvePing(sim, hit.ping);
+        paintHud();
+        draw();
+        saveRun();
+        return;
+      }
+      if (!hit) {
+        flashAt(sim, w.x, w.y);
+        floater(sim, w.x, w.y - 24, '…', '#f6f0e4');
+        hooks.tap();
+        draw();
+        return;
+      }
+      var act;
+      if (hit.cust) {
+        var c = hit.cust;
+        var angry = c.bubble === 'angry' || (c.maxPatience && c.patience < c.maxPatience * 0.38);
+        if (angry || c.state === 'browse' || c.state === 'enter') act = { name: 'calm', cust: c, point: { x: c.x, y: c.y } };
+        else if (c.reg) act = { name: 'pull', station: c.reg, point: { x: c.x, y: c.y } };
+        else act = { name: 'calm', cust: c, point: { x: c.x, y: c.y } };
+      } else if (hit.station === 'freight') act = { name: 'freight', point: { x: SPOTS.truck.x, y: SPOTS.truck.y } };
+      else if (hit.station === 'floor') act = { name: 'cover', station: 'floor', point: { x: SPOTS.floor.x, y: SPOTS.floor.y } };
+      else act = { name: 'pull', station: hit.station, point: { x: SPOTS[hit.station].x, y: SPOTS[hit.station].y } };
+      playerAct(act.name, act);
+    }
+
+    function drawTag(text, x, y) {
+      ctx.font = '800 16px Outfit, Inter, sans-serif';
+      ctx.textAlign = 'center';
+      var w = ctx.measureText(text).width + 12;
+      ctx.fillStyle = 'rgba(20,12,16,0.88)';
+      ctx.fillRect(x - w / 2, y - 14, w, 18);
+      ctx.fillStyle = '#f6f0e4';
+      ctx.fillText(text, x, y);
+    }
+
+    function drawPatience(x, y, p) {
+      var r = 16;
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = 'rgba(246,240,228,0.28)';
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.strokeStyle = p > 0.5 ? '#2f9e57' : p > 0.25 ? '#e0a322' : '#d64545';
+      ctx.beginPath();
+      ctx.arc(x, y, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * p);
+      ctx.stroke();
+    }
+
+    function drawIconAt(name, x, y, size) {
+      var ir = assets.icons['icons/' + name + '.png'];
+      if (!ir) return;
+      ctx.drawImage(assets.img.icons, ir[0], ir[1], ir[2], ir[3], x - size / 2, y - size / 2, size, size);
+    }
+
+    function drawPings() {
+      if (!sim.pings) return;
+      for (var i = 0; i < sim.pings.length; i++) {
+        var ping = sim.pings[i];
+        if (ping.dead) continue;
+        var bob = reduceMotion ? 0 : Math.sin(Date.now() / 200 + i) * 4;
+        var icon = ping.kind === 'basket' ? 'price' : ping.kind === 'box' ? 'truck' : 'line';
+        var label = ping.kind === 'basket' ? '+$' : ping.kind === 'box' ? 'Box' : 'Help';
+        ctx.strokeStyle = 'rgba(224,163,34,0.85)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(ping.x, ping.y + bob, 26, 0, Math.PI * 2);
+        ctx.stroke();
+        drawIconAt(icon, ping.x, ping.y + bob, 36);
+        drawTag(label, ping.x, ping.y + bob - 28);
+      }
+    }
+
+    function drawTrouble() {
+      var regs = ['reg1', 'reg2'];
+      for (var i = 0; i < regs.length; i++) {
+        var n = queueOf(sim, regs[i]).length;
+        if (n >= 3) {
+          drawIconAt('line', SPOTS[regs[i]].x, SPOTS[regs[i]].y - 108, 36);
+          drawTag('Line ' + n, SPOTS[regs[i]].x, SPOTS[regs[i]].y - 132);
+        }
+      }
+      if (sim.truck) {
+        drawIconAt('truck', SPOTS.truck.x, SPOTS.truck.y - 24, 40);
+        drawTag('Truck', SPOTS.truck.x, SPOTS.truck.y - 52);
+      }
+      if (sim.stock < 0.34) {
+        drawIconAt('outstock', SHELVES[0].x, SHELVES[0].y - 70, 34);
+        drawTag('Low', SHELVES[0].x, SHELVES[0].y - 96);
+      }
+    }
+
+    function drawHand(x, y) {
+      var bob = reduceMotion ? 0 : Math.sin(Date.now() / 160) * 8;
+      ctx.save();
+      ctx.translate(x, y + 62 + bob);
+      ctx.fillStyle = '#f6f0e4';
+      ctx.strokeStyle = '#2b1d2e';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(0, -20);
+      ctx.lineTo(9, -2);
+      ctx.lineTo(4, -2);
+      ctx.lineTo(4, 18);
+      ctx.lineTo(-4, 18);
+      ctx.lineTo(-4, -2);
+      ctx.lineTo(-9, -2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function publishCoach(focus) {
+      if (!focus || !coach) {
+        if (els.stage) {
+          delete els.stage.dataset.tx;
+          delete els.stage.dataset.ty;
+          delete els.stage.dataset.coach;
+        }
+        return;
+      }
+      var view = viewSize();
+      var scale = view.cssW / view.viewW;
+      els.stage.dataset.tx = String(Math.round((focus.x - cam.x) * scale));
+      els.stage.dataset.ty = String(Math.round((focus.y - cam.y) * scale));
+      els.stage.dataset.coach = String(coach.step);
+    }
+
     function viewSize() {
       var cssW = els.canvas._cssW || 800;
       var cssH = els.canvas._cssH || 450;
-      var target = cssW < 720 ? 48 : 40;
+      var target = cssW < 720 ? 84 : 96;
       var viewW = CONFIG.sprite * cssW / target;
       if (viewW > WORLD_W) viewW = WORLD_W;
       var viewH = viewW * cssH / cssW;
@@ -1893,16 +2683,24 @@
       var dpr = els.canvas._dpr || 1;
       var view = viewSize();
       var scale = view.cssW / view.viewW;
-      if (sim && cam.follow) {
-        var fx = WORLD_W * 0.5;
-        var fy = WORLD_H * 0.58;
+      var focus = sim && coach ? coachFocus() : null;
+      if (focus) {
+        cam.x = focus.x - view.viewW * 0.5;
+        cam.y = focus.y - view.viewH * 0.62;
+      } else if (sim && cam.follow) {
+        var fx = 0;
+        var fy = 0;
         var nCust = 0;
-        for (var i = 0; i < sim.customers.length; i++) { fx += sim.customers[i].x; fy += sim.customers[i].y; nCust++; }
-        if (nCust) { fx /= (nCust + 1); fy /= (nCust + 1); }
-        var dx = fx - view.viewW / 2;
-        var dy = fy - view.viewH / 2;
-        cam.x += (dx - cam.x) * 0.08;
-        cam.y += (dy - cam.y) * 0.08;
+        for (var i = 0; i < sim.customers.length; i++) {
+          if (sim.customers[i].state === 'leave') continue;
+          fx += sim.customers[i].x;
+          fy += sim.customers[i].y;
+          nCust++;
+        }
+        if (!nCust) { fx = SPOTS.reg1.x; fy = QUEUE.reg1.y; nCust = 1; }
+        else { fx /= nCust; fy /= nCust; }
+        cam.x += ((fx - view.viewW * 0.5) - cam.x) * 0.08;
+        cam.y += ((fy - view.viewH * 0.58) - cam.y) * 0.08;
       }
       cam.x = clamp(cam.x, 0, Math.max(0, WORLD_W - view.viewW));
       cam.y = clamp(cam.y, 0, Math.max(0, WORLD_H - view.viewH));
@@ -1925,15 +2723,53 @@
         if (sim.you) drawList.push(sim.you);
         drawList.sort(function (a, b) { return a.y - b.y; });
         for (var d = 0; d < drawList.length; d++) drawActor(drawList[d]);
-        ctx.font = '700 22px Outfit, Inter, sans-serif';
+        drawPings();
+        drawTrouble();
+        if (sim.coins) {
+          for (var ci = 0; ci < sim.coins.length; ci++) {
+            var coin = sim.coins[ci];
+            ctx.globalAlpha = clamp(coin.life, 0, 1);
+            ctx.fillStyle = '#e0a322';
+            ctx.beginPath();
+            ctx.arc(coin.x, coin.y, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#2b1d2e';
+            ctx.font = '800 11px Outfit, Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('$', coin.x, coin.y + 4);
+          }
+        }
+        if (sim.fx) {
+          for (var fi = 0; fi < sim.fx.length; fi++) {
+            var burst = sim.fx[fi];
+            var u = 1 - clamp(burst.life / 0.38, 0, 1);
+            ctx.globalAlpha = clamp(burst.life / 0.38, 0, 1);
+            ctx.strokeStyle = '#ffe08a';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.arc(burst.x, burst.y, 10 + u * 36, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+        }
+        ctx.globalAlpha = 1;
         ctx.textAlign = 'center';
         for (var f = 0; f < sim.floats.length; f++) {
           var fl = sim.floats[f];
           ctx.globalAlpha = clamp(fl.life, 0, 1);
           ctx.fillStyle = fl.color;
+          ctx.font = (fl.big ? '800 28px ' : '700 20px ') + 'Outfit, Inter, sans-serif';
           ctx.fillText(fl.text, fl.x, fl.y);
         }
         ctx.globalAlpha = 1;
+        if (focus) {
+          ctx.strokeStyle = 'rgba(224,163,34,0.95)';
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.arc(focus.x, focus.y, 28 + (reduceMotion ? 0 : Math.sin(Date.now() / 180) * 4), 0, Math.PI * 2);
+          ctx.stroke();
+          drawHand(focus.x, focus.y);
+          publishCoach(focus);
+        } else publishCoach(null);
       }
     }
 
@@ -1953,6 +2789,7 @@
         var squash = 1 + Math.sin(a.frame * 1.4) * 0.05;
         ctx.scale(1, squash);
       }
+      if (!reduceMotion && a.pop > 0) ctx.scale(1 + a.pop * 0.22, 1 + a.pop * 0.22);
       if (a.role && ROLE_COLOR[a.role]) {
         ctx.fillStyle = ROLE_COLOR[a.role];
         ctx.globalAlpha = 0.9;
@@ -1963,25 +2800,23 @@
       }
       ctx.drawImage(assets.img.floor, rect[0], rect[1], rect[2], rect[3], -size / 2, -size + 8, size, size);
       ctx.restore();
-      if (a.kind === 'cust' && (a.state === 'queue' || a.state === 'checkout' || a.state === 'browse')) {
-        var p = clamp(a.patience / a.maxPatience, 0, 1);
-        ctx.fillStyle = 'rgba(43,29,46,0.45)';
-        ctx.fillRect(a.x - 14, a.y - size - 6, 28, 5);
-        ctx.fillStyle = p > 0.5 ? '#2f9e57' : p > 0.25 ? '#e0a322' : '#d64545';
-        ctx.fillRect(a.x - 14, a.y - size - 6, 28 * p, 5);
+      if (a.kind === 'cust' && a.state !== 'leave' && a.maxPatience) {
+        drawPatience(a.x, a.y - size - 8, clamp(a.patience / a.maxPatience, 0, 1));
       }
       if (a.bubble) {
         var ir = assets.icons['icons/' + a.bubble + '.png'];
         if (ir) {
-          ctx.drawImage(assets.img.icons, ir[0], ir[1], ir[2], ir[3], a.x - 14, a.y - size - 28, 28, 28);
+          ctx.drawImage(assets.img.icons, ir[0], ir[1], ir[2], ir[3], a.x - 16, a.y - size - 46, 32, 32);
         }
       }
-      if (a.kind === 'you') {
-        ctx.font = '800 16px Outfit, Inter, sans-serif';
-        ctx.fillStyle = '#2b1d2e';
-        ctx.textAlign = 'center';
-        ctx.fillText('YOU', a.x, a.y - size - 8);
+      if (a.kind === 'staff' && a.id) {
+        var tag = firstName(a.id);
+        if (a.rush > 1) tag += ' →';
+        drawTag(tag, a.x, a.y - size - 16);
+      } else if (a.kind === 'you') {
+        drawTag('YOU', a.x, a.y - size - 16);
       }
+      if (a.heart > 0) drawTag('♥', a.x, a.y - size - 40);
     }
 
     function loop(ts) {
@@ -1992,6 +2827,7 @@
       if (dt > 0.05) dt = 0.05;
       if (sim && !sim.paused && !sim.done) {
         var speed = isQA() ? qaSpeed : 1;
+        if (coach && sim.sales > 0) speed *= 0.34;
         step(sim, run, dt * speed);
         while (sim.notes.length) toast(sim.notes.shift());
         if (sim.pending && shownEvent !== sim.pending) {
@@ -2006,6 +2842,8 @@
           els.live.textContent = DAY_NAMES[run.day] + ' ' + clockLabel(sim.t, sim.duration) + ', sales ' + money(sim.sales) + ' of ' + money(sim.goal) + ', morale ' + Math.round(sim.morale) + ', ' + (Math.round(sim.stars * 10) / 10) + ' stars.';
         }
         if (sim.done) finishDay();
+        simSaveAcc += dt;
+        if (simSaveAcc > 1) { simSaveAcc = 0; saveRun(); }
       }
       if (!els.sim.hidden) draw();
     }
@@ -2022,12 +2860,14 @@
 
     document.addEventListener('visibilitychange', function () {
       if (document.hidden) {
+        saveRun();
         stopLoop();
       } else if (sim && !els.sim.hidden) {
         lastTs = 0;
         startLoop();
       }
     });
+    window.addEventListener('pagehide', saveRun);
 
     if (window.ResizeObserver) {
       var ro = new ResizeObserver(function () { resize(); if (!els.sim.hidden) draw(); });
@@ -2038,9 +2878,10 @@
 
     els.stage.addEventListener('pointerdown', function (ev) {
       if (els.sim.hidden || ev.button > 0) return;
+      if (ev.target.closest && ev.target.closest('button')) return;
       cam.drag = { x: ev.clientX, y: ev.clientY, cx: cam.x, cy: cam.y, moved: false };
-      cam.follow = false;
-      els.stage.setPointerCapture(ev.pointerId);
+      if (!coach) cam.follow = false;
+      try { els.stage.setPointerCapture(ev.pointerId); } catch (e) {}
     });
     els.stage.addEventListener('pointermove', function (ev) {
       if (!cam.drag) return;
@@ -2048,27 +2889,39 @@
       var scale = view.cssW / view.viewW;
       var mx = ev.clientX - cam.drag.x;
       var my = ev.clientY - cam.drag.y;
-      if (Math.abs(mx) + Math.abs(my) > 6) cam.drag.moved = true;
+      if (Math.abs(mx) + Math.abs(my) > 14) cam.drag.moved = true;
+      if (!cam.drag.moved) return;
       cam.x = clamp(cam.drag.cx - mx / scale, 0, Math.max(0, WORLD_W - view.viewW));
       cam.y = clamp(cam.drag.cy - my / scale, 0, Math.max(0, WORLD_H - view.viewH));
     });
-    function endPan() {
+    function endPan(ev) {
+      var wasTap = cam.drag && !cam.drag.moved;
       if (cam.drag && cam.drag.moved) {
-        setTimeout(function () { cam.follow = true; }, 2500);
-      } else cam.follow = true;
+        setTimeout(function () { if (!coach) cam.follow = true; }, 2200);
+      } else if (!coach) cam.follow = true;
       cam.drag = null;
+      if (wasTap && ev && !(ev.target && ev.target.closest && ev.target.closest('button'))) onStageTap(ev);
     }
     els.stage.addEventListener('pointerup', endPan);
     els.stage.addEventListener('pointercancel', endPan);
 
+    var skipBtn = document.getElementById('hr-skip');
+    if (skipBtn) skipBtn.addEventListener('click', function (ev) {
+      ev.stopPropagation();
+      markInput();
+      endCoach();
+      hooks.tap();
+    });
+
     els.sim.addEventListener('click', function (ev) {
       var btn = ev.target.closest('[data-act]');
       if (!btn || !sim) return;
-      var res = doAction(sim, run, btn.getAttribute('data-act'));
-      toast(res.msg);
-      if (res.ok) { sfx('place'); buzz(10); }
-      else sfx('miss');
-      paintHud();
+      if (root.CGSfx && root.CGSfx.juice) root.CGSfx.juice(btn, 'pop');
+      var name = btn.getAttribute('data-act');
+      var point = name === 'freight' ? { x: SPOTS.truck.x, y: SPOTS.truck.y }
+        : name === 'calm' ? { x: SPOTS.reg1.x, y: QUEUE.reg1.y }
+        : { x: SPOTS.reg1.x, y: SPOTS.reg1.y };
+      playerAct(name, { point: point });
     });
 
     els.plan.addEventListener('pointerdown', function (ev) {
@@ -2169,7 +3022,15 @@
       if (from && from.shift === shift && from.station === station) return;
       var res = tryPlace(run.schedule[run.day], avail, id, shift, station, from);
       if (!res.ok) {
-        toast(res.reason);
+        var row = (run.days[run.day].avail && run.days[run.day].avail[id]) || [0, 0, 0];
+        var msg = res.reason;
+        if (!row[shift]) {
+          var bits = [0, 1, 2].map(function (i) {
+            return SHIFT_NAMES[i] + (row[i] ? ' (gold)' : ' (gray)');
+          }).join(', ');
+          msg = firstName(id) + ': dots are ' + bits + '. ' + SHIFT_NAMES[shift] + ' is gray, so that cell will not take them.';
+        }
+        showPlanNote(msg);
         sfx('miss');
         var cell = els.plan.querySelector('[data-shift="' + shift + '"][data-station="' + station + '"]');
         if (cell) cell.classList.add('shake');
@@ -2184,6 +3045,16 @@
       var drop = els.plan.querySelector('[data-shift="' + shift + '"][data-station="' + station + '"]');
       if (drop) drop.classList.add('stamped');
     }
+
+    onAsset = function () {
+      loadCount++;
+      var bar = document.getElementById('hr-loadbar');
+      var lab = document.getElementById('hr-load-label');
+      var pct = Math.min(100, Math.round(100 * loadCount / 9));
+      if (bar) bar.style.width = pct + '%';
+      if (bar && bar.parentNode) bar.parentNode.setAttribute('aria-valuenow', String(pct));
+      if (lab) lab.textContent = pct < 100 ? 'Setting the floor' : 'Doors open';
+    };
 
     Promise.all([
       loadImage(ART + 'floor_chars.png8.png'),
@@ -2204,7 +3075,15 @@
       };
       bakeFloors();
       resize();
-      renderIntro();
+      var saved = readJSON('hr_run_v1');
+      if (saved && saved.ymd === ymd && saved.phase && saved.phase !== 'intro') {
+        run = saved;
+        if (!run.suggested) run.suggested = [false, false, false];
+        track('holiday_rush_resume', { seed: ymd });
+        enterPhase();
+      } else {
+        beginFresh();
+      }
       track('holiday_rush_open', { seed: ymd });
     }).catch(function () {
       showFatal('The store art did not load. Refresh the page to try again.');
