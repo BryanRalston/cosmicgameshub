@@ -150,6 +150,21 @@
     .hr-choices button:disabled { opacity: 0.45; }
     .hr-grade { font-family: Outfit, Inter, sans-serif; font-size: 3rem; font-weight: 800; color: #e0a322; line-height: 1; }
     .hr-scorebig { font-family: Outfit, Inter, sans-serif; font-size: clamp(2rem, 6vw, 3rem); font-weight: 800; color: var(--text-hi); margin: 0.2rem 0; }
+    .hr-map { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin: 0.6rem 0 0.8rem; }
+    .hr-week { grid-column: 1 / -1; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #e0a322; margin-top: 0.35rem; }
+    .hr-node { min-height: 72px; border-radius: 12px; border: 1px solid rgba(224,163,34,0.4); background: #2a2118; color: #f6f0e4; font: inherit; font-weight: 800; cursor: pointer; touch-action: manipulation; padding: 0.35rem 0.2rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+    .hr-node small { font-weight: 700; color: rgba(246,240,228,0.7); font-size: 0.68rem; }
+    .hr-node .hr-stars { font-size: 0.85rem; letter-spacing: 0.04em; }
+    .hr-node.is-locked { opacity: 0.4; cursor: not-allowed; }
+    .hr-node.is-next { outline: 2px solid #e0a322; }
+    .hr-shop { display: flex; flex-direction: column; gap: 8px; margin: 0.6rem 0; }
+    .hr-upgrade { display: flex; gap: 10px; align-items: center; background: #f6f0e4; color: #2b1d2e; border-radius: 14px; padding: 0.65rem; }
+    .hr-upgrade h3 { margin: 0; font-size: 1rem; color: #2b1d2e; }
+    .hr-upgrade p { margin: 0.15rem 0 0; color: #3c2a30; font-size: 0.82rem; }
+    .hr-upgrade button { margin-left: auto; flex: 0 0 auto; min-height: 44px; }
+    .hr-bank { font-size: 1.35rem; font-weight: 800; color: #e0a322; margin: 0.2rem 0; }
+    .hr-thresholds { color: var(--text-mid); font-size: 0.82rem; font-weight: 700; }
+    .hr-combo.is-max { box-shadow: 0 0 0 3px #fff4c2; }
     .hr-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin: 0.6rem 0 1rem; }
     .hr-table th, .hr-table td { text-align: left; padding: 0.4rem 0.35rem; border-bottom: 1px solid var(--border); color: var(--text-mid); }
     .hr-table th { font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-lo); }
@@ -182,6 +197,9 @@
       .hr-hero { padding-top: 0.6rem; }
       .hr-actions { grid-template-columns: 1fr 1fr; }
       .hr-modal { align-items: flex-end; padding: 0.5rem; }
+      .hr-map { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .hr-upgrade { flex-wrap: wrap; }
+      .hr-upgrade button { width: 100%; margin-left: 0; }
     }
     @media (max-height: 520px) {
       body:has(#hr-sim:not([hidden])) .nav { display: none; }
@@ -228,7 +246,7 @@
     <header class="hr-hero">
       <span class="section__eyebrow">Daily store sim</span>
       <h1>Holiday Rush: Store Manager</h1>
-      <p>Monday is open. Tap the floor, move the crew, and hit the sales goal.</p>
+      <p>Tap the floor, move the crew, and clear the shift. Stars unlock the next one.</p>
       <div class="hr-pills">
         <div class="hr-pill">Seed <b id="hr-seed">—</b></div>
         <div class="hr-pill">Streak <b id="hr-streak">0</b></div>
@@ -256,6 +274,8 @@
       <p class="hr-actline" id="hr-actline"></p>
     </section>
     <section id="hr-score" hidden></section>
+    <section id="hr-shop" hidden></section>
+    <section id="hr-map" hidden></section>
     <section id="hr-final" hidden>
       <div id="hr-final-body"></div>
       <div class="result-loop" data-cg-streak-hint data-streak-source="holiday-rush"></div>
