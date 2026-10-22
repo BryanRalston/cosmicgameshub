@@ -8190,6 +8190,19 @@
         var body = els.event ? els.event.querySelector('p') : null;
         return (title ? title.textContent : '') + ' | ' + (body ? body.textContent : '');
       },
+      wrapState: function () {
+        if (!isQA() || !sim) return null;
+        var open = 0;
+        var life = 0;
+        var pings = sim.pings || [];
+        for (var i = 0; i < pings.length; i++) {
+          if (pings[i].kind === 'wrap' && !pings[i].dead) {
+            open++;
+            if (pings[i].life > life) life = pings[i].life;
+          }
+        }
+        return { open: open, life: Math.round(life * 10) / 10, wraps: sim.wraps || 0, crowd: sim.crowd || '' };
+      },
       wraps: function () {
         if (!isQA() || !sim) return null;
         offerWrap(sim);
