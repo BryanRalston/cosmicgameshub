@@ -64,8 +64,7 @@
     var books = ctx.books;
     var econ = economy();
     var items = econ.availableItems(books);
-    var build = econ.nextBuild(books);
-    var gate = econ.canBuild(books, build);
+    var offered = econ.offeredBuilds ? econ.offeredBuilds(books) : [econ.nextBuild(books)].filter(Boolean);
     var loan = econ.loanOffer(books);
     var other = otherLocation(books);
     var active = books.locations[books.active];
@@ -96,9 +95,12 @@
         '<button type="button" class="btn" data-train="' + esc(row.id) + '">Train</button>' +
         '<button type="button" class="btn" data-fire="' + esc(row.id) + '">Fire</button></div></div>';
     }).join('');
-    var buildBlock = build
-      ? '<article class="hr-upgrade"><div><h3>' + esc(build.name) + '</h3><p>' + esc(build.blurb) + '</p><p class="hr-fine">' + esc(gate.ok ? 'Ready.' : gate.msg) + '</p></div>' +
-        '<button type="button" class="btn btn--primary" data-build="' + esc(build.id) + '"' + (gate.ok ? '' : ' disabled') + '>' + money(build.cost) + '</button></article>'
+    var buildBlock = offered.length
+      ? offered.map(function (build) {
+        var gate = econ.canBuild(books, build);
+        return '<article class="hr-upgrade"><div><h3>' + esc(build.name) + '</h3><p>' + esc(build.blurb) + '</p><p class="hr-fine">' + esc(gate.ok ? 'Ready.' : gate.msg) + '</p></div>' +
+          '<button type="button" class="btn btn--primary" data-build="' + esc(build.id) + '"' + (gate.ok ? '' : ' disabled') + '>' + money(build.cost) + '</button></article>';
+      }).join('')
       : '<p class="hr-fine">The mart is as large as this building gets. The plaza kiosk is the second floor.</p>';
     var loanBlock = '';
     if (books.loan && books.loan.left > 0) {
@@ -370,16 +372,13 @@
         path: 'Plaza Kiosk is on this map and open. Tap the card to play that floor. The mart keeps running on its lead.'
       };
     }
-    var rep = Math.round((books.reputation || 0) * 10) / 10;
-    var next = 'Next: buy Plaza Kiosk from Next build in the office.';
+    var def = root.HRParts.data.get().economy.buildById.kiosk;
+    var cost = def ? def.cost : 6400;
+    var next = 'Next: buy Plaza Kiosk from Next build in the office (' + money(cost) + ').';
     if (!econ.has(books, 'knock')) next = 'Next: knock through the east wall ($1,600).';
     else if (!econ.has(books, 'lane')) next = 'Next: the third register ($3,200).';
-    else if (!econ.has(books, 'departments')) next = 'Next: the seasonal bay and cafe ($5,200).';
-    else if (!econ.has(books, 'flagship')) next = 'Next: the flagship wing ($7,800, reviews 3.6).';
-    else if (rep < 3.7) next = 'Next: reviews 3.7. They are ' + rep.toFixed(1) + ' now.';
-    else if (econ.managerSkill(books) < 2) next = 'Next: a manager at skill 2.';
-    else if ((books.cash || 0) < 9800) next = 'Next: $9,800 in the register. It has ' + money(books.cash || 0) + '.';
-    var path = 'Plaza Kiosk is on this map. Unlock it in order: east wall ($1,600), third register ($3,200), seasonal bay ($5,200), flagship wing ($7,800 and reviews 3.6), then reviews 3.7 and $9,800 from Next build in the office. Maren starts at skill 2, so the lead is already qualified. ' + next;
+    else if ((books.cash || 0) < cost) next = 'Next: ' + money(cost) + ' in the register. It has ' + money(books.cash || 0) + '.';
+    var path = 'Plaza Kiosk is on this map. It opens after the third register: east wall ($1,600), third register ($3,200), then Plaza Kiosk for ' + money(cost) + ' from Next build. The seasonal bay and the flagship wing can wait. ' + next;
     return { open: false, here: false, short: next, path: path };
   }
 

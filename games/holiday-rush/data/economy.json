@@ -16,7 +16,7 @@
     {"id": "lane", "name": "Third register", "cost": 3200, "needs": ["knock"], "blurb": "Register C sits in the new bay. Pull someone onto it or the lane just watches the line."},
     {"id": "departments", "name": "Seasonal bay and the cafe", "cost": 5200, "needs": ["lane"], "blurb": "A snow-globe gondola and a cafe counter. Mugs only sell if the counter is on the floor."},
     {"id": "flagship", "name": "Flagship wing", "cost": 7800, "needs": ["departments"], "needsRep": 3.6, "blurb": "Another knock-through. The mart is now a floor you cross, not a room you see at once."},
-    {"id": "kiosk", "name": "Plaza kiosk", "cost": 9800, "needs": ["flagship"], "needsRep": 3.7, "needsSkill": 2, "blurb": "A second store. You play one floor. A trained lead runs the other, and the company register is shared."}
+    {"id": "kiosk", "name": "Plaza kiosk", "cost": 6400, "needs": ["lane"], "blurb": "A second store once the third register is in. You play one floor. A trained lead runs the other, and the company register is shared."}
   ],
   "custCap": {"base": 14, "knock": 18, "lane": 22, "departments": 26, "flagship": 32},
   "trainCostPerSkill": 450,

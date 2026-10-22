@@ -587,6 +587,28 @@
     return null;
   }
 
+  function needsMet(books, build) {
+    if (!build || !build.needs) return false;
+    for (var i = 0; i < build.needs.length; i++) {
+      if (!has(books, build.needs[i])) return false;
+    }
+    return true;
+  }
+
+  function offeredBuilds(books) {
+    var builds = defs().economy.builds;
+    var out = [];
+    var next = nextBuild(books);
+    if (next) out.push(next);
+    for (var i = 0; i < builds.length; i++) {
+      var row = builds[i];
+      if (has(books, row.id)) continue;
+      if (next && row.id === next.id) continue;
+      if (needsMet(books, row)) out.push(row);
+    }
+    return out;
+  }
+
   function canBuild(books, build) {
     if (!build) return { ok: false, msg: 'The floor is as large as it gets.' };
     for (var i = 0; i < build.needs.length; i++) {
@@ -857,6 +879,21 @@
     cafeBooks.locations.kiosk = { id: 'kiosk', layout: data.get().layouts.kiosk, stock: {} };
     cafeBooks.active = 'kiosk';
     if (!itemUnlocked(cafeBooks, mug)) fail('mug kiosk');
+    var kioskDef = data.get().economy.buildById.kiosk;
+    if (!kioskDef || kioskDef.needs.indexOf('lane') < 0 || kioskDef.needs.indexOf('flagship') >= 0) fail('kiosk needs');
+    if (kioskDef.needsRep || kioskDef.needsSkill) fail('kiosk gate');
+    if (!(kioskDef.cost > 0) || kioskDef.cost > 8000) fail('kiosk cost ' + kioskDef.cost);
+    var earlyKiosk = blankBooks();
+    earlyKiosk.cash = 20000;
+    expand(earlyKiosk, 'knock');
+    expand(earlyKiosk, 'lane');
+    if (earlyKiosk.cash !== 20000 - 1600 - 3200) fail('kiosk spent ' + earlyKiosk.cash);
+    var kioskGate = canBuild(earlyKiosk, kioskDef);
+    if (!kioskGate.ok) fail('kiosk early ' + (kioskGate.msg || ''));
+    var offered = offeredBuilds(earlyKiosk);
+    var sawKiosk = false;
+    for (var oi = 0; oi < offered.length; oi++) if (offered[oi].id === 'kiosk') sawKiosk = true;
+    if (!sawKiosk) fail('kiosk offer');
     return { ok: reasons.length === 0, reason: reasons.join('; '), mean: Math.round(mean * 10) / 10 };
   }
 
@@ -896,6 +933,7 @@
     train: train,
     expand: expand,
     nextBuild: nextBuild,
+    offeredBuilds: offeredBuilds,
     canBuild: canBuild,
     loanOffer: loanOffer,
     takeLoan: takeLoan,

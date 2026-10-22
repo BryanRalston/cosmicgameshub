@@ -3825,19 +3825,24 @@
 
     var toastQueue = [];
     var toastOn = false;
-    function toast(msg, first) {
+    function toast(msg, first, ms) {
       if (!msg) return;
+      if (msg === 'Actions are refilling.') {
+        if (els.sim && els.sim.hidden) return;
+        if (toastQueue.indexOf(msg) >= 0) return;
+        if (toastOn && els.toast && els.toast.textContent === msg) return;
+      }
       if (first) toastQueue.unshift(msg);
       else toastQueue.push(msg);
-      if (!toastOn) playToast();
+      if (!toastOn) playToast(ms);
       else if (first) {
         clearTimeout(toastTimer);
         if (els.toast) els.toast.classList.remove('show');
         toastOn = false;
-        playToast();
+        playToast(ms);
       }
     }
-    function playToast() {
+    function playToast(ms) {
       if (!els.toast || !toastQueue.length) { toastOn = false; return; }
       toastOn = true;
       els.toast.textContent = toastQueue.shift();
@@ -3849,7 +3854,19 @@
           if (toastQueue.length) playToast();
           else toastOn = false;
         }, 160);
-      }, 2200);
+      }, ms || 2200);
+    }
+    function clearRefillNotice() {
+      toastQueue = toastQueue.filter(function (m) { return m !== 'Actions are refilling.'; });
+      var line = document.getElementById('hr-actline');
+      if (line) line.textContent = '';
+      if (els.toast && els.toast.textContent === 'Actions are refilling.') {
+        els.toast.classList.remove('show');
+        els.toast.textContent = '';
+        clearTimeout(toastTimer);
+        toastOn = false;
+        if (toastQueue.length) playToast();
+      }
     }
     if (HR.economy && HR.economy.listenMilestones && HR.data) {
       HR.economy.listenMilestones(function (booksNow, id) {
@@ -3897,6 +3914,7 @@
       if (which !== 'sim') {
         els.event.hidden = true;
         els.modal.hidden = true;
+        clearRefillNotice();
       }
       document.body.dataset.hrPhase = which;
       if (which !== 'sim') stopLoop();
@@ -4331,6 +4349,12 @@
       snap.bank = books.cash;
       snap.bestCombo = sim.bestCombo || 0;
       snap.shiftStars = goalStars(snap.goalPct || 0);
+      snap.closeNote = announceClose(cut > 0);
+      var tenantCamp = campaignGet();
+      if (tenantCamp.playedDay !== (run && run.ymd)) {
+        tenantCamp.playedDay = run.ymd;
+      }
+      campaignPut(tenantCamp);
       hooks.fanfare();
       run.history.push(snap);
       run.phase = 'score';
@@ -4588,19 +4612,23 @@
       var storeName = books && books.locations[books.active] ? books.locations[books.active].name : '';
       var ops = run.day >= 1;
       var hud =
+        '<div class="hr-hud__stats">' +
         '<div class="hr-clock" id="hr-clock" style="--p:0"><span id="hr-clock-label">8:00 AM</span></div>' +
         '<div class="hr-sales"><div class="hr-sales__top"><span>Sales</span><strong id="hr-sales-text"></strong></div><div class="hr-bar"><i id="hr-sales-bar"></i></div></div>' +
-        '<div class="hr-stat hr-stat--stars"><span>Stars</span><strong id="hr-star-text" class="hr-stars"></strong></div>' +
+        '<div class="hr-stat hr-stat--stars hr-hud__extra"><span>Stars</span><strong id="hr-star-text" class="hr-stars"></strong></div>' +
         '<div class="hr-combo" id="hr-combo" hidden>x2</div>' +
         '<div class="hr-rush" id="hr-rush" hidden>RUSH</div>' +
-        (ops ? '<div class="hr-stat"><span>Payroll</span><strong id="hr-pay-text"></strong></div><div class="hr-stat"><span>Morale</span><strong id="hr-mor-text"></strong></div>' : '') +
-        (storeName ? '<div class="hr-stat"><span>Store</span><strong id="hr-store-name">' + esc(storeName) + '</strong></div>' : '') +
+        (ops ? '<div class="hr-stat hr-hud__extra"><span>Payroll</span><strong id="hr-pay-text"></strong></div><div class="hr-stat hr-hud__extra"><span>Morale</span><strong id="hr-mor-text"></strong></div>' : '') +
+        (storeName ? '<div class="hr-stat hr-hud__extra"><span>Store</span><strong id="hr-store-name">' + esc(storeName) + '</strong></div>' : '') +
         (sim.tenant ? '<div class="hr-stat"><span>Floor</span><strong id="hr-tenant-name">' + esc(sim.tenant.name) + (sim.tenant.mechanic ? ' · ' + esc(mechanicLabel(sim.tenant.mechanic)) : '') + '</strong></div>' : '') +
-        (sim.calendarName && !sim.tenant ? '<div class="hr-stat"><span>Today</span><strong id="hr-cal-name">' + esc(sim.calendarName) + '</strong></div>' : '') +
-        (sim.mallRetune ? '<div class="hr-stat"><span>Plaza</span><strong id="hr-plaza-text">' + esc(sim.mallRetune) + '</strong></div>' : '') +
-        (books ? '<div class="hr-stat hr-aisle"><span>Aisle</span><strong id="hr-aisle-text">Steady</strong></div>' : '') +
+        (sim.calendarName && !sim.tenant ? '<div class="hr-stat hr-hud__extra"><span>Today</span><strong id="hr-cal-name">' + esc(sim.calendarName) + '</strong></div>' : '') +
+        (sim.mallRetune ? '<div class="hr-stat hr-hud__extra"><span>Plaza</span><strong id="hr-plaza-text">' + esc(sim.mallRetune) + '</strong></div>' : '') +
+        (books ? '<div class="hr-stat hr-aisle hr-hud__extra"><span>Aisle</span><strong id="hr-aisle-text">Steady</strong></div>' : '') +
+        '</div>' +
+        '<div class="hr-hud__tools">' +
         '<button type="button" id="hr-crew-btn" class="hr-mute">Crew</button>' +
-        '<button type="button" id="hr-mute" class="hr-mute" aria-pressed="false" aria-label="Mute sound">Sound</button>';
+        '<button type="button" id="hr-mute" class="hr-mute" aria-pressed="false" aria-label="Mute sound">Sound</button>' +
+        '</div>';
       function actButton(name, label, icon) {
         return '<button type="button" data-act="' + name + '"><span class="hr-icon" style="' + iconStyle(icon, 28) + '" aria-hidden="true"></span><span>' + label + '</span></button>';
       }
@@ -4807,6 +4835,34 @@
       if (els.live) els.live.textContent = card.title + '. ' + card.body + ' The floor keeps moving.';
     }
 
+    function announceClose(inBlack, camp) {
+      camp = camp || campaignGet();
+      if (run && (!camp.playedDay || camp.playedDay !== run.ymd)) {
+        var streakNow = bumpStreak(run.ymd);
+        camp.playedDay = run.ymd;
+        paintMeta();
+        if (books && streakNow && streakNow.streak >= 3 && HR.economy && HR.economy.milestone) {
+          HR.economy.milestone(books, 'streak-3');
+        }
+      }
+      var meta = metaGet();
+      var parts = [];
+      if (inBlack) parts.push('In the black.');
+      if (meta.streak >= 1) parts.push('Streak ' + meta.streak + '.');
+      var line = parts.join(' ');
+      if (line) {
+        toastQueue = toastQueue.filter(function (m) { return m !== 'Actions are refilling.'; });
+        if (els.toast && els.toast.textContent === 'Actions are refilling.') {
+          els.toast.classList.remove('show');
+          els.toast.textContent = '';
+          clearTimeout(toastTimer);
+          toastOn = false;
+        }
+        toast(line, true, 4200);
+      }
+      return line;
+    }
+
     function bankShift(snap) {
       var camp = campaignGet();
       var stars = goalStars(snap.goalPct);
@@ -4862,22 +4918,7 @@
       camp.seen = true;
       camp.current = run.day;
       var inBlack = !!(snap.tape && snap.tape.profit > 0);
-      var streakLine = '';
-      if (!camp.playedDay || camp.playedDay !== run.ymd) {
-        var streakBefore = metaGet().streak;
-        var streakNow = bumpStreak(run.ymd);
-        camp.playedDay = run.ymd;
-        paintMeta();
-        if (streakNow && streakNow.lastYmd === run.ymd && streakNow.streak !== streakBefore) {
-          streakLine = 'Streak ' + streakNow.streak + '.';
-        }
-        if (books && streakNow && streakNow.streak >= 3 && HR.economy && HR.economy.milestone) {
-          HR.economy.milestone(books, 'streak-3');
-        }
-      }
-      if (inBlack && streakLine) toast('In the black. ' + streakLine, true);
-      else if (inBlack) toast('In the black.', true);
-      else if (streakLine) toast(streakLine, true);
+      snap.closeNote = announceClose(inBlack, camp);
       campaignPut(camp);
       snap.shiftStars = stars;
       snap.bestComboLabel = (snap.bestCombo || 0) > 1 ? multLabel(snap.bestCombo) : '';
@@ -5071,6 +5112,7 @@
         '<p class="hr-stars hr-stars--big">' + starGlyph(snap.shiftStars == null ? goalStars(snap.goalPct || 0) : snap.shiftStars) + '</p>' +
         '<p class="hr-thresholds">1★ ' + Math.round(CONFIG.star1 * 100) + '% · 2★ ' + Math.round(CONFIG.star2 * 100) + '% · 3★ ' + Math.round(CONFIG.star3 * 100) + '%</p>' +
         (snap.tenant ? '<p class="hr-lead">You ran ' + esc(snap.tenant) + '. Their drawer did ' + money(snap.sales) + '. You keep 15% (' + money(snap.cut || 0) + '). The other 85% stays on their tape.</p>' : '') +
+        (snap.closeNote ? '<p class="hr-lead" id="hr-close-note">' + esc(snap.closeNote) + '</p>' : '') +
         '<p class="hr-lead">Best combo ' + esc(comboBit) + ' · ' + (snap.walkouts || 0) + ' walkouts · ' + money(snap.sales) + ' / ' + money(snap.goal) + '</p>' +
         '<p class="hr-bank">' + (snap.tape ? money(snap.tape.profit) + ' profit' : (snap.earned > 0 ? '+' + money(snap.earned) + ' banked' : 'Register unchanged')) + ' · ' + money(snap.bank || 0) + ' in the register</p>' +
         '<p class="hr-fine">' + esc(bankCopy(snap)) + '</p>' +
@@ -5741,6 +5783,31 @@
       els.canvas._cssW = w;
       els.canvas._cssH = h;
       els.canvas._dpr = dpr;
+      placeChrome();
+    }
+
+    function placeChrome() {
+      var zoom = document.getElementById('hr-zoom');
+      var skip = document.getElementById('hr-skip');
+      var coachEl = document.getElementById('hr-coach');
+      var stage = els.stage;
+      if (!zoom || !stage) return;
+      var z = zoom.getBoundingClientRect();
+      var stageBox = stage.getBoundingClientRect();
+      if (z.width < 8 || stageBox.width < 8) return;
+      var clearance = Math.round(stageBox.right - z.left + 8);
+      if (skip) skip.style.right = clearance + 'px';
+      if (!coachEl) return;
+      var skipW = skip && !skip.hidden ? skip.offsetWidth + 8 : 0;
+      if (stageBox.width < 720) {
+        coachEl.style.top = Math.round(z.height + 14) + 'px';
+        coachEl.style.right = '8px';
+        coachEl.style.left = '8px';
+      } else {
+        coachEl.style.top = '8px';
+        coachEl.style.left = '8px';
+        coachEl.style.right = (clearance + skipW) + 'px';
+      }
     }
 
     function showPlanNote(text) {
@@ -5783,6 +5850,7 @@
         if (focus) cap.textContent = focus.label;
       }
       if (skip) skip.hidden = !coach;
+      placeChrome();
       if (sim) sim.coachHold = !!coach;
       if (focus && els.live) els.live.textContent = focus.label + '. Skip is available.';
     }
@@ -6274,6 +6342,7 @@
         var blobR = Math.min(view.viewW, view.viewH) * 0.28;
         for (var d = 0; d < drawList.length; d++) {
           var actor = drawList[d];
+          actor._drew = '';
           var visible = !heavy || actor.kind === 'jack' || !HR.render || HR.render.onScreen(actor, cam.x, cam.y, view.viewW, view.viewH, sim._shed ? 24 : 140);
           if (!visible) continue;
           drawn++;
@@ -6283,15 +6352,33 @@
           }
           var dx = actor.x - cx;
           var dy = actor.y - cy;
-          var far = fullBudget <= 0 || ((sim._tier != null && sim._tier <= 1) && (dx * dx + dy * dy > blobR * blobR));
+          var inLine = actor.kind === 'cust' && (actor.state === 'queue' || actor.state === 'checkout' || actor.state === 'toQueue');
+          var far = !inLine && (fullBudget <= 0 || ((sim._tier != null && sim._tier <= 1) && (dx * dx + dy * dy > blobR * blobR)));
           if (far) {
+            actor._drew = 'blob';
             drawLodBlob(actor);
             continue;
           }
-          fullBudget--;
+          if (!inLine) fullBudget--;
           drawActor(actor);
         }
         if (isQA() && els.stage) {
+          var qSprite = 0;
+          var qBlob = 0;
+          var qSil = 0;
+          var qN = 0;
+          for (var qi = 0; qi < sim.customers.length; qi++) {
+            var queued = sim.customers[qi];
+            if (queued.state !== 'queue' && queued.state !== 'checkout') continue;
+            qN++;
+            if (queued._drew === 'sprite') qSprite++;
+            else if (queued._drew === 'blob') qBlob++;
+            else if (queued._drew === 'sil') qSil++;
+          }
+          els.stage.dataset.queueN = String(qN);
+          els.stage.dataset.queueSprites = String(qSprite);
+          els.stage.dataset.queueBlobs = String(qBlob);
+          els.stage.dataset.queueSils = String(qSil);
           els.stage.dataset.drawCount = String(drawn);
           els.stage.dataset.simCount = String(sim.customers.length + sim.staff.length);
           els.stage.dataset.shed = sim._shed ? '1' : '0';
@@ -6888,17 +6975,18 @@
     }
 
     function paintPerson(a) {
-      if (drawSpritePerson(a)) return;
+      if (drawSpritePerson(a)) {
+        if (a) a._drew = 'sprite';
+        return;
+      }
       var pack = assets && assets.spritePack;
       if (!pack || !pack.ready) {
+        if (a) a._drew = 'figure';
         drawFigure(a);
         return;
       }
-      if (!pack.types[spriteTypeFor(a)]) {
-        drawSilhouette(a);
-        return;
-      }
-      drawFigure(a);
+      if (a) a._drew = 'sil';
+      drawSilhouette(a);
     }
 
     function drawFigure(a) {
@@ -7387,6 +7475,8 @@
     });
     els.stage.addEventListener('wheel', function (ev) {
       if (els.sim.hidden) return;
+      var cssW = els.canvas._cssW || window.innerWidth;
+      if (cssW < 720) return;
       ev.preventDefault();
       zoomBy(ev.deltaY > 0 ? 0.92 : 1.08);
     }, { passive: false });

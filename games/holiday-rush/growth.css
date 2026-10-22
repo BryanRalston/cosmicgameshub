@@ -208,8 +208,8 @@
 }
 
 .hr-hud .hr-sales {
-  flex: 1 1 140px;
-  min-width: 132px;
+  flex: 1 1 88px;
+  min-width: 0;
 }
 
 .hr-hud .hr-stat strong,
