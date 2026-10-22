@@ -486,6 +486,7 @@
     var kioskLayout = data.get().layouts.kiosk;
     if (!kioskLayout || !(kioskLayout.goalMul > 0.5 && kioskLayout.goalMul < 0.8)) reasons.push('kiosk goal');
     if (!kioskLayout || kioskLayout.mechanic !== 'wrap') reasons.push('kiosk mechanic');
+    if (!kioskLayout || kioskLayout.crowd !== 'gift') reasons.push('kiosk crowd');
     var ev0 = calendarEvent(0);
     if (!ev0 || ev0.id !== 'lighting') reasons.push('cal');
     var goal = dailyGoal('2026-10-22');

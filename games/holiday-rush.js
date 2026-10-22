@@ -1334,6 +1334,14 @@
     } else if (mechanic === 'cups') c.saleMul *= 0.65;
   }
 
+  function applyKioskTune(sim, c) {
+    if (!sim || !c || sim.crowd !== 'gift') return;
+    c.speedMul *= 0.72;
+    c.patience *= 1.55;
+    c.maxPatience = c.patience;
+    c.saleMul *= 0.62;
+  }
+
   function spawnCustomer(sim, run, forcedArch) {
     var cap = HR.sim ? HR.sim.custCap(sim, CONFIG.custCap) : CONFIG.custCap;
     if (sim.customers.length >= cap) {
@@ -1360,6 +1368,7 @@
       if (dayN >= 7) bag.push('cust_karen');
       if (dayN >= 12) bag.push('cust_teen', 'cust_teen');
     }
+    if (sim.crowd === 'gift') bag = ['cust_mom', 'cust_kid', 'cust_grandpa', 'cust_mom', 'cust_kid', 'cust_grandpa'];
     var id = spec ? spec.who : bag[Math.floor(sim.rng() * bag.length)];
     var shelf = SHELVES[Math.floor(sim.rng() * SHELVES.length)];
     if (sim.live && shelf && shelf.id && trafficBlocked(shelf.id)) {
@@ -1388,6 +1397,7 @@
     c.saleMul = 1;
     tuneArch(c, arch);
     applyTenantTune(sim, c);
+    applyKioskTune(sim, c);
     if (forcedArch) {
       c.x = SPOTS.floor.x + 36;
       c.y = SPOTS.floor.y + 16;
@@ -2223,6 +2233,7 @@
       sim.pings[pi].life -= used;
       if (sim.pings[pi].life <= 0 || sim.pings[pi].dead) sim.pings.splice(pi, 1);
     }
+    keepWrap(sim);
     var maxA = sim.actionMax || (CONFIG.baseActions + 1);
     if (sim.actions < maxA) {
       sim.actionFrac = (sim.actionFrac || 0) + used;
@@ -2503,14 +2514,19 @@
   }
 
   function wrapSpot() {
+    var order = ['BOOTH', 'WRAP', 'TABLE', 'COCOA'];
+    var j;
     var i;
-    for (i = 0; i < SHELVES.length; i++) {
-      if (SHELVES[i].label === 'WRAP') return SHELVES[i];
-    }
-    for (i = 0; i < SHELVES.length; i++) {
-      if (SHELVES[i].label === 'TABLE' || SHELVES[i].label === 'COCOA') return SHELVES[i];
+    for (j = 0; j < order.length; j++) {
+      for (i = 0; i < SHELVES.length; i++) {
+        if (SHELVES[i].label === order[j]) return SHELVES[i];
+      }
     }
     return SHELVES[0] || { x: 640, y: 460 };
+  }
+
+  function wrapLift(spot) {
+    return spot && spot.label === 'BOOTH' ? 170 : 36;
   }
 
   function offerWrap(sim) {
@@ -2522,9 +2538,22 @@
     }
     if (open >= 2) return;
     var spot = wrapSpot();
+    var lift = wrapLift(spot);
     var fee = 28 + Math.round(sim.rng() * 24);
-    sim.pings.push({ kind: 'wrap', x: spot.x, y: spot.y - 36, life: 8, pop: 1, dead: false, fee: fee });
-    floater(sim, spot.x, spot.y - 78, 'Wrap?', '#ffe08a', true);
+    sim.pings.push({ kind: 'wrap', x: spot.x, y: spot.y - lift, life: 22, pop: 1, dead: false, fee: fee });
+    floater(sim, spot.x, spot.y - lift - 56, 'Wrap?', '#ffe08a', true);
+  }
+
+  function keepWrap(sim) {
+    if (!sim || !sim.floorOn || !sim.live || sim.mechanic !== 'wrap' || sim.done) return;
+    if (!sim.pings) sim.pings = [];
+    var open = 0;
+    for (var i = 0; i < sim.pings.length; i++) {
+      if (sim.pings[i].kind === 'wrap' && !sim.pings[i].dead) open++;
+    }
+    if (open >= 1) return;
+    offerWrap(sim);
+    if (sim._wrapCamUntil == null) sim._wrapCamUntil = sim.t + 8;
   }
 
   function maybePing(sim) {
@@ -2554,6 +2583,7 @@
       var fee = ping.fee || 24;
       sim.sales += fee;
       sim.wraps = (sim.wraps || 0) + 1;
+      try { localStorage.setItem('hr_wrap_coach', '1'); } catch (eWrap) {}
       burstCoins(sim, ping.x, ping.y);
       floater(sim, ping.x, ping.y - 28, 'Wrapped +$' + fee, '#ffe08a', true);
       hooks.coin();
@@ -3396,13 +3426,26 @@
     return typeof location !== 'undefined' && /(?:\?|&)qa=1(?:&|$)/.test(location.search);
   }
 
+  function seedsFromSearch(search) {
+    var match = /(?:\?|&)seed=([^&]*)/.exec(search || '');
+    if (!match) return [];
+    var raw = match[1];
+    for (var n = 0; n < 2; n++) {
+      if (raw.indexOf('%') < 0) break;
+      try {
+        var next = decodeURIComponent(raw);
+        if (next === raw) break;
+        raw = next;
+      } catch (err) { break; }
+    }
+    return raw.toLowerCase().split(/[,+\s]+/).filter(Boolean);
+  }
+
   function previewSeeds() {
     if (typeof location === 'undefined') return [];
     var host = (location.hostname || '').toLowerCase();
     if (host === 'cosmicgameshub.com' || host === 'www.cosmicgameshub.com') return [];
-    var match = /(?:\?|&)seed=([a-z0-9_,+-]+)(?:&|$)/.exec(location.search || '');
-    if (!match) return [];
-    return match[1].toLowerCase().split(/[,+]/).filter(Boolean);
+    return seedsFromSearch(location.search || '');
   }
   function previewHas(id) {
     var all = previewSeeds();
@@ -4332,6 +4375,7 @@
       if (pack.goalMul) sim.goal = Math.max(900, Math.round((sim.goal || 0) * pack.goalMul));
       if (pack.spawnMul) sim.spawnMul = pack.spawnMul;
       if (pack.mechanic) sim.mechanic = pack.mechanic;
+      sim.crowd = pack.crowd || '';
       var loc = books.locations[books.active];
       if (loc && books.active === 'kiosk' && !loc.leadId) loc.leadId = 'staff_reg1';
     }
@@ -4864,6 +4908,7 @@
         els.stage.dataset.clock = label.textContent;
         if (isQA()) els.stage.dataset.clockBack = String(sim._clockBack || 0);
         fitHud();
+        paintWrapCoach();
         if (isQA()) {
           var arches = [];
           for (var ai = 0; ai < sim.customers.length; ai++) if (sim.customers[ai].arch) arches.push(sim.customers[ai].arch);
@@ -4911,8 +4956,13 @@
           if (cocoaItem) els.stage.dataset.cocoa = String(HR.economy.priceOf(sim.books, cocoaItem));
         }
       }
+      var earnedStars = goalStars(sim.goal ? sim.sales / sim.goal : 0);
       var starEl = document.getElementById('hr-star-text');
-      if (starEl) starEl.innerHTML = starGlyph(paceStars(sim));
+      if (starEl) starEl.innerHTML = starGlyph(earnedStars);
+      if (isQA() && els.stage) {
+        els.stage.dataset.stars = String(earnedStars);
+        els.stage.dataset.crowd = sim.crowd || '';
+      }
       var act = document.getElementById('hr-actline');
       var crewBtn = document.getElementById('hr-crew-btn');
       if (crewBtn) crewBtn.hidden = !!coach;
@@ -5262,7 +5312,7 @@
         (snap.tape && snap.tape.leaseIn ? '<p class="hr-fine">Mall rent collected ' + money(snap.tape.leaseIn) + '.</p>' : '') +
         (snap.tape && snap.tape.reviews ? snap.tape.reviews.map(function (line) { return '<p class="hr-fine">“' + esc(line) + '”</p>'; }).join('') : '') +
         (snap.background && snap.background.tapes && snap.background.tapes.length ? snap.background.tapes.map(function (row) {
-          if (snap.storeName) return '<p class="hr-fine">The other floor posted ' + money(row.profit) + '.</p>';
+          if (snap.storeName) return '<p class="hr-fine" id="hr-other-floor">' + esc(row.name) + ' kept selling while you ran ' + esc(snap.storeName) + '. It posted ' + money(row.profit) + '.</p>';
           return '<p class="hr-fine">' + esc(row.name) + ' posted ' + money(row.profit) + (row.complaints && row.complaints[0] ? '. ' + esc(row.complaints[0]) : '.') + '</p>';
         }).join('') : '') +
         '<p class="hr-scorebig">' + snap.points + ' pts</p>' +
@@ -5602,7 +5652,8 @@
     function plateKey() {
       var band = sim && sim.stock < 0.25 ? 0 : sim && sim.stock < 0.7 ? 1 : 2;
       var art = assets && assets.objects && assets.objects['floor/floor_tile.png'] ? 1 : 0;
-      return WORLD_W + 'x' + WORLD_H + ':' + band + ':' + (SPOTS.reg3 ? 1 : 0) + ':' + SHELVES.length + ':' + art;
+      var kiosk = books && books.active === 'kiosk' ? 1 : 0;
+      return WORLD_W + 'x' + WORLD_H + ':' + band + ':' + (SPOTS.reg3 ? 1 : 0) + ':' + SHELVES.length + ':' + art + ':' + kiosk;
     }
 
     function bakeStorePlate() {
@@ -5627,7 +5678,8 @@
           stockSpot: SPOTS.stock,
           truck: SPOTS.truck,
           door: SPOTS.door,
-          worldH: WORLD_H
+          worldH: WORLD_H,
+          kiosk: !!(books && books.active === 'kiosk')
         });
       } else {
         c.width = WORLD_W * 2;
@@ -6047,18 +6099,46 @@
       return { x: SPOTS.floor.x, y: SPOTS.floor.y - 40, r: 48, label: '3/3  Tap the upset shopper\nA calm keeps the star.' };
     }
 
+    function wrapCoachOn() {
+      if (!sim || coach || sim.mechanic !== 'wrap' || (sim.wraps || 0) > 0) return false;
+      try {
+        if (localStorage.getItem('hr_wrap_coach') === '1') return false;
+      } catch (eWrapCoach) { return false; }
+      return true;
+    }
+
+    function paintWrapCoach() {
+      if (coach) return;
+      var cap = document.getElementById('hr-coach');
+      if (!cap) return;
+      if (!wrapCoachOn()) {
+        if (cap.getAttribute('data-wrap') === '1') {
+          cap.hidden = true;
+          cap.removeAttribute('data-wrap');
+        }
+        return;
+      }
+      cap.hidden = false;
+      cap.setAttribute('data-wrap', '1');
+      cap.textContent = 'Tap the pulsing Wrap on the gift table.\nEach gift rings this drawer.';
+    }
+
     function paintCoach() {
       var cap = document.getElementById('hr-coach');
       var skip = document.getElementById('hr-skip');
       var focus = coach ? coachFocus() : null;
       if (cap) {
         cap.hidden = !focus;
-        if (focus) cap.textContent = focus.label;
+        if (focus) {
+          cap.textContent = focus.label;
+          cap.removeAttribute('data-wrap');
+        }
       }
       if (skip) skip.hidden = !coach;
       placeChrome();
       if (sim) sim.coachHold = !!coach;
       if (focus && els.live) els.live.textContent = focus.label + '. Skip is available.';
+      paintWrapCoach();
     }
 
     function beginCoach() {
@@ -6182,19 +6262,21 @@
     }
 
     function pickHit(ev) {
+      var phoneHit = (els.canvas._cssW || window.innerWidth) < 720;
       if (sim.pings) {
         var pingHit = null;
-        var pingD = 56;
+        var pingD = 1e9;
         for (var p = 0; p < sim.pings.length; p++) {
           var ping = sim.pings[p];
           if (ping.dead) continue;
+          var reach = phoneHit ? 100 : (ping.kind === 'wrap' ? 72 : 56);
           var pd = screenDist(ping.x, ping.y, ev);
-          if (pd < pingD) { pingD = pd; pingHit = ping; }
+          if (pd < reach && pd < pingD) { pingD = pd; pingHit = ping; }
         }
         if (pingHit) return { ping: pingHit };
       }
       var best = null;
-      var bestD = 64;
+      var bestD = phoneHit ? 110 : 64;
       for (var i = 0; i < sim.customers.length; i++) {
         var c = sim.customers[i];
         if (c.dead || c.state === 'leave') continue;
@@ -6210,7 +6292,7 @@
         zones.unshift({ station: reg, x: SPOTS[reg].x, y: (SPOTS[reg].y + QUEUE[reg].y) * 0.5 });
       });
       var zone = null;
-      var zoneD = 72;
+      var zoneD = phoneHit ? 96 : 72;
       for (var z = 0; z < zones.length; z++) {
         var dist = screenDist(zones[z].x, zones[z].y, ev);
         if (dist < zoneD) { zoneD = dist; zone = zones[z]; }
@@ -6221,6 +6303,7 @@
     function onStageTap(ev) {
       if (!sim || els.sim.hidden) return;
       markInput();
+      if (isQA() && els.stage && ev) els.stage.dataset.pointer = ev.pointerType || '';
       var w = eventWorld(ev);
       var hit = pickHit(ev);
       if (hit && hit.ping) {
@@ -6294,6 +6377,12 @@
         var bob = reduceMotion ? 0 : Math.sin(Date.now() / 200 + i) * 4;
         var icon = ping.kind === 'wrap' ? 'return' : ping.kind === 'basket' ? 'price' : ping.kind === 'box' ? 'truck' : 'line';
         var label = ping.kind === 'wrap' ? 'Wrap' : ping.kind === 'basket' ? '+$' : ping.kind === 'box' ? 'Box' : 'Help';
+        if (ping.kind === 'wrap') {
+          var pulse = reduceMotion ? 1 : 1 + Math.sin(Date.now() / 180) * 0.18;
+          drawIconAt(icon, ping.x, ping.y + bob, 72 * pulse);
+          drawTag(label, ping.x, ping.y + bob - 52);
+          continue;
+        }
         ctx.strokeStyle = 'rgba(224,163,34,0.85)';
         ctx.lineWidth = 3;
         ctx.beginPath();
@@ -6421,6 +6510,11 @@
       if (focus) {
         cam.x = focus.x - view.viewW * 0.5;
         cam.y = focus.y - view.viewH * 0.62;
+      } else if (sim && sim._wrapCamUntil && sim.t < sim._wrapCamUntil && !cam.fit) {
+        var wrapAt = wrapSpot();
+        var wrapY = wrapAt.y - wrapLift(wrapAt);
+        cam.x += ((wrapAt.x - view.viewW * 0.5) - cam.x) * 0.12;
+        cam.y += ((wrapY - view.viewH * 0.48) - cam.y) * 0.12;
       } else if (sim && cam.follow && !cam.fit) {
         var fx = 0;
         var fy = 0;
@@ -7702,7 +7796,7 @@
       if (Object.keys(pointers).length >= 2) return;
       if (ev.target.closest && ev.target.closest('button, .hr-card')) return;
       var phonePan = (els.canvas._cssW || window.innerWidth) < 720;
-      if (phonePan && ev.pointerType === 'touch') return;
+      var touchTap = phonePan && ev.pointerType === 'touch';
       if (sim && !phonePan) {
         var preview = pickHit(ev);
         var at = eventWorld(ev);
@@ -7714,7 +7808,7 @@
         tapFx(sim, px, py);
         draw();
       }
-      cam.drag = { x: ev.clientX, y: ev.clientY, cx: cam.x, cy: cam.y, moved: false, phone: phonePan, locked: phonePan ? '' : 'pan' };
+      cam.drag = { x: ev.clientX, y: ev.clientY, cx: cam.x, cy: cam.y, moved: false, phone: phonePan, locked: touchTap ? '' : (phonePan ? '' : 'pan'), touch: touchTap };
       if (!phonePan) {
         if (!coach) cam.follow = false;
         try { els.stage.setPointerCapture(ev.pointerId); } catch (e) {}
@@ -7733,6 +7827,13 @@
         return;
       }
       if (!cam.drag) return;
+      if (cam.drag.touch) {
+        var dxT = ev.clientX - cam.drag.x;
+        var dyT = ev.clientY - cam.drag.y;
+        if (Math.abs(dxT) + Math.abs(dyT) > 10) cam.drag.moved = true;
+        if (Math.abs(dyT) >= 10 && Math.abs(dyT) >= Math.abs(dxT)) cam.drag = null;
+        return;
+      }
       if (cam.drag.phone && !cam.drag.locked) {
         var dx0 = ev.clientX - cam.drag.x;
         var dy0 = ev.clientY - cam.drag.y;
@@ -8113,7 +8214,7 @@
             fee: ping.fee
           };
         }
-        return { sales: sim.sales, wraps: sim.wraps || 0, at: at };
+        return { sales: sim.sales, wraps: sim.wraps || 0, at: at, life: ping ? ping.life : 0 };
       },
       tapWrap: function () {
         if (!isQA() || !sim || !sim.pings) return null;
@@ -8312,6 +8413,25 @@
     line('mid8', mid8);
     if (comboMult(10) !== 4 || comboMult(40) !== 4 || multLabel(10) !== '×4' || multLabel(24) !== '×4') bad = true;
     if (goalStars(0.74) !== 0 || goalStars(0.75) !== 1 || goalStars(1) !== 2 || goalStars(1.2) !== 3) bad = true;
+    var seedEnc = seedsFromSearch('?seed=kiosk%2Cbus&_vercel_share=abc').join(',');
+    var seedDbl = seedsFromSearch('?seed=kiosk%252Cbus').join(',');
+    var seedPlus = seedsFromSearch('?qa=1&seed=kiosk+bus').join(',');
+    var seedBus = seedsFromSearch('?seed=bus').join(',');
+    if (seedEnc !== 'kiosk,bus' || seedDbl !== 'kiosk,bus' || seedPlus !== 'kiosk,bus' || seedBus !== 'bus') bad = true;
+    var wrapSim = { rng: function () { return 0.5; }, pings: [], floorOn: true, live: true, mechanic: 'wrap', t: 1 };
+    offerWrap(wrapSim);
+    if (!wrapSim.pings[0] || wrapSim.pings[0].life !== 22) bad = true;
+    keepWrap(wrapSim);
+    if (wrapSim.pings.length !== 1) bad = true;
+    wrapSim.pings[0].dead = true;
+    keepWrap(wrapSim);
+    if (wrapSim.pings.length !== 2 || wrapSim._wrapCamUntil !== 9) bad = true;
+    var tuned = { speedMul: 1, patience: 2, maxPatience: 2, saleMul: 1 };
+    applyKioskTune({ crowd: 'gift' }, tuned);
+    if (Math.abs(tuned.speedMul - 0.72) > 0.001 || Math.abs(tuned.patience - 3.1) > 0.001 || Math.abs(tuned.saleMul - 0.62) > 0.001) bad = true;
+    var plain = { speedMul: 1, patience: 2, maxPatience: 2, saleMul: 1 };
+    applyKioskTune({ crowd: '' }, plain);
+    if (plain.speedMul !== 1 || plain.saleMul !== 1) bad = true;
     if (SHIFT_COUNT < 15) bad = true;
     if (FLOOR_BEATS.length < SHIFT_COUNT) bad = true;
     function clockMinutes(label) {
