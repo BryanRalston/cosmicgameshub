@@ -119,7 +119,7 @@
     return 1 + (skill - 2) * 0.08;
   }
 
-  function rentOf(books) {
+  function martRent(books) {
     var rent = defs().economy.rent;
     var n = rent.base;
     if (has(books, 'knock')) n = rent.knock;
@@ -127,6 +127,11 @@
     if (has(books, 'departments')) n = rent.departments;
     if (has(books, 'flagship')) n = rent.flagship;
     return n;
+  }
+
+  function rentOf(books) {
+    if (books && books.active === 'kiosk') return defs().economy.rent.kiosk || 520;
+    return martRent(books);
   }
 
   function custCap(books) {
@@ -158,11 +163,12 @@
     return 'regular';
   }
 
-  function quote(books, cust, rng) {
+  function quote(books, cust, rng, stockBag) {
     var loc = activeLoc(books);
+    var source = stockBag || (loc && loc.stock) || {};
     var stock = {};
     var key;
-    for (key in loc.stock) stock[key] = loc.stock[key] || 0;
+    for (key in source) stock[key] = source[key] || 0;
     var items = availableItems(books);
     var profile = defs().customers.byId[profileId(cust)] || defs().customers.byId.regular;
     var units = Math.max(1, Math.round((2.4 + rng() * 1.8) * (cust.basketMul || 1) * (profile.units || 1)));
@@ -224,19 +230,32 @@
     return name + ' ×' + n;
   }
 
-  function consume(books, quoted) {
+  function consume(books, quoted, stockBag) {
     if (!quoted || !quoted.ok) return;
-    var stock = activeLoc(books).stock;
+    var stock = stockBag || activeLoc(books).stock;
     var id;
     for (id in quoted.taken) stock[id] = Math.max(0, (stock[id] || 0) - quoted.taken[id]);
   }
 
-  function unitsLeft(books) {
-    var stock = activeLoc(books).stock;
+  function stockUnits(stock) {
     var n = 0;
     var id;
-    for (id in stock) n += stock[id] || 0;
+    if (!stock) return 0;
+    for (id in stock) n += +stock[id] || 0;
     return n;
+  }
+
+  function unitsLeft(books, stockBag) {
+    var loc = activeLoc(books);
+    return stockUnits(stockBag || (loc && loc.stock) || {});
+  }
+
+  function ensureTenantStock(lease) {
+    if (!lease) return { stock: {}, units: 0, filled: false };
+    var units = stockUnits(lease.stock);
+    if (units >= 1) return { stock: lease.stock, units: units, filled: false };
+    lease.stock = starterStock(1);
+    return { stock: lease.stock, units: stockUnits(lease.stock), filled: true };
   }
 
   function shiftUse(books, id) {
@@ -254,10 +273,18 @@
     return item.wholesale * defs().economy.caseUnits;
   }
 
+  var milestoneListener = null;
+
   function milestone(books, id) {
+    if (!books.milestones) books.milestones = [];
     if (books.milestones.indexOf(id) >= 0) return false;
     books.milestones.push(id);
+    if (milestoneListener) milestoneListener(books, id);
     return true;
+  }
+
+  function listenMilestones(fn) {
+    milestoneListener = fn;
   }
 
   function serviceScore(books, report) {
@@ -396,6 +423,20 @@
     loc.stock[id] = (loc.stock[id] || 0) + defs().economy.caseUnits;
     milestone(books, 'stock');
     return { ok: true, msg: 'A case of ' + item.name + ' is in the back. ' + money(cost) + '.' };
+  }
+
+  function transferStock(books, id, fromId, toId) {
+    var item = defs().items.byId[id];
+    if (!item) return { ok: false, msg: 'That item is not in the catalog.' };
+    var from = books.locations[fromId];
+    var to = books.locations[toId];
+    if (!from || !to || fromId === toId) return { ok: false, msg: 'Both stores have to be open.' };
+    var units = defs().economy.caseUnits;
+    if ((from.stock[id] || 0) < units) return { ok: false, msg: from.name + ' does not have a full case of ' + item.name + '.' };
+    from.stock[id] -= units;
+    to.stock[id] = (to.stock[id] || 0) + units;
+    milestone(books, 'transfer');
+    return { ok: true, msg: 'A case of ' + item.name + ' moved to ' + to.name + '. The register did not move.' };
   }
 
   function hireDef(id) {
@@ -544,6 +585,28 @@
       return builds[i];
     }
     return null;
+  }
+
+  function needsMet(books, build) {
+    if (!build || !build.needs) return false;
+    for (var i = 0; i < build.needs.length; i++) {
+      if (!has(books, build.needs[i])) return false;
+    }
+    return true;
+  }
+
+  function offeredBuilds(books) {
+    var builds = defs().economy.builds;
+    var out = [];
+    var next = nextBuild(books);
+    if (next) out.push(next);
+    for (var i = 0; i < builds.length; i++) {
+      var row = builds[i];
+      if (has(books, row.id)) continue;
+      if (next && row.id === next.id) continue;
+      if (needsMet(books, row)) out.push(row);
+    }
+    return out;
   }
 
   function canBuild(books, build) {
@@ -710,7 +773,8 @@
       lifetimeProfit: 0,
       playedPrice: false,
       mall: null,
-      tenantRuns: []
+      tenantRuns: [],
+      dailyClaimed: ''
     };
   }
 
@@ -785,6 +849,51 @@
     leased.mall = { leases: { a: { rentPaid: 400 } } };
     var withRent = closeShift(leased, { sales: 7500, cogs: 3750, wages: 520, walkouts: 0, checkouts: 30, stockouts: 0, goalPct: 1 });
     if (withRent.profit !== 3410 || withRent.leaseIn !== 400) fail('lease profit ' + withRent.profit);
+    var kioskBooks = blankBooks();
+    kioskBooks.active = 'kiosk';
+    if (rentOf(kioskBooks) !== 520) fail('kiosk rent ' + rentOf(kioskBooks));
+    if (rentOf(blankBooks()) !== 220) fail('mart rent');
+    var movedBooks = blankBooks();
+    var cocoaBefore = movedBooks.locations.mart.stock.cocoa;
+    var cashBefore = movedBooks.cash;
+    movedBooks.locations.kiosk = { id: 'kiosk', name: 'Plaza Kiosk', stock: { cocoa: 0 }, layout: { fixtures: [] } };
+    var movedCase = transferStock(movedBooks, 'cocoa', 'mart', 'kiosk');
+    if (!movedCase.ok) fail('transfer');
+    if (movedBooks.cash !== cashBefore) fail('transfer cash');
+    if (movedBooks.locations.mart.stock.cocoa !== cocoaBefore - 40) fail('transfer mart');
+    if (movedBooks.locations.kiosk.stock.cocoa !== 40) fail('transfer kiosk');
+    var bagBooks = blankBooks();
+    var bagCocoa = bagBooks.locations.mart.stock.cocoa;
+    var bag = starterStock(1);
+    var bagQuote = quote(bagBooks, { profile: 'regular', basketMul: 1 }, rng, bag);
+    if (!bagQuote.ok) fail('tenant bag quote');
+    consume(bagBooks, bagQuote, bag);
+    if (bagBooks.locations.mart.stock.cocoa !== bagCocoa) fail('tenant bag drained mart');
+    if (stockUnits(bag) >= stockUnits(starterStock(1))) fail('tenant bag unused');
+    var emptyLease = {};
+    var seeded = ensureTenantStock(emptyLease);
+    if (!seeded.filled || seeded.units < 40) fail('tenant seed');
+    var mug = data.get().items.byId.mug;
+    if (itemUnlocked(blankBooks(), mug)) fail('mug early');
+    var cafeBooks = blankBooks();
+    cafeBooks.locations.kiosk = { id: 'kiosk', layout: data.get().layouts.kiosk, stock: {} };
+    cafeBooks.active = 'kiosk';
+    if (!itemUnlocked(cafeBooks, mug)) fail('mug kiosk');
+    var kioskDef = data.get().economy.buildById.kiosk;
+    if (!kioskDef || kioskDef.needs.indexOf('lane') < 0 || kioskDef.needs.indexOf('flagship') >= 0) fail('kiosk needs');
+    if (kioskDef.needsRep || kioskDef.needsSkill) fail('kiosk gate');
+    if (!(kioskDef.cost > 0) || kioskDef.cost > 8000) fail('kiosk cost ' + kioskDef.cost);
+    var earlyKiosk = blankBooks();
+    earlyKiosk.cash = 20000;
+    expand(earlyKiosk, 'knock');
+    expand(earlyKiosk, 'lane');
+    if (earlyKiosk.cash !== 20000 - 1600 - 3200) fail('kiosk spent ' + earlyKiosk.cash);
+    var kioskGate = canBuild(earlyKiosk, kioskDef);
+    if (!kioskGate.ok) fail('kiosk early ' + (kioskGate.msg || ''));
+    var offered = offeredBuilds(earlyKiosk);
+    var sawKiosk = false;
+    for (var oi = 0; oi < offered.length; oi++) if (offered[oi].id === 'kiosk') sawKiosk = true;
+    if (!sawKiosk) fail('kiosk offer');
     return { ok: reasons.length === 0, reason: reasons.join('; '), mean: Math.round(mean * 10) / 10 };
   }
 
@@ -799,6 +908,9 @@
     quote: quote,
     consume: consume,
     unitsLeft: unitsLeft,
+    stockUnits: stockUnits,
+    ensureTenantStock: ensureTenantStock,
+    starterStock: starterStock,
     shiftUse: shiftUse,
     caseCost: caseCost,
     priceOf: priceOf,
@@ -811,11 +923,17 @@
     itemUnlocked: itemUnlocked,
     setPrice: setPrice,
     buyCase: buyCase,
+    transferStock: transferStock,
+    milestone: milestone,
+    markMilestone: milestone,
+    listenMilestones: listenMilestones,
+    martRent: martRent,
     hire: hire,
     fire: fire,
     train: train,
     expand: expand,
     nextBuild: nextBuild,
+    offeredBuilds: offeredBuilds,
     canBuild: canBuild,
     loanOffer: loanOffer,
     takeLoan: takeLoan,

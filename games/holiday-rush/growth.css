@@ -9,6 +9,8 @@
 .hr-zoom {
   top: 8px;
   right: 8px;
+  z-index: 8;
+  pointer-events: auto;
 }
 
 .hr-zoom button,
@@ -68,8 +70,26 @@
 .hr-office__block {
   margin: 16px 0;
   padding: 12px;
-  background: rgba(255, 244, 220, 0.55);
+  background: #fff6e4;
+  color: #3c2a30;
+  border: 1px solid rgba(42, 28, 24, 0.14);
   border-radius: 14px;
+  opacity: 1;
+  animation: none;
+  filter: none;
+}
+
+.hr-office__block h2,
+.hr-office__block h3,
+.hr-office__block h4,
+.hr-office__block strong {
+  color: #24180f;
+}
+
+.hr-office__block p,
+.hr-office__block li,
+.hr-office__block .hr-fine {
+  color: #3c2a30;
 }
 
 .hr-sku,
@@ -94,8 +114,35 @@
 }
 
 .hr-step strong {
-  min-width: 64px;
+  min-width: 72px;
   text-align: center;
+  font-size: 1.05rem;
+}
+
+.hr-step button {
+  flex: 0 0 auto;
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  min-height: 52px;
+  padding: 0;
+  border-radius: 14px;
+  border: 2px solid #2a1c18;
+  background: #f6f0e4;
+  color: #14240c;
+  font: 800 28px/1 Outfit, Inter, sans-serif;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+@media (max-width: 720px) {
+  .hr-step button {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 24px;
+  }
 }
 
 .hr-board {
@@ -165,10 +212,43 @@
 
 .hr-hud .hr-stat,
 .hr-hud .hr-sales {
-  background: url("/games/holiday-rush/objects/ui/hud_0.png") center / 100% 100% no-repeat;
-  border-radius: 10px;
-  padding: 4px 8px;
+  background: #f3e6c8;
+  border-radius: 12px;
+  padding: 6px 10px 8px;
   color: #24180f;
+}
+
+.hr-hud .hr-stat,
+.hr-hud .hr-combo,
+.hr-hud .hr-rush,
+.hr-hud .hr-mute {
+  flex: 0 0 auto;
+}
+
+.hr-hud .hr-sales {
+  flex: 0 1 auto;
+  min-width: min(100%, max-content);
+  max-width: 100%;
+}
+
+.hr-hud .hr-sales__top span,
+.hr-hud .hr-sales__top strong {
+  flex: 0 0 auto;
+  min-width: max-content;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.hr-hud .hr-stat strong,
+.hr-hud .hr-sales__top strong,
+.hr-hud .hr-sales__top span,
+.hr-hud .hr-stat span {
+  white-space: nowrap;
+}
+
+.hr-hud .hr-bar {
+  background: rgba(36, 24, 15, 0.18);
+  margin-top: 6px;
 }
 
 .hr-hud .hr-stat span,
@@ -181,26 +261,43 @@
   color: #24180f;
 }
 
-.hr-actions button,
+#hr-sim .hr-actions button,
 #hr-shop .btn,
 #hr-score .btn,
 #hr-map .btn,
+#hr-event .hr-choices button,
+#hr-modal .hr-choices button,
 .hr-choices button {
-  background-color: #d7c48a;
+  background-color: #55a525;
   background-image: url("/games/holiday-rush/objects/ui/buttons_0.png");
   background-repeat: no-repeat;
-  background-size: 100% 100%;
-  color: #24180f;
+  background-size: 251% 258%;
+  background-position: 97.4% 2.4%;
+  color: #14240c;
   border-color: transparent;
+  border-radius: 999px;
 }
 
 .hr-actions button {
   color: #24180f;
 }
 
+#hr-shop .btn {
+  width: fit-content;
+  max-width: 100%;
+  justify-self: start;
+  align-self: flex-start;
+  justify-content: center;
+  text-align: center;
+  padding: 0.7rem 1.15rem;
+  min-height: 44px;
+}
+
 #hr-shop .btn:disabled,
+#hr-event .hr-choices button:disabled,
+#hr-modal .hr-choices button:disabled,
 .hr-choices button:disabled,
-.hr-actions button:disabled {
+#hr-sim .hr-actions button:disabled {
   opacity: 0.5;
 }
 
@@ -240,6 +337,15 @@
   cursor: pointer;
 }
 
+.hr-front.is-kiosk {
+  flex-basis: 168px;
+  min-height: 210px;
+}
+
+.hr-front.is-kiosk small {
+  white-space: normal;
+}
+
 .hr-front small,
 .hr-tenant small,
 .hr-common small {
@@ -272,6 +378,36 @@
   font: 800 13px/1.15 Outfit, Inter, sans-serif;
   text-align: left;
   cursor: pointer;
+}
+
+.hr-achieves,
+.hr-cals {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.hr-achieve,
+.hr-cal {
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(36, 24, 15, 0.06);
+}
+
+.hr-achieve.is-done,
+.hr-cal.is-on {
+  background: #f3e6c8;
+  box-shadow: inset 3px 0 0 #2f9e57;
+}
+
+.hr-achieve span,
+.hr-cal span {
+  font-weight: 500;
+  color: #5c4636;
 }
 
 .hr-seal {

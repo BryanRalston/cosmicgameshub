@@ -84,6 +84,88 @@
     };
   }
 
+  // Mid-phone fragment budget after bandwidth, about 144 MP/s. Not a Mali or Adreno counter.
+  var FILL_BUDGET = 2400000;
+  var QUALITY = [
+    { tier: 0, dpr: 0.5, glows: 0, fullSprites: 16, shed: true },
+    { tier: 1, dpr: 1, glows: 0, fullSprites: 28, shed: false },
+    { tier: 2, dpr: 1, glows: 6, fullSprites: 80, shed: false },
+    { tier: 3, dpr: 2, glows: 24, fullSprites: 999, shed: false }
+  ];
+
+  function fillPx(tier, cssW, cssH, spritePx, shown) {
+    var q = QUALITY[tier] || QUALITY[0];
+    var plate = cssW * cssH * q.dpr * q.dpr;
+    var sprites = Math.min(shown, q.fullSprites) * spritePx * spritePx;
+    var blobs = Math.max(0, shown - q.fullSprites) * 144;
+    return plate + plate * 0.35 + sprites + q.glows * 96 * 96 + blobs;
+  }
+
+  function adapt(state) {
+    state = state || {};
+    var tier = state.tier == null ? 3 : state.tier;
+    if (tier < 0) tier = 0;
+    if (tier > 3) tier = 3;
+    var hot = state.hot || 0;
+    var cool = state.cool || 0;
+    var cssW = state.cssW || 1280;
+    var cssH = state.cssH || 800;
+    var spritePx = state.spritePx || 108;
+    var shown = state.shown == null ? 8 : state.shown;
+    var frameMs = state.frameMs || 0;
+    var fill = fillPx(tier, cssW, cssH, spritePx, shown);
+    var reason = 'hold';
+    var over = fill > FILL_BUDGET || frameMs > 18;
+    if (over) {
+      hot += 1;
+      cool = 0;
+      if (hot >= 3 && tier > 0) {
+        tier -= 1;
+        hot = 0;
+        reason = 'down';
+        fill = fillPx(tier, cssW, cssH, spritePx, shown);
+      } else if (hot >= 3) reason = 'floor';
+      else reason = 'hot';
+    } else {
+      cool += 1;
+      hot = 0;
+      if (cool >= 18 && tier < 3 && frameMs <= 15) {
+        var nextFill = fillPx(tier + 1, cssW, cssH, spritePx, shown);
+        if (nextFill <= FILL_BUDGET) {
+          tier += 1;
+          cool = 0;
+          reason = 'up';
+          fill = nextFill;
+        } else reason = 'budget';
+      } else if (cool >= 18 && frameMs > 15) reason = 'pace';
+      else if (cool >= 18) reason = 'ceil';
+      else reason = 'cool';
+    }
+    var q = QUALITY[tier];
+    return {
+      tier: tier,
+      fill: Math.round(fill),
+      budget: FILL_BUDGET,
+      hot: hot,
+      cool: cool,
+      dpr: q.dpr,
+      glows: q.glows,
+      fullSprites: q.fullSprites,
+      shed: q.shed,
+      reason: reason
+    };
+  }
+
+  function stepAdapt(state) {
+    var next = adapt(state);
+    next.cssW = state.cssW;
+    next.cssH = state.cssH;
+    next.spritePx = state.spritePx;
+    next.shown = state.shown;
+    next.frameMs = state.frameMs;
+    return next;
+  }
+
   function selfTest() {
     var reasons = [];
     var phone = view(390, 480, 1600, 900, 1, 78);
@@ -105,6 +187,28 @@
     if (onScreen({ x: 2000, y: 100 }, 0, 0, 300, 400, 20)) reasons.push('cull out');
     var edge = edges(0, 0, 300, 400, 2880, 900);
     if (edge.left || !edge.right) reasons.push('edge');
+    var crowd = { tier: 3, hot: 0, cool: 0, cssW: 1280, cssH: 800, spritePx: 108, shown: 150, frameMs: 16 };
+    var steps = 0;
+    while (steps < 8) {
+      crowd = stepAdapt(crowd);
+      steps++;
+    }
+    if (!(crowd.tier < 3)) reasons.push('crowd tier ' + crowd.tier);
+    if (crowd.fill > FILL_BUDGET) reasons.push('crowd fill ' + crowd.fill);
+    var quiet = { tier: 3, hot: 0, cool: 0, cssW: 390, cssH: 700, spritePx: 118, shown: 8, frameMs: 10 };
+    var qsteps = 0;
+    while (qsteps < 8) {
+      quiet = stepAdapt(quiet);
+      qsteps++;
+    }
+    if (quiet.tier !== 3) reasons.push('quiet tier ' + quiet.tier);
+    var hotPhone = { tier: 3, hot: 0, cool: 0, cssW: 390, cssH: 700, spritePx: 118, shown: 8, frameMs: 32 };
+    var hsteps = 0;
+    while (hsteps < 20) {
+      hotPhone = stepAdapt(hotPhone);
+      hsteps++;
+    }
+    if (hotPhone.tier !== 0 || !hotPhone.shed) reasons.push('hot phone ' + hotPhone.tier);
     return { ok: reasons.length === 0, reason: reasons.join('; '), phone: Math.round(phone.spritePx), product: Math.round(phone.productPx) };
   }
 
@@ -117,6 +221,9 @@
     view: view,
     onScreen: onScreen,
     edges: edges,
+    FILL_BUDGET: FILL_BUDGET,
+    fillPx: fillPx,
+    adapt: adapt,
     selfTest: selfTest
   };
   root.HRParts = root.HRParts || {};

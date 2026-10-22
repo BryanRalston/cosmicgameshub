@@ -64,8 +64,7 @@
     var books = ctx.books;
     var econ = economy();
     var items = econ.availableItems(books);
-    var build = econ.nextBuild(books);
-    var gate = econ.canBuild(books, build);
+    var offered = econ.offeredBuilds ? econ.offeredBuilds(books) : [econ.nextBuild(books)].filter(Boolean);
     var loan = econ.loanOffer(books);
     var other = otherLocation(books);
     var active = books.locations[books.active];
@@ -96,9 +95,12 @@
         '<button type="button" class="btn" data-train="' + esc(row.id) + '">Train</button>' +
         '<button type="button" class="btn" data-fire="' + esc(row.id) + '">Fire</button></div></div>';
     }).join('');
-    var buildBlock = build
-      ? '<article class="hr-upgrade"><div><h3>' + esc(build.name) + '</h3><p>' + esc(build.blurb) + '</p><p class="hr-fine">' + esc(gate.ok ? 'Ready.' : gate.msg) + '</p></div>' +
-        '<button type="button" class="btn btn--primary" data-build="' + esc(build.id) + '"' + (gate.ok ? '' : ' disabled') + '>' + money(build.cost) + '</button></article>'
+    var buildBlock = offered.length
+      ? offered.map(function (build) {
+        var gate = econ.canBuild(books, build);
+        return '<article class="hr-upgrade"><div><h3>' + esc(build.name) + '</h3><p>' + esc(build.blurb) + '</p><p class="hr-fine">' + esc(gate.ok ? 'Ready.' : gate.msg) + '</p></div>' +
+          '<button type="button" class="btn btn--primary" data-build="' + esc(build.id) + '"' + (gate.ok ? '' : ' disabled') + '>' + money(build.cost) + '</button></article>';
+      }).join('')
       : '<p class="hr-fine">The mart is as large as this building gets. The plaza kiosk is the second floor.</p>';
     var loanBlock = '';
     if (books.loan && books.loan.left > 0) {
@@ -132,7 +134,16 @@
       var opts = items.map(function (item) {
         return '<option value="' + esc(item.id) + '">' + esc(item.name) + '</option>';
       }).join('');
-      send = '<div class="hr-send"><label>Stock ' + esc(other.name) + '<select id="hr-send-sku">' + opts + '</select></label><button type="button" class="btn" data-send="' + esc(other.id) + '">Send one case</button></div>';
+      send = '<div class="hr-send"><label>Stock ' + esc(other.name) + '<select id="hr-send-sku">' + opts + '</select></label><button type="button" class="btn" data-send="' + esc(other.id) + '">Send one case</button><button type="button" class="btn" data-move="' + esc(other.id) + '">Move a case over</button></div>';
+    }
+    var achieve = '';
+    var goalBook = root.HRParts.data.get().goals;
+    if (goalBook && goalBook.achievements) {
+      var done = books.milestones || [];
+      achieve = '<section class="hr-office__block"><h3>Achievements</h3><ul class="hr-achieves">' + goalBook.achievements.map(function (row) {
+        var on = done.indexOf(row.id) >= 0;
+        return '<li class="hr-achieve' + (on ? ' is-done' : '') + '"><b>' + esc(row.name) + '</b><span>' + esc(row.blurb) + '</span></li>';
+      }).join('') + '</ul></section>';
     }
     var review = books.reviews && books.reviews[0];
     var reviewHtml = review
@@ -166,6 +177,7 @@
       (econ.has(books, 'knock') ? '' : '<p class="hr-fine">The plaza units open after you knock through the east wall.</p>') +
       '</section>' +
       locBlock +
+      achieve +
       '<section class="hr-office__block"><h3>Floor tools</h3><p class="hr-fine">These hit the shift you are about to run: faster stocking, a hotter till, longer patience.</p>' + upgrades + '</section>' +
       '<div class="hr-cta"><button type="button" class="btn btn--primary" data-back="1">Shift map</button></div>';
     el.onclick = function (ev) {
@@ -188,6 +200,9 @@
       } else if (btn.hasAttribute('data-send')) {
         var sku = document.getElementById('hr-send-sku');
         msg = econ.buyCase(books, sku ? sku.value : '', btn.getAttribute('data-send')).msg;
+      } else if (btn.hasAttribute('data-move')) {
+        var moveSku = document.getElementById('hr-send-sku');
+        msg = econ.transferStock(books, moveSku ? moveSku.value : '', books.active, btn.getAttribute('data-move')).msg;
       } else if (btn.hasAttribute('data-hire')) {
         msg = econ.hire(books, btn.getAttribute('data-hire')).msg;
       } else if (btn.hasAttribute('data-fire')) {
@@ -345,6 +360,28 @@
     return UI + (CHIP[name] || CHIP.vacant);
   }
 
+  function kioskStatus(books) {
+    var econ = economy();
+    var open = !!(books.locations.kiosk && books.locations.kiosk.open);
+    if (open) {
+      var here = books.active === 'kiosk';
+      return {
+        open: true,
+        here: here,
+        short: here ? 'You are playing the Plaza Kiosk.' : 'Plaza Kiosk is open. Tap it to play that floor next.',
+        path: 'Plaza Kiosk is on this map and open. Tap the card to play that floor. The mart keeps running on its lead.'
+      };
+    }
+    var def = root.HRParts.data.get().economy.buildById.kiosk;
+    var cost = def ? def.cost : 6400;
+    var next = 'Next: buy Plaza Kiosk from Next build in the office (' + money(cost) + ').';
+    if (!econ.has(books, 'knock')) next = 'Next: knock through the east wall ($1,600).';
+    else if (!econ.has(books, 'lane')) next = 'Next: the third register ($3,200).';
+    else if ((books.cash || 0) < cost) next = 'Next: ' + money(cost) + ' in the register. It has ' + money(books.cash || 0) + '.';
+    var path = 'Plaza Kiosk is on this map. It opens after the third register: east wall ($1,600), third register ($3,200), then Plaza Kiosk for ' + money(cost) + ' from Next build. The seasonal bay and the flagship wing can wait. ' + next;
+    return { open: false, here: false, short: next, path: path };
+  }
+
   function mountMall(el, ctx) {
     var books = ctx.books;
     var world = root.HRParts.world;
@@ -370,6 +407,10 @@
       return '<button type="button" class="' + cls + '" data-slot="' + esc(row.id) + '" style="background-image:url(' + chipUrl(face) + ')">' +
         '<b>' + esc(title) + '</b><small>' + esc(sub) + '</small></button>';
     }).join('');
+    var kiosk = kioskStatus(books);
+    var kioskSmall = kiosk.open ? (kiosk.here ? 'This floor' : 'Open · tap to play') : kiosk.short;
+    fronts += '<button type="button" class="hr-front is-kiosk' + (kiosk.open ? '' : ' is-locked') + (kiosk.here ? ' is-on' : '') + '" data-kiosk="1" id="hr-kiosk-card">' +
+      '<b>Plaza Kiosk</b><small>' + esc(kioskSmall) + '</small></button>';
     var commons = data.mall.commons.map(function (id) {
       var on = (mall.commons[id] || 0) >= 1;
       var cost = world.commonCost(id);
@@ -385,6 +426,14 @@
       panel = '<p class="hr-lead">' + esc(tenant.blurb) + '</p>' +
         '<p class="hr-fine">Rent ' + money(leaseRow.rent) + ' · they pay ' + money(leaseRow.rentPaid || 0) + ' this close.' +
         (leaseRow.openComplaint ? ' “' + esc(leaseRow.openComplaint) + '”' : ' The common they wanted is open.') + '</p>' +
+        '<p class="hr-fine" id="hr-cut">Play their floor and you keep 15% of that drawer. The other 85% stays on their tape. This close does not replace the flagship profit.</p>' +
+        (function () {
+          var units = economy().stockUnits ? economy().stockUnits(leaseRow.stock) : 0;
+          if (units > 0) {
+            return '<p class="hr-fine" id="hr-tenant-stock">Their back room holds ' + units + ' units. That stock is theirs. Playing this floor does not empty the mart.</p>';
+          }
+          return '<p class="hr-fine" id="hr-tenant-stock">Their back room is empty, so the floor would earn $0. Play their floor and a starter delivery lands before the first sale. It does not take the mart\'s cases.</p>';
+        })() +
         '<button type="button" class="btn btn--primary" data-play="' + esc(slot.id) + '">Play their floor</button>' +
         '<button type="button" class="btn" data-end="' + esc(slot.id) + '">End the lease</button>';
     } else {
@@ -400,13 +449,38 @@
       }).join('');
       var want = world.commonName(chosen.wants);
       var ready = (mall.commons[chosen.wants] || 0) >= 1;
+      var counterNote = '';
+      var signLabel = 'Hand them the keys';
+      if (ctx.counter && ctx.counter.slot === slot.id && ctx.counter.tenant === pick) {
+        if (ctx.counter.status === 'perk') {
+          counterNote = '<p class="hr-fine" id="hr-counter">' + esc(ctx.counter.reason || '') + '</p>' +
+            '<button type="button" class="btn btn--primary" data-perk="1">Open ' + esc(want) + ' and sign at ' + money(ctx.counter.rent) + '</button>';
+        } else {
+          signLabel = 'Push back at ' + money(rent);
+          counterNote = '<p class="hr-fine" id="hr-counter">' + esc(chosen.name) + ' counters at ' + money(ctx.counter.rent) + '. Take it, or push back. A small push makes them want ' + esc(want) + '. A low one and they walk.</p>' +
+            '<button type="button" class="btn btn--primary" data-take="1">Accept ' + money(ctx.counter.rent) + '</button>';
+        }
+      }
+      var capNote = ctx.capMsg ? '<p class="hr-fine" id="hr-cap">' + esc(ctx.capMsg) + '</p>' : '';
       panel = '<div class="hr-tenants">' + chips + '</div>' +
         '<p class="hr-lead">' + esc(chosen.blurb) + '</p>' +
         '<p class="hr-fine">They want ' + esc(want) + (ready ? ', and it is open.' : '. It is dark, so they will complain on the next shift and pay 85%.') + '</p>' +
+        '<p class="hr-fine">Offer under their ask and they counter. Push that counter and they walk, or they sign only if ' + esc(want) + ' is open.</p>' +
         '<div class="hr-step"><button type="button" data-rent="-50" aria-label="Lower rent">−</button><strong>' + money(rent) + '</strong><button type="button" data-rent="50" aria-label="Raise rent">+</button></div>' +
-        '<button type="button" class="btn btn--primary" data-sign="' + esc(slot.id) + '">Hand them the keys</button>';
+        capNote +
+        '<button type="button" class="btn btn--primary" data-sign="' + esc(slot.id) + '">' + signLabel + '</button>' +
+        counterNote;
     }
     var door = mall.door && Object.keys(mall.leases).length ? Math.round(mall.door * 100) : 100;
+    var week = data.mall.calendar || [];
+    var cal = '';
+    if (week.length && world.calendarEvent) {
+      var today = world.calendarEvent(ctx.day || 0);
+      cal = '<section class="hr-office__block"><h3>This week</h3><ul class="hr-cals">' + week.map(function (row) {
+        var on = today && row.id === today.id ? ' is-on' : '';
+        return '<li class="hr-cal' + on + '"><b>' + esc(row.name) + '</b><span>' + Math.round((row.door || 1) * 100) + '% door · ' + esc(row.note) + '</span></li>';
+      }).join('') + '</ul></section>';
+    }
     var retuneLine = mall.retune
       ? '<p class="hr-fine" id="hr-retune">Next flagship: ' + esc(mall.retune.kind) + '. ' + esc(mall.retune.note) + '</p>'
       : '<p class="hr-fine" id="hr-retune">Walk the plaza, send a parade, or ride a blackout. The next flagship shift takes that tune.</p>';
@@ -418,9 +492,11 @@
       '<p class="hr-kicker">Mall</p><h2>' + esc(data.mall.name) + '</h2>' +
       '<p class="hr-bank">Register ' + money(books.cash) + ' · door ' + door + '%</p>' +
       '<p class="hr-lead">You still run the flagship. A leased unit posts rent at close. If the common they asked for is shut, the next shift opens with their complaint.</p>' +
+      '<p class="hr-fine" id="hr-kiosk-path">' + esc(kiosk.path) + '</p>' +
       '<div class="hr-rowfront">' + fronts + '</div>' +
       '<section class="hr-office__block"><h3>' + esc(slot.name) + '</h3>' + panel + '</section>' +
       '<section class="hr-office__block"><h3>Commons</h3><div class="hr-commons">' + commons + '</div></section>' +
+      cal +
       '<section class="hr-office__block"><h3>Plaza</h3>' + retuneLine +
       '<div class="hr-plaza">' +
       '<button type="button" class="btn" data-visit="visit">Walk the plaza</button>' +
@@ -429,8 +505,15 @@
       '</div></section>' +
       '<div class="hr-cta"><button type="button" class="btn btn--primary" data-back="1">Back to the office</button></div>';
     el.onclick = function (ev) {
+      if (ev && ev.preventDefault) ev.preventDefault();
       var btn = ev.target.closest('button');
       if (!btn || btn.disabled) return;
+      if (btn.hasAttribute('data-kiosk')) {
+        var kioskNow = kioskStatus(books);
+        ctx.onToast(kioskNow.short);
+        if (ctx.onKiosk) ctx.onKiosk(kioskNow.open ? 'play' : 'locked');
+        return;
+      }
       if (btn.hasAttribute('data-slot')) {
         ctx.slot = btn.getAttribute('data-slot');
         mountMall(el, ctx);
@@ -446,20 +529,85 @@
         var who = data.tenants.byId[id];
         var next = (ctx.rents[id] || 0) + (+btn.getAttribute('data-rent') || 0);
         if (next < 50) next = 50;
-        if (next > who.maxRent) next = who.maxRent;
+        if (next > who.maxRent) {
+          next = who.maxRent;
+          ctx.capMsg = who.name + ' stops at ' + money(who.maxRent) + '. That is the cap.';
+          ctx.onToast(ctx.capMsg);
+        } else ctx.capMsg = '';
         ctx.rents[id] = next;
+        mountMall(el, ctx);
+        return;
+      }
+      if (btn.hasAttribute('data-perk')) {
+        var perkDeal = ctx.counter;
+        if (!perkDeal || perkDeal.status !== 'perk') return;
+        var perkId = perkDeal.perk;
+        var commonsNow = (books.mall && books.mall.commons) || {};
+        if ((commonsNow[perkId] || 0) < 1) {
+          var opened = world.buyCommon(books, perkId);
+          ctx.onToast(opened.msg);
+          if (!opened.ok) {
+            mountMall(el, ctx);
+            return;
+          }
+        }
+        var perkSigned = world.signLease(books, perkDeal.slot, perkDeal.tenant, perkDeal.rent);
+        if (perkSigned.accepted && economy().milestone) economy().milestone(books, 'negotiated');
+        ctx.counter = null;
+        ctx.capMsg = '';
+        if (perkSigned.accepted) {
+          ctx.coachMall = false;
+          if (ctx.onCoachMall) ctx.onCoachMall();
+          ctx.onDirty();
+        }
+        ctx.onToast(perkSigned.accepted ? (perkSigned.tenant + ' took ' + money(perkDeal.rent) + ' once ' + world.commonName(perkId) + ' was open.') : perkSigned.reason);
         mountMall(el, ctx);
         return;
       }
       if (btn.hasAttribute('data-sign')) {
         var tid = ctx.tenant || data.tenants.tenants[0].id;
-        var res = world.signLease(books, btn.getAttribute('data-sign'), tid, ctx.rents[tid]);
-        if (res.accepted) {
+        var prior = (ctx.counter && ctx.counter.tenant === tid) ? ctx.counter : null;
+        var offer = world.negotiate(books, btn.getAttribute('data-sign'), tid, ctx.rents[tid], prior);
+        if (offer.status === 'accept') {
+          var res = world.signLease(books, btn.getAttribute('data-sign'), tid, offer.rent);
+          ctx.counter = null;
+          if (res.accepted) {
+            ctx.coachMall = false;
+            if (ctx.onCoachMall) ctx.onCoachMall();
+            ctx.onDirty();
+          }
+          var capBit = offer.reason && offer.reason.indexOf('cap') >= 0 ? offer.reason + ' ' : '';
+          ctx.onToast(res.accepted ? (res.tenant + ' has the keys. ' + capBit + (res.complaints[0] || 'They are settled.')) : res.reason);
+        } else if (offer.status === 'counter' || offer.status === 'perk') {
+          ctx.counter = {
+            slot: btn.getAttribute('data-sign'),
+            tenant: tid,
+            rent: offer.rent,
+            status: offer.status,
+            perk: offer.perk || '',
+            reason: offer.reason || ''
+          };
+          ctx.onToast(offer.reason);
+        } else {
+          ctx.counter = null;
+          ctx.onToast(offer.reason || 'They walk.');
+        }
+        mountMall(el, ctx);
+        return;
+      }
+      if (btn.hasAttribute('data-take')) {
+        var deal = ctx.counter;
+        if (!deal) return;
+        var taken = world.signLease(books, deal.slot, deal.tenant, deal.rent);
+        if (taken.accepted && economy().milestone) economy().milestone(books, 'negotiated');
+        var dealRent = deal.rent;
+        ctx.counter = null;
+        if (taken.accepted) {
           ctx.coachMall = false;
           if (ctx.onCoachMall) ctx.onCoachMall();
+          ctx.onDirty();
         }
-        ctx.onToast(res.accepted ? (res.tenant + ' has the keys. ' + (res.complaints[0] || 'They are settled.')) : res.reason);
-        ctx.onDirty();
+        ctx.onToast(taken.accepted ? (taken.tenant + ' took ' + money(dealRent) + '.') : taken.reason);
         mountMall(el, ctx);
         return;
       }
