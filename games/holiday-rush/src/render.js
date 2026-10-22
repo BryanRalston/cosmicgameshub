@@ -129,7 +129,7 @@
     } else {
       cool += 1;
       hot = 0;
-      if (cool >= 18 && tier < 3) {
+      if (cool >= 18 && tier < 3 && frameMs <= 15) {
         var nextFill = fillPx(tier + 1, cssW, cssH, spritePx, shown);
         if (nextFill <= FILL_BUDGET) {
           tier += 1;
@@ -137,7 +137,8 @@
           reason = 'up';
           fill = nextFill;
         } else reason = 'budget';
-      } else if (cool >= 18) reason = 'ceil';
+      } else if (cool >= 18 && frameMs > 15) reason = 'pace';
+      else if (cool >= 18) reason = 'ceil';
       else reason = 'cool';
     }
     var q = QUALITY[tier];

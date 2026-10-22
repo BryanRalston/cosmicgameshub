@@ -4619,6 +4619,7 @@
         els.stage.dataset.sales = String(Math.round(sim.sales));
           if (sim._snapSales != null) els.stage.dataset.snapSales = String(sim._snapSales);
           if (sim.tenant) els.stage.dataset.tenant = sim.tenant.name;
+          else delete els.stage.dataset.tenant;
           if (sim.books && sim.books.locations && sim.books.locations[sim.books.active]) {
             els.stage.dataset.store = sim.books.locations[sim.books.active].name;
           }
@@ -6078,6 +6079,8 @@
       frameView.h = view.viewH;
       if (sim && HR.render && HR.render.adapt) {
         var shown = sim.customers.length + sim.staff.length + (sim.you ? 1 : 0);
+        var frameSample = sim._frameMs || 0;
+        sim._frameEma = sim._frameEma == null ? frameSample : sim._frameEma * 0.65 + frameSample * 0.35;
         var adapted = HR.render.adapt({
           tier: sim._tier == null ? 3 : sim._tier,
           hot: sim._qHot || 0,
@@ -6086,7 +6089,7 @@
           cssH: view.cssH,
           spritePx: view.spritePx || 108,
           shown: shown,
-          frameMs: sim._frameMs || 0
+          frameMs: sim._frameEma
         });
         sim._tier = adapted.tier;
         sim._qHot = adapted.hot;
@@ -6180,6 +6183,7 @@
           els.stage.dataset.simCount = String(sim.customers.length + sim.staff.length);
           els.stage.dataset.shed = sim._shed ? '1' : '0';
           els.stage.dataset.frameMs = String(Math.round(sim._frameMs || 0));
+          els.stage.dataset.frameEma = String(Math.round(sim._frameEma || 0));
           els.stage.dataset.smooth = sim._shed ? 'off' : (sim.customers.length > 40 ? 'low' : 'medium');
           els.stage.dataset.glow = String(sim._glow || 0);
           els.stage.dataset.tier = sim._tier == null ? '' : String(sim._tier);
@@ -7572,6 +7576,7 @@
         sim._qCool = 0;
         sim._shed = false;
         sim._frameMs = 0;
+        sim._frameEma = 0;
         if (sim.spatial) sim.spatial.rebuild(sim.customers.concat(sim.staff));
         resize();
         if (els.stage) els.stage.dataset.simCount = String(sim.customers.length + sim.staff.length);

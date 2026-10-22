@@ -58,7 +58,7 @@
     }
     var complaints = [];
     if (!manager) complaints.push(loc.name + ' had nobody on the till. Sales fell apart.');
-    else if (skill < 3) complaints.push(econ.nameOf(loc.managerId) + ' kept the kiosk open and dropped two baskets.');
+    else if (skill < 3) complaints.push(econ.nameOf(loc.managerId) + ' kept ' + loc.name + ' open and dropped two baskets.');
     if (units < 20) complaints.push(loc.name + ' ran out. The back room was bare.');
     return {
       id: loc.id,
