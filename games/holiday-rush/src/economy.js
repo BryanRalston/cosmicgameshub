@@ -259,10 +259,18 @@
     return item.wholesale * defs().economy.caseUnits;
   }
 
+  var milestoneListener = null;
+
   function milestone(books, id) {
+    if (!books.milestones) books.milestones = [];
     if (books.milestones.indexOf(id) >= 0) return false;
     books.milestones.push(id);
+    if (milestoneListener) milestoneListener(books, id);
     return true;
+  }
+
+  function listenMilestones(fn) {
+    milestoneListener = fn;
   }
 
   function serviceScore(books, report) {
@@ -853,6 +861,7 @@
     transferStock: transferStock,
     milestone: milestone,
     markMilestone: milestone,
+    listenMilestones: listenMilestones,
     martRent: martRent,
     hire: hire,
     fire: fire,

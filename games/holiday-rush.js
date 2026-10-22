@@ -3111,37 +3111,49 @@
     });
   }
 
+  function deliverArt(kind, payload) {
+    if (kind === 'sprites') {
+      if (root.__hrApplyPack) root.__hrApplyPack(payload);
+      else root.__hrPendingPack = payload;
+      return;
+    }
+    if (root.__hrApplyObjects) root.__hrApplyObjects(payload);
+    else root.__hrPendingObjects = payload;
+  }
+
   function loadGameArt() {
     var iconImg = loadImage(ART + 'icons_ui.png8.png');
     var iconJson = loadJSON(ART + 'icons_ui_atlas.json');
     if (!HR.sprites) return loadPhotoArt(iconImg, iconJson, { ready: false, reason: 'empty', bytes: 0 });
     var types = HR.sprites.typesForDay(0, null);
-    spriteSession = HR.sprites.createSession(ART, function () {
-      if (typeof onAsset === 'function') onAsset();
-    });
-    var objectPromise = HR.room ? HR.room.load(ART, function () {
-      if (typeof onAsset === 'function') onAsset();
-    }).catch(function () { return null; }) : Promise.resolve(null);
+    spriteSession = HR.sprites.createSession(ART, function () {});
+    if (!HR.room) return loadPhotoArt(iconImg, iconJson, { ready: false, reason: 'empty', bytes: 0 });
     return spriteSession.loadManifest().then(function () {
-      loadGoal = 2 + spriteSession.fileCount(types);
-      return Promise.all([spriteSession.ensure(types), objectPromise]);
-    }).then(function (loadedArt) {
-      var pack = loadedArt[0];
-      var objects = loadedArt[1];
+      loadGoal = 24;
+      spriteSession.ensure(types).then(function (pack) {
+        deliverArt('sprites', pack);
+      }).catch(function () {});
+      HR.room.load(ART, function () {}, { rest: true }).then(function (more) {
+        if (more) deliverArt('objects', more);
+      }).catch(function () {});
+      return HR.room.load(ART, function () {
+        if (typeof onAsset === 'function') onAsset();
+      }, { critical: true });
+    }).then(function (objects) {
       return Promise.all([iconImg, iconJson]).then(function (icons) {
-        var status = {
-          ready: !!(pack && pack.ready && Object.keys(pack.types || {}).length),
-          reason: pack && pack.ready ? 'ready' : 'partial',
-          bytes: (pack && pack.bytes) || 0,
-          partial: true
-        };
-        if (!status.ready) return loadPhotoArt(iconImg, iconJson, status);
+        var pack = spriteSession.pack();
+        var ready = !!(pack && pack.types && Object.keys(pack.types).length);
         return {
           img: { staff: null, cust: null, icons: icons[0] },
-          portraits: pack.portraits,
+          portraits: pack && pack.portraits,
           icons: icons[1],
-          spritePack: pack,
-          spriteStatus: status,
+          spritePack: ready ? pack : null,
+          spriteStatus: {
+            ready: ready,
+            reason: ready ? 'ready' : 'streaming',
+            bytes: (pack && pack.bytes) || 0,
+            partial: true
+          },
           session: spriteSession,
           objects: objects
         };
@@ -3184,7 +3196,7 @@
 
   function bankCopy(snap) {
     if (snap && snap.tenant) {
-      return 'You ran ' + snap.tenant + '. Their drawer did ' + money(snap.sales) + '. Your cut is ' + money(snap.cut || 0) + '. The flagship tape is untouched.';
+      return 'You keep 15% of their drawer (' + money(snap.cut || 0) + ' of ' + money(snap.sales) + '). The other 85% stays on their tape. This close does not replace the flagship profit.';
     }
     if (snap && snap.tape) {
       var tape = snap.tape;
@@ -3798,12 +3810,35 @@
       els.best.textContent = bestGet(ymd) ? String(bestGet(ymd)) : '—';
     }
 
+    var toastQueue = [];
+    var toastOn = false;
     function toast(msg) {
       if (!msg) return;
-      els.toast.textContent = msg;
+      toastQueue.push(msg);
+      if (!toastOn) playToast();
+    }
+    function playToast() {
+      if (!els.toast || !toastQueue.length) { toastOn = false; return; }
+      toastOn = true;
+      els.toast.textContent = toastQueue.shift();
       els.toast.classList.add('show');
       clearTimeout(toastTimer);
-      toastTimer = setTimeout(function () { els.toast.classList.remove('show'); }, 2400);
+      toastTimer = setTimeout(function () {
+        els.toast.classList.remove('show');
+        setTimeout(function () {
+          if (toastQueue.length) playToast();
+          else toastOn = false;
+        }, 160);
+      }, 2200);
+    }
+    if (HR.economy && HR.economy.listenMilestones && HR.data) {
+      HR.economy.listenMilestones(function (booksNow, id) {
+        var data = HR.data.get();
+        var list = data && data.goals && data.goals.achievements || [];
+        var row = null;
+        for (var mi = 0; mi < list.length; mi++) if (list[mi].id === id) row = list[mi];
+        toast(row ? ('Achievement: ' + row.name + '. ' + row.blurb) : 'Achievement unlocked.');
+      });
     }
 
     function showFatal(msg) {
@@ -4987,7 +5022,7 @@
         '<h2>' + pct + '% of goal</h2>' +
         '<p class="hr-stars hr-stars--big">' + starGlyph(snap.shiftStars || goalStars(snap.goalPct)) + '</p>' +
         '<p class="hr-thresholds">1★ ' + Math.round(CONFIG.star1 * 100) + '% · 2★ ' + Math.round(CONFIG.star2 * 100) + '% · 3★ ' + Math.round(CONFIG.star3 * 100) + '%</p>' +
-        (snap.tenant ? '<p class="hr-lead">You ran ' + esc(snap.tenant) + '. Their drawer did ' + money(snap.sales) + '. Your cut is ' + money(snap.cut || 0) + '.</p>' : '') +
+        (snap.tenant ? '<p class="hr-lead">You ran ' + esc(snap.tenant) + '. Their drawer did ' + money(snap.sales) + '. You keep 15% (' + money(snap.cut || 0) + '). The other 85% stays on their tape.</p>' : '') +
         '<p class="hr-lead">Best combo ' + esc(comboBit) + ' · ' + (snap.walkouts || 0) + ' walkouts · ' + money(snap.sales) + ' / ' + money(snap.goal) + '</p>' +
         '<p class="hr-bank">' + (snap.tape ? money(snap.tape.profit) + ' profit' : (snap.earned > 0 ? '+' + money(snap.earned) + ' banked' : 'Register unchanged')) + ' · ' + money(snap.bank || 0) + ' in the register</p>' +
         '<p class="hr-fine">' + esc(bankCopy(snap)) + '</p>' +
@@ -5649,16 +5684,16 @@
 
     function coachFocus() {
       if (!coach || !sim) return null;
-      if (coach.step === 0) return { x: SPOTS.reg1.x, y: QUEUE.reg1.y + 20, label: '1/3  Tap the line\nA cashier keeps the sale.' };
-      if (coach.step === 1) return { x: SPOTS.truck.x, y: SPOTS.truck.y + 30, label: '2/3  Tap the truck\nUnload it before shelves thin out.' };
+      if (coach.step === 0) return { x: SPOTS.reg1.x, y: QUEUE.reg1.y - 40, r: 52, label: '1/3  Tap the line\nA cashier keeps the sale.' };
+      if (coach.step === 1) return { x: SPOTS.truck.x, y: SPOTS.truck.y + 10, r: 58, label: '2/3  Tap the truck\nUnload it before shelves thin out.' };
       var angry = null;
       for (var i = 0; i < sim.customers.length; i++) {
         var c = sim.customers[i];
         if (c.dead || c.state === 'leave') continue;
         if (c.bubble === 'angry' || (c.maxPatience && c.patience < c.maxPatience * 0.4)) angry = c;
       }
-      if (angry) return { x: angry.x, y: angry.y - 10, label: '3/3  Tap the upset shopper\nA calm keeps the star.' };
-      return { x: SPOTS.floor.x, y: SPOTS.floor.y, label: '3/3  Tap the upset shopper\nA calm keeps the star.' };
+      if (angry) return { x: angry.x, y: angry.y - 40, r: 48, label: '3/3  Tap the upset shopper\nA calm keeps the star.' };
+      return { x: SPOTS.floor.x, y: SPOTS.floor.y - 40, r: 48, label: '3/3  Tap the upset shopper\nA calm keeps the star.' };
     }
 
     function paintCoach() {
@@ -5948,7 +5983,7 @@
     function drawHand(x, y) {
       var bob = reduceMotion ? 0 : Math.sin(Date.now() / 160) * 8;
       ctx.save();
-      ctx.translate(x, y + 62 + bob);
+      ctx.translate(x, y + 8 + bob);
       ctx.fillStyle = '#f6f0e4';
       ctx.strokeStyle = '#2b1d2e';
       ctx.lineWidth = 3;
@@ -6259,10 +6294,11 @@
         if (focus) {
           ctx.strokeStyle = 'rgba(224,163,34,0.95)';
           ctx.lineWidth = 4;
+          var ringR = (focus.r || 48) + (reduceMotion ? 0 : Math.sin(Date.now() / 180) * 4);
           ctx.beginPath();
-          ctx.arc(focus.x, focus.y, 28 + (reduceMotion ? 0 : Math.sin(Date.now() / 180) * 4), 0, Math.PI * 2);
+          ctx.arc(focus.x, focus.y, ringR, 0, Math.PI * 2);
           ctx.stroke();
-          drawHand(focus.x, focus.y);
+          drawHand(focus.x + ringR * 0.35, focus.y);
           publishCoach(focus);
         } else publishCoach(null);
         ctx.globalAlpha = 1;
@@ -7190,11 +7226,23 @@
 
     var pointers = {};
     function zoomBy(mult) {
+      var before = cam.zoom || 1;
+      var cssW = els.canvas._cssW || 800;
+      var next = HR.render ? HR.render.clampZoom(cssW, before * mult) : before * mult;
+      if (Math.abs(next - before) < 0.005) {
+        if (mult < 1 && cssW < 720 && !cam.overview) {
+          toggleFrame();
+          toast('Phone view stays close so people stay readable. The map is the whole floor.');
+          return;
+        }
+        toast(mult < 1 ? 'That is as far as the camera pulls back.' : 'That is as close as the camera goes.');
+        return;
+      }
       cam.fit = false;
       cam.overview = false;
       var frameBtn = document.getElementById('hr-frame');
       if (frameBtn) frameBtn.setAttribute('aria-pressed', 'false');
-      cam.zoom = HR.render ? HR.render.clampZoom(els.canvas._cssW || 800, (cam.zoom || 1) * mult) : (cam.zoom || 1);
+      cam.zoom = next;
       draw();
     }
     function toggleFrame() {
@@ -7209,8 +7257,20 @@
     var zoomOut = document.getElementById('hr-zoom-out');
     var frameBtn = document.getElementById('hr-frame');
     var eastBtn = document.getElementById('hr-east');
-    if (zoomIn) zoomIn.addEventListener('click', function (ev) { ev.stopPropagation(); zoomBy(1.12); });
-    if (zoomOut) zoomOut.addEventListener('click', function (ev) { ev.stopPropagation(); zoomBy(0.9); });
+    function bindZoom(node, mult) {
+      if (!node) return;
+      node.addEventListener('pointerdown', function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        zoomBy(mult);
+      });
+      node.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+      });
+    }
+    bindZoom(zoomIn, 1.12);
+    bindZoom(zoomOut, 0.9);
     if (frameBtn) frameBtn.addEventListener('click', function (ev) { ev.stopPropagation(); toggleFrame(); });
     if (eastBtn) eastBtn.addEventListener('click', function (ev) {
       ev.stopPropagation();
@@ -7506,10 +7566,37 @@
       return loadGameArt();
     }).then(function (loaded) {
       assets = loaded;
-      if (els.stage && loaded.spriteStatus) {
-        els.stage.dataset.sprites = loaded.spriteStatus.ready ? 'ready' : loaded.spriteStatus.reason;
-        els.stage.dataset.spriteBytes = String(loaded.spriteStatus.bytes || 0);
+      function paintSpriteStatus() {
+        if (!els.stage || !assets || !assets.spriteStatus) return;
+        els.stage.dataset.sprites = assets.spriteStatus.ready ? 'ready' : assets.spriteStatus.reason;
+        els.stage.dataset.spriteBytes = String(assets.spriteStatus.bytes || 0);
       }
+      root.__hrApplyPack = function (pack) {
+        if (!assets || !pack) return;
+        assets.spritePack = pack;
+        assets.portraits = pack.portraits || assets.portraits;
+        var n = Object.keys(pack.types || {}).length;
+        assets.spriteStatus = {
+          ready: !!(pack.ready && n),
+          reason: n ? 'ready' : 'streaming',
+          bytes: pack.bytes || 0,
+          partial: true
+        };
+        paintSpriteStatus();
+        if (sim && !els.sim.hidden) draw();
+      };
+      root.__hrApplyObjects = function (more) {
+        if (!assets || !assets.objects || !more) return;
+        Object.keys(more).forEach(function (key) { assets.objects[key] = more[key]; });
+        bakedKey = '';
+        if (sim && !els.sim.hidden) {
+          bakeStorePlate();
+          draw();
+        }
+      };
+      if (root.__hrPendingPack) root.__hrApplyPack(root.__hrPendingPack);
+      if (root.__hrPendingObjects) root.__hrApplyObjects(root.__hrPendingObjects);
+      paintSpriteStatus();
       bakeStorePlate();
       resize();
       var saved = readJSON('hr_run_v1');

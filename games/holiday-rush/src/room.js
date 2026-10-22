@@ -436,13 +436,24 @@
     return glows;
   }
 
-  function load(art, onAsset) {
+  function isBootFile(file) {
+    if (file.indexOf('floor/') === 0 || file.indexOf('env/') === 0) return true;
+    if (file === 'decor/tree.png' || file === 'decor/wreath.png' || file === 'decor/gift_display.png') return true;
+    if (file === 'props/stock_box_stack.png' || file === 'icons/truck.png') return true;
+    if (file.indexOf('sprites/objects/gift_tower/') === 0) return true;
+    return false;
+  }
+
+  function load(art, onAsset, opts) {
+    opts = opts || {};
     return fetch(art + 'objects/files.json').then(function (res) {
       if (!res.ok) throw new Error('objects');
       return res.json();
     }).then(function (files) {
       var gift = ['full', 'two_left', 'one_left', 'empty_spot', 'sale_tag', 'sparkle', 'toppled', 'restocked'];
       gift.forEach(function (state) { files.push('sprites/objects/gift_tower/' + state + '.png'); });
+      if (opts.critical) files = files.filter(isBootFile);
+      else if (opts.rest) files = files.filter(function (file) { return !isBootFile(file); });
       return Promise.all(files.map(function (file) {
         return new Promise(function (resolve) {
           var image = new Image();

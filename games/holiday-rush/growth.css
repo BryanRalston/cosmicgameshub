@@ -9,6 +9,8 @@
 .hr-zoom {
   top: 8px;
   right: 8px;
+  z-index: 8;
+  pointer-events: auto;
 }
 
 .hr-zoom button,
@@ -165,10 +167,20 @@
 
 .hr-hud .hr-stat,
 .hr-hud .hr-sales {
-  background: url("/games/holiday-rush/objects/ui/hud_0.png") center / 100% 100% no-repeat;
-  border-radius: 10px;
-  padding: 4px 8px;
+  background: #f3e6c8;
+  border-radius: 12px;
+  padding: 6px 10px 8px;
   color: #24180f;
+}
+
+.hr-hud .hr-sales {
+  flex: 1 1 220px;
+  min-width: 200px;
+}
+
+.hr-hud .hr-bar {
+  background: rgba(36, 24, 15, 0.18);
+  margin-top: 6px;
 }
 
 .hr-hud .hr-stat span,
@@ -181,17 +193,21 @@
   color: #24180f;
 }
 
-.hr-actions button,
+#hr-sim .hr-actions button,
 #hr-shop .btn,
 #hr-score .btn,
 #hr-map .btn,
+#hr-event .hr-choices button,
+#hr-modal .hr-choices button,
 .hr-choices button {
-  background-color: #d7c48a;
+  background-color: #55a525;
   background-image: url("/games/holiday-rush/objects/ui/buttons_0.png");
   background-repeat: no-repeat;
-  background-size: 100% 100%;
-  color: #24180f;
+  background-size: 251% 258%;
+  background-position: 97.4% 2.4%;
+  color: #14240c;
   border-color: transparent;
+  border-radius: 999px;
 }
 
 .hr-actions button {
@@ -199,8 +215,10 @@
 }
 
 #hr-shop .btn:disabled,
+#hr-event .hr-choices button:disabled,
+#hr-modal .hr-choices button:disabled,
 .hr-choices button:disabled,
-.hr-actions button:disabled {
+#hr-sim .hr-actions button:disabled {
   opacity: 0.5;
 }
 

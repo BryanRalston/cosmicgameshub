@@ -258,17 +258,51 @@
     return { ok: false, msg: 'That plaza action is not on the map.' };
   }
 
-  function negotiate(books, slotId, tenantId, rent) {
+  function negotiate(books, slotId, tenantId, rent, prior) {
     var data = root.HRParts.data.get();
     var tenant = data.tenants.byId[tenantId];
     if (!tenant) return { status: 'walk', reason: 'That tenant is not on the list.' };
     var ask = Math.round(tenant.maxRent * 0.9);
     var floor = Math.round(tenant.maxRent * 0.62);
+    var perk = tenant.wants;
+    var perkLabel = commonName(perk);
     rent = Math.round(rent || 0);
+    if (prior && prior.status === 'perk') {
+      return { status: 'walk', ask: ask, floor: floor, perk: perk, tenant: tenant.name, reason: tenant.name + ' walks. You pushed past the perk.' };
+    }
+    if (prior && prior.status === 'counter') {
+      if (rent >= prior.rent) {
+        return { status: 'accept', rent: rent, ask: ask, floor: floor, tenant: tenant.name, reason: tenant.name + ' takes ' + rent + '.' };
+      }
+      if (rent >= floor && rent >= prior.rent - 100) {
+        return {
+          status: 'perk',
+          rent: rent,
+          ask: ask,
+          floor: floor,
+          perk: perk,
+          tenant: tenant.name,
+          reason: tenant.name + ' will take ' + rent + ' only if ' + perkLabel + ' is open. Push again and they walk.'
+        };
+      }
+      return { status: 'walk', ask: ask, floor: floor, tenant: tenant.name, reason: tenant.name + ' walks. ' + rent + ' is too far under ' + prior.rent + '.' };
+    }
     if (rent > tenant.maxRent) {
       return { status: 'refuse', ask: ask, floor: floor, reason: tenant.name + ' will not pay ' + rent + '. Their ceiling is ' + tenant.maxRent + '.' };
     }
-    if (rent >= ask) return { status: 'accept', rent: rent, ask: ask, floor: floor, tenant: tenant.name };
+    if (rent >= ask) {
+      var atCap = rent >= tenant.maxRent;
+      return {
+        status: 'accept',
+        rent: rent,
+        ask: ask,
+        floor: floor,
+        tenant: tenant.name,
+        reason: atCap
+          ? tenant.name + ' is at their cap of ' + tenant.maxRent + '. They sign, and the number does not go higher.'
+          : tenant.name + ' takes ' + rent + '.'
+      };
+    }
     if (rent >= floor) {
       var counter = Math.round((rent + ask) / 2);
       if (counter > tenant.maxRent) counter = tenant.maxRent;
@@ -433,6 +467,18 @@
     if (taken.status !== 'accept' || taken.rent !== 1300) reasons.push('accept');
     var refused = negotiate(econ.blankBooks(), 'a', 'repair', 1500);
     if (refused.status !== 'refuse') reasons.push('neg refuse');
+    var perk = negotiate(econ.blankBooks(), 'a', 'repair', 1050, countered);
+    if (perk.status !== 'perk' || perk.perk !== 'security') reasons.push('perk ' + perk.status);
+    var perkWalk = negotiate(econ.blankBooks(), 'a', 'repair', 1050, perk);
+    if (perkWalk.status !== 'walk') reasons.push('perk walk ' + perkWalk.status);
+    var lowPush = negotiate(econ.blankBooks(), 'a', 'repair', 900, countered);
+    if (lowPush.status !== 'walk') reasons.push('low push ' + lowPush.status);
+    var cap = negotiate(econ.blankBooks(), 'a', 'repair', 1400);
+    if (cap.status !== 'accept' || !cap.reason || cap.reason.indexOf('cap') < 0) reasons.push('cap');
+    var toysGoal = tenantLayout('toys_pop');
+    if (!toysGoal || toysGoal.goalMul < 1.2) reasons.push('toys goal');
+    var repairGoal = tenantLayout('repair');
+    if (!repairGoal || repairGoal.goalMul < 0.9) reasons.push('repair goal');
     var ev0 = calendarEvent(0);
     if (!ev0 || ev0.id !== 'lighting') reasons.push('cal');
     var goal = dailyGoal('2026-10-22');

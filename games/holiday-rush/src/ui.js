@@ -398,6 +398,7 @@
       panel = '<p class="hr-lead">' + esc(tenant.blurb) + '</p>' +
         '<p class="hr-fine">Rent ' + money(leaseRow.rent) + ' · they pay ' + money(leaseRow.rentPaid || 0) + ' this close.' +
         (leaseRow.openComplaint ? ' “' + esc(leaseRow.openComplaint) + '”' : ' The common they wanted is open.') + '</p>' +
+        '<p class="hr-fine" id="hr-cut">Play their floor and you keep 15% of that drawer. The other 85% stays on their tape. This close does not replace the flagship profit.</p>' +
         '<button type="button" class="btn btn--primary" data-play="' + esc(slot.id) + '">Play their floor</button>' +
         '<button type="button" class="btn" data-end="' + esc(slot.id) + '">End the lease</button>';
     } else {
@@ -414,15 +415,25 @@
       var want = world.commonName(chosen.wants);
       var ready = (mall.commons[chosen.wants] || 0) >= 1;
       var counterNote = '';
+      var signLabel = 'Hand them the keys';
       if (ctx.counter && ctx.counter.slot === slot.id && ctx.counter.tenant === pick) {
-        counterNote = '<p class="hr-fine" id="hr-counter">' + esc(chosen.name) + ' counters at ' + money(ctx.counter.rent) + '.</p>' +
-          '<button type="button" class="btn btn--primary" data-take="1">Accept ' + money(ctx.counter.rent) + '</button>';
+        if (ctx.counter.status === 'perk') {
+          counterNote = '<p class="hr-fine" id="hr-counter">' + esc(ctx.counter.reason || '') + '</p>' +
+            '<button type="button" class="btn btn--primary" data-perk="1">Open ' + esc(want) + ' and sign at ' + money(ctx.counter.rent) + '</button>';
+        } else {
+          signLabel = 'Push back at ' + money(rent);
+          counterNote = '<p class="hr-fine" id="hr-counter">' + esc(chosen.name) + ' counters at ' + money(ctx.counter.rent) + '. Take it, or push back. A small push makes them want ' + esc(want) + '. A low one and they walk.</p>' +
+            '<button type="button" class="btn btn--primary" data-take="1">Accept ' + money(ctx.counter.rent) + '</button>';
+        }
       }
+      var capNote = ctx.capMsg ? '<p class="hr-fine" id="hr-cap">' + esc(ctx.capMsg) + '</p>' : '';
       panel = '<div class="hr-tenants">' + chips + '</div>' +
         '<p class="hr-lead">' + esc(chosen.blurb) + '</p>' +
         '<p class="hr-fine">They want ' + esc(want) + (ready ? ', and it is open.' : '. It is dark, so they will complain on the next shift and pay 85%.') + '</p>' +
+        '<p class="hr-fine">Offer under their ask and they counter. Push that counter and they walk, or they sign only if ' + esc(want) + ' is open.</p>' +
         '<div class="hr-step"><button type="button" data-rent="-50" aria-label="Lower rent">−</button><strong>' + money(rent) + '</strong><button type="button" data-rent="50" aria-label="Raise rent">+</button></div>' +
-        '<button type="button" class="btn btn--primary" data-sign="' + esc(slot.id) + '">Hand them the keys</button>' +
+        capNote +
+        '<button type="button" class="btn btn--primary" data-sign="' + esc(slot.id) + '">' + signLabel + '</button>' +
         counterNote;
     }
     var door = mall.door && Object.keys(mall.leases).length ? Math.round(mall.door * 100) : 100;
@@ -475,14 +486,45 @@
         var who = data.tenants.byId[id];
         var next = (ctx.rents[id] || 0) + (+btn.getAttribute('data-rent') || 0);
         if (next < 50) next = 50;
-        if (next > who.maxRent) next = who.maxRent;
+        if (next > who.maxRent) {
+          next = who.maxRent;
+          ctx.capMsg = who.name + ' stops at ' + money(who.maxRent) + '. That is the cap.';
+          ctx.onToast(ctx.capMsg);
+        } else ctx.capMsg = '';
         ctx.rents[id] = next;
+        mountMall(el, ctx);
+        return;
+      }
+      if (btn.hasAttribute('data-perk')) {
+        var perkDeal = ctx.counter;
+        if (!perkDeal || perkDeal.status !== 'perk') return;
+        var perkId = perkDeal.perk;
+        var commonsNow = (books.mall && books.mall.commons) || {};
+        if ((commonsNow[perkId] || 0) < 1) {
+          var opened = world.buyCommon(books, perkId);
+          ctx.onToast(opened.msg);
+          if (!opened.ok) {
+            mountMall(el, ctx);
+            return;
+          }
+        }
+        var perkSigned = world.signLease(books, perkDeal.slot, perkDeal.tenant, perkDeal.rent);
+        if (perkSigned.accepted && economy().milestone) economy().milestone(books, 'negotiated');
+        ctx.counter = null;
+        ctx.capMsg = '';
+        if (perkSigned.accepted) {
+          ctx.coachMall = false;
+          if (ctx.onCoachMall) ctx.onCoachMall();
+          ctx.onDirty();
+        }
+        ctx.onToast(perkSigned.accepted ? (perkSigned.tenant + ' took ' + money(perkDeal.rent) + ' once ' + world.commonName(perkId) + ' was open.') : perkSigned.reason);
         mountMall(el, ctx);
         return;
       }
       if (btn.hasAttribute('data-sign')) {
         var tid = ctx.tenant || data.tenants.tenants[0].id;
-        var offer = world.negotiate(books, btn.getAttribute('data-sign'), tid, ctx.rents[tid]);
+        var prior = (ctx.counter && ctx.counter.tenant === tid) ? ctx.counter : null;
+        var offer = world.negotiate(books, btn.getAttribute('data-sign'), tid, ctx.rents[tid], prior);
         if (offer.status === 'accept') {
           var res = world.signLease(books, btn.getAttribute('data-sign'), tid, offer.rent);
           ctx.counter = null;
@@ -491,9 +533,17 @@
             if (ctx.onCoachMall) ctx.onCoachMall();
             ctx.onDirty();
           }
-          ctx.onToast(res.accepted ? (res.tenant + ' has the keys. ' + (res.complaints[0] || 'They are settled.')) : res.reason);
-        } else if (offer.status === 'counter') {
-          ctx.counter = { slot: btn.getAttribute('data-sign'), tenant: tid, rent: offer.rent };
+          var capBit = offer.reason && offer.reason.indexOf('cap') >= 0 ? offer.reason + ' ' : '';
+          ctx.onToast(res.accepted ? (res.tenant + ' has the keys. ' + capBit + (res.complaints[0] || 'They are settled.')) : res.reason);
+        } else if (offer.status === 'counter' || offer.status === 'perk') {
+          ctx.counter = {
+            slot: btn.getAttribute('data-sign'),
+            tenant: tid,
+            rent: offer.rent,
+            status: offer.status,
+            perk: offer.perk || '',
+            reason: offer.reason || ''
+          };
           ctx.onToast(offer.reason);
         } else {
           ctx.counter = null;
