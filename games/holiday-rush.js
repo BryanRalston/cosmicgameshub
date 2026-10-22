@@ -3249,16 +3249,17 @@
     spriteSession = HR.sprites.createSession(ART, function () {});
     if (!HR.room) return loadPhotoArt(iconImg, iconJson, { ready: false, reason: 'empty', bytes: 0 });
     return spriteSession.loadManifest().then(function () {
-      loadGoal = 24;
+      var shell = previewHas('kiosk') ? 'kiosk' : 'flagship';
+      loadGoal = 12;
       spriteSession.ensure(types).then(function (pack) {
         deliverArt('sprites', pack);
       }).catch(function () {});
-      HR.room.load(ART, function () {}, { rest: true }).then(function (more) {
+      HR.room.load(ART, function () {}, { rest: true, shell: shell }).then(function (more) {
         if (more) deliverArt('objects', more);
       }).catch(function () {});
       return HR.room.load(ART, function () {
         if (typeof onAsset === 'function') onAsset();
-      }, { critical: true });
+      }, { critical: true, shell: shell, onList: function (n) { loadGoal = Math.max(1, n); } });
     }).then(function (objects) {
       return Promise.all([iconImg, iconJson]).then(function (icons) {
         var pack = spriteSession.pack();
@@ -3924,7 +3925,7 @@
       var feelCss = document.createElement('style');
       feelCss.id = 'hr-feel-css';
       feelCss.textContent = [
-        '#hr-event.hr-inline{position:absolute;left:0;right:0;top:72px;bottom:34%;z-index:6;margin:0;padding:8px 12px;background:rgba(12,8,10,0.42);display:flex;justify-content:center;align-items:flex-start;pointer-events:auto;overflow:hidden;}',
+        '#hr-event.hr-inline{position:absolute;left:8px;right:8px;top:64px;bottom:auto;height:auto;max-height:42%;z-index:6;margin:0;padding:0;background:transparent;display:flex;justify-content:center;align-items:flex-start;pointer-events:none;overflow:visible;}',
         '#hr-event.hr-inline[hidden]{display:none !important;}',
         '#hr-event.hr-inline .hr-card{pointer-events:auto;width:min(640px,100%);max-height:100%;overflow:auto;padding:0.45rem 0.6rem 0.5rem;border-radius:14px;background:rgba(246,240,228,0.96);box-shadow:0 10px 28px rgba(0,0,0,0.35);}',
         '#hr-event.hr-inline .hr-card h2{font-size:1rem;margin:0 0 0.12rem;}',
@@ -3935,8 +3936,8 @@
         '#hr-event.hr-inline .hr-choice-cost{flex:0 0 auto;white-space:nowrap;}',
         '#hr-event.hr-inline .hr-card__art .hr-portrait,#hr-event.hr-inline .hr-card__art .hr-icon{width:36px !important;height:36px !important;border-radius:8px;}',
         '@media (max-width:720px){',
-        '#hr-event.hr-inline{top:136px;bottom:32%;padding:6px 8px;}',
-        '#hr-event.hr-inline .hr-card{padding:0.35rem 0.45rem 0.42rem;}',
+        '#hr-event.hr-inline{top:100px;left:6px;right:6px;bottom:auto;height:auto;max-height:38%;padding:0;background:transparent;}',
+        '#hr-event.hr-inline .hr-card{padding:0.28rem 0.4rem 0.32rem;max-height:100%;}',
         '#hr-event.hr-inline .hr-card h2{font-size:0.95rem;line-height:1.15;margin:0 0 0.08rem;}',
         '#hr-event.hr-inline .hr-card p{font-size:0.78rem;line-height:1.25;margin:0 0 0.28rem;-webkit-line-clamp:2;}',
         '#hr-event.hr-inline .hr-card__art{display:none;}',
@@ -4848,6 +4849,7 @@
       primeShift(sim, run);
       if (tutDone()) sim.coachHold = false;
       resize();
+      fitPhoneCamera();
       requestAnimationFrame(function () { resize(); if (sim && !els.sim.hidden) draw(); });
       focusCam(SPOTS.reg1.x, QUEUE.reg1.y);
       if (sim.tenant) sim.coachHold = false;
@@ -6140,6 +6142,12 @@
 
     function markInput() {
       if (!root.__hrInputAt && root.performance) root.__hrInputAt = root.performance.now();
+    }
+
+    function fitPhoneCamera() {
+      var cssW = els.canvas._cssW || 0;
+      if (!(cssW > 0 && cssW < 720) || cam.zoom > 0 || !HR.render) return;
+      cam.zoom = HR.render.frameZoom(cssW, els.canvas._cssH || 540, WORLD_W, WORLD_H, CONFIG.sprite);
     }
 
     function focusCam(x, y) {
@@ -7776,11 +7784,11 @@
     function zoomBy(mult) {
       var before = cam.zoom || 1;
       var cssW = els.canvas._cssW || 800;
-      var next = HR.render ? HR.render.clampZoom(cssW, before * mult) : before * mult;
+      var cssH = els.canvas._cssH || 450;
+      var next = HR.render ? HR.render.clampZoom(cssW, before * mult, cssH) : before * mult;
       if (Math.abs(next - before) < 0.005) {
-        if (mult < 1 && cssW < 720 && !cam.overview) {
-          toggleFrame();
-          toast('Phone view stays close so people stay readable. The map is the whole floor.');
+        if (mult < 1 && cssW < 720) {
+          toast('The floor fills this screen.');
           return;
         }
         toast(mult < 1 ? 'That is as far as the camera pulls back.' : 'That is as close as the camera goes.');
@@ -8518,6 +8526,10 @@
     var seedBus = seedsFromSearch('?seed=bus').join(',');
     if (seedEnc !== 'kiosk,bus' || seedDbl !== 'kiosk,bus' || seedPlus !== 'kiosk,bus' || seedBus !== 'bus') bad = true;
     if (seedsFromSearch('?seed=kiosk%2Cbus').join(',') !== 'kiosk,bus') bad = true;
+    var seededDay = newRun('2026-10-22');
+    if (!seededDay.days[0] || seededDay.days[0].events.join(',') !== 'boss,spill') bad = true;
+    if (!seededDay.days[0] || seededDay.days[0].eventTimes.join(',') !== '16.5,37.2') bad = true;
+    if (clockLabel(56, 62) !== '6:50 PM' || clockLabel(62, 62) !== '7:59 PM' || clockLabel(0, 62) !== '8:00 AM') bad = true;
     var wrapSim = { rng: function () { return 0.5; }, pings: [], floorOn: true, live: true, mechanic: 'wrap', t: 1 };
     offerWrap(wrapSim);
     if (!wrapSim.pings[0] || wrapSim.pings[0].life !== 22) bad = true;

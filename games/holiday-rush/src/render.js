@@ -4,7 +4,7 @@
     phonePx: 118,
     tabletPx: 112,
     deskPx: 108,
-    zoomMinPhone: 1,
+    zoomMinPhone: 0.4,
     zoomMinDesk: 0.88,
     zoomMax: 1.7,
     productW: 46,
@@ -17,13 +17,16 @@
     return READABLE.deskPx;
   }
 
-  function zoomMin(cssW) {
-    return cssW < 720 ? READABLE.zoomMinPhone : READABLE.zoomMinDesk;
+  function zoomMin(cssW, cssH) {
+    if (!(cssW < 720)) return READABLE.zoomMinDesk;
+    var fit = frameZoom(cssW, cssH || 540, 1280, 900, 78);
+    if (fit < 0.32) fit = 0.32;
+    return fit;
   }
 
-  function clampZoom(cssW, zoom) {
+  function clampZoom(cssW, zoom, cssH) {
     var z = zoom || 1;
-    var min = zoomMin(cssW);
+    var min = zoomMin(cssW, cssH);
     if (z < min) z = min;
     if (z > READABLE.zoomMax) z = READABLE.zoomMax;
     return Math.round(z * 100) / 100;
@@ -45,7 +48,7 @@
     cssW = cssW || 800;
     cssH = cssH || 450;
     sprite = sprite || 78;
-    zoom = fit ? (zoom || 1) : clampZoom(cssW, zoom);
+    zoom = fit ? (zoom || 1) : clampZoom(cssW, zoom, cssH);
     var target = targetPx(cssW);
     var viewW = sprite * cssW / target / zoom;
     var viewH = viewW * cssH / cssW;
@@ -178,7 +181,10 @@
     var grown = view(390, 480, 2880, 900, 1, 78);
     if (Math.round(grown.spritePx) !== Math.round(phone.spritePx)) reasons.push('growth shrink');
     var phoneMin = view(390, 480, 1600, 900, 0.2, 78);
-    if (phoneMin.zoom < 1) reasons.push('phone zoom ' + phoneMin.zoom);
+    if (Math.abs(phoneMin.zoom - 0.35) > 0.02) reasons.push('phone zoom ' + phoneMin.zoom);
+    if (phoneMin.spritePx < 40) reasons.push('phone far ' + Math.round(phoneMin.spritePx));
+    var phoneFit = frameZoom(390, 540, 1280, 900, 78);
+    if (Math.abs(phoneFit - READABLE.zoomMinPhone) > 0.001) reasons.push('phone fit ' + phoneFit);
     var fitZ = frameZoom(390, 480, 1600, 900, 78);
     var framed = view(390, 480, 1600, 900, fitZ, 78, true);
     if (framed.viewH < 775) reasons.push('frame ' + Math.round(framed.viewH));
