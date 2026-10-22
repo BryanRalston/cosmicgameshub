@@ -3339,6 +3339,14 @@
     return typeof location !== 'undefined' && /(?:\?|&)qa=1(?:&|$)/.test(location.search);
   }
 
+  function previewSeed() {
+    if (typeof location === 'undefined') return '';
+    var host = (location.hostname || '').toLowerCase();
+    if (host === 'cosmicgameshub.com' || host === 'www.cosmicgameshub.com') return '';
+    var match = /(?:\?|&)seed=([a-z0-9_-]+)(?:&|$)/.exec(location.search || '');
+    return match ? match[1] : '';
+  }
+
   var MELODY = [392, 493.88, 587.33, 659.25, 587.33, 493.88, 440, 392, 493.88, 587.33, 659.25, 783.99, 659.25, 587.33, 493.88, 440];
   var BASSLINE = [98, 98, 73.42, 73.42, 82.41, 82.41, 73.42, 98];
   var PAD = [196, 196, 146.83, 146.83, 164.81, 164.81, 146.83, 196];
@@ -3766,12 +3774,23 @@
       feelCss.textContent = [
         '#hr-event.hr-inline{position:absolute;left:8px;right:8px;bottom:8px;top:auto;z-index:6;background:transparent;padding:0;display:flex;justify-content:center;align-items:flex-end;pointer-events:none;}',
         '#hr-event.hr-inline[hidden]{display:none !important;}',
-        '#hr-event.hr-inline .hr-card{pointer-events:auto;width:min(560px,100%);padding:0.45rem 0.6rem 0.55rem;border-radius:14px;box-shadow:0 10px 28px rgba(0,0,0,0.35);}',
+        '#hr-event.hr-inline .hr-card{pointer-events:auto;width:min(560px,100%);max-height:70%;padding:0.45rem 0.6rem 0.55rem;border-radius:14px;box-shadow:0 10px 28px rgba(0,0,0,0.35);overflow:auto;}',
         '#hr-event.hr-inline .hr-card h2{font-size:1rem;margin:0 0 0.15rem;}',
         '#hr-event.hr-inline .hr-card p{font-size:0.8rem;margin:0 0 0.35rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}',
-        '#hr-event.hr-inline .hr-choices{flex-direction:row;flex-wrap:wrap;}',
-        '#hr-event.hr-inline .hr-choices button{flex:1 1 120px;min-height:44px;font-size:0.8rem;padding:0.35rem 0.5rem;}',
+        '#hr-event.hr-inline .hr-choices{flex-direction:row;flex-wrap:wrap;gap:6px;}',
+        '#hr-event.hr-inline .hr-choices button{width:auto;flex:1 1 0;min-width:0;min-height:44px;font-size:0.8rem;padding:0.35rem 0.45rem;white-space:normal;}',
         '#hr-event.hr-inline .hr-card__art .hr-portrait,#hr-event.hr-inline .hr-card__art .hr-icon{width:36px !important;height:36px !important;border-radius:8px;}',
+        '@media (max-width:720px){',
+        '#hr-event.hr-inline{left:6px;right:6px;bottom:6px;max-height:42%;overflow:hidden;}',
+        '#hr-event.hr-inline .hr-card{max-height:100%;padding:0.28rem 0.4rem 0.32rem;overflow:hidden;}',
+        '#hr-event.hr-inline .hr-card h2{font-size:0.92rem;line-height:1.15;margin:0 0 0.08rem;}',
+        '#hr-event.hr-inline .hr-card p{font-size:0.72rem;line-height:1.25;margin:0 0 0.22rem;-webkit-line-clamp:2;}',
+        '#hr-event.hr-inline .hr-card__art{display:none;}',
+        '#hr-event.hr-inline .hr-card__timer{margin:0 0 0.2rem;}',
+        '#hr-event.hr-inline .hr-choices{flex-wrap:nowrap;gap:6px;}',
+        '#hr-event.hr-inline .hr-choices button{min-height:44px;font-size:0.74rem;padding:0.25rem 0.35rem;}',
+        '#hr-event.hr-inline .hr-choice-cost{font-size:0.58rem;padding:0.08rem 0.28rem;}',
+        '}',
         '.hr-card__timer{height:4px;border-radius:99px;background:rgba(43,29,46,0.15);overflow:hidden;margin:0 0 0.35rem;}',
         '.hr-card__timer i{display:block;height:100%;width:100%;background:#e0a322;}',
         '.hr-actions button{transition:transform 0.05s linear;}',
@@ -4617,7 +4636,7 @@
         '<div class="hr-clock" id="hr-clock" style="--p:0"><span id="hr-clock-label">8:00 AM</span></div>' +
         '<div class="hr-sales"><div class="hr-sales__top"><span>Sales</span><strong id="hr-sales-text"></strong></div><div class="hr-bar"><i id="hr-sales-bar"></i></div></div>' +
         '<div class="hr-stat hr-stat--stars hr-hud__extra"><span>Stars</span><strong id="hr-star-text" class="hr-stars"></strong></div>' +
-        '<div class="hr-combo" id="hr-combo" hidden>x2</div>' +
+        '<div class="hr-combo is-idle" id="hr-combo" aria-hidden="true">×1</div>' +
         '<div class="hr-rush" id="hr-rush" hidden>RUSH</div>' +
         (ops ? '<div class="hr-stat hr-hud__extra"><span>Payroll</span><strong id="hr-pay-text"></strong></div><div class="hr-stat hr-hud__extra"><span>Morale</span><strong id="hr-mor-text"></strong></div>' : '') +
         (storeName ? '<div class="hr-stat hr-hud__extra"><span>Store</span><strong id="hr-store-name">' + esc(storeName) + '</strong></div>' : '') +
@@ -4697,7 +4716,9 @@
       var comboEl = document.getElementById('hr-combo');
       if (comboEl) {
         var showCombo = (sim.combo || 0) > 1;
-        comboEl.hidden = !showCombo;
+        comboEl.hidden = false;
+        comboEl.classList.toggle('is-idle', !showCombo);
+        comboEl.setAttribute('aria-hidden', showCombo ? 'false' : 'true');
         if (showCombo) {
           var comboLabel = multLabel(sim.combo);
           var atCap = sim.combo >= CONFIG.comboMax || comboMult(sim.combo) >= 4;
@@ -4707,6 +4728,10 @@
             comboEl.textContent = comboLabel;
             if (!reduceMotion && root.CGSfx && root.CGSfx.juice) root.CGSfx.juice(comboEl, 'pop');
           }
+        } else {
+          comboEl.classList.remove('is-max');
+          comboEl.setAttribute('aria-label', 'Combo ×1');
+          if (comboEl.textContent !== '×1') comboEl.textContent = '×1';
         }
       }
       var rushEl = document.getElementById('hr-rush');
@@ -5364,7 +5389,8 @@
           dailyLine = '<p class="hr-fine" id="hr-daily">Today: ' + esc(todayGoal.name) + '. ' + esc(todayGoal.blurb) + ' Bonus ' + money(todayGoal.bonus) + (already ? '. Already in the register.' : '.') + ' Streak ' + streak.streak + '.</p>';
         }
       }
-      var html = '<p class="hr-kicker">Holiday Rush Mart</p><h2>Shift map</h2><p class="hr-lead">Earn one star to unlock the next shift. Locked days stay blank. Replay any open shift. A retry replaces that shift’s profit in the register.</p><p class="hr-bank">Register ' + money(purse) + '</p>' + dailyLine + '<div class="hr-map">';
+      var locName = (books && books.locations[books.active] && books.locations[books.active].name) || 'Holiday Rush Mart';
+      var html = '<p class="hr-kicker">' + esc(locName) + '</p><h2>Shift map</h2><p class="hr-lead">Earn one star to unlock the next shift. Locked days stay blank. Replay any open shift. A retry replaces that shift’s profit in the register.</p><p class="hr-bank">Register ' + money(purse) + '</p>' + dailyLine + '<div class="hr-map">';
       var week = '';
       for (var i = 0; i < SHIFT_COUNT; i++) {
         var def = shiftDef(i);
@@ -7837,7 +7863,31 @@
       var saved = readJSON('hr_run_v1');
       var campBoot = campaignGet();
       var resumable = saved && saved.v === 3 && saved.ymd === ymd && saved.phase && saved.phase !== 'intro' && saved.days && saved.days.length === SHIFT_COUNT;
-      if (resumable) {
+      if (previewSeed() === 'kiosk' && books && HR.economy) {
+        books.cash = Math.max(books.cash || 0, 20000);
+        ['knock', 'lane', 'kiosk'].forEach(function (id) {
+          if (!HR.economy.has(books, id)) HR.economy.expand(books, id);
+        });
+        if (books.locations.kiosk && books.locations.kiosk.open) HR.economy.switchLocation(books, 'kiosk');
+        if (HR.save) HR.save.save(writeJSON, books);
+        try {
+          localStorage.setItem('hr_tut_done', '1');
+          localStorage.setItem('hr_coach_price', '1');
+          localStorage.setItem('hr_coach_mall', '1');
+          localStorage.removeItem('hr_run_v1');
+        } catch (eSeed) {}
+        var seedCamp = campaignGet();
+        seedCamp.seen = true;
+        seedCamp.bank = books.cash;
+        campaignPut(seedCamp);
+        run = newRun(ymd);
+        applyCampaign(run);
+        run.phase = 'map';
+        syncFloor(true);
+        renderMap();
+        toast('Plaza Kiosk is unlocked. Pick a shift to play that floor.');
+        if (els.stage) els.stage.dataset.seed = 'kiosk';
+      } else if (resumable) {
         run = saved;
         applyCampaign(run);
         if (!run.suggested) run.suggested = [];

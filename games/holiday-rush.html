@@ -135,10 +135,11 @@
     #hr-canvas { display: block; position: relative; z-index: 1; width: 100%; height: 100%; }
     .hr-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
     .hr-actions button { min-height: 48px; border-radius: 10px; border: 1px solid rgba(224,163,34,0.45); background: #2a2118; color: #f6f0e4; font: inherit; font-weight: 700; font-size: 0.88rem; cursor: pointer; touch-action: manipulation; display: flex; align-items: center; justify-content: flex-start; gap: 8px; padding: 0 10px; text-align: left; }
-    .hr-combo, .hr-rush { min-width: 52px; min-height: 44px; display: grid; place-items: center; padding: 0 10px; border-radius: 12px; font-weight: 800; letter-spacing: 0.04em; }
-    .hr-combo { background: #e0a322; color: #1a120c; font-size: 1.25rem; }
+    .hr-combo, .hr-rush { min-width: 52px; min-height: 44px; display: grid; place-items: center; padding: 0 10px; border-radius: 12px; font-weight: 800; letter-spacing: 0.04em; box-sizing: border-box; }
+    .hr-combo { width: 4.75rem; min-width: 4.75rem; background: #e0a322; color: #1a120c; font-size: 1.25rem; }
+    .hr-combo.is-idle { background: rgba(224, 163, 34, 0.35); color: #24180f; }
     .hr-rush { background: #d64545; color: #fff; font-size: 0.82rem; }
-    .hr-combo[hidden], .hr-rush[hidden] { display: none !important; }
+    .hr-rush[hidden] { display: none !important; }
     .hr-mute { min-width: 4.5rem; min-height: 44px; border-radius: 999px; border: 1px solid rgba(224,163,34,0.45); background: #2a2118; color: #f6f0e4; font: inherit; font-weight: 800; font-size: 0.82rem; cursor: pointer; touch-action: manipulation; padding: 0 12px; white-space: nowrap; flex: 0 0 auto; }
     .hr-clock.rush { box-shadow: 0 0 0 3px #d64545; }
     .hr-actions button:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -206,6 +207,10 @@
       body:has(#hr-sim:not([hidden])) .hr-hero h1 { font-size: 1.25rem; margin: 0; }
       body:has(#hr-sim:not([hidden])) .hr-pills { margin: 0.25rem 0 0; }
       body:has(#hr-sim:not([hidden])) .hr-stage { height: min(62vh, 540px); }
+    }
+    @media (min-width: 721px) {
+      .hr-hud, .hr-hud__stats { flex-wrap: nowrap; }
+      .hr-sales__top { flex-wrap: nowrap; }
     }
     @media (max-width: 720px) {
       body:has(#hr-sim:not([hidden])) .nav { display: none; }
