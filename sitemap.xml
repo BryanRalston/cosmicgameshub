@@ -4,7 +4,7 @@
   <!-- Homepage -->
   <url>
     <loc>https://www.cosmicgameshub.com/</loc>
-    <lastmod>2026-09-01</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
@@ -846,9 +846,9 @@
   <!-- Games Hub -->
   <url>
     <loc>https://www.cosmicgameshub.com/games</loc>
-    <lastmod>2026-08-30</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.95</priority>
   </url>
   <url>
     <loc>https://www.cosmicgameshub.com/games/daily</loc>
@@ -980,15 +980,15 @@
   <!-- Games -->
   <url>
     <loc>https://www.cosmicgameshub.com/games/rift</loc>
-    <lastmod>2026-05-07</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>daily</changefreq>
-    <priority>0.7</priority>
+    <priority>0.85</priority>
   </url>
   <url>
     <loc>https://www.cosmicgameshub.com/games/gamerdle</loc>
-    <lastmod>2026-05-07</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>daily</changefreq>
-    <priority>0.7</priority>
+    <priority>0.85</priority>
   </url>
   <url>
     <loc>https://www.cosmicgameshub.com/games/link</loc>
@@ -998,9 +998,9 @@
   </url>
   <url>
     <loc>https://www.cosmicgameshub.com/games/pixle</loc>
-    <lastmod>2026-05-07</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>daily</changefreq>
-    <priority>0.7</priority>
+    <priority>0.85</priority>
   </url>
   <url>
     <loc>https://www.cosmicgameshub.com/games/word-scramble</loc>
@@ -1094,9 +1094,9 @@
   </url>
   <url>
     <loc>https://www.cosmicgameshub.com/games/brix3d</loc>
-    <lastmod>2026-05-08</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.85</priority>
   </url>
   <url>
     <loc>https://www.cosmicgameshub.com/games/dream-machine</loc>
@@ -1124,15 +1124,15 @@
   </url>
   <url>
     <loc>https://www.cosmicgameshub.com/games/rootweave</loc>
-    <lastmod>2026-08-21</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.85</priority>
   </url>
   <url>
     <loc>https://www.cosmicgameshub.com/games/holiday-rush</loc>
-    <lastmod>2026-10-19</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>daily</changefreq>
-    <priority>0.8</priority>
+    <priority>0.9</priority>
   </url>
 
   <!-- AI Gaming -->
