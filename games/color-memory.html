@@ -12,205 +12,496 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Color Memory — CosmicGamesHub</title>
-  <meta name="description" content="Simon Says color memory game. Watch the sequence, repeat it back. How long can your memory streak go?" />
+  <meta name="description" content="Repeat the pattern. 5 seconds per press, Simon tones, and colorblind-safe shapes. Classic, reverse, speed, a position grid, and a daily streak." />
   <meta property="og:title" content="Color Memory — CosmicGamesHub" />
-  <meta property="og:description" content="Simon Says color memory game. Watch the sequence, repeat it back." />
+  <meta property="og:description" content="Repeat the pattern. 5 seconds per press, with tones, shapes, and a visible timer." />
   <meta property="og:image" content="https://www.cosmicgameshub.com/images/game-color-memory.jpg" />
   <link rel="canonical" href="https://www.cosmicgameshub.com/games/color-memory" />
   <link rel="stylesheet" href="../styles.css" />
   <style>
     html { overflow-x: hidden; }
     .cm-wrap {
-      max-width: 480px;
+      max-width: 520px;
       margin: 0 auto;
-      text-align: center;
-      padding: 0 1rem;
+      padding: 0 1rem 1rem;
     }
     .cm-back {
       display: inline-flex;
       align-items: center;
       gap: 0.4rem;
-      color: var(--text-muted);
+      color: var(--text-mid, #a8a8c0);
       text-decoration: none;
       font-size: 0.85rem;
-      margin-bottom: 1.2rem;
+      margin-bottom: 0.45rem;
     }
-    .cm-back:hover { color: var(--accent); }
-    .cm-title {
-      font-size: 1.6rem;
+    .cm-back:hover { color: var(--accent, #00d4ff); }
+    h1.cm-title {
+      font-size: 1.7rem;
       font-weight: 700;
-      color: var(--text-primary);
-      margin: 0 0 0.3rem;
-    }
-    .cm-subtitle {
-      color: var(--text-muted);
-      font-size: 0.88rem;
-      margin: 0 0 1.5rem;
-    }
-    .cm-hud {
-      display: flex;
-      justify-content: center;
-      gap: 1.5rem;
-      margin-bottom: 1.5rem;
-    }
-    .cm-hud__stat {
+      letter-spacing: -0.03em;
+      color: var(--text-hi, #eeeef8);
+      margin: 0 0 0.35rem;
       text-align: center;
     }
+    .cm-rules {
+      color: var(--text-mid, #a8a8c0);
+      font-size: 0.88rem;
+      line-height: 1.35;
+      text-align: center;
+      margin: 0 auto 0.65rem;
+      max-width: 36rem;
+    }
+    .cm-stage {
+      background: linear-gradient(180deg, #ffffff 0%, #f5f5f7 42%);
+      color: #1d1d1f;
+      border-radius: 28px;
+      padding: 18px 16px 16px;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.7),
+        0 24px 50px rgba(0,0,0,0.28);
+      text-align: center;
+    }
+    .cm-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .cm-modes {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 6px;
+      flex: 1 1 16rem;
+      min-width: 0;
+      overflow: visible;
+    }
+    .cm-mode, .cm-tool {
+      appearance: none;
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 0.82rem;
+      min-height: 44px;
+      border-radius: 999px;
+      cursor: pointer;
+      border: none;
+      white-space: nowrap;
+    }
+    .cm-mode {
+      flex: 0 0 auto;
+      padding: 0 14px;
+      background: #e8e8ed;
+      color: #1d1d1f;
+      font-family: inherit;
+    }
+    .cm-mode[aria-checked="true"] {
+      background: #1d1d1f;
+      color: #fff;
+    }
+    .cm-mode:disabled { opacity: 0.45; cursor: default; }
+    .cm-tools { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+    .cm-tool {
+      padding: 0 12px;
+      background: #fff;
+      color: #1d1d1f;
+      box-shadow: inset 0 0 0 1px #d2d2d7;
+      font-family: inherit;
+    }
+    .cm-tool[aria-pressed="true"] { background: #1d1d1f; color: #fff; box-shadow: none; }
+    .cm-hud {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 8px;
+    }
     .cm-hud__val {
-      font-size: 1.4rem;
+      font-size: 1.45rem;
       font-weight: 700;
-      color: var(--text-primary);
-      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: -0.04em;
+      font-variant-numeric: tabular-nums;
       line-height: 1;
     }
     .cm-hud__lbl {
+      margin-top: 0.2rem;
       font-size: 0.68rem;
-      color: var(--text-muted);
+      letter-spacing: 0.08em;
       text-transform: uppercase;
-      letter-spacing: 0.07em;
-      margin-top: 0.15rem;
+      color: #6e6e73;
     }
-    .cm-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-      width: min(320px, calc(100vw - 32px));
-      margin: 0 auto 1.5rem;
-    }
-    .cm-btn {
-      width: 100%;
-      aspect-ratio: 1;
-      border-radius: 16px;
-      border: none;
-      cursor: pointer;
-      transition: filter 0.08s, transform 0.08s, box-shadow 0.08s;
+    .cm-board {
       position: relative;
-      overflow: hidden;
+      width: min(300px, 100%);
+      margin: 0 auto;
+      aspect-ratio: 1;
     }
-    .cm-btn::after {
-      content: '';
+    .cm-ring {
       position: absolute;
       inset: 0;
-      border-radius: inherit;
-      background: rgba(255,255,255,0.15);
-      opacity: 0;
-      transition: opacity 0.15s;
+      width: 100%;
+      height: 100%;
+      opacity: 0.28;
+      pointer-events: none;
     }
-    .cm-btn:hover::after { opacity: 1; }
-    .cm-btn--red    { background: #c0392b; box-shadow: 0 4px 20px rgba(192,57,43,0.25); }
-    .cm-btn--green  { background: #27ae60; box-shadow: 0 4px 20px rgba(39,174,96,0.25); }
-    .cm-btn--blue   { background: #2980b9; box-shadow: 0 4px 20px rgba(41,128,185,0.25); }
-    .cm-btn--yellow { background: #f39c12; box-shadow: 0 4px 20px rgba(243,156,18,0.25); }
-    .cm-btn--lit.cm-btn--red    { filter: brightness(2.2); box-shadow: 0 0 40px rgba(255,80,60,0.7); transform: scale(1.04); }
-    .cm-btn--lit.cm-btn--green  { filter: brightness(2.2); box-shadow: 0 0 40px rgba(60,255,120,0.7); transform: scale(1.04); }
-    .cm-btn--lit.cm-btn--blue   { filter: brightness(2.2); box-shadow: 0 0 40px rgba(60,130,255,0.7); transform: scale(1.04); }
-    .cm-btn--lit.cm-btn--yellow { filter: brightness(2.2); box-shadow: 0 0 40px rgba(255,220,60,0.7); transform: scale(1.04); }
-    .cm-btn:active:not(:disabled) { transform: scale(0.96); }
-    .cm-btn:disabled { cursor: not-allowed; }
-    .cm-status {
-      font-size: 0.9rem;
-      color: var(--text-muted);
-      min-height: 1.5em;
-      margin-bottom: 1rem;
-      font-weight: 500;
+    .cm-board.is-input .cm-ring { opacity: 1; }
+    .cm-board.is-chimp .cm-ring { display: none; }
+    .cm-ring__track, .cm-ring__value { fill: none; stroke-width: 3.5; }
+    .cm-ring__track { stroke: #d2d2d7; }
+    .cm-ring__value {
+      stroke: #0071e3;
+      stroke-linecap: round;
+      stroke-dasharray: 339.292;
+      stroke-dashoffset: 0;
+      transform: rotate(-90deg);
+      transform-origin: 60px 60px;
     }
-    .cm-status--watch { color: var(--accent); }
-    .cm-status--go { color: #22d36e; }
-    .cm-status--fail { color: #ef4444; }
-    .cm-sequence-viz {
+    .cm-ring.is-low .cm-ring__value { stroke: #ff3b30; }
+    .cm-grid {
+      position: absolute;
+      inset: 8.5%;
+      display: grid;
+      gap: 12px;
+    }
+    .cm-board.is-chimp .cm-grid { inset: 0; gap: 6px; }
+    .cm-board.is-grid .cm-grid { gap: 8px; }
+    .cm-grid--4 { grid-template-columns: 1fr 1fr; }
+    .cm-grid--9 { grid-template-columns: 1fr 1fr 1fr; }
+    .cm-grid--16 { grid-template-columns: repeat(4, 1fr); }
+    .cm-btn {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      padding: 0;
+      border: none;
+      border-radius: 22px;
+      background: var(--pad, #ccc);
+      color: var(--ink, #111);
+      font-family: inherit;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.14);
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .cm-grid--9 .cm-btn { border-radius: 16px; }
+    .cm-grid--16 .cm-btn { border-radius: 12px; }
+    .cm-btn:disabled { cursor: default; }
+    .cm-btn:focus { outline: none; }
+    .cm-btn:focus-visible {
+      outline: 3px solid #0071e3;
+      outline-offset: 3px;
+    }
+    @media (hover: hover) {
+      .cm-btn:not(:disabled):hover { transform: translateY(-1px); }
+      .cm-btn:disabled:hover { transform: none; }
+    }
+    .cm-btn:active:not(:disabled) { transform: scale(0.97); }
+    .cm-btn--lit,
+    .cm-btn--lit:hover {
+      transform: scale(1.04);
+      z-index: 1;
+      box-shadow: 0 0 0 3px #1d1d1f, 0 12px 28px rgba(0,0,0,0.16);
+    }
+    .cm-btn--miss,
+    .cm-btn--miss:hover {
+      box-shadow: 0 0 0 3px #ff3b30, 0 12px 28px rgba(255,59,48,0.25);
+    }
+    .cm-btn--neutral.cm-btn--lit,
+    .cm-btn--neutral.cm-btn--lit:hover {
+      background: #1d1d1f;
+      color: #fff;
+    }
+    .cm-shape {
+      position: absolute;
+      left: 50%;
+      top: 54%;
+      width: 36%;
+      height: 36%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+    .cm-stage:not(.is-shapes) .cm-shape { visibility: hidden; }
+    .cm-key {
+      position: absolute;
+      top: 8px;
+      left: 10px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      opacity: 0.9;
+      pointer-events: none;
+    }
+    .cm-key span { margin-left: 4px; opacity: 0.65; font-weight: 600; }
+    .cm-btn--neutral {
       display: flex;
+      align-items: center;
       justify-content: center;
-      gap: 5px;
-      margin-bottom: 1rem;
-      flex-wrap: wrap;
-      min-height: 16px;
     }
+    .cm-btn--neutral .cm-key {
+      position: static;
+      font-size: 1.15rem;
+      opacity: 1;
+    }
+    .cm-btn--chimp {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+      color: #1d1d1f;
+      font-size: clamp(1rem, 4.2vw, 1.45rem);
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      box-shadow: inset 0 0 0 1px #d2d2d7;
+    }
+    .cm-btn--chimp.is-empty { visibility: hidden; }
+    .cm-btn--chimp.is-blank { color: transparent; }
+    .cm-btn--chimp.cm-btn--miss { background: #fff5f5; color: #1d1d1f; }
+    .cm-seq {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      justify-content: center;
+      margin: 10px 0 0;
+    }
+    .cm-seq:empty { display: none; }
+    .cm-stage.is-over .cm-seq,
+    .cm-stage.is-over .cm-hint { display: none; }
     .cm-dot {
       width: 10px;
       height: 10px;
       border-radius: 50%;
-      background: rgba(255,255,255,0.12);
-      border: 1px solid rgba(255,255,255,0.1);
-      transition: background 0.15s;
+      background: transparent;
+      box-shadow: inset 0 0 0 1.5px #c7c7cc;
+      display: inline-block;
     }
-    .cm-dot--active { background: var(--accent); border-color: var(--accent); }
-    .cm-dot--done   { background: rgba(34,211,238,0.4); border-color: rgba(34,211,238,0.3); }
-    .cm-start-btn {
-      padding: 0.7rem 2rem;
-      border-radius: 8px;
-      font-size: 1rem;
+    .cm-dot--done {
+      background: #1d1d1f;
+      box-shadow: none;
+    }
+    .cm-dot--active {
+      background: #fff;
+      box-shadow: inset 0 0 0 2px #0071e3;
+    }
+    .cm-live {
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: 10px;
+      min-height: 1.4em;
+      margin: 0.45rem 0 0.15rem;
+    }
+    .cm-status {
+      margin: 0;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #6e6e73;
+    }
+    .cm-status--watch { color: #0071e3; }
+    .cm-status--go { color: #0b7a32; }
+    .cm-status--fail { color: #c41e16; }
+    .cm-status.is-turn { animation: cm-pulse 1.15s ease-in-out infinite; }
+    .cm-count {
+      margin: 0;
+      min-width: 3.1em;
       font-weight: 700;
-      cursor: pointer;
-      border: none;
-      background: var(--accent);
-      color: #000;
+      font-variant-numeric: tabular-nums;
+      color: #0071e3;
+      letter-spacing: -0.03em;
+    }
+    .cm-count:empty { display: none; }
+    .cm-count.is-low { color: #ff3b30; }
+    @keyframes cm-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.45; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .cm-status.is-turn { animation: none; }
+      .cm-btn, .cm-btn--lit { transition: none; }
+    }
+    .cm-hint {
+      margin: 0 0 0.25rem;
+      color: #6e6e73;
+      font-size: 0.78rem;
+    }
+    .cm-go, .cm-secondary {
+      appearance: none;
       font-family: inherit;
-      transition: opacity 0.15s;
-      margin-bottom: 0.75rem;
+      font-weight: 600;
+      font-size: 0.95rem;
       min-height: 44px;
+      padding: 0 18px;
+      border-radius: 980px;
+      cursor: pointer;
     }
-    .cm-start-btn:hover { opacity: 0.9; }
-    .cm-result {
-      display: none;
-      background: var(--bg-surface);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 1.25rem;
-      margin-bottom: 1rem;
+    .cm-go {
+      border: none;
+      background: #0071e3;
+      color: #fff;
+      scroll-margin: 16px;
     }
-    .cm-result.show { display: block; }
-    .cm-result__score {
-      font-size: 3rem;
-      font-weight: 900;
-      color: var(--accent);
-      font-family: 'JetBrains Mono', monospace;
-      line-height: 1;
-      margin-bottom: 0.25rem;
+    .cm-go:hover { background: #0077ed; }
+    .cm-go:focus-visible, .cm-secondary:focus-visible, .cm-mode:focus-visible, .cm-tool:focus-visible {
+      outline: 3px solid #0071e3;
+      outline-offset: 2px;
     }
-    .cm-result__label { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.75rem; }
-    .cm-result__best {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      margin-bottom: 0.75rem;
+    .cm-secondary {
+      background: #fff;
+      color: #1d1d1f;
+      border: 1px solid #d2d2d7;
     }
-    .cm-result__best span { color: var(--accent); font-family: 'JetBrains Mono', monospace; }
-    .cm-new-best {
-      font-size: 0.85rem;
-      color: #ffd700;
-      margin-bottom: 0.5rem;
+    .cm-secondary:hover { background: #f5f5f7; }
+    .cm-result { margin-top: 0.2rem; }
+    .cm-new {
+      display: inline-block;
+      margin: 0 0 0.35rem;
+      padding: 0.15rem 0.55rem;
+      border-radius: 999px;
+      background: #fff4d6;
+      color: #8a5a00;
+      font-size: 0.78rem;
+      font-weight: 700;
     }
+    .cm-new[hidden] { display: none !important; }
+    .cm-scoreline {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      text-align: left;
+    }
+    .cm-score {
+      margin: 0;
+      font-size: 2.8rem;
+      font-weight: 700;
+      letter-spacing: -0.045em;
+      line-height: 0.9;
+      font-variant-numeric: tabular-nums;
+    }
+    .cm-scorecopy p { margin: 0; }
+    .cm-score-label, .cm-detail, .cm-pct, .cm-replay-note, .cm-share-msg, .cm-note, .cm-recent {
+      margin: 0;
+      color: #6e6e73;
+      font-size: 0.84rem;
+    }
+    .cm-score-label { color: #1d1d1f; font-weight: 600; }
+    .cm-pct { color: #1d1d1f; font-weight: 600; font-size: 0.95rem; }
     .cm-btns {
       display: flex;
-      gap: 0.65rem;
-      justify-content: center;
       flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 0.65rem;
     }
-    .cm-btn-action {
-      padding: 0.55rem 1.2rem;
+    .cm-replay {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: center;
+      margin-top: 0.85rem;
+    }
+    .cm-replay:empty { display: none; }
+    .cm-chip {
+      position: relative;
+      width: 28px;
+      height: 28px;
       border-radius: 8px;
-      font-size: 0.88rem;
-      font-weight: 600;
-      cursor: pointer;
-      font-family: inherit;
-      transition: opacity 0.15s;
-      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.12);
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+    .cm-chip .cm-shape {
+      position: static;
+      width: 16px;
+      height: 16px;
+      transform: none;
+    }
+    .cm-chip--miss { box-shadow: 0 0 0 2px #ff3b30; }
+    .cm-sharebox {
+      width: 100%;
+      margin-top: 8px;
+      border-radius: 12px;
+      border: 1px solid #d2d2d7;
+      padding: 8px 10px;
+      font: 12px/1.4 ui-monospace, SFMono-Regular, monospace;
+      color: #1d1d1f;
+      background: #fff;
+      resize: none;
+    }
+    .cm-stats {
+      margin-top: 1rem;
+      padding-top: 0.85rem;
+      border-top: 1px solid #e3e3e8;
+    }
+    .cm-stats__nums {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .cm-stats__nums b {
+      display: block;
+      font-size: 1.15rem;
+      letter-spacing: -0.03em;
+      font-variant-numeric: tabular-nums;
+    }
+    .cm-stats__nums span {
+      color: #6e6e73;
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .cm-hist {
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      height: 52px;
+      margin-top: 0.8rem;
+    }
+    .cm-bar {
+      flex: 1;
+      display: block;
+      background: #d2d2d7;
+      border-radius: 3px 3px 0 0;
+      min-height: 4px;
+    }
+    .cm-bar.is-median { background: #1d1d1f; }
+    .cm-bar.is-you { background: #0071e3; }
+    .cm-axis {
+      display: flex;
+      justify-content: space-between;
+      color: #8e8e93;
+      font-size: 0.68rem;
+      margin-top: 2px;
     }
     @media (max-width: 480px) {
-      main { padding: 0.5rem 0 2rem !important; }
+      main { padding: 0.6rem 0 2rem !important; }
       .cm-back { display: none; }
-      .cm-title { font-size: 1.2rem; }
-      .cm-subtitle { margin-bottom: 0.8rem; font-size: 0.82rem; }
-      .cm-hud { margin-bottom: 0.8rem; }
-      .cm-wrap { padding: 0 0.6rem; }
+      h1.cm-title { font-size: 1.3rem; }
+      .cm-wrap { padding: 0 0.7rem; }
+      .cm-stage { padding: 12px 10px 12px; border-radius: 22px; }
+      .cm-board { width: min(280px, 100%); }
+      .cm-score { font-size: 2.4rem; }
+      .cm-mode, .cm-tool { min-height: 36px; font-size: 0.78rem; padding: 0 11px; }
+      .cm-toolbar, .cm-modes { gap: 6px; }
     }
-    .cm-btn-action--primary { background: var(--accent); color: #000; border: none; }
-    .cm-btn-action--secondary { background: transparent; border: 1px solid rgba(255,255,255,0.15); color: var(--text-secondary); }
-    .cm-alltime {
-      margin-top: 1rem;
-      font-size: 0.78rem;
-      color: var(--text-muted);
+    @media (max-height: 860px) {
+      main { padding-top: 0.85rem !important; }
+      h1.cm-title { font-size: 1.4rem; }
+      .cm-rules { margin-bottom: 0.4rem; }
+      .cm-board { width: min(188px, 100%); }
+      .cm-stage { padding-top: 8px; padding-bottom: 8px; }
+      .cm-hud { margin-bottom: 2px; }
+      .cm-hud__val { font-size: 1.15rem; }
+      .cm-mode, .cm-tool { min-height: 36px; font-size: 0.76rem; }
+      .cm-btns { margin-top: 0.3rem; }
+      .cm-replay { margin-top: 0.35rem; }
+      .cm-live { margin-top: 0.15rem; }
+      .cm-score { font-size: 2.2rem; }
     }
-    .cm-alltime span { color: var(--accent); font-family: 'JetBrains Mono', monospace; }
   </style>
   <script type="application/ld+json">
 {
@@ -240,7 +531,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:site" content="@CosmicGamesHub">
   <meta name="twitter:title" content="Color Memory — CosmicGamesHub">
-  <meta name="twitter:description" content="Simon Says color memory game. Watch the sequence, repeat it back. How long can your memory streak go?">
+  <meta name="twitter:description" content="Repeat the pattern. 5 seconds per press, with tones and colorblind-safe shapes.">
   <meta name="twitter:image" content="https://www.cosmicgameshub.com/images/game-color-memory.jpg">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="CosmicGamesHub">
@@ -270,62 +561,96 @@
   </div>
 </nav>
 
-<main style="padding: 2rem 0 4rem;">
+<main style="padding: 1.15rem 0 3rem;">
   <div class="cm-wrap">
     <a href="/games" class="cm-back">← Back to Games</a>
+    <h1 class="cm-title">Color Memory</h1>
+    <p class="cm-rules" id="cmRules">Repeat the pattern. 5 seconds per press. Playback speeds up at 5, 9, and 13.</p>
 
-    <h1 class="cm-title">🎨 Color Memory</h1>
-    <p class="cm-subtitle">Watch the sequence — repeat it back. How far can you go?</p>
+    <div class="cm-stage is-shapes" id="cmStage">
+      <div class="cm-toolbar">
+        <div class="cm-modes" role="radiogroup" aria-label="Game mode">
+          <button type="button" class="cm-mode" role="radio" data-mode="classic" aria-checked="true">Classic</button>
+          <button type="button" class="cm-mode" role="radio" data-mode="reverse">Reverse</button>
+          <button type="button" class="cm-mode" role="radio" data-mode="speed">Speed</button>
+          <button type="button" class="cm-mode" role="radio" data-mode="grid" aria-label="3 by 3 grid, positions only">Grid</button>
+          <button type="button" class="cm-mode" role="radio" data-mode="chimp" aria-label="Chimp test, numbered tiles">Chimp</button>
+          <button type="button" class="cm-mode" role="radio" data-mode="daily">Daily</button>
+        </div>
+        <div class="cm-tools">
+          <button type="button" class="cm-tool" id="cmMute" aria-pressed="false" aria-label="Sound on">Sound on</button>
+          <button type="button" class="cm-tool" id="cmShapes" aria-pressed="true">Shapes</button>
+        </div>
+      </div>
 
-    <!-- HUD -->
-    <div class="cm-hud">
-      <div class="cm-hud__stat">
-        <div class="cm-hud__val" id="hudRound">—</div>
-        <div class="cm-hud__lbl">Round</div>
+      <div class="cm-hud" aria-label="Scoreboard">
+        <div>
+          <div class="cm-hud__val" id="hudRound">—</div>
+          <div class="cm-hud__lbl" id="hudRoundLbl">Round</div>
+        </div>
+        <div>
+          <div class="cm-hud__val" id="hudLen">—</div>
+          <div class="cm-hud__lbl" id="hudLenLbl">Sequence</div>
+        </div>
+        <div>
+          <div class="cm-hud__val" id="hudProgress">—</div>
+          <div class="cm-hud__lbl" id="hudProgLbl">Progress</div>
+        </div>
       </div>
-      <div class="cm-hud__stat">
-        <div class="cm-hud__val" id="hudLen">—</div>
-        <div class="cm-hud__lbl">Length</div>
+
+      <div class="cm-board" id="cmBoard">
+        <svg class="cm-ring" id="cmRing" viewBox="0 0 120 120" aria-hidden="true">
+          <circle class="cm-ring__track" cx="60" cy="60" r="54"></circle>
+          <circle class="cm-ring__value" id="cmRingValue" cx="60" cy="60" r="54"></circle>
+        </svg>
+        <div class="cm-grid cm-grid--4" id="cmGrid" role="group" aria-label="Color pads"></div>
       </div>
-      <div class="cm-hud__stat">
-        <div class="cm-hud__val" id="hudProgress">—</div>
-        <div class="cm-hud__lbl">Progress</div>
+
+      <div class="cm-seq" id="seqViz" aria-hidden="true"></div>
+
+      <div class="cm-live">
+        <p class="cm-status" id="cmStatus" aria-live="polite" aria-atomic="true">Press Start to play</p>
+        <p class="cm-count" id="cmCountdown" aria-hidden="true"></p>
       </div>
+      <p class="cm-hint" id="cmHint">Keys 1–4 or Q W A S</p>
+
+      <button type="button" class="cm-go" id="cmStartBtn">Start</button>
+
+      <div class="cm-result" id="cmResult" hidden>
+        <p class="cm-new" id="cmNewBest" hidden>New personal best</p>
+        <div class="cm-scoreline">
+          <p class="cm-score" id="cmScore">0</p>
+          <div class="cm-scorecopy">
+            <p class="cm-score-label" id="cmScoreLabel">Rounds completed</p>
+            <p class="cm-detail" id="cmDetail"></p>
+            <p class="cm-pct" id="cmPct"></p>
+          </div>
+        </div>
+        <div class="cm-btns">
+          <button type="button" class="cm-go" id="cmPlayAgain">Play Again</button>
+          <button type="button" class="cm-secondary" id="cmNewPattern" hidden>New pattern</button>
+          <button type="button" class="cm-secondary" id="cmShare">Share</button>
+        </div>
+        <div class="cm-replay" id="cmReplay"></div>
+        <p class="cm-replay-note" id="cmReplayNote"></p>
+        <p class="cm-share-msg" id="cmShareMsg" aria-live="polite"></p>
+        <textarea id="cmShareBox" class="cm-sharebox" rows="3" hidden readonly spellcheck="false"></textarea>
+      </div>
+
+      <section class="cm-stats" aria-label="Your stats">
+        <div class="cm-stats__nums">
+          <div><b id="stBest">—</b><span>Best</span></div>
+          <div><b id="stAvg">—</b><span>Average</span></div>
+          <div><b id="stGames">0</b><span>Played</span></div>
+        </div>
+        <div class="cm-hist" id="stHist" aria-hidden="true"></div>
+        <div class="cm-axis" aria-hidden="true"><span>1</span><span id="stMedian">median 9</span><span>18</span></div>
+        <p class="cm-recent" id="stRecent"></p>
+        <p class="cm-note" id="stNote"></p>
+      </section>
     </div>
-
-    <!-- Sequence dot visualizer -->
-    <div class="cm-sequence-viz" id="seqViz"></div>
-
-    <!-- Buttons -->
-    <div class="cm-grid">
-      <button class="cm-btn cm-btn--red"    id="btn-red"    disabled aria-label="Red">🔴</button>
-      <button class="cm-btn cm-btn--green"  id="btn-green"  disabled aria-label="Green">🟢</button>
-      <button class="cm-btn cm-btn--blue"   id="btn-blue"   disabled aria-label="Blue">🔵</button>
-      <button class="cm-btn cm-btn--yellow" id="btn-yellow" disabled aria-label="Yellow">🟡</button>
-    </div>
-
-    <!-- Status message -->
-    <div class="cm-status" id="cmStatus">Press Start to play</div>
-
-    <!-- Start button (visible before game starts) -->
-    <button class="cm-start-btn" id="cmStartBtn">Start</button>
-
-    <!-- Result panel -->
-    <div class="cm-result" id="cmResult">
-      <div id="cmNewBest" class="cm-new-best" style="display:none;">🥇 New personal best!</div>
-      <div class="cm-result__score" id="cmScore">0</div>
-      <div class="cm-result__label">sequence length reached</div>
-      <div class="cm-result__best" id="cmBestLine"></div>
-      <div class="cm-btns">
-        <button class="cm-btn-action cm-btn-action--primary" id="cmPlayAgain">Play Again</button>
-        <button class="cm-btn-action cm-btn-action--secondary" id="cmShare">📋 Share</button>
-      </div>
-    </div>
-
-    <div class="cm-alltime" id="cmAllTime"></div>
   </div>
 </main>
-
 
 <section class="rg-section">
   <div class="container">
@@ -381,196 +706,1303 @@
       <p>© 2026 CosmicGamesHub. <a href="/games">← More Games</a></p>
     </div>
   </div>
-
 </footer>
 
 <script>
-(function() {
-  const BEST_KEY = 'cm_best';
-  const COLORS = ['red','green','blue','yellow'];
-  const FLASH_ON = 500;
-  const FLASH_OFF = 200;
-  const FLASH_PAUSE = 600;
-  const INPUT_TIMEOUT = 5000;
+(function () {
+  'use strict';
 
-  const btns = {};
-  COLORS.forEach(c => { btns[c] = document.getElementById('btn-' + c); });
-  const statusEl = document.getElementById('cmStatus');
-  const startBtn = document.getElementById('cmStartBtn');
-  const resultEl = document.getElementById('cmResult');
-  const hudRound = document.getElementById('hudRound');
-  const hudLen   = document.getElementById('hudLen');
-  const hudProg  = document.getElementById('hudProgress');
-  const seqViz   = document.getElementById('seqViz');
+  var BEST_KEY = 'cm_best';
+  var MUTE_KEY = 'cm_mute';
+  var SHAPE_KEY = 'cm_shapes';
+  var STATS_KEY = 'cm_stats_v1';
+  var MODE_KEY = 'cm_mode';
+  var INPUT_MS = 5000;
+  var GRACE_MS = 300;
+  var RING_C = 2 * Math.PI * 54;
+  var MODES = ['classic', 'reverse', 'speed', 'grid', 'chimp', 'daily'];
+  var SHARE_BASE = 'https://www.cosmicgameshub.com/games/color-memory';
 
-  let sequence = [];
-  let playerIndex = 0;
-  let round = 0;
-  let playing = false;
-  let inputEnabled = false;
-  let inputTimer = null;
+  var CLASSIC_PADS = [
+    { id: 'red', name: 'Red', shape: 'triangle', shapeName: 'triangle', keys: ['1', 'q'], keyLabel: '1', freq: 310, color: '#A33B00', ink: '#ffffff' },
+    { id: 'green', name: 'Green', shape: 'circle', shapeName: 'circle', keys: ['2', 'w'], keyLabel: '2', freq: 415, color: '#14916A', ink: '#042016' },
+    { id: 'blue', name: 'Blue', shape: 'square', shapeName: 'square', keys: ['3', 'a'], keyLabel: '3', freq: 209, color: '#56B4E9', ink: '#102030' },
+    { id: 'yellow', name: 'Yellow', shape: 'diamond', shapeName: 'diamond', keys: ['4', 's'], keyLabel: '4', freq: 252, color: '#F0E442', ink: '#1d1d1f' }
+  ];
 
-  function setStatus(msg, cls) {
-    statusEl.textContent = msg;
-    statusEl.className = 'cm-status' + (cls ? ' cm-status--' + cls : '');
+  var GRID_FREQ = [262, 294, 330, 349, 392, 440, 494, 523, 587];
+  var GRID_PADS = GRID_FREQ.map(function (freq, i) {
+    var n = i + 1;
+    return {
+      id: 'g' + n,
+      name: 'Tile ' + n,
+      shape: '',
+      shapeName: '',
+      keys: [String(n)],
+      keyLabel: String(n),
+      freq: freq,
+      color: '#d8d8de',
+      ink: '#1d1d1f',
+      neutral: true
+    };
+  });
+
+  var stage = document.getElementById('cmStage');
+  var board = document.getElementById('cmBoard');
+  var grid = document.getElementById('cmGrid');
+  var ring = document.getElementById('cmRing');
+  var ringValue = document.getElementById('cmRingValue');
+  var statusEl = document.getElementById('cmStatus');
+  var countdownEl = document.getElementById('cmCountdown');
+  var startBtn = document.getElementById('cmStartBtn');
+  var resultEl = document.getElementById('cmResult');
+  var seqViz = document.getElementById('seqViz');
+  var rulesEl = document.getElementById('cmRules');
+  var hintEl = document.getElementById('cmHint');
+  var muteBtn = document.getElementById('cmMute');
+  var shapesBtn = document.getElementById('cmShapes');
+  var hudRound = document.getElementById('hudRound');
+  var hudLen = document.getElementById('hudLen');
+  var hudProg = document.getElementById('hudProgress');
+
+  var mode = 'classic';
+  var phase = 'idle';
+  var runId = 0;
+  var seed = '';
+  var challengeLock = false;
+  var sequence = [];
+  var fullRoll = [];
+  var playerIndex = 0;
+  var round = 0;
+  var inputEnabled = false;
+  var lastScore = 0;
+  var histScore = null;
+  var resultLocked = false;
+  var shapesOn = true;
+  var muted = false;
+  var audioCtx = null;
+  var audioUnlocked = false;
+  var lightToken = {};
+  var pending = [];
+  var inputClock = null;
+  var chimp = null;
+  var stats = null;
+  var lastPointerAt = 0;
+
+  function $(id) { return document.getElementById(id); }
+
+  function track(name, params) {
+    try {
+      if (typeof window.gtag === 'function') window.gtag('event', name, params || {});
+    } catch (err) { /* analytics must not break play */ }
+  }
+
+  function referrerPath() {
+    try {
+      if (!document.referrer) return 'direct';
+      var url = new URL(document.referrer);
+      if (url.origin !== location.origin) return 'direct';
+      return url.pathname || '/';
+    } catch (err) {
+      return 'direct';
+    }
+  }
+
+  function pad2(n) { return n < 10 ? '0' + n : String(n); }
+
+  function localYmd(d) {
+    d = d || new Date();
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+  }
+
+  function addDays(ymd, days) {
+    var p = String(ymd || '').split('-');
+    if (p.length < 3) return '';
+    var dt = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10));
+    if (isNaN(dt.getTime())) return '';
+    dt.setDate(dt.getDate() + days);
+    return localYmd(dt);
+  }
+
+  function rngFromSeed(text) {
+    var h = 2166136261;
+    var s = String(text);
+    for (var i = 0; i < s.length; i++) {
+      h ^= s.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    var a = h >>> 0;
+    return function () {
+      a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function randomSeed() {
+    try {
+      var buf = new Uint32Array(2);
+      crypto.getRandomValues(buf);
+      return (buf[0].toString(16) + buf[1].toString(16)).slice(0, 8);
+    } catch (err) {
+      return Math.floor(Math.random() * 0xffffffff).toString(16);
+    }
+  }
+
+  function erf(x) {
+    var sign = x < 0 ? -1 : 1;
+    var a = Math.abs(x);
+    var t = 1 / (1 + 0.3275911 * a);
+    var y = 1 - (((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-a * a));
+    return sign * y;
+  }
+
+  function betterThan(score, mean, sd) {
+    var z = (score - mean) / sd;
+    var p = 0.5 * (1 + erf(z / Math.SQRT2));
+    return Math.max(0, Math.min(99, Math.round(p * 100)));
+  }
+
+  function referenceFor(which) {
+    if (which === 'chimp') return { mean: 8, sd: 2.2, median: 8, noun: 'chimp-test scores' };
+    return { mean: 9, sd: 3.2, median: 9, noun: 'sequence-memory scores' };
+  }
+
+  function tempoFor(length, which) {
+    var on = 500;
+    var off = 200;
+    var lead = 600;
+    if (length >= 13) { on = 260; off = 104; lead = 340; }
+    else if (length >= 9) { on = 340; off = 136; lead = 420; }
+    else if (length >= 5) { on = 420; off = 168; lead = 500; }
+    if (which === 'speed') {
+      if (length >= 13) { on = 150; off = 60; lead = 220; }
+      else if (length >= 9) { on = 200; off = 80; lead = 260; }
+      else if (length >= 5) { on = 260; off = 104; lead = 320; }
+      else { on = 340; off = 136; lead = 400; }
+    }
+    return { on: on, off: off, lead: lead };
+  }
+
+  function bracketOf(length) {
+    if (length >= 13) return 3;
+    if (length >= 9) return 2;
+    if (length >= 5) return 1;
+    return 0;
+  }
+
+  function readStore(key) {
+    try { return localStorage.getItem(key); } catch (err) { return null; }
+  }
+
+  function writeStore(key, value) {
+    try { localStorage.setItem(key, value); } catch (err) { /* private mode */ }
+  }
+
+  function emptySlot() {
+    return { games: 0, best: 0, sum: 0, runs: [] };
+  }
+
+  function loadStats() {
+    var parsed = null;
+    try { parsed = JSON.parse(readStore(STATS_KEY) || 'null'); } catch (err) { parsed = null; }
+    var next = { byMode: {}, daily: { lastYmd: '', streak: 0, bestStreak: 0 } };
+    if (parsed && typeof parsed === 'object') {
+      if (parsed.byMode && typeof parsed.byMode === 'object') next.byMode = parsed.byMode;
+      if (parsed.daily && typeof parsed.daily === 'object') {
+        next.daily.lastYmd = typeof parsed.daily.lastYmd === 'string' ? parsed.daily.lastYmd : '';
+        next.daily.streak = +parsed.daily.streak || 0;
+        next.daily.bestStreak = +parsed.daily.bestStreak || 0;
+      }
+    }
+    MODES.forEach(function (name) {
+      var slot = next.byMode[name];
+      if (!slot || typeof slot !== 'object') slot = emptySlot();
+      slot.games = +slot.games || 0;
+      slot.best = +slot.best || 0;
+      slot.sum = +slot.sum || 0;
+      slot.runs = Array.isArray(slot.runs) ? slot.runs.filter(function (n) { return isFinite(+n); }).map(Number).slice(-20) : [];
+      next.byMode[name] = slot;
+    });
+    var legacy = parseInt(readStore(BEST_KEY) || '0', 10);
+    if (legacy > next.byMode.classic.best) next.byMode.classic.best = legacy;
+    return next;
+  }
+
+  function saveStats() {
+    writeStore(STATS_KEY, JSON.stringify(stats));
+  }
+
+  function slot() { return stats.byMode[mode]; }
+
+  function liveDailyStreak() {
+    var d = stats.daily;
+    var ymd = localYmd();
+    if (d.lastYmd === ymd || d.lastYmd === addDays(ymd, -1)) return d.streak || 0;
+    return 0;
+  }
+
+  function noteDaily() {
+    var ymd = localYmd();
+    var d = stats.daily;
+    if (d.lastYmd === ymd) return;
+    d.streak = d.lastYmd === addDays(ymd, -1) ? (d.streak || 0) + 1 : 1;
+    d.lastYmd = ymd;
+    if (d.streak > (d.bestStreak || 0)) d.bestStreak = d.streak;
+  }
+
+  function currentPads() {
+    return mode === 'grid' ? GRID_PADS : CLASSIC_PADS;
+  }
+
+  function padById(id) {
+    var list = currentPads();
+    for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
+    return null;
+  }
+
+  function isSequenceMode() { return mode !== 'chimp'; }
+
+  function scoreNoun() { return mode === 'chimp' ? 'Numbers completed' : 'Rounds completed'; }
+
+  function modeLabel(which) {
+    switch (which) {
+      case 'classic': return 'Classic';
+      case 'reverse': return 'Reverse';
+      case 'speed': return 'Speed';
+      case 'grid': return 'Grid';
+      case 'chimp': return 'Chimp';
+      case 'daily': return 'Daily';
+      default: return 'Classic';
+    }
+  }
+
+  function rulesFor(which) {
+    var streak = liveDailyStreak();
+    switch (which) {
+      case 'classic':
+        return 'Repeat the pattern. 5 seconds per press. Playback speeds up at 5, 9, and 13.';
+      case 'reverse':
+        return 'Watch the pattern, then enter it backwards. 5 seconds per press.';
+      case 'speed':
+        return 'Same memory test, faster from the first round. 5 seconds per press.';
+      case 'grid':
+        return 'One color, nine positions. Remember the path. Keys 1–9. 5 seconds per press.';
+      case 'chimp':
+        return 'Tap the numbers in order. They hide after the first tap. Three strikes.';
+      case 'daily':
+        return 'Today’s pattern is the same for everyone. 5 seconds per press. Streak ' + streak + '.';
+      default:
+        return rulesFor('classic');
+    }
+  }
+
+  function hintFor(which) {
+    switch (which) {
+      case 'grid': return 'Keys 1–9';
+      case 'chimp': return 'Tap a tile, or Tab to it and press Enter';
+      case 'classic':
+      case 'reverse':
+      case 'speed':
+      case 'daily':
+        return 'Keys 1–4 or Q W A S';
+      default:
+        return hintFor('classic');
+    }
+  }
+
+  function shapeEl(kind) {
+    var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 64 64');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.classList.add('cm-shape');
+    var node;
+    if (kind === 'triangle') {
+      node = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+      node.setAttribute('points', '32,8 56,54 8,54');
+    } else if (kind === 'circle') {
+      node = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      node.setAttribute('cx', '32');
+      node.setAttribute('cy', '32');
+      node.setAttribute('r', '20');
+    } else if (kind === 'square') {
+      node = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      node.setAttribute('x', '12');
+      node.setAttribute('y', '12');
+      node.setAttribute('width', '40');
+      node.setAttribute('height', '40');
+      node.setAttribute('rx', '4');
+    } else {
+      node = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+      node.setAttribute('points', '32,6 58,32 32,58 6,32');
+    }
+    node.setAttribute('fill', 'currentColor');
+    svg.appendChild(node);
+    return svg;
+  }
+
+  function setStatus(text, kind, turn) {
+    statusEl.textContent = text;
+    statusEl.className = 'cm-status' + (kind ? ' cm-status--' + kind : '') + (turn ? ' is-turn' : '');
+  }
+
+  function later(ms) {
+    return new Promise(function (resolve) {
+      var item = { done: false, resolve: resolve, t: 0 };
+      item.t = setTimeout(function () {
+        if (item.done) return;
+        item.done = true;
+        resolve(true);
+      }, ms);
+      pending.push(item);
+    });
+  }
+
+  function cancelPending() {
+    pending.splice(0).forEach(function (item) {
+      clearTimeout(item.t);
+      if (!item.done) {
+        item.done = true;
+        item.resolve(false);
+      }
+    });
+  }
+
+  function bumpRun() {
+    runId += 1;
+    return runId;
+  }
+
+  function clearLights() {
+    Object.keys(lightToken).forEach(function (k) { lightToken[k] += 1; });
+    var nodes = grid.querySelectorAll('.cm-btn');
+    for (var i = 0; i < nodes.length; i++) nodes[i].classList.remove('cm-btn--lit', 'cm-btn--miss');
+  }
+
+  function stopInputClock() {
+    if (!inputClock) return;
+    clearTimeout(inputClock.graceTimer);
+    if (inputClock.raf) cancelAnimationFrame(inputClock.raf);
+    inputClock = null;
+    board.classList.remove('is-input');
+    countdownEl.textContent = '';
+    countdownEl.classList.remove('is-low');
+    ring.classList.remove('is-low');
+    if (statusEl.classList.contains('is-turn')) statusEl.classList.remove('is-turn');
+  }
+
+  function paintRing(ratio) {
+    var clamped = Math.max(0, Math.min(1, ratio));
+    ringValue.style.strokeDasharray = String(RING_C);
+    ringValue.style.strokeDashoffset = String(RING_C * (1 - clamped));
+    countdownEl.textContent = (clamped * (INPUT_MS / 1000)).toFixed(1) + 's';
+    var low = clamped > 0 && clamped < 0.3;
+    countdownEl.classList.toggle('is-low', low);
+    ring.classList.toggle('is-low', low);
+  }
+
+  function beginDrain() {
+    if (!inputClock || phase !== 'play' || !inputEnabled) return;
+    inputClock.grace = false;
+    inputClock.running = true;
+    inputClock.t0 = performance.now();
+    var tick = function () {
+      if (!inputClock || !inputClock.running) return;
+      var left = inputClock.remaining - (performance.now() - inputClock.t0);
+      paintRing(left / INPUT_MS);
+      if (left <= 0) {
+        inputClock.running = false;
+        onTimeout();
+        return;
+      }
+      inputClock.raf = requestAnimationFrame(tick);
+    };
+    inputClock.raf = requestAnimationFrame(tick);
+  }
+
+  function armInputTimer() {
+    stopInputClock();
+    inputClock = { remaining: INPUT_MS, running: false, grace: true, paused: false, graceLeft: GRACE_MS };
+    board.classList.add('is-input');
+    statusEl.classList.add('is-turn');
+    paintRing(1);
+    if (document.hidden) {
+      inputClock.paused = true;
+      return;
+    }
+    inputClock.graceTimer = setTimeout(function () {
+      if (!inputClock || !inputEnabled || phase !== 'play') return;
+      beginDrain();
+    }, GRACE_MS);
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    if (!inputClock || phase !== 'play' || !inputEnabled) return;
+    if (document.hidden) {
+      if (inputClock.grace) {
+        clearTimeout(inputClock.graceTimer);
+        inputClock.paused = true;
+        inputClock.graceLeft = GRACE_MS;
+      } else if (inputClock.running) {
+        inputClock.remaining -= performance.now() - inputClock.t0;
+        if (inputClock.remaining < 0) inputClock.remaining = 0;
+        inputClock.running = false;
+        if (inputClock.raf) cancelAnimationFrame(inputClock.raf);
+        inputClock.paused = true;
+      }
+      return;
+    }
+    if (!inputClock.paused) return;
+    inputClock.paused = false;
+    if (inputClock.grace) {
+      inputClock.graceTimer = setTimeout(function () {
+        if (!inputClock || !inputEnabled || phase !== 'play') return;
+        beginDrain();
+      }, inputClock.graceLeft || GRACE_MS);
+    } else if (inputClock.remaining <= 0) {
+      onTimeout();
+    } else {
+      beginDrain();
+    }
+  });
+
+  function unlockAudio() {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    try {
+      if (!audioCtx) audioCtx = new AC();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      if (!audioUnlocked) {
+        var buffer = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
+        var src = audioCtx.createBufferSource();
+        src.buffer = buffer;
+        src.connect(audioCtx.destination);
+        src.start();
+        audioUnlocked = true;
+      }
+    } catch (err) { /* autoplay policies */ }
+    return audioCtx;
+  }
+
+  function playFreq(freq, dur, type, when, vol) {
+    if (muted) return;
+    var a = unlockAudio();
+    if (!a) return;
+    var t = a.currentTime + (when || 0);
+    var osc = a.createOscillator();
+    var gain = a.createGain();
+    osc.type = type || 'square';
+    osc.frequency.setValueAtTime(freq, t);
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(vol || 0.12, t + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + Math.max(0.05, dur));
+    osc.connect(gain);
+    gain.connect(a.destination);
+    osc.start(t);
+    osc.stop(t + dur + 0.02);
+  }
+
+  function playPad(id) {
+    var pad = padById(id);
+    if (!pad) return;
+    playFreq(pad.freq, 0.26, 'square', 0, 0.12);
+  }
+
+  function playCorrect() {
+    playFreq(523, 0.08, 'sine', 0, 0.07);
+    playFreq(659, 0.12, 'sine', 0.08, 0.07);
+  }
+
+  function errorBuzz() {
+    if (muted) return;
+    var a = unlockAudio();
+    if (!a) return;
+    [42, 126].forEach(function (freq, i) {
+      var t = a.currentTime;
+      var osc = a.createOscillator();
+      var gain = a.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(freq, t);
+      var vol = i === 0 ? 0.18 : 0.05;
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(vol, t + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.32);
+      osc.connect(gain);
+      gain.connect(a.destination);
+      osc.start(t);
+      osc.stop(t + 0.34);
+    });
+  }
+
+  function haptic(pattern) {
+    try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (err) { /* unsupported */ }
+  }
+
+  function lightUp(id, ms, opts) {
+    opts = opts || {};
+    var my = runId;
+    var btn = document.getElementById('pad-' + id);
+    if (!btn) return Promise.resolve(false);
+    var token = (lightToken[id] || 0) + 1;
+    lightToken[id] = token;
+    btn.classList.add('cm-btn--lit');
+    if (opts.miss) btn.classList.add('cm-btn--miss');
+    if (opts.sound !== false) playPad(id);
+    return later(ms).then(function (alive) {
+      if (lightToken[id] === token) btn.classList.remove('cm-btn--lit', 'cm-btn--miss');
+      if (!alive || my !== runId) return false;
+      return later(opts.gap == null ? 0 : opts.gap).then(function (gapAlive) {
+        return gapAlive && my === runId;
+      });
+    });
   }
 
   function setEnabled(on) {
     inputEnabled = on;
-    COLORS.forEach(c => { btns[c].disabled = !on; });
+    var nodes = grid.querySelectorAll('.cm-btn');
+    for (var i = 0; i < nodes.length; i++) {
+      var btn = nodes[i];
+      if (btn.classList.contains('is-empty')) btn.disabled = true;
+      else btn.disabled = !on;
+    }
   }
 
-  function lightUp(color, ms) {
-    return new Promise(res => {
-      btns[color].classList.add('cm-btn--lit');
-      setTimeout(() => {
-        btns[color].classList.remove('cm-btn--lit');
-        setTimeout(res, FLASH_OFF);
-      }, ms);
+  function renderBoard() {
+    board.classList.toggle('is-chimp', mode === 'chimp');
+    board.classList.toggle('is-grid', mode === 'grid');
+    if (mode === 'chimp') {
+      grid.className = 'cm-grid cm-grid--16';
+      grid.setAttribute('aria-label', 'Number tiles');
+      grid.replaceChildren();
+      for (var i = 0; i < 16; i++) {
+        var idle = document.createElement('button');
+        idle.type = 'button';
+        idle.className = 'cm-btn cm-btn--chimp';
+        idle.disabled = true;
+        idle.dataset.cell = String(i);
+        idle.setAttribute('aria-label', 'Empty tile');
+        grid.appendChild(idle);
+      }
+      return;
+    }
+    var list = currentPads();
+    grid.className = 'cm-grid cm-grid--' + (list.length === 9 ? '9' : '4');
+    grid.setAttribute('aria-label', mode === 'grid' ? 'Position tiles' : 'Color pads');
+    grid.replaceChildren();
+    list.forEach(function (pad) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.id = 'pad-' + pad.id;
+      btn.className = 'cm-btn' + (pad.neutral ? ' cm-btn--neutral' : '');
+      btn.disabled = true;
+      btn.dataset.id = pad.id;
+      btn.style.setProperty('--pad', pad.color);
+      btn.style.setProperty('--ink', pad.ink);
+      var label = pad.name;
+      if (pad.shapeName) label += ', ' + pad.shapeName;
+      label += '. Key ' + pad.keys.map(function (k) { return k.toUpperCase(); }).join(' or ');
+      btn.setAttribute('aria-label', label);
+      btn.setAttribute('aria-keyshortcuts', pad.keys.join(' '));
+      if (pad.shape) btn.appendChild(shapeEl(pad.shape));
+      var key = document.createElement('span');
+      key.className = 'cm-key';
+      key.setAttribute('aria-hidden', 'true');
+      key.textContent = pad.keyLabel;
+      if (pad.keys[1]) {
+        var extra = document.createElement('span');
+        extra.textContent = pad.keys[1].toUpperCase();
+        key.appendChild(extra);
+      }
+      btn.appendChild(key);
+      grid.appendChild(btn);
     });
   }
 
   function buildSeqViz() {
-    seqViz.innerHTML = '';
-    for (let i = 0; i < sequence.length; i++) {
-      const d = document.createElement('div');
-      d.className = 'cm-dot' + (i < playerIndex ? ' cm-dot--done' : i === playerIndex ? ' cm-dot--active' : '');
-      seqViz.appendChild(d);
+    seqViz.replaceChildren();
+    if (!isSequenceMode() || !sequence.length) return;
+    sequence.forEach(function (_id, i) {
+      var dot = document.createElement('span');
+      dot.className = 'cm-dot';
+      if (inputEnabled) {
+        if (i < playerIndex) dot.classList.add('cm-dot--done');
+        else if (i === playerIndex) dot.classList.add('cm-dot--active');
+      }
+      seqViz.appendChild(dot);
+    });
+  }
+
+  function updateHud() {
+    var roundLbl = $('hudRoundLbl');
+    var lenLbl = $('hudLenLbl');
+    var progLbl = $('hudProgLbl');
+    if (mode === 'chimp') {
+      roundLbl.textContent = 'Numbers';
+      lenLbl.textContent = 'Cleared';
+      progLbl.textContent = 'Strikes';
+      if (!chimp || phase === 'idle') {
+        hudRound.textContent = '—';
+        hudLen.textContent = '—';
+        hudProg.textContent = '—';
+        return;
+      }
+      hudRound.textContent = String(chimp.n);
+      hudLen.textContent = String(chimp.cleared);
+      hudProg.textContent = chimp.strikes + '/3';
+      return;
     }
+    roundLbl.textContent = 'Round';
+    lenLbl.textContent = 'Sequence';
+    progLbl.textContent = 'Progress';
+    if (phase === 'idle') {
+      hudRound.textContent = '—';
+      hudLen.textContent = '—';
+      hudProg.textContent = '—';
+      return;
+    }
+    hudRound.textContent = String(Math.max(1, round));
+    hudLen.textContent = String(sequence.length || 1);
+    hudProg.textContent = playerIndex + '/' + (sequence.length || 1);
+  }
+
+  function updateChrome() {
+    var modes = stage.querySelectorAll('.cm-mode');
+    for (var i = 0; i < modes.length; i++) {
+      var btn = modes[i];
+      var on = btn.getAttribute('data-mode') === mode;
+      btn.setAttribute('aria-checked', on ? 'true' : 'false');
+      btn.disabled = phase === 'play';
+    }
+    stage.classList.toggle('is-shapes', shapesOn);
+    stage.classList.toggle('is-over', phase === 'over');
+    shapesBtn.setAttribute('aria-pressed', shapesOn ? 'true' : 'false');
+    shapesBtn.textContent = shapesOn ? 'Shapes' : 'Shapes off';
+    paintMute();
+    rulesEl.textContent = rulesFor(mode);
+    hintEl.textContent = hintFor(mode);
+    updateHud();
+    renderStats();
+  }
+
+  function expectedId() {
+    if (mode === 'reverse') return sequence[sequence.length - 1 - playerIndex];
+    return sequence[playerIndex];
+  }
+
+  function missIndex() {
+    if (mode === 'reverse') return sequence.length - 1 - playerIndex;
+    return playerIndex;
   }
 
   async function playSequence() {
+    var my = runId;
     setEnabled(false);
-    setStatus('Watch the sequence…', 'watch');
-    await delay(FLASH_PAUSE);
-    for (const c of sequence) {
-      await lightUp(c, FLASH_ON);
+    stopInputClock();
+    var tempo = tempoFor(sequence.length, mode);
+    var faster = bracketOf(sequence.length) > bracketOf(sequence.length - 1);
+    var leadIn = mode === 'speed' && sequence.length === 1
+      ? 'Speed mode. Watch the sequence.'
+      : (faster ? 'Faster. Watch the sequence.' : 'Watch the sequence.');
+    setStatus(leadIn, 'watch', false);
+    buildSeqViz();
+    updateHud();
+    var leadOk = await later(tempo.lead);
+    if (!leadOk || my !== runId) return;
+    for (var i = 0; i < sequence.length; i++) {
+      var pad = padById(sequence[i]);
+      var spoken = 'Watch. ' + (pad ? pad.name : 'Tile');
+      if (shapesOn && pad && pad.shapeName) spoken += ', ' + pad.shapeName;
+      spoken += '.';
+      setStatus(spoken, 'watch', false);
+      var ok = await lightUp(sequence[i], tempo.on, { gap: tempo.off });
+      if (!ok || my !== runId) return;
     }
-    await delay(200);
+    if (my !== runId || phase !== 'play') return;
     playerIndex = 0;
-    buildSeqViz();
-    setStatus('Your turn! Repeat the sequence.', 'go');
+    var turn = mode === 'reverse'
+      ? 'Your turn. Enter it in reverse. 5 seconds per press.'
+      : 'Your turn. Repeat the sequence. 5 seconds per press.';
+    setStatus(turn, 'go', true);
     setEnabled(true);
-    startInputTimer();
-  }
-
-  function delay(ms) {
-    return new Promise(res => setTimeout(res, ms));
-  }
-
-  function startInputTimer() {
-    clearTimeout(inputTimer);
-    inputTimer = setTimeout(() => {
-      if (inputEnabled) {
-        gameOver('Time\'s up!');
-      }
-    }, INPUT_TIMEOUT);
-  }
-
-  function handleClick(color) {
-    if (!inputEnabled) return;
-    clearTimeout(inputTimer);
-    lightUp(color, 200);
-
-    if (color !== sequence[playerIndex]) {
-      gameOver('Wrong color!');
-      return;
-    }
-
-    playerIndex++;
     buildSeqViz();
-    hudProg.textContent = playerIndex + '/' + sequence.length;
-
-    if (playerIndex === sequence.length) {
-      // Completed this round
-      setEnabled(false);
-      setStatus('Correct! ✓', 'go');
-      setTimeout(() => nextRound(), 800);
-    } else {
-      startInputTimer();
-    }
+    updateHud();
+    armInputTimer();
   }
 
   function nextRound() {
-    round++;
-    sequence.push(COLORS[Math.floor(Math.random() * COLORS.length)]);
-    hudRound.textContent = round;
-    hudLen.textContent = sequence.length;
-    hudProg.textContent = '0/' + sequence.length;
+    round += 1;
+    if (fullRoll.length < round) {
+      var extra = rngFromSeed(seed + '|' + mode + '|extra|' + round);
+      var pads = currentPads();
+      fullRoll.push(pads[Math.floor(extra() * pads.length)].id);
+    }
+    sequence = fullRoll.slice(0, round);
+    playerIndex = 0;
+    updateHud();
     playSequence();
   }
 
-  function gameOver(reason) {
-    setEnabled(false);
-    playing = false;
-    clearTimeout(inputTimer);
-
-    const score = sequence.length - 1;
-    setStatus(reason + ' You reached length ' + score + '.', 'fail');
-
-    const prev = parseInt(localStorage.getItem(BEST_KEY) || '0', 10);
-    document.getElementById('cmScore').textContent = score;
-    if (score > prev) {
-      localStorage.setItem(BEST_KEY, score);
-      document.getElementById('cmNewBest').style.display = '';
+  function renderReplay(index, wrongId) {
+    var replay = $('cmReplay');
+    var note = $('cmReplayNote');
+    replay.replaceChildren();
+    sequence.forEach(function (id, i) {
+      var pad = padById(id);
+      var chip = document.createElement('span');
+      chip.className = 'cm-chip' + (i === index ? ' cm-chip--miss' : '');
+      if (pad) {
+        chip.style.background = pad.color;
+        chip.style.color = pad.ink;
+        if (pad.neutral) chip.textContent = pad.keyLabel;
+        else if (shapesOn && pad.shape) chip.appendChild(shapeEl(pad.shape));
+      }
+      replay.appendChild(chip);
+    });
+    var correct = padById(sequence[index]);
+    var correctName = correct ? correct.name : 'the next pad';
+    if (wrongId) {
+      var wrong = padById(wrongId);
+      note.textContent = 'You pressed ' + (wrong ? wrong.name : 'the wrong pad') + '. The marked step was ' + correctName + '.';
     } else {
-      document.getElementById('cmNewBest').style.display = 'none';
+      note.textContent = 'Time ran out. The marked step was ' + correctName + '.';
     }
-    updateBestLine();
-    resultEl.classList.add('show');
   }
 
-  function updateBestLine() {
-    const best = localStorage.getItem(BEST_KEY);
-    if (best) {
-      document.getElementById('cmBestLine').innerHTML = 'Personal best: <span>' + best + '</span>';
-      document.getElementById('cmAllTime').innerHTML = 'All-time best: <span>' + best + '</span>';
+  function showResult(score, reason, detail) {
+    if (resultLocked) return;
+    resultLocked = true;
+    lastScore = score;
+    histScore = score;
+    var recorded = recordScore(score);
+    $('cmScore').textContent = String(score);
+    $('cmScoreLabel').textContent = scoreNoun();
+    $('cmDetail').textContent = detail;
+    $('cmPct').textContent = 'Better than ' + recorded.pct + '%';
+    $('cmNewBest').hidden = !recorded.isNew;
+    $('cmNewPattern').hidden = !(challengeLock && mode !== 'daily');
+    $('cmShareMsg').textContent = '';
+    $('cmShareBox').hidden = true;
+    $('cmShare').textContent = 'Share';
+    startBtn.hidden = true;
+    resultEl.hidden = false;
+    setStatus(reason + ' ' + scoreNoun() + ': ' + score + '.', 'fail', false);
+    var againBtn = $('cmPlayAgain');
+    if (againBtn && againBtn.getBoundingClientRect().bottom > window.innerHeight - 12) {
+      againBtn.scrollIntoView({ block: 'nearest' });
+    }
+    renderStats();
+    track('game_over', {
+      game: 'color-memory',
+      mode: mode,
+      score: score,
+      reason: reason
+    });
+  }
+
+  function recordScore(score) {
+    var bucket = slot();
+    var prev = bucket.best;
+    var isNew = score > 0 && score > prev;
+    bucket.games += 1;
+    bucket.sum += score;
+    if (isNew) bucket.best = score;
+    bucket.runs.push(score);
+    if (bucket.runs.length > 20) bucket.runs.shift();
+    if (mode === 'classic') writeStore(BEST_KEY, String(bucket.best));
+    if (mode === 'daily') noteDaily();
+    saveStats();
+    var ref = referenceFor(mode);
+    return { isNew: isNew, pct: betterThan(score, ref.mean, ref.sd) };
+  }
+
+  async function failSequence(wrongId, reason) {
+    var my = runId;
+    var index = missIndex();
+    var score = Math.max(0, sequence.length - 1);
+    var correct = padById(sequence[index]);
+    if (resultLocked || phase !== 'play') return;
+    inputEnabled = false;
+    phase = 'over';
+    setEnabled(false);
+    stopInputClock();
+    updateChrome();
+    errorBuzz();
+    haptic([24, 40, 24]);
+    var detail = 'Finished ' + score + '. Missed on sequence ' + (score + 1) + '.';
+    showResult(score, reason, detail);
+    renderReplay(index, wrongId);
+    if (correct) {
+      setStatus(reason + ' ' + scoreNoun() + ': ' + score + '. Next was ' + correct.name + (correct.shapeName ? ', ' + correct.shapeName : '') + '.', 'fail', false);
+    }
+    for (var n = 0; n < 3; n++) {
+      var flash = await lightUp(sequence[index], 160, { gap: 90, miss: true });
+      if (!flash || my !== runId) return;
+    }
+    for (var i = 0; i < sequence.length; i++) {
+      var step = await lightUp(sequence[i], i === index ? 280 : 180, { gap: 70, miss: i === index });
+      if (!step || my !== runId) return;
+    }
+  }
+
+  function onTimeout() {
+    if (phase !== 'play' || !inputEnabled) return;
+    failSequence(null, 'Time\'s up.');
+  }
+
+  function pressPad(id) {
+    if (phase !== 'play' || !inputEnabled) return;
+    var pad = padById(id);
+    if (!pad) return;
+    unlockAudio();
+    stopInputClock();
+    haptic(15);
+    var expected = expectedId();
+    lightUp(id, 160, { gap: 40 });
+    if (id !== expected) {
+      failSequence(id, mode === 'grid' ? 'Wrong tile.' : 'Wrong color.');
+      return;
+    }
+    playerIndex += 1;
+    buildSeqViz();
+    updateHud();
+    if (playerIndex === sequence.length) {
+      var my = runId;
+      inputEnabled = false;
+      setEnabled(false);
+      setStatus('Correct.', 'go', false);
+      playCorrect();
+      later(mode === 'speed' ? 450 : 800).then(function (alive) {
+        if (!alive || my !== runId || phase !== 'play') return;
+        nextRound();
+      });
+      return;
+    }
+    armInputTimer();
+  }
+
+  function renderChimpBoard() {
+    grid.className = 'cm-grid cm-grid--16';
+    grid.setAttribute('aria-label', 'Number tiles');
+    grid.replaceChildren();
+    for (var i = 0; i < 16; i++) {
+      var num = chimp.map[i];
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'cm-btn cm-btn--chimp';
+      btn.dataset.cell = String(i);
+      if (!num) {
+        btn.classList.add('is-empty');
+        btn.disabled = true;
+        btn.setAttribute('aria-label', 'Empty');
+      } else if (chimp.hidden) {
+        btn.classList.add('is-blank');
+        btn.textContent = '';
+        btn.disabled = !inputEnabled;
+        btn.setAttribute('aria-label', 'Hidden tile');
+      } else {
+        btn.textContent = String(num);
+        btn.disabled = !inputEnabled;
+        btn.setAttribute('aria-label', 'Number ' + num);
+      }
+      grid.appendChild(btn);
+    }
+  }
+
+  function dealChimp() {
+    var my = runId;
+    if (my !== runId) return;
+    var rng = rngFromSeed(seed + '|chimp|' + chimp.deal);
+    chimp.deal += 1;
+    var cells = [];
+    for (var i = 0; i < 16; i++) cells.push(i);
+    for (var j = cells.length - 1; j > 0; j--) {
+      var k = Math.floor(rng() * (j + 1));
+      var swap = cells[j];
+      cells[j] = cells[k];
+      cells[k] = swap;
+    }
+    var map = [];
+    for (var c = 0; c < 16; c++) map.push(0);
+    for (var n = 1; n <= chimp.n; n++) map[cells[n - 1]] = n;
+    chimp.map = map;
+    chimp.next = 1;
+    chimp.hidden = false;
+    inputEnabled = true;
+    renderChimpBoard();
+    updateHud();
+    setStatus('Tap the numbers in order. They hide after 1.', 'watch', false);
+  }
+
+  function startChimp() {
+    var my = bumpRun();
+    cancelPending();
+    clearLights();
+    stopInputClock();
+    resultLocked = false;
+    histScore = null;
+    phase = 'play';
+    inputEnabled = false;
+    if (!challengeLock || !seed) seed = randomSeed();
+    chimp = { n: 4, strikes: 0, cleared: 0, next: 1, hidden: false, map: [], deal: 0 };
+    sequence = [];
+    seqViz.replaceChildren();
+    $('cmReplay').replaceChildren();
+    $('cmReplayNote').textContent = '';
+    resultEl.hidden = true;
+    startBtn.hidden = true;
+    updateChrome();
+    track('game_start', { game: 'color-memory', mode: 'chimp', source_page: referrerPath() });
+    if (my !== runId) return;
+    dealChimp();
+  }
+
+  async function missChimp(cell) {
+    var my = runId;
+    chimp.strikes += 1;
+    inputEnabled = false;
+    errorBuzz();
+    haptic([24, 40, 24]);
+    var want = chimp.next;
+    var correctCell = chimp.map.indexOf(want);
+    chimp.hidden = false;
+    renderChimpBoard();
+    setEnabled(false);
+    updateHud();
+    if (chimp.strikes >= 3) {
+      if (resultLocked) return;
+      phase = 'over';
+      updateChrome();
+      showResult(chimp.cleared, 'Three strikes.', chimp.cleared > 0 ? 'Highest board cleared: ' + chimp.cleared + '.' : 'No board cleared.');
+      setStatus('Three strikes. Numbers completed: ' + chimp.cleared + '. Next was ' + want + '.', 'fail', false);
+      for (var n = 0; n < 3; n++) {
+        var btn = grid.querySelector('[data-cell="' + correctCell + '"]');
+        if (btn) btn.classList.add('cm-btn--miss');
+        var alive = await later(180);
+        if (btn) btn.classList.remove('cm-btn--miss');
+        if (!alive || my !== runId) return;
+        await later(80);
+        if (my !== runId) return;
+      }
+      return;
+    }
+    setStatus('Strike ' + chimp.strikes + ' of 3. Next was ' + want + '.', 'fail', false);
+    var mark = grid.querySelector('[data-cell="' + correctCell + '"]');
+    if (mark) mark.classList.add('cm-btn--miss');
+    var wait = await later(700);
+    if (!wait || my !== runId || phase !== 'play') return;
+    dealChimp();
+  }
+
+  function pressChimp(cell) {
+    if (phase !== 'play' || !inputEnabled || !chimp) return;
+    var num = chimp.map[cell] || 0;
+    unlockAudio();
+    haptic(15);
+    if (num !== chimp.next) {
+      missChimp(cell);
+      return;
+    }
+    playFreq(220 + num * 40, 0.12, 'sine', 0, 0.08);
+    if (chimp.next === 1) {
+      chimp.hidden = true;
+      renderChimpBoard();
+      setStatus('Numbers hidden. Keep going in order.', 'go', false);
+    }
+    var btn = grid.querySelector('[data-cell="' + cell + '"]');
+    if (btn) btn.classList.add('cm-btn--lit');
+    chimp.next += 1;
+    if (chimp.next > chimp.n) {
+      var my = runId;
+      chimp.cleared = chimp.n;
+      chimp.n += 1;
+      inputEnabled = false;
+      setEnabled(false);
+      playCorrect();
+      setStatus('Correct. Next board has ' + chimp.n + ' numbers.', 'go', false);
+      updateHud();
+      later(560).then(function (alive) {
+        if (!alive || my !== runId || phase !== 'play') return;
+        dealChimp();
+      });
     }
   }
 
   function startGame() {
+    unlockAudio();
+    if (mode === 'chimp') {
+      startChimp();
+      return;
+    }
+    var my = bumpRun();
+    cancelPending();
+    clearLights();
+    stopInputClock();
+    phase = 'play';
+    resultLocked = false;
+    histScore = null;
+    inputEnabled = false;
     sequence = [];
     playerIndex = 0;
     round = 0;
-    playing = true;
-    resultEl.classList.remove('show');
-    startBtn.style.display = 'none';
-    hudRound.textContent = '1';
-    hudLen.textContent = '1';
-    hudProg.textContent = '0/1';
-    document.getElementById('cmNewBest').style.display = 'none';
+    chimp = null;
+    if (mode === 'daily') {
+      seed = localYmd();
+      challengeLock = false;
+    } else if (!challengeLock || !seed) {
+      seed = randomSeed();
+    }
+    var rng = rngFromSeed(seed + '|' + mode);
+    var pads = currentPads();
+    fullRoll = [];
+    for (var i = 0; i < 40; i++) fullRoll.push(pads[Math.floor(rng() * pads.length)].id);
+    resultEl.hidden = true;
+    startBtn.hidden = true;
+    $('cmReplay').replaceChildren();
+    $('cmReplayNote').textContent = '';
+    seqViz.replaceChildren();
+    updateChrome();
+    track('game_start', { game: 'color-memory', mode: mode, source_page: referrerPath() });
+    if (my !== runId) return;
     nextRound();
   }
 
-  COLORS.forEach(c => {
-    btns[c].addEventListener('pointerdown', e => { e.preventDefault(); handleClick(c); });
+  function playAgain() {
+    if (mode === 'daily') seed = localYmd();
+    else if (!challengeLock) seed = '';
+    startGame();
+  }
+
+  function newPattern() {
+    challengeLock = false;
+    seed = '';
+    startGame();
+  }
+
+  function setMode(next) {
+    if (phase === 'play') return;
+    if (MODES.indexOf(next) === -1) return;
+    if (next === mode && phase === 'over') return;
+    if (next === mode && phase === 'idle') return;
+    var changed = next !== mode;
+    mode = next;
+    if (changed) {
+      challengeLock = false;
+      seed = '';
+    }
+    phase = 'idle';
+    histScore = null;
+    bumpRun();
+    cancelPending();
+    clearLights();
+    stopInputClock();
+    sequence = [];
+    playerIndex = 0;
+    round = 0;
+    chimp = null;
+    inputEnabled = false;
+    writeStore(MODE_KEY, mode);
+    resultEl.hidden = true;
+    startBtn.hidden = false;
+    $('cmReplay').replaceChildren();
+    $('cmReplayNote').textContent = '';
+    seqViz.replaceChildren();
+    renderBoard();
+    setStatus('Press Start to play', '', false);
+    updateChrome();
+  }
+
+  function renderStats() {
+    var bucket = slot();
+    var ref = referenceFor(mode);
+    $('stBest').textContent = bucket.games || bucket.best ? String(bucket.best) : '—';
+    $('stAvg').textContent = bucket.games ? String(Math.round((bucket.sum / bucket.games) * 10) / 10) : '—';
+    $('stGames').textContent = String(bucket.games);
+    $('stMedian').textContent = 'median ' + ref.median;
+    var hist = $('stHist');
+    hist.replaceChildren();
+    var weights = [];
+    var max = 0;
+    for (var s = 1; s <= 18; s++) {
+      var z = (s - ref.mean) / ref.sd;
+      var w = Math.exp(-0.5 * z * z);
+      weights.push(w);
+      if (w > max) max = w;
+    }
+    var mark = histScore;
+    weights.forEach(function (w, i) {
+      var bar = document.createElement('span');
+      bar.className = 'cm-bar';
+      var value = i + 1;
+      if (value === ref.median) bar.classList.add('is-median');
+      if (mark != null && mark >= 1 && value === Math.min(18, mark)) bar.classList.add('is-you');
+      bar.style.height = Math.max(8, Math.round((w / max) * 100)) + '%';
+      hist.appendChild(bar);
+    });
+    $('stRecent').textContent = bucket.runs.length ? 'Recent: ' + bucket.runs.slice(-8).join(', ') : '';
+    var streakBit = mode === 'daily' ? ' Daily streak ' + liveDailyStreak() + '.' : '';
+    $('stNote').textContent = 'Reference curve for typical ' + ref.noun + ', median ' + ref.median + '. Not a live leaderboard.' + streakBit;
+  }
+
+  function shareUrl() {
+    var url = SHARE_BASE + '?mode=' + encodeURIComponent(mode);
+    if (mode !== 'chimp' || seed) url += '&seed=' + encodeURIComponent(seed || localYmd());
+    return url;
+  }
+
+  function shareText() {
+    var ref = referenceFor(mode);
+    var pct = betterThan(lastScore, ref.mean, ref.sd);
+    var grade = lastScore >= 15 ? '🏆 ' : lastScore >= 10 ? '⭐ ' : lastScore >= 7 ? '👍 ' : '';
+    var unit = mode === 'chimp' ? 'numbers completed' : 'rounds completed';
+    return grade + 'Color Memory (' + modeLabel(mode) + ') — ' + lastScore + ' ' + unit + ', better than ' + pct + '%';
+  }
+
+  async function shareScore() {
+    var text = shareText();
+    var url = shareUrl();
+    var btn = $('cmShare');
+    var msg = $('cmShareMsg');
+    var box = $('cmShareBox');
+    box.hidden = true;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: 'Color Memory', text: text, url: url });
+        btn.textContent = 'Shared';
+        msg.textContent = '';
+        return;
+      }
+    } catch (err) {
+      if (err && err.name === 'AbortError') return;
+    }
+    var full = text + '\n' + url;
+    try {
+      if (!navigator.clipboard || !navigator.clipboard.writeText) throw new Error('no clipboard');
+      await navigator.clipboard.writeText(full);
+      btn.textContent = 'Copied';
+      msg.textContent = 'Link copied.';
+    } catch (err) {
+      box.hidden = false;
+      box.value = full;
+      box.focus();
+      box.select();
+      btn.textContent = 'Copy the text';
+      msg.textContent = 'Couldn’t share automatically. The result is selected below.';
+    }
+    setTimeout(function () {
+      if (btn.textContent === 'Copied' || btn.textContent === 'Shared') btn.textContent = 'Share';
+    }, 2000);
+  }
+
+  function padFromKey(key) {
+    var list = currentPads();
+    var k = String(key || '').toLowerCase();
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].keys.indexOf(k) !== -1) return list[i].id;
+    }
+    return '';
+  }
+
+  function isControl(target) {
+    return !!(target && target.closest && target.closest('button, a, input, textarea, select'));
+  }
+
+  grid.addEventListener('pointerdown', function (event) {
+    var btn = event.target.closest ? event.target.closest('.cm-btn') : null;
+    if (!btn || btn.disabled) return;
+    event.preventDefault();
+    lastPointerAt = performance.now();
+    btn.dataset.ptr = String(lastPointerAt);
+    if (mode === 'chimp') pressChimp(parseInt(btn.dataset.cell, 10));
+    else if (btn.dataset.id) pressPad(btn.dataset.id);
+  });
+
+  grid.addEventListener('click', function (event) {
+    var btn = event.target.closest ? event.target.closest('.cm-btn') : null;
+    if (!btn || btn.disabled) return;
+    if (performance.now() - parseFloat(btn.dataset.ptr || '0') < 500) return;
+    if (mode === 'chimp') pressChimp(parseInt(btn.dataset.cell, 10));
+    else if (btn.dataset.id) pressPad(btn.dataset.id);
+  });
+
+  document.addEventListener('keydown', function (event) {
+    if (event.metaKey || event.ctrlKey || event.altKey) return;
+    if (event.repeat) return;
+    var key = event.key;
+    if ((key === 'Enter' || key === ' ') && !isControl(event.target)) {
+      event.preventDefault();
+      if (phase === 'play') return;
+      if (phase === 'over') playAgain();
+      else startGame();
+      return;
+    }
+    if (phase !== 'play' || !inputEnabled || mode === 'chimp') return;
+    var id = padFromKey(key);
+    if (!id) return;
+    event.preventDefault();
+    pressPad(id);
   });
 
   startBtn.addEventListener('click', startGame);
+  $('cmPlayAgain').addEventListener('click', playAgain);
+  $('cmNewPattern').addEventListener('click', newPattern);
+  $('cmShare').addEventListener('click', shareScore);
 
-  document.getElementById('cmPlayAgain').addEventListener('click', () => {
-    resultEl.classList.remove('show');
-    startBtn.style.display = '';
-    setStatus('Press Start to play');
-    COLORS.forEach(c => { btns[c].disabled = true; });
-    seqViz.innerHTML = '';
-    hudRound.textContent = '—';
-    hudLen.textContent = '—';
-    hudProg.textContent = '—';
+  function paintMute() {
+    var label = muted ? 'Sound off' : 'Sound on';
+    muteBtn.setAttribute('aria-pressed', muted ? 'true' : 'false');
+    muteBtn.setAttribute('aria-label', label);
+    muteBtn.textContent = label;
+  }
+
+  muteBtn.addEventListener('click', function () {
+    muted = !muted;
+    writeStore(MUTE_KEY, muted ? '1' : '0');
+    paintMute();
+    if (!muted) unlockAudio();
   });
 
-  document.getElementById('cmShare').addEventListener('click', () => {
-    const score = parseInt(document.getElementById('cmScore').textContent, 10);
-    const grade = score >= 15 ? '🏆' : score >= 10 ? '⭐' : score >= 7 ? '👍' : '🎮';
-    const text = grade + ' Color Memory — reached sequence length ' + score + '\ncosmicgameshub.com/games/color-memory';
-    navigator.clipboard.writeText(text).then(() => {
-      const btn = document.getElementById('cmShare');
-      btn.textContent = '✓ Copied!';
-      setTimeout(() => { btn.textContent = '📋 Share'; }, 2000);
-    }).catch(() => {});
+  shapesBtn.addEventListener('click', function () {
+    shapesOn = !shapesOn;
+    writeStore(SHAPE_KEY, shapesOn ? '1' : '0');
+    updateChrome();
+    if (sequence.length) buildSeqViz();
   });
 
-  updateBestLine();
+  stage.querySelectorAll('.cm-mode').forEach(function (btn) {
+    btn.addEventListener('click', function () { setMode(btn.getAttribute('data-mode')); });
+  });
+
+  document.addEventListener('click', function (event) {
+    var link = event.target.closest && event.target.closest('a[href]');
+    if (!link) return;
+    var match = (link.getAttribute('href') || '').match(/^\/games\/([a-z0-9-]+)$/);
+    if (!match || match[1] === 'color-memory') return;
+    track('game_card_click', { game: match[1], source_page: '/games/color-memory', placement: 'more_games' });
+  }, true);
+
+  (function init() {
+    stats = loadStats();
+    muted = readStore(MUTE_KEY) === '1';
+    shapesOn = readStore(SHAPE_KEY) !== '0';
+    var params = new URLSearchParams(location.search);
+    var urlMode = params.get('mode');
+    var urlSeed = params.get('seed') || '';
+    urlSeed = urlSeed.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 40);
+    if (urlSeed) {
+      challengeLock = true;
+      seed = urlSeed;
+    }
+    if (MODES.indexOf(urlMode) !== -1) mode = urlMode;
+    else if (!urlSeed && MODES.indexOf(readStore(MODE_KEY) || '') !== -1) mode = readStore(MODE_KEY);
+    if (mode === 'daily') {
+      challengeLock = false;
+      seed = localYmd();
+    }
+    renderBoard();
+    setStatus('Press Start to play', '', false);
+    updateChrome();
+  })();
 })();
 </script>
 
