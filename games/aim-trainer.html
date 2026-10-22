@@ -209,14 +209,12 @@
     }
     .at-btn-sec:hover { border-color: var(--accent, #00d4ff); color: var(--accent, #00d4ff); }
     .at-actions {
-      position: sticky;
-      bottom: 0;
       display: flex;
       flex-wrap: wrap;
       gap: 0.5rem;
       justify-content: center;
-      padding: 0.75rem 0 0.2rem;
-      background: linear-gradient(to top, rgba(10,12,18,0.96), rgba(10,12,18,0.88) 68%, transparent);
+      margin-top: 0.85rem;
+      padding: 0.15rem 0 0.1rem;
     }
     .at-settings { margin-top: 0.8rem; text-align: left; }
     .at-settings summary {
@@ -440,7 +438,7 @@
             <p class="at-blurb" id="modeBlurb"></p>
             <div class="at-chips" id="durList" role="group" aria-label="Duration"></div>
             <button type="button" class="at-btn" id="btnStart">Start</button>
-            <p class="at-note">Accuracy is hits divided by hits plus misclicks. Leaving a target to expire does not lower it.</p>
+            <p class="at-note">Accuracy is hits divided by hits plus misclicks. Leaving a target to expire does not lower it. A personal best saves your score, and only if accuracy is at least 50%.</p>
             <p class="at-best" id="startBest"></p>
             <div class="at-history" id="atHistory" hidden>
               <svg id="spark" viewBox="0 0 240 36" aria-hidden="true"></svg>
@@ -511,7 +509,15 @@
             <p class="at-note" id="resRegion" hidden></p>
             <p class="at-note" id="resEstimate" hidden></p>
             <p class="at-formula" id="resFormula"></p>
-            <aside class="gear-hop gear-hop--compact" aria-label="Recommended gear">
+            <div class="at-actions">
+              <button type="button" class="at-btn" id="btnPlayAgain">Play Again</button>
+              <button type="button" class="at-btn-sec" id="btnRetry">Same targets</button>
+              <button type="button" class="at-btn-sec" id="btnShare">Share</button>
+              <button type="button" class="at-btn-sec" id="btnCard">Save card</button>
+            </div>
+            <input class="at-share-link" id="atShareLink" readonly aria-label="Challenge link" />
+            <p class="at-share-msg" id="atShareMsg" hidden aria-live="polite"></p>
+            <aside class="gear-hop gear-hop--compact" id="resGear" aria-label="Recommended gear">
               <button type="button" class="gear-hop__dismiss" aria-label="Dismiss gear suggestion" onclick="var h=this.closest('.gear-hop'); h.hidden=true; h.style.display='none';">&times;</button>
               <div class="gear-hop__eyebrow">Upgrade Your Mouse</div>
               <div class="gear-hop__name">Logitech G Pro X Superlight 2 DEX</div>
@@ -521,14 +527,6 @@
                 <a href="https://www.amazon.com/dp/B0DG2XJPTC?tag=cosmicgameshu-20" class="btn btn--amazon-sm" target="_blank" rel="nofollow sponsored noopener">Check price on Amazon</a>
               </div>
             </aside>
-            <div class="at-actions">
-              <button type="button" class="at-btn" id="btnPlayAgain">Play Again</button>
-              <button type="button" class="at-btn-sec" id="btnRetry">Same targets</button>
-              <button type="button" class="at-btn-sec" id="btnShare">Share</button>
-              <button type="button" class="at-btn-sec" id="btnCard">Save card</button>
-            </div>
-            <input class="at-share-link" id="atShareLink" readonly aria-label="Challenge link" />
-            <p class="at-share-msg" id="atShareMsg" hidden aria-live="polite"></p>
           </div>
         </div>
       </div>

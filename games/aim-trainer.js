@@ -79,6 +79,42 @@
     return (hits / seconds) * (hits / shots);
   }
 
+  // Human reactions under 100 ms are not useful aim samples.
+  var REACTION_MIN_MS = 100;
+  // First 10s of a warmup mode covers this fraction of the difficulty curve.
+  var RAMP_EASE = 0.18;
+
+  function countReactions(list) {
+    var out = [];
+    var src = list || [];
+    var i;
+    for (i = 0; i < src.length; i++) {
+      if (src[i] >= REACTION_MIN_MS) out.push(src[i]);
+    }
+    return out;
+  }
+
+  function accuracyCounts(acc) {
+    return acc != null && isFinite(acc) && Math.round(acc * 100) >= 50;
+  }
+
+  function recordEligible(kind, acc, score) {
+    if (kind === 'track') return score > 0;
+    return accuracyCounts(acc);
+  }
+
+  function rampAt(elapsedMs, totalMs, warmupMs) {
+    if (!totalMs || totalMs <= 0) return 0;
+    var t = clamp(elapsedMs, 0, totalMs);
+    if (!warmupMs) return t / totalMs;
+    var warm = Math.min(warmupMs, totalMs * 0.45);
+    if (warm <= 0) return t / totalMs;
+    if (t <= warm) return RAMP_EASE * (t / warm);
+    var rest = totalMs - warm;
+    if (rest <= 0) return 1;
+    return RAMP_EASE + (1 - RAMP_EASE) * ((t - warm) / rest);
+  }
+
   function pointsForHit(reactionMs, lifeMs, dist, radius, combo) {
     var ref = (lifeMs && isFinite(lifeMs) && lifeMs > 0) ? lifeMs : 900;
     var speed = clamp(1 - reactionMs / ref, 0, 1);
@@ -134,24 +170,30 @@
     return out;
   }
 
-  window.AimTrainer = {
-    gradeFromRate: gradeFromRate,
-    gradeFromMs: gradeFromMs,
-    gradeFromHits: gradeFromHits,
-    gradeFromTrack: gradeFromTrack,
-    percentileFromMs: percentileFromMs,
-    effectiveRate: effectiveRate,
-    pointsForHit: pointsForHit,
-    dailySeedFor: dailySeedFor,
-    hashString: hashString
-  };
+  if (typeof window !== 'undefined') {
+    window.AimTrainer = {
+      gradeFromRate: gradeFromRate,
+      gradeFromMs: gradeFromMs,
+      gradeFromHits: gradeFromHits,
+      gradeFromTrack: gradeFromTrack,
+      percentileFromMs: percentileFromMs,
+      effectiveRate: effectiveRate,
+      pointsForHit: pointsForHit,
+      dailySeedFor: dailySeedFor,
+      hashString: hashString,
+      countReactions: countReactions,
+      accuracyCounts: accuracyCounts,
+      recordEligible: recordEligible,
+      rampAt: rampAt
+    };
+  }
 
   var MODES = {
     classic: {
       id: 'classic', name: 'Classic',
-      blurb: 'Several targets. They shrink and expire faster as the clock runs down.',
+      blurb: 'Several targets. The first 10 seconds stay easier, then they shrink and expire faster.',
       timed: true, durations: [30, 60, 90], dur: 30, sim: 'ramp', start: 1,
-      life: [1200, 2400], lifeRamp: 0.5, radius: [22, 42], radiusRamp: 0.4,
+      life: [2000, 3200], lifeRamp: 0.42, warmup: 10000, radius: [22, 42], radiusRamp: 0.4,
       spawn: [300, 800], spawnRamp: 0.5, expire: true, rateScale: 1
     },
     benchmark: {
@@ -193,9 +235,9 @@
     },
     daily: {
       id: 'daily', name: 'Daily',
-      blurb: 'A 60-second classic board. Everyone gets the same targets today.',
+      blurb: 'A 60-second classic board with an easier first 10 seconds. Everyone gets the same targets today.',
       timed: true, durations: [60], dur: 60, lockDur: true, sim: 'ramp', start: 1,
-      life: [1200, 2400], lifeRamp: 0.5, radius: [22, 42], radiusRamp: 0.4,
+      life: [2000, 3200], lifeRamp: 0.42, warmup: 10000, radius: [22, 42], radiusRamp: 0.4,
       spawn: [300, 800], spawnRamp: 0.5, expire: true, daily: true, rateScale: 1
     }
   };
@@ -236,6 +278,36 @@
   };
 
   var REGION_NAMES = ['Top left', 'Top', 'Top right', 'Left', 'Center', 'Right', 'Bottom left', 'Bottom', 'Bottom right'];
+
+  if (typeof document === 'undefined') {
+    function assertAim(cond, msg) {
+      if (!cond) throw new Error('aim-trainer self-test: ' + msg);
+    }
+    var sample = countReactions([16, 40, 99, 100, 180, 99.9]);
+    assertAim(sample.length === 2 && sample[0] === 100 && sample[1] === 180, 'reaction floor');
+    assertAim(recordEligible('click', 0, 50) === false, 'spam accuracy');
+    assertAim(recordEligible('click', 0.49, 900) === false, 'under 50');
+    assertAim(recordEligible('click', 0.5, 50) === true, 'exact 50');
+    assertAim(recordEligible('click', null, 0) === false, 'no shots');
+    assertAim(recordEligible('benchmark', 0, 800) === false, 'benchmark spam');
+    assertAim(recordEligible('precision', 0.2, 400) === false, 'precision spam');
+    assertAim(recordEligible('track', 0.1, 20) === true, 'track score');
+    assertAim(recordEligible('track', 1, 0) === false, 'track zero');
+    assertAim(rampAt(0, 30000, 10000) === 0, 'ramp start');
+    assertAim(Math.abs(rampAt(10000, 30000, 10000) - RAMP_EASE) < 1e-9, 'ramp 10s');
+    assertAim(Math.abs(rampAt(30000, 30000, 10000) - 1) < 1e-9, 'ramp end');
+    assertAim(Math.abs(rampAt(15000, 30000, 0) - 0.5) < 1e-9, 'linear without warmup');
+    assertAim(MODES.classic.life[0] >= 1900 && MODES.classic.warmup === 10000, 'classic opening');
+    assertAim(MODES.daily.life[0] === MODES.classic.life[0] && MODES.daily.warmup === 10000, 'daily matches classic');
+    var at10 = rampAt(10000, 30000, MODES.classic.warmup);
+    var minAt10 = MODES.classic.life[0] * (1 - at10 * MODES.classic.lifeRamp);
+    assertAim(minAt10 >= 1600, 'life at 10s ' + minAt10);
+    assertAim(!MODES.flick.warmup && MODES.flick.life[0] === 780, 'flick stays fast');
+    assertAim(!MODES.gridshot.warmup && !MODES.benchmark.warmup && !MODES.precision.warmup, 'other modes unchanged');
+    assertAim(!MODES.tracking.warmup && !MODES.autobalance.warmup, 'track and autobalance unchanged');
+    console.log('aim-trainer self-test ok');
+    return;
+  }
 
   var canvas = document.getElementById('atCanvas');
   var ctx = canvas.getContext('2d');
@@ -365,8 +437,17 @@
   }
 
   function sfx(name) {
-    if (isMuted()) return;
-    if (window.CGSfx) window.CGSfx.play(name);
+    if (isMuted() || !window.CGSfx) return;
+    try {
+      var ctx = window.CGSfx.unlock ? window.CGSfx.unlock() : null;
+      if (ctx && ctx.state === 'suspended' && ctx.resume) {
+        ctx.resume().then(function () {
+          try { window.CGSfx.play(name); } catch (err) {}
+        }).catch(function () {});
+        return;
+      }
+      window.CGSfx.play(name);
+    } catch (err) {}
   }
 
   function haptic(ms) {
@@ -410,9 +491,9 @@
     return Math.max(0, gameNow() - runOrigin);
   }
 
-  function progress() {
+  function difficulty() {
     if (!mode.timed || !runSeconds) return 0;
-    return clamp(elapsed() / (runSeconds * 1000), 0, 1);
+    return rampAt(elapsed(), runSeconds * 1000, mode.warmup || 0);
   }
 
   function shotAccuracy() {
@@ -437,8 +518,17 @@
     return Math.round((trackMs / 10) * penalty);
   }
 
+  function countedReactions() {
+    return countReactions(reactions);
+  }
+
+  function reactionStatsOn(summary) {
+    if (!summary || summary.kind === 'track') return false;
+    return accuracyCounts(summary.acc) && countedReactions().length > 0;
+  }
+
   function runningAvg() {
-    return average(reactions);
+    return average(countedReactions());
   }
 
   function sizeMul() {
@@ -448,7 +538,8 @@
   }
 
   function maxLive(p) {
-    if (mode.sim === 'ramp') return Math.round(3 + p * 2);
+    var pace = p == null ? difficulty() : p;
+    if (mode.sim === 'ramp') return Math.round(3 + pace * 2);
     return mode.sim || 1;
   }
 
@@ -597,12 +688,14 @@
   }
 
   function radiusFor(spec, p) {
-    var scale = (1 - p * (mode.radiusRamp || 0)) * sizeMul();
+    var pace = p == null ? difficulty() : p;
+    var scale = (1 - pace * (mode.radiusRamp || 0)) * sizeMul();
     return (mode.radius[0] + spec.nr * (mode.radius[1] - mode.radius[0])) * scale;
   }
 
   function lifeFor(spec, p) {
-    var scale = (1 - p * (mode.lifeRamp || 0)) * (mode.adapt ? adapt : 1);
+    var pace = p == null ? difficulty() : p;
+    var scale = (1 - pace * (mode.lifeRamp || 0)) * (mode.adapt ? adapt : 1);
     return (mode.life[0] + spec.nl * (mode.life[1] - mode.life[0])) * scale;
   }
 
@@ -627,7 +720,7 @@
       spawnTracking();
       return;
     }
-    var p = progress();
+    var p = difficulty();
     if (liveCount() >= maxLive(p)) return;
     var spec = takeSpec();
     var r = fitRadius(radiusFor(spec, p));
@@ -641,7 +734,7 @@
 
   function armSpawn(now) {
     var spec = takeSpec();
-    var p = progress();
+    var p = difficulty();
     var scale = 1 - p * (mode.spawnRamp || 0);
     var delay = (mode.spawn[0] + spec.nr * (mode.spawn[1] - mode.spawn[0])) * scale;
     nextSpawn = now + Math.max(120, delay);
@@ -1272,10 +1365,10 @@
     var lead = motionReduced() ? 180 : 1500;
     countEndsAt = performance.now() + lead;
     countShown = motionReduced() ? '' : '3';
+    if (window.CGSfx && window.CGSfx.unlock) window.CGSfx.unlock();
     if (!motionReduced()) sfx('tick');
     updateHud();
     ensureLoop();
-    if (window.CGSfx && window.CGSfx.unlock) window.CGSfx.unlock();
   }
 
   function pause() {
@@ -1387,22 +1480,34 @@
     spark.appendChild(path);
   }
 
+  function scoreGate(prev) {
+    if (!prev) return NaN;
+    if (prev.scoreAcc != null) return +prev.scoreAcc;
+    return prev.acc == null ? NaN : +prev.acc;
+  }
+
+  function storedScoreCounts(prev) {
+    if (!prev) return false;
+    var kind = mode.kind || 'click';
+    if (!accuracyCounts(scoreGate(prev)) && kind !== 'track') return false;
+    if (kind === 'benchmark') return prev.avg != null && isFinite(+prev.avg);
+    return +prev.score > 0;
+  }
+
   function renderBest() {
     var all = readJSON('at_pb_v2', {});
     var key = mode.timed ? String(duration) : 'x';
     var pb = all[mode.id] && all[mode.id][key];
     var parts = [];
-    if (pb && mode.kind === 'benchmark' && pb.avg != null) parts.push('Best average ' + Math.round(pb.avg) + ' ms');
-    else if (pb && pb.score) parts.push('Best score ' + Math.round(pb.score).toLocaleString());
-    if (pb && pb.acc) parts.push('Best accuracy ' + Math.round(pb.acc * 100) + '%');
-    if (pb && pb.avg != null && mode.kind !== 'benchmark') parts.push('Best reaction ' + Math.round(pb.avg) + ' ms');
-    var text = parts.length ? parts.join(' · ') : 'No record yet.';
-    if ((!pb || !pb.score) && (mode.id === 'classic' || mode.id === 'daily')) {
-      var old = null;
-      try { old = localStorage.getItem('at_best_' + duration); } catch (err) {}
-      if (old) text += ' Earlier hit record: ' + old + '.';
+    if (pb && storedScoreCounts(pb)) {
+      if (mode.kind === 'benchmark' && pb.avg != null) parts.push('Best average ' + Math.round(pb.avg) + ' ms');
+      else if (pb.score) parts.push('Best score ' + Math.round(pb.score).toLocaleString());
+      if (pb.acc) parts.push('Best accuracy ' + Math.round(pb.acc * 100) + '%');
+      if (pb.avg != null && mode.kind !== 'benchmark' && mode.kind !== 'track') {
+        parts.push('Best reaction ' + Math.round(pb.avg) + ' ms');
+      }
     }
-    startBest.textContent = text;
+    startBest.textContent = parts.length ? parts.join(' · ') : 'No record yet.';
   }
 
   function renderBanner() {
@@ -1529,29 +1634,34 @@
     if (!all[mode.id] || typeof all[mode.id] !== 'object') all[mode.id] = {};
     var key = pbKey();
     var prev = all[mode.id][key] || {};
+    var keep = storedScoreCounts(prev);
     var next = {
-      score: +prev.score || 0,
-      avg: prev.avg == null ? null : +prev.avg,
-      acc: +prev.acc || 0,
-      at: prev.at || 0
+      score: keep ? +prev.score : 0,
+      scoreAcc: keep ? scoreGate(prev) : 0,
+      avg: keep && prev.avg != null ? +prev.avg : null,
+      acc: keep ? (+prev.acc || 0) : 0,
+      at: keep ? (prev.at || 0) : 0
     };
+    var eligible = recordEligible(summary.kind, summary.acc, summary.score);
     var better = false;
-    if (summary.kind === 'benchmark') {
+    if (eligible && summary.kind === 'benchmark') {
       if (summary.avg != null && (next.avg == null || summary.avg < next.avg)) {
         next.avg = summary.avg;
         next.score = summary.score;
+        next.scoreAcc = summary.acc;
         better = true;
       }
-    } else if (summary.score > next.score) {
+    } else if (eligible && summary.score > next.score) {
       next.score = summary.score;
+      next.scoreAcc = summary.acc;
       better = true;
     }
-    if (summary.acc != null && summary.acc > (next.acc || 0)) next.acc = summary.acc;
-    if (summary.kind !== 'benchmark' && summary.avg != null && (next.avg == null || summary.avg < next.avg)) {
+    if (eligible && summary.acc != null && summary.acc > (next.acc || 0)) next.acc = summary.acc;
+    if (eligible && summary.kind !== 'benchmark' && summary.avg != null && (next.avg == null || summary.avg < next.avg)) {
       next.avg = summary.avg;
     }
     if (better) next.at = Date.now();
-    all[mode.id][key] = next;
+    if (keep || eligible) all[mode.id][key] = next;
     writeJSON('at_pb_v2', all);
 
     var hist = readJSON('at_hist_v2', {});
@@ -1595,7 +1705,7 @@
     for (i = 0; i < 9; i++) cells.push({ n: 0, ms: 0 });
     for (i = 0; i < clicks.length; i++) {
       var c = clicks[i];
-      if (!c.hit || c.ms == null) continue;
+      if (!c.hit || c.ms == null || c.ms < REACTION_MIN_MS) continue;
       var col = Math.min(2, Math.floor(c.nx * 3));
       var row = Math.min(2, Math.floor(c.ny * 3));
       var cell = cells[row * 3 + col];
@@ -1652,9 +1762,6 @@
     var lines = [];
     if (kind === 'benchmark') {
       lines.push(['Targets', hits + ' / ' + (mode.goal || hits)]);
-      lines.push(['Average', summary.avg == null ? '—' : Math.round(summary.avg) + ' ms']);
-      lines.push(['Median', reactions.length ? Math.round(medianOf(reactions)) + ' ms' : '—']);
-      lines.push(['Fastest', reactions.length ? Math.round(Math.min.apply(null, reactions)) + ' ms' : '—']);
       lines.push(['Misclicks', String(misclicks)]);
     } else if (kind === 'track') {
       lines.push(['On target', (trackMs / 1000).toFixed(1) + 's']);
@@ -1679,22 +1786,25 @@
       lines.push(['Bullseyes', String(bullseyes)]);
       lines.push(['Best combo', String(bestCombo)]);
     }
-    if (summary.avg != null && kind !== 'benchmark') {
-      lines.push(['Avg reaction', Math.round(summary.avg) + ' ms']);
-      lines.push(['Median', Math.round(medianOf(reactions)) + ' ms']);
-      lines.push(['Fastest', Math.round(Math.min.apply(null, reactions)) + ' ms']);
-    }
-    if (summary.avg != null && reactions.length >= 5) {
-      lines.push(['Faster than', percentileFromMs(summary.avg) + '% est.']);
+    if (kind !== 'track') {
+      var sample = countedReactions();
+      if (!reactionStatsOn(summary)) {
+        lines.push(['Reaction', 'Not enough accurate hits']);
+      } else {
+        lines.push([kind === 'benchmark' ? 'Average' : 'Avg reaction', Math.round(average(sample)) + ' ms']);
+        lines.push(['Median', Math.round(medianOf(sample)) + ' ms']);
+        lines.push(['Fastest', Math.round(Math.min.apply(null, sample)) + ' ms']);
+        if (sample.length >= 5) lines.push(['Faster than', percentileFromMs(average(sample)) + '% est.']);
+      }
     }
     return lines;
   }
 
   function formulaText(kind) {
-    if (kind === 'benchmark') return 'Lower average is better. The percentile uses a published aim curve, not a live board.';
+    if (kind === 'benchmark') return 'Lower average is better. Hits under 100 ms are left out. Reaction stats and a personal best need at least 50% accuracy. The percentile uses a published aim curve, not a live board.';
     if (kind === 'track') return 'Score is time on target. Misclicks trim it. The grade is the share of the round you held.';
-    if (kind === 'precision') return 'Accuracy is hits divided by hits plus misclicks. A timeout costs a life, not accuracy.';
-    return 'Accuracy is hits ÷ (hits + misclicks). Expired targets are separate. Grade is hits per second × accuracy, so 30, 60, and 90 second runs match. Spam clicks lower both.';
+    if (kind === 'precision') return 'Accuracy is hits divided by hits plus misclicks. A timeout costs a life, not accuracy. A personal best saves the score only at 50% accuracy or better. Reaction stats ignore hits under 100 ms.';
+    return 'Accuracy is hits ÷ (hits + misclicks). Expired targets are separate. Grade is hits per second × accuracy, so 30, 60, and 90 second runs match. Spam clicks lower both. A personal best saves the score only at 50% accuracy or better. Reaction stats ignore hits under 100 ms.';
   }
 
   function challengeUrl(seed) {
@@ -1708,11 +1818,17 @@
     var head = 'Aim Trainer · ' + mode.name;
     if (mode.timed) head += ' ' + runSeconds + 's';
     var bits = ['Grade ' + summary.grade];
-    if (summary.kind === 'benchmark' && summary.avg != null) bits.push(Math.round(summary.avg) + ' ms avg');
-    else bits.push(summary.score.toLocaleString() + ' pts');
-    if (summary.acc != null && summary.kind !== 'benchmark') bits.push(Math.round(summary.acc * 100) + '%');
-    if (summary.avg != null && reactions.length >= 5 && summary.kind !== 'track') {
-      bits.push('faster than ' + percentileFromMs(summary.avg) + '% est.');
+    var sample = countedReactions();
+    if (summary.kind === 'benchmark') {
+      if (reactionStatsOn(summary)) bits.push(Math.round(average(sample)) + ' ms avg');
+      else bits.push('Not enough accurate hits');
+    } else {
+      bits.push(summary.score.toLocaleString() + ' pts');
+      if (summary.acc != null) bits.push(Math.round(summary.acc * 100) + '%');
+      if (summary.kind !== 'track' && !reactionStatsOn(summary)) bits.push('Not enough accurate hits');
+    }
+    if (reactionStatsOn(summary) && sample.length >= 5) {
+      bits.push('faster than ' + percentileFromMs(average(sample)) + '% est.');
     }
     return head + '\n' + bits.join(' · ');
   }
@@ -1753,8 +1869,12 @@
     c.font = '500 30px Inter, system-ui, sans-serif';
     c.fillStyle = '#d5d5e6';
     var line = 'Accuracy ' + (summary.acc == null ? '—' : Math.round(summary.acc * 100) + '%');
-    if (summary.avg != null && summary.kind !== 'benchmark') line += '   ·   ' + Math.round(summary.avg) + ' ms';
-    if (reactions.length >= 5 && summary.avg != null) line += '   ·   faster than ' + percentileFromMs(summary.avg) + '%';
+    var sample = countedReactions();
+    if (summary.kind !== 'track' && !reactionStatsOn(summary)) line += '   ·   Not enough accurate hits';
+    else if (reactionStatsOn(summary)) {
+      line += '   ·   ' + Math.round(average(sample)) + ' ms';
+      if (sample.length >= 5) line += '   ·   faster than ' + percentileFromMs(average(sample)) + '%';
+    }
     c.fillText(line, 72, 560);
     c.fillStyle = '#0c0e14';
     roundRect(c, 72, 620, 936, 280, 24);
@@ -1768,11 +1888,24 @@
       c.fill();
     }
     c.fillStyle = '#00d4ff';
-    c.font = '600 22px Inter, system-ui, sans-serif';
-    c.fillText(shareUrl.replace('https://', ''), 72, 1000);
-    return new Promise(function (resolve) {
-      card.toBlob(function (blob) { resolve(blob); }, 'image/png');
-    });
+    c.font = '600 16px Inter, system-ui, sans-serif';
+    var urlText = shareUrl.replace('https://', '');
+    if (c.measureText(urlText).width > 936) {
+      c.font = '600 13px Inter, system-ui, sans-serif';
+    }
+    c.fillText(urlText, 72, 1000);
+    return card;
+  }
+
+  function pngBlob(canvas) {
+    var data = canvas.toDataURL('image/png');
+    var parts = data.split(',');
+    var mime = (parts[0].match(/:(.*?);/) || [])[1] || 'image/png';
+    var bin = atob(parts[1]);
+    var arr = new Uint8Array(bin.length);
+    var i;
+    for (i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return new Blob([arr], { type: mime });
   }
 
   function roundRect(c, x, y, w, h, r) {
@@ -1811,7 +1944,7 @@
     else hero.textContent = summary.score.toLocaleString();
     document.getElementById('resDesc').textContent = copy;
     fillRows(copyLines(summary));
-    var region = slowestRegion();
+    var region = reactionStatsOn(summary) ? slowestRegion() : null;
     var regionEl = document.getElementById('resRegion');
     if (region) {
       regionEl.hidden = false;
@@ -1820,9 +1953,13 @@
       regionEl.hidden = true;
     }
     var estimate = document.getElementById('resEstimate');
-    if (summary.avg != null && reactions.length >= 5 && summary.kind !== 'track') {
+    var sample = countedReactions();
+    if (summary.kind !== 'track' && !reactionStatsOn(summary)) {
       estimate.hidden = false;
-      estimate.textContent = 'Faster than ' + percentileFromMs(summary.avg) + '% of typical players. Estimated from a published aim curve, not a live leaderboard.';
+      estimate.textContent = 'Not enough accurate hits';
+    } else if (reactionStatsOn(summary) && sample.length >= 5) {
+      estimate.hidden = false;
+      estimate.textContent = 'Faster than ' + percentileFromMs(average(sample)) + '% of typical players. Estimated from a published aim curve, not a live leaderboard.';
     } else {
       estimate.hidden = true;
     }
@@ -1853,7 +1990,8 @@
       resHeat.hidden = true;
     }
     updateHud();
-    renderCard(summary).then(function (blob) { cardBlob = blob; }).catch(function () { cardBlob = null; });
+    try { cardBlob = pngBlob(renderCard(summary)); }
+    catch (err) { cardBlob = null; }
     draw();
   }
 
@@ -2112,7 +2250,51 @@
   bind();
   applyLayout();
 
+  function debugLife(elapsedMs) {
+    var savedOrigin = runOrigin;
+    var savedSeconds = runSeconds;
+    var savedDebt = pauseDebt;
+    runSeconds = mode.timed ? (duration || 30) : 30;
+    pauseDebt = 0;
+    runOrigin = gameNow() - elapsedMs;
+    var min = lifeFor({ nl: 0, nr: 0 });
+    var max = lifeFor({ nl: 1, nr: 1 });
+    var pace = difficulty();
+    runOrigin = savedOrigin;
+    runSeconds = savedSeconds;
+    pauseDebt = savedDebt;
+    return { min: min, max: max, pace: pace };
+  }
+
+  function debugFinish(patch) {
+    patch = patch || {};
+    hits = patch.hits || 0;
+    misclicks = patch.misclicks || 0;
+    expired = patch.expired || 0;
+    bullseyes = patch.bullseyes || 0;
+    bestCombo = patch.bestCombo || 0;
+    pointSum = patch.pointSum || 0;
+    reactions = (patch.reactions || []).slice();
+    clicks = patch.clicks || [];
+    trackMs = patch.trackMs || 0;
+    if (patch.seconds) runSeconds = patch.seconds;
+    ended = false;
+    phase = 'run';
+    finish();
+  }
+
   if (new URLSearchParams(window.location.search).get('debug') === '1') {
-    window.__AT = { snapshot: snapshot, start: startRun, pause: pause, resume: resume };
+    window.__AT = {
+      snapshot: snapshot,
+      start: startRun,
+      pause: pause,
+      resume: resume,
+      select: selectMode,
+      menu: showMenu,
+      debugLife: debugLife,
+      debugFinish: debugFinish,
+      shareText: function () { return shareText; },
+      cardReady: function () { return !!cardBlob; }
+    };
   }
 })();
