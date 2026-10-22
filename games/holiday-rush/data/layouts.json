@@ -55,7 +55,7 @@
     "worldW": 1280,
     "worldH": 900,
     "edited": false,
-    "goalMul": 0.64,
+    "goalMul": 0.54,
     "spawnMul": 0.58,
     "mechanic": "wrap",
     "crowd": "gift",

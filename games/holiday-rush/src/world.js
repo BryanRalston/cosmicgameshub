@@ -337,11 +337,17 @@
     return list[ymdHash(ymd) % list.length];
   }
 
+  function comboPay(n) {
+    if (n <= 1) return 1;
+    var m = 1 + (n - 1) * 0.35;
+    return m > 4 ? 4 : m;
+  }
+
   function dailyMet(goal, report) {
     if (!goal || !report) return false;
     if (goal.walkoutsMax != null) return (report.walkouts || 0) <= goal.walkoutsMax;
     if (goal.goalMin != null) return (report.goalPct || 0) >= goal.goalMin;
-    if (goal.comboMin != null) return (report.bestCombo || 0) >= goal.comboMin;
+    if (goal.comboMin != null) return comboPay(report.bestCombo || 0) >= goal.comboMin;
     return false;
   }
 
@@ -484,7 +490,7 @@
     var seasonGoal = tenantLayout('seasonal');
     if (!seasonGoal || Math.abs(seasonGoal.goalMul - 1.12) > 0.02) reasons.push('season goal');
     var kioskLayout = data.get().layouts.kiosk;
-    if (!kioskLayout || !(kioskLayout.goalMul > 0.5 && kioskLayout.goalMul < 0.8)) reasons.push('kiosk goal');
+    if (!kioskLayout || Math.abs(kioskLayout.goalMul - 0.54) > 0.02) reasons.push('kiosk goal');
     if (!kioskLayout || kioskLayout.mechanic !== 'wrap') reasons.push('kiosk mechanic');
     if (!kioskLayout || kioskLayout.crowd !== 'gift') reasons.push('kiosk crowd');
     var ev0 = calendarEvent(0);
@@ -492,9 +498,13 @@
     var goal = dailyGoal('2026-10-22');
     var goalAgain = dailyGoal('2026-10-22');
     if (!goal || goal.id !== goalAgain.id) reasons.push('daily');
+    var shyBooks = econ.blankBooks();
+    shyBooks.cash = 80;
+    var shy = claimDaily(shyBooks, '2026-10-22', { walkouts: 0, goalPct: 1, bestCombo: 4 });
+    if (shy.claimed || shyBooks.cash !== 80) reasons.push('hot till');
     var payer = econ.blankBooks();
     payer.cash = 100;
-    var met = { walkouts: 0, goalPct: 1, bestCombo: 5 };
+    var met = { walkouts: 0, goalPct: 1, bestCombo: 7 };
     var first = claimDaily(payer, '2026-10-22', met);
     if (!first.claimed || first.bonus !== goal.bonus || payer.cash !== 100 + goal.bonus) reasons.push('claim ' + payer.cash);
     var second = claimDaily(payer, '2026-10-22', met);

@@ -3898,15 +3898,14 @@
         '#hr-event.hr-inline .hr-choices button{width:auto;flex:1 1 0;min-width:0;min-height:44px;font-size:0.8rem;padding:0.35rem 0.45rem;white-space:normal;}',
         '#hr-event.hr-inline .hr-card__art .hr-portrait,#hr-event.hr-inline .hr-card__art .hr-icon{width:36px !important;height:36px !important;border-radius:8px;}',
         '@media (max-width:720px){',
-        '#hr-event.hr-inline{left:6px;right:6px;bottom:6px;max-height:42%;overflow:hidden;}',
-        '#hr-event.hr-inline .hr-card{max-height:100%;padding:0.28rem 0.4rem 0.32rem;overflow:hidden;}',
+        '#hr-event.hr-inline{left:6px;right:6px;top:6px;bottom:auto;max-height:34%;overflow:hidden;align-items:flex-start;}',
+        '#hr-event.hr-inline .hr-card{max-height:100%;padding:0.22rem 0.4rem 0.28rem;overflow:hidden;}',
         '#hr-event.hr-inline .hr-card h2{font-size:0.92rem;line-height:1.15;margin:0 0 0.08rem;}',
-        '#hr-event.hr-inline .hr-card p{font-size:0.72rem;line-height:1.25;margin:0 0 0.22rem;-webkit-line-clamp:2;}',
+        '#hr-event.hr-inline .hr-card p{font-size:0.72rem;line-height:1.2;margin:0 0 0.18rem;-webkit-line-clamp:1;}',
         '#hr-event.hr-inline .hr-card__art{display:none;}',
-        '#hr-event.hr-inline .hr-card__timer{margin:0 0 0.2rem;}',
-        '#hr-event.hr-inline{max-height:52%;}',
-        '#hr-event.hr-inline .hr-choices{flex-direction:column;flex-wrap:nowrap;gap:8px;}',
-        '#hr-event.hr-inline .hr-choices button{width:100%;flex:0 0 auto;min-height:48px;font-size:0.95rem;padding:0.45rem 0.75rem;white-space:nowrap;justify-content:flex-start;}',
+        '#hr-event.hr-inline .hr-card__timer{margin:0 0 0.15rem;}',
+        '#hr-event.hr-inline .hr-choices{flex-direction:column;flex-wrap:nowrap;gap:6px;}',
+        '#hr-event.hr-inline .hr-choices button{width:100%;flex:0 0 auto;min-height:44px;font-size:0.92rem;padding:0.35rem 0.7rem;white-space:nowrap;justify-content:flex-start;}',
         '#hr-event.hr-inline .hr-choice-cost{font-size:0.68rem;padding:0.12rem 0.4rem;}',
         '}',
         '.hr-card__timer{height:4px;border-radius:99px;background:rgba(43,29,46,0.15);overflow:hidden;margin:0 0 0.35rem;}',
@@ -4993,9 +4992,19 @@
       bar.style.width = (Math.max(0, Math.min(1, left)) * 100) + '%';
     }
 
+    var cardArmAt = 0;
+    function armCardTap() {
+      cardArmAt = (root.performance ? root.performance.now() : Date.now()) + 300;
+    }
+    function cardTapBlocked() {
+      var now = root.performance ? root.performance.now() : Date.now();
+      return now < cardArmAt;
+    }
+
     function renderEvent() {
       var card = sim.pending;
       if (!card) { els.event.hidden = true; return; }
+      armCardTap();
       els.event.classList.add('hr-inline');
       els.event.hidden = false;
       var art = '';
@@ -5016,6 +5025,7 @@
         if (!btn || btn.disabled) return;
         ev.preventDefault();
         ev.stopPropagation();
+        if (cardTapBlocked()) return;
         var res = resolvePending(sim, run, +btn.getAttribute('data-choice'));
         if (!res.ok) { toast(res.msg); sfx('miss'); return; }
         sfx('place');
@@ -5159,9 +5169,11 @@
       var art = '<span class="hr-portrait" style="' + portraitStyle(spec.who, 'impatient', 36) + '"></span><span class="hr-icon" style="' + iconStyle(card.icon, 36) + '"></span>';
       els.event.innerHTML = '<div class="hr-card" role="region" aria-labelledby="hr-type-title"><div class="hr-card__timer" aria-hidden="true"><i id="hr-prompt-bar"></i></div><div class="hr-card__art">' + art + '</div><p class="hr-kicker">Week ' + (((run.day / 5) | 0) + 1) + '</p><h2 id="hr-type-title">' + esc(card.title) + '</h2><p>' + esc(card.body) + '</p><div class="hr-choices"><button type="button" id="hr-type-ok">Got it</button></div></div>';
       paintPromptTimer();
+      armCardTap();
       document.getElementById('hr-type-ok').addEventListener('pointerdown', function (ev) {
         ev.preventDefault();
         ev.stopPropagation();
+        if (cardTapBlocked()) return;
         var title = card.title;
         dismissTypeCard(sim, run);
         els.event.hidden = true;
@@ -5318,7 +5330,7 @@
         (snap.tape && snap.tape.leaseIn ? '<p class="hr-fine">Mall rent collected ' + money(snap.tape.leaseIn) + '.</p>' : '') +
         (snap.tape && snap.tape.reviews ? snap.tape.reviews.map(function (line) { return '<p class="hr-fine">“' + esc(line) + '”</p>'; }).join('') : '') +
         (snap.background && snap.background.tapes && snap.background.tapes.length ? snap.background.tapes.map(function (row) {
-          if (snap.storeName) return '<p class="hr-fine" id="hr-other-floor">' + esc(row.name) + ' kept selling while you ran ' + esc(snap.storeName) + '. It posted ' + money(row.profit) + '.</p>';
+          if (snap.storeName) return '<p class="hr-lead" id="hr-other-floor"><strong>Other floor.</strong> ' + esc(row.name) + ' stayed open while you ran ' + esc(snap.storeName) + ' and posted ' + money(row.profit) + '.</p>';
           return '<p class="hr-fine">' + esc(row.name) + ' posted ' + money(row.profit) + (row.complaints && row.complaints[0] ? '. ' + esc(row.complaints[0]) : '.') + '</p>';
         }).join('') : '') +
         '<p class="hr-scorebig">' + snap.points + ' pts</p>' +
@@ -5672,7 +5684,8 @@
         HR.room.paint(g, objs, WORLD_W, WORLD_H, {
           entranceX: SPOTS.door.x,
           arch: WORLD_W > 1600,
-          archX: 1600
+          archX: 1600,
+          kiosk: !!(books && books.active === 'kiosk')
         });
         var regs = registers().map(function (id) {
           return { x: SPOTS[id].x, y: SPOTS[id].y, station: id };
@@ -6308,6 +6321,7 @@
 
     function onStageTap(ev) {
       if (!sim || els.sim.hidden) return;
+      if (cardTapBlocked()) return;
       markInput();
       if (isQA() && els.stage && ev) els.stage.dataset.pointer = ev.pointerType || '';
       var w = eventWorld(ev);
@@ -7798,6 +7812,7 @@
 
     els.stage.addEventListener('pointerdown', function (ev) {
       if (els.sim.hidden || ev.button > 0) return;
+      if (cardTapBlocked()) return;
       pointers[ev.pointerId] = { x: ev.clientX, y: ev.clientY };
       if (Object.keys(pointers).length >= 2) return;
       if (ev.target.closest && ev.target.closest('button, .hr-card')) return;
@@ -8177,6 +8192,7 @@
       combo: function (n) {
         if (!isQA() || !sim) return;
         sim.combo = n == null ? 4 : n;
+        if (sim.combo > (sim.bestCombo || 0)) sim.bestCombo = sim.combo;
         paintHud();
       },
       rush: function (on) {
@@ -8432,6 +8448,7 @@
     line('mid8', mid8);
     if (comboMult(10) !== 4 || comboMult(40) !== 4 || multLabel(10) !== '×4' || multLabel(24) !== '×4') bad = true;
     if (goalStars(0.74) !== 0 || goalStars(0.75) !== 1 || goalStars(1) !== 2 || goalStars(1.2) !== 3) bad = true;
+    if (!(comboMult(4) < 3) || comboMult(6) >= 3 || !(comboMult(7) >= 3)) bad = true;
     var seedEnc = seedsFromSearch('?seed=kiosk%2Cbus&_vercel_share=abc').join(',');
     var seedDbl = seedsFromSearch('?seed=kiosk%252Cbus').join(',');
     var seedPlus = seedsFromSearch('?qa=1&seed=kiosk+bus').join(',');

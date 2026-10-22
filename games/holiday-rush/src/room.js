@@ -250,7 +250,20 @@
     }
   }
 
+  function kioskSkin(images) {
+    var out = {};
+    var keys = Object.keys(images || {});
+    for (var i = 0; i < keys.length; i++) {
+      var key = keys[i];
+      if (key.indexOf('floor/floor_var_') === 0) continue;
+      var alt = key.indexOf('floor/') === 0 ? 'floor/kiosk/' + key.slice('floor/'.length) : '';
+      out[key] = (alt && images[alt]) ? images[alt] : images[key];
+    }
+    return out;
+  }
+
   function paint(ctx, images, worldW, worldH, opts) {
+    if (opts && opts.kiosk) images = kioskSkin(images);
     var steps = plan(worldW, worldH, opts);
     var tile = img(images, 'floor/floor_tile.png');
     var wing = img(images, 'floor/floor_wing.png');
