@@ -407,6 +407,9 @@
         '<button type="button" class="btn btn--primary" data-sign="' + esc(slot.id) + '">Hand them the keys</button>';
     }
     var door = mall.door && Object.keys(mall.leases).length ? Math.round(mall.door * 100) : 100;
+    var retuneLine = mall.retune
+      ? '<p class="hr-fine" id="hr-retune">Next flagship: ' + esc(mall.retune.kind) + '. ' + esc(mall.retune.note) + '</p>'
+      : '<p class="hr-fine" id="hr-retune">Walk the plaza, send a parade, or ride a blackout. The next flagship shift takes that tune.</p>';
     var mallCoach = ctx.coachMall
       ? '<p class="hr-coachbar" id="hr-coach-mall">This is the plaza. Lease a unit, set the rent, and open the common they asked for. Leave it dark and they pay 85% with a thinner door. Hand someone the keys and this note goes away.</p>'
       : '';
@@ -418,6 +421,12 @@
       '<div class="hr-rowfront">' + fronts + '</div>' +
       '<section class="hr-office__block"><h3>' + esc(slot.name) + '</h3>' + panel + '</section>' +
       '<section class="hr-office__block"><h3>Commons</h3><div class="hr-commons">' + commons + '</div></section>' +
+      '<section class="hr-office__block"><h3>Plaza</h3>' + retuneLine +
+      '<div class="hr-plaza">' +
+      '<button type="button" class="btn" data-visit="visit">Walk the plaza</button>' +
+      '<button type="button" class="btn" data-visit="parade">Send the parade</button>' +
+      '<button type="button" class="btn" data-visit="blackout">Ride the blackout</button>' +
+      '</div></section>' +
       '<div class="hr-cta"><button type="button" class="btn btn--primary" data-back="1">Back to the office</button></div>';
     el.onclick = function (ev) {
       var btn = ev.target.closest('button');
@@ -468,6 +477,13 @@
         var bought = world.buyCommon(books, btn.getAttribute('data-common'));
         ctx.onToast(bought.msg);
         if (bought.ok) ctx.onDirty();
+        mountMall(el, ctx);
+        return;
+      }
+      if (btn.hasAttribute('data-visit')) {
+        var tuned = world.retune(books, btn.getAttribute('data-visit'));
+        ctx.onToast(tuned.msg);
+        if (tuned.ok) ctx.onDirty();
         mountMall(el, ctx);
         return;
       }

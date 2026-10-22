@@ -218,6 +218,45 @@
     return tenants[tenantId] || tenants.toys_pop || null;
   }
 
+  function retune(books, kind) {
+    var mall = ensureMall(books);
+    var commons = mall.commons || {};
+    var ids = ['decor', 'security', 'parking', 'foodcourt', 'events'];
+    var openN = 0;
+    for (var i = 0; i < ids.length; i++) if ((commons[ids[i]] || 0) >= 1) openN++;
+    if (kind === 'parade') {
+      if ((commons.events || 0) < 1) {
+        return { ok: false, msg: 'Open the holiday event. Then the parade can pass the flagship.' };
+      }
+      mall.retune = {
+        kind: 'parade',
+        door: 1,
+        note: 'Parade is set. The next flagship shift draws a bigger crowd the whole day.'
+      };
+      return { ok: true, msg: mall.retune.note, retune: mall.retune };
+    }
+    if (kind === 'blackout') {
+      var lit = (commons.parking || 0) >= 1 && (commons.security || 0) >= 1;
+      if (lit) return { ok: false, msg: 'Parking lights and security are on. The plaza stays lit.' };
+      mall.retune = {
+        kind: 'blackout',
+        door: 0.84,
+        note: 'Blackout is set. The next flagship shift is dim, patience drains, and the door is thinner.'
+      };
+      return { ok: true, msg: mall.retune.note, retune: mall.retune };
+    }
+    if (kind === 'visit') {
+      var door = Math.round((0.9 + openN * 0.06) * 100) / 100;
+      mall.retune = {
+        kind: 'visit',
+        door: door,
+        note: 'You walked the plaza. ' + openN + ' commons are open, so the next flagship door is ' + Math.round(door * 100) + '%.'
+      };
+      return { ok: true, msg: mall.retune.note, retune: mall.retune };
+    }
+    return { ok: false, msg: 'That plaza action is not on the map.' };
+  }
+
   function nextComplaint(books) {
     if (!books || !books.mall || !books.mall.leases) return null;
     var data = root.HRParts.data.get();
@@ -295,6 +334,19 @@
     });
     if (!door || !reg) reasons.push('tenant floor');
     if (!tenantLayout('repair') || !tenantLayout('cafe_chain') || !tenantLayout('seasonal')) reasons.push('tenant set');
+    var paradeEarly = retune(player, 'parade');
+    if (paradeEarly.ok) reasons.push('parade early');
+    player.mall.commons.events = 1;
+    var parade = retune(player, 'parade');
+    if (!parade.ok || !player.mall.retune || player.mall.retune.kind !== 'parade' || player.mall.retune.door !== 1) reasons.push('parade');
+    var black = retune(player, 'blackout');
+    if (!black.ok || player.mall.retune.kind !== 'blackout' || Math.abs(player.mall.retune.door - 0.84) > 0.001) reasons.push('blackout');
+    player.mall.commons.parking = 1;
+    if (retune(player, 'blackout').ok) reasons.push('lit blackout');
+    var visit = retune(player, 'visit');
+    if (!visit.ok || player.mall.retune.kind !== 'visit') reasons.push('visit');
+    if (!(player.mall.retune.door > 1 && player.mall.retune.door < 1.2)) reasons.push('visit door ' + (player.mall.retune && player.mall.retune.door));
+    if (player.cash !== 4100) reasons.push('retune cash');
     return { ok: reasons.length === 0, reason: reasons.join('; '), sample: tape.profit };
   }
 
@@ -314,6 +366,7 @@
     commonCost: commonCost,
     commonName: commonName,
     tenantLayout: tenantLayout,
+    retune: retune,
     selfTest: selfTest
   };
   root.HRParts = root.HRParts || {};

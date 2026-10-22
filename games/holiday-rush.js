@@ -2028,6 +2028,18 @@
     return card;
   }
 
+  function applyMallRetune(sim) {
+    if (!sim || sim.tenant || !sim.books || !sim.books.mall || !sim.books.mall.retune) return;
+    var ret = sim.books.mall.retune;
+    sim.mallRetune = ret.kind || 'visit';
+    sim.plazaMul = ret.door || 1;
+    if (ret.kind === 'parade') sim.paradeUntil = sim.duration;
+    if (ret.kind === 'blackout') sim.flickerUntil = sim.duration;
+    sim.books.mall.retune = null;
+    note(sim, ret.note || 'The plaza retuned the flagship.');
+    persistBooks(sim.books);
+  }
+
   function maybeMallCard(sim) {
     if (!sim.live || !sim.books || sim._mallShown || sim.coachHold || sim.pending || sim.paused) return;
     if (sim.t < 2.2) return;
@@ -2146,6 +2158,7 @@
     if (sim.t < sim.rushUntil) rate *= 1.72;
     if (sim.t < sim.slowUntil) rate *= 0.62;
     if (sim.paradeUntil && sim.t < sim.paradeUntil) rate *= 1.4;
+    if (sim.plazaMul && sim.plazaMul !== 1) rate *= sim.plazaMul;
     if (sim.tenant && sim.tenant.spawnMul) rate *= sim.tenant.spawnMul;
     rate *= 0.74 + Math.min(stationPower(sim, run, 'floor'), 1.6) * 0.2;
     if (sim.books && HR.sim) rate *= HR.sim.demandMul(sim.books);
@@ -2578,6 +2591,8 @@
       flickerUntil: sim.flickerUntil || 0,
       stockFreeze: sim.stockFreeze || 0,
       paradeUntil: sim.paradeUntil || 0,
+      plazaMul: sim.plazaMul == null ? 1 : sim.plazaMul,
+      mallRetune: sim.mallRetune || '',
       tenant: sim.tenant || null,
       rngState: sim.rng && sim.rng.state ? sim.rng.state() : 0,
       pendingMeta: pendingMeta
@@ -2615,6 +2630,8 @@
     sim.flickerUntil = data.flickerUntil || 0;
     sim.stockFreeze = data.stockFreeze || 0;
     sim.paradeUntil = data.paradeUntil || 0;
+    sim.plazaMul = data.plazaMul == null ? 1 : data.plazaMul;
+    sim.mallRetune = data.mallRetune || '';
     sim.tenant = data.tenant || null;
     var beatPending = { mall: 1, priceTalk: 1 };
     for (var bi = 0; bi < FLOOR_BEATS.length; bi++) beatPending[FLOOR_BEATS[bi].id] = 1;
@@ -4473,6 +4490,7 @@
         '<div class="hr-rush" id="hr-rush" hidden>RUSH</div>' +
         (ops ? '<div class="hr-stat"><span>Payroll</span><strong id="hr-pay-text"></strong></div><div class="hr-stat"><span>Morale</span><strong id="hr-mor-text"></strong></div>' : '') +
         (sim.tenant ? '<div class="hr-stat"><span>Floor</span><strong id="hr-tenant-name">' + esc(sim.tenant.name) + '</strong></div>' : '') +
+        (sim.mallRetune ? '<div class="hr-stat"><span>Plaza</span><strong id="hr-plaza-text">' + esc(sim.mallRetune) + '</strong></div>' : '') +
         (books ? '<div class="hr-stat hr-aisle"><span>Aisle</span><strong id="hr-aisle-text">Steady</strong></div>' : '') +
         '<button type="button" id="hr-crew-btn" class="hr-mute">Crew</button>' +
         '<button type="button" id="hr-mute" class="hr-mute" aria-pressed="false" aria-label="Mute sound">Sound</button>';
@@ -4488,6 +4506,7 @@
       els.sim.querySelector('.hr-actions').innerHTML = actions;
       sim.live = true;
       sim.floorOn = true;
+      if (!opts.resume) applyMallRetune(sim);
       if (run._awayNote && run._awayNote.length) {
         toast(run._awayNote.map(firstName).join(', ') + ' is off this floor.');
         run._awayNote = [];
@@ -4604,6 +4623,8 @@
           els.stage.dataset.priceWalks = String(sim.priceWalks || 0);
           els.stage.dataset.grumbles = String(sim.grumbles || 0);
           els.stage.dataset.beat = sim.pending ? (sim.pending.id || '') : '';
+          els.stage.dataset.retune = sim.mallRetune || '';
+          els.stage.dataset.plaza = String(sim.plazaMul == null ? 1 : sim.plazaMul);
           var cocoaItem = HR.data && HR.data.get() && HR.data.get().items.byId.cocoa;
           if (cocoaItem) els.stage.dataset.cocoa = String(HR.economy.priceOf(sim.books, cocoaItem));
         }

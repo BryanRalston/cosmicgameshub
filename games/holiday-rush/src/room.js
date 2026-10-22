@@ -2,9 +2,11 @@
    Side walls, then back segments from x=222, then the 222x125
    corners. Ledge order matches qc_modular.py: each end piece's
    bottom 14px band is redrawn 6px lower, then the full end piece,
-   then the front ledge on top. Scuffs use the art script's
-   Random(3) stream at chance 0.17. light_first comes from the
-   floor tile. wall_back_arch stays 125px tall. */
+   then the front ledge on top. The stockroom door is pasted at its
+   own 421x126 size, the same drop-in the art script composites,
+   with no resample into the 420x125 segment. Scuffs use the art
+   script's Random(3) stream at chance 0.17. light_first comes from
+   the floor tile. wall_back_arch stays 125px tall. */
 (function (root) {
   'use strict';
   var SPEC = {
@@ -220,6 +222,15 @@
     return tile._lightFirst;
   }
 
+  function backBlit(step, imageW, imageH) {
+    if (step.kind === 'door' || step.kind === 'arch') {
+      return { sx: 0, sy: 0, sw: imageW, sh: imageH, dx: step.x, dy: 0, dw: imageW, dh: imageH };
+    }
+    var sw = Math.min(imageW, step.w);
+    var sh = Math.min(imageH, step.h);
+    return { sx: 0, sy: 0, sw: sw, sh: sh, dx: step.x, dy: 0, dw: sw, dh: sh };
+  }
+
   function firstOp(steps, op) {
     for (var i = 0; i < steps.length; i++) if (steps[i].op === op) return i;
     return -1;
@@ -302,7 +313,13 @@
         }
         var backName = step.kind === 'door' ? 'floor/wall_back_door.png' : step.kind === 'arch' ? 'floor/wall_back_arch.png' : 'floor/wall_back.png';
         var back = img(images, backName) || img(images, 'floor/wall_back.png');
-        if (back) ctx.drawImage(back, 0, 0, Math.min(back.width, step.w), back.height, step.x, 0, Math.min(back.width, step.w), step.h);
+        if (back) {
+          var blit = backBlit(step, back.width, back.height);
+          var prevSmooth = ctx.imageSmoothingEnabled;
+          ctx.imageSmoothingEnabled = false;
+          ctx.drawImage(back, blit.sx, blit.sy, blit.sw, blit.sh, blit.dx, blit.dy, blit.dw, blit.dh);
+          ctx.imageSmoothingEnabled = prevSmooth;
+        }
       } else if (step.op === 'corner') {
         var corner = img(images, step.side === 'tl' ? 'floor/wall_corner_tl.png' : 'floor/wall_corner_tr.png');
         if (corner) ctx.drawImage(corner, step.x, 0, SPEC.cornerW, SPEC.cornerH);
@@ -537,6 +554,10 @@
     var backs = steps.filter(function (step) { return step.op === 'back'; });
     if (!backs.length || backs[0].x !== 222) reasons.push('back x');
     if (backs[0].kind !== 'door') reasons.push('stock door');
+    var doorBlit = backBlit(backs[0], 421, 126);
+    if (doorBlit.dw !== 421 || doorBlit.dh !== 126 || doorBlit.dx !== 222) reasons.push('door blit');
+    var partial = backBlit({ kind: 'back', x: 1062, w: 316, h: 125 }, 420, 125);
+    if (partial.dw !== 316 || partial.dh !== 125 || partial.sw !== 316) reasons.push('partial blit');
     var corners = steps.filter(function (step) { return step.op === 'corner'; });
     if (corners.length !== 2 || corners[0].w !== 222 || corners[0].h !== 125) reasons.push('corner');
     var band = steps.filter(function (step) { return step.op === 'endBand'; })[0];

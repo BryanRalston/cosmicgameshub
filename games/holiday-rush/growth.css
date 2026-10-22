@@ -213,6 +213,16 @@
   padding-bottom: 8px;
 }
 
+.hr-plaza {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hr-plaza .btn {
+  min-height: 44px;
+}
+
 .hr-front,
 .hr-tenant {
   flex: 0 0 132px;

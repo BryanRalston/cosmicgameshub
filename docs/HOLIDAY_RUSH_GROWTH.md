@@ -1,6 +1,6 @@
 # Holiday Rush growth
 
-Holiday Rush is a floor you run, then a store you grow, then a plaza you lease. The mall map opens after the east-wall knock-through. A complaint from a tenant is a card on the next shift, the same shape as a call-out. Dropping into a tenant’s own floor is still later.
+Holiday Rush is a floor you run, then a store you grow, then a plaza you lease. The mall map opens after the east-wall knock-through. A complaint from a tenant is a card on the next shift, the same shape as a call-out. A leased unit can be played as its own floor. A plaza walk, a parade, or a blackout retunes the next flagship shift.
 
 The shift tick in `games/holiday-rush.js` (`startDay`, `step`, `updateCustomers`) stays the tuned sim. New content enters through `sim.books`, the layout, and JSON. A new SKU, hire, or build does not require an edit to the tick. Headless `simulate()` does not set `sim.books`, so the pinned shift-0 balance is unchanged.
 
@@ -12,7 +12,7 @@ The shift tick in `games/holiday-rush.js` (`startDay`, `step`, `updateCustomers`
 - Knock-through expansion, a third register, departments, a flagship wing, and a plaza kiosk.
 - A grid editor. Traffic is a flood from the door. A walled-off register, gondola, or cafe does not sell.
 - A world layer: the store you are in runs at full fidelity. Every other open store posts an aggregate tape.
-- A mall map after the knock-through: four lease units, rent you set, five commons you can open, and a complaint card on the next shift. Lease rent hits the tape only when a lease exists.
+- A mall map after the knock-through: four lease units, rent you set, five commons you can open, and a complaint card on the next shift. Lease rent hits the tape only when a lease exists. Walk the plaza, send a parade, or ride a blackout, and the next flagship shift takes that tune.
 - A price the aisle can see. A tag on the gondola, an aisle mood on the HUD, a grumble above 1.2×, and a walkout at 1.45×. Headless `simulate()` still has no books, so the pinned shift does not feel it.
 - Per-type sprite budgets and lazy loads. The camera stays close when the building grows. Glow and smoothing drop when the frame is late or the crowd is large.
 
@@ -177,12 +177,12 @@ Phase A, shipped earlier. One mart, then a kiosk. The active store is full fidel
 
 Phase B, this build. The mall map unlocks with the east-wall knock-through, so day one stays a floor. Storefronts are the chip sheets. You pick a tenant, set rent under their ceiling, and hand them the keys. Commons are stamp buttons: decor $800, security $900, parking lights $700, food court $1,200, holiday event $600. If the common they `want` is still 0, they complain, traffic drops to 70% of their number, and they pay 85%. The next shift shows that complaint as a card. Fix it and the common opens, cash leaves the register, and this close collects full rent. Let them grumble and the door stays thin. Rent is added in `closeShift` only when `books.mall.leases` exists, so a save with `mall: null` still posts the pinned $3,010.
 
-Phase C, first slice. A leased unit has Play their floor. That opens their 1280×900 room with their gondolas, your crew, and a smaller goal. The close adds 15% of their drawer to the register and does not replace the flagship’s posted profit. A parade, a blackout, or a plaza visit that retunes the flagship is still ahead. Commons are a purchase and a card, not a mall-wide event system.
+Phase C. A leased unit has Play their floor. That opens their 1280×900 room with their gondolas, your crew, and a smaller goal. The close adds 15% of their drawer to the register and does not replace the flagship’s posted profit. The plaza section sets the next flagship shift. Walk the plaza and the door becomes 90% plus 6% for each open common. Send the parade after the holiday event is open and that shift’s crowd stays at the parade rate the whole day. Ride the blackout while parking lights or security are dark and that shift drains patience with a 0.84 door. The tune is consumed when the flagship opens, so a tenant floor and a headless `simulate()` leave it untouched. Commons stay a purchase. The complaint card is unchanged.
 
 ## What was cut
 
-An investor who skims every shift. A catalog of 80–150 SKUs. Hundreds of decorations. A research tree. A gardening minigame. Prices that move with no tell. Mall-wide parade and blackout events. A taller store. A 40-person roster. The 20 staff and 150 customers in the stress test are the pool and the spatial hash, not a hiring catalog. The crew you learn by name stays the original eight plus four hires.
+An investor who skims every shift. A catalog of 80–150 SKUs. Hundreds of decorations. A research tree. A gardening minigame. Prices that move with no tell. A taller store. A 40-person roster. The 20 staff and 150 customers in the stress test are the pool and the spatial hash, not a hiring catalog. The crew you learn by name stays the original eight plus four hires.
 
 ## Self-test
 
-`node games/holiday-rush.js --self-test` still pins combo, stars, and the shift-0 bands. It also runs the module tests: basket mean, the $3,010 tape, a $400 lease that posts $3,410, a shelf that refuses at 1.45× and grumbles above 1.2×, migration of an $1,800 bank, starter traffic, a walled-off register, the path into the east bay, aggregate profit, a refused over-rent lease, a complaint when security is 0, buying security to clear that complaint, phone sprite size, and the per-type sprite budget.
+`node games/holiday-rush.js --self-test` still pins combo, stars, and the shift-0 bands. It also runs the module tests: basket mean, the $3,010 tape, a $400 lease that posts $3,410, a shelf that refuses at 1.45× and grumbles above 1.2×, migration of an $1,800 bank, starter traffic, a walled-off register, the path into the east bay, aggregate profit, a refused over-rent lease, a complaint when security is 0, buying security to clear that complaint, a parade that waits for the holiday event, a blackout that waits for a dark lot, a plaza visit door, the stockroom door pasted at 421×126, phone sprite size, and the per-type sprite budget.
