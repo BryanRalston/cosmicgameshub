@@ -29,11 +29,23 @@
     return Math.round(z * 100) / 100;
   }
 
-  function view(cssW, cssH, worldW, worldH, zoom, sprite) {
+  function frameZoom(cssW, cssH, worldW, worldH, sprite) {
+    cssW = cssW || 390;
+    cssH = cssH || 480;
+    worldH = worldH || 900;
+    sprite = sprite || 78;
+    var target = targetPx(cssW);
+    var z = sprite * cssH / target / worldH;
+    if (!(z > 0)) z = 0.35;
+    if (z > READABLE.zoomMax) z = READABLE.zoomMax;
+    return Math.round(z * 100) / 100;
+  }
+
+  function view(cssW, cssH, worldW, worldH, zoom, sprite, fit) {
     cssW = cssW || 800;
     cssH = cssH || 450;
     sprite = sprite || 78;
-    zoom = clampZoom(cssW, zoom);
+    zoom = fit ? (zoom || 1) : clampZoom(cssW, zoom);
     var target = targetPx(cssW);
     var viewW = sprite * cssW / target / zoom;
     var viewH = viewW * cssH / cssW;
@@ -83,6 +95,12 @@
     if (fitted.spritePx + 1 < wide.spritePx * 0.88) reasons.push('shrink ' + fitted.spritePx);
     var grown = view(390, 480, 2880, 900, 1, 78);
     if (Math.round(grown.spritePx) !== Math.round(phone.spritePx)) reasons.push('growth shrink');
+    var phoneMin = view(390, 480, 1600, 900, 0.2, 78);
+    if (phoneMin.zoom < 1) reasons.push('phone zoom ' + phoneMin.zoom);
+    var fitZ = frameZoom(390, 480, 1600, 900, 78);
+    var framed = view(390, 480, 1600, 900, fitZ, 78, true);
+    if (framed.viewH < 775) reasons.push('frame ' + Math.round(framed.viewH));
+    if (fitZ >= 1) reasons.push('frame zoom ' + fitZ);
     if (!onScreen({ x: 100, y: 100 }, 0, 0, 300, 400, 20)) reasons.push('cull in');
     if (onScreen({ x: 2000, y: 100 }, 0, 0, 300, 400, 20)) reasons.push('cull out');
     var edge = edges(0, 0, 300, 400, 2880, 900);
@@ -95,6 +113,7 @@
     targetPx: targetPx,
     zoomMin: zoomMin,
     clampZoom: clampZoom,
+    frameZoom: frameZoom,
     view: view,
     onScreen: onScreen,
     edges: edges,

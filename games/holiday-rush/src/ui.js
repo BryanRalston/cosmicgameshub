@@ -148,7 +148,11 @@
       return '<article class="hr-upgrade"><div><h3>' + esc(u.name) + '</h3><p>' + esc(u.blurb) + '</p><p class="hr-fine">Level ' + lvl + ' of ' + u.max + '</p></div>' +
         '<button type="button" class="btn btn--primary" data-upgrade="' + esc(u.id) + '"' + (afford ? '' : ' disabled') + '>' + (maxed ? 'Maxed' : money(cost)) + '</button></article>';
     }).join('');
+    var priceCoach = ctx.coachPrice
+      ? '<p class="hr-coachbar" id="hr-coach-price">The tag on the gondola is the price they see. Past the sticker they grumble and lose patience. At the ceiling they walk out. <button type="button" data-coach="price">Got it</button></p>'
+      : '';
     el.innerHTML =
+      priceCoach +
       '<p class="hr-kicker">Office</p>' +
       '<h2>' + esc(active.name) + '</h2>' +
       '<p class="hr-bank">Register ' + money(books.cash) + ' · rent ' + money(econ.rentOf(books)) + ' · reviews ' + (Math.round(books.reputation * 10) / 10).toFixed(1) + '</p>' +
@@ -168,6 +172,10 @@
       var btn = ev.target.closest('button');
       if (!btn || btn.disabled) return;
       var msg = '';
+      if (btn.getAttribute('data-coach') === 'price') {
+        if (ctx.onCoachPrice) ctx.onCoachPrice();
+        return;
+      }
       if (btn.hasAttribute('data-price')) {
         var itemId = btn.getAttribute('data-price');
         var item = root.HRParts.data.get().items.byId[itemId];
@@ -343,7 +351,11 @@
         '<button type="button" class="btn btn--primary" data-sign="' + esc(slot.id) + '">Hand them the keys</button>';
     }
     var door = mall.door && Object.keys(mall.leases).length ? Math.round(mall.door * 100) : 100;
+    var mallCoach = ctx.coachMall
+      ? '<p class="hr-coachbar" id="hr-coach-mall">This is the plaza. Lease a unit, set the rent, and open the common they asked for. Leave it dark and they pay 85% with a thinner door. <button type="button" data-coach="mall">Got it</button></p>'
+      : '';
     el.innerHTML =
+      mallCoach +
       '<p class="hr-kicker">Mall</p><h2>' + esc(data.mall.name) + '</h2>' +
       '<p class="hr-bank">Register ' + money(books.cash) + ' · door ' + door + '%</p>' +
       '<p class="hr-lead">You still run the flagship. A leased unit posts rent at close. If the common they asked for is shut, the next shift opens with their complaint.</p>' +
@@ -354,6 +366,10 @@
     el.onclick = function (ev) {
       var btn = ev.target.closest('button');
       if (!btn || btn.disabled) return;
+      if (btn.getAttribute('data-coach') === 'mall') {
+        if (ctx.onCoachMall) ctx.onCoachMall();
+        return;
+      }
       if (btn.hasAttribute('data-slot')) {
         ctx.slot = btn.getAttribute('data-slot');
         mountMall(el, ctx);

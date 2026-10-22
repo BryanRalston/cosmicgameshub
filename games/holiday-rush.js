@@ -351,7 +351,12 @@
       cust.maxPatience = Math.max(cust.maxPatience || 0, cust.patience);
       cust.bubble = 'price';
       cust.pop = 1;
+      sim.grumbles = (sim.grumbles || 0) + 1;
       floater(sim, cust.x, cust.y - 78, 'Too steep', '#ffd0a8');
+      if (sim.floorOn && !sim._grumbleTold) {
+        sim._grumbleTold = true;
+        note(sim, 'Too steep. They still queue, and their patience drops.');
+      }
     }
     return false;
   }
@@ -546,6 +551,7 @@
       points: points,
       walkouts: sim.walkouts,
       checkouts: sim.checkouts,
+      grumbles: sim.grumbles || 0,
       grade: points >= 900 ? 'A' : points >= 760 ? 'B' : points >= 620 ? 'C' : 'D'
     };
   }
@@ -1478,6 +1484,7 @@
     if (sim.combo > (sim.bestCombo || 0)) sim.bestCombo = sim.combo;
     var mult = comboMult(sim.combo);
     basket = Math.round(basket * mult);
+    if (sim.floorOn && sim.doubleUntil && sim.t < sim.doubleUntil) basket *= 2;
     sim.sales += basket;
     sim.checkouts++;
     sim.stock = Math.max(0, sim.stock - CONFIG.stockPerSale);
@@ -1534,6 +1541,7 @@
     for (var n = 0; n < sim.customers.length; n++) {
       var cust = sim.customers[n];
       if (cust.dead) continue;
+      if (sim._shed && cust.state === 'browse' && cust.browseT > 30) continue;
       var custSpeed = speed * (cust.speedMul || 1);
       if (sim.coachHold && cust.maxPatience && cust.state !== 'leave' && cust.patience < cust.maxPatience * 0.24) {
         cust.patience = cust.maxPatience * 0.24;
@@ -1662,7 +1670,12 @@
     }
     if (sim.pool) sim.pool.compact(sim.customers);
     else sim.customers = sim.customers.filter(function (c) { return !c.dead; });
-    if (sim.spatial) sim.spatial.rebuild(sim.customers.concat(sim.staff));
+    if (sim.spatial) {
+      sim._spatialN = (sim._spatialN || 0) + 1;
+      if (!(sim._shed && sim.customers.length > 60 && (sim._spatialN % 3) !== 0)) {
+        sim.spatial.rebuild(sim.customers.concat(sim.staff));
+      }
+    }
   }
 
   function firstName(id) {
@@ -2161,10 +2174,82 @@
     maybePing(sim);
     maybeTypeIntro(sim, run);
     if (sim.live) maybeMallCard(sim);
+    if (sim.floorOn) maybeLiveBeat(sim, run);
     if (sim.paused) return sim;
     maybeEvent(sim, run);
     if (!sim.paused && sim.t >= sim.duration - 1e-4) sim.done = true;
     return sim;
+  }
+
+  function beatCard(sim, id, title, body, choices) {
+    sim.pending = { id: id, icon: 'line', title: title, body: body, who: null, expr: 'neutral', choices: choices };
+    sim.pendingUntil = sim.t + 8;
+  }
+
+  function tagIsSteep(books) {
+    if (!books || !HR.economy || !HR.data || !HR.data.get()) return false;
+    var items = HR.data.get().items.items;
+    for (var i = 0; i < items.length; i++) {
+      if (!HR.economy.itemUnlocked(books, items[i])) continue;
+      if (HR.economy.markup(items[i], HR.economy.priceOf(books, items[i])) > 1.12) return true;
+    }
+    return false;
+  }
+
+  function maybeLiveBeat(sim, run) {
+    if (!sim.floorOn || sim.coachHold || sim.paused || sim.pending || sim.done) return;
+    if (!sim._beats) sim._beats = {};
+    var dayN = run && run.day ? run.day : 0;
+    var kind = dayN % 3;
+    var id = kind === 0 ? 'sample' : kind === 1 ? 'bus' : 'double';
+    var when = kind === 0 ? 22 : kind === 1 ? 28 : 40;
+    if (!sim._beats[id] && sim.t >= when) {
+      sim._beats[id] = 1;
+      if (id === 'sample') {
+        beatCard(sim, 'sample', 'Sample tray', 'Cocoa samples are on the wrap table. Hand them out and the aisle lingers. Wave them off and the line keeps its pace.', [
+          choice('Hand out samples', 1, function () {
+            sim.slowUntil = Math.max(sim.slowUntil || 0, sim.t + 14);
+            note(sim, 'Samples out. Shoppers linger in the aisle.');
+          }),
+          choice('Wave them off', 0, function () { note(sim, 'No samples. The line keeps its pace.'); })
+        ]);
+      } else if (id === 'bus') {
+        beatCard(sim, 'bus', 'Tour bus', 'A bus is at the curb. Open the door and three families come in with full carts. Hold the door and the rush waits.', [
+          choice('Open the door', 0, function () {
+            spawnCustomer(sim, run, 'family');
+            spawnCustomer(sim, run, 'family');
+            spawnCustomer(sim, run, 'family');
+            note(sim, 'Three families just walked in.');
+          }),
+          choice('Hold the door', 0, function () {
+            sim.slowUntil = Math.max(sim.slowUntil || 0, sim.t + 10);
+            note(sim, 'The door stays shut. The rush waits.');
+          })
+        ]);
+      } else {
+        beatCard(sim, 'double', 'Double ring', 'Call it and the next sales ring twice for a few seconds. Let it pass and the till stays on one ring.', [
+          choice('Call the double', 1, function () {
+            sim.doubleUntil = sim.t + 12;
+            note(sim, 'Sales ring twice for a few seconds.');
+          }),
+          choice('Let it pass', 0, function () { note(sim, 'The till stays on a single ring.'); })
+        ]);
+      }
+      return;
+    }
+    if (sim._beats.priceTalk || sim.t < 48 || !sim.books || !tagIsSteep(sim.books)) return;
+    sim._beats.priceTalk = 1;
+    beatCard(sim, 'priceTalk', 'Price talk', 'A shopper is staring at a tag above the sticker. Drop cocoa a notch, or hold the tag and let them grumble.', [
+      choice('Drop cocoa a notch', 0, function () {
+        var item = HR.data.get().items.byId.cocoa;
+        if (!item) return;
+        var next = HR.economy.priceOf(sim.books, item) - 1;
+        var res = HR.economy.setPrice(sim.books, 'cocoa', next);
+        persistBooks(sim.books);
+        note(sim, res.msg || 'Cocoa moved.');
+      }),
+      choice('Hold the tag', 0, function () { note(sim, 'The tag stays. They can grumble.'); })
+    ]);
   }
 
   function maybePing(sim) {
@@ -2304,7 +2389,11 @@
       typeCard: sim.typeCard || '',
       _introDone: !!sim._introDone,
       priceWalks: sim.priceWalks || 0,
+      grumbles: sim.grumbles || 0,
       _mallShown: !!sim._mallShown,
+      _beats: sim._beats || {},
+      _grumbleTold: !!sim._grumbleTold,
+      doubleUntil: sim.doubleUntil || 0,
       rngState: sim.rng && sim.rng.state ? sim.rng.state() : 0,
       pendingMeta: pendingMeta
     }));
@@ -2333,8 +2422,13 @@
     sim._introDone = !!data._introDone;
     if (sim.typeCard) sim.typeUntil = sim.t + 5.5;
     sim.priceWalks = data.priceWalks || 0;
+    sim.grumbles = data.grumbles || 0;
     sim._mallShown = !!data._mallShown;
-    if (data.pendingMeta && data.pendingMeta.id && data.pendingMeta.id !== 'mall') {
+    sim._beats = data._beats || {};
+    sim._grumbleTold = !!data._grumbleTold;
+    sim.doubleUntil = data.doubleUntil || 0;
+    var beatPending = { mall: 1, sample: 1, bus: 1, double: 1, priceTalk: 1 };
+    if (data.pendingMeta && data.pendingMeta.id && !beatPending[data.pendingMeta.id]) {
       sim.pending = buildEvent(data.pendingMeta.id, sim, run, { who: data.pendingMeta.who });
       sim.pendingUntil = sim.t + 7;
     }
@@ -4224,6 +4318,8 @@
           els.stage.dataset.aisle = mood;
           els.stage.dataset.demand = String(Math.round(moodMul * 100) / 100);
           els.stage.dataset.priceWalks = String(sim.priceWalks || 0);
+          els.stage.dataset.grumbles = String(sim.grumbles || 0);
+          els.stage.dataset.beat = sim.pending ? (sim.pending.id || '') : '';
           var cocoaItem = HR.data && HR.data.get() && HR.data.get().items.byId.cocoa;
           if (cocoaItem) els.stage.dataset.cocoa = String(HR.economy.priceOf(sim.books, cocoaItem));
         }
@@ -4529,6 +4625,7 @@
         '<p class="hr-lead">Best combo ' + esc(comboBit) + ' · ' + (snap.walkouts || 0) + ' walkouts · ' + money(snap.sales) + ' / ' + money(snap.goal) + '</p>' +
         '<p class="hr-bank">' + (snap.tape ? money(snap.tape.profit) + ' profit' : (snap.earned > 0 ? '+' + money(snap.earned) + ' banked' : 'Register unchanged')) + ' · ' + money(snap.bank || 0) + ' in the register</p>' +
         '<p class="hr-fine">' + esc(bankCopy(snap)) + '</p>' +
+        (snap.grumbles ? '<p class="hr-fine">Shoppers grumbled at the tag ' + snap.grumbles + ' time' + (snap.grumbles === 1 ? '' : 's') + '.</p>' : '') +
         (snap.tape && snap.tape.leaseIn ? '<p class="hr-fine">Mall rent collected ' + money(snap.tape.leaseIn) + '.</p>' : '') +
         (snap.tape && snap.tape.reviews ? snap.tape.reviews.map(function (line) { return '<p class="hr-fine">“' + esc(line) + '”</p>'; }).join('') : '') +
         (snap.background && snap.background.tapes && snap.background.tapes.length ? snap.background.tapes.map(function (row) {
@@ -4577,6 +4674,14 @@
       });
     }
 
+    function officeCoachNeeded(which) {
+      try { return !localStorage.getItem(which === 'mall' ? 'hr_coach_mall' : 'hr_coach_price'); } catch (e) { return false; }
+    }
+
+    function dismissOfficeCoach(which) {
+      try { localStorage.setItem(which === 'mall' ? 'hr_coach_mall' : 'hr_coach_price', '1'); } catch (e) {}
+    }
+
     function renderShop() {
       show('shop');
       if (!books || !HR.ui) return renderShopLegacy();
@@ -4586,6 +4691,7 @@
       if (run) run.upgrades = camp.upgrades;
       HR.ui.mountOffice(els.shop, {
         books: books,
+        coachPrice: officeCoachNeeded('price'),
         upgrades: UPGRADES,
         upgradeLevel: function (id) { return (camp.upgrades && camp.upgrades[id]) || 0; },
         onToast: toast,
@@ -4617,6 +4723,7 @@
         },
         onLayout: function () { renderLayout(); },
         onMall: function () { renderMall(); },
+        onCoachPrice: function () { dismissOfficeCoach('price'); renderShop(); },
         onBack: function () {
           if (run) { run.phase = 'map'; saveRun(); }
           renderMap();
@@ -4634,7 +4741,9 @@
       }
       HR.ui.mountMall(els.shop, {
         books: books,
+        coachMall: officeCoachNeeded('mall'),
         slot: 'a',
+        onCoachMall: function () { dismissOfficeCoach('mall'); renderMall(); },
         onToast: toast,
         onDirty: function () {
           var campNow = campaignGet();
@@ -5113,10 +5222,18 @@
       g.fillRect(0, 0, WORLD_W, WORLD_H);
     }
 
+    function pixelBudget() {
+      if (sim && sim.customers && sim.customers.length > 70) return 0.5;
+      return 2;
+    }
+
     function resize() {
       var stage = els.stage;
       var rect = stage.getBoundingClientRect();
-      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      var cap = pixelBudget();
+      var dpr = Math.min(window.devicePixelRatio || 1, cap);
+      if (dpr < 0.5) dpr = 0.5;
+      els.canvas._dprCap = cap;
       var w = Math.max(280, Math.round(rect.width));
       var h = Math.max(200, Math.round(rect.height));
       els.canvas.width = Math.round(w * dpr);
@@ -5483,6 +5600,11 @@
     function viewSize() {
       var cssW = els.canvas._cssW || 800;
       var cssH = els.canvas._cssH || 450;
+      if (cam.fit && HR.render && HR.render.frameZoom) {
+        var fitted = HR.render.frameZoom(cssW, cssH, WORLD_W, WORLD_H, CONFIG.sprite);
+        cam.zoom = fitted;
+        return HR.render.view(cssW, cssH, WORLD_W, WORLD_H, fitted, CONFIG.sprite, true);
+      }
       if (HR.render) return HR.render.view(cssW, cssH, WORLD_W, WORLD_H, cam.zoom || 1, CONFIG.sprite);
       var target = cssW < 520 ? 118 : cssW < 900 ? 112 : 108;
       var viewW = CONFIG.sprite * cssW / target;
@@ -5502,6 +5624,9 @@
         els.stage.dataset.productPx = String(Math.round(view.productPx || 0));
         els.stage.dataset.zoom = String(view.zoom || cam.zoom || 1);
         els.stage.dataset.world = WORLD_W + 'x' + WORLD_H;
+        els.stage.dataset.framed = cam.fit ? '1' : '0';
+        var holdsDoor = cam.y <= 80 && cam.y + view.viewH >= SPOTS.door.y;
+        els.stage.dataset.span = holdsDoor ? '1' : '0';
       }
       if (!HR.render) return;
       var edge = HR.render.edges(cam.x, cam.y, view.viewW, view.viewH, WORLD_W, WORLD_H);
@@ -5523,7 +5648,7 @@
       if (focus) {
         cam.x = focus.x - view.viewW * 0.5;
         cam.y = focus.y - view.viewH * 0.62;
-      } else if (sim && cam.follow) {
+      } else if (sim && cam.follow && !cam.fit) {
         var fx = 0;
         var fy = 0;
         var nCust = 0;
@@ -5570,8 +5695,11 @@
       ctx.lineCap = 'round';
       frameView.w = view.viewW;
       frameView.h = view.viewH;
-      ctx.imageSmoothingEnabled = true;
-      if (sim) sim._shed = (sim._frameMs || 0) > 18 || sim.customers.length > 70;
+      if (sim) {
+        sim._shed = (sim._frameMs || 0) > 18 || sim.customers.length > 70;
+        sim._glow = 0;
+      }
+      ctx.imageSmoothingEnabled = !(sim && sim._shed);
       if ('imageSmoothingQuality' in ctx) {
         ctx.imageSmoothingQuality = (sim && (sim.customers.length > 40 || sim._shed)) ? 'low' : 'medium';
       }
@@ -5585,10 +5713,12 @@
         ctx.fillStyle = sim.stock < 0.34 ? 'rgba(62,32,24,0.16)' : 'rgba(62,32,24,0.07)';
         ctx.fillRect(0, 0, WORLD_W, WORLD_H);
       }
-      if (sim) drawStoreDress();
+      if (sim && !sim._shed) drawStoreDress();
       if (sim) {
+        if (isQA() && els.stage) els.stage.dataset.sils = '0';
         SHELVES.forEach(function (sh) {
-          if (sim._shed && !worldOn(sh.x, sh.y, 80)) return;
+          if (sim._shed) return;
+          if (!worldOn(sh.x, sh.y, 80)) return;
           var pct = Math.round(clamp(sim.stock, 0, 1) * 100);
           ctx.fillStyle = 'rgba(20,12,16,0.78)';
           ctx.fillRect(sh.x - 36, sh.y - 108, 72, 14);
@@ -5618,24 +5748,42 @@
         drawList.sort(function (a, b) { return a.y - b.y; });
         var heavy = sim.customers.length > 40;
         var drawn = 0;
+        var fullBudget = sim._shed ? 16 : 999;
+        var cx = cam.x + view.viewW * 0.5;
+        var cy = cam.y + view.viewH * 0.5;
+        var blobR = Math.min(view.viewW, view.viewH) * 0.28;
         for (var d = 0; d < drawList.length; d++) {
           var actor = drawList[d];
-          var visible = !heavy || actor.kind === 'jack' || !HR.render || HR.render.onScreen(actor, cam.x, cam.y, view.viewW, view.viewH, 140);
+          var visible = !heavy || actor.kind === 'jack' || !HR.render || HR.render.onScreen(actor, cam.x, cam.y, view.viewW, view.viewH, sim._shed ? 24 : 140);
           if (!visible) continue;
           drawn++;
-          if (actor.kind === 'jack') drawPalletJack(actor);
-          else drawActor(actor);
+          if (actor.kind === 'jack') {
+            if (!sim._shed) drawPalletJack(actor);
+            continue;
+          }
+          var dx = actor.x - cx;
+          var dy = actor.y - cy;
+          var far = sim._shed && (fullBudget <= 0 || dx * dx + dy * dy > blobR * blobR);
+          if (far) {
+            drawLodBlob(actor);
+            continue;
+          }
+          if (sim._shed) fullBudget--;
+          drawActor(actor);
         }
         if (isQA() && els.stage) {
           els.stage.dataset.drawCount = String(drawn);
           els.stage.dataset.simCount = String(sim.customers.length + sim.staff.length);
           els.stage.dataset.shed = sim._shed ? '1' : '0';
           els.stage.dataset.frameMs = String(Math.round(sim._frameMs || 0));
-          els.stage.dataset.smooth = (sim.customers.length > 40 || sim._shed) ? 'low' : 'medium';
+          els.stage.dataset.smooth = sim._shed ? 'off' : (sim.customers.length > 40 ? 'low' : 'medium');
+          els.stage.dataset.glow = String(sim._glow || 0);
         }
-        drawPings();
-        drawTrouble();
-        if (sim.coins) {
+        if (!sim._shed) {
+          drawPings();
+          drawTrouble();
+        }
+        if (sim.coins && !sim._shed) {
           for (var ci = 0; ci < sim.coins.length; ci++) {
             var coin = sim.coins[ci];
             ctx.globalAlpha = clamp(coin.life, 0, 1);
@@ -5649,7 +5797,7 @@
             ctx.fillText('$', coin.x, coin.y + 4);
           }
         }
-        if (sim.fx) {
+        if (sim.fx && !sim._shed) {
           for (var fi = 0; fi < sim.fx.length; fi++) {
             var burst = sim.fx[fi];
             var u = 1 - clamp(burst.life / 0.38, 0, 1);
@@ -5661,7 +5809,7 @@
             ctx.stroke();
           }
         }
-        if (sim.taps) {
+        if (sim.taps && !sim._shed) {
           for (var ti = 0; ti < sim.taps.length; ti++) {
             var tapRing = sim.taps[ti];
             var tu = 1 - clamp(tapRing.life / 0.32, 0, 1);
@@ -5673,7 +5821,7 @@
             ctx.stroke();
           }
         }
-        if (sim.confetti) {
+        if (sim.confetti && !sim._shed) {
           for (var ck = 0; ck < sim.confetti.length; ck++) {
             var bit = sim.confetti[ck];
             ctx.save();
@@ -5687,7 +5835,7 @@
         }
         ctx.globalAlpha = 1;
         ctx.textAlign = 'center';
-        for (var f = 0; f < sim.floats.length; f++) {
+        if (!sim._shed) for (var f = 0; f < sim.floats.length; f++) {
           var fl = sim.floats[f];
           ctx.globalAlpha = clamp(fl.life, 0, 1);
           ctx.fillStyle = fl.color;
@@ -5846,7 +5994,7 @@
       ctx.globalCompositeOperation = 'lighter';
       ctx.drawImage(image, x, y, w, h);
       ctx.restore();
-      if (isQA() && els.stage) els.stage.dataset.glow = String((+(els.stage.dataset.glow || 0)) + 1);
+      if (sim) sim._glow = (sim._glow || 0) + 1;
     }
 
     function drawStoreDress() {
@@ -6103,15 +6251,37 @@
 
     function drawSilhouette(a) {
       ctx.save();
-      ctx.fillStyle = 'rgba(42,28,24,0.72)';
+      ctx.fillStyle = 'rgba(36,24,48,0.94)';
+      ctx.strokeStyle = '#ffe08a';
+      ctx.lineWidth = 4;
+      ctx.setLineDash([8, 5]);
       ctx.beginPath();
-      ctx.ellipse(0, -36, 12, 14, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, -62, 20, 22, 0, 0, Math.PI * 2);
       ctx.fill();
+      ctx.stroke();
       ctx.beginPath();
-      ctx.ellipse(0, -4, 16, 22, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, -16, 28, 40, 0, 0, Math.PI * 2);
       ctx.fill();
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#ffe08a';
+      ctx.font = '800 28px Outfit, Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('?', 0, -6);
       ctx.restore();
       if (a) a._sil = 1;
+      if (isQA() && els.stage) els.stage.dataset.sils = String((+els.stage.dataset.sils || 0) + 1);
+    }
+
+    function drawLodBlob(a) {
+      ctx.save();
+      ctx.translate(a.x, a.y);
+      ctx.fillStyle = a.kind === 'staff' ? '#2f6b45' : '#6b3a28';
+      ctx.beginPath();
+      ctx.ellipse(0, -36, 10, 12, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, -10, 14, 18, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
     }
 
     function paintPerson(a) {
@@ -6121,7 +6291,11 @@
         drawFigure(a);
         return;
       }
-      if (pack.partial && !pack.types[spriteTypeFor(a)]) drawSilhouette(a);
+      if (!pack.types[spriteTypeFor(a)]) {
+        drawSilhouette(a);
+        return;
+      }
+      drawFigure(a);
     }
 
     function drawFigure(a) {
@@ -6447,7 +6621,16 @@
           decayFx(sim, dt);
         } else {
         var speed = isQA() ? qaSpeed : 1;
-        step(sim, run, dt * speed);
+        var stepDt = dt * speed;
+        if (sim._shed && sim.customers.length > 100) {
+          sim._stepAcc = (sim._stepAcc || 0) + stepDt;
+          if (sim._stepAcc < 0.05) stepDt = 0;
+          else {
+            stepDt = sim._stepAcc;
+            sim._stepAcc = 0;
+          }
+        }
+        if (stepDt > 0) step(sim, run, stepDt);
         }
         while (sim.notes.length) toast(sim.notes.shift());
         if (sim.pending && shownEvent !== sim.pending) {
@@ -6460,7 +6643,7 @@
           if (!sim.typeCard) els.event.hidden = true;
         }
         paintPromptTimer();
-        paintHud();
+        if (!sim._shed || ((sim._frames || 0) % 4) === 0) paintHud();
         liveAcc += dt;
         if (liveAcc > 5 && els.live) {
           liveAcc = 0;
@@ -6475,6 +6658,7 @@
         shownType = sim.typeCard;
         renderTypeCard();
       }
+      if (sim && els.canvas && pixelBudget() !== els.canvas._dprCap) resize();
       if (isQA() && sim && els.stage) {
         sim._frames = (sim._frames || 0) + 1;
         if (!sim._fpsT) sim._fpsT = ts;
@@ -6521,17 +6705,39 @@
 
     var pointers = {};
     function zoomBy(mult) {
+      cam.fit = false;
+      var frameBtn = document.getElementById('hr-frame');
+      if (frameBtn) frameBtn.setAttribute('aria-pressed', 'false');
       cam.zoom = HR.render ? HR.render.clampZoom(els.canvas._cssW || 800, (cam.zoom || 1) * mult) : (cam.zoom || 1);
+      draw();
+    }
+    function toggleFrame() {
+      cam.fit = !cam.fit;
+      var frameBtn = document.getElementById('hr-frame');
+      if (frameBtn) frameBtn.setAttribute('aria-pressed', cam.fit ? 'true' : 'false');
+      if (cam.fit) {
+        cam.follow = false;
+        var fitted = viewSize();
+        var lo = Math.max(0, SPOTS.door.y - fitted.viewH);
+        var hi = Math.min(80, Math.max(0, WORLD_H - fitted.viewH));
+        cam.y = lo <= hi ? lo : 0;
+        cam.x = clamp((WORLD_W - fitted.viewW) * 0.5, 0, Math.max(0, WORLD_W - fitted.viewW));
+      } else cam.follow = true;
       draw();
     }
     var zoomIn = document.getElementById('hr-zoom-in');
     var zoomOut = document.getElementById('hr-zoom-out');
+    var frameBtn = document.getElementById('hr-frame');
     var eastBtn = document.getElementById('hr-east');
     if (zoomIn) zoomIn.addEventListener('click', function (ev) { ev.stopPropagation(); zoomBy(1.12); });
     if (zoomOut) zoomOut.addEventListener('click', function (ev) { ev.stopPropagation(); zoomBy(0.9); });
+    if (frameBtn) frameBtn.addEventListener('click', function (ev) { ev.stopPropagation(); toggleFrame(); });
     if (eastBtn) eastBtn.addEventListener('click', function (ev) {
       ev.stopPropagation();
       var view = viewSize();
+      cam.fit = false;
+      var frameNow = document.getElementById('hr-frame');
+      if (frameNow) frameNow.setAttribute('aria-pressed', 'false');
       cam.x = Math.max(0, WORLD_W - view.viewW);
       cam.follow = false;
       setTimeout(function () { if (!coach) cam.follow = true; }, 2600);
@@ -6884,7 +7090,10 @@
           cust.dead = false;
           cust.browseT = 999;
         }
+        sim._shed = true;
+        sim._frameMs = 32;
         if (sim.spatial) sim.spatial.rebuild(sim.customers.concat(sim.staff));
+        resize();
         if (els.stage) els.stage.dataset.simCount = String(sim.customers.length + sim.staff.length);
         return { customers: sim.customers.length, staff: sim.staff.length };
       },
@@ -6899,10 +7108,20 @@
         if (!isQA() || !storePlate) return '';
         return storePlate.toDataURL('image/png');
       },
+      roomPlate: function () {
+        if (!isQA() || !assets || !HR.room) return '';
+        var plate = document.createElement('canvas');
+        plate.width = 1600;
+        plate.height = 900;
+        var g = plate.getContext('2d');
+        HR.room.paint(g, assets.objects, 1600, 900, { entranceX: 960, arch: false });
+        return plate.toDataURL('image/png');
+      },
       silhouette: function (type) {
-        if (!isQA() || !assets || !assets.spritePack) return;
-        delete assets.spritePack.types[type || 'regular'];
-        assets.spritePack.partial = true;
+        if (!isQA() || !spriteSession) return false;
+        var name = type || 'regular';
+        spriteSession.hold(name);
+        return true;
       },
       ack: function () {
         if (!isQA() || !run) return;

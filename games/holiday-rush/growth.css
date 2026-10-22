@@ -30,6 +30,36 @@
   padding: 0 12px;
 }
 
+#hr-frame {
+  font-size: 13px;
+}
+
+#hr-frame[aria-pressed="true"] {
+  background: #e0a322;
+  color: #24180f;
+}
+
+.hr-coachbar {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #2b1d2e;
+  color: #f6f0e4;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.hr-coachbar button {
+  min-height: 44px;
+  margin-top: 8px;
+  border: 0;
+  border-radius: 999px;
+  background: #f6f0e4;
+  color: #24180f;
+  font: 800 15px/1 Outfit, Inter, sans-serif;
+  padding: 0 16px;
+}
+
 .hr-pan--left { left: 8px; top: 50%; }
 .hr-pan--right { right: 8px; top: 50%; }
 .hr-pan--up { left: 50%; top: 48px; transform: translateX(-50%); }

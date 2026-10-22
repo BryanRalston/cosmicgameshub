@@ -199,7 +199,8 @@
       portraits: {},
       objects: {},
       bytes: 0,
-      perTypeBudget: PER_TYPE
+      perTypeBudget: PER_TYPE,
+      held: {}
     };
     var manifest = null;
     var loading = {};
@@ -242,7 +243,20 @@
       });
     }
 
+    function hold(type) {
+      pack.held[type] = true;
+      delete pack.types[type];
+      delete loading[type];
+      pack.partial = true;
+      pack.ready = true;
+    }
+
+    function release(type) {
+      delete pack.held[type];
+    }
+
     function loadType(type) {
+      if (pack.held[type]) return Promise.resolve(false);
       if (pack.types[type] || loading[type] || failed[type]) return loading[type] || Promise.resolve(!!pack.types[type]);
       var entry = (manifest && manifest.types[type]) || [];
       var files = entry.files || entry;
@@ -333,7 +347,9 @@
       preload: preload,
       loadManifest: loadManifest,
       fileCount: fileCount,
-      ready: function (type) { return !!(pack.types[type]); }
+      ready: function (type) { return !!(pack.types[type]); },
+      hold: hold,
+      release: release
     };
   }
 
@@ -350,6 +366,10 @@
     var early = typesForDay(0);
     var later = typesForDay(12);
     if (early.length >= later.length) reasons.push('preload set');
+    var session = createSession('/games/holiday-rush/');
+    session.hold('regular');
+    var heldPack = session.pack();
+    if (!heldPack.held.regular || heldPack.types.regular) reasons.push('hold');
     return { ok: reasons.length === 0, reason: reasons.join('; ') };
   }
 

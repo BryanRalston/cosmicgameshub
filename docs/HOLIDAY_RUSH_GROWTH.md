@@ -87,6 +87,12 @@ Loan: District bridge, $4,000 now, $560 off each of the next 8 closes. Offered o
 
 Knock-through grows east only. The stage is short; the store does not grow taller.
 
+## Shift beats
+
+The played floor, and only the played floor, adds one extra beat so the shift is not the same chain every day. Day mod 3 picks it: a sample tray at the wrap table, a tour bus of three families, or a double ring that doubles the next sales for a few seconds. If a tag is above 1.12× the sticker, a price-talk card follows and the last choice holds the tag. Headless `simulate()` never sets `floorOn`, so these cards do not move the shift-0 pins. The first office open explains pricing. The first mall open explains rent and the 85% grumble. Neither is a fourth step on the day-0 floor coach.
+
+A crowd past 70 shoppers sheds work: half-resolution backing store, edge shoppers as blobs, shelf chrome and glows skipped, the spatial hash rebuilt every third tick, and the sim stepped about twenty times a second. That path is the stress crowd, not a normal cap of 14 to 32.
+
 ## Layout
 
 Cells are 80 world units. The starter fixtures sit on the coordinates the shift already uses, and shift 1 does not apply the layout, so the first floor does not drift.
@@ -101,13 +107,15 @@ When the layout is edited or the world is wider than 1600, shoppers path on the 
 
 Characters are targeted at 118px on a phone under 520px wide, 112px on a tablet, 108px on a desk. Zoom bottoms at 1.0 on a phone and 0.88 on a desk, and tops at 1.7. A bigger world does not shrink the sprites. A 390px-wide stage shows a slice of the floor. Drag, edge chevrons, and the East bay button move you. Follow resumes about 2.6 seconds after a drag.
 
+Whole floor is a separate button. It frames the back wall and the door in one view by dropping below the phone zoom floor, and only while that button is pressed. Zoom in, zoom out, or East bay leaves that frame and the chunky camera comes back. The default zoom floor stays 1.0 on a phone.
+
 Products draw in a 46×54 world slot, about 70px on that phone. Illustrated art, when it arrives, drops into the same rect from `products/<sku>.webp` or `objects/<sku>.png`.
 
 ## Sprites
 
 There is no total art cap. Each character type, body frames plus portraits, stays within 110KB (`perTypeBudget` 112640). PNG and WebP with alpha both count. `manifest.json` keeps the flat `files` list and adds a `types` map. The grouper unions both, so a new file is picked up even before someone edits the map.
 
-The boot loads only the types on today's shift. Day 0 is regular, kid, family, and the four crew bodies. The ugly-sweater shopper preloads with day 1, rusher from day 5, haggle from day 7, lift from day 12. The end-of-shift screen preloads the next day's new types. A type that is not in the pack yet draws as a silhouette. The opening line is grandpa, mom, and kid so the first shift does not ask for sprites it has not loaded. Headless simulate still uses the old customer mix, because that mix is part of the pinned balance.
+The boot loads only the types on today's shift. Day 0 is regular, kid, family, and the four crew bodies. The ugly-sweater shopper preloads with day 1, rusher from day 5, haggle from day 7, lift from day 12. The end-of-shift screen preloads the next day's new types. A type that is not in the pack yet draws as a tall dashed silhouette with a question mark. Holding a type drops its sheet and blocks the loader from filling it back in, so a missing body stays a silhouette until it is released. The opening line is grandpa, mom, and kid so the first shift does not ask for sprites it has not loaded. Headless simulate still uses the old customer mix, because that mix is part of the pinned balance.
 
 The v10 pack replaces the v3 bodies. Each type stays under 110 KB and keeps its own manifest. The floor is no longer a baked photo or a code-drawn room. `room.js` paints side walls, then back-wall segments from x=222, then the 222×125 corners. `wall_back_arch` stays 125 px tall. Each side-wall end piece redraws its bottom 14 px band 6 px lower onto the front ledge. About one in six floor cells swaps to a same-parity scuff tile. Shelves, registers, the truck, the jack, and the tree are object sprites. Tree twinkle, the scanner sweep, the gift sparkle, and lit string bulbs composite with `lighter`. The static room is one canvas blit, so the glow pass stays a handful of images while 150 shoppers are on the floor.
 
