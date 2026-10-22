@@ -7820,6 +7820,28 @@
         finishDay();
       },
       turbo: function (n) { if (isQA()) qaSpeed = n || 1; },
+      combo: function (n) {
+        if (!isQA() || !sim) return;
+        sim.combo = n == null ? 4 : n;
+        paintHud();
+      },
+      forceTier: function (n) {
+        if (!isQA() || !sim) return null;
+        sim._tier = n;
+        sim._qHot = 0;
+        sim._qCool = 0;
+        sim._frameMs = 0;
+        sim._frameEma = 0;
+        sim._fullSprites = n <= 1 ? 0 : 999;
+        draw();
+        return {
+          tier: els.stage ? els.stage.dataset.tier : '',
+          queueN: els.stage ? els.stage.dataset.queueN : '',
+          queueSprites: els.stage ? els.stage.dataset.queueSprites : '',
+          queueBlobs: els.stage ? els.stage.dataset.queueBlobs : '',
+          queueSils: els.stage ? els.stage.dataset.queueSils : ''
+        };
+      },
       grant: function (n) {
         if (!isQA() || !books) return;
         books.cash += n || 0;
