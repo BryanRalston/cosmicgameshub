@@ -23,5 +23,14 @@
     {"id": "d", "kind": "lease", "name": "Unit D"},
     {"id": "court", "kind": "common", "name": "Food court"}
   ],
-  "commons": ["decor", "security", "parking", "foodcourt", "events"]
+  "commons": ["decor", "security", "parking", "foodcourt", "events"],
+  "calendar": [
+    {"id": "lighting", "name": "Tree lighting", "door": 1.08, "note": "The court is bright. The flagship door is busier."},
+    {"id": "field", "name": "School field trip", "door": 1.05, "note": "Classes are in the court. Families follow them in."},
+    {"id": "cocoa", "name": "Cocoa tasting", "door": 1.06, "note": "The tasting pulls people toward the flagship."},
+    {"id": "market", "name": "Maker market", "door": 1.04, "note": "Stalls in the court. Foot traffic is up."},
+    {"id": "choir", "name": "Choir in the court", "door": 1.03, "note": "The choir holds people in the plaza."},
+    {"id": "saturday", "name": "Saturday parade", "door": 1.16, "note": "The parade passes the flagship door."},
+    {"id": "sunday", "name": "Quiet Sunday", "door": 0.9, "note": "The plaza is calm. The door is thinner."}
+  ]
 }

@@ -44,6 +44,7 @@
     var cogs = Math.round(sales * cogsRate);
     var wage = manager ? econ.wageOf(loc.managerId) * 8 : 0;
     var rent = (root.HRParts.data.get().economy.rent.kiosk) || 520;
+    if (loc.kind === 'flagship' && econ.martRent) rent = econ.martRent(books);
     var profit = sales - cogs - wage - rent;
     if (units >= 20) {
       var burn = Math.min(units, 70);
@@ -257,6 +258,73 @@
     return { ok: false, msg: 'That plaza action is not on the map.' };
   }
 
+  function negotiate(books, slotId, tenantId, rent) {
+    var data = root.HRParts.data.get();
+    var tenant = data.tenants.byId[tenantId];
+    if (!tenant) return { status: 'walk', reason: 'That tenant is not on the list.' };
+    var ask = Math.round(tenant.maxRent * 0.9);
+    var floor = Math.round(tenant.maxRent * 0.62);
+    rent = Math.round(rent || 0);
+    if (rent > tenant.maxRent) {
+      return { status: 'refuse', ask: ask, floor: floor, reason: tenant.name + ' will not pay ' + rent + '. Their ceiling is ' + tenant.maxRent + '.' };
+    }
+    if (rent >= ask) return { status: 'accept', rent: rent, ask: ask, floor: floor, tenant: tenant.name };
+    if (rent >= floor) {
+      var counter = Math.round((rent + ask) / 2);
+      if (counter > tenant.maxRent) counter = tenant.maxRent;
+      return { status: 'counter', rent: counter, ask: ask, floor: floor, tenant: tenant.name, reason: tenant.name + ' counters at ' + counter + '.' };
+    }
+    return { status: 'walk', ask: ask, floor: floor, tenant: tenant.name, reason: tenant.name + ' walks. ' + rent + ' is under their floor.' };
+  }
+
+  function calendarEvent(dayIndex) {
+    var list = root.HRParts.data.get().mall.calendar || [];
+    if (!list.length) return null;
+    var n = list.length;
+    var i = ((dayIndex % n) + n) % n;
+    return list[i];
+  }
+
+  function ymdHash(ymd) {
+    var s = String(ymd || '');
+    var n = 0;
+    for (var i = 0; i < s.length; i++) n += s.charCodeAt(i) * (i + 1);
+    return n % 997;
+  }
+
+  function dailyList() {
+    var goals = root.HRParts.data.get().goals;
+    return (goals && goals.daily) || [];
+  }
+
+  function dailyGoal(ymd) {
+    var list = dailyList();
+    if (!list.length) return null;
+    return list[ymdHash(ymd) % list.length];
+  }
+
+  function dailyMet(goal, report) {
+    if (!goal || !report) return false;
+    if (goal.walkoutsMax != null) return (report.walkouts || 0) <= goal.walkoutsMax;
+    if (goal.goalMin != null) return (report.goalPct || 0) >= goal.goalMin;
+    if (goal.comboMin != null) return (report.bestCombo || 0) >= goal.comboMin;
+    return false;
+  }
+
+  function claimDaily(books, ymd, report) {
+    if (!books) return { claimed: false, bonus: 0 };
+    if (books.dailyClaimed === ymd) return { claimed: false, bonus: 0, reason: 'already' };
+    var goal = dailyGoal(ymd);
+    if (!goal) return { claimed: false, bonus: 0 };
+    if (!dailyMet(goal, report)) return { claimed: false, bonus: 0, goal: goal, reason: 'miss' };
+    var bonus = goal.bonus || 0;
+    books.cash = Math.round((books.cash || 0) + bonus);
+    books.dailyClaimed = ymd;
+    var econ = economy();
+    if (econ && econ.milestone) econ.milestone(books, 'daily');
+    return { claimed: true, bonus: bonus, goal: goal, cash: books.cash };
+  }
+
   function nextComplaint(books) {
     if (!books || !books.mall || !books.mall.leases) return null;
     var data = root.HRParts.data.get();
@@ -347,6 +415,41 @@
     if (!visit.ok || player.mall.retune.kind !== 'visit') reasons.push('visit');
     if (!(player.mall.retune.door > 1 && player.mall.retune.door < 1.2)) reasons.push('visit door ' + (player.mall.retune && player.mall.retune.door));
     if (player.cash !== 4100) reasons.push('retune cash');
+    if (tape.rent !== 520) reasons.push('kiosk rent ' + tape.rent);
+    var flagTape = tickAggregate(books, {
+      id: 'back',
+      name: 'Back mart',
+      open: true,
+      kind: 'flagship',
+      stock: { cocoa: 90, paper: 70 },
+      managerId: 'staff_mgr'
+    });
+    if (flagTape.rent !== 220) reasons.push('flag rent ' + flagTape.rent);
+    var walked = negotiate(econ.blankBooks(), 'a', 'repair', 500);
+    if (walked.status !== 'walk') reasons.push('walk ' + walked.status);
+    var countered = negotiate(econ.blankBooks(), 'a', 'repair', 1000);
+    if (countered.status !== 'counter' || countered.rent !== 1130) reasons.push('counter ' + countered.rent);
+    var taken = negotiate(econ.blankBooks(), 'a', 'repair', 1300);
+    if (taken.status !== 'accept' || taken.rent !== 1300) reasons.push('accept');
+    var refused = negotiate(econ.blankBooks(), 'a', 'repair', 1500);
+    if (refused.status !== 'refuse') reasons.push('neg refuse');
+    var ev0 = calendarEvent(0);
+    if (!ev0 || ev0.id !== 'lighting') reasons.push('cal');
+    var goal = dailyGoal('2026-10-22');
+    var goalAgain = dailyGoal('2026-10-22');
+    if (!goal || goal.id !== goalAgain.id) reasons.push('daily');
+    var payer = econ.blankBooks();
+    payer.cash = 100;
+    var met = { walkouts: 0, goalPct: 1, bestCombo: 5 };
+    var first = claimDaily(payer, '2026-10-22', met);
+    if (!first.claimed || first.bonus !== goal.bonus || payer.cash !== 100 + goal.bonus) reasons.push('claim ' + payer.cash);
+    var second = claimDaily(payer, '2026-10-22', met);
+    if (second.claimed || payer.cash !== 100 + goal.bonus) reasons.push('twice');
+    var missBooks = econ.blankBooks();
+    missBooks.cash = 50;
+    var miss = claimDaily(missBooks, '2026-10-23', { walkouts: 99, goalPct: 0, bestCombo: 0 });
+    if (miss.claimed || missBooks.cash !== 50) reasons.push('miss');
+    if (player.cash !== 4100) reasons.push('neg cash');
     return { ok: reasons.length === 0, reason: reasons.join('; '), sample: tape.profit };
   }
 
@@ -367,6 +470,11 @@
     commonName: commonName,
     tenantLayout: tenantLayout,
     retune: retune,
+    negotiate: negotiate,
+    calendarEvent: calendarEvent,
+    dailyGoal: dailyGoal,
+    dailyMet: dailyMet,
+    claimDaily: claimDaily,
     selfTest: selfTest
   };
   root.HRParts = root.HRParts || {};

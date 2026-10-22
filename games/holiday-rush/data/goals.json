@@ -1,0 +1,21 @@
+{
+  "achievements": [
+    {"id": "profit", "name": "In the black", "blurb": "Close a shift that still has profit after rent."},
+    {"id": "price", "name": "Off the sticker", "blurb": "Move a price the aisle can see."},
+    {"id": "stock", "name": "A full back room", "blurb": "Buy a wholesale case."},
+    {"id": "hire", "name": "New name on the board", "blurb": "Hire someone."},
+    {"id": "trained", "name": "They came back sharper", "blurb": "Finish a training shift."},
+    {"id": "knock", "name": "Through the wall", "blurb": "Knock the east bay open."},
+    {"id": "kiosk", "name": "Second set of keys", "blurb": "Open the plaza kiosk."},
+    {"id": "two-floors", "name": "Both floors", "blurb": "Run a full shift on the kiosk yourself."},
+    {"id": "transfer", "name": "Case on the truck", "blurb": "Move a case from one back room to the other."},
+    {"id": "negotiated", "name": "Across the table", "blurb": "Accept a tenant's counteroffer."},
+    {"id": "daily", "name": "Morning bell", "blurb": "Clear today's rush and take the bonus."},
+    {"id": "streak-3", "name": "Three mornings", "blurb": "Open the store three days in a row."}
+  ],
+  "daily": [
+    {"id": "walkouts", "name": "Short lines", "blurb": "Close with 3 walkouts or fewer.", "bonus": 150, "walkoutsMax": 3},
+    {"id": "star", "name": "A star on the door", "blurb": "Clear 75% of the goal.", "bonus": 150, "goalMin": 0.75},
+    {"id": "combo", "name": "A hot till", "blurb": "Ring a combo of 3 or better.", "bonus": 180, "comboMin": 3}
+  ]
+}

@@ -17,7 +17,8 @@
       economy: read('economy.json'),
       fixtures: read('fixtures.json'),
       tenants: read('tenants.json'),
-      mall: read('mall.json')
+      mall: read('mall.json'),
+      goals: read('goals.json')
     };
     index(defs);
     return defs;
@@ -44,7 +45,7 @@
       cache = syncRead();
       return Promise.resolve(cache);
     }
-    var names = ['items', 'staff', 'customers', 'layouts', 'economy', 'fixtures', 'tenants', 'mall'];
+    var names = ['items', 'staff', 'customers', 'layouts', 'economy', 'fixtures', 'tenants', 'mall', 'goals'];
     return Promise.all(names.map(function (name) {
       return fetch(base + name + '.json').then(function (res) {
         if (!res.ok) throw new Error(name);

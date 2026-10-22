@@ -1323,6 +1323,17 @@
     }
   }
 
+  function applyTenantTune(sim, c) {
+    if (!sim || !sim.tenant || !c) return;
+    var mechanic = sim.tenant.mechanic;
+    if (mechanic === 'demo' && c.arch === 'family') c.saleMul *= 1.35;
+    else if (mechanic === 'bench') {
+      c.patience *= 1.35;
+      c.maxPatience = c.patience;
+      c.saleMul *= 1.45;
+    } else if (mechanic === 'cups') c.saleMul *= 0.65;
+  }
+
   function spawnCustomer(sim, run, forcedArch) {
     var cap = HR.sim ? HR.sim.custCap(sim, CONFIG.custCap) : CONFIG.custCap;
     if (sim.customers.length >= cap) {
@@ -1376,6 +1387,7 @@
     c.basketMul = 1;
     c.saleMul = 1;
     tuneArch(c, arch);
+    applyTenantTune(sim, c);
     if (forcedArch) {
       c.x = SPOTS.floor.x + 36;
       c.y = SPOTS.floor.y + 16;
@@ -2040,6 +2052,24 @@
     persistBooks(sim.books);
   }
 
+  function applyCalendar(sim, dayIndex) {
+    if (!sim || !sim.books || !sim.books.mall || !HR.world || !HR.world.calendarEvent) return;
+    var ev = HR.world.calendarEvent(dayIndex || 0);
+    if (!ev) return;
+    sim.calendarDoor = ev.door || 1;
+    sim.calendarName = ev.name || '';
+    sim.calendarId = ev.id || '';
+    sim.calendarMul = sim.tenant ? 1 : (ev.door || 1);
+  }
+
+  function mechanicLabel(id) {
+    if (id === 'demo') return 'Demo table';
+    if (id === 'bench') return 'Repair bench';
+    if (id === 'cups') return 'Cup line';
+    if (id === 'window') return 'Window';
+    return id || '';
+  }
+
   function maybeMallCard(sim) {
     if (!sim.live || !sim.books || sim._mallShown || sim.coachHold || sim.pending || sim.paused) return;
     if (sim.t < 2.2) return;
@@ -2159,7 +2189,10 @@
     if (sim.t < sim.slowUntil) rate *= 0.62;
     if (sim.paradeUntil && sim.t < sim.paradeUntil) rate *= 1.4;
     if (sim.plazaMul && sim.plazaMul !== 1) rate *= sim.plazaMul;
+    if (!sim.tenant && sim.calendarMul && sim.calendarMul !== 1) rate *= sim.calendarMul;
     if (sim.tenant && sim.tenant.spawnMul) rate *= sim.tenant.spawnMul;
+    if (sim.tenant && sim.tenant.mechanic === 'cups') rate *= 1.25;
+    if (sim.tenant && sim.tenant.mechanic === 'window') rate *= (sim.calendarDoor > 1 ? 1.25 : 0.78);
     rate *= 0.74 + Math.min(stationPower(sim, run, 'floor'), 1.6) * 0.2;
     if (sim.books && HR.sim) rate *= HR.sim.demandMul(sim.books);
     if (sim.books && sim.books.mall && sim.books.mall.door) rate *= sim.books.mall.door;
@@ -4205,7 +4238,8 @@
         tenantId: row.tenantId,
         name: tenant.name,
         spawnMul: layout.spawnMul || 1,
-        bias: layout.bias || ''
+        bias: layout.bias || '',
+        mechanic: layout.mechanic || ''
       };
       sim.goal = Math.max(900, Math.round((sim.goal || 7500) * (layout.goalMul || 0.45)));
       saveRun();
@@ -4482,6 +4516,8 @@
       els.modal.hidden = true;
       els.event.hidden = true;
       if (!opts.resume) applyMallRetune(sim);
+      applyCalendar(sim, run ? run.day : 0);
+      var storeName = books && books.locations[books.active] ? books.locations[books.active].name : '';
       var ops = run.day >= 1;
       var hud =
         '<div class="hr-clock" id="hr-clock" style="--p:0"><span id="hr-clock-label">8:00 AM</span></div>' +
@@ -4490,7 +4526,9 @@
         '<div class="hr-combo" id="hr-combo" hidden>x2</div>' +
         '<div class="hr-rush" id="hr-rush" hidden>RUSH</div>' +
         (ops ? '<div class="hr-stat"><span>Payroll</span><strong id="hr-pay-text"></strong></div><div class="hr-stat"><span>Morale</span><strong id="hr-mor-text"></strong></div>' : '') +
-        (sim.tenant ? '<div class="hr-stat"><span>Floor</span><strong id="hr-tenant-name">' + esc(sim.tenant.name) + '</strong></div>' : '') +
+        (storeName ? '<div class="hr-stat"><span>Store</span><strong id="hr-store-name">' + esc(storeName) + '</strong></div>' : '') +
+        (sim.tenant ? '<div class="hr-stat"><span>Floor</span><strong id="hr-tenant-name">' + esc(sim.tenant.name) + (sim.tenant.mechanic ? ' · ' + esc(mechanicLabel(sim.tenant.mechanic)) : '') + '</strong></div>' : '') +
+        (sim.calendarName && !sim.tenant ? '<div class="hr-stat"><span>Today</span><strong id="hr-cal-name">' + esc(sim.calendarName) + '</strong></div>' : '') +
         (sim.mallRetune ? '<div class="hr-stat"><span>Plaza</span><strong id="hr-plaza-text">' + esc(sim.mallRetune) + '</strong></div>' : '') +
         (books ? '<div class="hr-stat hr-aisle"><span>Aisle</span><strong id="hr-aisle-text">Steady</strong></div>' : '') +
         '<button type="button" id="hr-crew-btn" class="hr-mute">Crew</button>' +
@@ -4581,6 +4619,11 @@
         els.stage.dataset.sales = String(Math.round(sim.sales));
           if (sim._snapSales != null) els.stage.dataset.snapSales = String(sim._snapSales);
           if (sim.tenant) els.stage.dataset.tenant = sim.tenant.name;
+          if (sim.books && sim.books.locations && sim.books.locations[sim.books.active]) {
+            els.stage.dataset.store = sim.books.locations[sim.books.active].name;
+          }
+          els.stage.dataset.mechanic = (sim.tenant && sim.tenant.mechanic) || '';
+          els.stage.dataset.calendar = sim.calendarName || '';
         els.stage.dataset.clock = label.textContent;
         if (isQA()) {
           var arches = [];
@@ -4715,6 +4758,15 @@
         }
         books.posted[postKey] = tape.profit;
         books.closed[postKey] = 1;
+        if (HR.world && HR.world.claimDaily && run.ymd) {
+          var daily = HR.world.claimDaily(books, run.ymd, {
+            walkouts: snap.walkouts || 0,
+            goalPct: snap.goalPct || 0,
+            bestCombo: snap.bestCombo || 0
+          });
+          snap.daily = { claimed: !!daily.claimed, bonus: daily.bonus || 0, goal: daily.goal || null };
+        }
+        if (books.active === 'kiosk' && HR.economy.milestone) HR.economy.milestone(books, 'two-floors');
         tape.cash = books.cash;
         snap.tape = tape;
         snap.earned = tape.profit;
@@ -4735,9 +4787,12 @@
       camp.seen = true;
       camp.current = run.day;
       if (!camp.playedDay || camp.playedDay !== run.ymd) {
-        bumpStreak(run.ymd);
+        var streakNow = bumpStreak(run.ymd);
         camp.playedDay = run.ymd;
         paintMeta();
+        if (books && streakNow && streakNow.streak >= 3 && HR.economy && HR.economy.milestone) {
+          HR.economy.milestone(books, 'streak-3');
+        }
       }
       campaignPut(camp);
       snap.shiftStars = Math.max(prevStars, stars);
@@ -4935,6 +4990,7 @@
         '<p class="hr-lead">Best combo ' + esc(comboBit) + ' · ' + (snap.walkouts || 0) + ' walkouts · ' + money(snap.sales) + ' / ' + money(snap.goal) + '</p>' +
         '<p class="hr-bank">' + (snap.tape ? money(snap.tape.profit) + ' profit' : (snap.earned > 0 ? '+' + money(snap.earned) + ' banked' : 'Register unchanged')) + ' · ' + money(snap.bank || 0) + ' in the register</p>' +
         '<p class="hr-fine">' + esc(bankCopy(snap)) + '</p>' +
+        (snap.daily && snap.daily.claimed ? '<p class="hr-fine" id="hr-daily-bonus">Morning bonus ' + money(snap.daily.bonus) + ' for ' + esc(snap.daily.goal && snap.daily.goal.name) + '.</p>' : '') +
         (snap.grumbles ? '<p class="hr-fine">Shoppers grumbled at the tag ' + snap.grumbles + ' time' + (snap.grumbles === 1 ? '' : 's') + '.</p>' : '') +
         (snap.tape && snap.tape.leaseIn ? '<p class="hr-fine">Mall rent collected ' + money(snap.tape.leaseIn) + '.</p>' : '') +
         (snap.tape && snap.tape.reviews ? snap.tape.reviews.map(function (line) { return '<p class="hr-fine">“' + esc(line) + '”</p>'; }).join('') : '') +
@@ -5059,6 +5115,7 @@
         books: books,
         coachMall: officeCoachNeeded('mall'),
         slot: 'a',
+        day: run ? run.day : 0,
         onCoachMall: function () { dismissOfficeCoach('mall'); },
         onPlayTenant: function (slotId) { beginTenantShift(slotId); },
         onToast: toast,
@@ -5140,7 +5197,16 @@
       show('map');
       var camp = campaignGet();
       var purse = books ? books.cash : camp.bank;
-      var html = '<p class="hr-kicker">Holiday Rush Mart</p><h2>Shift map</h2><p class="hr-lead">Earn one star to unlock the next shift. Locked days stay blank. Replay any open shift. A retry replaces that shift’s profit in the register.</p><p class="hr-bank">Register ' + money(purse) + '</p><div class="hr-map">';
+      var dailyLine = '';
+      if (books && HR.world && HR.world.dailyGoal) {
+        var todayGoal = HR.world.dailyGoal(ymd);
+        var streak = metaGet();
+        if (todayGoal) {
+          var already = books.dailyClaimed === ymd;
+          dailyLine = '<p class="hr-fine" id="hr-daily">Today: ' + esc(todayGoal.name) + '. ' + esc(todayGoal.blurb) + ' Bonus ' + money(todayGoal.bonus) + (already ? '. Already in the register.' : '.') + ' Streak ' + streak.streak + '.</p>';
+        }
+      }
+      var html = '<p class="hr-kicker">Holiday Rush Mart</p><h2>Shift map</h2><p class="hr-lead">Earn one star to unlock the next shift. Locked days stay blank. Replay any open shift. A retry replaces that shift’s profit in the register.</p><p class="hr-bank">Register ' + money(purse) + '</p>' + dailyLine + '<div class="hr-map">';
       var week = '';
       for (var i = 0; i < SHIFT_COUNT; i++) {
         var def = shiftDef(i);
@@ -5540,6 +5606,7 @@
     }
 
     function pixelBudget() {
+      if (sim && sim._dprCap) return sim._dprCap;
       if (sim && sim.customers && sim.customers.length > 70) return 0.5;
       return 2;
     }
@@ -6009,7 +6076,30 @@
       ctx.lineCap = 'round';
       frameView.w = view.viewW;
       frameView.h = view.viewH;
-      if (sim) {
+      if (sim && HR.render && HR.render.adapt) {
+        var shown = sim.customers.length + sim.staff.length + (sim.you ? 1 : 0);
+        var adapted = HR.render.adapt({
+          tier: sim._tier == null ? 3 : sim._tier,
+          hot: sim._qHot || 0,
+          cool: sim._qCool || 0,
+          cssW: view.cssW,
+          cssH: view.cssH,
+          spritePx: view.spritePx || 108,
+          shown: shown,
+          frameMs: sim._frameMs || 0
+        });
+        sim._tier = adapted.tier;
+        sim._qHot = adapted.hot;
+        sim._qCool = adapted.cool;
+        sim._shed = adapted.shed;
+        sim._dprCap = adapted.dpr;
+        sim._fullSprites = adapted.fullSprites;
+        sim._glowCap = adapted.glows;
+        sim._fill = adapted.fill;
+        sim._fillBudget = adapted.budget;
+        sim._qReason = adapted.reason;
+        sim._glow = 0;
+      } else if (sim) {
         sim._shed = (sim._frameMs || 0) > 18 || sim.customers.length > 70;
         sim._glow = 0;
       }
@@ -6062,7 +6152,7 @@
         drawList.sort(function (a, b) { return a.y - b.y; });
         var heavy = sim.customers.length > 40;
         var drawn = 0;
-        var fullBudget = sim._shed ? 16 : 999;
+        var fullBudget = sim._fullSprites != null ? sim._fullSprites : (sim._shed ? 16 : 999);
         var cx = cam.x + view.viewW * 0.5;
         var cy = cam.y + view.viewH * 0.5;
         var blobR = Math.min(view.viewW, view.viewH) * 0.28;
@@ -6077,12 +6167,12 @@
           }
           var dx = actor.x - cx;
           var dy = actor.y - cy;
-          var far = sim._shed && (fullBudget <= 0 || dx * dx + dy * dy > blobR * blobR);
+          var far = fullBudget <= 0 || ((sim._tier != null && sim._tier <= 1) && (dx * dx + dy * dy > blobR * blobR));
           if (far) {
             drawLodBlob(actor);
             continue;
           }
-          if (sim._shed) fullBudget--;
+          fullBudget--;
           drawActor(actor);
         }
         if (isQA() && els.stage) {
@@ -6092,6 +6182,11 @@
           els.stage.dataset.frameMs = String(Math.round(sim._frameMs || 0));
           els.stage.dataset.smooth = sim._shed ? 'off' : (sim.customers.length > 40 ? 'low' : 'medium');
           els.stage.dataset.glow = String(sim._glow || 0);
+          els.stage.dataset.tier = sim._tier == null ? '' : String(sim._tier);
+          els.stage.dataset.fill = String(sim._fill || 0);
+          els.stage.dataset.budget = String(sim._fillBudget || 0);
+          els.stage.dataset.qdpr = String(sim._dprCap == null ? '' : sim._dprCap);
+          els.stage.dataset.qreason = sim._qReason || '';
         }
         if (!sim._shed) {
           drawPings();
@@ -6338,6 +6433,7 @@
 
     function drawLighter(image, x, y, w, h) {
       if (!image) return;
+      if (sim && (sim._glowCap === 0 || (sim._glowCap != null && (sim._glow || 0) >= sim._glowCap))) return;
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
       ctx.drawImage(image, x, y, w, h);
@@ -7471,8 +7567,11 @@
           cust.dead = false;
           cust.browseT = 999;
         }
-        sim._shed = true;
-        sim._frameMs = 32;
+        sim._tier = 3;
+        sim._qHot = 0;
+        sim._qCool = 0;
+        sim._shed = false;
+        sim._frameMs = 0;
         if (sim.spatial) sim.spatial.rebuild(sim.customers.concat(sim.staff));
         resize();
         if (els.stage) els.stage.dataset.simCount = String(sim.customers.length + sim.staff.length);

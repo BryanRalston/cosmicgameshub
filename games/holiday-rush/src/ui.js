@@ -132,7 +132,16 @@
       var opts = items.map(function (item) {
         return '<option value="' + esc(item.id) + '">' + esc(item.name) + '</option>';
       }).join('');
-      send = '<div class="hr-send"><label>Stock ' + esc(other.name) + '<select id="hr-send-sku">' + opts + '</select></label><button type="button" class="btn" data-send="' + esc(other.id) + '">Send one case</button></div>';
+      send = '<div class="hr-send"><label>Stock ' + esc(other.name) + '<select id="hr-send-sku">' + opts + '</select></label><button type="button" class="btn" data-send="' + esc(other.id) + '">Send one case</button><button type="button" class="btn" data-move="' + esc(other.id) + '">Move a case over</button></div>';
+    }
+    var achieve = '';
+    var goalBook = root.HRParts.data.get().goals;
+    if (goalBook && goalBook.achievements) {
+      var done = books.milestones || [];
+      achieve = '<section class="hr-office__block"><h3>Achievements</h3><ul class="hr-achieves">' + goalBook.achievements.map(function (row) {
+        var on = done.indexOf(row.id) >= 0;
+        return '<li class="hr-achieve' + (on ? ' is-done' : '') + '"><b>' + esc(row.name) + '</b><span>' + esc(row.blurb) + '</span></li>';
+      }).join('') + '</ul></section>';
     }
     var review = books.reviews && books.reviews[0];
     var reviewHtml = review
@@ -166,6 +175,7 @@
       (econ.has(books, 'knock') ? '' : '<p class="hr-fine">The plaza units open after you knock through the east wall.</p>') +
       '</section>' +
       locBlock +
+      achieve +
       '<section class="hr-office__block"><h3>Floor tools</h3><p class="hr-fine">These hit the shift you are about to run: faster stocking, a hotter till, longer patience.</p>' + upgrades + '</section>' +
       '<div class="hr-cta"><button type="button" class="btn btn--primary" data-back="1">Shift map</button></div>';
     el.onclick = function (ev) {
@@ -188,6 +198,9 @@
       } else if (btn.hasAttribute('data-send')) {
         var sku = document.getElementById('hr-send-sku');
         msg = econ.buyCase(books, sku ? sku.value : '', btn.getAttribute('data-send')).msg;
+      } else if (btn.hasAttribute('data-move')) {
+        var moveSku = document.getElementById('hr-send-sku');
+        msg = econ.transferStock(books, moveSku ? moveSku.value : '', books.active, btn.getAttribute('data-move')).msg;
       } else if (btn.hasAttribute('data-hire')) {
         msg = econ.hire(books, btn.getAttribute('data-hire')).msg;
       } else if (btn.hasAttribute('data-fire')) {
@@ -400,13 +413,28 @@
       }).join('');
       var want = world.commonName(chosen.wants);
       var ready = (mall.commons[chosen.wants] || 0) >= 1;
+      var counterNote = '';
+      if (ctx.counter && ctx.counter.slot === slot.id && ctx.counter.tenant === pick) {
+        counterNote = '<p class="hr-fine" id="hr-counter">' + esc(chosen.name) + ' counters at ' + money(ctx.counter.rent) + '.</p>' +
+          '<button type="button" class="btn btn--primary" data-take="1">Accept ' + money(ctx.counter.rent) + '</button>';
+      }
       panel = '<div class="hr-tenants">' + chips + '</div>' +
         '<p class="hr-lead">' + esc(chosen.blurb) + '</p>' +
         '<p class="hr-fine">They want ' + esc(want) + (ready ? ', and it is open.' : '. It is dark, so they will complain on the next shift and pay 85%.') + '</p>' +
         '<div class="hr-step"><button type="button" data-rent="-50" aria-label="Lower rent">−</button><strong>' + money(rent) + '</strong><button type="button" data-rent="50" aria-label="Raise rent">+</button></div>' +
-        '<button type="button" class="btn btn--primary" data-sign="' + esc(slot.id) + '">Hand them the keys</button>';
+        '<button type="button" class="btn btn--primary" data-sign="' + esc(slot.id) + '">Hand them the keys</button>' +
+        counterNote;
     }
     var door = mall.door && Object.keys(mall.leases).length ? Math.round(mall.door * 100) : 100;
+    var week = data.mall.calendar || [];
+    var cal = '';
+    if (week.length && world.calendarEvent) {
+      var today = world.calendarEvent(ctx.day || 0);
+      cal = '<section class="hr-office__block"><h3>This week</h3><ul class="hr-cals">' + week.map(function (row) {
+        var on = today && row.id === today.id ? ' is-on' : '';
+        return '<li class="hr-cal' + on + '"><b>' + esc(row.name) + '</b><span>' + Math.round((row.door || 1) * 100) + '% door · ' + esc(row.note) + '</span></li>';
+      }).join('') + '</ul></section>';
+    }
     var retuneLine = mall.retune
       ? '<p class="hr-fine" id="hr-retune">Next flagship: ' + esc(mall.retune.kind) + '. ' + esc(mall.retune.note) + '</p>'
       : '<p class="hr-fine" id="hr-retune">Walk the plaza, send a parade, or ride a blackout. The next flagship shift takes that tune.</p>';
@@ -421,6 +449,7 @@
       '<div class="hr-rowfront">' + fronts + '</div>' +
       '<section class="hr-office__block"><h3>' + esc(slot.name) + '</h3>' + panel + '</section>' +
       '<section class="hr-office__block"><h3>Commons</h3><div class="hr-commons">' + commons + '</div></section>' +
+      cal +
       '<section class="hr-office__block"><h3>Plaza</h3>' + retuneLine +
       '<div class="hr-plaza">' +
       '<button type="button" class="btn" data-visit="visit">Walk the plaza</button>' +
@@ -453,13 +482,39 @@
       }
       if (btn.hasAttribute('data-sign')) {
         var tid = ctx.tenant || data.tenants.tenants[0].id;
-        var res = world.signLease(books, btn.getAttribute('data-sign'), tid, ctx.rents[tid]);
-        if (res.accepted) {
+        var offer = world.negotiate(books, btn.getAttribute('data-sign'), tid, ctx.rents[tid]);
+        if (offer.status === 'accept') {
+          var res = world.signLease(books, btn.getAttribute('data-sign'), tid, offer.rent);
+          ctx.counter = null;
+          if (res.accepted) {
+            ctx.coachMall = false;
+            if (ctx.onCoachMall) ctx.onCoachMall();
+            ctx.onDirty();
+          }
+          ctx.onToast(res.accepted ? (res.tenant + ' has the keys. ' + (res.complaints[0] || 'They are settled.')) : res.reason);
+        } else if (offer.status === 'counter') {
+          ctx.counter = { slot: btn.getAttribute('data-sign'), tenant: tid, rent: offer.rent };
+          ctx.onToast(offer.reason);
+        } else {
+          ctx.counter = null;
+          ctx.onToast(offer.reason || 'They walk.');
+        }
+        mountMall(el, ctx);
+        return;
+      }
+      if (btn.hasAttribute('data-take')) {
+        var deal = ctx.counter;
+        if (!deal) return;
+        var taken = world.signLease(books, deal.slot, deal.tenant, deal.rent);
+        if (taken.accepted && economy().milestone) economy().milestone(books, 'negotiated');
+        var dealRent = deal.rent;
+        ctx.counter = null;
+        if (taken.accepted) {
           ctx.coachMall = false;
           if (ctx.onCoachMall) ctx.onCoachMall();
+          ctx.onDirty();
         }
-        ctx.onToast(res.accepted ? (res.tenant + ' has the keys. ' + (res.complaints[0] || 'They are settled.')) : res.reason);
-        ctx.onDirty();
+        ctx.onToast(taken.accepted ? (taken.tenant + ' took ' + money(dealRent) + '.') : taken.reason);
         mountMall(el, ctx);
         return;
       }

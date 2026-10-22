@@ -58,13 +58,14 @@
     "owned": [{"x": 0, "y": 0, "w": 1280, "h": 900}],
     "fixtures": [
       {"id": "k_door", "type": "door", "x": 640, "y": 855},
-      {"id": "k_reg", "type": "register", "station": "reg1", "x": 480, "y": 730},
-      {"id": "k_reg2", "type": "register", "station": "reg2", "x": 760, "y": 730},
-      {"id": "k_floor", "type": "floor", "x": 560, "y": 460},
-      {"id": "k_toys", "type": "gondola", "dept": "toys", "x": 320, "y": 420, "label": "TOYS"},
-      {"id": "k_season", "type": "gondola", "dept": "seasonal", "x": 760, "y": 420, "label": "WRAP"},
-      {"id": "k_freight", "type": "freight", "x": 1040, "y": 220},
-      {"id": "k_truck", "type": "truck", "x": 1120, "y": 140}
+      {"id": "k_reg", "type": "register", "station": "reg1", "x": 420, "y": 700},
+      {"id": "k_reg2", "type": "register", "station": "reg2", "x": 680, "y": 700},
+      {"id": "k_floor", "type": "floor", "x": 900, "y": 520},
+      {"id": "k_window", "type": "gondola", "dept": "toys", "x": 260, "y": 340, "label": "WINDOW"},
+      {"id": "k_wrap", "type": "gondola", "dept": "seasonal", "x": 980, "y": 340, "label": "WRAP"},
+      {"id": "k_counter", "type": "cafe", "dept": "cafe", "x": 640, "y": 460, "label": "COCOA"},
+      {"id": "k_freight", "type": "freight", "x": 1080, "y": 200},
+      {"id": "k_truck", "type": "truck", "x": 1160, "y": 130}
     ]
   },
   "tenants": {
@@ -77,6 +78,7 @@
       "goalMul": 0.5,
       "spawnMul": 1.2,
       "bias": "family",
+      "mechanic": "demo",
       "owned": [{"x": 0, "y": 0, "w": 1280, "h": 900}],
       "fixtures": [
         {"id": "t_door", "type": "door", "x": 640, "y": 855},
@@ -98,6 +100,7 @@
       "goalMul": 0.32,
       "spawnMul": 0.72,
       "bias": "",
+      "mechanic": "bench",
       "owned": [{"x": 0, "y": 0, "w": 1280, "h": 900}],
       "fixtures": [
         {"id": "r_door", "type": "door", "x": 640, "y": 855},
@@ -118,6 +121,7 @@
       "goalMul": 0.48,
       "spawnMul": 1.05,
       "bias": "",
+      "mechanic": "cups",
       "owned": [{"x": 0, "y": 0, "w": 1280, "h": 900}],
       "fixtures": [
         {"id": "c_door", "type": "door", "x": 640, "y": 855},
@@ -139,6 +143,7 @@
       "goalMul": 0.4,
       "spawnMul": 1,
       "bias": "",
+      "mechanic": "window",
       "owned": [{"x": 0, "y": 0, "w": 1280, "h": 900}],
       "fixtures": [
         {"id": "s_door", "type": "door", "x": 640, "y": 855},
