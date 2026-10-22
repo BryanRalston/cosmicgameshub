@@ -1,0 +1,4 @@
+{
+  "note": "Grok Imagine drop-in. Leave files empty until the PNGs are in this folder. Each body frame is <type>/<anim>_<dir>_<index>.png (anim idle|walk|work, dir down|side|up). Portraits are portraits/<type>_<expr>.png. PNG with alpha, 32–512 px, recommended 128×160 frames and 160×160 portraits. A pack replaces the photo portraits only when every type has idle_down_0, walk_down_0, and portraits/<type>_neutral.png, and the sum is within 750KB.",
+  "files": []
+}

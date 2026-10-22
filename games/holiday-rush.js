@@ -1,6 +1,9 @@
 /* Holiday Rush: Store Manager
-   Wide shot is drawn in canvas (2× store plate + vector people) so it stays
-   sharp on high-DPI screens. Portraits and icons still come from the atlases.
+   The store is a 2× canvas plate. People are transparent PNG sprites listed in
+   games/holiday-rush/sprites/manifest.json (idle, walk, and work frames, plus
+   illustrated portraits). That list is empty until the Grok Imagine pack is
+   dropped in. Until then the floor keeps the temporary vector figures and the
+   photo portraits. Do not draw new character art in code.
    The photo floor and 96px character sheet are not downloaded.
    localStorage only. No accounts. */
 (function (root) {
@@ -117,6 +120,108 @@
     cust_teen: { scale: 1.02, skin: '#c68642', hair: '#1a120c', style: 'hood', top: '#2a2a32', bottom: '#3a3a44', shoes: '#f6f0e4' },
     cust_karen: { scale: 1, skin: '#f3d0b0', hair: '#e6c878', style: 'big', top: '#7a3e86', bottom: '#3a2444', shoes: '#2a1c18', wide: 1 }
   };
+  // Drop-in body art. One transparent PNG per frame, named
+  // <type>/<anim>_<dir>_<index>.png under games/holiday-rush/sprites/.
+  // Portraits are portraits/<type-or-id>_<expr>.png. Recommended frame
+  // 128×160 and portrait 160×160 (2× the on-screen size). Color type must
+  // be RGBA or gray+alpha. The whole pack stays within budget, which is the
+  // photo-portrait download it replaces. Manifest files:[] means not shipped.
+  var SPRITE_PACK = {
+    budget: 750 * 1024,
+    displayH: 80,
+    foot: 6,
+    types: ['rusher', 'haggle', 'family', 'lift', 'regular', 'kid', 'crew_manager', 'crew_register', 'crew_freight', 'crew_floor'],
+    crewExpr: ['neutral', 'happy', 'stressed', 'angry', 'sick', 'proud'],
+    custExpr: ['neutral', 'impatient', 'angry', 'delighted']
+  };
+  var SPRITE_TYPE_BY_ID = {
+    staff_mgr: 'crew_manager',
+    staff_reg1: 'crew_register',
+    staff_reg2: 'crew_register',
+    staff_frt1: 'crew_freight',
+    staff_frt2: 'crew_freight',
+    staff_flr1: 'crew_floor',
+    staff_flr2: 'crew_floor',
+    staff_flr3: 'crew_floor',
+    cust_mom: 'family',
+    cust_grandpa: 'regular',
+    cust_kid: 'kid',
+    cust_biz: 'rusher',
+    cust_teen: 'lift',
+    cust_karen: 'haggle'
+  };
+
+  function spriteTypeFor(actor) {
+    if (!actor) return 'regular';
+    if (actor.charId === 'cust_kid') return 'kid';
+    if (actor.kind === 'you') return 'crew_manager';
+    if (actor.kind === 'staff' || (actor.id && BY_ID[actor.id])) {
+      var role = actor.role || (BY_ID[actor.id] && BY_ID[actor.id].role) || 'floor';
+      if (role === 'manager') return 'crew_manager';
+      if (role === 'register') return 'crew_register';
+      if (role === 'freight') return 'crew_freight';
+      return 'crew_floor';
+    }
+    if (actor.arch === 'rusher') return 'rusher';
+    if (actor.arch === 'haggle' || actor.haggling) return 'haggle';
+    if (actor.arch === 'family') return 'family';
+    if (actor.arch === 'lift') return 'lift';
+    return 'regular';
+  }
+
+  function classifySpriteFile(rel) {
+    var name = String(rel || '').replace(/\\/g, '/').replace(/^\//, '');
+    var frame = name.match(/^([a-z0-9_]+)\/(idle|walk|work)_(down|side|up)_(\d+)\.png$/);
+    if (frame) {
+      if (SPRITE_PACK.types.indexOf(frame[1]) < 0) return null;
+      return { kind: 'frame', type: frame[1], anim: frame[2], dir: frame[3], index: +frame[4] };
+    }
+    var port = name.match(/^portraits\/([a-z0-9_]+)_([a-z]+)\.png$/);
+    if (!port) return null;
+    var key = port[1];
+    var expr = port[2];
+    var crew = key.indexOf('crew_') === 0 || key.indexOf('staff_') === 0;
+    var allowed = crew ? SPRITE_PACK.crewExpr : SPRITE_PACK.custExpr;
+    if (allowed.indexOf(expr) < 0) return null;
+    if (SPRITE_PACK.types.indexOf(key) < 0 && !SPRITE_TYPE_BY_ID[key]) return null;
+    return { kind: 'portrait', key: key, expr: expr };
+  }
+
+  function pngInfo(bytes) {
+    if (!bytes || bytes.length < 26) return null;
+    if (bytes[0] !== 0x89 || bytes[1] !== 0x50 || bytes[2] !== 0x4e || bytes[3] !== 0x47) return null;
+    var w = (bytes[16] << 24) | (bytes[17] << 16) | (bytes[18] << 8) | bytes[19];
+    var h = (bytes[20] << 24) | (bytes[21] << 16) | (bytes[22] << 8) | bytes[23];
+    return { w: w >>> 0, h: h >>> 0, color: bytes[25] };
+  }
+
+  function spriteFrameList(sheet, anim, dir) {
+    if (!sheet) return null;
+    var tries = [
+      anim + '|' + dir,
+      anim + '|down',
+      (anim === 'work' ? 'idle' : anim) + '|' + dir,
+      'idle|' + dir,
+      'idle|down',
+      'walk|down'
+    ];
+    for (var i = 0; i < tries.length; i++) {
+      var list = sheet[tries[i]];
+      if (list && list.length) return list;
+    }
+    return null;
+  }
+
+  function spritePackComplete(types, portraits) {
+    for (var i = 0; i < SPRITE_PACK.types.length; i++) {
+      var t = SPRITE_PACK.types[i];
+      var sheet = types[t];
+      if (!sheet || !sheet['idle|down'] || !sheet['idle|down'].length) return false;
+      if (!sheet['walk|down'] || !sheet['walk|down'].length) return false;
+      if (!portraits[t] || !portraits[t].neutral) return false;
+    }
+    return true;
+  }
   var ARCH_ORDER = [
     { id: 'rusher', day: 5, who: 'cust_biz' },
     { id: 'haggle', day: 7, who: 'cust_karen' },
@@ -2269,6 +2374,7 @@
   }
 
   var onAsset = function () {};
+  var loadGoal = 5;
 
   function loadJSON(url) {
     return fetch(url).then(function (r) {
@@ -2284,6 +2390,173 @@
       img.onerror = function () { reject(new Error(url)); };
       img.src = url;
     });
+  }
+
+  function revokeSpriteRows(rows) {
+    for (var i = 0; i < rows.length; i++) {
+      if (rows[i] && rows[i].url && typeof URL !== 'undefined') URL.revokeObjectURL(rows[i].url);
+    }
+  }
+
+  function loadSpritePng(url, spec) {
+    return fetch(url).then(function (res) {
+      if (!res.ok) {
+        var missing = new Error(url);
+        missing.reject = 'missing';
+        throw missing;
+      }
+      return res.arrayBuffer();
+    }).then(function (buf) {
+      var bytes = new Uint8Array(buf);
+      var png = pngInfo(bytes);
+      if (!png) return { reject: 'not-png', file: url, bytes: buf.byteLength, spec: spec };
+      if (png.color !== 4 && png.color !== 6) return { reject: 'no-alpha', file: url, bytes: buf.byteLength, spec: spec };
+      if (png.w < 32 || png.h < 32 || png.w > 512 || png.h > 512) return { reject: 'dimensions', file: url, bytes: buf.byteLength, spec: spec };
+      onAsset();
+      var blob = new Blob([buf], { type: 'image/png' });
+      var src = URL.createObjectURL(blob);
+      return new Promise(function (resolve) {
+        var img = new Image();
+        img.onload = function () {
+          resolve({ img: img, url: src, bytes: buf.byteLength, w: png.w, h: png.h, spec: spec });
+        };
+        img.onerror = function () {
+          URL.revokeObjectURL(src);
+          resolve({ reject: 'decode', file: url, bytes: buf.byteLength, spec: spec });
+        };
+        img.src = src;
+      });
+    });
+  }
+
+  function loadSpriteFiles(listed) {
+    var jobs = [];
+    for (var i = 0; i < listed.length; i++) {
+      var spec = classifySpriteFile(listed[i]);
+      if (!spec) return Promise.resolve({ ready: false, reason: 'bad-name', file: listed[i], bytes: 0 });
+      jobs.push(loadSpritePng(ART + 'sprites/' + listed[i], spec));
+    }
+    return Promise.all(jobs).then(function (rows) {
+      var bytes = 0;
+      var types = {};
+      var portraits = {};
+      for (var r = 0; r < rows.length; r++) {
+        var row = rows[r];
+        if (!row || row.reject) {
+          revokeSpriteRows(rows);
+          return { ready: false, reason: (row && row.reject) || 'missing', file: row && row.file, bytes: bytes };
+        }
+        bytes += row.bytes;
+        if (row.spec.kind === 'frame') {
+          if (!types[row.spec.type]) types[row.spec.type] = {};
+          var key = row.spec.anim + '|' + row.spec.dir;
+          if (!types[row.spec.type][key]) types[row.spec.type][key] = [];
+          types[row.spec.type][key].push(row);
+        } else {
+          if (!portraits[row.spec.key]) portraits[row.spec.key] = {};
+          portraits[row.spec.key][row.spec.expr] = row;
+        }
+      }
+      Object.keys(types).forEach(function (type) {
+        Object.keys(types[type]).forEach(function (key) {
+          types[type][key].sort(function (a, b) { return a.spec.index - b.spec.index; });
+        });
+      });
+      if (bytes > SPRITE_PACK.budget) {
+        revokeSpriteRows(rows);
+        return { ready: false, reason: 'over-budget', bytes: bytes, budget: SPRITE_PACK.budget };
+      }
+      if (!spritePackComplete(types, portraits)) {
+        revokeSpriteRows(rows);
+        return { ready: false, reason: 'incomplete', bytes: bytes, budget: SPRITE_PACK.budget };
+      }
+      return { ready: true, reason: 'ready', bytes: bytes, budget: SPRITE_PACK.budget, types: types, portraits: portraits };
+    }).catch(function (err) {
+      return { ready: false, reason: (err && err.reject) || 'load-failed', file: err && err.message, bytes: 0 };
+    });
+  }
+
+  function loadPhotoArt(iconImg, iconJson, status) {
+    return Promise.all([
+      loadImage(ART + 'portraits_staff.png8.png'),
+      loadImage(ART + 'portraits_customers.png8.png'),
+      iconImg,
+      loadJSON(ART + 'portraits_atlas.json'),
+      iconJson
+    ]).then(function (all) {
+      return {
+        img: { staff: all[0], cust: all[1], icons: all[2] },
+        portraits: all[3],
+        icons: all[4],
+        spritePack: null,
+        spriteStatus: status || { ready: false, reason: 'empty', bytes: 0 }
+      };
+    });
+  }
+
+  function loadGameArt() {
+    var iconImg = loadImage(ART + 'icons_ui.png8.png');
+    var iconJson = loadJSON(ART + 'icons_ui_atlas.json');
+    return fetch(ART + 'sprites/manifest.json').then(function (res) {
+      if (!res.ok) return { files: [] };
+      return res.json();
+    }).catch(function () {
+      return { files: [] };
+    }).then(function (man) {
+      var listed = man && man.files ? man.files : [];
+      if (!listed.length) return loadPhotoArt(iconImg, iconJson, { ready: false, reason: 'empty', bytes: 0, budget: SPRITE_PACK.budget });
+      loadGoal = 2 + listed.length;
+      return loadSpriteFiles(listed).then(function (pack) {
+        if (!pack.ready) return loadPhotoArt(iconImg, iconJson, pack);
+        return Promise.all([iconImg, iconJson]).then(function (icons) {
+          return {
+            img: { staff: null, cust: null, icons: icons[0] },
+            portraits: {},
+            icons: icons[1],
+            spritePack: pack,
+            spriteStatus: pack
+          };
+        });
+      });
+    });
+  }
+
+  function verifySpritePack() {
+    if (SPRITE_PACK.types.length !== 10 || SPRITE_PACK.budget !== 750 * 1024 || SPRITE_PACK.displayH !== 80) {
+      throw new Error('sprite spec');
+    }
+    var sample = classifySpriteFile('rusher/walk_side_3.png');
+    if (!sample || sample.kind !== 'frame' || sample.index !== 3 || sample.dir !== 'side') throw new Error('frame name');
+    var port = classifySpriteFile('portraits/crew_register_sick.png');
+    if (!port || port.kind !== 'portrait' || port.expr !== 'sick') throw new Error('portrait name');
+    if (classifySpriteFile('rusher/jump_down_0.png')) throw new Error('bad anim accepted');
+    if (classifySpriteFile('../secrets.png')) throw new Error('path accepted');
+    var rusher = spriteTypeFor({ kind: 'cust', charId: 'cust_biz', arch: 'rusher' });
+    var regular = spriteTypeFor({ kind: 'cust', charId: 'cust_grandpa' });
+    var crew = spriteTypeFor({ kind: 'staff', id: 'staff_frt1', role: 'freight' });
+    var kid = spriteTypeFor({ charId: 'cust_kid', arch: 'family' });
+    if (rusher !== 'rusher' || regular !== 'regular' || crew !== 'crew_freight' || kid !== 'kid') throw new Error('sprite type');
+    var files = [];
+    var bytes = 0;
+    if (typeof require !== 'undefined') {
+      var fs = require('fs');
+      var path = require('path');
+      var manPath = path.join(__dirname, 'holiday-rush', 'sprites', 'manifest.json');
+      var man = JSON.parse(fs.readFileSync(manPath, 'utf8'));
+      files = man.files || [];
+      for (var i = 0; i < files.length; i++) {
+        if (!classifySpriteFile(files[i])) throw new Error('manifest name ' + files[i]);
+        var abs = path.join(__dirname, 'holiday-rush', 'sprites', files[i]);
+        if (!fs.existsSync(abs)) throw new Error('missing ' + files[i]);
+        var buf = fs.readFileSync(abs);
+        var png = pngInfo(buf);
+        if (!png || (png.color !== 4 && png.color !== 6)) throw new Error('alpha ' + files[i]);
+        if (png.w < 32 || png.h < 32 || png.w > 512 || png.h > 512) throw new Error('dim ' + files[i]);
+        bytes += buf.length;
+      }
+      if (bytes > SPRITE_PACK.budget) throw new Error('sprite budget ' + bytes);
+    }
+    return { ok: true, budget: SPRITE_PACK.budget, listed: files.length, present: files.length, bytes: bytes };
   }
 
   function campaignDefault() {
@@ -3147,9 +3420,19 @@
 
     function portraitStyle(id, expr, size) {
       if (!assets) return '';
+      var pack = assets.spritePack;
+      if (pack && pack.ready) {
+        var bucket = pack.portraits[id] || pack.portraits[SPRITE_TYPE_BY_ID[id] || ''];
+        var drawn = bucket && (bucket[expr] || bucket.neutral || bucket.impatient);
+        if (drawn) {
+          return 'background-image:url(' + drawn.url + ');background-size:' + size + 'px ' + size + 'px;background-position:0 0;width:' + size + 'px;height:' + size + 'px;';
+        }
+      }
+      if (!assets.portraits) return '';
       var rec = assets.portraits[id + '_' + expr] || assets.portraits[id + '_neutral'] || assets.portraits[id + '_impatient'];
-      if (!rec) return '';
+      if (!rec || !assets.img) return '';
       var img = rec[0] === 'staff' ? assets.img.staff : assets.img.cust;
+      if (!img) return '';
       var scale = size / rec[3];
       return 'background-image:url(' + img.src + ');background-size:' + (img.naturalWidth * scale) + 'px ' + (img.naturalHeight * scale) + 'px;background-position:' + (-rec[1] * scale) + 'px ' + (-rec[2] * scale) + 'px;width:' + size + 'px;height:' + size + 'px;';
     }
@@ -5021,6 +5304,29 @@
       ctx.restore();
     }
 
+    function drawSpritePerson(a) {
+      var pack = assets && assets.spritePack;
+      if (!pack || !pack.ready) return false;
+      var type = spriteTypeFor(a);
+      var sheet = pack.types[type];
+      var anim = a.anim === 'walk' || a.anim === 'work' ? a.anim : 'idle';
+      var dir = (a.face < 0 || a.dir === 'side') ? 'side' : (a.dir === 'up' ? 'up' : 'down');
+      var list = spriteFrameList(sheet, anim, dir);
+      if (!list) return false;
+      var frame = list[(a.frame || 0) % list.length];
+      if (!frame || !frame.img) return false;
+      var look = LOOKS[a.charId] || LOOKS.cust_mom;
+      var dh = SPRITE_PACK.displayH * (look.scale || 1);
+      var dw = dh * (frame.w / frame.h);
+      ctx.drawImage(frame.img, -dw / 2, -dh + SPRITE_PACK.foot, dw, dh);
+      return true;
+    }
+
+    function paintPerson(a) {
+      if (drawSpritePerson(a)) return;
+      drawFigure(a);
+    }
+
     function drawFigure(a) {
       var look = LOOKS[a.charId] || LOOKS.cust_mom;
       var sc = look.scale || 1;
@@ -5260,7 +5566,7 @@
         ctx.fill();
         ctx.globalAlpha = 1;
       }
-      drawFigure(a);
+      paintPerson(a);
       if (a.arch === 'rusher' && a.anim === 'walk') {
         ctx.strokeStyle = 'rgba(214,69,69,0.75)';
         ctx.lineWidth = 3;
@@ -5280,7 +5586,7 @@
         ctx.save();
         ctx.translate(kx, ky);
         if (a.face < 0) ctx.scale(-1, 1);
-        drawFigure({
+        paintPerson({
           charId: 'cust_kid',
           dir: a.dir,
           face: 1,
@@ -5634,24 +5940,15 @@
       loadCount++;
       var bar = document.getElementById('hr-loadbar');
       var lab = document.getElementById('hr-load-label');
-      var pct = Math.min(100, Math.round(100 * loadCount / 5));
+      var pct = Math.min(100, Math.round(100 * loadCount / loadGoal));
       if (bar) bar.style.width = pct + '%';
       if (bar && bar.parentNode) bar.parentNode.setAttribute('aria-valuenow', String(pct));
       if (lab) lab.textContent = pct < 100 ? 'Setting the floor' : 'Doors open';
     };
 
-    Promise.all([
-      loadImage(ART + 'portraits_staff.png8.png'),
-      loadImage(ART + 'portraits_customers.png8.png'),
-      loadImage(ART + 'icons_ui.png8.png'),
-      loadJSON(ART + 'portraits_atlas.json'),
-      loadJSON(ART + 'icons_ui_atlas.json')
-    ]).then(function (all) {
-      assets = {
-        img: { staff: all[0], cust: all[1], icons: all[2] },
-        portraits: all[3],
-        icons: all[4]
-      };
+    loadGameArt().then(function (loaded) {
+      assets = loaded;
+      if (els.stage && loaded.spriteStatus) els.stage.dataset.sprites = loaded.spriteStatus.ready ? 'ready' : loaded.spriteStatus.reason;
       bakeStorePlate();
       resize();
       var saved = readJSON('hr_run_v1');
@@ -5704,6 +6001,8 @@
     greedy: greedy,
     simulate: simulate,
     verifyAtlases: verifyAtlases,
+    verifySpritePack: verifySpritePack,
+    SPRITE_PACK: SPRITE_PACK,
     renderMixdown: renderMixdown,
     startDay: startDay,
     step: step,
@@ -5722,6 +6021,7 @@
 
   if (typeof process !== 'undefined' && process.argv && process.argv.indexOf('--self-test') >= 0) {
     var atlas = verifyAtlases();
+    var sprites = verifySpritePack();
     var active0 = simulate('2026-10-19', 'active', 0)[0];
     var greedy0 = simulate('2026-10-19', 'greedy', 0)[0];
     var empty0 = simulate('2026-10-19', 'empty', 0)[0];
@@ -5735,6 +6035,7 @@
       console.log(label, 'shift', row.shift, 'sales', row.sales, 'goal', row.goal, 'pct', Math.round(row.goalPct * 100), 'stars', row.shiftStars, 'out', row.walkouts, 'in', row.checkouts);
     }
     console.log('atlas', JSON.stringify(atlas));
+    console.log('sprites', JSON.stringify(sprites));
     line('active0', active0);
     line('greedy0', greedy0);
     line('empty0', empty0);
