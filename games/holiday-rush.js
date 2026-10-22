@@ -1337,6 +1337,7 @@
       if (!dropped) return;
     }
     var arch = forcedArch || rollArch(sim, run);
+    if (!forcedArch && sim.tenant && sim.tenant.bias && sim.rng() < 0.4) arch = sim.tenant.bias;
     var spec = arch ? archDef(arch) : null;
     var dayN = run && run.day ? run.day : 0;
     var bag = ['cust_mom', 'cust_teen', 'cust_biz', 'cust_mom', 'cust_kid', 'cust_grandpa', 'cust_teen', 'cust_karen', 'cust_biz'];
@@ -1538,6 +1539,7 @@
     var speed = CONFIG.walkSpeed * (sim.t < sim.spillUntil ? 0.6 : 1);
     var cocoa = hasPerk(run, 'cocoa') ? 0.82 : 1;
     var drainMul = (sim._heat && sim._heat.drain) ? sim._heat.drain : 1;
+    if (sim.flickerUntil && sim.t < sim.flickerUntil) drainMul *= 1.85;
     for (var n = 0; n < sim.customers.length; n++) {
       var cust = sim.customers[n];
       if (cust.dead) continue;
@@ -2117,7 +2119,10 @@
     var stockLv = upgradeLevel(run, 'stock');
     var regen = CONFIG.freightRegen * fp * (hasPerk(run, 'freight') ? 1.6 : 1) * (1 + 0.45 * stockLv);
     var warehouseOpen = !(sim.books && HR.economy && HR.economy.unitsLeft(sim.books) <= 0);
-    if (warehouseOpen && sim.truck) {
+    var frozen = sim.stockFreeze && sim.t < sim.stockFreeze;
+    if (frozen) {
+      /* count holds the shelf still */
+    } else if (warehouseOpen && sim.truck) {
       sim.stock = Math.max(0, sim.stock - used * 0.01);
       if (fp > 0.35) sim.truckWork += used * fp;
       if (sim.truckWork > 5.5 / (1 + 0.25 * stockLv)) {
@@ -2139,6 +2144,8 @@
     var rate = CONFIG.spawn[sh] * (sim._heat ? sim._heat.spawn : 1);
     if (sim.t < sim.rushUntil) rate *= 1.72;
     if (sim.t < sim.slowUntil) rate *= 0.62;
+    if (sim.paradeUntil && sim.t < sim.paradeUntil) rate *= 1.4;
+    if (sim.tenant && sim.tenant.spawnMul) rate *= sim.tenant.spawnMul;
     rate *= 0.74 + Math.min(stationPower(sim, run, 'floor'), 1.6) * 0.2;
     if (sim.books && HR.sim) rate *= HR.sim.demandMul(sim.books);
     if (sim.books && sim.books.mall && sim.books.mall.door) rate *= sim.books.mall.door;
@@ -2196,45 +2203,218 @@
     return false;
   }
 
-  function maybeLiveBeat(sim, run) {
-    if (!sim.floorOn || sim.coachHold || sim.paused || sim.pending || sim.done) return;
-    if (!sim._beats) sim._beats = {};
-    var dayN = run && run.day ? run.day : 0;
-    var kind = dayN % 3;
-    var id = kind === 0 ? 'sample' : kind === 1 ? 'bus' : 'double';
-    var when = kind === 0 ? 22 : kind === 1 ? 28 : 40;
-    if (!sim._beats[id] && sim.t >= when) {
-      sim._beats[id] = 1;
-      if (id === 'sample') {
-        beatCard(sim, 'sample', 'Sample tray', 'Cocoa samples are on the wrap table. Hand them out and the aisle lingers. Wave them off and the line keeps its pace.', [
+  var FLOOR_BEATS = [
+    {
+      id: 'sample', t: 22, title: 'Sample tray',
+      body: 'Cocoa samples are on the wrap table. Hand them out and the aisle lingers. Wave them off and the line keeps its pace.',
+      choices: function (sim) {
+        return [
           choice('Hand out samples', 1, function () {
             sim.slowUntil = Math.max(sim.slowUntil || 0, sim.t + 14);
             note(sim, 'Samples out. Shoppers linger in the aisle.');
           }),
           choice('Wave them off', 0, function () { note(sim, 'No samples. The line keeps its pace.'); })
-        ]);
-      } else if (id === 'bus') {
-        beatCard(sim, 'bus', 'Tour bus', 'A bus is at the curb. Open the door and three families come in with full carts. Hold the door and the rush waits.', [
+        ];
+      }
+    },
+    {
+      id: 'bus', t: 26, title: 'Tour bus',
+      body: 'A bus is at the curb. Open the door and three families come in with full carts. Hold the door and the rush waits.',
+      choices: function (sim, run) {
+        return [
           choice('Open the door', 0, function () {
             spawnCustomer(sim, run, 'family');
             spawnCustomer(sim, run, 'family');
             spawnCustomer(sim, run, 'family');
             note(sim, 'Three families just walked in.');
           }),
-          choice('Hold the door', 0, function () {
-            sim.slowUntil = Math.max(sim.slowUntil || 0, sim.t + 10);
-            note(sim, 'The door stays shut. The rush waits.');
-          })
-        ]);
-      } else {
-        beatCard(sim, 'double', 'Double ring', 'Call it and the next sales ring twice for a few seconds. Let it pass and the till stays on one ring.', [
+          choice('Hold the door', 0, function () { note(sim, 'The door stays shut. The rush waits.'); })
+        ];
+      }
+    },
+    {
+      id: 'double', t: 24, title: 'Double ring',
+      body: 'Call it and the next sales ring twice for a few seconds. Let it pass and the till stays on one ring.',
+      choices: function (sim) {
+        return [
           choice('Call the double', 1, function () {
             sim.doubleUntil = sim.t + 12;
             note(sim, 'Sales ring twice for a few seconds.');
           }),
           choice('Let it pass', 0, function () { note(sim, 'The till stays on a single ring.'); })
-        ]);
+        ];
       }
+    },
+    {
+      id: 'flash', t: 22, title: 'Flash the wrap table',
+      body: 'The wrap table can run a short sale. Flash it and baskets ring lighter. Leave the tags and the aisle stays on the sticker.',
+      choices: function (sim) {
+        return [
+          choice('Flash the tags', 0, function () {
+            sim.discountUntil = sim.t + 14;
+            note(sim, 'Wrap-table tags are lighter for a few seconds.');
+          }),
+          choice('Leave the tags', 0, function () { note(sim, 'The stickers stay.'); })
+        ];
+      }
+    },
+    {
+      id: 'flicker', t: 30, title: 'Lights flicker',
+      body: 'The bay lights hiccup. Kill them for a moment and patience drains. Leave them on and the aisle keeps shopping.',
+      choices: function (sim) {
+        return [
+          choice('Kill the lights', 0, function () {
+            sim.flickerUntil = sim.t + 12;
+            note(sim, 'The bay is dim. Patience drains faster.');
+          }),
+          choice('Leave them on', 0, function () { note(sim, 'The lights stay up.'); })
+        ];
+      }
+    },
+    {
+      id: 'lost', t: 28, title: 'Lost kid',
+      body: 'A kid is at the door without a cart. Call them in and they join the aisle. Let the parent look and the door stays as it is.',
+      choices: function (sim, run) {
+        return [
+          choice('Call the kid in', 0, function () {
+            spawnCustomer(sim, run, 'family');
+            note(sim, 'A family followed the kid in.');
+          }),
+          choice('Let the parent look', 0, function () { note(sim, 'The door stays as it is.'); })
+        ];
+      }
+    },
+    {
+      id: 'inspector', t: 32, title: 'Aisle inspector',
+      body: 'Someone with a clipboard wants the seasonal bay. Walk them and the stars tick up. Wave them through and nothing on the floor changes.',
+      choices: function (sim) {
+        return [
+          choice('Walk the aisle', 1, function () {
+            sim.stars = clamp(sim.stars + 0.12, 1, 5);
+            note(sim, 'You walked the aisle. The clipboard is happy.');
+          }),
+          choice('Wave them through', 0, function () { note(sim, 'They left without a note.'); })
+        ];
+      }
+    },
+    {
+      id: 'return', t: 24, title: 'Open return',
+      body: 'A shopper wants money back on a cocoa tin. Take it and the drawer dips. The tag says no, and the line keeps moving.',
+      choices: function (sim) {
+        return [
+          choice('Take the return', 0, function () {
+            sim.sales = Math.max(0, sim.sales - 40);
+            sim.stars = clamp(sim.stars + 0.05, 1, 5);
+            note(sim, 'Cocoa return. The drawer is $40 lighter.');
+          }),
+          choice('The tag says no', 0, function () { note(sim, 'No return. The line keeps moving.'); })
+        ];
+      }
+    },
+    {
+      id: 'carol', t: 26, title: 'Carolers',
+      body: 'Three singers are in the doorway. Let them sing and morale jumps while the door slows. Ask them to move and the floor stays put.',
+      choices: function (sim) {
+        return [
+          choice('Let them sing', 0, function () {
+            sim.morale = clamp(sim.morale + 8, 0, 100);
+            sim.slowUntil = Math.max(sim.slowUntil || 0, sim.t + 8);
+            note(sim, 'The carolers are in. Morale is up and the door is slower.');
+          }),
+          choice('Ask them to move', 0, function () { note(sim, 'The doorway stays clear.'); })
+        ];
+      }
+    },
+    {
+      id: 'hold', t: 22, title: 'Hold the door',
+      body: 'The curb is packed. Hold the door and the next stretch is quieter. Keep it open and the spawn stays on the clock.',
+      choices: function (sim) {
+        return [
+          choice('Hold the door', 0, function () {
+            sim.slowUntil = Math.max(sim.slowUntil || 0, sim.t + 16);
+            note(sim, 'The door is held. Fewer shoppers for a stretch.');
+          }),
+          choice('Keep it open', 0, function () { note(sim, 'The door stays on the clock.'); })
+        ];
+      }
+    },
+    {
+      id: 'rain', t: 30, title: 'Rain on the curb',
+      body: 'Rain is pushing people inside. Pull the mats and a rush comes in. Leave the mats and the curb waits it out.',
+      choices: function (sim) {
+        return [
+          choice('Pull the mats', 0, function () {
+            sim.rushUntil = Math.max(sim.rushUntil || 0, sim.t + 12);
+            note(sim, 'Mats are down. A rush just came in.');
+          }),
+          choice('Leave the mats', 0, function () { note(sim, 'The curb waits out the rain.'); })
+        ];
+      }
+    },
+    {
+      id: 'coupon', t: 28, title: 'Expired coupon',
+      body: 'A coupon for the treat gondola is a week old. Honor it and the next baskets ring lighter. Call it expired and the sticker stands.',
+      choices: function (sim) {
+        return [
+          choice('Honor the coupon', 0, function () {
+            sim.discountUntil = sim.t + 10;
+            note(sim, 'The coupon is honored. Baskets ring lighter.');
+          }),
+          choice('It is expired', 0, function () { note(sim, 'The sticker stands.'); })
+        ];
+      }
+    },
+    {
+      id: 'jam', t: 24, title: 'Jammed dock',
+      body: 'The truck is stuck in the bay. Unjam it and the dock has to be worked before the shelf refills. Let it wait and stocking stays as it is.',
+      choices: function (sim) {
+        return [
+          choice('Unjam the dock', 1, function () {
+            sim.truck = 1;
+            sim.truckWork = 0;
+            sim.hornPlayed = false;
+            note(sim, 'The truck is in the bay. Work the dock.');
+          }),
+          choice('Let the dock wait', 0, function () { note(sim, 'Stocking stays as it is.'); })
+        ];
+      }
+    },
+    {
+      id: 'freeze', t: 32, title: 'Back-room count',
+      body: 'The count sheet is out. Count the back room and the shelf stops refilling. Skip it and freight keeps the pace.',
+      choices: function (sim) {
+        return [
+          choice('Count the back room', 0, function () {
+            sim.stockFreeze = sim.t + 14;
+            note(sim, 'Count is on. The shelf holds still.');
+          }),
+          choice('Skip the count', 0, function () { note(sim, 'Freight keeps the pace.'); })
+        ];
+      }
+    },
+    {
+      id: 'parade', t: 26, title: 'Parade on the curb',
+      body: 'A parade is passing the door. Open for it and the next stretch is busier. Keep the door steady and the clock does not change.',
+      choices: function (sim) {
+        return [
+          choice('Open for the parade', 0, function () {
+            sim.paradeUntil = sim.t + 14;
+            note(sim, 'The parade is in the door. More shoppers.');
+          }),
+          choice('Keep the door steady', 0, function () { note(sim, 'The door stays on its clock.'); })
+        ];
+      }
+    }
+  ];
+
+  function maybeLiveBeat(sim, run) {
+    if (!sim.floorOn || sim.coachHold || sim.paused || sim.pending || sim.done) return;
+    if (!sim._beats) sim._beats = {};
+    var dayN = run && run.day ? run.day : 0;
+    var beat = FLOOR_BEATS[dayN] || FLOOR_BEATS[dayN % FLOOR_BEATS.length];
+    if (beat && !sim._beats[beat.id] && sim.t >= beat.t) {
+      sim._beats[beat.id] = 1;
+      beatCard(sim, beat.id, beat.title, beat.body, beat.choices(sim, run));
       return;
     }
     if (sim._beats.priceTalk || sim.t < 48 || !sim.books || !tagIsSteep(sim.books)) return;
@@ -2394,6 +2574,10 @@
       _beats: sim._beats || {},
       _grumbleTold: !!sim._grumbleTold,
       doubleUntil: sim.doubleUntil || 0,
+      flickerUntil: sim.flickerUntil || 0,
+      stockFreeze: sim.stockFreeze || 0,
+      paradeUntil: sim.paradeUntil || 0,
+      tenant: sim.tenant || null,
       rngState: sim.rng && sim.rng.state ? sim.rng.state() : 0,
       pendingMeta: pendingMeta
     }));
@@ -2427,7 +2611,12 @@
     sim._beats = data._beats || {};
     sim._grumbleTold = !!data._grumbleTold;
     sim.doubleUntil = data.doubleUntil || 0;
-    var beatPending = { mall: 1, sample: 1, bus: 1, double: 1, priceTalk: 1 };
+    sim.flickerUntil = data.flickerUntil || 0;
+    sim.stockFreeze = data.stockFreeze || 0;
+    sim.paradeUntil = data.paradeUntil || 0;
+    sim.tenant = data.tenant || null;
+    var beatPending = { mall: 1, priceTalk: 1 };
+    for (var bi = 0; bi < FLOOR_BEATS.length; bi++) beatPending[FLOOR_BEATS[bi].id] = 1;
     if (data.pendingMeta && data.pendingMeta.id && !beatPending[data.pendingMeta.id]) {
       sim.pending = buildEvent(data.pendingMeta.id, sim, run, { who: data.pendingMeta.who });
       sim.pendingUntil = sim.t + 7;
@@ -3966,6 +4155,82 @@
 
     function beginFresh() { beginShift(0); }
 
+    function beginTenantShift(slotId) {
+      if (!books || !books.mall || !books.mall.leases || !books.mall.leases[slotId]) {
+        toast('That unit is empty.');
+        return;
+      }
+      if (!HR.world || !HR.world.tenantLayout || !HR.layout || !HR.data.get()) return;
+      var row = books.mall.leases[slotId];
+      var tenant = HR.data.get().tenants.byId[row.tenantId];
+      var layout = HR.world.tenantLayout(row.tenantId);
+      if (!tenant || !layout) return;
+      coach = null;
+      if (!run || !run.days || run.days.length !== SHIFT_COUNT) run = newRun(ymd);
+      run.phase = 'sim';
+      run._tenantSlot = slotId;
+      HR.layout.apply(layout, layoutApi());
+      floorDirty = true;
+      activeLayout = layout;
+      trafficBlocked._layout = null;
+      bakeStorePlate();
+      if (spriteSession && HR.sprites) spriteSession.ensure(HR.sprites.typesForDay(run.day || 0, books));
+      sim = startDay(run);
+      sim.books = books;
+      sim.cogs = 0;
+      sim.stockouts = 0;
+      sim.tenant = {
+        slot: slotId,
+        tenantId: row.tenantId,
+        name: tenant.name,
+        spawnMul: layout.spawnMul || 1,
+        bias: layout.bias || ''
+      };
+      sim.goal = Math.max(900, Math.round((sim.goal || 7500) * (layout.goalMul || 0.45)));
+      saveRun();
+      renderSim({ resume: false });
+    }
+
+    function finishTenant() {
+      var who = sim.tenant;
+      var snap = scoreSnapshot(sim);
+      var cut = Math.round((snap.sales || 0) * 0.15);
+      books.cash = Math.round((books.cash || 0) + cut);
+      if (!books.tenantRuns) books.tenantRuns = [];
+      books.tenantRuns.unshift({
+        name: who.name,
+        tenantId: who.tenantId,
+        slot: who.slot,
+        sales: Math.round(snap.sales || 0),
+        cut: cut
+      });
+      if (books.tenantRuns.length > 8) books.tenantRuns.length = 8;
+      persistBooks(books);
+      snap.tenant = who.name;
+      snap.tenantId = who.tenantId;
+      snap.slot = who.slot;
+      snap.cut = cut;
+      snap.sales = Math.round(snap.sales || 0);
+      snap.earned = cut;
+      snap.bank = books.cash;
+      snap.bestCombo = sim.bestCombo || 0;
+      hooks.fanfare();
+      run.history.push(snap);
+      run.phase = 'score';
+      run.simState = null;
+      run.lastSnap = snap;
+      run._tenantSlot = '';
+      coach = null;
+      sim = null;
+      floorDirty = false;
+      activeLayout = null;
+      trafficBlocked._layout = null;
+      syncFloor(true);
+      saveRun();
+      sfx('correct');
+      renderScore();
+    }
+
     function ensureSuggested() {
       if (!run.suggested) run.suggested = [false, false, false];
       if (run.day === 0) return;
@@ -3992,6 +4257,17 @@
           try {
             sim = restoreSim(snap, run);
             if (books) sim.books = books;
+            sim._snapSales = Math.round(snap.sales || 0);
+            if (els.stage) els.stage.dataset.snapSales = String(sim._snapSales);
+            if (snap.tenant && HR.world && HR.world.tenantLayout && HR.layout) {
+              var tLayout = HR.world.tenantLayout(snap.tenant.tenantId);
+              if (tLayout) {
+                HR.layout.apply(tLayout, layoutApi());
+                floorDirty = true;
+                activeLayout = tLayout;
+                bakeStorePlate();
+              }
+            }
             if (snap.pendingMeta && snap.pendingMeta.id === 'mall') {
               sim.pending = buildMallCard(sim);
               if (sim.pending) sim.pendingUntil = sim.t + 9;
@@ -4192,6 +4468,7 @@
         '<div class="hr-combo" id="hr-combo" hidden>x2</div>' +
         '<div class="hr-rush" id="hr-rush" hidden>RUSH</div>' +
         (ops ? '<div class="hr-stat"><span>Payroll</span><strong id="hr-pay-text"></strong></div><div class="hr-stat"><span>Morale</span><strong id="hr-mor-text"></strong></div>' : '') +
+        (sim.tenant ? '<div class="hr-stat"><span>Floor</span><strong id="hr-tenant-name">' + esc(sim.tenant.name) + '</strong></div>' : '') +
         (books ? '<div class="hr-stat hr-aisle"><span>Aisle</span><strong id="hr-aisle-text">Steady</strong></div>' : '') +
         '<button type="button" id="hr-crew-btn" class="hr-mute">Crew</button>' +
         '<button type="button" id="hr-mute" class="hr-mute" aria-pressed="false" aria-label="Mute sound">Sound</button>';
@@ -4216,8 +4493,9 @@
       resize();
       requestAnimationFrame(function () { resize(); if (sim && !els.sim.hidden) draw(); });
       focusCam(SPOTS.reg1.x, QUEUE.reg1.y);
-      if (!opts.resume && run.day === 0 && !tutDone()) beginCoach();
-      else if (opts.resume && run.day === 0 && !tutDone()) beginCoach();
+      if (sim.tenant) sim.coachHold = false;
+      if (!sim.tenant && !opts.resume && run.day === 0 && !tutDone()) beginCoach();
+      else if (!sim.tenant && opts.resume && run.day === 0 && !tutDone()) beginCoach();
       else paintCoach();
       paintHud();
       paintMute();
@@ -4278,6 +4556,8 @@
         els.stage.dataset.rush = rushing ? '1' : '0';
         els.stage.dataset.combo = String(sim.combo || 0);
         els.stage.dataset.sales = String(Math.round(sim.sales));
+          if (sim._snapSales != null) els.stage.dataset.snapSales = String(sim._snapSales);
+          if (sim.tenant) els.stage.dataset.tenant = sim.tenant.name;
         els.stage.dataset.clock = label.textContent;
         if (isQA()) {
           var arches = [];
@@ -4441,6 +4721,10 @@
     }
 
     function finishDay() {
+      if (sim && sim.tenant) {
+        finishTenant();
+        return;
+      }
       var snap = scoreSnapshot(sim);
       snap.bestCombo = sim.bestCombo || 0;
       hooks.fanfare();
@@ -4622,6 +4906,7 @@
         '<h2>' + pct + '% of goal</h2>' +
         '<p class="hr-stars hr-stars--big">' + starGlyph(snap.shiftStars || goalStars(snap.goalPct)) + '</p>' +
         '<p class="hr-thresholds">1★ ' + Math.round(CONFIG.star1 * 100) + '% · 2★ ' + Math.round(CONFIG.star2 * 100) + '% · 3★ ' + Math.round(CONFIG.star3 * 100) + '%</p>' +
+        (snap.tenant ? '<p class="hr-lead">You ran ' + esc(snap.tenant) + '. Their drawer did ' + money(snap.sales) + '. Your cut is ' + money(snap.cut || 0) + '.</p>' : '') +
         '<p class="hr-lead">Best combo ' + esc(comboBit) + ' · ' + (snap.walkouts || 0) + ' walkouts · ' + money(snap.sales) + ' / ' + money(snap.goal) + '</p>' +
         '<p class="hr-bank">' + (snap.tape ? money(snap.tape.profit) + ' profit' : (snap.earned > 0 ? '+' + money(snap.earned) + ' banked' : 'Register unchanged')) + ' · ' + money(snap.bank || 0) + ' in the register</p>' +
         '<p class="hr-fine">' + esc(bankCopy(snap)) + '</p>' +
@@ -4633,14 +4918,20 @@
         }).join('') : '') +
         '<p class="hr-scorebig">' + snap.points + ' pts</p>' +
         '<div class="hr-cta">' +
-        '<button type="button" class="btn btn--primary" id="hr-retry">Retry shift</button>' +
+        (snap.tenant
+          ? '<button type="button" class="btn btn--primary" id="hr-retry">Back to the plaza</button>' +
+            '<button type="button" class="btn" id="hr-tenant-again">Play their floor again</button>'
+          : '<button type="button" class="btn btn--primary" id="hr-retry">Retry shift</button>') +
         '<button type="button" class="btn" id="hr-to-crew">Set crew</button>' +
         '<button type="button" class="btn" id="hr-to-shop">Office</button>' +
         '<button type="button" class="btn" id="hr-to-map">Shift map</button>' +
         '</div>';
       document.getElementById('hr-retry').addEventListener('click', function () {
-        beginShift(run.day);
+        if (snap.tenant) renderMall();
+        else beginShift(run.day);
       });
+      var again = document.getElementById('hr-tenant-again');
+      if (again) again.addEventListener('click', function () { beginTenantShift(snap.slot); });
       document.getElementById('hr-to-crew').addEventListener('click', function () {
         openCrew('score');
       });
@@ -4723,7 +5014,7 @@
         },
         onLayout: function () { renderLayout(); },
         onMall: function () { renderMall(); },
-        onCoachPrice: function () { dismissOfficeCoach('price'); renderShop(); },
+        onCoachPrice: function () { dismissOfficeCoach('price'); },
         onBack: function () {
           if (run) { run.phase = 'map'; saveRun(); }
           renderMap();
@@ -4743,7 +5034,8 @@
         books: books,
         coachMall: officeCoachNeeded('mall'),
         slot: 'a',
-        onCoachMall: function () { dismissOfficeCoach('mall'); renderMall(); },
+        onCoachMall: function () { dismissOfficeCoach('mall'); },
+        onPlayTenant: function (slotId) { beginTenantShift(slotId); },
         onToast: toast,
         onDirty: function () {
           var campNow = campaignGet();
@@ -5198,7 +5490,7 @@
       if (SPOTS.reg3) counter(SPOTS.reg3.x, 748, PAL.gold);
       g.fillStyle = 'rgba(42,24,18,0.2)';
       g.fillRect(SPOTS.reg1.x - 18, 800, 36, 70);
-      g.fillRect(SPOTS.reg2.x - 18, 800, 36, 70);
+      if (SPOTS.reg2) g.fillRect(SPOTS.reg2.x - 18, 800, 36, 70);
       function pool(x, y, r, color) {
         var grd = g.createRadialGradient(x - 20, y - 24, 8, x, y, r);
         grd.addColorStop(0, color);
@@ -5600,11 +5892,6 @@
     function viewSize() {
       var cssW = els.canvas._cssW || 800;
       var cssH = els.canvas._cssH || 450;
-      if (cam.fit && HR.render && HR.render.frameZoom) {
-        var fitted = HR.render.frameZoom(cssW, cssH, WORLD_W, WORLD_H, CONFIG.sprite);
-        cam.zoom = fitted;
-        return HR.render.view(cssW, cssH, WORLD_W, WORLD_H, fitted, CONFIG.sprite, true);
-      }
       if (HR.render) return HR.render.view(cssW, cssH, WORLD_W, WORLD_H, cam.zoom || 1, CONFIG.sprite);
       var target = cssW < 520 ? 118 : cssW < 900 ? 112 : 108;
       var viewW = CONFIG.sprite * cssW / target;
@@ -5624,8 +5911,10 @@
         els.stage.dataset.productPx = String(Math.round(view.productPx || 0));
         els.stage.dataset.zoom = String(view.zoom || cam.zoom || 1);
         els.stage.dataset.world = WORLD_W + 'x' + WORLD_H;
-        els.stage.dataset.framed = cam.fit ? '1' : '0';
-        var holdsDoor = cam.y <= 80 && cam.y + view.viewH >= SPOTS.door.y;
+        els.stage.dataset.framed = cam.overview ? '1' : '0';
+        els.stage.dataset.minimap = cam.overview ? '1' : '0';
+        var doorY = SPOTS.door ? SPOTS.door.y : 855;
+        var holdsDoor = !!cam.overview || (cam.y <= 80 && cam.y + view.viewH >= doorY);
         els.stage.dataset.span = holdsDoor ? '1' : '0';
       }
       if (!HR.render) return;
@@ -5873,6 +6162,40 @@
           ctx.fillText('RUSH', view.cssW / 2, 28);
         }
       }
+      if (cam.overview) drawMinimap(view);
+    }
+
+    function drawMinimap(view) {
+      if (!storePlate || !view) return;
+      var dpr = els.canvas._dpr || 1;
+      var cssW = view.cssW;
+      var cssH = view.cssH;
+      var mapW = Math.min(cssW * 0.42, 220);
+      var mapH = mapW * (WORLD_H / Math.max(1, WORLD_W));
+      if (mapH > cssH * 0.34) {
+        mapH = cssH * 0.34;
+        mapW = mapH * (WORLD_W / Math.max(1, WORLD_H));
+      }
+      var x = Math.max(8, cssW - mapW - 10);
+      var y = Math.max(8, cssH - mapH - 10);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.fillStyle = 'rgba(26,20,18,0.9)';
+      ctx.fillRect(x - 4, y - 4, mapW + 8, mapH + 8);
+      ctx.strokeStyle = '#ffe08a';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x - 4, y - 4, mapW + 8, mapH + 8);
+      ctx.drawImage(storePlate, 0, 0, WORLD_W, WORLD_H, x, y, mapW, mapH);
+      var vx = x + (cam.x / WORLD_W) * mapW;
+      var vy = y + (cam.y / WORLD_H) * mapH;
+      var vw = Math.max(4, (view.viewW / WORLD_W) * mapW);
+      var vh = Math.max(4, (view.viewH / WORLD_H) * mapH);
+      ctx.strokeStyle = '#fff4d2';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(vx, vy, vw, vh);
+      ctx.font = '700 11px Outfit, Inter, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#ffe08a';
+      ctx.fillText('Floor', x, y - 8);
     }
 
     function roundBox(x, y, w, h, r) {
@@ -6249,26 +6572,62 @@
       return true;
     }
 
+    function drawGhostPose(a) {
+      var pack = assets && assets.spritePack;
+      if (!pack || !pack.ghosts) return false;
+      var type = spriteTypeFor(a);
+      var sheet = pack.ghosts[type];
+      if (!sheet) return false;
+      var anim = a.anim === 'walk' || a.anim === 'work' ? a.anim : 'idle';
+      var dir = (a.face < 0 || a.dir === 'side') ? 'side' : (a.dir === 'up' ? 'up' : 'down');
+      var list = spriteFrameList(sheet, anim, dir);
+      if (!list) return false;
+      var frame = list[(a.frame || 0) % list.length];
+      if (!frame || !frame.img) return false;
+      var dh = SPRITE_PACK.displayH;
+      var dw = dh * (frame.w / frame.h);
+      var foot = (SPRITE_PACK.footY / frame.h) * dh;
+      var gw = Math.max(1, Math.round(dw));
+      var gh = Math.max(1, Math.round(dh));
+      var key = gw + 'x' + gh;
+      if (!frame._ghost || frame._ghostKey !== key) {
+        var plate = document.createElement('canvas');
+        plate.width = gw;
+        plate.height = gh;
+        var g = plate.getContext('2d');
+        g.drawImage(frame.img, 0, 0, gw, gh);
+        g.globalCompositeOperation = 'source-in';
+        g.fillStyle = 'rgb(36,24,48)';
+        g.fillRect(0, 0, gw, gh);
+        frame._ghost = plate;
+        frame._ghostKey = key;
+      }
+      ctx.drawImage(frame._ghost, Math.round(-dw / 2), Math.round(-foot));
+      return true;
+    }
+
     function drawSilhouette(a) {
-      ctx.save();
-      ctx.fillStyle = 'rgba(36,24,48,0.94)';
-      ctx.strokeStyle = '#ffe08a';
-      ctx.lineWidth = 4;
-      ctx.setLineDash([8, 5]);
-      ctx.beginPath();
-      ctx.ellipse(0, -62, 20, 22, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.ellipse(0, -16, 28, 40, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-      ctx.setLineDash([]);
-      ctx.fillStyle = '#ffe08a';
-      ctx.font = '800 28px Outfit, Inter, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('?', 0, -6);
-      ctx.restore();
+      if (!drawGhostPose(a)) {
+        ctx.save();
+        ctx.fillStyle = 'rgba(36,24,48,0.94)';
+        ctx.strokeStyle = '#ffe08a';
+        ctx.lineWidth = 4;
+        ctx.setLineDash([8, 5]);
+        ctx.beginPath();
+        ctx.ellipse(0, -62, 20, 22, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.ellipse(0, -16, 28, 40, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#ffe08a';
+        ctx.font = '800 28px Outfit, Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('?', 0, -6);
+        ctx.restore();
+      }
       if (a) a._sil = 1;
       if (isQA() && els.stage) els.stage.dataset.sils = String((+els.stage.dataset.sils || 0) + 1);
     }
@@ -6706,23 +7065,18 @@
     var pointers = {};
     function zoomBy(mult) {
       cam.fit = false;
+      cam.overview = false;
       var frameBtn = document.getElementById('hr-frame');
       if (frameBtn) frameBtn.setAttribute('aria-pressed', 'false');
       cam.zoom = HR.render ? HR.render.clampZoom(els.canvas._cssW || 800, (cam.zoom || 1) * mult) : (cam.zoom || 1);
       draw();
     }
     function toggleFrame() {
-      cam.fit = !cam.fit;
+      cam.overview = !cam.overview;
+      cam.fit = false;
       var frameBtn = document.getElementById('hr-frame');
-      if (frameBtn) frameBtn.setAttribute('aria-pressed', cam.fit ? 'true' : 'false');
-      if (cam.fit) {
-        cam.follow = false;
-        var fitted = viewSize();
-        var lo = Math.max(0, SPOTS.door.y - fitted.viewH);
-        var hi = Math.min(80, Math.max(0, WORLD_H - fitted.viewH));
-        cam.y = lo <= hi ? lo : 0;
-        cam.x = clamp((WORLD_W - fitted.viewW) * 0.5, 0, Math.max(0, WORLD_W - fitted.viewW));
-      } else cam.follow = true;
+      if (frameBtn) frameBtn.setAttribute('aria-pressed', cam.overview ? 'true' : 'false');
+      cam.follow = !cam.overview;
       draw();
     }
     var zoomIn = document.getElementById('hr-zoom-in');
@@ -6736,6 +7090,7 @@
       ev.stopPropagation();
       var view = viewSize();
       cam.fit = false;
+      cam.overview = false;
       var frameNow = document.getElementById('hr-frame');
       if (frameNow) frameNow.setAttribute('aria-pressed', 'false');
       cam.x = Math.max(0, WORLD_W - view.viewW);
@@ -7121,7 +7476,13 @@
         if (!isQA() || !spriteSession) return false;
         var name = type || 'regular';
         spriteSession.hold(name);
-        return true;
+        var pack = spriteSession.pack();
+        return { held: !pack.types[name], pose: !!(pack.ghosts && pack.ghosts[name]) };
+      },
+      flush: function () {
+        if (!isQA()) return null;
+        saveRun();
+        return { sales: sim ? Math.round(sim.sales) : 0, cash: books ? Math.round(books.cash) : 0 };
       },
       ack: function () {
         if (!isQA() || !run) return;
@@ -7187,6 +7548,13 @@
     if (comboMult(10) !== 4 || comboMult(40) !== 4 || multLabel(10) !== '×4' || multLabel(24) !== '×4') bad = true;
     if (goalStars(0.74) !== 0 || goalStars(0.75) !== 1 || goalStars(1) !== 2 || goalStars(1.2) !== 3) bad = true;
     if (SHIFT_COUNT < 15) bad = true;
+    if (FLOOR_BEATS.length < SHIFT_COUNT) bad = true;
+    var beatSeen = {};
+    for (var beatI = 0; beatI < FLOOR_BEATS.length; beatI++) {
+      var beatRow = FLOOR_BEATS[beatI];
+      if (!beatRow || beatSeen[beatRow.id] || beatRow.t < 18 || beatRow.t > 44) bad = true;
+      beatSeen[beatRow.id] = 1;
+    }
     var impliedGood = greedy0.goalPct * 1.45;
     if (greedy0.goalPct < 0.78 || greedy0.goalPct > 0.94) bad = true;
     if (impliedGood < 1.1 || impliedGood > 1.32) bad = true;

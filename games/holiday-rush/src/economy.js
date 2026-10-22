@@ -709,7 +709,8 @@
       shifts: 0,
       lifetimeProfit: 0,
       playedPrice: false,
-      mall: null
+      mall: null,
+      tenantRuns: []
     };
   }
 
@@ -741,6 +742,11 @@
     var reasons = [];
     function fail(msg) { reasons.push(msg); }
     if (Math.abs(demandMul(books) - 1) > 0.02) fail('demand ' + demandMul(books));
+    var steepBooks = blankBooks();
+    var steepCocoa = data.get().items.byId.cocoa;
+    setPrice(steepBooks, 'cocoa', Math.round(steepCocoa.msrp * 1.45));
+    var steepDemand = demandMul(steepBooks);
+    if (!(steepDemand < 0.78)) fail('steep demand ' + steepDemand);
     if (trainMul(books, 'staff_reg1') !== 1) fail('train');
     if (custCap(books) !== 14) fail('cap');
     var rngState = 1;

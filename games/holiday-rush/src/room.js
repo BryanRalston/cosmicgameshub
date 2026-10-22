@@ -1,11 +1,10 @@
 /* Modular Holiday Rush room.
-   Draw order matches objects_v9 (v9 / v9b / v9c):
-   floor, then side walls, then back segments from x=222,
-   then the 222x125 corners, then the front ledge,
-   then each side-wall end piece, then that piece's bottom 14px
-   band redrawn 6px lower onto the front ledge.
-   wall_back_arch stays 125px tall. About 1 in 6 floor cells
-   swap to a same-parity variation tile. */
+   Side walls, then back segments from x=222, then the 222x125
+   corners. Ledge order matches qc_modular.py: each end piece's
+   bottom 14px band is redrawn 6px lower, then the full end piece,
+   then the front ledge on top. Scuffs use the art script's
+   Random(3) stream at chance 0.17. light_first comes from the
+   floor tile. wall_back_arch stays 125px tall. */
 (function (root) {
   'use strict';
   var SPEC = {
@@ -25,7 +24,7 @@
     endDrop: 6,
     tile: 128,
     varCell: 64,
-    varChance: 1 / 6,
+    varChance: 0.17,
     entrance: 320,
     inset: 42,
     surround: '#342824',
@@ -67,10 +66,97 @@
     ]
   };
 
-  function cellHash(x, y) {
-    var n = Math.imul(x | 0, 374761393) + Math.imul(y | 0, 668265263);
-    n = Math.imul(n ^ (n >>> 13), 1274126177);
-    return ((n ^ (n >>> 16)) >>> 0) / 4294967296;
+  function mtRandom(seed) {
+    var N = 624;
+    var M = 397;
+    var mt = new Uint32Array(N);
+    var index = N;
+    var prev;
+    var mixed;
+    mt[0] = 19650218;
+    for (var mti = 1; mti < N; mti++) {
+      prev = mt[mti - 1];
+      mt[mti] = (Math.imul(1812433253, (prev ^ (prev >>> 30)) >>> 0) + mti) >>> 0;
+    }
+    var key = [seed >>> 0];
+    var i = 1;
+    var j = 0;
+    var k = N;
+    for (; k; k--) {
+      prev = mt[i - 1];
+      mixed = Math.imul((prev ^ (prev >>> 30)) >>> 0, 1664525) >>> 0;
+      mt[i] = ((mt[i] ^ mixed) + key[j] + j) >>> 0;
+      i++;
+      j++;
+      if (i >= N) { mt[0] = mt[N - 1]; i = 1; }
+      if (j >= key.length) j = 0;
+    }
+    for (k = N - 1; k; k--) {
+      prev = mt[i - 1];
+      mixed = Math.imul((prev ^ (prev >>> 30)) >>> 0, 1566083941) >>> 0;
+      mt[i] = ((mt[i] ^ mixed) - i) >>> 0;
+      i++;
+      if (i >= N) { mt[0] = mt[N - 1]; i = 1; }
+    }
+    mt[0] = 0x80000000;
+    function gen() {
+      var y;
+      var kk;
+      if (index >= N) {
+        for (kk = 0; kk < N - M; kk++) {
+          y = (mt[kk] & 0x80000000) | (mt[kk + 1] & 0x7fffffff);
+          mt[kk] = (mt[kk + M] ^ (y >>> 1) ^ ((y & 1) ? 0x9908b0df : 0)) >>> 0;
+        }
+        for (; kk < N - 1; kk++) {
+          y = (mt[kk] & 0x80000000) | (mt[kk + 1] & 0x7fffffff);
+          mt[kk] = (mt[kk + (M - N)] ^ (y >>> 1) ^ ((y & 1) ? 0x9908b0df : 0)) >>> 0;
+        }
+        y = (mt[N - 1] & 0x80000000) | (mt[0] & 0x7fffffff);
+        mt[N - 1] = (mt[M - 1] ^ (y >>> 1) ^ ((y & 1) ? 0x9908b0df : 0)) >>> 0;
+        index = 0;
+      }
+      y = mt[index++];
+      y ^= y >>> 11;
+      y ^= (y << 7) & 0x9d2c5680;
+      y ^= (y << 15) & 0xefc60000;
+      y ^= y >>> 18;
+      return y >>> 0;
+    }
+    return {
+      random: function () {
+        var a = gen() >>> 5;
+        var b = gen() >>> 6;
+        return (a * 67108864 + b) * (1 / 9007199254740992);
+      },
+      below: function (n) {
+        if (n <= 1) return 0;
+        var k = 0;
+        var v = n >>> 0;
+        while (v > 0) { v >>>= 1; k++; }
+        var r = gen() >>> (32 - k);
+        while (r >= n) r = gen() >>> (32 - k);
+        return r;
+      }
+    };
+  }
+
+  function scuffMask(worldW, worldH) {
+    var rnd = mtRandom(3);
+    var fy0 = SPEC.backH - 12;
+    var s = 0;
+    var count = 0;
+    var first = null;
+    for (var y = fy0; y < worldH; y += SPEC.varCell) {
+      for (var x = 0; x < worldW; x += SPEC.varCell) {
+        if (rnd.random() >= SPEC.varChance) continue;
+        var par = ((((x / SPEC.varCell) | 0) + (((y - fy0) / SPEC.varCell) | 0)) % 2 === 0) ? 1 : 0;
+        var choice = rnd.below(8);
+        if (!first) first = [x, y, par, choice];
+        count++;
+        s = (Math.imul(s, 131) + x + y * 3 + choice * 17) >>> 0;
+      }
+    }
+    return { sum: s, count: count, first: first };
   }
 
   function plan(worldW, worldH, opts) {
@@ -105,13 +191,33 @@
     }
     steps.push({ op: 'corner', x: 0, w: SPEC.cornerW, h: SPEC.cornerH, side: 'tl' });
     steps.push({ op: 'corner', x: worldW - SPEC.cornerW, w: SPEC.cornerW, h: SPEC.cornerH, side: 'tr' });
-    steps.push({ op: 'front', y: worldH - SPEC.frontH, gap0: gap0, gap1: gap1 });
-    steps.push({ op: 'end', x: 0, y: ey, h: SPEC.endH, side: 'left' });
-    steps.push({ op: 'end', x: worldW - SPEC.sideW, y: ey, h: SPEC.endH, side: 'right' });
     var bandY = ey + SPEC.endH - SPEC.endBand + SPEC.endDrop;
     steps.push({ op: 'endBand', x: 0, y: bandY, h: SPEC.endBand, drop: SPEC.endDrop, side: 'left' });
+    steps.push({ op: 'end', x: 0, y: ey, h: SPEC.endH, side: 'left' });
     steps.push({ op: 'endBand', x: worldW - SPEC.sideW, y: bandY, h: SPEC.endBand, drop: SPEC.endDrop, side: 'right' });
+    steps.push({ op: 'end', x: worldW - SPEC.sideW, y: ey, h: SPEC.endH, side: 'right' });
+    steps.push({ op: 'front', y: worldH - SPEC.frontH, gap0: gap0, gap1: gap1 });
     return steps;
+  }
+
+  function lightFirstOf(tile) {
+    if (!tile || !tile.width) return SPEC.lightFirst;
+    if (tile._lightFirst != null) return tile._lightFirst;
+    tile._lightFirst = SPEC.lightFirst;
+    if (typeof document === 'undefined') return tile._lightFirst;
+    try {
+      var c = document.createElement('canvas');
+      c.width = tile.width;
+      c.height = tile.height;
+      var g = c.getContext('2d', { willReadFrequently: true });
+      g.drawImage(tile, 0, 0);
+      var a = g.getImageData(32, 32, 1, 1).data;
+      var b = g.getImageData(96, 32, 1, 1).data;
+      tile._lightFirst = (a[0] + a[1] + a[2]) > (b[0] + b[1] + b[2]);
+    } catch (e) {
+      tile._lightFirst = SPEC.lightFirst;
+    }
+    return tile._lightFirst;
   }
 
   function firstOp(steps, op) {
@@ -143,8 +249,23 @@
       if (key.indexOf('floor/floor_var_light_') === 0) lights.push(images[key]);
       else if (key.indexOf('floor/floor_var_dark_') === 0) darks.push(images[key]);
     });
-    lights.sort(function (a, b) { return a.src < b.src ? -1 : 1; });
-    darks.sort(function (a, b) { return a.src < b.src ? -1 : 1; });
+    function fileName(image) {
+      var src = image && image.src ? image.src : '';
+      var clean = src.split('?')[0];
+      return clean.slice(clean.lastIndexOf('/') + 1);
+    }
+    lights.sort(function (a, b) {
+      var na = fileName(a);
+      var nb = fileName(b);
+      return na < nb ? -1 : na > nb ? 1 : 0;
+    });
+    darks.sort(function (a, b) {
+      var na = fileName(a);
+      var nb = fileName(b);
+      return na < nb ? -1 : na > nb ? 1 : 0;
+    });
+    var rnd = mtRandom(3);
+    var lightFirst = lightFirstOf(tile);
     ctx.fillStyle = SPEC.surround;
     ctx.fillRect(0, 0, worldW, worldH);
     for (var s = 0; s < steps.length; s++) {
@@ -156,13 +277,12 @@
         var y0 = step.y0;
         for (var cy = y0; cy < worldH; cy += SPEC.varCell) {
           for (var cx = 0; cx < worldW; cx += SPEC.varCell) {
-            if (cellHash(cx, cy) >= SPEC.varChance) continue;
+            if (rnd.random() >= SPEC.varChance) continue;
             var even = (((cx / SPEC.varCell) | 0) + (((cy - y0) / SPEC.varCell) | 0)) % 2 === 0;
-            var lightCell = even === SPEC.lightFirst;
+            var lightCell = even === lightFirst;
             var list = lightCell ? lights : darks;
             if (!list.length) continue;
-            var pick = list[(cellHash(cx + 17, cy + 9) * list.length) | 0];
-            ctx.drawImage(pick, cx, cy);
+            ctx.drawImage(list[rnd.below(list.length)], cx, cy);
           }
         }
       } else if (step.op === 'inset') {
@@ -333,6 +453,71 @@
     });
   }
 
+  function pngRGBA(buf) {
+    if (typeof require === 'undefined' || !buf || buf.length < 24 || buf[0] !== 0x89) return null;
+    var zlib = require('zlib');
+    var o = 8;
+    var w = 0;
+    var h = 0;
+    var ctype = 0;
+    var parts = [];
+    while (o + 8 <= buf.length) {
+      var len = buf.readUInt32BE(o);
+      o += 4;
+      var type = buf.toString('ascii', o, o + 4);
+      o += 4;
+      var data = buf.slice(o, o + len);
+      o += len + 4;
+      if (type === 'IHDR') {
+        w = data.readUInt32BE(0);
+        h = data.readUInt32BE(4);
+        ctype = data[9];
+      } else if (type === 'IDAT') parts.push(data);
+      else if (type === 'IEND') break;
+    }
+    var bpp = ctype === 6 ? 4 : ctype === 2 ? 3 : 0;
+    if (!bpp || !w || !h) return null;
+    var raw = zlib.inflateSync(Buffer.concat(parts));
+    var stride = w * bpp;
+    var out = Buffer.alloc(w * h * 4);
+    var prev = Buffer.alloc(stride);
+    var p = 0;
+    for (var y = 0; y < h; y++) {
+      var filter = raw[p++];
+      var src = raw.slice(p, p + stride);
+      p += stride;
+      var row = Buffer.alloc(stride);
+      for (var i = 0; i < stride; i++) {
+        var left = i >= bpp ? row[i - bpp] : 0;
+        var up = prev[i];
+        var ul = i >= bpp ? prev[i - bpp] : 0;
+        var v = src[i];
+        if (filter === 1) v = (v + left) & 255;
+        else if (filter === 2) v = (v + up) & 255;
+        else if (filter === 3) v = (v + ((left + up) >> 1)) & 255;
+        else if (filter === 4) {
+          var pred = left + up - ul;
+          var pa = Math.abs(pred - left);
+          var pb = Math.abs(pred - up);
+          var pc = Math.abs(pred - ul);
+          var pr = pa <= pb && pa <= pc ? left : pb <= pc ? up : ul;
+          v = (v + pr) & 255;
+        }
+        row[i] = v;
+      }
+      for (var x = 0; x < w; x++) {
+        var s = x * bpp;
+        var d = (y * w + x) * 4;
+        out[d] = row[s];
+        out[d + 1] = row[s + 1];
+        out[d + 2] = row[s + 2];
+        out[d + 3] = bpp === 4 ? row[s + 3] : 255;
+      }
+      prev = row;
+    }
+    return { w: w, h: h, data: out };
+  }
+
   function pngSize(buf) {
     if (!buf || buf.length < 24) return null;
     if (buf[0] !== 0x89 || buf[1] !== 0x50) return null;
@@ -347,7 +532,8 @@
     var cornerAt = firstOp(steps, 'corner');
     var endAt = firstOp(steps, 'end');
     var bandAt = firstOp(steps, 'endBand');
-    if (!(sideAt >= 0 && sideAt < backAt && backAt < cornerAt && cornerAt < endAt && endAt < bandAt)) reasons.push('order');
+    var frontAt = firstOp(steps, 'front');
+    if (!(sideAt >= 0 && sideAt < backAt && backAt < cornerAt && cornerAt < bandAt && bandAt < endAt && endAt < frontAt)) reasons.push('order');
     var backs = steps.filter(function (step) { return step.op === 'back'; });
     if (!backs.length || backs[0].x !== 222) reasons.push('back x');
     if (backs[0].kind !== 'door') reasons.push('stock door');
@@ -355,17 +541,15 @@
     if (corners.length !== 2 || corners[0].w !== 222 || corners[0].h !== 125) reasons.push('corner');
     var band = steps.filter(function (step) { return step.op === 'endBand'; })[0];
     if (!band || band.h !== 14 || band.drop !== 6) reasons.push('end band');
-    if (Math.abs(SPEC.varChance - (1 / 6)) > 0.0001) reasons.push('variation');
-    var hits = 0;
-    var cells = 0;
-    for (var y = 0; y < 900; y += 64) {
-      for (var x = 0; x < 1600; x += 64) {
-        cells++;
-        if (cellHash(x, y) < SPEC.varChance) hits++;
-      }
+    if (Math.abs(SPEC.varChance - 0.17) > 0.0001) reasons.push('variation');
+    var probe = mtRandom(3);
+    var expect = [0.23796462709189137, 0.5442292252959519, 0.36995516654807925, 0.6039200385961945, 0.625720304108054];
+    for (var ri = 0; ri < expect.length; ri++) {
+      if (Math.abs(probe.random() - expect[ri]) > 1e-12) reasons.push('scuff rng');
     }
-    var rate = hits / cells;
-    if (rate < 0.1 || rate > 0.24) reasons.push('var rate ' + rate);
+    var mask = scuffMask(1600, 900);
+    if (mask.count !== 54 || mask.sum !== 711889381) reasons.push('scuff hash ' + mask.count + ' ' + mask.sum);
+    if (!mask.first || mask.first[0] !== 320 || mask.first[1] !== 113 || mask.first[3] !== 0) reasons.push('scuff first');
     var grown = plan(2080, 900, { entranceX: 960, arch: true, archX: 1600 });
     var arch = null;
     for (var i = 0; i < grown.length; i++) if (grown[i].kind === 'arch') arch = grown[i];
@@ -383,6 +567,17 @@
         var ch = pngSize(fs.readFileSync(cornerPath));
         if (!ch || ch.w !== 222 || ch.h !== 125) reasons.push('corner file');
       } else reasons.push('corner missing');
+      var tilePath = path.join(__dirname, '..', 'objects', 'floor', 'floor_tile.png');
+      if (fs.existsSync(tilePath)) {
+        var rgba = pngRGBA(fs.readFileSync(tilePath));
+        if (!rgba) reasons.push('tile decode');
+        else {
+          var ia = (32 + 32 * rgba.w) * 4;
+          var ib = (96 + 32 * rgba.w) * 4;
+          var light = (rgba.data[ia] + rgba.data[ia + 1] + rgba.data[ia + 2]) > (rgba.data[ib] + rgba.data[ib + 1] + rgba.data[ib + 2]);
+          if (light) reasons.push('light first');
+        }
+      } else reasons.push('tile missing');
     }
     return { ok: reasons.length === 0, reason: reasons.join('; '), backStartX: 222, archH: 125, varChance: SPEC.varChance };
   }

@@ -105,6 +105,7 @@
   overflow-x: auto;
   padding-bottom: 8px;
   margin: 12px 0;
+  touch-action: none;
 }
 
 .hr-tile {
@@ -116,6 +117,7 @@
   font: 700 8px/1 Outfit, Inter, sans-serif;
   color: #2a1c18;
   background: #c4a574;
+  touch-action: none;
 }
 
 .hr-tile.is-walk { background: #f3e6c8; }

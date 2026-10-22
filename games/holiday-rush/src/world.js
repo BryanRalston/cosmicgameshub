@@ -211,6 +211,13 @@
     return sum;
   }
 
+  function tenantLayout(tenantId) {
+    var data = root.HRParts.data.get();
+    var tenants = data.layouts && data.layouts.tenants;
+    if (!tenants) return null;
+    return tenants[tenantId] || tenants.toys_pop || null;
+  }
+
   function nextComplaint(books) {
     if (!books || !books.mall || !books.mall.leases) return null;
     var data = root.HRParts.data.get();
@@ -278,6 +285,16 @@
     var bought = buyCommon(player, 'security');
     if (!bought.ok || nextComplaint(player) || player.mall.leases.a.rentPaid !== 1000) reasons.push('bought');
     if (player.cash !== 4100) reasons.push('cash ' + player.cash);
+    var floor = tenantLayout('toys_pop');
+    var door = false;
+    var reg = false;
+    if (!floor || floor.worldW !== 1280) reasons.push('tenant size');
+    else floor.fixtures.forEach(function (f) {
+      if (f.type === 'door') door = true;
+      if (f.type === 'register') reg = true;
+    });
+    if (!door || !reg) reasons.push('tenant floor');
+    if (!tenantLayout('repair') || !tenantLayout('cafe_chain') || !tenantLayout('seasonal')) reasons.push('tenant set');
     return { ok: reasons.length === 0, reason: reasons.join('; '), sample: tape.profit };
   }
 
@@ -296,6 +313,7 @@
     nextComplaint: nextComplaint,
     commonCost: commonCost,
     commonName: commonName,
+    tenantLayout: tenantLayout,
     selfTest: selfTest
   };
   root.HRParts = root.HRParts || {};

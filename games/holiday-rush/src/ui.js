@@ -149,7 +149,7 @@
         '<button type="button" class="btn btn--primary" data-upgrade="' + esc(u.id) + '"' + (afford ? '' : ' disabled') + '>' + (maxed ? 'Maxed' : money(cost)) + '</button></article>';
     }).join('');
     var priceCoach = ctx.coachPrice
-      ? '<p class="hr-coachbar" id="hr-coach-price">The tag on the gondola is the price they see. Past the sticker they grumble and lose patience. At the ceiling they walk out. <button type="button" data-coach="price">Got it</button></p>'
+      ? '<p class="hr-coachbar" id="hr-coach-price">The tag on the gondola is the price they see. Past the sticker they grumble and lose patience. At the ceiling they walk out. Move a price and this note goes away.</p>'
       : '';
     el.innerHTML =
       priceCoach +
@@ -172,15 +172,17 @@
       var btn = ev.target.closest('button');
       if (!btn || btn.disabled) return;
       var msg = '';
-      if (btn.getAttribute('data-coach') === 'price') {
-        if (ctx.onCoachPrice) ctx.onCoachPrice();
-        return;
-      }
       if (btn.hasAttribute('data-price')) {
         var itemId = btn.getAttribute('data-price');
         var item = root.HRParts.data.get().items.byId[itemId];
-        var next = econ.priceOf(books, item) + (+btn.getAttribute('data-dir') || 0);
-        msg = econ.setPrice(books, itemId, next).msg;
+        var before = econ.priceOf(books, item);
+        var next = before + (+btn.getAttribute('data-dir') || 0);
+        var priced = econ.setPrice(books, itemId, next);
+        msg = priced.msg;
+        if (priced.ok && econ.priceOf(books, item) !== before) {
+          ctx.coachPrice = false;
+          if (ctx.onCoachPrice) ctx.onCoachPrice();
+        }
       } else if (btn.hasAttribute('data-case')) {
         msg = econ.buyCase(books, btn.getAttribute('data-case'), books.active).msg;
       } else if (btn.hasAttribute('data-send')) {
@@ -248,30 +250,83 @@
     }).join('');
     var warns = model.warnings.length
       ? model.warnings.map(function (w) { return '<p class="hr-warn">' + esc(w) + '</p>'; }).join('')
-      : '<p class="hr-fine">Pale tiles are the path from the door. A walled-off till or gondola does not sell.</p>';
+      : '<p class="hr-fine">Pale tiles are the path from the door. Drag a tool across the tiles. A walled-off till or gondola does not sell.</p>';
     el.innerHTML =
       '<p class="hr-kicker">Floor</p><h2>Arrange the fixtures</h2>' +
-      warns +
+      '<div class="hr-warns">' + warns + '</div>' +
       '<div class="hr-tools">' + buttons + '</div>' +
       '<div class="hr-board" style="--cols:' + model.cols + '">' + cells + '</div>' +
       '<div class="hr-cta"><button type="button" class="btn btn--primary" data-done="1">Back to the office</button></div>';
+    var dragOn = false;
+    var lastKey = '';
+    function paintBoard() {
+      var fresh = layoutApi().editorModel(ctx.layout);
+      var by = {};
+      fresh.cells.forEach(function (cell) { by[cell.c + ',' + cell.r] = cell; });
+      var tiles = el.querySelectorAll('.hr-board [data-c]');
+      for (var i = 0; i < tiles.length; i++) {
+        var tile = tiles[i];
+        var cell = by[tile.getAttribute('data-c') + ',' + tile.getAttribute('data-r')];
+        if (!cell) continue;
+        var cls = 'hr-tile';
+        if (!cell.owned) cls += ' is-void';
+        else if (cell.walk) cls += ' is-walk';
+        else cls += ' is-block';
+        if (cell.type) cls += ' is-' + cell.type;
+        if (fresh.blocked.indexOf(cell.fixture) >= 0) cls += ' is-shut';
+        tile.className = cls;
+        tile.textContent = cell.label || (cell.type === 'wall' ? '' : cell.type ? cell.type.slice(0, 3) : '');
+      }
+      var warn = el.querySelector('.hr-warns');
+      if (warn) {
+        warn.innerHTML = fresh.warnings.length
+          ? fresh.warnings.map(function (w) { return '<p class="hr-warn">' + esc(w) + '</p>'; }).join('')
+          : '<p class="hr-fine">Pale tiles are the path from the door. Drag a tool across the tiles. A walled-off till or gondola does not sell.</p>';
+      }
+    }
+    function stamp(tile) {
+      if (!tile) return;
+      var key = tile.getAttribute('data-c') + ',' + tile.getAttribute('data-r');
+      if (key === lastKey) return;
+      lastKey = key;
+      var res = layoutApi().place(ctx.layout, ctx.tool || 'shelf-toys', +tile.getAttribute('data-c'), +tile.getAttribute('data-r'));
+      ctx.onToast(res.msg);
+      ctx.onPlaced();
+      paintBoard();
+    }
+    var board = el.querySelector('.hr-board');
+    board.addEventListener('pointerdown', function (ev) {
+      var tile = ev.target.closest('[data-c]');
+      if (!tile || !board.contains(tile)) return;
+      ev.preventDefault();
+      dragOn = true;
+      lastKey = '';
+      stamp(tile);
+      try { board.setPointerCapture(ev.pointerId); } catch (e) {}
+    });
+    board.addEventListener('pointermove', function (ev) {
+      if (!dragOn) return;
+      var hit = document.elementFromPoint(ev.clientX, ev.clientY);
+      var tile = hit && hit.closest ? hit.closest('[data-c]') : null;
+      if (tile && board.contains(tile)) stamp(tile);
+    });
+    function endDrag() {
+      if (!dragOn) return;
+      dragOn = false;
+      lastKey = '';
+      mountLayout(el, ctx);
+    }
+    board.addEventListener('pointerup', endDrag);
+    board.addEventListener('pointercancel', endDrag);
     el.onclick = function (ev) {
       var btn = ev.target.closest('button');
-      if (!btn) return;
+      if (!btn || btn.hasAttribute('data-c')) return;
       if (btn.hasAttribute('data-tool')) {
         ctx.tool = btn.getAttribute('data-tool');
         mountLayout(el, ctx);
         return;
       }
-      if (btn.hasAttribute('data-done')) {
-        ctx.onDone();
-        return;
-      }
-      if (!btn.hasAttribute('data-c')) return;
-      var res = layoutApi().place(ctx.layout, ctx.tool || 'shelf-toys', +btn.getAttribute('data-c'), +btn.getAttribute('data-r'));
-      ctx.onToast(res.msg);
-      ctx.onPlaced();
-      mountLayout(el, ctx);
+      if (btn.hasAttribute('data-done')) ctx.onDone();
     };
   }
 
@@ -330,6 +385,7 @@
       panel = '<p class="hr-lead">' + esc(tenant.blurb) + '</p>' +
         '<p class="hr-fine">Rent ' + money(leaseRow.rent) + ' · they pay ' + money(leaseRow.rentPaid || 0) + ' this close.' +
         (leaseRow.openComplaint ? ' “' + esc(leaseRow.openComplaint) + '”' : ' The common they wanted is open.') + '</p>' +
+        '<button type="button" class="btn btn--primary" data-play="' + esc(slot.id) + '">Play their floor</button>' +
         '<button type="button" class="btn" data-end="' + esc(slot.id) + '">End the lease</button>';
     } else {
       var pick = ctx.tenant || data.tenants.tenants[0].id;
@@ -352,7 +408,7 @@
     }
     var door = mall.door && Object.keys(mall.leases).length ? Math.round(mall.door * 100) : 100;
     var mallCoach = ctx.coachMall
-      ? '<p class="hr-coachbar" id="hr-coach-mall">This is the plaza. Lease a unit, set the rent, and open the common they asked for. Leave it dark and they pay 85% with a thinner door. <button type="button" data-coach="mall">Got it</button></p>'
+      ? '<p class="hr-coachbar" id="hr-coach-mall">This is the plaza. Lease a unit, set the rent, and open the common they asked for. Leave it dark and they pay 85% with a thinner door. Hand someone the keys and this note goes away.</p>'
       : '';
     el.innerHTML =
       mallCoach +
@@ -366,10 +422,6 @@
     el.onclick = function (ev) {
       var btn = ev.target.closest('button');
       if (!btn || btn.disabled) return;
-      if (btn.getAttribute('data-coach') === 'mall') {
-        if (ctx.onCoachMall) ctx.onCoachMall();
-        return;
-      }
       if (btn.hasAttribute('data-slot')) {
         ctx.slot = btn.getAttribute('data-slot');
         mountMall(el, ctx);
@@ -393,9 +445,17 @@
       if (btn.hasAttribute('data-sign')) {
         var tid = ctx.tenant || data.tenants.tenants[0].id;
         var res = world.signLease(books, btn.getAttribute('data-sign'), tid, ctx.rents[tid]);
+        if (res.accepted) {
+          ctx.coachMall = false;
+          if (ctx.onCoachMall) ctx.onCoachMall();
+        }
         ctx.onToast(res.accepted ? (res.tenant + ' has the keys. ' + (res.complaints[0] || 'They are settled.')) : res.reason);
         ctx.onDirty();
         mountMall(el, ctx);
+        return;
+      }
+      if (btn.hasAttribute('data-play')) {
+        if (ctx.onPlayTenant) ctx.onPlayTenant(btn.getAttribute('data-play'));
         return;
       }
       if (btn.hasAttribute('data-end')) {

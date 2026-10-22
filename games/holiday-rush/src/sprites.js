@@ -200,7 +200,8 @@
       objects: {},
       bytes: 0,
       perTypeBudget: PER_TYPE,
-      held: {}
+      held: {},
+      ghosts: {}
     };
     var manifest = null;
     var loading = {};
@@ -244,6 +245,7 @@
     }
 
     function hold(type) {
+      if (pack.types[type]) pack.ghosts[type] = pack.types[type];
       pack.held[type] = true;
       delete pack.types[type];
       delete loading[type];
@@ -367,9 +369,12 @@
     var later = typesForDay(12);
     if (early.length >= later.length) reasons.push('preload set');
     var session = createSession('/games/holiday-rush/');
+    var pose = session.pack();
+    pose.types.regular = { marker: 7 };
     session.hold('regular');
     var heldPack = session.pack();
     if (!heldPack.held.regular || heldPack.types.regular) reasons.push('hold');
+    if (!heldPack.ghosts || !heldPack.ghosts.regular || heldPack.ghosts.regular.marker !== 7) reasons.push('pose');
     return { ok: reasons.length === 0, reason: reasons.join('; ') };
   }
 

@@ -22,7 +22,7 @@ The shift tick in `games/holiday-rush.js` (`startDay`, `step`, `updateCustomers`
 
 **Good Pizza Great Pizza.** Ingredient cost is wholesale, and the chapter unlock is a knock-through you can see. Reviews are three lines with a number, tied to the wait, the hole in the shelf, or a price above the tag. Eight SKUs, not a topping catalog. The products on the gondola are drawn large enough to read on a phone. A cocoa tin at the ceiling is not a hidden modifier: the treats gondola says WON’T PAY, that shopper turns around, and the close names the price against the tag. That is the GPGP beat where a bad price shows up in the shop, not only in the ledger.
 
-**Supermarket Simulator.** The price the shopper expects is the printed MSRP. It does not drift in the background. Raise it and the HUD aisle mood goes Thin, because demand is the weighted price pressure. Raise one SKU past 1.45× and the shopper at that gondola walks. The others still queue. Empty back room stops the shelf from refilling. Expansion happens when the floor is full, and the camera does not zoom out to show the new bay. You drag there.
+**Supermarket Simulator.** The price the shopper expects is the printed MSRP. It does not drift in the background. Raise one starter SKU to the ceiling and the weighted aisle demand falls under 0.78, so the HUD reads Thin. Raise one SKU past 1.45× and the shopper at that gondola walks. The others still queue. Empty back room stops the shelf from refilling. Expansion happens when the floor is full, and the camera does not zoom out to show the new bay. You drag there.
 
 **Two Point Hospital.** Reputation moves the crowd. Training pulls a person off the next shift. Firing costs severance and a hit to reviews, and the last till lead cannot be fired. The loan is one product, offered when the next build is close and unaffordable. The crowd you manage is the crowd on the floor you are standing in. A tenant complaint is that kind of interrupt: Quick Fix says the parking row is dark, and you either open Security for $900 or let the door stay thin.
 
@@ -37,7 +37,7 @@ Demand, with reputation anchored at 3.4 so day one matches the current floor:
 ```
 priceDemand = clamp(1 - (price/MSRP - 1) * 0.9, 0.42, 1.22)
 priceDemand = 0 when price/MSRP >= 1.45
-demand = clamp((1 + (reputation - 3.4) * 0.11) * average(priceDemand), 0.78, 1.42)
+demand = clamp((1 + (reputation - 3.4) * 0.11) * average(priceDemand), 0.42, 1.42)
 ```
 
 Prices stay between 0.7× and 1.45× MSRP. A regular basket at MSRP lands between $64 and $88 before the floor's upsell, stock, and combo. Combo multiplies revenue after the quote. Cost of goods stays the wholesale on the units taken.
@@ -89,7 +89,7 @@ Knock-through grows east only. The stage is short; the store does not grow talle
 
 ## Shift beats
 
-The played floor, and only the played floor, adds one extra beat so the shift is not the same chain every day. Day mod 3 picks it: a sample tray at the wrap table, a tour bus of three families, or a double ring that doubles the next sales for a few seconds. If a tag is above 1.12× the sticker, a price-talk card follows and the last choice holds the tag. Headless `simulate()` never sets `floorOn`, so these cards do not move the shift-0 pins. The first office open explains pricing. The first mall open explains rent and the 85% grumble. Neither is a fourth step on the day-0 floor coach.
+The played floor, and only the played floor, adds one fresh beat per day across the fifteen shifts: sample tray, tour bus, double ring, wrap-table flash, flickering lights, a lost kid, an aisle inspector, an open return, carolers, holding the door, rain on the curb, an expired coupon, a jammed dock, a back-room count, and a parade. The last choice on every card leaves the floor alone, so a timeout does not move the pins. If a tag is above 1.12× the sticker, a price-talk card follows and the last choice holds the tag. Headless `simulate()` never sets `floorOn`, so these cards do not move the shift-0 pins. The first office open explains pricing and stays until a price actually changes. The first mall open explains rent and the 85% grumble and stays until a lease is signed. Neither is a fourth step on the day-0 floor coach.
 
 A crowd past 70 shoppers sheds work: half-resolution backing store, edge shoppers as blobs, shelf chrome and glows skipped, the spatial hash rebuilt every third tick, and the sim stepped about twenty times a second. That path is the stress crowd, not a normal cap of 14 to 32.
 
@@ -99,7 +99,7 @@ Cells are 80 world units. The starter fixtures sit on the coordinates the shift 
 
 Gondola, register, cafe, wall, and freight block their cell. The door is walkable. Traffic is a 4-neighbor flood from the door. A selling fixture is reachable when any neighbor is flooded.
 
-The editor tools are toys, lights, seasonal, register (reg1–reg3 only), cafe, wall, and erase. The door, the dock, and the last register cannot be erased.
+The editor tools are toys, lights, seasonal, register (reg1–reg3 only), cafe, wall, and erase. Drag a tool across tiles to place a run of them. The door, the dock, and the last register cannot be erased.
 
 When the layout is edited or the world is wider than 1600, shoppers path on the grid. Until then they use the existing aisle path.
 
@@ -107,7 +107,7 @@ When the layout is edited or the world is wider than 1600, shoppers path on the 
 
 Characters are targeted at 118px on a phone under 520px wide, 112px on a tablet, 108px on a desk. Zoom bottoms at 1.0 on a phone and 0.88 on a desk, and tops at 1.7. A bigger world does not shrink the sprites. A 390px-wide stage shows a slice of the floor. Drag, edge chevrons, and the East bay button move you. Follow resumes about 2.6 seconds after a drag.
 
-Whole floor is a separate button. It frames the back wall and the door in one view by dropping below the phone zoom floor, and only while that button is pressed. Zoom in, zoom out, or East bay leaves that frame and the chunky camera comes back. The default zoom floor stays 1.0 on a phone.
+Map is a separate button. It draws a corner minimap of the whole plate, back wall through the door, with a rectangle for the current view. The play camera stays on the zoom floor, so characters stay at the phone target. Zoom in, zoom out, or East bay closes the map. The default zoom floor stays 1.0 on a phone.
 
 Products draw in a 46×54 world slot, about 70px on that phone. Illustrated art, when it arrives, drops into the same rect from `products/<sku>.webp` or `objects/<sku>.png`.
 
@@ -115,9 +115,9 @@ Products draw in a 46×54 world slot, about 70px on that phone. Illustrated art,
 
 There is no total art cap. Each character type, body frames plus portraits, stays within 110KB (`perTypeBudget` 112640). PNG and WebP with alpha both count. `manifest.json` keeps the flat `files` list and adds a `types` map. The grouper unions both, so a new file is picked up even before someone edits the map.
 
-The boot loads only the types on today's shift. Day 0 is regular, kid, family, and the four crew bodies. The ugly-sweater shopper preloads with day 1, rusher from day 5, haggle from day 7, lift from day 12. The end-of-shift screen preloads the next day's new types. A type that is not in the pack yet draws as a tall dashed silhouette with a question mark. Holding a type drops its sheet and blocks the loader from filling it back in, so a missing body stays a silhouette until it is released. The opening line is grandpa, mom, and kid so the first shift does not ask for sprites it has not loaded. Headless simulate still uses the old customer mix, because that mix is part of the pinned balance.
+The boot loads only the types on today's shift. Day 0 is regular, kid, family, and the four crew bodies. The ugly-sweater shopper preloads with day 1, rusher from day 5, haggle from day 7, lift from day 12. The end-of-shift screen preloads the next day's new types. A type that is not in the pack yet draws as a silhouette. If that type’s sheet was already decoded, the stand-in is that pose filled solid. Otherwise it is a tall dashed figure with a question mark. Holding a type keeps the sheet as a ghost and blocks the loader from filling the live pack back in. The opening line is grandpa, mom, and kid so the first shift does not ask for sprites it has not loaded. Headless simulate still uses the old customer mix, because that mix is part of the pinned balance.
 
-The v10 pack replaces the v3 bodies. Each type stays under 110 KB and keeps its own manifest. The floor is no longer a baked photo or a code-drawn room. `room.js` paints side walls, then back-wall segments from x=222, then the 222×125 corners. `wall_back_arch` stays 125 px tall. Each side-wall end piece redraws its bottom 14 px band 6 px lower onto the front ledge. About one in six floor cells swaps to a same-parity scuff tile. Shelves, registers, the truck, the jack, and the tree are object sprites. Tree twinkle, the scanner sweep, the gift sparkle, and lit string bulbs composite with `lighter`. The static room is one canvas blit, so the glow pass stays a handful of images while 150 shoppers are on the floor.
+The v10 pack replaces the v3 bodies. Each type stays under 110 KB and keeps its own manifest. The floor is no longer a baked photo or a code-drawn room. `room.js` paints side walls, then back-wall segments from x=222, then the 222×125 corners. `wall_back_arch` stays 125 px tall. Ledge order matches the art script: the end piece’s bottom 14 px band is redrawn 6 px lower, then the full end piece, then the front ledge. Scuffs use that script’s Random(3) stream at chance 0.17, and light-versus-dark follows the floor tile. Shelves, registers, the truck, the jack, and the tree are object sprites. Tree twinkle, the scanner sweep, the gift sparkle, and lit string bulbs composite with `lighter`. The static room is one canvas blit, so the glow pass stays a handful of images while 150 shoppers are on the floor.
 
 ## Save
 
@@ -130,13 +130,14 @@ Key `hr_books_v4`. Version 4. `hr_campaign_v1.bank` migrates into `cash` once. C
   active, locations: { mart, kiosk? },
   reviews, milestones, posted, closed,
   shifts, lifetimeProfit, playedPrice,
-  mall: null
+  mall: null,
+  tenantRuns: []
 }
 ```
 
 `posted` / `closed` remember the profit already booked for a shift index so a retry replaces it. `mall: null` is reserved so the mall phase can fill that key without a migration.
 
-`hr_run_v1` (version 3, same day) still resumes a shift in progress.
+`hr_run_v1` (version 3, same day) still resumes a shift in progress, including the sales already on the drawer. A mid-shift reload reads that saved sales figure back before the clock steps again. `tenantRuns` keeps the last management cuts from playing a leased floor.
 
 ## Milestones
 
@@ -176,11 +177,11 @@ Phase A, shipped earlier. One mart, then a kiosk. The active store is full fidel
 
 Phase B, this build. The mall map unlocks with the east-wall knock-through, so day one stays a floor. Storefronts are the chip sheets. You pick a tenant, set rent under their ceiling, and hand them the keys. Commons are stamp buttons: decor $800, security $900, parking lights $700, food court $1,200, holiday event $600. If the common they `want` is still 0, they complain, traffic drops to 70% of their number, and they pay 85%. The next shift shows that complaint as a card. Fix it and the common opens, cash leaves the register, and this close collects full rent. Let them grumble and the door stays thin. Rent is added in `closeShift` only when `books.mall.leases` exists, so a save with `mall: null` still posts the pinned $3,010.
 
-Phase C, not a screen. You do not drop into a tenant’s floor and play their shift. A parade, a blackout, or a plaza visit that retunes the flagship is still ahead. Commons are a purchase and a card, not a mall-wide event system.
+Phase C, first slice. A leased unit has Play their floor. That opens their 1280×900 room with their gondolas, your crew, and a smaller goal. The close adds 15% of their drawer to the register and does not replace the flagship’s posted profit. A parade, a blackout, or a plaza visit that retunes the flagship is still ahead. Commons are a purchase and a card, not a mall-wide event system.
 
 ## What was cut
 
-An investor who skims every shift. A catalog of 80–150 SKUs. Hundreds of decorations. A research tree. A gardening minigame. Prices that move with no tell. Playing a tenant’s store as its own shift. A taller store. A 40-person roster. The 20 staff and 150 customers in the stress test are the pool and the spatial hash, not a hiring catalog. The crew you learn by name stays the original eight plus four hires.
+An investor who skims every shift. A catalog of 80–150 SKUs. Hundreds of decorations. A research tree. A gardening minigame. Prices that move with no tell. Mall-wide parade and blackout events. A taller store. A 40-person roster. The 20 staff and 150 customers in the stress test are the pool and the spatial hash, not a hiring catalog. The crew you learn by name stays the original eight plus four hires.
 
 ## Self-test
 
