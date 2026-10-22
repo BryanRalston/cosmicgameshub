@@ -184,6 +184,7 @@
     .hr-name:disabled { opacity: 0.38; cursor: not-allowed; }
     #hr-coach { white-space: pre-line; line-height: 1.25; align-items: flex-start; }
     #hr-score .hr-fine { color: var(--text-mid); font-size: 0.95rem; }
+    #hr-other-floor { display: block; margin: 0.2rem 0 0.45rem; padding: 0.35rem 0.65rem; border-radius: 10px; background: rgba(224, 163, 34, 0.16); color: var(--text-hi); font-size: 0.95rem; line-height: 1.35; max-width: none; }
     .hr-node.is-next { outline: 2px solid #e0a322; }
     .hr-shop { display: flex; flex-direction: column; gap: 8px; margin: 0.6rem 0; }
     .hr-upgrade { display: flex; gap: 10px; align-items: center; background: #f6f0e4; color: #2b1d2e; border-radius: 14px; padding: 0.65rem; }
@@ -366,6 +367,32 @@
 <div id="hr-event" class="hr-modal" hidden></div>
 <div id="hr-toast" role="status"></div>
 
+<script>
+(function () {
+  var search = location.search || '';
+  var path = location.pathname || '';
+  if (/\.html$/i.test(path)) {
+    try { sessionStorage.setItem('hr_preview_search', search); } catch (e) {}
+    var clean = path.replace(/\.html$/i, '') || '/';
+    if (history.replaceState) history.replaceState(null, '', clean + search + (location.hash || ''));
+  }
+  var match = /(?:\?|&)seed=([^&]*)/.exec(location.search || '');
+  if (!match) return;
+  var raw = match[1];
+  var n;
+  for (n = 0; n < 2; n++) {
+    if (raw.indexOf('%') < 0) break;
+    try {
+      var next = decodeURIComponent(raw);
+      if (next === raw) break;
+      raw = next;
+    } catch (err) { break; }
+  }
+  var seeds = raw.toLowerCase().split(/[,+\s]+/).filter(Boolean);
+  var pill = document.getElementById('hr-seed');
+  if (pill && seeds.length) pill.textContent = seeds.join(', ');
+})();
+</script>
 <script src="/games/holiday-rush/src/data.js"></script>
 <script src="/games/holiday-rush/src/entities.js"></script>
 <script src="/games/holiday-rush/src/economy.js"></script>
