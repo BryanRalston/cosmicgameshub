@@ -4702,7 +4702,11 @@
         clock.classList.toggle('rush', rushing);
       }
       var salesLab = salesText.parentNode && salesText.parentNode.querySelector('span');
-      if (salesLab) salesLab.textContent = shiftLabel(run.day) + ' · ' + SHIFT_NAMES[shiftIndex(sim)] + (rushing ? ' rush' : '');
+      if (salesLab) {
+        var rushWord = rushing;
+        try { if (window.matchMedia('(max-width: 720px)').matches) rushWord = false; } catch (eRushWord) {}
+        salesLab.textContent = shiftLabel(run.day) + ' · ' + SHIFT_NAMES[shiftIndex(sim)] + (rushWord ? ' rush' : '');
+      }
       if (sim._paintSales != null && sim.sales > sim._paintSales && root.CGSfx && root.CGSfx.juice) {
         root.CGSfx.juice(salesText, 'pop');
       }
