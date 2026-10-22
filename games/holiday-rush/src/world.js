@@ -353,7 +353,7 @@
 
   function claimDaily(books, ymd, report) {
     if (!books) return { claimed: false, bonus: 0 };
-    if (books.dailyClaimed === ymd) return { claimed: false, bonus: 0, reason: 'already' };
+    if (books.dailyClaimed === ymd) return { claimed: false, bonus: 0, reason: 'already', goal: dailyGoal(ymd) };
     var goal = dailyGoal(ymd);
     if (!goal) return { claimed: false, bonus: 0 };
     if (!dailyMet(goal, report)) return { claimed: false, bonus: 0, goal: goal, reason: 'miss' };
@@ -508,7 +508,7 @@
     var first = claimDaily(payer, '2026-10-22', met);
     if (!first.claimed || first.bonus !== goal.bonus || payer.cash !== 100 + goal.bonus) reasons.push('claim ' + payer.cash);
     var second = claimDaily(payer, '2026-10-22', met);
-    if (second.claimed || payer.cash !== 100 + goal.bonus) reasons.push('twice');
+    if (second.claimed || second.reason !== 'already' || payer.cash !== 100 + goal.bonus) reasons.push('twice');
     var missBooks = econ.blankBooks();
     missBooks.cash = 50;
     var miss = claimDaily(missBooks, '2026-10-23', { walkouts: 99, goalPct: 0, bestCombo: 0 });
