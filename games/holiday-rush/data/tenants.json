@@ -1,0 +1,8 @@
+{
+  "tenants": [
+    {"id": "toys_pop", "name": "Window Box", "blurb": "A toy pop-up. Families detour for it if the walk from the flagship is bright.", "maxRent": 900, "traffic": 1.15, "wants": "decor", "complaint": "The corridor is bare. Parents turn around before the plush."},
+    {"id": "repair", "name": "Quick Fix", "blurb": "Phone repair. Quiet, and they pay if the parking row feels safe.", "maxRent": 1400, "traffic": 0.82, "wants": "security", "complaint": "The parking row is dark. My customers won't walk it."},
+    {"id": "cafe_chain", "name": "Second Cup", "blurb": "A cafe that feeds the court. They want the food court open.", "maxRent": 1100, "traffic": 1.28, "wants": "foodcourt", "complaint": "You leased me a cafe and the food court is closed."},
+    {"id": "seasonal", "name": "Trim & Bow", "blurb": "Holiday trim. They do well when the mall is dressed for the rush.", "maxRent": 700, "traffic": 1.05, "wants": "events", "complaint": "No mall event this week. The seasonal bay is a closet."}
+  ]
+}

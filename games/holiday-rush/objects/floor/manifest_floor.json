@@ -1,0 +1,176 @@
+{
+ "floor/floor_tile.png": {
+  "w": 128,
+  "h": 128,
+  "bytes": 10766,
+  "use": "repeat as pattern; 128px = 2x2 cells (game cell ~61px at 1600w); createPattern(img,\"repeat\")"
+ },
+ "floor/wall_back.png": {
+  "w": 420,
+  "h": 125,
+  "bytes": 8175,
+  "use": "back wall segment, tile horizontally (repeat-x)"
+ },
+ "floor/wall_back_door.png": {
+  "w": 421,
+  "h": 126,
+  "bytes": 7844,
+  "use": "back wall with stockroom door; drop-in for one wall_back segment"
+ },
+ "floor/wall_back_arch.png": {
+  "w": 427,
+  "h": 125,
+  "bytes": 20597,
+  "use": "back wall with wing opening; height == wall_back (v9c)"
+ },
+ "floor/wall_front.png": {
+  "w": 198,
+  "h": 71,
+  "bytes": 793,
+  "use": "front ledge segment, repeat-x; leave a gap for the entrance"
+ },
+ "floor/wall_post.png": {
+  "w": 26,
+  "h": 71,
+  "bytes": 735,
+  "use": "end post / corner cap for front ledge and wall ends"
+ },
+ "floor/wall_side_left.png": {
+  "w": 84,
+  "h": 283,
+  "bytes": 14115,
+  "use": "left wall, repeat-y (cap seam rows trimmed in v9)"
+ },
+ "floor/wall_side_right.png": {
+  "w": 84,
+  "h": 283,
+  "bytes": 14183,
+  "use": "right wall, repeat-y"
+ },
+ "floor/wall_side_left_end.png": {
+  "w": 84,
+  "h": 118,
+  "bytes": 4612,
+  "use": "bottom end of left wall (meets front ledge)"
+ },
+ "floor/wall_side_right_end.png": {
+  "w": 84,
+  "h": 118,
+  "bytes": 4510,
+  "use": "bottom end of right wall"
+ },
+ "floor/wall_corner_tl.png": {
+  "w": 222,
+  "h": 125,
+  "bytes": 21521,
+  "use": "top-left corner, 222x125, height==wall_back; back segments start at x=222; garland wraps corner"
+ },
+ "floor/wall_corner_tr.png": {
+  "w": 222,
+  "h": 125,
+  "bytes": 21544,
+  "use": "top-right corner (mirror)"
+ },
+ "floor/floor_var_light_0.png": {
+  "w": 64,
+  "h": 64,
+  "bytes": 3326,
+  "use": "variation cell: randomly replace ~1 in 6 matching-parity cells of floor_tile"
+ },
+ "floor/floor_var_dark_1.png": {
+  "w": 64,
+  "h": 64,
+  "bytes": 2875,
+  "use": "variation cell: randomly replace ~1 in 6 matching-parity cells of floor_tile"
+ },
+ "floor/floor_var_light_2.png": {
+  "w": 64,
+  "h": 64,
+  "bytes": 3008,
+  "use": "variation cell: randomly replace ~1 in 6 matching-parity cells of floor_tile"
+ },
+ "floor/floor_var_dark_3.png": {
+  "w": 64,
+  "h": 64,
+  "bytes": 2493,
+  "use": "variation cell: randomly replace ~1 in 6 matching-parity cells of floor_tile"
+ },
+ "floor/floor_var_dark_4.png": {
+  "w": 64,
+  "h": 64,
+  "bytes": 2703,
+  "use": "variation cell: randomly replace ~1 in 6 matching-parity cells of floor_tile"
+ },
+ "floor/floor_var_light_5.png": {
+  "w": 64,
+  "h": 64,
+  "bytes": 2442,
+  "use": "variation cell: randomly replace ~1 in 6 matching-parity cells of floor_tile"
+ },
+ "floor/floor_var_dark_6.png": {
+  "w": 64,
+  "h": 64,
+  "bytes": 3081,
+  "use": "variation cell: randomly replace ~1 in 6 matching-parity cells of floor_tile"
+ },
+ "floor/floor_var_light_7.png": {
+  "w": 64,
+  "h": 64,
+  "bytes": 3126,
+  "use": "variation cell: randomly replace ~1 in 6 matching-parity cells of floor_tile"
+ },
+ "floor/floor_var_light_8.png": {
+  "w": 64,
+  "h": 64,
+  "bytes": 2700,
+  "use": "variation cell: randomly replace ~1 in 6 matching-parity cells of floor_tile"
+ },
+ "floor/floor_var_dark_9.png": {
+  "w": 64,
+  "h": 64,
+  "bytes": 2505,
+  "use": "variation cell: randomly replace ~1 in 6 matching-parity cells of floor_tile"
+ },
+ "floor/floor_var_light_10.png": {
+  "w": 64,
+  "h": 64,
+  "bytes": 2586,
+  "use": "variation cell: randomly replace ~1 in 6 matching-parity cells of floor_tile"
+ },
+ "floor/floor_var_dark_11.png": {
+  "w": 64,
+  "h": 64,
+  "bytes": 2645,
+  "use": "variation cell: randomly replace ~1 in 6 matching-parity cells of floor_tile"
+ },
+ "floor/floor_var_dark_12.png": {
+  "w": 64,
+  "h": 64,
+  "bytes": 2796,
+  "use": "variation cell: randomly replace ~1 in 6 matching-parity cells of floor_tile"
+ },
+ "floor/floor_var_light_13.png": {
+  "w": 64,
+  "h": 64,
+  "bytes": 2984,
+  "use": "variation cell: randomly replace ~1 in 6 matching-parity cells of floor_tile"
+ },
+ "floor/floor_var_dark_14.png": {
+  "w": 64,
+  "h": 64,
+  "bytes": 2558,
+  "use": "variation cell: randomly replace ~1 in 6 matching-parity cells of floor_tile"
+ },
+ "floor/floor_var_dark_15.png": {
+  "w": 64,
+  "h": 64,
+  "bytes": 2883,
+  "use": "variation cell: randomly replace ~1 in 6 matching-parity cells of floor_tile"
+ },
+ "floor/floor_wing.png": {
+  "w": 232,
+  "h": 128,
+  "bytes": 3103,
+  "use": "fill behind wall_back_arch / wing rooms, repeat both axes"
+ }
+}

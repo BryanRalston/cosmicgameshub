@@ -1,0 +1,33 @@
+{
+ "haggle": {
+  "kind": "character",
+  "files": [
+   "haggle/idle_down_0.png",
+   "haggle/idle_down_1.png",
+   "haggle/idle_side_0.png",
+   "haggle/idle_side_1.png",
+   "haggle/idle_up_0.png",
+   "haggle/idle_up_1.png",
+   "haggle/walk_down_0.png",
+   "haggle/walk_down_1.png",
+   "haggle/walk_down_2.png",
+   "haggle/walk_down_3.png",
+   "haggle/walk_side_0.png",
+   "haggle/walk_side_1.png",
+   "haggle/walk_side_2.png",
+   "haggle/walk_side_3.png",
+   "haggle/walk_up_0.png",
+   "haggle/walk_up_1.png",
+   "haggle/walk_up_2.png",
+   "haggle/walk_up_3.png",
+   "haggle/work_down_0.png",
+   "haggle/work_down_1.png",
+   "portraits/haggle_angry.png",
+   "portraits/haggle_delighted.png",
+   "portraits/haggle_impatient.png",
+   "portraits/haggle_neutral.png"
+  ],
+  "bytes": 92982,
+  "budget": 110000
+ }
+}

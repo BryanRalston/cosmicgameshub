@@ -1,0 +1,33 @@
+{
+ "rusher": {
+  "kind": "character",
+  "files": [
+   "portraits/rusher_angry.png",
+   "portraits/rusher_delighted.png",
+   "portraits/rusher_impatient.png",
+   "portraits/rusher_neutral.png",
+   "rusher/idle_down_0.png",
+   "rusher/idle_down_1.png",
+   "rusher/idle_side_0.png",
+   "rusher/idle_side_1.png",
+   "rusher/idle_up_0.png",
+   "rusher/idle_up_1.png",
+   "rusher/walk_down_0.png",
+   "rusher/walk_down_1.png",
+   "rusher/walk_down_2.png",
+   "rusher/walk_down_3.png",
+   "rusher/walk_side_0.png",
+   "rusher/walk_side_1.png",
+   "rusher/walk_side_2.png",
+   "rusher/walk_side_3.png",
+   "rusher/walk_up_0.png",
+   "rusher/walk_up_1.png",
+   "rusher/walk_up_2.png",
+   "rusher/walk_up_3.png",
+   "rusher/work_down_0.png",
+   "rusher/work_down_1.png"
+  ],
+  "bytes": 88328,
+  "budget": 110000
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "lift": {
+  "kind": "character",
+  "files": [
+   "lift/idle_down_0.png",
+   "lift/idle_down_1.png",
+   "lift/idle_side_0.png",
+   "lift/idle_side_1.png",
+   "lift/idle_up_0.png",
+   "lift/idle_up_1.png",
+   "lift/walk_down_0.png",
+   "lift/walk_down_1.png",
+   "lift/walk_down_2.png",
+   "lift/walk_down_3.png",
+   "lift/walk_side_0.png",
+   "lift/walk_side_1.png",
+   "lift/walk_side_2.png",
+   "lift/walk_side_3.png",
+   "lift/walk_up_0.png",
+   "lift/walk_up_1.png",
+   "lift/walk_up_2.png",
+   "lift/walk_up_3.png",
+   "lift/work_down_0.png",
+   "lift/work_down_1.png",
+   "portraits/lift_angry.png",
+   "portraits/lift_delighted.png",
+   "portraits/lift_impatient.png",
+   "portraits/lift_neutral.png"
+  ],
+  "bytes": 74548,
+  "budget": 110000
+ }
+}

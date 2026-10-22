@@ -1,0 +1,155 @@
+{
+  "cell": 80,
+  "starter": {
+    "id": "mart",
+    "name": "Holiday Rush Mart",
+    "worldW": 1600,
+    "worldH": 900,
+    "edited": false,
+    "owned": [{"x": 0, "y": 0, "w": 1600, "h": 900}],
+    "fixtures": [
+      {"id": "door", "type": "door", "x": 960, "y": 855},
+      {"id": "reg1", "type": "register", "station": "reg1", "x": 496, "y": 730},
+      {"id": "reg2", "type": "register", "station": "reg2", "x": 752, "y": 730},
+      {"id": "floor", "type": "floor", "x": 800, "y": 470},
+      {"id": "freight", "type": "freight", "x": 1160, "y": 200},
+      {"id": "truck", "type": "truck", "x": 1200, "y": 130},
+      {"id": "g1", "type": "gondola", "dept": "toys", "x": 480, "y": 460, "label": "TOYS"},
+      {"id": "g2", "type": "gondola", "dept": "seasonal", "x": 800, "y": 260, "label": "TREATS"},
+      {"id": "g3", "type": "gondola", "dept": "seasonal", "x": 800, "y": 520, "label": "WRAP"},
+      {"id": "g4", "type": "gondola", "dept": "toys", "x": 1140, "y": 460, "label": "CARDS"}
+    ]
+  },
+  "adds": {
+    "knock": {
+      "owned": [{"x": 1600, "y": 124, "w": 480, "h": 776}],
+      "worldW": 2080,
+      "fixtures": [
+        {"id": "g_elec", "type": "gondola", "dept": "electronics", "x": 1840, "y": 420, "label": "LIGHTS"}
+      ]
+    },
+    "lane": {
+      "fixtures": [
+        {"id": "reg3", "type": "register", "station": "reg3", "x": 1680, "y": 730}
+      ]
+    },
+    "departments": {
+      "owned": [{"x": 2080, "y": 124, "w": 400, "h": 776}],
+      "worldW": 2480,
+      "fixtures": [
+        {"id": "g_season", "type": "gondola", "dept": "seasonal", "x": 2260, "y": 380, "label": "SEASON"},
+        {"id": "cafe", "type": "cafe", "dept": "cafe", "x": 2260, "y": 640, "label": "CAFE"}
+      ]
+    },
+    "flagship": {
+      "owned": [{"x": 2480, "y": 124, "w": 400, "h": 776}],
+      "worldW": 2880,
+      "fixtures": [
+        {"id": "g_flag", "type": "gondola", "dept": "toys", "x": 2660, "y": 460, "label": "PLUSH"}
+      ]
+    }
+  },
+  "kiosk": {
+    "id": "kiosk",
+    "name": "Plaza Kiosk",
+    "worldW": 1280,
+    "worldH": 900,
+    "edited": false,
+    "owned": [{"x": 0, "y": 0, "w": 1280, "h": 900}],
+    "fixtures": [
+      {"id": "k_door", "type": "door", "x": 640, "y": 855},
+      {"id": "k_reg", "type": "register", "station": "reg1", "x": 480, "y": 730},
+      {"id": "k_reg2", "type": "register", "station": "reg2", "x": 760, "y": 730},
+      {"id": "k_floor", "type": "floor", "x": 560, "y": 460},
+      {"id": "k_toys", "type": "gondola", "dept": "toys", "x": 320, "y": 420, "label": "TOYS"},
+      {"id": "k_season", "type": "gondola", "dept": "seasonal", "x": 760, "y": 420, "label": "WRAP"},
+      {"id": "k_freight", "type": "freight", "x": 1040, "y": 220},
+      {"id": "k_truck", "type": "truck", "x": 1120, "y": 140}
+    ]
+  },
+  "tenants": {
+    "toys_pop": {
+      "id": "toys_pop",
+      "name": "Window Box",
+      "worldW": 1280,
+      "worldH": 900,
+      "edited": false,
+      "goalMul": 0.5,
+      "spawnMul": 1.2,
+      "bias": "family",
+      "owned": [{"x": 0, "y": 0, "w": 1280, "h": 900}],
+      "fixtures": [
+        {"id": "t_door", "type": "door", "x": 640, "y": 855},
+        {"id": "t_reg", "type": "register", "station": "reg1", "x": 420, "y": 730},
+        {"id": "t_reg2", "type": "register", "station": "reg2", "x": 700, "y": 730},
+        {"id": "t_floor", "type": "floor", "x": 560, "y": 460},
+        {"id": "t_toys", "type": "gondola", "dept": "toys", "x": 280, "y": 380, "label": "PLUSH"},
+        {"id": "t_toys2", "type": "gondola", "dept": "toys", "x": 860, "y": 380, "label": "TOYS"},
+        {"id": "t_freight", "type": "freight", "x": 1040, "y": 220},
+        {"id": "t_truck", "type": "truck", "x": 1120, "y": 140}
+      ]
+    },
+    "repair": {
+      "id": "repair",
+      "name": "Quick Fix",
+      "worldW": 1280,
+      "worldH": 900,
+      "edited": false,
+      "goalMul": 0.32,
+      "spawnMul": 0.72,
+      "bias": "",
+      "owned": [{"x": 0, "y": 0, "w": 1280, "h": 900}],
+      "fixtures": [
+        {"id": "r_door", "type": "door", "x": 640, "y": 855},
+        {"id": "r_reg", "type": "register", "station": "reg1", "x": 480, "y": 730},
+        {"id": "r_reg2", "type": "register", "station": "reg2", "x": 760, "y": 730},
+        {"id": "r_floor", "type": "floor", "x": 560, "y": 480},
+        {"id": "r_elec", "type": "gondola", "dept": "electronics", "x": 360, "y": 400, "label": "PHONES"},
+        {"id": "r_freight", "type": "freight", "x": 1040, "y": 220},
+        {"id": "r_truck", "type": "truck", "x": 1120, "y": 140}
+      ]
+    },
+    "cafe_chain": {
+      "id": "cafe_chain",
+      "name": "Second Cup",
+      "worldW": 1280,
+      "worldH": 900,
+      "edited": false,
+      "goalMul": 0.48,
+      "spawnMul": 1.05,
+      "bias": "",
+      "owned": [{"x": 0, "y": 0, "w": 1280, "h": 900}],
+      "fixtures": [
+        {"id": "c_door", "type": "door", "x": 640, "y": 855},
+        {"id": "c_reg", "type": "register", "station": "reg1", "x": 480, "y": 730},
+        {"id": "c_reg2", "type": "register", "station": "reg2", "x": 760, "y": 730},
+        {"id": "c_floor", "type": "floor", "x": 560, "y": 500},
+        {"id": "c_cafe", "type": "cafe", "dept": "cafe", "x": 360, "y": 420, "label": "CAFE"},
+        {"id": "c_cafe2", "type": "cafe", "dept": "cafe", "x": 860, "y": 420, "label": "COCOA"},
+        {"id": "c_freight", "type": "freight", "x": 1040, "y": 220},
+        {"id": "c_truck", "type": "truck", "x": 1120, "y": 140}
+      ]
+    },
+    "seasonal": {
+      "id": "seasonal",
+      "name": "Trim & Bow",
+      "worldW": 1280,
+      "worldH": 900,
+      "edited": false,
+      "goalMul": 0.4,
+      "spawnMul": 1,
+      "bias": "",
+      "owned": [{"x": 0, "y": 0, "w": 1280, "h": 900}],
+      "fixtures": [
+        {"id": "s_door", "type": "door", "x": 640, "y": 855},
+        {"id": "s_reg", "type": "register", "station": "reg1", "x": 480, "y": 730},
+        {"id": "s_reg2", "type": "register", "station": "reg2", "x": 760, "y": 730},
+        {"id": "s_floor", "type": "floor", "x": 560, "y": 480},
+        {"id": "s_trim", "type": "gondola", "dept": "seasonal", "x": 320, "y": 400, "label": "TRIM"},
+        {"id": "s_bow", "type": "gondola", "dept": "seasonal", "x": 900, "y": 400, "label": "BOWS"},
+        {"id": "s_freight", "type": "freight", "x": 1040, "y": 220},
+        {"id": "s_truck", "type": "truck", "x": 1120, "y": 140}
+      ]
+    }
+  }
+}

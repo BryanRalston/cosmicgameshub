@@ -1,0 +1,12 @@
+{
+  "items": [
+    {"id": "cocoa", "name": "Cocoa tin", "dept": "cafe", "msrp": 26, "wholesale": 13, "weight": 3, "unlock": "start", "startUnits": 90, "shape": "tin"},
+    {"id": "paper", "name": "Wrap roll", "dept": "seasonal", "msrp": 18, "wholesale": 9, "weight": 2, "unlock": "start", "startUnits": 70, "shape": "roll"},
+    {"id": "candy", "name": "Ribbon candy", "dept": "toys", "msrp": 20, "wholesale": 10, "weight": 2, "unlock": "start", "startUnits": 70, "shape": "bag"},
+    {"id": "candle", "name": "Bayberry candle", "dept": "seasonal", "msrp": 24, "wholesale": 12, "weight": 1, "unlock": "start", "startUnits": 40, "shape": "candle"},
+    {"id": "lights", "name": "String lights", "dept": "electronics", "msrp": 34, "wholesale": 16, "weight": 2, "unlock": "knock", "startUnits": 0, "shape": "coil"},
+    {"id": "plush", "name": "Window plush", "dept": "toys", "msrp": 32, "wholesale": 15, "weight": 2, "unlock": "knock", "startUnits": 0, "shape": "plush"},
+    {"id": "globe", "name": "Snow globe", "dept": "seasonal", "msrp": 44, "wholesale": 20, "weight": 1, "unlock": "departments", "startUnits": 0, "shape": "globe"},
+    {"id": "mug", "name": "Cafe mug", "dept": "cafe", "msrp": 16, "wholesale": 6, "weight": 2, "unlock": "cafe", "startUnits": 0, "shape": "mug"}
+  ]
+}

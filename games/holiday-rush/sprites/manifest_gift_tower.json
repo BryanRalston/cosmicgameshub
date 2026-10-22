@@ -1,0 +1,27 @@
+{
+ "gift_tower": {
+  "kind": "object",
+  "files": [
+   "objects/gift_tower/empty_spot.png",
+   "objects/gift_tower/full.png",
+   "objects/gift_tower/one_left.png",
+   "objects/gift_tower/restocked.png",
+   "objects/gift_tower/sale_tag.png",
+   "objects/gift_tower/sparkle.png",
+   "objects/gift_tower/toppled.png",
+   "objects/gift_tower/two_left.png"
+  ],
+  "bytes": 24707,
+  "budget": 110000,
+  "states": [
+   "full",
+   "two_left",
+   "one_left",
+   "empty_spot",
+   "sale_tag",
+   "sparkle",
+   "toppled",
+   "restocked"
+  ]
+ }
+}

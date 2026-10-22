@@ -1,0 +1,35 @@
+{
+ "crew_register": {
+  "kind": "character",
+  "files": [
+   "crew_register/idle_down_0.png",
+   "crew_register/idle_down_1.png",
+   "crew_register/idle_side_0.png",
+   "crew_register/idle_side_1.png",
+   "crew_register/idle_up_0.png",
+   "crew_register/idle_up_1.png",
+   "crew_register/walk_down_0.png",
+   "crew_register/walk_down_1.png",
+   "crew_register/walk_down_2.png",
+   "crew_register/walk_down_3.png",
+   "crew_register/walk_side_0.png",
+   "crew_register/walk_side_1.png",
+   "crew_register/walk_side_2.png",
+   "crew_register/walk_side_3.png",
+   "crew_register/walk_up_0.png",
+   "crew_register/walk_up_1.png",
+   "crew_register/walk_up_2.png",
+   "crew_register/walk_up_3.png",
+   "crew_register/work_down_0.png",
+   "crew_register/work_down_1.png",
+   "portraits/crew_register_angry.png",
+   "portraits/crew_register_happy.png",
+   "portraits/crew_register_neutral.png",
+   "portraits/crew_register_proud.png",
+   "portraits/crew_register_sick.png",
+   "portraits/crew_register_stressed.png"
+  ],
+  "bytes": 85006,
+  "budget": 110000
+ }
+}

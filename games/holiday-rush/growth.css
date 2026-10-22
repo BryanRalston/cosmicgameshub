@@ -1,0 +1,286 @@
+.hr-zoom,
+.hr-pan {
+  position: absolute;
+  z-index: 4;
+  display: flex;
+  gap: 6px;
+}
+
+.hr-zoom {
+  top: 8px;
+  right: 8px;
+}
+
+.hr-zoom button,
+.hr-pan button,
+.hr-office button,
+.hr-tools button,
+.hr-tile {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.hr-zoom button,
+.hr-pan button {
+  border: 0;
+  border-radius: 10px;
+  background: #2a1c18;
+  color: #f6f0e4;
+  font: 700 16px/1 Outfit, Inter, sans-serif;
+  padding: 0 12px;
+}
+
+#hr-frame {
+  font-size: 13px;
+}
+
+#hr-frame[aria-pressed="true"] {
+  background: #e0a322;
+  color: #24180f;
+}
+
+.hr-coachbar {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #2b1d2e;
+  color: #f6f0e4;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.hr-coachbar button {
+  min-height: 44px;
+  margin-top: 8px;
+  border: 0;
+  border-radius: 999px;
+  background: #f6f0e4;
+  color: #24180f;
+  font: 800 15px/1 Outfit, Inter, sans-serif;
+  padding: 0 16px;
+}
+
+.hr-pan--left { left: 8px; top: 50%; }
+.hr-pan--right { right: 8px; top: 50%; }
+.hr-pan--up { left: 50%; top: 48px; transform: translateX(-50%); }
+.hr-pan--down { left: 50%; bottom: 8px; transform: translateX(-50%); }
+
+.hr-office__block {
+  margin: 16px 0;
+  padding: 12px;
+  background: rgba(255, 244, 220, 0.55);
+  border-radius: 14px;
+}
+
+.hr-sku,
+.hr-crewline,
+.hr-upgrade {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(42, 28, 24, 0.12);
+}
+
+.hr-step,
+.hr-crewline__act,
+.hr-row,
+.hr-tools,
+.hr-send {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.hr-step strong {
+  min-width: 64px;
+  text-align: center;
+}
+
+.hr-board {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), 44px);
+  gap: 4px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  margin: 12px 0;
+  touch-action: none;
+}
+
+.hr-tile {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 6px;
+  border: 1px solid #2a1c18;
+  font: 700 8px/1 Outfit, Inter, sans-serif;
+  color: #2a1c18;
+  background: #c4a574;
+  touch-action: none;
+}
+
+.hr-tile.is-walk { background: #f3e6c8; }
+.hr-tile.is-void { background: #2a1c18; color: transparent; border-color: #2a1c18; }
+.hr-tile.is-gondola,
+.hr-tile.is-cafe { background: #6b4228; color: #f6f0e4; }
+.hr-tile.is-register { background: #c4363a; color: #f6f0e4; }
+.hr-tile.is-wall,
+.hr-tile.is-freight { background: #3e2618; color: #f6f0e4; }
+.hr-tile.is-door,
+.hr-tile.is-truck,
+.hr-tile.is-floor { background: #e0a322; }
+.hr-tile.is-shut { outline: 3px solid #e0a322; }
+
+.hr-warn {
+  color: #8a2a22;
+  font-weight: 700;
+}
+
+.hr-tools .is-on,
+.hr-row .is-on {
+  outline: 3px solid #e0a322;
+}
+
+.hr-leadpick {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.hr-leadpick select,
+.hr-send select {
+  min-height: 44px;
+  font: 600 16px/1.2 Outfit, Inter, sans-serif;
+}
+
+@media (max-width: 520px) {
+  .hr-sku,
+  .hr-crewline,
+  .hr-upgrade {
+    grid-template-columns: 1fr;
+  }
+}
+
+.hr-hud .hr-stat,
+.hr-hud .hr-sales {
+  background: url("/games/holiday-rush/objects/ui/hud_0.png") center / 100% 100% no-repeat;
+  border-radius: 10px;
+  padding: 4px 8px;
+  color: #24180f;
+}
+
+.hr-hud .hr-stat span,
+.hr-hud .hr-sales__top span {
+  color: #5c4632;
+}
+
+.hr-hud .hr-stat strong,
+.hr-hud .hr-sales__top strong {
+  color: #24180f;
+}
+
+.hr-actions button,
+#hr-shop .btn,
+#hr-score .btn,
+#hr-map .btn,
+.hr-choices button {
+  background-color: #d7c48a;
+  background-image: url("/games/holiday-rush/objects/ui/buttons_0.png");
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  color: #24180f;
+  border-color: transparent;
+}
+
+.hr-actions button {
+  color: #24180f;
+}
+
+#hr-shop .btn:disabled,
+.hr-choices button:disabled,
+.hr-actions button:disabled {
+  opacity: 0.5;
+}
+
+.hr-rowfront,
+.hr-tenants,
+.hr-commons {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.hr-plaza {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hr-plaza .btn {
+  min-height: 44px;
+}
+
+.hr-front,
+.hr-tenant {
+  flex: 0 0 132px;
+  min-height: 176px;
+  border: 0;
+  border-radius: 16px;
+  background-color: #f3e6c8;
+  background-repeat: no-repeat;
+  background-position: center 12px;
+  background-size: 72px 90px;
+  color: #24180f;
+  font: 800 13px/1.2 Outfit, Inter, sans-serif;
+  padding: 108px 8px 10px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.hr-front small,
+.hr-tenant small,
+.hr-common small {
+  display: block;
+  font-weight: 650;
+  color: #5c4632;
+}
+
+.hr-front.is-on,
+.hr-tenant.is-on {
+  outline: 3px solid #e0a322;
+}
+
+.hr-front.is-you {
+  box-shadow: inset 0 0 0 3px #2f9e57;
+}
+
+.hr-front.is-mad {
+  box-shadow: inset 0 -6px 0 #c4363a;
+}
+
+.hr-common {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 64px;
+  border: 0;
+  background: transparent;
+  color: #24180f;
+  font: 800 13px/1.15 Outfit, Inter, sans-serif;
+  text-align: left;
+  cursor: pointer;
+}
+
+.hr-seal {
+  width: 42px;
+  height: 60px;
+  background: url("/games/holiday-rush/objects/ui/stamp_0.png") center / contain no-repeat;
+  flex: 0 0 auto;
+}
+
+.hr-common.is-on .hr-seal {
+  background-image: url("/games/holiday-rush/objects/ui/stamp_1.png");
+}

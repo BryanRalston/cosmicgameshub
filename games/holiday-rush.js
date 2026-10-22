@@ -1,21 +1,53 @@
 /* Holiday Rush: Store Manager
-   Floor frames: floor_chars_atlas.json (96px cells, 3 dirs × idle2/walk4/work4, left = mirrored side).
-   Portraits: portraits_atlas.json. Icons: icons_ui_atlas.json.
-   Round 4 detail (pallet jack, shelf product, kid back-view, reactions) is drawn
-   on the canvas so the png/webp load stays the same size.
-   localStorage only. No accounts. */
+   People are the v10 per-type sprite packs in games/holiday-rush/sprites/.
+   The room is assembled from games/holiday-rush/objects/ (floor kit, fixtures,
+   props). Glow overlays use additive blending. A missing type draws as a
+   silhouette. localStorage only. No accounts. */
 (function (root) {
   'use strict';
+  if (typeof document === 'undefined' && typeof require === 'function') {
+    var hrJoin = require('path');
+    var hrSrc = hrJoin.join(__dirname, 'holiday-rush', 'src');
+    require(hrJoin.join(hrSrc, 'data.js'));
+    require(hrJoin.join(hrSrc, 'entities.js'));
+    require(hrJoin.join(hrSrc, 'economy.js'));
+    require(hrJoin.join(hrSrc, 'layout.js'));
+    require(hrJoin.join(hrSrc, 'world.js'));
+    require(hrJoin.join(hrSrc, 'save.js'));
+    require(hrJoin.join(hrSrc, 'sprites.js'));
+    require(hrJoin.join(hrSrc, 'sim.js'));
+    require(hrJoin.join(hrSrc, 'render.js'));
+    require(hrJoin.join(hrSrc, 'room.js'));
+    require(hrJoin.join(hrSrc, 'ui.js'));
+  }
+  var HR = root.HRParts || {};
 
   var ART = 'holiday-rush/';
   var WORLD_W = 1600;
   var WORLD_H = 900;
-  var COLS = 21;
   var DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
   var SHIFT_NAMES = ['Open', 'Mid', 'Close'];
   var SHIFT_HOURS = ['8–12', '12–4', '4–8'];
   var STATIONS = ['reg1', 'reg2', 'floor', 'freight'];
-  var STATION_LABEL = { reg1: 'Register A', reg2: 'Register B', floor: 'Floor', freight: 'Freight' };
+  var STATION_LABEL = { reg1: 'Register A', reg2: 'Register B', reg3: 'Register C', floor: 'Floor', freight: 'Freight' };
+  var reg3Live = false;
+  var activeLayout = null;
+  var spriteSession = null;
+  var floorDirty = false;
+  var PAL = {
+    ink: '#2a1c18',
+    cream: '#f6f0e4',
+    gold: '#e0a322',
+    red: '#c4363a',
+    green: '#2f7d4a',
+    blue: '#2d4c7c',
+    wood: '#6b4228',
+    woodDark: '#3e2618',
+    floorA: '#e4c7a0',
+    floorB: '#d1aa78',
+    wall: '#5c2c38',
+    trim: '#f3e6d0'
+  };
   var ROLE_COLOR = { register: '#d64545', freight: '#3b78d0', floor: '#2f9e57', manager: '#e0a322' };
   var ROLE_LETTER = { register: 'R', freight: 'F', floor: 'L', manager: 'K' };
   var STAFF_EXPR = ['neutral', 'happy', 'stressed', 'angry', 'sick', 'proud'];
@@ -89,6 +121,151 @@
   ];
 
   var CUST_IDS = ['cust_mom', 'cust_grandpa', 'cust_kid', 'cust_biz', 'cust_teen', 'cust_karen'];
+  var LOOKS = {
+    staff_mgr: { scale: 1.06, skin: '#e7b896', hair: '#2a1a14', style: 'bun', top: '#6d2740', bottom: '#241820', shoes: '#1a120c', vest: '#4a1a2c' },
+    staff_reg1: { scale: 1, skin: '#c68642', hair: '#1a120c', style: 'short', top: '#f4f0e8', bottom: '#2c2428', shoes: '#1a120c', vest: '#c4363a' },
+    staff_reg2: { scale: 0.98, skin: '#8d5524', hair: '#1a120c', style: 'pony', top: '#f4f0e8', bottom: '#3a2a3a', shoes: '#1a120c', vest: '#c4363a', glasses: 1 },
+    staff_frt1: { scale: 1.05, skin: '#f0c8a0', hair: '#5a3a28', style: 'cap', top: '#2d4c7c', bottom: '#24344c', shoes: '#1a120c', beard: 1 },
+    staff_frt2: { scale: 1, skin: '#c68642', hair: '#0e3d38', style: 'hijab', top: '#2d4c7c', bottom: '#24344c', shoes: '#1a120c' },
+    staff_flr1: { scale: 1, skin: '#e0ac7a', hair: '#3a2418', style: 'curly', top: '#2f7d4a', bottom: '#243028', shoes: '#1a120c' },
+    staff_flr2: { scale: 0.96, skin: '#f3d0b0', hair: '#c47a3a', style: 'bob', top: '#f6f0e4', bottom: '#5c3a4a', shoes: '#3a2418', vest: '#2f7d4a' },
+    staff_flr3: { scale: 1.08, skin: '#6b3e2a', hair: '#1a120c', style: 'fade', top: '#1e2a24', bottom: '#1e2a24', shoes: '#1a120c', vest: '#246b40' },
+    cust_mom: { scale: 1, skin: '#e0ac7a', hair: '#4a2c20', style: 'bun', top: '#c46a3a', bottom: '#6b2438', shoes: '#2a1c18', wide: 1 },
+    cust_grandpa: { scale: 0.94, skin: '#e7c4a0', hair: '#d9d3c7', style: 'bald', top: '#6e7a4a', bottom: '#4a4038', shoes: '#2a241c', cane: 1, stoop: 1 },
+    cust_kid: { scale: 0.68, skin: '#f0c8a0', hair: '#6b3a22', style: 'short', top: '#e23b3b', bottom: '#2a4e96', shoes: '#f2d15a' },
+    cust_biz: { scale: 1.04, skin: '#d2a679', hair: '#2a241c', style: 'neat', top: '#243656', bottom: '#1c2740', shoes: '#141820', tie: 1 },
+    cust_teen: { scale: 1.02, skin: '#c68642', hair: '#1a120c', style: 'hood', top: '#2a2a32', bottom: '#3a3a44', shoes: '#f6f0e4' },
+    cust_karen: { scale: 1, skin: '#f3d0b0', hair: '#e6c878', style: 'big', top: '#7a3e86', bottom: '#3a2444', shoes: '#2a1c18', wide: 1 },
+    cust_sweater: { scale: 1, skin: '#e7b896', hair: '#c45a28', style: 'short', top: '#c4363a', bottom: '#c4a574', shoes: '#6b4228' }
+  };
+  // Body frames are <type>/<anim>_<dir>_<index>.png. Portraits are
+  // portraits/<type>_<expr>.png. Indexed PNGs with a tRNS chunk count as
+  // transparent. Feet sit on source y=158. displayH matches CONFIG.sprite
+  // so the whole cast shares one scale and the camera stays sharp.
+  var SPRITE_PACK = {
+    perTypeBudget: 110 * 1024,
+    budget: 110 * 1024,
+    displayH: 78,
+    footY: 158,
+    types: ['rusher', 'haggle', 'family', 'lift', 'regular', 'kid', 'crew_manager', 'crew_register', 'crew_freight', 'crew_floor'],
+    crewExpr: ['neutral', 'happy', 'stressed', 'angry', 'sick', 'proud'],
+    custExpr: ['neutral', 'impatient', 'angry', 'delighted']
+  };
+  var SPRITE_TYPE_BY_ID = {
+    staff_mgr: 'crew_manager',
+    staff_reg1: 'crew_register',
+    staff_reg2: 'crew_register',
+    staff_frt1: 'crew_freight',
+    staff_frt2: 'crew_freight',
+    staff_flr1: 'crew_floor',
+    staff_flr2: 'crew_floor',
+    staff_flr3: 'crew_floor',
+    cust_mom: 'family',
+    cust_grandpa: 'regular',
+    cust_kid: 'kid',
+    cust_biz: 'rusher',
+    cust_teen: 'lift',
+    cust_karen: 'haggle',
+    cust_sweater: 'ugly_sweater'
+  };
+
+  function spriteTypeFor(actor) {
+    if (!actor) return 'regular';
+    if (actor.charId === 'cust_kid') return 'kid';
+    if (actor.charId === 'cust_sweater') return 'ugly_sweater';
+    if (actor.kind === 'you') return 'crew_manager';
+    if (actor.kind === 'staff' || (actor.id && BY_ID[actor.id])) {
+      var role = actor.role || (BY_ID[actor.id] && BY_ID[actor.id].role) || 'floor';
+      if (role === 'manager') return 'crew_manager';
+      if (role === 'register') return 'crew_register';
+      if (role === 'freight') return 'crew_freight';
+      return 'crew_floor';
+    }
+    if (actor.arch === 'rusher') return 'rusher';
+    if (actor.arch === 'haggle' || actor.haggling) return 'haggle';
+    if (actor.arch === 'family') return 'family';
+    if (actor.arch === 'lift') return 'lift';
+    return 'regular';
+  }
+
+  function classifySpriteFile(rel) {
+    if (HR.sprites && HR.sprites.classify) {
+      var spec = HR.sprites.classify(rel);
+      if (!spec) return null;
+      if (spec.kind === 'frame') return { kind: 'frame', type: spec.type, anim: spec.anim, dir: spec.dir, index: spec.index };
+      if (spec.kind === 'portrait') return { kind: 'portrait', key: spec.key, expr: spec.expr };
+      return spec;
+    }
+    var name = String(rel || '').replace(/\\/g, '/').replace(/^\//, '');
+    var frame = name.match(/^([a-z0-9_]+)\/(idle|walk|work)_(down|side|up)_(\d+)\.png$/);
+    if (frame) {
+      if (SPRITE_PACK.types.indexOf(frame[1]) < 0) return null;
+      return { kind: 'frame', type: frame[1], anim: frame[2], dir: frame[3], index: +frame[4] };
+    }
+    var port = name.match(/^portraits\/([a-z0-9_]+)_([a-z]+)\.png$/);
+    if (!port) return null;
+    var key = port[1];
+    var expr = port[2];
+    var crew = key.indexOf('crew_') === 0 || key.indexOf('staff_') === 0;
+    var allowed = crew ? SPRITE_PACK.crewExpr : SPRITE_PACK.custExpr;
+    if (allowed.indexOf(expr) < 0) return null;
+    if (SPRITE_PACK.types.indexOf(key) < 0 && !SPRITE_TYPE_BY_ID[key]) return null;
+    return { kind: 'portrait', key: key, expr: expr };
+  }
+
+  function pngInfo(bytes) {
+    if (!bytes || bytes.length < 26) return null;
+    if (bytes[0] !== 0x89 || bytes[1] !== 0x50 || bytes[2] !== 0x4e || bytes[3] !== 0x47) return null;
+    var w = (bytes[16] << 24) | (bytes[17] << 16) | (bytes[18] << 8) | bytes[19];
+    var h = (bytes[20] << 24) | (bytes[21] << 16) | (bytes[22] << 8) | bytes[23];
+    return { w: w >>> 0, h: h >>> 0, color: bytes[25] };
+  }
+
+  function pngHasAlpha(bytes) {
+    var info = pngInfo(bytes);
+    if (!info) return false;
+    if (info.color === 4 || info.color === 6) return true;
+    if (info.color !== 3) return false;
+    var i = 8;
+    var n = bytes.length;
+    while (i + 12 <= n) {
+      var len = ((bytes[i] << 24) | (bytes[i + 1] << 16) | (bytes[i + 2] << 8) | bytes[i + 3]) >>> 0;
+      var kind = String.fromCharCode(bytes[i + 4], bytes[i + 5], bytes[i + 6], bytes[i + 7]);
+      if (kind === 'tRNS') return true;
+      if (kind === 'IDAT' || kind === 'IEND') return false;
+      if (len > n) return false;
+      i += 12 + len;
+    }
+    return false;
+  }
+
+  function spriteFrameList(sheet, anim, dir) {
+    if (!sheet) return null;
+    var tries = [
+      anim + '|' + dir,
+      anim + '|down',
+      (anim === 'work' ? 'idle' : anim) + '|' + dir,
+      'idle|' + dir,
+      'idle|down',
+      'walk|down'
+    ];
+    for (var i = 0; i < tries.length; i++) {
+      var list = sheet[tries[i]];
+      if (list && list.length) return list;
+    }
+    return null;
+  }
+
+  function spritePackComplete(types, portraits) {
+    for (var i = 0; i < SPRITE_PACK.types.length; i++) {
+      var t = SPRITE_PACK.types[i];
+      var sheet = types[t];
+      if (!sheet || !sheet['idle|down'] || !sheet['idle|down'].length) return false;
+      if (!sheet['walk|down'] || !sheet['walk|down'].length) return false;
+      if (!portraits[t] || !portraits[t].neutral) return false;
+    }
+    return true;
+  }
   var ARCH_ORDER = [
     { id: 'rusher', day: 5, who: 'cust_biz' },
     { id: 'haggle', day: 7, who: 'cust_karen' },
@@ -130,15 +307,105 @@
     truck: { x: 1200, y: 130 }
   };
   var SHELVES = [
-    { x: 480, y: 460 },
-    { x: 800, y: 260 },
-    { x: 800, y: 520 },
-    { x: 1140, y: 460 }
+    { id: 'g1', type: 'gondola', dept: 'toys', x: 480, y: 460, label: 'TOYS' },
+    { id: 'g2', type: 'gondola', dept: 'seasonal', x: 800, y: 260, label: 'TREATS' },
+    { id: 'g3', type: 'gondola', dept: 'seasonal', x: 800, y: 520, label: 'WRAP' },
+    { id: 'g4', type: 'gondola', dept: 'toys', x: 1140, y: 460, label: 'CARDS' }
   ];
+
+  function primarySku(sh) {
+    var label = (sh && sh.label) || '';
+    var dept = (sh && sh.dept) || '';
+    if (dept === 'electronics' || label === 'LIGHTS') return 'lights';
+    if (dept === 'cafe' || label === 'CAFE') return 'cocoa';
+    if (label === 'SEASON') return 'globe';
+    if (label === 'TREATS') return 'cocoa';
+    if (label === 'WRAP') return 'paper';
+    if (label === 'CARDS' || label === 'TOYS' || label === 'PLUSH' || dept === 'toys') return 'candy';
+    if (dept === 'seasonal') return 'paper';
+    return 'cocoa';
+  }
+
+  function shelfPriceTag(sh, books) {
+    if (!books || !HR.economy || !HR.data || !HR.data.get()) return null;
+    var item = HR.data.get().items.byId[primarySku(sh)];
+    if (!item || !HR.economy.itemUnlocked(books, item)) return null;
+    var price = HR.economy.priceOf(books, item);
+    return { item: item, price: price, markup: item.msrp ? price / item.msrp : 1 };
+  }
+
+  function priceTurn(sim, cust) {
+    if (!sim.books || !HR.economy || !HR.economy.shelfReaction || !cust.shelf) return false;
+    var tag = shelfPriceTag(cust.shelf, sim.books);
+    if (!tag) return false;
+    var reaction = HR.economy.shelfReaction(tag.item, tag.price, sim.rng());
+    if (reaction.act === 'refuse') {
+      walkout(sim, cust);
+      cust.bubble = 'price';
+      floater(sim, cust.x, cust.y - 78, tag.item.name + ' ' + money(tag.price), '#ffb4b4', true);
+      sim.priceWalks = (sim.priceWalks || 0) + 1;
+      return true;
+    }
+    if (reaction.act === 'grumble') {
+      cust.patience *= reaction.patience || 0.72;
+      cust.maxPatience = Math.max(cust.maxPatience || 0, cust.patience);
+      cust.bubble = 'price';
+      cust.pop = 1;
+      sim.grumbles = (sim.grumbles || 0) + 1;
+      floater(sim, cust.x, cust.y - 78, 'Too steep', '#ffd0a8');
+      if (sim.floorOn && !sim._grumbleTold) {
+        sim._grumbleTold = true;
+        note(sim, 'Too steep. They still queue, and their patience drops.');
+      }
+    }
+    return false;
+  }
+
   var QUEUE = {
     reg1: { x: 496, y: 800, dy: 32 },
     reg2: { x: 752, y: 800, dy: 32 }
   };
+
+  function stationList() {
+    if (!reg3Live) return STATIONS;
+    return ['reg1', 'reg2', 'reg3', 'floor', 'freight'];
+  }
+
+  function isTill(st) {
+    return st === 'reg1' || st === 'reg2' || st === 'reg3';
+  }
+
+  function registers() {
+    var list = [];
+    if (SPOTS.reg1) list.push('reg1');
+    if (SPOTS.reg2) list.push('reg2');
+    if (SPOTS.reg3) list.push('reg3');
+    return list;
+  }
+
+  function trafficBlocked(id) {
+    if (!id || !activeLayout || !HR.layout || !HR.layout.wantsGrid(activeLayout)) return false;
+    if (trafficBlocked._layout !== activeLayout || trafficBlocked._n !== activeLayout.fixtures.length) {
+      trafficBlocked._layout = activeLayout;
+      trafficBlocked._n = activeLayout.fixtures.length;
+      trafficBlocked._set = {};
+      var report = HR.layout.traffic(activeLayout);
+      for (var i = 0; i < report.blocked.length; i++) trafficBlocked._set[report.blocked[i]] = true;
+    }
+    return !!trafficBlocked._set[id];
+  }
+
+  function busiestRegister(sim) {
+    var regs = registers();
+    var best = regs[0] || 'reg1';
+    var n = -1;
+    for (var i = 0; i < regs.length; i++) {
+      if (trafficBlocked(regs[i])) continue;
+      var q = queueOf(sim, regs[i]).length;
+      if (q > n) { n = q; best = regs[i]; }
+    }
+    return best;
+  }
 
   var PERKS = [
     { id: 'key', name: 'Better key carrier', icon: 'boss', body: 'Maren works any station like a specialist for the rest of the week.' },
@@ -148,6 +415,17 @@
   ];
 
   function clamp(n, a, b) { return n < a ? a : n > b ? b : n; }
+
+  function traceRound(g, x, y, w, h, r) {
+    var rad = Math.max(0, Math.min(r || 0, Math.abs(w) / 2, Math.abs(h) / 2));
+    g.beginPath();
+    g.moveTo(x + rad, y);
+    g.arcTo(x + w, y, x + w, y + h, rad);
+    g.arcTo(x + w, y + h, x, y + h, rad);
+    g.arcTo(x, y + h, x, y, rad);
+    g.arcTo(x, y, x + w, y, rad);
+    g.closePath();
+  }
   function pad(n) { return n < 10 ? '0' + n : String(n); }
 
   function utcYmd(d) {
@@ -184,7 +462,7 @@
     return next;
   }
 
-  function blankShift() { return { reg1: null, reg2: null, floor: null, freight: null }; }
+  function blankShift() { return { reg1: null, reg2: null, reg3: null, floor: null, freight: null }; }
   function blankDay() { return [blankShift(), blankShift(), blankShift()]; }
   function blankCampaign() {
     var days = [];
@@ -207,36 +485,42 @@
   function clone(obj) { return JSON.parse(JSON.stringify(obj)); }
 
   function hoursOf(daySched) {
+    var stations = stationList();
     var h = 0;
     for (var s = 0; s < 3; s++) {
-      for (var i = 0; i < STATIONS.length; i++) if (daySched[s][STATIONS[i]]) h += CONFIG.slotHours;
+      for (var i = 0; i < stations.length; i++) if (daySched[s][stations[i]]) h += CONFIG.slotHours;
     }
     return h;
   }
 
   function shiftsOf(daySched, id) {
+    var stations = stationList();
     var n = 0;
     for (var s = 0; s < 3; s++) {
-      for (var i = 0; i < STATIONS.length; i++) if (daySched[s][STATIONS[i]] === id) n++;
+      for (var i = 0; i < stations.length; i++) if (daySched[s][stations[i]] === id) n++;
     }
     return n;
   }
 
   function payrollOf(daySched, extra) {
+    var stations = stationList();
     var pay = extra || 0;
     for (var s = 0; s < 3; s++) {
-      for (var i = 0; i < STATIONS.length; i++) {
-        var id = daySched[s][STATIONS[i]];
+      for (var i = 0; i < stations.length; i++) {
+        var id = daySched[s][stations[i]];
         if (!id || !BY_ID[id]) continue;
-        pay += (BY_ID[id].role === 'manager' ? CONFIG.rateMgr : CONFIG.rate) * CONFIG.slotHours;
+        var person = BY_ID[id];
+        var rate = person.wage || (person.role === 'manager' ? CONFIG.rateMgr : CONFIG.rate);
+        pay += rate * CONFIG.slotHours;
       }
     }
     return pay;
   }
 
   function scheduled(daySched, shift, id) {
-    for (var i = 0; i < STATIONS.length; i++) {
-      if (daySched[shift][STATIONS[i]] === id) return STATIONS[i];
+    var stations = stationList();
+    for (var i = 0; i < stations.length; i++) {
+      if (daySched[shift][stations[i]] === id) return stations[i];
     }
     return null;
   }
@@ -267,6 +551,7 @@
       points: points,
       walkouts: sim.walkouts,
       checkouts: sim.checkouts,
+      grumbles: sim.grumbles || 0,
       grade: points >= 900 ? 'A' : points >= 760 ? 'B' : points >= 620 ? 'C' : 'D'
     };
   }
@@ -349,6 +634,7 @@
       [2, 'reg1'], [2, 'floor'], [2, 'freight'],
       [0, 'reg2'], [2, 'reg2']
     ];
+    if (reg3Live) order.push([1, 'reg3'], [0, 'reg3'], [2, 'reg3']);
     var hours = 0;
     for (var n = 0; n < order.length; n++) {
       if (hours + CONFIG.slotHours > CONFIG.hoursBudget) break;
@@ -381,8 +667,9 @@
     }
     var copy = clone(daySched);
     if (from) copy[from.shift][from.station] = null;
-    for (var i = 0; i < STATIONS.length; i++) {
-      if (copy[shift][STATIONS[i]] === id) copy[shift][STATIONS[i]] = null;
+    var clearStations = stationList();
+    for (var i = 0; i < clearStations.length; i++) {
+      if (copy[shift][clearStations[i]] === id) copy[shift][clearStations[i]] = null;
     }
     copy[shift][station] = id;
     if (hoursOf(copy) > CONFIG.hoursBudget) {
@@ -394,24 +681,49 @@
     return { ok: true, schedule: copy };
   }
 
-  function makeActor(charId, x, y) {
-    return {
-      charId: charId,
-      x: x, y: y,
-      dir: 'down',
-      face: 1,
-      anim: 'idle',
-      frame: 0,
-      frameT: 0,
-      arrived: false,
-      path: null,
-      pathI: 0,
-      hidden: false,
-      station: null,
-      shelfI: 0,
-      workT: 0,
-      bubble: null
-    };
+  function makeActor(charId, x, y, pooled) {
+    var a = pooled || {};
+    a.charId = charId;
+    a.x = x; a.y = y;
+    a.dir = 'down';
+    a.face = 1;
+    a.anim = 'idle';
+    a.frame = 0;
+    a.frameT = 0;
+    a.arrived = false;
+    a.path = null;
+    a.pathI = 0;
+    a.hidden = false;
+    a.station = null;
+    a.shelfI = 0;
+    a.workT = 0;
+    a.bubble = null;
+    a.dead = false;
+    a.sold = false;
+    a.walked = false;
+    a.arch = '';
+    a.receipt = '';
+    a.haggling = false;
+    a.haggleT = 0;
+    a.checkT = null;
+    a.intro = false;
+    a.angry = false;
+    a.saleMul = 1;
+    a.basketMul = 1;
+    a.speedMul = 1;
+    a.reg = null;
+    a.heart = 0;
+    a.caught = false;
+    a.prowlT = 0;
+    a.state = '';
+    a.kind = '';
+    a.id = null;
+    a.role = null;
+    a.qIndex = 0;
+    a.pop = 0;
+    a.tired = false;
+    a.rush = 0;
+    return a;
   }
 
   function moveToward(a, tx, ty, dt, speed) {
@@ -450,6 +762,10 @@
   }
 
   function pathVia(x, y, tx, ty) {
+    if (activeLayout && HR.layout) {
+      var routed = HR.layout.route(activeLayout, x, y, tx, ty);
+      if (routed && routed.length) return routed;
+    }
     return [
       { x: x, y: Math.min(820, Math.max(y, 780)) },
       { x: tx, y: 810 },
@@ -529,7 +845,7 @@
   function hasPerk(run, id) { return run.perks.indexOf(id) >= 0; }
 
   function skillMul(actor, station, run, sim) {
-    var need = station === 'reg1' || station === 'reg2' ? 'register' : station;
+    var need = isTill(station) ? 'register' : station;
     var m = 0.56;
     if (actor.role === need) m = 1.34;
     if (actor.role === 'manager') m = hasPerk(run, 'key') ? 1.75 : 1.2;
@@ -537,6 +853,7 @@
     var morale = sim ? sim.morale : 70;
     m *= 0.76 + clamp(morale, 0, 100) / 260;
     m *= actor.arrived ? 1 : 0.5;
+    if (sim && sim.books && actor && actor.id && HR.sim) m *= HR.sim.trainMul(sim.books, actor.id);
     return m;
   }
 
@@ -550,7 +867,7 @@
     if (sim.you && sim.you.station === station && sim.t < sim.you.until) {
       p += skillMul(sim.you, station, run, sim);
     }
-    if (station === 'reg1' || station === 'reg2') p += 0.62 * upgradeLevel(run, 'register');
+    if (isTill(station)) p += 0.62 * upgradeLevel(run, 'register');
     return p;
   }
 
@@ -567,7 +884,8 @@
 
   function floater(sim, x, y, text, color, big) {
     if (!sim.floats) sim.floats = [];
-    if (sim.floats.length > 16) sim.floats.shift();
+    var cap = sim.customers && sim.customers.length > 40 ? 6 : 16;
+    if (sim.floats.length > cap) sim.floats.shift();
     sim.floats.push({ x: x, y: y, text: text, color: color || '#ffe08a', life: big ? 1.25 : 1.05, big: !!big });
   }
 
@@ -592,6 +910,7 @@
   } catch (e1) {}
 
   function burstCoins(sim, x, y) {
+    if (sim.customers && sim.customers.length > 40) return;
     if (!sim.coins) sim.coins = [];
     for (var i = 0; i < 5; i++) {
       if (sim.coins.length > 28) sim.coins.shift();
@@ -624,6 +943,7 @@
   }
 
   function spawnConfetti(sim, x, y) {
+    if (sim.customers && sim.customers.length > 40) return;
     if (!sim.confetti) sim.confetti = [];
     var n = reduceMotion ? 8 : 40;
     var colors = ['#d64545', '#2f9e57', '#e0a322', '#f6f0e4', '#7ec8ff'];
@@ -847,15 +1167,23 @@
         actor.hidden = false;
       }
     }
+    sim.pool = HR.entities ? HR.entities.createPool() : null;
+    sim.spatial = HR.entities ? HR.entities.createSpatial(96) : null;
     return sim;
   }
 
   function tickAnim(a, dt) {
+    if (a.anim === 'work') {
+      a.frame = 0;
+      a.frameT = 0;
+      return;
+    }
     a.frameT += dt;
-    var fps = a.anim === 'idle' ? 3.2 : 8;
-    var count = a.anim === 'idle' ? 2 : 4;
+    var fps = a.anim === 'walk' ? 8 : 2;
+    var count = a.anim === 'walk' ? 4 : 2;
     if (a.frameT >= 1 / fps) {
       a.frameT -= 1 / fps;
+      if (a.frameT > 1 / fps) a.frameT = 0;
       a.frame = (a.frame + 1) % count;
     }
   }
@@ -892,13 +1220,14 @@
       a.path = null;
     }
     var target = SPOTS.stock;
-    if (st === 'reg1' || st === 'reg2') target = SPOTS[st];
-    else if (st === 'floor') target = SHELVES[a.shelfI % SHELVES.length];
+    if (isTill(st) && SPOTS[st]) target = SPOTS[st];
+    else if (st === 'floor' && SHELVES.length) target = SHELVES[(a.shelfI || 0) % SHELVES.length];
     else if (st === 'freight') {
-      var loop = [SPOTS.truck, SHELVES[0], SHELVES[1], SHELVES[3]];
-      if (sim.truck) loop = [SPOTS.truck];
-      target = loop[a.shelfI % loop.length];
+      var loop = [SPOTS.truck, SHELVES[0], SHELVES[1], SHELVES[3]].filter(function (spot) { return spot && spot.x != null; });
+      if (sim.truck || !loop.length) loop = [SPOTS.truck];
+      target = loop[(a.shelfI || 0) % loop.length];
     }
+    if (!target) target = SPOTS.stock;
     var speed = CONFIG.staffSpeed * (a.rush > 1 ? a.rush : 1);
     if (!a.arrived) {
       if (moveToward(a, target.x, target.y, dt, speed)) {
@@ -910,12 +1239,12 @@
       a.anim = 'work';
       a.workT += dt;
       var dwell = st === 'floor' ? 1.15 : 1.35;
-      if (a.workT > dwell && st !== 'reg1' && st !== 'reg2') {
+      if (a.workT > dwell && !isTill(st)) {
         a.workT = 0;
         a.arrived = false;
         a.shelfI++;
       }
-      if (st === 'reg1' || st === 'reg2') {
+      if (isTill(st)) {
         var qn = queueOf(sim, st).length;
         a.anim = qn > 0 ? 'work' : 'idle';
         a.bubble = qn >= 3 ? 'line' : null;
@@ -995,7 +1324,8 @@
   }
 
   function spawnCustomer(sim, run, forcedArch) {
-    if (sim.customers.length >= CONFIG.custCap) {
+    var cap = HR.sim ? HR.sim.custCap(sim, CONFIG.custCap) : CONFIG.custCap;
+    if (sim.customers.length >= cap) {
       if (!forcedArch) return;
       var dropped = false;
       for (var n = sim.customers.length - 1; n >= 0; n--) {
@@ -1008,17 +1338,31 @@
       if (!dropped) return;
     }
     var arch = forcedArch || rollArch(sim, run);
+    if (!forcedArch && sim.tenant && sim.tenant.bias && sim.rng() < 0.4) arch = sim.tenant.bias;
     var spec = arch ? archDef(arch) : null;
+    var dayN = run && run.day ? run.day : 0;
     var bag = ['cust_mom', 'cust_teen', 'cust_biz', 'cust_mom', 'cust_kid', 'cust_grandpa', 'cust_teen', 'cust_karen', 'cust_biz'];
+    if (sim.live) {
+      bag = ['cust_grandpa', 'cust_mom', 'cust_kid', 'cust_mom', 'cust_grandpa'];
+      if (dayN >= 1) bag.push('cust_sweater');
+      if (dayN >= 5) bag.push('cust_biz', 'cust_biz');
+      if (dayN >= 7) bag.push('cust_karen');
+      if (dayN >= 12) bag.push('cust_teen', 'cust_teen');
+    }
     var id = spec ? spec.who : bag[Math.floor(sim.rng() * bag.length)];
     var shelf = SHELVES[Math.floor(sim.rng() * SHELVES.length)];
+    if (sim.live && shelf && shelf.id && trafficBlocked(shelf.id)) {
+      for (var si = 0; si < SHELVES.length; si++) {
+        if (!trafficBlocked(SHELVES[si].id)) { shelf = SHELVES[si]; break; }
+      }
+    }
     var heat = sim._heat || { patience: 1, rush: false };
     var patience = (0.86 + sim.rng() * 0.28) * heat.patience;
     if (id === 'cust_karen') patience *= 0.7;
     if (id === 'cust_kid') patience *= 0.88;
     if (id === 'cust_grandpa') patience *= 1.18;
     if (hasPerk(run, 'cocoa')) patience *= 1.14;
-    var c = makeActor(id, SPOTS.door.x + (sim.rng() * 50 - 25), SPOTS.door.y);
+    var c = makeActor(id, SPOTS.door.x + (sim.rng() * 50 - 25), SPOTS.door.y, sim.pool ? sim.pool.acquire() : null);
     c.kind = 'cust';
     c.state = 'enter';
     c.shelf = shelf;
@@ -1046,6 +1390,22 @@
     return c;
   }
 
+  function dismissTypeCard(sim, run) {
+    if (!sim || !sim.typeCard) return '';
+    var metId = sim.typeCard;
+    sim.typeCard = '';
+    sim.typeUntil = 0;
+    if (run) {
+      if (!run.met) run.met = {};
+      run.met[metId] = 1;
+    }
+    var camp = campaignGet();
+    if (!camp.met) camp.met = {};
+    camp.met[metId] = 1;
+    campaignPut(camp);
+    return metId;
+  }
+
   function maybeTypeIntro(sim, run) {
     if (!sim.floorOn || sim.coachHold || sim.paused || sim.done || sim.typeCard || sim._introDone) return;
     var id = dueIntro(run);
@@ -1054,7 +1414,7 @@
     if (!born) return;
     sim._introDone = true;
     sim.typeCard = id;
-    sim.paused = true;
+    sim.typeUntil = sim.t + 5.5;
     hooks.alert();
   }
 
@@ -1082,15 +1442,42 @@
 
   function completeSale(sim, run, c) {
     if (c.sold) return;
-    if (sim.stock <= 0.025) { walkout(sim, c); return; }
+    if (sim.stock <= 0.025) {
+      if (sim.books) {
+        sim.stockouts = (sim.stockouts || 0) + 1;
+        floater(sim, c.x, c.y - 96, 'Empty shelf', '#ffb4b4', true);
+      }
+      walkout(sim, c);
+      return;
+    }
+    var basket;
+    if (sim.books && HR.sim && HR.economy) {
+      var quoted = HR.sim.checkout(sim.books, c, sim.rng);
+      if (!quoted.ok) {
+        sim.stockouts = (sim.stockouts || 0) + 1;
+        floater(sim, c.x, c.y - 96, 'Back room is empty', '#ffb4b4', true);
+        walkout(sim, c);
+        return;
+      }
+      HR.economy.consume(sim.books, quoted);
+      basket = quoted.revenue;
+      if (stationPower(sim, run, 'floor') > 0.55) basket *= 1.1;
+      if (sim.stock < 0.28) basket *= 0.64;
+      if (sim.t < sim.discountUntil) basket *= 0.86;
+      basket *= 1 + 0.09 * upgradeLevel(run, 'baskets');
+      if (c.saleMul) basket *= c.saleMul;
+      sim.cogs = (sim.cogs || 0) + quoted.cogs;
+      c.receipt = quoted.label;
+    } else {
+      basket = CONFIG.basketMin + sim.rng() * (CONFIG.basketMax - CONFIG.basketMin);
+      if (stationPower(sim, run, 'floor') > 0.55) basket *= 1.1;
+      if (sim.stock < 0.28) basket *= 0.64;
+      if (sim.t < sim.discountUntil) basket *= 0.86;
+      basket *= 1 + 0.09 * upgradeLevel(run, 'baskets');
+      if (c.basketMul) basket *= c.basketMul;
+      if (c.saleMul) basket *= c.saleMul;
+    }
     c.sold = true;
-    var basket = CONFIG.basketMin + sim.rng() * (CONFIG.basketMax - CONFIG.basketMin);
-    if (stationPower(sim, run, 'floor') > 0.55) basket *= 1.1;
-    if (sim.stock < 0.28) basket *= 0.64;
-    if (sim.t < sim.discountUntil) basket *= 0.86;
-    basket *= 1 + 0.09 * upgradeLevel(run, 'baskets');
-    if (c.basketMul) basket *= c.basketMul;
-    if (c.saleMul) basket *= c.saleMul;
     var gap = sim.t - (sim.lastSaleAt == null ? -999 : sim.lastSaleAt);
     if (gap <= CONFIG.comboWindow && (sim.combo || 0) >= 1) {
       if (sim.combo < CONFIG.comboMax) sim.combo += 1;
@@ -1099,6 +1486,7 @@
     if (sim.combo > (sim.bestCombo || 0)) sim.bestCombo = sim.combo;
     var mult = comboMult(sim.combo);
     basket = Math.round(basket * mult);
+    if (sim.floorOn && sim.doubleUntil && sim.t < sim.doubleUntil) basket *= 2;
     sim.sales += basket;
     sim.checkouts++;
     sim.stock = Math.max(0, sim.stock - CONFIG.stockPerSale);
@@ -1121,18 +1509,22 @@
   }
 
   function pickRegister(sim, run) {
-    var best = 'reg1';
+    var regs = registers();
+    var best = regs[0] || 'reg1';
     var bestScore = 1e9;
-    for (var i = 0; i < 2; i++) {
-      var reg = i === 0 ? 'reg1' : 'reg2';
+    var any = false;
+    for (var i = 0; i < regs.length; i++) {
+      var reg = regs[i];
+      if (trafficBlocked(reg)) continue;
+      any = true;
       var score = queueOf(sim, reg).length * 2 - stationPower(sim, run, reg) * 1.4;
       if (score < bestScore) { bestScore = score; best = reg; }
     }
-    return best;
+    return any ? best : regs[0];
   }
 
   function updateCustomers(sim, run, dt) {
-    var regs = ['reg1', 'reg2'];
+    var regs = registers();
     for (var r = 0; r < regs.length; r++) {
       var list = queueOf(sim, regs[r]);
       for (var i = 0; i < list.length; i++) {
@@ -1148,9 +1540,11 @@
     var speed = CONFIG.walkSpeed * (sim.t < sim.spillUntil ? 0.6 : 1);
     var cocoa = hasPerk(run, 'cocoa') ? 0.82 : 1;
     var drainMul = (sim._heat && sim._heat.drain) ? sim._heat.drain : 1;
+    if (sim.flickerUntil && sim.t < sim.flickerUntil) drainMul *= 1.85;
     for (var n = 0; n < sim.customers.length; n++) {
       var cust = sim.customers[n];
       if (cust.dead) continue;
+      if (sim._shed && cust.state === 'browse' && cust.browseT > 30) continue;
       var custSpeed = speed * (cust.speedMul || 1);
       if (sim.coachHold && cust.maxPatience && cust.state !== 'leave' && cust.patience < cust.maxPatience * 0.24) {
         cust.patience = cust.maxPatience * 0.24;
@@ -1210,9 +1604,12 @@
         else if (cust.browseT <= 0) {
           if (sim.stock <= 0.04) walkout(sim, cust);
           else {
-            cust.state = 'toQueue';
             cust.reg = pickRegister(sim, run);
-            cust.path = null;
+            if (trafficBlocked(cust.reg)) walkout(sim, cust);
+            else if (!priceTurn(sim, cust)) {
+              cust.state = 'toQueue';
+              cust.path = null;
+            }
           }
         }
       } else if (cust.state === 'toQueue') {
@@ -1274,7 +1671,14 @@
       }
       tickAnim(cust, dt);
     }
-    sim.customers = sim.customers.filter(function (c) { return !c.dead; });
+    if (sim.pool) sim.pool.compact(sim.customers);
+    else sim.customers = sim.customers.filter(function (c) { return !c.dead; });
+    if (sim.spatial) {
+      sim._spatialN = (sim._spatialN || 0) + 1;
+      if (!(sim._shed && sim.customers.length > 60 && (sim._spatialN % 3) !== 0)) {
+        sim.spatial.rebuild(sim.customers.concat(sim.staff));
+      }
+    }
   }
 
   function firstName(id) {
@@ -1382,13 +1786,13 @@
             if (sim.staff[i].station === 'floor' || sim.staff[i].station === 'freight') { pull = sim.staff[i]; break; }
           }
           if (!pull) { note(sim, 'No one to pull.'); return; }
-          var reg = queueOf(sim, 'reg1').length >= queueOf(sim, 'reg2').length ? 'reg1' : 'reg2';
+          var reg = busiestRegister(sim);
           sim.override[pull.id] = reg;
           sim.overrideShift[pull.id] = shiftIndex(sim);
           note(sim, firstName(pull.id) + ' jumped on a till.');
         }),
         choice('Hop on a till', 1, function () {
-          var reg = queueOf(sim, 'reg1').length >= queueOf(sim, 'reg2').length ? 'reg1' : 'reg2';
+          var reg = busiestRegister(sim);
           sim.you = makeActor('staff_mgr', SPOTS[reg].x, SPOTS[reg].y + 30);
           sim.you.kind = 'you'; sim.you.role = 'manager'; sim.you.station = reg; sim.you.until = sim.t + 12;
         })
@@ -1589,6 +1993,63 @@
     return card;
   }
 
+  function persistBooks(books) {
+    if (!books) return;
+    if (HR.save) HR.save.save(writeJSON, books);
+    var camp = campaignGet();
+    camp.bank = books.cash;
+    campaignPut(camp);
+  }
+
+  function buildMallCard(sim) {
+    if (!sim || !sim.books || !HR.world || !HR.world.nextComplaint) return null;
+    var row = HR.world.nextComplaint(sim.books);
+    if (!row) return null;
+    var cost = row.cost || 0;
+    var label = (HR.world.commonName ? HR.world.commonName(row.wants) : row.wants) + ' · ' + money(cost);
+    var card = {
+      id: 'mall',
+      icon: 'boss',
+      title: row.name,
+      body: row.complaint + ' Opening ' + (HR.world.commonName ? HR.world.commonName(row.wants) : row.wants).toLowerCase() + ' is ' + money(cost) + '.',
+      who: null,
+      expr: 'neutral',
+      choices: [
+        choice(label, 0, function () {
+          var res = HR.world.buyCommon(sim.books, row.wants);
+          note(sim, res.msg);
+          if (res.ok) persistBooks(sim.books);
+        }),
+        choice('Let them grumble', 0, function () {
+          note(sim, row.name + ' stays unhappy. The door stays thinner and they pay 85%.');
+        })
+      ]
+    };
+    return card;
+  }
+
+  function applyMallRetune(sim) {
+    if (!sim || sim.tenant || !sim.books || !sim.books.mall || !sim.books.mall.retune) return;
+    var ret = sim.books.mall.retune;
+    sim.mallRetune = ret.kind || 'visit';
+    sim.plazaMul = ret.door || 1;
+    if (ret.kind === 'parade') sim.paradeUntil = sim.duration;
+    if (ret.kind === 'blackout') sim.flickerUntil = sim.duration;
+    sim.books.mall.retune = null;
+    note(sim, ret.note || 'The plaza retuned the flagship.');
+    persistBooks(sim.books);
+  }
+
+  function maybeMallCard(sim) {
+    if (!sim.live || !sim.books || sim._mallShown || sim.coachHold || sim.pending || sim.paused) return;
+    if (sim.t < 2.2) return;
+    sim._mallShown = true;
+    var card = buildMallCard(sim);
+    if (!card) return;
+    sim.pending = card;
+    sim.pendingUntil = sim.t + 9;
+  }
+
   function resolvePending(sim, run, index) {
     if (!sim.pending) return { ok: false, msg: '' };
     var ch = sim.pending.choices[index];
@@ -1597,6 +2058,7 @@
     if (ch.cost) sim.actions -= ch.cost;
     ch.apply();
     sim.pending = null;
+    sim.pendingUntil = 0;
     sim.paused = false;
     return { ok: true, msg: '' };
   }
@@ -1610,11 +2072,19 @@
     var id = sim.events[sim.eventIndex];
     sim.eventIndex++;
     sim.pending = buildEvent(id, sim, run);
-    sim.paused = true;
+    sim.pendingUntil = sim.t + 7;
   }
 
   function step(sim, run, dt) {
     if (!sim || sim.done || sim.paused) return sim;
+    if (sim.pending && sim.pendingUntil && sim.t >= sim.pendingUntil - 1e-4) {
+      resolvePending(sim, run, autoChoice(sim.pending, sim));
+      if (sim.live) note(sim, 'The aisle moved on.');
+    }
+    if (sim.typeCard && sim.typeUntil && sim.t >= sim.typeUntil - 1e-4) {
+      var metName = dismissTypeCard(sim, run);
+      if (sim.live && metName) note(sim, 'New shopper is on the floor.');
+    }
     if (!(dt > 0)) return sim;
     if (sim.punch > 0) {
       var held = Math.min(sim.punch, dt);
@@ -1661,7 +2131,11 @@
     var fp = stationPower(sim, run, 'freight');
     var stockLv = upgradeLevel(run, 'stock');
     var regen = CONFIG.freightRegen * fp * (hasPerk(run, 'freight') ? 1.6 : 1) * (1 + 0.45 * stockLv);
-    if (sim.truck) {
+    var warehouseOpen = !(sim.books && HR.economy && HR.economy.unitsLeft(sim.books) <= 0);
+    var frozen = sim.stockFreeze && sim.t < sim.stockFreeze;
+    if (frozen) {
+      /* count holds the shelf still */
+    } else if (warehouseOpen && sim.truck) {
       sim.stock = Math.max(0, sim.stock - used * 0.01);
       if (fp > 0.35) sim.truckWork += used * fp;
       if (sim.truckWork > 5.5 / (1 + 0.25 * stockLv)) {
@@ -1669,7 +2143,7 @@
         sim.stock = clamp(sim.stock + 0.12, 0, 1);
         note(sim, 'Truck is cleared.');
       }
-    } else {
+    } else if (warehouseOpen) {
       sim.stock = clamp(sim.stock + used * regen, 0, 1);
     }
     if (sim.spillUntil > sim.t) {
@@ -1683,7 +2157,12 @@
     var rate = CONFIG.spawn[sh] * (sim._heat ? sim._heat.spawn : 1);
     if (sim.t < sim.rushUntil) rate *= 1.72;
     if (sim.t < sim.slowUntil) rate *= 0.62;
+    if (sim.paradeUntil && sim.t < sim.paradeUntil) rate *= 1.4;
+    if (sim.plazaMul && sim.plazaMul !== 1) rate *= sim.plazaMul;
+    if (sim.tenant && sim.tenant.spawnMul) rate *= sim.tenant.spawnMul;
     rate *= 0.74 + Math.min(stationPower(sim, run, 'floor'), 1.6) * 0.2;
+    if (sim.books && HR.sim) rate *= HR.sim.demandMul(sim.books);
+    if (sim.books && sim.books.mall && sim.books.mall.door) rate *= sim.books.mall.door;
     if (sim.stock < 0.22) rate *= 0.58;
     sim.spawnAcc += used * rate;
     var guard = 0;
@@ -1715,10 +2194,256 @@
     } else if (!sim.truck) sim.hornPlayed = false;
     maybePing(sim);
     maybeTypeIntro(sim, run);
+    if (sim.live) maybeMallCard(sim);
+    if (sim.floorOn) maybeLiveBeat(sim, run);
     if (sim.paused) return sim;
     maybeEvent(sim, run);
     if (!sim.paused && sim.t >= sim.duration - 1e-4) sim.done = true;
     return sim;
+  }
+
+  function beatCard(sim, id, title, body, choices) {
+    sim.pending = { id: id, icon: 'line', title: title, body: body, who: null, expr: 'neutral', choices: choices };
+    sim.pendingUntil = sim.t + 8;
+  }
+
+  function tagIsSteep(books) {
+    if (!books || !HR.economy || !HR.data || !HR.data.get()) return false;
+    var items = HR.data.get().items.items;
+    for (var i = 0; i < items.length; i++) {
+      if (!HR.economy.itemUnlocked(books, items[i])) continue;
+      if (HR.economy.markup(items[i], HR.economy.priceOf(books, items[i])) > 1.12) return true;
+    }
+    return false;
+  }
+
+  var FLOOR_BEATS = [
+    {
+      id: 'sample', t: 22, title: 'Sample tray',
+      body: 'Cocoa samples are on the wrap table. Hand them out and the aisle lingers. Wave them off and the line keeps its pace.',
+      choices: function (sim) {
+        return [
+          choice('Hand out samples', 1, function () {
+            sim.slowUntil = Math.max(sim.slowUntil || 0, sim.t + 14);
+            note(sim, 'Samples out. Shoppers linger in the aisle.');
+          }),
+          choice('Wave them off', 0, function () { note(sim, 'No samples. The line keeps its pace.'); })
+        ];
+      }
+    },
+    {
+      id: 'bus', t: 26, title: 'Tour bus',
+      body: 'A bus is at the curb. Open the door and three families come in with full carts. Hold the door and the rush waits.',
+      choices: function (sim, run) {
+        return [
+          choice('Open the door', 0, function () {
+            spawnCustomer(sim, run, 'family');
+            spawnCustomer(sim, run, 'family');
+            spawnCustomer(sim, run, 'family');
+            note(sim, 'Three families just walked in.');
+          }),
+          choice('Hold the door', 0, function () { note(sim, 'The door stays shut. The rush waits.'); })
+        ];
+      }
+    },
+    {
+      id: 'double', t: 24, title: 'Double ring',
+      body: 'Call it and the next sales ring twice for a few seconds. Let it pass and the till stays on one ring.',
+      choices: function (sim) {
+        return [
+          choice('Call the double', 1, function () {
+            sim.doubleUntil = sim.t + 12;
+            note(sim, 'Sales ring twice for a few seconds.');
+          }),
+          choice('Let it pass', 0, function () { note(sim, 'The till stays on a single ring.'); })
+        ];
+      }
+    },
+    {
+      id: 'flash', t: 22, title: 'Flash the wrap table',
+      body: 'The wrap table can run a short sale. Flash it and baskets ring lighter. Leave the tags and the aisle stays on the sticker.',
+      choices: function (sim) {
+        return [
+          choice('Flash the tags', 0, function () {
+            sim.discountUntil = sim.t + 14;
+            note(sim, 'Wrap-table tags are lighter for a few seconds.');
+          }),
+          choice('Leave the tags', 0, function () { note(sim, 'The stickers stay.'); })
+        ];
+      }
+    },
+    {
+      id: 'flicker', t: 30, title: 'Lights flicker',
+      body: 'The bay lights hiccup. Kill them for a moment and patience drains. Leave them on and the aisle keeps shopping.',
+      choices: function (sim) {
+        return [
+          choice('Kill the lights', 0, function () {
+            sim.flickerUntil = sim.t + 12;
+            note(sim, 'The bay is dim. Patience drains faster.');
+          }),
+          choice('Leave them on', 0, function () { note(sim, 'The lights stay up.'); })
+        ];
+      }
+    },
+    {
+      id: 'lost', t: 28, title: 'Lost kid',
+      body: 'A kid is at the door without a cart. Call them in and they join the aisle. Let the parent look and the door stays as it is.',
+      choices: function (sim, run) {
+        return [
+          choice('Call the kid in', 0, function () {
+            spawnCustomer(sim, run, 'family');
+            note(sim, 'A family followed the kid in.');
+          }),
+          choice('Let the parent look', 0, function () { note(sim, 'The door stays as it is.'); })
+        ];
+      }
+    },
+    {
+      id: 'inspector', t: 32, title: 'Aisle inspector',
+      body: 'Someone with a clipboard wants the seasonal bay. Walk them and the stars tick up. Wave them through and nothing on the floor changes.',
+      choices: function (sim) {
+        return [
+          choice('Walk the aisle', 1, function () {
+            sim.stars = clamp(sim.stars + 0.12, 1, 5);
+            note(sim, 'You walked the aisle. The clipboard is happy.');
+          }),
+          choice('Wave them through', 0, function () { note(sim, 'They left without a note.'); })
+        ];
+      }
+    },
+    {
+      id: 'return', t: 24, title: 'Open return',
+      body: 'A shopper wants money back on a cocoa tin. Take it and the drawer dips. The tag says no, and the line keeps moving.',
+      choices: function (sim) {
+        return [
+          choice('Take the return', 0, function () {
+            sim.sales = Math.max(0, sim.sales - 40);
+            sim.stars = clamp(sim.stars + 0.05, 1, 5);
+            note(sim, 'Cocoa return. The drawer is $40 lighter.');
+          }),
+          choice('The tag says no', 0, function () { note(sim, 'No return. The line keeps moving.'); })
+        ];
+      }
+    },
+    {
+      id: 'carol', t: 26, title: 'Carolers',
+      body: 'Three singers are in the doorway. Let them sing and morale jumps while the door slows. Ask them to move and the floor stays put.',
+      choices: function (sim) {
+        return [
+          choice('Let them sing', 0, function () {
+            sim.morale = clamp(sim.morale + 8, 0, 100);
+            sim.slowUntil = Math.max(sim.slowUntil || 0, sim.t + 8);
+            note(sim, 'The carolers are in. Morale is up and the door is slower.');
+          }),
+          choice('Ask them to move', 0, function () { note(sim, 'The doorway stays clear.'); })
+        ];
+      }
+    },
+    {
+      id: 'hold', t: 22, title: 'Hold the door',
+      body: 'The curb is packed. Hold the door and the next stretch is quieter. Keep it open and the spawn stays on the clock.',
+      choices: function (sim) {
+        return [
+          choice('Hold the door', 0, function () {
+            sim.slowUntil = Math.max(sim.slowUntil || 0, sim.t + 16);
+            note(sim, 'The door is held. Fewer shoppers for a stretch.');
+          }),
+          choice('Keep it open', 0, function () { note(sim, 'The door stays on the clock.'); })
+        ];
+      }
+    },
+    {
+      id: 'rain', t: 30, title: 'Rain on the curb',
+      body: 'Rain is pushing people inside. Pull the mats and a rush comes in. Leave the mats and the curb waits it out.',
+      choices: function (sim) {
+        return [
+          choice('Pull the mats', 0, function () {
+            sim.rushUntil = Math.max(sim.rushUntil || 0, sim.t + 12);
+            note(sim, 'Mats are down. A rush just came in.');
+          }),
+          choice('Leave the mats', 0, function () { note(sim, 'The curb waits out the rain.'); })
+        ];
+      }
+    },
+    {
+      id: 'coupon', t: 28, title: 'Expired coupon',
+      body: 'A coupon for the treat gondola is a week old. Honor it and the next baskets ring lighter. Call it expired and the sticker stands.',
+      choices: function (sim) {
+        return [
+          choice('Honor the coupon', 0, function () {
+            sim.discountUntil = sim.t + 10;
+            note(sim, 'The coupon is honored. Baskets ring lighter.');
+          }),
+          choice('It is expired', 0, function () { note(sim, 'The sticker stands.'); })
+        ];
+      }
+    },
+    {
+      id: 'jam', t: 24, title: 'Jammed dock',
+      body: 'The truck is stuck in the bay. Unjam it and the dock has to be worked before the shelf refills. Let it wait and stocking stays as it is.',
+      choices: function (sim) {
+        return [
+          choice('Unjam the dock', 1, function () {
+            sim.truck = 1;
+            sim.truckWork = 0;
+            sim.hornPlayed = false;
+            note(sim, 'The truck is in the bay. Work the dock.');
+          }),
+          choice('Let the dock wait', 0, function () { note(sim, 'Stocking stays as it is.'); })
+        ];
+      }
+    },
+    {
+      id: 'freeze', t: 32, title: 'Back-room count',
+      body: 'The count sheet is out. Count the back room and the shelf stops refilling. Skip it and freight keeps the pace.',
+      choices: function (sim) {
+        return [
+          choice('Count the back room', 0, function () {
+            sim.stockFreeze = sim.t + 14;
+            note(sim, 'Count is on. The shelf holds still.');
+          }),
+          choice('Skip the count', 0, function () { note(sim, 'Freight keeps the pace.'); })
+        ];
+      }
+    },
+    {
+      id: 'parade', t: 26, title: 'Parade on the curb',
+      body: 'A parade is passing the door. Open for it and the next stretch is busier. Keep the door steady and the clock does not change.',
+      choices: function (sim) {
+        return [
+          choice('Open for the parade', 0, function () {
+            sim.paradeUntil = sim.t + 14;
+            note(sim, 'The parade is in the door. More shoppers.');
+          }),
+          choice('Keep the door steady', 0, function () { note(sim, 'The door stays on its clock.'); })
+        ];
+      }
+    }
+  ];
+
+  function maybeLiveBeat(sim, run) {
+    if (!sim.floorOn || sim.coachHold || sim.paused || sim.pending || sim.done) return;
+    if (!sim._beats) sim._beats = {};
+    var dayN = run && run.day ? run.day : 0;
+    var beat = FLOOR_BEATS[dayN] || FLOOR_BEATS[dayN % FLOOR_BEATS.length];
+    if (beat && !sim._beats[beat.id] && sim.t >= beat.t) {
+      sim._beats[beat.id] = 1;
+      beatCard(sim, beat.id, beat.title, beat.body, beat.choices(sim, run));
+      return;
+    }
+    if (sim._beats.priceTalk || sim.t < 48 || !sim.books || !tagIsSteep(sim.books)) return;
+    sim._beats.priceTalk = 1;
+    beatCard(sim, 'priceTalk', 'Price talk', 'A shopper is staring at a tag above the sticker. Drop cocoa a notch, or hold the tag and let them grumble.', [
+      choice('Drop cocoa a notch', 0, function () {
+        var item = HR.data.get().items.byId.cocoa;
+        if (!item) return;
+        var next = HR.economy.priceOf(sim.books, item) - 1;
+        var res = HR.economy.setPrice(sim.books, 'cocoa', next);
+        persistBooks(sim.books);
+        note(sim, res.msg || 'Cocoa moved.');
+      }),
+      choice('Hold the tag', 0, function () { note(sim, 'The tag stays. They can grumble.'); })
+    ]);
   }
 
   function maybePing(sim) {
@@ -1785,7 +2510,7 @@
     sim.live = true;
     var reg = 'reg1';
     if (stationPower(sim, run, 'reg1') < 0.2 && stationPower(sim, run, 'reg2') > 0.2) reg = 'reg2';
-    var ids = ['cust_mom', 'cust_teen', 'cust_biz', 'cust_karen'];
+    var ids = ['cust_grandpa', 'cust_mom', 'cust_kid', 'cust_mom'];
     for (var i = 0; i < 4; i++) {
       var c = makeActor(ids[i], QUEUE[reg].x, QUEUE[reg].y + i * QUEUE[reg].dy);
       c.kind = 'cust';
@@ -1806,6 +2531,8 @@
       t: sim.t,
       duration: sim.duration,
       sales: sim.sales,
+      cogs: sim.cogs || 0,
+      stockouts: sim.stockouts || 0,
       goal: sim.goal,
       payroll: sim.payroll,
       morale: sim.morale,
@@ -1855,6 +2582,18 @@
       rushTold: !!sim.rushTold,
       typeCard: sim.typeCard || '',
       _introDone: !!sim._introDone,
+      priceWalks: sim.priceWalks || 0,
+      grumbles: sim.grumbles || 0,
+      _mallShown: !!sim._mallShown,
+      _beats: sim._beats || {},
+      _grumbleTold: !!sim._grumbleTold,
+      doubleUntil: sim.doubleUntil || 0,
+      flickerUntil: sim.flickerUntil || 0,
+      stockFreeze: sim.stockFreeze || 0,
+      paradeUntil: sim.paradeUntil || 0,
+      plazaMul: sim.plazaMul == null ? 1 : sim.plazaMul,
+      mallRetune: sim.mallRetune || '',
+      tenant: sim.tenant || null,
       rngState: sim.rng && sim.rng.state ? sim.rng.state() : 0,
       pendingMeta: pendingMeta
     }));
@@ -1881,10 +2620,24 @@
     sim.paused = false;
     sim.typeCard = data.typeCard || '';
     sim._introDone = !!data._introDone;
-    if (sim.typeCard) sim.paused = true;
-    if (data.pendingMeta && data.pendingMeta.id) {
+    if (sim.typeCard) sim.typeUntil = sim.t + 5.5;
+    sim.priceWalks = data.priceWalks || 0;
+    sim.grumbles = data.grumbles || 0;
+    sim._mallShown = !!data._mallShown;
+    sim._beats = data._beats || {};
+    sim._grumbleTold = !!data._grumbleTold;
+    sim.doubleUntil = data.doubleUntil || 0;
+    sim.flickerUntil = data.flickerUntil || 0;
+    sim.stockFreeze = data.stockFreeze || 0;
+    sim.paradeUntil = data.paradeUntil || 0;
+    sim.plazaMul = data.plazaMul == null ? 1 : data.plazaMul;
+    sim.mallRetune = data.mallRetune || '';
+    sim.tenant = data.tenant || null;
+    var beatPending = { mall: 1, priceTalk: 1 };
+    for (var bi = 0; bi < FLOOR_BEATS.length; bi++) beatPending[FLOOR_BEATS[bi].id] = 1;
+    if (data.pendingMeta && data.pendingMeta.id && !beatPending[data.pendingMeta.id]) {
       sim.pending = buildEvent(data.pendingMeta.id, sim, run, { who: data.pendingMeta.who });
-      sim.paused = true;
+      sim.pendingUntil = sim.t + 7;
     }
     return sim;
   }
@@ -1892,19 +2645,18 @@
   function doAction(sim, run, name, target) {
     target = target || {};
     if (!sim || sim.done) return { ok: false, msg: 'The day is over.' };
-    if (sim.paused && sim.pending) return { ok: false, msg: 'Answer the card first.' };
+    if (sim.paused && sim._hold === 'crew') return { ok: false, msg: 'Crew board is open.' };
     var free = !!target.free;
     if (!free && sim.actions <= 0) return { ok: false, msg: 'Actions are refilling.' };
     function spend() { if (!free) sim.actions--; }
     if (name === 'pull') {
-      var reg = (target.station === 'reg1' || target.station === 'reg2') ? target.station
-        : (queueOf(sim, 'reg1').length >= queueOf(sim, 'reg2').length ? 'reg1' : 'reg2');
+      var reg = (isTill(target.station) && SPOTS[target.station]) ? target.station : busiestRegister(sim);
       var pull = null;
       for (var p = 0; p < sim.staff.length; p++) {
         var cand = sim.staff[p];
         if (!cand.id || sim.removed[cand.id]) continue;
         if (cand.station === reg) continue;
-        if (cand.station === 'floor' || cand.station === 'freight' || cand.station === 'reg1' || cand.station === 'reg2') {
+        if (cand.station === 'floor' || cand.station === 'freight' || isTill(cand.station)) {
           pull = cand;
           if (cand.station === 'floor' || cand.station === 'freight') break;
         }
@@ -2097,11 +2849,12 @@
       doAction(sim, run, 'calm', { cust: upset });
       return;
     }
-    var q1 = queueOf(sim, 'reg1').length;
-    var q2 = queueOf(sim, 'reg2').length;
-    if (q1 + q2 >= 3) doAction(sim, run, 'pull');
+    var qSum = 0;
+    var qRegs = registers();
+    for (var qi = 0; qi < qRegs.length; qi++) qSum += queueOf(sim, qRegs[qi]).length;
+    if (qSum >= 3) doAction(sim, run, 'pull');
     else if (sim.stock < 0.55) doAction(sim, run, 'freight');
-    else doAction(sim, run, 'cover', { station: q1 >= q2 ? 'reg1' : 'reg2' });
+    else doAction(sim, run, 'cover', { station: busiestRegister(sim) });
   }
 
   function simulate(ymd, mode, onlyShift) {
@@ -2124,11 +2877,15 @@
       }
       var guard = 0;
       while (!sim.done && guard < 9000) {
-        if (mode === 'active' || mode === 'upgraded' || mode === 'mid') driveActive(sim, run);
-        else if (sim.paused && sim.pending) {
-          var pick = mode === 'smart' ? smartChoice(sim.pending, sim) : autoChoice(sim.pending, sim);
+        var heldCard = false;
+        if (sim.pending) {
+          var pick = (mode === 'active' || mode === 'upgraded' || mode === 'mid' || mode === 'smart')
+            ? smartChoice(sim.pending, sim)
+            : autoChoice(sim.pending, sim);
           resolvePending(sim, run, pick);
+          heldCard = true;
         }
+        if (!heldCard && (mode === 'active' || mode === 'upgraded' || mode === 'mid')) driveActive(sim, run);
         step(sim, run, 0.1);
         guard++;
       }
@@ -2149,31 +2906,13 @@
     var fs = require('fs');
     var path = require('path');
     var dir = path.join(__dirname, 'holiday-rush');
-    var floor = JSON.parse(fs.readFileSync(path.join(dir, 'floor_chars_atlas.json'), 'utf8'));
     var portraits = JSON.parse(fs.readFileSync(path.join(dir, 'portraits_atlas.json'), 'utf8'));
     var icons = JSON.parse(fs.readFileSync(path.join(dir, 'icons_ui_atlas.json'), 'utf8'));
     var chars = STAFF.map(function (s) { return s.id; }).concat(CUST_IDS);
-    var anims = [];
-    ['down', 'side', 'up'].forEach(function (dir) {
-      anims.push(dir + '_idle_0', dir + '_idle_1');
-      for (var w = 0; w < 4; w++) anims.push(dir + '_walk_' + w);
-      for (var k = 0; k < 4; k++) anims.push(dir + '_work_' + k);
-    });
-    if (anims.length !== 30) throw new Error('anim count');
     for (var ci = 0; ci < chars.length; ci++) {
-      for (var ai = 0; ai < anims.length; ai++) {
-        var key = chars[ci] + '/' + anims[ai];
-        var rect = floor.frames[key];
-        if (!rect) throw new Error('missing ' + key);
-        var i = ci * 30 + ai;
-        var col = i % COLS;
-        var row = (i / COLS) | 0;
-        if (rect[0] !== col * 96 || rect[1] !== row * 96 || rect[2] !== 96 || rect[3] !== 96) {
-          throw new Error('grid mismatch ' + key);
-        }
-      }
+      var look = LOOKS[chars[ci]];
+      if (!look || !look.skin || !look.top || !look.hair || !look.style) throw new Error('look ' + chars[ci]);
     }
-    if (floor.left.indexOf('mirror') < 0) throw new Error('left mirror note missing');
     STAFF.forEach(function (s) {
       STAFF_EXPR.forEach(function (ex) {
         if (!portraits[s.id + '_' + ex]) throw new Error('portrait ' + s.id + '_' + ex);
@@ -2187,7 +2926,7 @@
     ['angry', 'boss', 'break', 'callout', 'line', 'outstock', 'price', 'return', 'rush', 'spill', 'theft', 'truck'].forEach(function (name) {
       if (!icons['icons/' + name + '.png']) throw new Error('icon ' + name);
     });
-    return { ok: true, frames: Object.keys(floor.frames).length, portraits: Object.keys(portraits).length };
+    return { ok: true, looks: chars.length, portraits: Object.keys(portraits).length };
   }
 
   function clockLabel(t, dur) {
@@ -2219,6 +2958,7 @@
   }
 
   var onAsset = function () {};
+  var loadGoal = 5;
 
   function loadJSON(url) {
     return fetch(url).then(function (r) {
@@ -2236,6 +2976,165 @@
     });
   }
 
+  function revokeSpriteRows(rows) {
+    for (var i = 0; i < rows.length; i++) {
+      if (rows[i] && rows[i].url && typeof URL !== 'undefined') URL.revokeObjectURL(rows[i].url);
+    }
+  }
+
+  function loadSpritePng(url, spec) {
+    return fetch(url).then(function (res) {
+      if (!res.ok) {
+        var missing = new Error(url);
+        missing.reject = 'missing';
+        throw missing;
+      }
+      return res.arrayBuffer();
+    }).then(function (buf) {
+      var bytes = new Uint8Array(buf);
+      var png = pngInfo(bytes);
+      if (!png) return { reject: 'not-png', file: url, bytes: buf.byteLength, spec: spec };
+      if (!pngHasAlpha(bytes)) return { reject: 'no-alpha', file: url, bytes: buf.byteLength, spec: spec };
+      if (png.w < 32 || png.h < 32 || png.w > 512 || png.h > 512) return { reject: 'dimensions', file: url, bytes: buf.byteLength, spec: spec };
+      onAsset();
+      var blob = new Blob([buf], { type: 'image/png' });
+      var src = URL.createObjectURL(blob);
+      return new Promise(function (resolve) {
+        var img = new Image();
+        img.onload = function () {
+          resolve({ img: img, url: src, bytes: buf.byteLength, w: png.w, h: png.h, spec: spec });
+        };
+        img.onerror = function () {
+          URL.revokeObjectURL(src);
+          resolve({ reject: 'decode', file: url, bytes: buf.byteLength, spec: spec });
+        };
+        img.src = src;
+      });
+    });
+  }
+
+  function loadSpriteFiles(listed) {
+    var jobs = [];
+    for (var i = 0; i < listed.length; i++) {
+      var spec = classifySpriteFile(listed[i]);
+      if (!spec) return Promise.resolve({ ready: false, reason: 'bad-name', file: listed[i], bytes: 0 });
+      jobs.push(loadSpritePng(ART + 'sprites/' + listed[i], spec));
+    }
+    return Promise.all(jobs).then(function (rows) {
+      var bytes = 0;
+      var types = {};
+      var portraits = {};
+      for (var r = 0; r < rows.length; r++) {
+        var row = rows[r];
+        if (!row || row.reject) {
+          revokeSpriteRows(rows);
+          return { ready: false, reason: (row && row.reject) || 'missing', file: row && row.file, bytes: bytes };
+        }
+        bytes += row.bytes;
+        if (row.spec.kind === 'frame') {
+          if (!types[row.spec.type]) types[row.spec.type] = {};
+          var key = row.spec.anim + '|' + row.spec.dir;
+          if (!types[row.spec.type][key]) types[row.spec.type][key] = [];
+          types[row.spec.type][key].push(row);
+        } else {
+          if (!portraits[row.spec.key]) portraits[row.spec.key] = {};
+          portraits[row.spec.key][row.spec.expr] = row;
+        }
+      }
+      Object.keys(types).forEach(function (type) {
+        Object.keys(types[type]).forEach(function (key) {
+          types[type][key].sort(function (a, b) { return a.spec.index - b.spec.index; });
+        });
+      });
+      if (bytes > SPRITE_PACK.budget) {
+        revokeSpriteRows(rows);
+        return { ready: false, reason: 'over-budget', bytes: bytes, budget: SPRITE_PACK.budget };
+      }
+      if (!spritePackComplete(types, portraits)) {
+        revokeSpriteRows(rows);
+        return { ready: false, reason: 'incomplete', bytes: bytes, budget: SPRITE_PACK.budget };
+      }
+      return { ready: true, reason: 'ready', bytes: bytes, budget: SPRITE_PACK.budget, types: types, portraits: portraits };
+    }).catch(function (err) {
+      return { ready: false, reason: (err && err.reject) || 'load-failed', file: err && err.message, bytes: 0 };
+    });
+  }
+
+  function loadPhotoArt(iconImg, iconJson, status) {
+    return Promise.all([
+      loadImage(ART + 'portraits_staff.png8.png'),
+      loadImage(ART + 'portraits_customers.png8.png'),
+      iconImg,
+      loadJSON(ART + 'portraits_atlas.json'),
+      iconJson
+    ]).then(function (all) {
+      return {
+        img: { staff: all[0], cust: all[1], icons: all[2] },
+        portraits: all[3],
+        icons: all[4],
+        spritePack: null,
+        spriteStatus: status || { ready: false, reason: 'empty', bytes: 0 }
+      };
+    });
+  }
+
+  function loadGameArt() {
+    var iconImg = loadImage(ART + 'icons_ui.png8.png');
+    var iconJson = loadJSON(ART + 'icons_ui_atlas.json');
+    if (!HR.sprites) return loadPhotoArt(iconImg, iconJson, { ready: false, reason: 'empty', bytes: 0 });
+    var types = HR.sprites.typesForDay(0, null);
+    spriteSession = HR.sprites.createSession(ART, function () {
+      if (typeof onAsset === 'function') onAsset();
+    });
+    var objectPromise = HR.room ? HR.room.load(ART, function () {
+      if (typeof onAsset === 'function') onAsset();
+    }).catch(function () { return null; }) : Promise.resolve(null);
+    return spriteSession.loadManifest().then(function () {
+      loadGoal = 2 + spriteSession.fileCount(types);
+      return Promise.all([spriteSession.ensure(types), objectPromise]);
+    }).then(function (loadedArt) {
+      var pack = loadedArt[0];
+      var objects = loadedArt[1];
+      return Promise.all([iconImg, iconJson]).then(function (icons) {
+        var status = {
+          ready: !!(pack && pack.ready && Object.keys(pack.types || {}).length),
+          reason: pack && pack.ready ? 'ready' : 'partial',
+          bytes: (pack && pack.bytes) || 0,
+          partial: true
+        };
+        if (!status.ready) return loadPhotoArt(iconImg, iconJson, status);
+        return {
+          img: { staff: null, cust: null, icons: icons[0] },
+          portraits: pack.portraits,
+          icons: icons[1],
+          spritePack: pack,
+          spriteStatus: status,
+          session: spriteSession,
+          objects: objects
+        };
+      });
+    });
+  }
+
+  function verifySpritePack() {
+    if (SPRITE_PACK.types.length !== 10 || SPRITE_PACK.perTypeBudget !== 110 * 1024 || SPRITE_PACK.displayH !== 78 || SPRITE_PACK.footY !== 158) {
+      throw new Error('sprite spec');
+    }
+    var sample = classifySpriteFile('rusher/walk_side_3.png');
+    if (!sample || sample.kind !== 'frame' || sample.index !== 3 || sample.dir !== 'side') throw new Error('frame name');
+    var port = classifySpriteFile('portraits/crew_register_sick.png');
+    if (!port || port.kind !== 'portrait' || port.expr !== 'sick') throw new Error('portrait name');
+    if (classifySpriteFile('rusher/jump_down_0.png')) throw new Error('bad anim accepted');
+    if (classifySpriteFile('../secrets.png')) throw new Error('path accepted');
+    var rusher = spriteTypeFor({ kind: 'cust', charId: 'cust_biz', arch: 'rusher' });
+    var regular = spriteTypeFor({ kind: 'cust', charId: 'cust_grandpa' });
+    var crew = spriteTypeFor({ kind: 'staff', id: 'staff_frt1', role: 'freight' });
+    var kid = spriteTypeFor({ charId: 'cust_kid', arch: 'family' });
+    if (rusher !== 'rusher' || regular !== 'regular' || crew !== 'crew_freight' || kid !== 'kid') throw new Error('sprite type');
+    if (!HR.sprites) throw new Error('sprites module');
+    return HR.sprites.verify(typeof __dirname !== 'undefined' ? __dirname : '');
+  }
+
   function campaignDefault() {
     return { v: 1, stars: [], bestEarn: [], bank: 0, upgrades: {}, seen: false, current: 0, met: {} };
   }
@@ -2251,6 +3150,14 @@
   function campaignPut(c) { writeJSON('hr_campaign_v1', c); }
 
   function bankCopy(snap) {
+    if (snap && snap.tenant) {
+      return 'You ran ' + snap.tenant + '. Their drawer did ' + money(snap.sales) + '. Your cut is ' + money(snap.cut || 0) + '. The flagship tape is untouched.';
+    }
+    if (snap && snap.tape) {
+      var tape = snap.tape;
+      var loanBit = tape.loanPay ? ' − loan ' + money(tape.loanPay) : '';
+      return 'Sales ' + money(tape.sales) + ' − goods ' + money(tape.cogs) + ' − wages ' + money(tape.wages) + ' − rent ' + money(tape.rent) + loanBit + ' = ' + money(tape.profit) + '. The register holds ' + money(tape.cash) + '.';
+    }
     var rate = Math.round(CONFIG.earnRate * 100);
     var gross = snap.earnGross || 0;
     var prev = snap.earnPrev || 0;
@@ -2375,6 +3282,398 @@
     return typeof location !== 'undefined' && /(?:\?|&)qa=1(?:&|$)/.test(location.search);
   }
 
+  var MELODY = [392, 493.88, 587.33, 659.25, 587.33, 493.88, 440, 392, 493.88, 587.33, 659.25, 783.99, 659.25, 587.33, 493.88, 440];
+  var BASSLINE = [98, 98, 73.42, 73.42, 82.41, 82.41, 73.42, 98];
+  var PAD = [196, 196, 146.83, 146.83, 164.81, 164.81, 146.83, 196];
+
+  function noiseBuffer(ctx, seconds, seed) {
+    var frames = Math.max(1, Math.floor(ctx.sampleRate * seconds));
+    var buf = ctx.createBuffer(1, frames, ctx.sampleRate);
+    var data = buf.getChannelData(0);
+    var s = seed || 1;
+    for (var i = 0; i < frames; i++) {
+      s = (Math.imul(s, 1664525) + 1013904223) | 0;
+      data[i] = ((s >>> 0) / 4294967296) * 2 - 1;
+    }
+    return buf;
+  }
+
+  function mixTone(ctx, dest, freq, t, dur, type, vol, slide) {
+    if (!(vol > 0) || !(dur > 0.01)) return;
+    var o = ctx.createOscillator();
+    var g = ctx.createGain();
+    o.type = type || 'sine';
+    var f0 = Math.max(48, freq);
+    o.frequency.setValueAtTime(f0, t);
+    if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(48, slide), t + dur);
+    var attack = Math.min(0.018, dur * 0.35);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(vol, t + attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g);
+    g.connect(dest);
+    o.start(t);
+    o.stop(t + dur + 0.03);
+  }
+
+  function mixNoise(ctx, dest, t, dur, vol, freq, q) {
+    if (!(vol > 0) || !(dur > 0.01)) return;
+    var src = ctx.createBufferSource();
+    src.buffer = noiseBuffer(ctx, dur + 0.02, 3 + Math.floor(t * 1000));
+    var filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(freq || 1400, t);
+    filter.Q.value = q || 0.7;
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(vol, t + Math.min(0.01, dur * 0.3));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(filter);
+    filter.connect(g);
+    g.connect(dest);
+    src.start(t);
+    src.stop(t + dur + 0.02);
+  }
+
+  function mixBeat(ctx, dest, t, index, rush) {
+    var i = index % MELODY.length;
+    var bar = Math.floor(index / 8) % BASSLINE.length;
+    var eighth = rush ? 0.22 : 0.3;
+    var mel = MELODY[i];
+    mixTone(ctx, dest, mel, t, Math.min(0.24, eighth * 0.9), 'triangle', rush ? 0.028 : 0.022, null);
+    mixTone(ctx, dest, mel * 2, t, 0.08, 'sine', rush ? 0.008 : 0.006, null);
+    if (rush) mixTone(ctx, dest, mel * 1.5, t + 0.02, 0.1, 'sine', 0.01, null);
+    if (index % 2 === 0) mixNoise(ctx, dest, t, 0.025, rush ? 0.01 : 0.006, 2800, 0.65);
+    if (index % 8 === 0) {
+      mixTone(ctx, dest, BASSLINE[bar], t, eighth * 6.4, 'sine', rush ? 0.05 : 0.04, null);
+      mixTone(ctx, dest, PAD[bar], t, eighth * 5.5, 'sine', 0.012, null);
+      mixTone(ctx, dest, PAD[bar] * 1.498, t, eighth * 5.5, 'triangle', 0.008, null);
+    }
+    if (rush && index % 4 === 0) mixTone(ctx, dest, 142, t, 0.11, 'sine', 0.042, 52);
+    if (rush && index % 4 === 2) {
+      mixNoise(ctx, dest, t, 0.06, 0.016, 1400, 0.55);
+      mixTone(ctx, dest, 180, t, 0.04, 'triangle', 0.014, 120);
+    }
+  }
+
+  function mixSfx(ctx, dest, name, t, extra) {
+    extra = extra || {};
+    var combo = extra.combo || 1;
+    if (name === 'scan' || name === 'sale' || name === 'combo') {
+      mixNoise(ctx, dest, t, 0.028, 0.02, 1800, 0.8);
+      mixTone(ctx, dest, 740, t + 0.012, 0.05, 'triangle', 0.045, null);
+      mixTone(ctx, dest, 1180, t + 0.05, 0.07, 'sine', 0.032, null);
+    }
+    if (name === 'coin' || name === 'sale' || name === 'combo') {
+      var at = name === 'coin' ? t : t + 0.07;
+      mixTone(ctx, dest, 1318, at, 0.055, 'sine', 0.04, null);
+      mixTone(ctx, dest, 1760, at + 0.04, 0.07, 'triangle', 0.026, null);
+    }
+    if (name === 'combo') {
+      var f = 523 * Math.pow(1.05, Math.min(combo, 8));
+      mixTone(ctx, dest, f, t + 0.12, 0.12, 'triangle', 0.032, null);
+      mixTone(ctx, dest, f * 1.25, t + 0.18, 0.1, 'sine', 0.02, null);
+    }
+    if (name === 'truck') {
+      mixTone(ctx, dest, 174, t, 0.16, 'triangle', 0.05, 98);
+      mixTone(ctx, dest, 130, t + 0.1, 0.16, 'sine', 0.028, 82);
+    }
+    if (name === 'tap') mixTone(ctx, dest, 520, t, 0.03, 'sine', 0.022, null);
+    if (name === 'angry') {
+      mixTone(ctx, dest, 233, t, 0.16, 'triangle', 0.04, 110);
+      mixTone(ctx, dest, 155, t + 0.04, 0.16, 'sine', 0.026, 82);
+    }
+    if (name === 'goal' || name === 'fanfare') {
+      var notes = [523, 659, 784, 1046];
+      for (var i = 0; i < notes.length; i++) {
+        mixTone(ctx, dest, notes[i], t + i * 0.09, name === 'fanfare' ? 0.18 : 0.12, 'triangle', 0.036, null);
+        if (name === 'fanfare') mixTone(ctx, dest, notes[i] * 1.5, t + i * 0.09, 0.1, 'sine', 0.012, null);
+      }
+    }
+    if (name === 'rush') {
+      mixTone(ctx, dest, 196, t, 0.22, 'triangle', 0.03, 392);
+      mixTone(ctx, dest, 294, t + 0.06, 0.18, 'sine', 0.022, 466);
+    }
+    if (name === 'alert') {
+      mixTone(ctx, dest, 622, t, 0.07, 'triangle', 0.03, null);
+      mixTone(ctx, dest, 830, t + 0.07, 0.08, 'sine', 0.024, null);
+    }
+    if (name === 'freight') {
+      mixNoise(ctx, dest, t, 0.07, 0.03, 240, 0.7);
+      mixTone(ctx, dest, 110, t, 0.1, 'triangle', 0.04, 62);
+    }
+    if (name === 'calm') {
+      mixTone(ctx, dest, 523, t, 0.09, 'sine', 0.03, null);
+      mixTone(ctx, dest, 659, t + 0.05, 0.12, 'triangle', 0.024, null);
+    }
+    if (name === 'pull') {
+      mixTone(ctx, dest, 340, t, 0.06, 'triangle', 0.03, 680);
+      mixTone(ctx, dest, 510, t + 0.04, 0.06, 'sine', 0.02, null);
+    }
+    if (name === 'cover') {
+      mixTone(ctx, dest, 392, t, 0.08, 'sine', 0.028, null);
+      mixTone(ctx, dest, 523, t + 0.05, 0.09, 'triangle', 0.022, null);
+      mixTone(ctx, dest, 784, t + 0.1, 0.1, 'sine', 0.016, null);
+    }
+    if (name === 'action') mixNoise(ctx, dest, t, 0.04, 0.02, 480, 0.6);
+  }
+
+  function mixCrowd(ctx, dest, start, dur, rushAt) {
+    var src = ctx.createBufferSource();
+    src.buffer = noiseBuffer(ctx, 2, 11);
+    src.loop = true;
+    var low = ctx.createBiquadFilter();
+    low.type = 'lowpass';
+    low.frequency.value = 380;
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(0.007, start);
+    if (rushAt != null && rushAt > start && rushAt < start + dur) {
+      g.gain.setValueAtTime(0.007, rushAt);
+      g.gain.linearRampToValueAtTime(0.016, rushAt + 0.35);
+    }
+    src.connect(low);
+    low.connect(g);
+    g.connect(dest);
+    src.start(start);
+    src.stop(start + dur);
+    return g;
+  }
+
+  function buildMixGraph(ctx) {
+    var now = ctx.currentTime || 0;
+    var comp = ctx.createDynamicsCompressor();
+    comp.threshold.setValueAtTime(-8, now);
+    comp.knee.setValueAtTime(6, now);
+    comp.ratio.setValueAtTime(2.4, now);
+    comp.attack.setValueAtTime(0.008, now);
+    comp.release.setValueAtTime(0.2, now);
+    var shelf = ctx.createBiquadFilter();
+    shelf.type = 'highshelf';
+    shelf.frequency.value = 5600;
+    shelf.gain.value = -3.5;
+    var musicLp = ctx.createBiquadFilter();
+    musicLp.type = 'lowpass';
+    musicLp.frequency.value = 5200;
+    musicLp.Q.value = 0.4;
+    var music = ctx.createGain();
+    music.gain.setValueAtTime(1, now);
+    var lift = ctx.createGain();
+    lift.gain.setValueAtTime(1, now);
+    var sfx = ctx.createGain();
+    sfx.gain.setValueAtTime(1.35, now);
+    var makeup = ctx.createGain();
+    makeup.gain.setValueAtTime(2.5, now);
+    music.connect(musicLp);
+    musicLp.connect(lift);
+    lift.connect(shelf);
+    sfx.connect(shelf);
+    shelf.connect(makeup);
+    makeup.connect(comp);
+    comp.connect(ctx.destination);
+    return { music: music, sfx: sfx, lift: lift, comp: comp };
+  }
+
+  function mixDrone(ctx, dest, start, dur, rushAt) {
+    var freqs = [196, 246.94, 293.66];
+    var vols = [0.042, 0.02, 0.016];
+    for (var i = 0; i < freqs.length; i++) {
+      var o = ctx.createOscillator();
+      var g = ctx.createGain();
+      o.type = i === 2 ? 'triangle' : 'sine';
+      o.frequency.setValueAtTime(freqs[i], start);
+      g.gain.setValueAtTime(vols[i], start);
+      if (rushAt != null) {
+        g.gain.setValueAtTime(vols[i], rushAt);
+        g.gain.linearRampToValueAtTime(vols[i] * 1.55, Math.min(start + dur, rushAt + 0.4));
+      }
+      o.connect(g);
+      g.connect(dest);
+      o.start(start);
+      if (dur) o.stop(start + dur);
+    }
+  }
+
+  function goertzelPower(data, i0, n, freq, rate) {
+    var k = Math.round(freq * n / rate);
+    var w = 2 * Math.PI * k / n;
+    var coeff = 2 * Math.cos(w);
+    var s1 = 0;
+    var s2 = 0;
+    for (var i = 0; i < n; i++) {
+      var s0 = data[i0 + i] + coeff * s1 - s2;
+      s2 = s1;
+      s1 = s0;
+    }
+    return s1 * s1 + s2 * s2 - coeff * s1 * s2;
+  }
+
+  function analyzeMix(buffer, cues) {
+    var data = buffer.getChannelData(0);
+    var rate = buffer.sampleRate;
+    var peak = 0;
+    var sum = 0;
+    var clips = 0;
+    for (var i = 0; i < data.length; i++) {
+      var a = data[i];
+      var abs = a < 0 ? -a : a;
+      if (abs > peak) peak = abs;
+      if (abs >= 0.999) clips++;
+      sum += a * a;
+    }
+    function rangeRms(t0, t1) {
+      var i0 = Math.max(0, Math.floor(t0 * rate));
+      var i1 = Math.min(data.length, Math.floor(t1 * rate));
+      var s = 0;
+      var n = 0;
+      var p = 0;
+      for (var j = i0; j < i1; j++) {
+        s += data[j] * data[j];
+        n++;
+        var absj = data[j] < 0 ? -data[j] : data[j];
+        if (absj > p) p = absj;
+      }
+      return { rms: Math.sqrt(s / Math.max(1, n)), peak: p };
+    }
+    function highRatio(t) {
+      var n = 2048;
+      var i0 = Math.floor(t * rate);
+      if (i0 + n >= data.length) i0 = data.length - n - 1;
+      if (i0 < 0) return 0;
+      var bands = [150, 400, 1000, 2000, 5000, 8000, 11000];
+      var powers = [];
+      var total = 0;
+      var high = 0;
+      for (var b = 0; b < bands.length; b++) {
+        var pwr = goertzelPower(data, i0, n, bands[b], rate);
+        powers.push(pwr);
+        total += pwr;
+        if (bands[b] >= 5000) high += pwr;
+      }
+      return { ratio: total > 0 ? high / total : 0, bands: powers };
+    }
+    function db(v) { return 20 * Math.log10(Math.max(v, 1e-8)); }
+    var calm = rangeRms(0.4, 3.0);
+    var rush = rangeRms(3.6, 7.4);
+    var cueStats = [];
+    for (var c = 0; c < cues.length; c++) {
+      var window = rangeRms(cues[c].t, cues[c].t + 0.38);
+      cueStats.push({ name: cues[c].name, peak: window.peak, peakDb: db(window.peak) });
+    }
+    var calmHigh = highRatio(1.2);
+    var rushHigh = highRatio(5.2);
+    return {
+      sampleRate: rate,
+      seconds: data.length / rate,
+      peak: peak,
+      peakDb: db(peak),
+      rms: Math.sqrt(sum / data.length),
+      rmsDb: db(Math.sqrt(sum / data.length)),
+      clips: clips,
+      calmRms: calm.rms,
+      calmRmsDb: db(calm.rms),
+      rushRms: rush.rms,
+      rushRmsDb: db(rush.rms),
+      rushOverCalmDb: db(rush.rms) - db(calm.rms),
+      highRatioCalm: calmHigh.ratio,
+      highRatioRush: rushHigh.ratio,
+      cues: cueStats,
+      clipped: clips > 0 || peak >= 0.999,
+      harsh: calmHigh.ratio > 0.22 || rushHigh.ratio > 0.22
+    };
+  }
+
+  function encodeWavB64(buffer) {
+    var data = buffer.getChannelData(0);
+    var n = data.length;
+    var bytes = 44 + n * 2;
+    var ab = new ArrayBuffer(bytes);
+    var view = new DataView(ab);
+    function writeStr(offset, s) {
+      for (var i = 0; i < s.length; i++) view.setUint8(offset + i, s.charCodeAt(i));
+    }
+    writeStr(0, 'RIFF');
+    view.setUint32(4, bytes - 8, true);
+    writeStr(8, 'WAVE');
+    writeStr(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, buffer.sampleRate, true);
+    view.setUint32(28, buffer.sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    writeStr(36, 'data');
+    view.setUint32(40, n * 2, true);
+    var off = 44;
+    for (var i = 0; i < n; i++) {
+      var s = data[i];
+      if (s > 1) s = 1;
+      if (s < -1) s = -1;
+      view.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+      off += 2;
+    }
+    var u8 = new Uint8Array(ab);
+    var bin = '';
+    var step = 8192;
+    for (var j = 0; j < u8.length; j += step) {
+      var slice = u8.subarray(j, Math.min(u8.length, j + step));
+      bin += String.fromCharCode.apply(null, slice);
+    }
+    return root.btoa(bin);
+  }
+
+  function renderMixdown(seconds, opts) {
+    seconds = seconds || 8;
+    opts = opts || {};
+    var AC = root.OfflineAudioContext || root.webkitOfflineAudioContext;
+    if (!AC) return Promise.reject(new Error('OfflineAudioContext missing'));
+    var rate = 44100;
+    var ctx = new AC(1, Math.ceil(rate * seconds), rate);
+    var buses = buildMixGraph(ctx);
+    var cues = [
+      { name: 'scan', t: 0.45 },
+      { name: 'coin', t: 0.95 },
+      { name: 'truck', t: 1.35 },
+      { name: 'angry', t: 1.75 },
+      { name: 'goal', t: 2.2 },
+      { name: 'fanfare', t: 2.7 },
+      { name: 'rush', t: 3.25 },
+      { name: 'freight', t: 3.75 },
+      { name: 'calm', t: 4.2 },
+      { name: 'pull', t: 4.6 },
+      { name: 'cover', t: 5.0 },
+      { name: 'alert', t: 5.4 },
+      { name: 'sale', t: 5.85 },
+      { name: 'combo', t: 6.45 },
+      { name: 'tap', t: 7.15 }
+    ];
+    var t = 0.06;
+    var step = 0;
+    while (t < 3.2) {
+      mixBeat(ctx, buses.music, t, step, false);
+      t += 0.3;
+      step++;
+    }
+    while (t < seconds - 0.05) {
+      mixBeat(ctx, buses.music, t, step, true);
+      t += 0.22;
+      step++;
+    }
+    for (var c = 0; c < cues.length; c++) {
+      mixSfx(ctx, buses.sfx, cues[c].name, cues[c].t, { combo: cues[c].name === 'combo' ? 6 : 1 });
+    }
+    mixCrowd(ctx, buses.music, 0, seconds, 3.2);
+    mixDrone(ctx, buses.music, 0, seconds, 3.2);
+    buses.lift.gain.setValueAtTime(1, 0);
+    buses.lift.gain.setValueAtTime(1, 3.2);
+    buses.lift.gain.linearRampToValueAtTime(1.32, 3.65);
+    return ctx.startRendering().then(function (buffer) {
+      var stats = analyzeMix(buffer, cues);
+      if (opts.wav) stats.wavBase64 = encodeWavB64(buffer);
+      return stats;
+    });
+  }
+
   var booted = false;
 
   function boot() {
@@ -2402,8 +3701,33 @@
       seed: document.getElementById('hr-seed')
     };
     var ctx = els.canvas.getContext('2d', { alpha: false });
+    if (els.stage && els.event && els.event.parentNode !== els.stage) els.stage.appendChild(els.event);
+    if (!document.getElementById('hr-feel-css')) {
+      var feelCss = document.createElement('style');
+      feelCss.id = 'hr-feel-css';
+      feelCss.textContent = [
+        '#hr-event.hr-inline{position:absolute;left:8px;right:8px;bottom:8px;top:auto;z-index:6;background:transparent;padding:0;display:flex;justify-content:center;align-items:flex-end;pointer-events:none;}',
+        '#hr-event.hr-inline[hidden]{display:none !important;}',
+        '#hr-event.hr-inline .hr-card{pointer-events:auto;width:min(560px,100%);padding:0.45rem 0.6rem 0.55rem;border-radius:14px;box-shadow:0 10px 28px rgba(0,0,0,0.35);}',
+        '#hr-event.hr-inline .hr-card h2{font-size:1rem;margin:0 0 0.15rem;}',
+        '#hr-event.hr-inline .hr-card p{font-size:0.8rem;margin:0 0 0.35rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}',
+        '#hr-event.hr-inline .hr-choices{flex-direction:row;flex-wrap:wrap;}',
+        '#hr-event.hr-inline .hr-choices button{flex:1 1 120px;min-height:44px;font-size:0.8rem;padding:0.35rem 0.5rem;}',
+        '#hr-event.hr-inline .hr-card__art .hr-portrait,#hr-event.hr-inline .hr-card__art .hr-icon{width:36px !important;height:36px !important;border-radius:8px;}',
+        '.hr-card__timer{height:4px;border-radius:99px;background:rgba(43,29,46,0.15);overflow:hidden;margin:0 0 0.35rem;}',
+        '.hr-card__timer i{display:block;height:100%;width:100%;background:#e0a322;}',
+        '.hr-actions button{transition:transform 0.05s linear;}',
+        '.hr-actions button.is-down{transform:translateY(1px) scale(0.98);filter:brightness(1.12);}'
+      ].join('');
+      document.head.appendChild(feelCss);
+    }
+    if (els.event) {
+      els.event.addEventListener('pointerdown', function (ev) { ev.stopPropagation(); });
+      els.event.addEventListener('pointerup', function (ev) { ev.stopPropagation(); });
+    }
     var ymd = utcYmd(new Date());
     var run = null;
+    var books = null;
     var sim = null;
     var assets = null;
     var armed = null;
@@ -2413,10 +3737,13 @@
     var raf = 0;
     var lastTs = 0;
     var cam = { x: 0, y: 0, follow: true };
+    var frameView = { w: 1600, h: 900 };
     var drag = null;
     var moved = false;
     var suppressClick = false;
-    var floors = [];
+    var storePlate = null;
+    var bakedKey = '';
+    var fixtureGlows = null;
     var toastTimer = 0;
     var liveAcc = 0;
     var simSaveAcc = 0;
@@ -2503,53 +3830,11 @@
       return actx;
     }
 
-    var music = { timer: 0, next: 0, step: 0, master: null, crowd: null, rush: false, started: false, level: 0.16 };
-    var TUNE = [
-      523.25, 659.25, 783.99, 659.25, 587.33, 523.25, 440, 523.25,
-      392, 493.88, 587.33, 493.88, 440, 392, 349.23, 392,
-      523.25, 659.25, 783.99, 880, 783.99, 659.25, 587.33, 523.25,
-      493.88, 523.25, 587.33, 659.25, 587.33, 523.25, 440, 392
-    ];
-    var BASS = [130.81, 110, 174.61, 146.83];
+    var music = { timer: 0, next: 0, step: 0, master: null, sfx: null, crowd: null, rush: false, started: false };
 
     function audioMuted() {
       if (root.CGSfx && root.CGSfx.isMuted) return !!root.CGSfx.isMuted();
       return false;
-    }
-
-    function tone(a, freq, t, dur, type, vol, slide, dest) {
-      var o = a.createOscillator();
-      var g = a.createGain();
-      o.type = type || 'sine';
-      o.frequency.setValueAtTime(Math.max(40, freq), t);
-      if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, slide), t + Math.max(0.02, dur));
-      g.gain.setValueAtTime(Math.max(0.0001, vol || 0.03), t);
-      g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-      o.connect(g);
-      g.connect(dest || a.destination);
-      o.start(t);
-      o.stop(t + dur + 0.03);
-    }
-
-    function noiseBurst(a, t, dur, vol, freq, dest) {
-      var frames = Math.max(1, Math.floor(a.sampleRate * dur));
-      var buf = a.createBuffer(1, frames, a.sampleRate);
-      var data = buf.getChannelData(0);
-      for (var i = 0; i < frames; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / frames);
-      var src = a.createBufferSource();
-      src.buffer = buf;
-      var filter = a.createBiquadFilter();
-      filter.type = 'bandpass';
-      filter.frequency.setValueAtTime(freq || 1400, t);
-      filter.Q.value = 0.7;
-      var g = a.createGain();
-      g.gain.setValueAtTime(Math.max(0.0001, vol), t);
-      g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-      src.connect(filter);
-      filter.connect(g);
-      g.connect(dest || a.destination);
-      src.start(t);
-      src.stop(t + dur + 0.02);
     }
 
     function heard(name) {
@@ -2561,9 +3846,17 @@
       if (!music.master || !a) return;
       var now = a.currentTime;
       try {
-        music.master.gain.setTargetAtTime(dip, now, 0.015);
-        music.master.gain.setTargetAtTime(music.level, now + (backAfter || 0.28), 0.1);
+        music.master.gain.setTargetAtTime(dip, now, 0.02);
+        music.master.gain.setTargetAtTime(1, now + (backAfter || 0.28), 0.08);
       } catch (eDuck) {}
+    }
+
+    function playSfx(name, extra) {
+      if (audioMuted()) return;
+      ensureMusic();
+      var a = hrAudio();
+      if (!a || !music.sfx) return;
+      mixSfx(a, music.sfx, name, a.currentTime, extra || {});
     }
 
     function paintMute() {
@@ -2578,22 +3871,12 @@
     function scheduleMusic() {
       var a = hrAudio();
       if (!a || !music.master || audioMuted()) return;
-      var horizon = a.currentTime + 0.4;
-      var eighth = music.rush ? 0.21 : 0.28;
+      var horizon = a.currentTime + 0.45;
+      var eighth = music.rush ? 0.22 : 0.3;
       var guard = 0;
-      while (music.next < horizon && guard < 8) {
+      while (music.next < horizon && guard < 10) {
         guard++;
-        var i = music.step % TUNE.length;
-        var t = music.next;
-        var freq = TUNE[i];
-        tone(a, freq, t, 0.22, 'triangle', 0.02, freq * 0.72, music.master);
-        tone(a, freq * 2, t, 0.08, 'sine', 0.008, null, music.master);
-        if (i % 8 === 0) {
-          var bass = BASS[Math.floor(i / 8) % BASS.length];
-          tone(a, bass, t, eighth * 7.2, 'sine', 0.028, null, music.master);
-          tone(a, freq * 1.5, t, 0.09, 'triangle', 0.01, null, music.master);
-        }
-        if (music.rush && i % 4 === 0) tone(a, 880, t, 0.04, 'triangle', 0.008, null, music.master);
+        mixBeat(a, music.master, music.next, music.step, music.rush);
         music.next += eighth;
         music.step++;
       }
@@ -2603,42 +3886,40 @@
       if (audioMuted()) return;
       var a = hrAudio();
       if (!a) return;
-        if (music.started) {
-        if (music.master) music.master.gain.setTargetAtTime(music.level, a.currentTime, 0.04);
-        if (!music.timer) music.timer = setInterval(scheduleMusic, 120);
+      if (!music.master) {
+        try {
+          var buses = buildMixGraph(a);
+          music.master = buses.music;
+          music.sfx = buses.sfx;
+          music.lift = buses.lift;
+          mixDrone(a, buses.music, a.currentTime, 0, null);
+          var src = a.createBufferSource();
+          src.buffer = noiseBuffer(a, 2, 11);
+          src.loop = true;
+          var low = a.createBiquadFilter();
+          low.type = 'lowpass';
+          low.frequency.value = 380;
+          music.crowd = a.createGain();
+          music.crowd.gain.setValueAtTime(0.006, a.currentTime);
+          src.connect(low);
+          low.connect(music.crowd);
+          music.crowd.connect(music.master);
+          src.start();
+        } catch (err) { return; }
+      }
+      if (music.started) {
+        try { music.master.gain.setTargetAtTime(1, a.currentTime, 0.05); } catch (eGain) {}
+        if (music.sfx) {
+          try { music.sfx.gain.setTargetAtTime(1, a.currentTime, 0.03); } catch (eSfx) {}
+        }
+        if (!music.timer) music.timer = setInterval(scheduleMusic, 100);
         return;
       }
-      try {
-        var warm = a.createBiquadFilter();
-        warm.type = 'lowpass';
-        warm.frequency.value = 1800;
-        warm.Q.value = 0.4;
-        music.master = a.createGain();
-        music.master.gain.setValueAtTime(music.level, a.currentTime);
-        music.master.connect(warm);
-        warm.connect(a.destination);
-        var frames = a.sampleRate;
-        var buf = a.createBuffer(1, frames, a.sampleRate);
-        var data = buf.getChannelData(0);
-        for (var i = 0; i < frames; i++) data[i] = Math.random() * 2 - 1;
-        var src = a.createBufferSource();
-        src.buffer = buf;
-        src.loop = true;
-        var low = a.createBiquadFilter();
-        low.type = 'lowpass';
-        low.frequency.value = 380;
-        music.crowd = a.createGain();
-        music.crowd.gain.setValueAtTime(0.0001, a.currentTime);
-        src.connect(low);
-        low.connect(music.crowd);
-        music.crowd.connect(music.master);
-        src.start();
-        music.started = true;
-        heard('music');
-        music.next = a.currentTime + 0.06;
-        music.timer = setInterval(scheduleMusic, 120);
-        scheduleMusic();
-      } catch (err) {}
+      music.started = true;
+      heard('music');
+      music.next = a.currentTime + 0.05;
+      music.timer = setInterval(scheduleMusic, 100);
+      scheduleMusic();
     }
 
     function setAudioMuted(flag) {
@@ -2649,6 +3930,9 @@
         if (music.master && actx) {
           try { music.master.gain.setTargetAtTime(0.0001, actx.currentTime, 0.03); } catch (e2) {}
         }
+        if (music.sfx && actx) {
+          try { music.sfx.gain.setTargetAtTime(0.0001, actx.currentTime, 0.02); } catch (e3) {}
+        }
       } else {
         ensureMusic();
       }
@@ -2657,125 +3941,64 @@
 
     hooks.heat = function (customers, rush) {
       music.rush = !!rush;
-      if (!music.crowd || !actx || audioMuted()) return;
-      var target = Math.min(0.014, 0.003 + customers * 0.0007 + (rush ? 0.006 : 0));
-      try { music.crowd.gain.setTargetAtTime(target, actx.currentTime, 0.25); } catch (e3) {}
+      if (!actx || audioMuted()) return;
+      if (music.crowd) {
+        var target = Math.min(0.028, 0.008 + customers * 0.0008 + (rush ? 0.012 : 0));
+        try { music.crowd.gain.setTargetAtTime(target, actx.currentTime, 0.3); } catch (eHeat) {}
+      }
+      if (music.lift) {
+        try { music.lift.gain.setTargetAtTime(rush ? 1.32 : 1, actx.currentTime, 0.28); } catch (eLift) {}
+      }
     };
     hooks.sale = function (combo) {
-      var a = hrAudio();
-      if (!a) return;
       heard('scan');
       heard('coin');
       heard(combo > 1 ? 'combo' : 'sale');
-      var t = a.currentTime;
-      duckMusic(a, 0.1, combo > 1 ? 0.42 : 0.26);
-      noiseBurst(a, t, 0.03, 0.022, 2400);
-      tone(a, 880, t + 0.015, 0.05, 'triangle', 0.06);
-      tone(a, 1320, t + 0.05, 0.08, 'sine', 0.05);
-      tone(a, 1760, t + 0.09, 0.1, 'sine', 0.034);
-      if (combo > 1) {
-        var f = 523 * Math.pow(1.06, Math.min(combo, 10));
-        tone(a, f, t + 0.12, 0.14, 'triangle', 0.05);
-        tone(a, f * 1.25, t + 0.18, 0.12, 'sine', 0.03);
-      }
+      var a = hrAudio();
+      if (a) duckMusic(a, 0.62, combo > 1 ? 0.42 : 0.26);
+      playSfx(combo > 1 ? 'combo' : 'sale', { combo: combo || 1 });
     };
     hooks.coin = function () {
-      var a = hrAudio();
-      if (!a) return;
       heard('coin');
-      var t = a.currentTime;
-      tone(a, 1760, t, 0.05, 'sine', 0.055);
-      tone(a, 2340, t + 0.045, 0.07, 'triangle', 0.038);
+      playSfx('coin');
     };
     hooks.kaching = function () { hooks.sale(1); };
     hooks.horn = function () {
-      var a = hrAudio();
-      if (!a) return;
       heard('truck');
-      var t = a.currentTime;
-      duckMusic(a, 0.12, 0.4);
-      tone(a, 196, t, 0.16, 'triangle', 0.04, 130);
-      tone(a, 146, t + 0.1, 0.18, 'sine', 0.03);
-      tone(a, 164, t + 0.26, 0.14, 'triangle', 0.028, 110);
-    };
-    hooks.tap = function () {
       var a = hrAudio();
-      if (!a) return;
-      tone(a, 660, a.currentTime, 0.03, 'sine', 0.02);
+      if (a) duckMusic(a, 0.7, 0.4);
+      playSfx('truck');
     };
+    hooks.tap = function () { playSfx('tap'); };
     hooks.angry = function () {
-      var a = hrAudio();
-      if (!a) return;
       heard('angry');
-      var t = a.currentTime;
-      duckMusic(a, 0.12, 0.34);
-      tone(a, 220, t, 0.16, 'triangle', 0.04, 110);
-      tone(a, 165, t + 0.05, 0.18, 'sine', 0.03, 90);
+      var a = hrAudio();
+      if (a) duckMusic(a, 0.68, 0.34);
+      playSfx('angry');
     };
     hooks.goal = function () {
-      var a = hrAudio();
-      if (!a) return;
       heard('goal');
-      var t = a.currentTime;
-      duckMusic(a, 0.08, 0.5);
-      tone(a, 523, t, 0.1, 'triangle', 0.05);
-      tone(a, 659, t + 0.08, 0.12, 'triangle', 0.05);
-      tone(a, 784, t + 0.16, 0.16, 'sine', 0.05);
-      tone(a, 1046, t + 0.24, 0.22, 'sine', 0.045);
+      var a = hrAudio();
+      if (a) duckMusic(a, 0.6, 0.5);
+      playSfx('goal');
     };
     hooks.fanfare = function () {
-      var a = hrAudio();
-      if (!a) return;
       heard('fanfare');
-      var t = a.currentTime;
-      duckMusic(a, 0.08, 0.7);
-      var notes = [523, 659, 784, 1046];
-      for (var i = 0; i < notes.length; i++) {
-        tone(a, notes[i], t + i * 0.11, 0.2, 'triangle', 0.05);
-        tone(a, notes[i] * 2, t + i * 0.11, 0.12, 'sine', 0.02);
-      }
-      noiseBurst(a, t + 0.05, 0.08, 0.03, 3200);
+      var a = hrAudio();
+      if (a) duckMusic(a, 0.55, 0.7);
+      playSfx('fanfare');
     };
     hooks.rush = function () {
-      var a = hrAudio();
-      if (!a) return;
       heard('rush');
-      var t = a.currentTime;
-      duckMusic(a, 0.14, 0.4);
-      tone(a, 196, t, 0.28, 'triangle', 0.03, 392);
-      tone(a, 294, t + 0.08, 0.24, 'sine', 0.028, 494);
-      for (var i = 0; i < 3; i++) tone(a, 988, t + i * 0.09, 0.04, 'triangle', 0.012);
-    };
-    hooks.alert = function () {
       var a = hrAudio();
-      if (!a) return;
-      var t = a.currentTime;
-      tone(a, 660, t, 0.07, 'triangle', 0.035);
-      tone(a, 880, t + 0.08, 0.09, 'sine', 0.03);
+      if (a) duckMusic(a, 0.72, 0.4);
+      playSfx('rush');
     };
+    hooks.alert = function () { playSfx('alert'); };
     hooks.action = function (name) {
-      var a = hrAudio();
-      if (!a) return;
       heard(name || 'action');
-      var t = a.currentTime;
-      if (name === 'freight') {
-        noiseBurst(a, t, 0.07, 0.028, 280);
-        tone(a, 140, t, 0.1, 'triangle', 0.035, 80);
-        tone(a, 210, t + 0.06, 0.08, 'sine', 0.02);
-        return;
-      }
-      if (name === 'calm') {
-        tone(a, 520, t, 0.08, 'sine', 0.035);
-        tone(a, 780, t + 0.06, 0.12, 'triangle', 0.03);
-        return;
-      }
-      if (name === 'pull') {
-        tone(a, 420, t, 0.05, 'triangle', 0.035, 760);
-        tone(a, 640, t + 0.05, 0.06, 'sine', 0.03);
-        return;
-      }
-      noiseBurst(a, t, 0.06, 0.035, 500);
-      tone(a, 300, t, 0.08, 'triangle', 0.035, 180);
+      if (name === 'freight' || name === 'calm' || name === 'pull' || name === 'cover') playSfx(name);
+      else playSfx('action');
     };
 
     document.addEventListener('pointerdown', function (ev) {
@@ -2785,14 +4008,31 @@
 
     function portraitStyle(id, expr, size) {
       if (!assets) return '';
+      var pack = assets.spritePack;
+      if (pack && pack.ready) {
+        var bucket = pack.portraits[id] || pack.portraits[SPRITE_TYPE_BY_ID[id] || ''];
+        var drawn = bucket && (bucket[expr] || bucket.neutral || bucket.impatient);
+        if (drawn) {
+          return 'background-image:url(' + drawn.url + ');background-size:' + size + 'px ' + size + 'px;background-position:0 0;width:' + size + 'px;height:' + size + 'px;';
+        }
+      }
+      if (!assets.portraits) return '';
       var rec = assets.portraits[id + '_' + expr] || assets.portraits[id + '_neutral'] || assets.portraits[id + '_impatient'];
-      if (!rec) return '';
+      if (!rec || !assets.img) return '';
       var img = rec[0] === 'staff' ? assets.img.staff : assets.img.cust;
+      if (!img) return '';
       var scale = size / rec[3];
       return 'background-image:url(' + img.src + ');background-size:' + (img.naturalWidth * scale) + 'px ' + (img.naturalHeight * scale) + 'px;background-position:' + (-rec[1] * scale) + 'px ' + (-rec[2] * scale) + 'px;width:' + size + 'px;height:' + size + 'px;';
     }
 
     function iconStyle(name, size) {
+      var illustrated = {
+        angry: 1, boss: 1, break: 1, callout: 1, line: 1, outstock: 1,
+        price: 1, return: 1, rush: 1, spill: 1, theft: 1, truck: 1
+      };
+      if (illustrated[name]) {
+        return 'background-image:url(' + ART + 'objects/icons/' + name + '.png);background-size:contain;background-repeat:no-repeat;background-position:center;width:' + size + 'px;height:' + size + 'px;';
+      }
       var rec = assets.icons['icons/' + name + '.png'] || assets.icons['ui/' + name + '.png'];
       if (!rec) return '';
       var img = assets.img.icons;
@@ -2824,6 +4064,82 @@
       return camp;
     }
 
+    function layoutApi() {
+      return {
+        spots: SPOTS,
+        shelves: SHELVES,
+        queue: QUEUE,
+        setWorld: function (w, h) { WORLD_W = w; WORLD_H = h; },
+        setReg3: function (on) { reg3Live = !!on; }
+      };
+    }
+
+    function syncFloor(force) {
+      if (!books || !HR.layout || !HR.world || !HR.data.get()) return;
+      var layout = HR.world.activeLayout(books);
+      var custom = layout && (layout.edited || layout.worldW > 1600 || books.active !== 'mart');
+      if (!custom && !floorDirty && !force) {
+        activeLayout = null;
+        reg3Live = false;
+        return;
+      }
+      var source = custom ? layout : HR.data.get().layouts.starter;
+      HR.layout.apply(source, layoutApi());
+      activeLayout = HR.layout.wantsGrid(source) ? source : null;
+      floorDirty = !!custom;
+      trafficBlocked._layout = null;
+      bakeStorePlate();
+    }
+
+    function syncHires() {
+      if (!books || !HR.data.get()) return;
+      var hires = HR.data.get().staff.hires;
+      hires.forEach(function (h) {
+        var rec = books.staff[h.id];
+        var employed = !!(rec && rec.employed);
+        var idx = -1;
+        for (var i = 0; i < STAFF.length; i++) if (STAFF[i].id === h.id) idx = i;
+        if (!employed) {
+          if (idx >= 0) STAFF.splice(idx, 1);
+          delete BY_ID[h.id];
+          if (run && run.schedule) {
+            for (var d = 0; d < run.schedule.length; d++) {
+              for (var s = 0; s < 3; s++) {
+                var stations = stationList();
+                for (var k = 0; k < stations.length; k++) {
+                  if (run.schedule[d][s][stations[k]] === h.id) run.schedule[d][s][stations[k]] = null;
+                }
+              }
+            }
+          }
+          return;
+        }
+        if (idx < 0) {
+          var twin = h.role === 'manager' ? 'staff_mgr' : h.role === 'register' ? 'staff_reg1' : h.role === 'freight' ? 'staff_frt1' : 'staff_flr1';
+          var person = { id: h.id, name: h.name, role: h.role, blurb: h.blurb, wage: h.wage };
+          STAFF.push(person);
+          BY_ID[h.id] = person;
+          LOOKS[h.id] = LOOKS[twin];
+          SPRITE_TYPE_BY_ID[h.id] = h.sprite;
+        }
+        if (run && run.days) {
+          for (var day = 0; day < run.days.length; day++) {
+            if (!run.days[day].avail[h.id]) run.days[day].avail[h.id] = [1, 1, 1];
+          }
+        }
+      });
+    }
+
+    function prepareFloor(index) {
+      if (!books || !HR.economy || !HR.sim) return;
+      HR.economy.beginShiftBooks(books);
+      var away = HR.economy.awayIds(books);
+      var pulled = HR.sim.pullAway(run.schedule[index], away);
+      run._awayNote = pulled || [];
+      syncFloor(false);
+      if (spriteSession && HR.sprites) spriteSession.ensure(HR.sprites.typesForDay(index, books));
+    }
+
     function beginShift(index, opts) {
       opts = opts || {};
       coach = null;
@@ -2839,10 +4155,17 @@
       run.day = index;
       run.phase = 'sim';
       var keepCrew = (opts && opts.keepCrew) || (run.crewLock && run.crewLock[index]);
+      syncHires();
       if (!keepCrew) run.schedule[index] = greedy(run, index);
+      prepareFloor(index);
       if (!run.met) run.met = campaignGet().met || {};
       run.simState = null;
       sim = startDay(run);
+      if (books) {
+        sim.books = books;
+        sim.cogs = 0;
+        sim.stockouts = 0;
+      }
       camp.seen = true;
       camp.current = index;
       campaignPut(camp);
@@ -2852,6 +4175,82 @@
     }
 
     function beginFresh() { beginShift(0); }
+
+    function beginTenantShift(slotId) {
+      if (!books || !books.mall || !books.mall.leases || !books.mall.leases[slotId]) {
+        toast('That unit is empty.');
+        return;
+      }
+      if (!HR.world || !HR.world.tenantLayout || !HR.layout || !HR.data.get()) return;
+      var row = books.mall.leases[slotId];
+      var tenant = HR.data.get().tenants.byId[row.tenantId];
+      var layout = HR.world.tenantLayout(row.tenantId);
+      if (!tenant || !layout) return;
+      coach = null;
+      if (!run || !run.days || run.days.length !== SHIFT_COUNT) run = newRun(ymd);
+      run.phase = 'sim';
+      run._tenantSlot = slotId;
+      HR.layout.apply(layout, layoutApi());
+      floorDirty = true;
+      activeLayout = layout;
+      trafficBlocked._layout = null;
+      bakeStorePlate();
+      if (spriteSession && HR.sprites) spriteSession.ensure(HR.sprites.typesForDay(run.day || 0, books));
+      sim = startDay(run);
+      sim.books = books;
+      sim.cogs = 0;
+      sim.stockouts = 0;
+      sim.tenant = {
+        slot: slotId,
+        tenantId: row.tenantId,
+        name: tenant.name,
+        spawnMul: layout.spawnMul || 1,
+        bias: layout.bias || ''
+      };
+      sim.goal = Math.max(900, Math.round((sim.goal || 7500) * (layout.goalMul || 0.45)));
+      saveRun();
+      renderSim({ resume: false });
+    }
+
+    function finishTenant() {
+      var who = sim.tenant;
+      var snap = scoreSnapshot(sim);
+      var cut = Math.round((snap.sales || 0) * 0.15);
+      books.cash = Math.round((books.cash || 0) + cut);
+      if (!books.tenantRuns) books.tenantRuns = [];
+      books.tenantRuns.unshift({
+        name: who.name,
+        tenantId: who.tenantId,
+        slot: who.slot,
+        sales: Math.round(snap.sales || 0),
+        cut: cut
+      });
+      if (books.tenantRuns.length > 8) books.tenantRuns.length = 8;
+      persistBooks(books);
+      snap.tenant = who.name;
+      snap.tenantId = who.tenantId;
+      snap.slot = who.slot;
+      snap.cut = cut;
+      snap.sales = Math.round(snap.sales || 0);
+      snap.earned = cut;
+      snap.bank = books.cash;
+      snap.bestCombo = sim.bestCombo || 0;
+      hooks.fanfare();
+      run.history.push(snap);
+      run.phase = 'score';
+      run.simState = null;
+      run.lastSnap = snap;
+      run._tenantSlot = '';
+      coach = null;
+      sim = null;
+      floorDirty = false;
+      activeLayout = null;
+      trafficBlocked._layout = null;
+      syncFloor(true);
+      saveRun();
+      sfx('correct');
+      renderScore();
+    }
 
     function ensureSuggested() {
       if (!run.suggested) run.suggested = [false, false, false];
@@ -2878,6 +4277,25 @@
         if (snap && typeof snap.t === 'number' && !snap.done) {
           try {
             sim = restoreSim(snap, run);
+            if (books) sim.books = books;
+            sim._snapSales = Math.round(snap.sales || 0);
+            if (els.stage) els.stage.dataset.snapSales = String(sim._snapSales);
+            if (snap.tenant && HR.world && HR.world.tenantLayout && HR.layout) {
+              var tLayout = HR.world.tenantLayout(snap.tenant.tenantId);
+              if (tLayout) {
+                HR.layout.apply(tLayout, layoutApi());
+                floorDirty = true;
+                activeLayout = tLayout;
+                bakeStorePlate();
+              }
+            }
+            if (snap.pendingMeta && snap.pendingMeta.id === 'mall') {
+              sim.pending = buildMallCard(sim);
+              if (sim.pending) sim.pendingUntil = sim.t + 9;
+              sim._mallShown = true;
+            }
+            sim.cogs = sim.cogs || 0;
+            sim.stockouts = sim.stockouts || 0;
             renderSim({ resume: true });
             if (snap.t > 0.4) toast('Shift resumed.');
           } catch (err) {
@@ -2886,7 +4304,13 @@
           }
         } else {
           if (run.day === 0 && hoursOf(run.schedule[0]) < 1) run.schedule[0] = greedy(run, 0);
+          prepareFloor(run.day);
           sim = startDay(run);
+          if (books) {
+            sim.books = books;
+            sim.cogs = 0;
+            sim.stockouts = 0;
+          }
           renderSim({ resume: false });
         }
       } else if (run.phase === 'score' || run.phase === 'perk') renderScore();
@@ -2917,8 +4341,8 @@
             run.callouts++;
           }
           for (var s = 0; s < 3; s++) {
-            for (var i = 0; i < STATIONS.length; i++) {
-              if (run.schedule[day][s][STATIONS[i]] === person.id) run.schedule[day][s][STATIONS[i]] = null;
+            for (var i = 0; i < stationList().length; i++) {
+              if (run.schedule[day][s][stationList()[i]] === person.id) run.schedule[day][s][stationList()[i]] = null;
             }
           }
           els.modal.hidden = true;
@@ -2934,7 +4358,7 @@
       for (var h = 0; h < 3; h++) {
         cells += '<div class="hr-grid__head">' + SHIFT_NAMES[h] + '<small>' + SHIFT_HOURS[h] + '</small></div>';
       }
-      STATIONS.forEach(function (st) {
+      stationList().forEach(function (st) {
         var role = st.indexOf('reg') === 0 ? 'register' : st;
         cells += '<div class="hr-grid__label"><i style="background:' + ROLE_COLOR[role] + '"></i>' + STATION_LABEL[st] + '</div>';
         for (var sh = 0; sh < 3; sh++) {
@@ -2969,7 +4393,7 @@
           ? '<div class="hr-grid" id="hr-grid">' + cells + '</div><div class="hr-tray" id="hr-tray">' + tray + '</div>'
           : '<div class="hr-crew" id="hr-crew">' + [0, 1, 2].map(function (sh) {
             var names = [];
-            STATIONS.forEach(function (st) {
+            stationList().forEach(function (st) {
               var id = run.schedule[day][sh][st];
               if (id && BY_ID[id]) names.push(firstName(id));
             });
@@ -3027,10 +4451,10 @@
       var avail = run.days[run.day].avail;
       var next = blankDay();
       for (var sh = 0; sh < 3; sh++) {
-        for (var i = 0; i < STATIONS.length; i++) {
-          var id = prev[sh][STATIONS[i]];
+        for (var i = 0; i < stationList().length; i++) {
+          var id = prev[sh][stationList()[i]];
           if (!id) continue;
-          var placed = tryPlace(next, avail, id, sh, STATIONS[i], null);
+          var placed = tryPlace(next, avail, id, sh, stationList()[i], null);
           if (placed.ok) next = placed.schedule;
         }
       }
@@ -3057,6 +4481,7 @@
       show('sim');
       els.modal.hidden = true;
       els.event.hidden = true;
+      if (!opts.resume) applyMallRetune(sim);
       var ops = run.day >= 1;
       var hud =
         '<div class="hr-clock" id="hr-clock" style="--p:0"><span id="hr-clock-label">8:00 AM</span></div>' +
@@ -3065,6 +4490,9 @@
         '<div class="hr-combo" id="hr-combo" hidden>x2</div>' +
         '<div class="hr-rush" id="hr-rush" hidden>RUSH</div>' +
         (ops ? '<div class="hr-stat"><span>Payroll</span><strong id="hr-pay-text"></strong></div><div class="hr-stat"><span>Morale</span><strong id="hr-mor-text"></strong></div>' : '') +
+        (sim.tenant ? '<div class="hr-stat"><span>Floor</span><strong id="hr-tenant-name">' + esc(sim.tenant.name) + '</strong></div>' : '') +
+        (sim.mallRetune ? '<div class="hr-stat"><span>Plaza</span><strong id="hr-plaza-text">' + esc(sim.mallRetune) + '</strong></div>' : '') +
+        (books ? '<div class="hr-stat hr-aisle"><span>Aisle</span><strong id="hr-aisle-text">Steady</strong></div>' : '') +
         '<button type="button" id="hr-crew-btn" class="hr-mute">Crew</button>' +
         '<button type="button" id="hr-mute" class="hr-mute" aria-pressed="false" aria-label="Mute sound">Sound</button>';
       function actButton(name, label, icon) {
@@ -3079,13 +4507,18 @@
       els.sim.querySelector('.hr-actions').innerHTML = actions;
       sim.live = true;
       sim.floorOn = true;
+      if (run._awayNote && run._awayNote.length) {
+        toast(run._awayNote.map(firstName).join(', ') + ' is off this floor.');
+        run._awayNote = [];
+      }
       primeShift(sim, run);
       if (tutDone()) sim.coachHold = false;
       resize();
       requestAnimationFrame(function () { resize(); if (sim && !els.sim.hidden) draw(); });
       focusCam(SPOTS.reg1.x, QUEUE.reg1.y);
-      if (!opts.resume && run.day === 0 && !tutDone()) beginCoach();
-      else if (opts.resume && run.day === 0 && !tutDone()) beginCoach();
+      if (sim.tenant) sim.coachHold = false;
+      if (!sim.tenant && !opts.resume && run.day === 0 && !tutDone()) beginCoach();
+      else if (!sim.tenant && opts.resume && run.day === 0 && !tutDone()) beginCoach();
       else paintCoach();
       paintHud();
       paintMute();
@@ -3146,6 +4579,8 @@
         els.stage.dataset.rush = rushing ? '1' : '0';
         els.stage.dataset.combo = String(sim.combo || 0);
         els.stage.dataset.sales = String(Math.round(sim.sales));
+          if (sim._snapSales != null) els.stage.dataset.snapSales = String(sim._snapSales);
+          if (sim.tenant) els.stage.dataset.tenant = sim.tenant.name;
         els.stage.dataset.clock = label.textContent;
         if (isQA()) {
           var arches = [];
@@ -3169,12 +4604,31 @@
             dirBits.push(dc.charId.replace('cust_', '') + (dc.arch ? '/' + dc.arch : '') + ':' + dc.dir);
           }
           els.stage.dataset.dirs = dirBits.join(' ');
+          els.stage.dataset.paused = sim.paused ? '1' : '0';
+          els.stage.dataset.prompt = sim.pending ? (sim.pending.id || 'card') : (sim.typeCard || '');
         }
       }
       var payEl = document.getElementById('hr-pay-text');
       var morEl = document.getElementById('hr-mor-text');
       if (payEl) payEl.textContent = money(sim.payroll);
       if (morEl) morEl.textContent = String(Math.round(sim.morale));
+      var aisleEl = document.getElementById('hr-aisle-text');
+      if (aisleEl && sim.books && HR.economy) {
+        var moodMul = HR.economy.demandMul(sim.books);
+        var mood = moodMul < 0.9 ? 'Thin' : moodMul > 1.08 ? 'Busy' : 'Steady';
+        aisleEl.textContent = mood;
+        if (isQA() && els.stage) {
+          els.stage.dataset.aisle = mood;
+          els.stage.dataset.demand = String(Math.round(moodMul * 100) / 100);
+          els.stage.dataset.priceWalks = String(sim.priceWalks || 0);
+          els.stage.dataset.grumbles = String(sim.grumbles || 0);
+          els.stage.dataset.beat = sim.pending ? (sim.pending.id || '') : '';
+          els.stage.dataset.retune = sim.mallRetune || '';
+          els.stage.dataset.plaza = String(sim.plazaMul == null ? 1 : sim.plazaMul);
+          var cocoaItem = HR.data && HR.data.get() && HR.data.get().items.byId.cocoa;
+          if (cocoaItem) els.stage.dataset.cocoa = String(HR.economy.priceOf(sim.books, cocoaItem));
+        }
+      }
       var starEl = document.getElementById('hr-star-text');
       if (starEl) starEl.innerHTML = starGlyph(paceStars(sim));
       var act = document.getElementById('hr-actline');
@@ -3190,17 +4644,25 @@
           act.textContent = sim.actions + ' / ' + maxA + ' actions · refills every ' + (Math.round(regenSec * 10) / 10) + 's' + (sim.actions < maxA ? ' · ' + Math.round(fill * 100) + '% to the next' : '');
         }
       }
-      var buttons = els.sim.querySelectorAll('[data-act]');
-      for (var i = 0; i < buttons.length; i++) buttons[i].disabled = !!sim.pending;
+    }
+
+    function paintPromptTimer() {
+      var bar = document.getElementById('hr-prompt-bar');
+      if (!bar || !sim) return;
+      var until = sim.pending ? sim.pendingUntil : sim.typeUntil;
+      var total = sim.pending ? 7 : 5.5;
+      var left = until ? (until - sim.t) / total : 1;
+      bar.style.width = (Math.max(0, Math.min(1, left)) * 100) + '%';
     }
 
     function renderEvent() {
       var card = sim.pending;
       if (!card) { els.event.hidden = true; return; }
+      els.event.classList.add('hr-inline');
       els.event.hidden = false;
       var art = '';
-      if (card.who) art = '<span class="hr-portrait" style="' + portraitStyle(card.who, card.expr || 'neutral', 96) + '"></span>';
-      art += '<span class="hr-icon" style="' + iconStyle(card.icon, 72) + '"></span>';
+      if (card.who) art = '<span class="hr-portrait" style="' + portraitStyle(card.who, card.expr || 'neutral', 36) + '"></span>';
+      art += '<span class="hr-icon" style="' + iconStyle(card.icon, 36) + '"></span>';
       var buttons = card.choices.map(function (ch, i) {
         var disabled = ch.cost && sim.actions < ch.cost;
         var cost = ch.cost
@@ -3208,18 +4670,23 @@
           : '<span class="hr-choice-cost hr-choice-cost--free">Free</span>';
         return '<button type="button" data-choice="' + i + '"' + (disabled ? ' disabled' : '') + '>' + cost + '<span>' + esc(ch.label) + '</span></button>';
       }).join('');
-      els.event.innerHTML = '<div class="hr-card" role="dialog" aria-modal="true" aria-labelledby="hr-ev-title"><div class="hr-card__art">' + art + '</div><h2 id="hr-ev-title">' + esc(card.title) + '</h2><p>' + esc(card.body) + '</p><div class="hr-choices">' + buttons + '</div><p class="hr-fine">Paused. You have ' + sim.actions + ' action' + (sim.actions === 1 ? '' : 's') + '. They refill every ' + CONFIG.actionRegen + ' seconds. The cost is on each option.</p></div>';
+      els.event.innerHTML = '<div class="hr-card" role="region" aria-labelledby="hr-ev-title"><div class="hr-card__timer" aria-hidden="true"><i id="hr-prompt-bar"></i></div><div class="hr-card__art">' + art + '</div><h2 id="hr-ev-title">' + esc(card.title) + '</h2><p>' + esc(card.body) + '</p><div class="hr-choices">' + buttons + '</div></div>';
       hooks.alert();
-      els.event.querySelector('.hr-choices').addEventListener('click', function (ev) {
+      paintPromptTimer();
+      els.event.querySelector('.hr-choices').addEventListener('pointerdown', function (ev) {
         var btn = ev.target.closest('[data-choice]');
-        if (!btn) return;
+        if (!btn || btn.disabled) return;
+        ev.preventDefault();
+        ev.stopPropagation();
         var res = resolvePending(sim, run, +btn.getAttribute('data-choice'));
         if (!res.ok) { toast(res.msg); sfx('miss'); return; }
         sfx('place');
+        buzz(8);
         els.event.hidden = true;
         paintHud();
+        draw();
       });
-      if (els.live) els.live.textContent = card.title + '. ' + card.body;
+      if (els.live) els.live.textContent = card.title + '. ' + card.body + ' The floor keeps moving.';
     }
 
     function bankShift(snap) {
@@ -3227,13 +4694,44 @@
       var stars = goalStars(snap.goalPct);
       var prevStars = camp.stars[run.day] || 0;
       if (stars > prevStars) camp.stars[run.day] = stars;
-      var earned = Math.round((snap.sales || 0) * CONFIG.earnRate);
-      var prevEarn = camp.bestEarn[run.day] || 0;
-      var gain = Math.max(0, earned - prevEarn);
-      if (earned > prevEarn) camp.bestEarn[run.day] = earned;
-      camp.bank = (camp.bank || 0) + gain;
-      snap.earnGross = earned;
-      snap.earnPrev = prevEarn;
+      if (books && sim && HR.economy) {
+        var postKey = String(run.day);
+        books.posted = books.posted || {};
+        books.closed = books.closed || {};
+        var firstClose = !books.closed[postKey];
+        var prevPost = books.posted[postKey] || 0;
+        var tape = HR.economy.closeShift(books, {
+          sales: snap.sales,
+          cogs: sim.cogs || 0,
+          wages: snap.payroll,
+          walkouts: snap.walkouts,
+          checkouts: snap.checkouts,
+          stockouts: sim.stockouts || 0,
+          goalPct: snap.goalPct
+        });
+        if (!firstClose) books.cash = Math.round(books.cash - prevPost);
+        else if (HR.world) {
+          snap.background = HR.world.closeBackground(books);
+        }
+        books.posted[postKey] = tape.profit;
+        books.closed[postKey] = 1;
+        tape.cash = books.cash;
+        snap.tape = tape;
+        snap.earned = tape.profit;
+        snap.bank = books.cash;
+        camp.bank = books.cash;
+        if (HR.save) HR.save.save(writeJSON, books);
+      } else {
+        var earned = Math.round((snap.sales || 0) * CONFIG.earnRate);
+        var prevEarn = camp.bestEarn[run.day] || 0;
+        var gain = Math.max(0, earned - prevEarn);
+        if (earned > prevEarn) camp.bestEarn[run.day] = earned;
+        camp.bank = (camp.bank || 0) + gain;
+        snap.earnGross = earned;
+        snap.earnPrev = prevEarn;
+        snap.earned = gain;
+        snap.bank = camp.bank;
+      }
       camp.seen = true;
       camp.current = run.day;
       if (!camp.playedDay || camp.playedDay !== run.ymd) {
@@ -3243,13 +4741,15 @@
       }
       campaignPut(camp);
       snap.shiftStars = Math.max(prevStars, stars);
-      snap.earned = gain;
-      snap.bank = camp.bank;
       snap.bestComboLabel = (snap.bestCombo || 0) > 1 ? multLabel(snap.bestCombo) : '';
       return snap;
     }
 
     function finishDay() {
+      if (sim && sim.tenant) {
+        finishTenant();
+        return;
+      }
       var snap = scoreSnapshot(sim);
       snap.bestCombo = sim.bestCombo || 0;
       hooks.fanfare();
@@ -3278,26 +4778,23 @@
       var card = id && ARCH_CARD[id];
       var spec = id && archDef(id);
       if (!card || !spec) return;
+      els.event.classList.add('hr-inline');
       els.event.hidden = false;
-      var art = '<span class="hr-portrait" style="' + portraitStyle(spec.who, 'impatient', 96) + '"></span><span class="hr-icon" style="' + iconStyle(card.icon, 72) + '"></span>';
-      els.event.innerHTML = '<div class="hr-card" role="dialog" aria-modal="true" aria-labelledby="hr-type-title"><div class="hr-card__art">' + art + '</div><p class="hr-kicker">Week ' + (((run.day / 5) | 0) + 1) + '</p><h2 id="hr-type-title">' + esc(card.title) + '</h2><p>' + esc(card.body) + '</p><div class="hr-choices"><button type="button" id="hr-type-ok">Got it</button></div></div>';
-      document.getElementById('hr-type-ok').addEventListener('click', function () {
-        var metId = sim.typeCard;
-        sim.typeCard = '';
-        sim.paused = false;
-        if (!run.met) run.met = {};
-        run.met[metId] = 1;
-        var camp = campaignGet();
-        if (!camp.met) camp.met = {};
-        camp.met[metId] = 1;
-        campaignPut(camp);
+      var art = '<span class="hr-portrait" style="' + portraitStyle(spec.who, 'impatient', 36) + '"></span><span class="hr-icon" style="' + iconStyle(card.icon, 36) + '"></span>';
+      els.event.innerHTML = '<div class="hr-card" role="region" aria-labelledby="hr-type-title"><div class="hr-card__timer" aria-hidden="true"><i id="hr-prompt-bar"></i></div><div class="hr-card__art">' + art + '</div><p class="hr-kicker">Week ' + (((run.day / 5) | 0) + 1) + '</p><h2 id="hr-type-title">' + esc(card.title) + '</h2><p>' + esc(card.body) + '</p><div class="hr-choices"><button type="button" id="hr-type-ok">Got it</button></div></div>';
+      paintPromptTimer();
+      document.getElementById('hr-type-ok').addEventListener('pointerdown', function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        var title = card.title;
+        dismissTypeCard(sim, run);
         els.event.hidden = true;
         shownType = null;
-        toast(card.title.replace('New shopper: ', '') + ' is on the floor.');
+        toast(title.replace('New shopper: ', '') + ' is on the floor.');
         sfx('place');
         saveRun();
       });
-      if (els.live) els.live.textContent = card.title + '. ' + card.body;
+      if (els.live) els.live.textContent = card.title + '. ' + card.body + ' The floor keeps moving.';
     }
 
     function openCrew(mode) {
@@ -3317,7 +4814,7 @@
       var sh = crewMode === 'live' && sim ? shiftIndex(sim) : 0;
       var sched = run.schedule[day];
       var avail = run.days[day].avail;
-      var stations = STATIONS.map(function (st) {
+      var stations = stationList().map(function (st) {
         var sid = sched[sh][st];
         var who = sid && BY_ID[sid] ? firstName(sid) : 'Empty';
         var match = sid && BY_ID[sid] && ((st.indexOf('reg') === 0 && BY_ID[sid].role === 'register') || BY_ID[sid].role === st || BY_ID[sid].role === 'manager');
@@ -3387,8 +4884,8 @@
           return;
         }
         var from = null;
-        for (var i = 0; i < STATIONS.length; i++) {
-          if (sched[sh][STATIONS[i]] === crewArm) from = { shift: sh, station: STATIONS[i] };
+        for (var i = 0; i < stationList().length; i++) {
+          if (sched[sh][stationList()[i]] === crewArm) from = { shift: sh, station: stationList()[i] };
         }
         var res = tryPlace(run.schedule[day], avail, crewArm, sh, station, from);
         if (!res.ok) { toast(res.reason); sfx('miss'); return; }
@@ -3434,19 +4931,32 @@
         '<h2>' + pct + '% of goal</h2>' +
         '<p class="hr-stars hr-stars--big">' + starGlyph(snap.shiftStars || goalStars(snap.goalPct)) + '</p>' +
         '<p class="hr-thresholds">1★ ' + Math.round(CONFIG.star1 * 100) + '% · 2★ ' + Math.round(CONFIG.star2 * 100) + '% · 3★ ' + Math.round(CONFIG.star3 * 100) + '%</p>' +
+        (snap.tenant ? '<p class="hr-lead">You ran ' + esc(snap.tenant) + '. Their drawer did ' + money(snap.sales) + '. Your cut is ' + money(snap.cut || 0) + '.</p>' : '') +
         '<p class="hr-lead">Best combo ' + esc(comboBit) + ' · ' + (snap.walkouts || 0) + ' walkouts · ' + money(snap.sales) + ' / ' + money(snap.goal) + '</p>' +
-        '<p class="hr-bank">' + (snap.earned > 0 ? '+' + money(snap.earned) + ' banked' : 'Bank unchanged') + ' · ' + money(snap.bank || 0) + ' total</p>' +
+        '<p class="hr-bank">' + (snap.tape ? money(snap.tape.profit) + ' profit' : (snap.earned > 0 ? '+' + money(snap.earned) + ' banked' : 'Register unchanged')) + ' · ' + money(snap.bank || 0) + ' in the register</p>' +
         '<p class="hr-fine">' + esc(bankCopy(snap)) + '</p>' +
+        (snap.grumbles ? '<p class="hr-fine">Shoppers grumbled at the tag ' + snap.grumbles + ' time' + (snap.grumbles === 1 ? '' : 's') + '.</p>' : '') +
+        (snap.tape && snap.tape.leaseIn ? '<p class="hr-fine">Mall rent collected ' + money(snap.tape.leaseIn) + '.</p>' : '') +
+        (snap.tape && snap.tape.reviews ? snap.tape.reviews.map(function (line) { return '<p class="hr-fine">“' + esc(line) + '”</p>'; }).join('') : '') +
+        (snap.background && snap.background.tapes && snap.background.tapes.length ? snap.background.tapes.map(function (row) {
+          return '<p class="hr-fine">' + esc(row.name) + ' posted ' + money(row.profit) + (row.complaints && row.complaints[0] ? '. ' + esc(row.complaints[0]) : '.') + '</p>';
+        }).join('') : '') +
         '<p class="hr-scorebig">' + snap.points + ' pts</p>' +
         '<div class="hr-cta">' +
-        '<button type="button" class="btn btn--primary" id="hr-retry">Retry shift</button>' +
+        (snap.tenant
+          ? '<button type="button" class="btn btn--primary" id="hr-retry">Back to the plaza</button>' +
+            '<button type="button" class="btn" id="hr-tenant-again">Play their floor again</button>'
+          : '<button type="button" class="btn btn--primary" id="hr-retry">Retry shift</button>') +
         '<button type="button" class="btn" id="hr-to-crew">Set crew</button>' +
-        '<button type="button" class="btn" id="hr-to-shop">Upgrades</button>' +
+        '<button type="button" class="btn" id="hr-to-shop">Office</button>' +
         '<button type="button" class="btn" id="hr-to-map">Shift map</button>' +
         '</div>';
       document.getElementById('hr-retry').addEventListener('click', function () {
-        beginShift(run.day);
+        if (snap.tenant) renderMall();
+        else beginShift(run.day);
       });
+      var again = document.getElementById('hr-tenant-again');
+      if (again) again.addEventListener('click', function () { beginTenantShift(snap.slot); });
       document.getElementById('hr-to-crew').addEventListener('click', function () {
         openCrew('score');
       });
@@ -3455,6 +4965,24 @@
         saveRun();
         renderShop();
       });
+      if (spriteSession && HR.sprites && books) {
+        var tomorrow = HR.sprites.typesForDay(Math.min(SHIFT_COUNT - 1, run.day + 1), books);
+        var packNow = spriteSession.pack();
+        var waiting = [];
+        for (var ti = 0; ti < tomorrow.length; ti++) {
+          if (!packNow.types[tomorrow[ti]]) waiting.push(tomorrow[ti]);
+        }
+        if (waiting.length) {
+          var noteEl = document.createElement('p');
+          noteEl.className = 'hr-fine';
+          noteEl.id = 'hr-preload';
+          noteEl.textContent = 'Next shift’s new shoppers are loading in the back.';
+          var cta = els.score.querySelector('.hr-cta');
+          if (cta) els.score.insertBefore(noteEl, cta);
+        }
+        spriteSession.preload(tomorrow);
+        document.body.dataset.preload = tomorrow.join(',');
+      }
       document.getElementById('hr-to-map').addEventListener('click', function () {
         run.phase = 'map';
         saveRun();
@@ -3462,7 +4990,107 @@
       });
     }
 
+    function officeCoachNeeded(which) {
+      try { return !localStorage.getItem(which === 'mall' ? 'hr_coach_mall' : 'hr_coach_price'); } catch (e) { return false; }
+    }
+
+    function dismissOfficeCoach(which) {
+      try { localStorage.setItem(which === 'mall' ? 'hr_coach_mall' : 'hr_coach_price', '1'); } catch (e) {}
+    }
+
     function renderShop() {
+      show('shop');
+      if (!books || !HR.ui) return renderShopLegacy();
+      syncHires();
+      var camp = campaignGet();
+      camp.bank = books.cash;
+      if (run) run.upgrades = camp.upgrades;
+      HR.ui.mountOffice(els.shop, {
+        books: books,
+        coachPrice: officeCoachNeeded('price'),
+        upgrades: UPGRADES,
+        upgradeLevel: function (id) { return (camp.upgrades && camp.upgrades[id]) || 0; },
+        onToast: toast,
+        onDirty: function () {
+          camp.bank = books.cash;
+          campaignPut(camp);
+          if (HR.save) HR.save.save(writeJSON, books);
+          syncHires();
+          saveRun();
+        },
+        onUpgrade: function (id) {
+          var def = null;
+          for (var i = 0; i < UPGRADES.length; i++) if (UPGRADES[i].id === id) def = UPGRADES[i];
+          if (!def) return;
+          var live = campaignGet();
+          var lvl = live.upgrades[id] || 0;
+          if (lvl >= def.max) return;
+          var cost = def.costs[lvl];
+          if (books.cash < cost) { toast('Not enough in the register.'); return; }
+          books.cash -= cost;
+          live.bank = books.cash;
+          live.upgrades[id] = lvl + 1;
+          campaignPut(live);
+          if (run) run.upgrades = live.upgrades;
+          if (HR.save) HR.save.save(writeJSON, books);
+          sfx('correct');
+          toast(def.name + ' is on the floor.');
+          renderShop();
+        },
+        onLayout: function () { renderLayout(); },
+        onMall: function () { renderMall(); },
+        onCoachPrice: function () { dismissOfficeCoach('price'); },
+        onBack: function () {
+          if (run) { run.phase = 'map'; saveRun(); }
+          renderMap();
+        }
+      });
+    }
+
+    function renderMall() {
+      show('shop');
+      if (!books || !HR.ui || !HR.ui.mountMall || !HR.world) return renderShop();
+      if (!HR.economy.has(books, 'knock')) {
+        toast('Knock through the east wall first.');
+        renderShop();
+        return;
+      }
+      HR.ui.mountMall(els.shop, {
+        books: books,
+        coachMall: officeCoachNeeded('mall'),
+        slot: 'a',
+        onCoachMall: function () { dismissOfficeCoach('mall'); },
+        onPlayTenant: function (slotId) { beginTenantShift(slotId); },
+        onToast: toast,
+        onDirty: function () {
+          var campNow = campaignGet();
+          campNow.bank = books.cash;
+          campaignPut(campNow);
+          if (HR.save) HR.save.save(writeJSON, books);
+          saveRun();
+        },
+        onBack: function () { renderShop(); }
+      });
+    }
+
+    function renderLayout() {
+      show('shop');
+      if (!books || !HR.ui || !HR.layout) return;
+      var loc = books.locations[books.active];
+      HR.ui.mountLayout(els.shop, {
+        layout: loc.layout,
+        tool: 'shelf-toys',
+        onToast: toast,
+        onPlaced: function () {
+          trafficBlocked._layout = null;
+          syncFloor(true);
+          if (HR.save) HR.save.save(writeJSON, books);
+        },
+        onDone: function () { renderShop(); }
+      });
+    }
+
+    function renderShopLegacy() {
       show('shop');
       var camp = campaignGet();
       if (run) run.upgrades = camp.upgrades;
@@ -3511,7 +5139,8 @@
     function renderMap() {
       show('map');
       var camp = campaignGet();
-      var html = '<p class="hr-kicker">Holiday Rush Mart</p><h2>Shift map</h2><p class="hr-lead">Earn one star to unlock the next shift. Locked days stay blank. Replay any open shift. The bank keeps 10% of sales, and a replay only adds a better haul.</p><p class="hr-bank">Bank ' + money(camp.bank) + '</p><div class="hr-map">';
+      var purse = books ? books.cash : camp.bank;
+      var html = '<p class="hr-kicker">Holiday Rush Mart</p><h2>Shift map</h2><p class="hr-lead">Earn one star to unlock the next shift. Locked days stay blank. Replay any open shift. A retry replaces that shift’s profit in the register.</p><p class="hr-bank">Register ' + money(purse) + '</p><div class="hr-map">';
       var week = '';
       for (var i = 0; i < SHIFT_COUNT; i++) {
         var def = shiftDef(i);
@@ -3605,24 +5234,323 @@
       paintMeta();
     }
 
-    function bakeFloors() {
-      floors = [0.45, 0.78, 1].map(function (alpha) {
-        var c = document.createElement('canvas');
+    function plateKey() {
+      var band = sim && sim.stock < 0.25 ? 0 : sim && sim.stock < 0.7 ? 1 : 2;
+      var art = assets && assets.objects && assets.objects['floor/floor_tile.png'] ? 1 : 0;
+      return WORLD_W + 'x' + WORLD_H + ':' + band + ':' + (SPOTS.reg3 ? 1 : 0) + ':' + SHELVES.length + ':' + art;
+    }
+
+    function bakeStorePlate() {
+      var objs = assets && assets.objects;
+      var c = document.createElement('canvas');
+      if (objs && HR.room && objs['floor/floor_tile.png'] && objs['floor/wall_back.png']) {
         c.width = WORLD_W;
         c.height = WORLD_H;
         var g = c.getContext('2d');
-        g.drawImage(assets.img.empty, 0, 0, WORLD_W, WORLD_H);
-        g.globalAlpha = alpha;
-        g.drawImage(assets.img.layout, 0, 0, WORLD_W, WORLD_H);
-        g.globalAlpha = 1;
-        return c;
-      });
+        HR.room.paint(g, objs, WORLD_W, WORLD_H, {
+          entranceX: SPOTS.door.x,
+          arch: WORLD_W > 1600,
+          archX: 1600
+        });
+        var regs = registers().map(function (id) {
+          return { x: SPOTS[id].x, y: SPOTS[id].y, station: id };
+        });
+        fixtureGlows = HR.room.paintFixtures(g, objs, {
+          shelves: SHELVES,
+          registers: regs,
+          stock: sim ? sim.stock : 1,
+          stockSpot: SPOTS.stock,
+          truck: SPOTS.truck,
+          door: SPOTS.door,
+          worldH: WORLD_H
+        });
+      } else {
+        c.width = WORLD_W * 2;
+        c.height = WORLD_H * 2;
+        var fallback = c.getContext('2d');
+        fallback.scale(2, 2);
+        fallback.lineJoin = 'round';
+        fallback.lineCap = 'round';
+        paintStorePlate(fallback);
+        fixtureGlows = null;
+      }
+      storePlate = c;
+      bakedKey = plateKey();
+      if (els.stage) els.stage.dataset.art = fixtureGlows ? 'v10' : 'code';
+    }
+
+    function plateHash(x, y) {
+      var n = Math.imul(x | 0, 374761393) + Math.imul(y | 0, 668265263);
+      n = Math.imul(n ^ (n >>> 13), 1274126177);
+      return ((n ^ (n >>> 16)) >>> 0) / 4294967296;
+    }
+
+    function paintStorePlate(g) {
+      g.fillStyle = PAL.floorB;
+      g.fillRect(0, 0, WORLD_W, WORLD_H);
+      if (WORLD_W > 1600) {
+        g.fillStyle = 'rgba(224,163,34,0.16)';
+        g.fillRect(1600, 124, WORLD_W - 1600, WORLD_H - 124);
+        g.fillStyle = PAL.floorA;
+        g.fillRect(1576, 400, 48, 180);
+        g.fillStyle = PAL.gold;
+        g.fillRect(1576, 400, 48, 6);
+        g.fillRect(1576, 574, 48, 6);
+      }
+      var rowH = 28;
+      for (var y = 118; y < WORLD_H; y += rowH) {
+        var row = ((y - 118) / rowH) | 0;
+        var shift = (row % 2) * 46;
+        for (var x = -46 + shift; x < WORLD_W; x += 92) {
+          var h = plateHash(x + 80, row);
+          g.fillStyle = h > 0.66 ? PAL.floorA : h > 0.33 ? PAL.floorB : '#c89a68';
+          g.fillRect(x, y, 90, rowH - 2);
+          g.fillStyle = 'rgba(255,244,220,0.18)';
+          g.fillRect(x + 2, y + 2, 86, 4);
+        }
+      }
+      g.fillStyle = '#6e2d3c';
+      g.fillRect(430, 150, 520, WORLD_H - 180);
+      g.fillStyle = PAL.gold;
+      g.fillRect(430, 150, 8, WORLD_H - 180);
+      g.fillRect(942, 150, 8, WORLD_H - 180);
+      g.fillStyle = PAL.wall;
+      g.fillRect(0, 0, WORLD_W, 124);
+      g.fillStyle = PAL.wallDark || '#3d1c26';
+      g.fillRect(0, 0, WORLD_W, 18);
+      g.fillStyle = PAL.trim;
+      g.fillRect(0, 112, WORLD_W, 12);
+      g.fillStyle = PAL.gold;
+      g.fillRect(0, 108, WORLD_W, 4);
+      function windowPane(x) {
+        var grd = g.createLinearGradient(x, 28, x, 100);
+        grd.addColorStop(0, '#f7e2b8');
+        grd.addColorStop(1, '#e0a322');
+        g.fillStyle = '#2a1c18';
+        traceRound(g, x, 28, 150, 72, 8);
+        g.fill();
+        g.fillStyle = grd;
+        traceRound(g, x + 6, 34, 138, 60, 6);
+        g.fill();
+        g.strokeStyle = 'rgba(255,244,220,0.45)';
+        g.lineWidth = 2;
+        g.beginPath();
+        g.moveTo(x + 75, 34);
+        g.lineTo(x + 75, 94);
+        g.moveTo(x + 6, 64);
+        g.lineTo(x + 144, 64);
+        g.stroke();
+      }
+      windowPane(80);
+      windowPane(1370);
+      g.fillStyle = PAL.cream;
+      traceRound(g, 560, 26, 480, 70, 12);
+      g.fill();
+      g.strokeStyle = PAL.ink;
+      g.lineWidth = 3;
+      g.stroke();
+      g.fillStyle = PAL.wall;
+      g.font = '800 28px Outfit, Inter, sans-serif';
+      g.textAlign = 'center';
+      g.fillText('HOLIDAY RUSH', 800, 70);
+      g.font = '700 12px Outfit, Inter, sans-serif';
+      g.fillStyle = '#8a5a32';
+      g.fillText('MART', 800, 86);
+      for (var b = 0; b < 22; b++) {
+        var bx = 70 + b * 68;
+        var by = 18 + Math.sin(b * 0.85) * 6;
+        g.fillStyle = '#1f6b3a';
+        g.beginPath();
+        g.arc(bx, by + 8, 7, 0, Math.PI * 2);
+        g.fill();
+        g.fillStyle = b % 3 === 0 ? PAL.red : b % 3 === 1 ? PAL.gold : PAL.cream;
+        g.beginPath();
+        g.arc(bx, by, 4.5, 0, Math.PI * 2);
+        g.fill();
+      }
+      function tree(x, y) {
+        g.fillStyle = 'rgba(42,24,18,0.25)';
+        g.beginPath();
+        g.ellipse(x + 6, y + 4, 28, 8, 0, 0, Math.PI * 2);
+        g.fill();
+        g.fillStyle = '#6b4228';
+        g.fillRect(x - 6, y - 16, 12, 22);
+        g.fillStyle = '#1d5c34';
+        g.beginPath();
+        g.moveTo(x, y - 96);
+        g.lineTo(x + 38, y - 14);
+        g.lineTo(x - 38, y - 14);
+        g.closePath();
+        g.fill();
+        g.strokeStyle = PAL.ink;
+        g.lineWidth = 2;
+        g.stroke();
+        g.fillStyle = '#2f7d4a';
+        g.beginPath();
+        g.moveTo(x, y - 78);
+        g.lineTo(x + 26, y - 30);
+        g.lineTo(x - 26, y - 30);
+        g.closePath();
+        g.fill();
+        var bulbs = [PAL.red, PAL.gold, PAL.cream, PAL.red];
+        for (var i = 0; i < 4; i++) {
+          g.fillStyle = bulbs[i];
+          g.beginPath();
+          g.arc(x + (i - 1.5) * 12, y - 42 - (i % 2) * 16, 4, 0, Math.PI * 2);
+          g.fill();
+        }
+        g.fillStyle = PAL.gold;
+        g.beginPath();
+        g.moveTo(x, y - 104);
+        g.lineTo(x + 8, y - 88);
+        g.lineTo(x - 8, y - 88);
+        g.closePath();
+        g.fill();
+      }
+      tree(168, 250);
+      g.fillStyle = '#8d8680';
+      g.fillRect(1040, 124, 560, 150);
+      g.fillStyle = '#d7dde4';
+      traceRound(g, 1288, 132, 250, 110, 6);
+      g.fill();
+      g.strokeStyle = PAL.ink;
+      g.lineWidth = 3;
+      g.stroke();
+      g.strokeStyle = '#8aa0b4';
+      g.lineWidth = 4;
+      for (var stripe = 0; stripe < 5; stripe++) {
+        g.beginPath();
+        g.moveTo(1300, 150 + stripe * 18);
+        g.lineTo(1524, 150 + stripe * 18);
+        g.stroke();
+      }
+      g.fillStyle = '#6b4228';
+      g.fillRect(1100, 210, 70, 14);
+      g.fillStyle = PAL.red;
+      g.fillRect(1110, 188, 22, 22);
+      g.fillStyle = PAL.green;
+      g.fillRect(1134, 194, 22, 16);
+      g.fillStyle = '#c4a882';
+      traceRound(g, 860, 820, 220, 70, 8);
+      g.fill();
+      g.strokeStyle = PAL.gold;
+      g.lineWidth = 4;
+      g.stroke();
+      g.fillStyle = PAL.ink;
+      g.font = '800 16px Outfit, Inter, sans-serif';
+      g.textAlign = 'center';
+      g.fillText('IN', 970, 860);
+      g.fillStyle = '#3e2618';
+      traceRound(g, 900, 790, 48, 70, 4);
+      g.fill();
+      traceRound(g, 992, 790, 48, 70, 4);
+      g.fill();
+      g.fillStyle = 'rgba(255,244,220,0.25)';
+      g.fillRect(908, 798, 32, 6);
+      g.fillRect(1000, 798, 32, 6);
+      function gondola(x, y, label) {
+        g.fillStyle = 'rgba(42,24,18,0.28)';
+        traceRound(g, x - 64, y - 98, 136, 108, 10);
+        g.fill();
+        g.fillStyle = '#4a2e1c';
+        traceRound(g, x - 70, y - 112, 140, 108, 8);
+        g.fill();
+        g.fillStyle = PAL.wood;
+        traceRound(g, x - 70, y - 118, 140, 100, 8);
+        g.fill();
+        g.strokeStyle = PAL.ink;
+        g.lineWidth = 2.5;
+        g.stroke();
+        g.fillStyle = 'rgba(255,244,220,0.16)';
+        g.fillRect(x - 62, y - 112, 124, 8);
+        g.fillStyle = PAL.gold;
+        g.fillRect(x - 62, y - 92, 124, 5);
+        g.fillRect(x - 62, y - 66, 124, 5);
+        g.fillRect(x - 62, y - 40, 124, 5);
+        g.fillStyle = PAL.cream;
+        traceRound(g, x - 42, y - 138, 84, 20, 6);
+        g.fill();
+        g.strokeStyle = PAL.ink;
+        g.lineWidth = 2;
+        g.stroke();
+        g.fillStyle = PAL.wall;
+        g.font = '800 12px Outfit, Inter, sans-serif';
+        g.textAlign = 'center';
+        g.fillText(label, x, y - 124);
+      }
+      var bayName = ['TOYS', 'TREATS', 'WRAP', 'CARDS'];
+      for (var si = 0; si < SHELVES.length; si++) gondola(SHELVES[si].x, SHELVES[si].y, SHELVES[si].label || bayName[si] || 'AISLE');
+      function counter(x, y, accent) {
+        g.fillStyle = 'rgba(42,24,18,0.28)';
+        traceRound(g, x - 62, y + 8, 132, 48, 8);
+        g.fill();
+        g.fillStyle = '#3e2618';
+        traceRound(g, x - 68, y - 6, 136, 52, 8);
+        g.fill();
+        g.fillStyle = '#6b4228';
+        traceRound(g, x - 68, y - 12, 136, 46, 8);
+        g.fill();
+        g.strokeStyle = PAL.ink;
+        g.lineWidth = 2.5;
+        g.stroke();
+        g.fillStyle = 'rgba(255,244,220,0.2)';
+        g.fillRect(x - 60, y - 8, 120, 6);
+        g.fillStyle = '#1a120c';
+        g.fillRect(x - 48, y + 4, 70, 12);
+        g.fillStyle = accent;
+        g.fillRect(x - 44, y + 6, 16, 8);
+        g.fillStyle = PAL.cream;
+        traceRound(g, x + 28, y - 28, 28, 22, 3);
+        g.fill();
+        g.fillStyle = '#9fd0ff';
+        g.fillRect(x + 32, y - 24, 20, 10);
+        g.fillStyle = PAL.gold;
+        g.beginPath();
+        g.arc(x - 78, y + 36, 6, 0, Math.PI * 2);
+        g.arc(x + 78, y + 36, 6, 0, Math.PI * 2);
+        g.fill();
+      }
+      counter(SPOTS.reg1.x, 748, PAL.red);
+      if (SPOTS.reg2) counter(SPOTS.reg2.x, 748, PAL.blue);
+      if (SPOTS.reg3) counter(SPOTS.reg3.x, 748, PAL.gold);
+      g.fillStyle = 'rgba(42,24,18,0.2)';
+      g.fillRect(SPOTS.reg1.x - 18, 800, 36, 70);
+      if (SPOTS.reg2) g.fillRect(SPOTS.reg2.x - 18, 800, 36, 70);
+      function pool(x, y, r, color) {
+        var grd = g.createRadialGradient(x - 20, y - 24, 8, x, y, r);
+        grd.addColorStop(0, color);
+        grd.addColorStop(1, 'rgba(255,255,255,0)');
+        g.fillStyle = grd;
+        g.beginPath();
+        g.arc(x, y, r, 0, Math.PI * 2);
+        g.fill();
+      }
+      g.globalCompositeOperation = 'screen';
+      pool(500, 680, 200, 'rgba(255,214,150,0.28)');
+      pool(760, 680, 180, 'rgba(255,214,150,0.22)');
+      pool(800, 420, 260, 'rgba(255,226,180,0.16)');
+      pool(250, 240, 120, 'rgba(255,220,160,0.14)');
+      pool(1240, 180, 150, 'rgba(186,208,224,0.2)');
+      g.globalCompositeOperation = 'source-over';
+      var vig = g.createRadialGradient(800, 460, 220, 800, 480, 980);
+      vig.addColorStop(0, 'rgba(0,0,0,0)');
+      vig.addColorStop(1, 'rgba(42,16,18,0.28)');
+      g.fillStyle = vig;
+      g.fillRect(0, 0, WORLD_W, WORLD_H);
+    }
+
+    function pixelBudget() {
+      if (sim && sim.customers && sim.customers.length > 70) return 0.5;
+      return 2;
     }
 
     function resize() {
       var stage = els.stage;
       var rect = stage.getBoundingClientRect();
-      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      var cap = pixelBudget();
+      var dpr = Math.min(window.devicePixelRatio || 1, cap);
+      if (dpr < 0.5) dpr = 0.5;
+      els.canvas._dprCap = cap;
       var w = Math.max(280, Math.round(rect.width));
       var h = Math.max(200, Math.round(rect.height));
       els.canvas.width = Math.round(w * dpr);
@@ -3800,7 +5728,7 @@
 
     function pickHit(ev) {
       var best = null;
-      var bestD = 50;
+      var bestD = 64;
       for (var i = 0; i < sim.customers.length; i++) {
         var c = sim.customers[i];
         if (c.dead || c.state === 'leave') continue;
@@ -3812,17 +5740,18 @@
         for (var p = 0; p < sim.pings.length; p++) {
           var ping = sim.pings[p];
           if (ping.dead) continue;
-          if (screenDist(ping.x, ping.y, ev) < 40) return { ping: ping };
+          if (screenDist(ping.x, ping.y, ev) < 48) return { ping: ping };
         }
       }
       var zones = [
-        { station: 'reg1', x: SPOTS.reg1.x, y: (SPOTS.reg1.y + QUEUE.reg1.y) * 0.5 },
-        { station: 'reg2', x: SPOTS.reg2.x, y: (SPOTS.reg2.y + QUEUE.reg2.y) * 0.5 },
         { station: 'freight', x: SPOTS.truck.x, y: SPOTS.truck.y + 20 },
         { station: 'floor', x: SPOTS.floor.x, y: SPOTS.floor.y }
       ];
+      registers().forEach(function (reg) {
+        zones.unshift({ station: reg, x: SPOTS[reg].x, y: (SPOTS[reg].y + QUEUE[reg].y) * 0.5 });
+      });
       var zone = null;
-      var zoneD = 56;
+      var zoneD = 72;
       for (var z = 0; z < zones.length; z++) {
         var dist = screenDist(zones[z].x, zones[z].y, ev);
         if (dist < zoneD) { zoneD = dist; zone = zones[z]; }
@@ -3917,7 +5846,7 @@
     }
 
     function drawTrouble() {
-      var regs = ['reg1', 'reg2'];
+      var regs = registers();
       for (var i = 0; i < regs.length; i++) {
         var n = queueOf(sim, regs[i]).length;
         if (n >= 3) {
@@ -3988,7 +5917,8 @@
     function viewSize() {
       var cssW = els.canvas._cssW || 800;
       var cssH = els.canvas._cssH || 450;
-      var target = cssW < 720 ? 84 : 96;
+      if (HR.render) return HR.render.view(cssW, cssH, WORLD_W, WORLD_H, cam.zoom || 1, CONFIG.sprite);
+      var target = cssW < 520 ? 118 : cssW < 900 ? 112 : 108;
       var viewW = CONFIG.sprite * cssW / target;
       if (viewW > WORLD_W) viewW = WORLD_W;
       var viewH = viewW * cssH / cssW;
@@ -3997,7 +5927,30 @@
         viewW = viewH * cssW / cssH;
         if (viewW > WORLD_W) viewW = WORLD_W;
       }
-      return { viewW: viewW, viewH: viewH, cssW: cssW, cssH: cssH };
+      return { viewW: viewW, viewH: viewH, cssW: cssW, cssH: cssH, spritePx: CONFIG.sprite * cssW / viewW, productPx: 46 * cssW / viewW, zoom: 1 };
+    }
+
+    function paintEdges(view) {
+      if (els.stage) {
+        els.stage.dataset.spritePx = String(Math.round(view.spritePx || 0));
+        els.stage.dataset.productPx = String(Math.round(view.productPx || 0));
+        els.stage.dataset.zoom = String(view.zoom || cam.zoom || 1);
+        els.stage.dataset.world = WORLD_W + 'x' + WORLD_H;
+        els.stage.dataset.framed = cam.overview ? '1' : '0';
+        els.stage.dataset.minimap = cam.overview ? '1' : '0';
+        var doorY = SPOTS.door ? SPOTS.door.y : 855;
+        var holdsDoor = !!cam.overview || (cam.y <= 80 && cam.y + view.viewH >= doorY);
+        els.stage.dataset.span = holdsDoor ? '1' : '0';
+      }
+      if (!HR.render) return;
+      var edge = HR.render.edges(cam.x, cam.y, view.viewW, view.viewH, WORLD_W, WORLD_H);
+      var map = { left: 'hr-pan-left', right: 'hr-pan-right', up: 'hr-pan-up', down: 'hr-pan-down' };
+      Object.keys(map).forEach(function (key) {
+        var node = document.getElementById(map[key]);
+        if (node) node.hidden = !edge[key];
+      });
+      var east = document.getElementById('hr-east');
+      if (east) east.hidden = WORLD_W <= 1600;
     }
 
     function draw() {
@@ -4009,16 +5962,7 @@
       if (focus) {
         cam.x = focus.x - view.viewW * 0.5;
         cam.y = focus.y - view.viewH * 0.62;
-      } else if (sim && sim.typeCard) {
-        var spotC = null;
-        for (var ti = 0; ti < sim.customers.length; ti++) {
-          if (sim.customers[ti].arch === sim.typeCard && !sim.customers[ti].dead) spotC = sim.customers[ti];
-        }
-        if (spotC) {
-          cam.x = spotC.x - view.viewW * 0.5;
-          cam.y = spotC.y - view.viewH * 0.55;
-        }
-      } else if (sim && cam.follow) {
+      } else if (sim && cam.follow && !cam.fit) {
         var fx = 0;
         var fy = 0;
         var nCust = 0;
@@ -4035,9 +5979,20 @@
       }
       cam.x = clamp(cam.x, 0, Math.max(0, WORLD_W - view.viewW));
       cam.y = clamp(cam.y, 0, Math.max(0, WORLD_H - view.viewH));
-      if (isQA() && els.stage) {
+      paintEdges(view);
+      if (isQA() && els.stage && sim) {
         els.stage.dataset.cam = Math.round(cam.x) + ',' + Math.round(cam.y);
         els.stage.dataset.view = Math.round(view.viewW) + ',' + Math.round(view.viewH);
+        els.stage.dataset.paused = sim.paused ? '1' : '0';
+        var cast = [];
+        function pushCast(actor) {
+          if (!actor || actor.hidden || cast.length >= 14) return;
+          cast.push(Math.round(actor.x) + ',' + Math.round(actor.y) + ',' + spriteTypeFor(actor) + ',' + (actor.anim || 'idle') + ',' + (actor.face < 0 ? 'L' : 'R'));
+        }
+        for (var cc = 0; cc < sim.customers.length; cc++) pushCast(sim.customers[cc]);
+        for (var cs = 0; cs < sim.staff.length; cs++) pushCast(sim.staff[cs]);
+        if (sim.you) pushCast(sim.you);
+        els.stage.dataset.cast = cast.join(' ');
       }
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.fillStyle = '#1a1412';
@@ -4050,11 +6005,34 @@
         shakeY = Math.cos(buzz * 1.3) * sim.shake * 0.65;
       }
       ctx.setTransform(dpr * scale, 0, 0, dpr * scale, (-cam.x + shakeX) * dpr * scale, (-cam.y + shakeY) * dpr * scale);
-      var band = !sim ? 2 : sim.stock < 0.34 ? 0 : sim.stock < 0.67 ? 1 : 2;
-      if (floors[band]) ctx.drawImage(floors[band], 0, 0);
-      if (sim) drawStoreDress();
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      frameView.w = view.viewW;
+      frameView.h = view.viewH;
       if (sim) {
+        sim._shed = (sim._frameMs || 0) > 18 || sim.customers.length > 70;
+        sim._glow = 0;
+      }
+      ctx.imageSmoothingEnabled = !(sim && sim._shed);
+      if ('imageSmoothingQuality' in ctx) {
+        ctx.imageSmoothingQuality = (sim && (sim.customers.length > 40 || sim._shed)) ? 'low' : 'medium';
+      }
+      if (plateKey() !== bakedKey) bakeStorePlate();
+      if (storePlate) ctx.drawImage(storePlate, 0, 0, WORLD_W, WORLD_H);
+      else {
+        ctx.fillStyle = PAL.floorB;
+        ctx.fillRect(0, 0, WORLD_W, WORLD_H);
+      }
+      if (sim && sim.stock < 0.67 && !fixtureGlows) {
+        ctx.fillStyle = sim.stock < 0.34 ? 'rgba(62,32,24,0.16)' : 'rgba(62,32,24,0.07)';
+        ctx.fillRect(0, 0, WORLD_W, WORLD_H);
+      }
+      if (sim && !sim._shed) drawStoreDress();
+      if (sim) {
+        if (isQA() && els.stage) els.stage.dataset.sils = '0';
         SHELVES.forEach(function (sh) {
+          if (sim._shed) return;
+          if (!worldOn(sh.x, sh.y, 80)) return;
           var pct = Math.round(clamp(sim.stock, 0, 1) * 100);
           ctx.fillStyle = 'rgba(20,12,16,0.78)';
           ctx.fillRect(sh.x - 36, sh.y - 108, 72, 14);
@@ -4064,6 +6042,17 @@
           ctx.textAlign = 'center';
           ctx.fillStyle = '#f6f0e4';
           ctx.fillText(pct + '%', sh.x, sh.y - 112);
+          var tag = shelfPriceTag(sh, sim.books);
+          if (tag) {
+            var label = tag.markup >= 1.45 ? 'WON\'T PAY ' + money(tag.price) : money(tag.price);
+            ctx.font = '800 16px Outfit, Inter, sans-serif';
+            var tw = ctx.measureText(label).width + 18;
+            var ty = sh.y - 142;
+            ctx.fillStyle = tag.markup >= 1.45 ? '#8a1e22' : tag.markup > 1.2 ? '#8a5a22' : '#2a1c18';
+            ctx.fillRect(sh.x - tw / 2, ty, tw, 22);
+            ctx.fillStyle = '#fff4d2';
+            ctx.fillText(label, sh.x, ty + 16);
+          }
         });
         var drawList = [];
         for (var s = 0; s < sim.staff.length; s++) if (!sim.staff[s].hidden) drawList.push(sim.staff[s]);
@@ -4071,13 +6060,44 @@
         if (sim.you) drawList.push(sim.you);
         drawList.push(jackPose());
         drawList.sort(function (a, b) { return a.y - b.y; });
+        var heavy = sim.customers.length > 40;
+        var drawn = 0;
+        var fullBudget = sim._shed ? 16 : 999;
+        var cx = cam.x + view.viewW * 0.5;
+        var cy = cam.y + view.viewH * 0.5;
+        var blobR = Math.min(view.viewW, view.viewH) * 0.28;
         for (var d = 0; d < drawList.length; d++) {
-          if (drawList[d].kind === 'jack') drawPalletJack(drawList[d]);
-          else drawActor(drawList[d]);
+          var actor = drawList[d];
+          var visible = !heavy || actor.kind === 'jack' || !HR.render || HR.render.onScreen(actor, cam.x, cam.y, view.viewW, view.viewH, sim._shed ? 24 : 140);
+          if (!visible) continue;
+          drawn++;
+          if (actor.kind === 'jack') {
+            if (!sim._shed) drawPalletJack(actor);
+            continue;
+          }
+          var dx = actor.x - cx;
+          var dy = actor.y - cy;
+          var far = sim._shed && (fullBudget <= 0 || dx * dx + dy * dy > blobR * blobR);
+          if (far) {
+            drawLodBlob(actor);
+            continue;
+          }
+          if (sim._shed) fullBudget--;
+          drawActor(actor);
         }
-        drawPings();
-        drawTrouble();
-        if (sim.coins) {
+        if (isQA() && els.stage) {
+          els.stage.dataset.drawCount = String(drawn);
+          els.stage.dataset.simCount = String(sim.customers.length + sim.staff.length);
+          els.stage.dataset.shed = sim._shed ? '1' : '0';
+          els.stage.dataset.frameMs = String(Math.round(sim._frameMs || 0));
+          els.stage.dataset.smooth = sim._shed ? 'off' : (sim.customers.length > 40 ? 'low' : 'medium');
+          els.stage.dataset.glow = String(sim._glow || 0);
+        }
+        if (!sim._shed) {
+          drawPings();
+          drawTrouble();
+        }
+        if (sim.coins && !sim._shed) {
           for (var ci = 0; ci < sim.coins.length; ci++) {
             var coin = sim.coins[ci];
             ctx.globalAlpha = clamp(coin.life, 0, 1);
@@ -4091,7 +6111,7 @@
             ctx.fillText('$', coin.x, coin.y + 4);
           }
         }
-        if (sim.fx) {
+        if (sim.fx && !sim._shed) {
           for (var fi = 0; fi < sim.fx.length; fi++) {
             var burst = sim.fx[fi];
             var u = 1 - clamp(burst.life / 0.38, 0, 1);
@@ -4103,7 +6123,7 @@
             ctx.stroke();
           }
         }
-        if (sim.taps) {
+        if (sim.taps && !sim._shed) {
           for (var ti = 0; ti < sim.taps.length; ti++) {
             var tapRing = sim.taps[ti];
             var tu = 1 - clamp(tapRing.life / 0.32, 0, 1);
@@ -4115,7 +6135,7 @@
             ctx.stroke();
           }
         }
-        if (sim.confetti) {
+        if (sim.confetti && !sim._shed) {
           for (var ck = 0; ck < sim.confetti.length; ck++) {
             var bit = sim.confetti[ck];
             ctx.save();
@@ -4129,7 +6149,7 @@
         }
         ctx.globalAlpha = 1;
         ctx.textAlign = 'center';
-        for (var f = 0; f < sim.floats.length; f++) {
+        if (!sim._shed) for (var f = 0; f < sim.floats.length; f++) {
           var fl = sim.floats[f];
           ctx.globalAlpha = clamp(fl.life, 0, 1);
           ctx.fillStyle = fl.color;
@@ -4155,6 +6175,9 @@
           else ctx.fillRect(0, 0, view.cssW, view.cssH);
         }
         if (sim._heat && sim._heat.rush && !sim.coachHold) {
+          ctx.fillStyle = 'rgba(196,54,58,0.35)';
+          ctx.fillRect(0, 0, view.cssW, 4);
+          ctx.fillRect(0, view.cssH - 4, view.cssW, 4);
           ctx.font = '800 22px Outfit, Inter, sans-serif';
           ctx.textAlign = 'center';
           ctx.fillStyle = 'rgba(20,12,16,0.72)';
@@ -4164,6 +6187,40 @@
           ctx.fillText('RUSH', view.cssW / 2, 28);
         }
       }
+      if (cam.overview) drawMinimap(view);
+    }
+
+    function drawMinimap(view) {
+      if (!storePlate || !view) return;
+      var dpr = els.canvas._dpr || 1;
+      var cssW = view.cssW;
+      var cssH = view.cssH;
+      var mapW = Math.min(cssW * 0.42, 220);
+      var mapH = mapW * (WORLD_H / Math.max(1, WORLD_W));
+      if (mapH > cssH * 0.34) {
+        mapH = cssH * 0.34;
+        mapW = mapH * (WORLD_W / Math.max(1, WORLD_H));
+      }
+      var x = Math.max(8, cssW - mapW - 10);
+      var y = Math.max(8, cssH - mapH - 10);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.fillStyle = 'rgba(26,20,18,0.9)';
+      ctx.fillRect(x - 4, y - 4, mapW + 8, mapH + 8);
+      ctx.strokeStyle = '#ffe08a';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x - 4, y - 4, mapW + 8, mapH + 8);
+      ctx.drawImage(storePlate, 0, 0, WORLD_W, WORLD_H, x, y, mapW, mapH);
+      var vx = x + (cam.x / WORLD_W) * mapW;
+      var vy = y + (cam.y / WORLD_H) * mapH;
+      var vw = Math.max(4, (view.viewW / WORLD_W) * mapW);
+      var vh = Math.max(4, (view.viewH / WORLD_H) * mapH);
+      ctx.strokeStyle = '#fff4d2';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(vx, vy, vw, vh);
+      ctx.font = '700 11px Outfit, Inter, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#ffe08a';
+      ctx.fillText('Floor', x, y - 8);
     }
 
     function roundBox(x, y, w, h, r) {
@@ -4177,103 +6234,192 @@
       ctx.closePath();
     }
 
-    function drawProduct(x, y, kind) {
-      if (kind === 0) {
-        ctx.fillStyle = '#d64545';
-        roundBox(x, y, 14, 16, 2);
-        ctx.fill();
-        ctx.fillStyle = '#f6f0e4';
-        ctx.fillRect(x + 2, y + 4, 10, 3);
-      } else if (kind === 1) {
-        ctx.fillStyle = '#3b78d0';
-        ctx.fillRect(x + 1, y + 4, 12, 12);
-        ctx.beginPath();
-        ctx.ellipse(x + 7, y + 4, 6, 3, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#e0a322';
-        ctx.fillRect(x + 1, y + 8, 12, 3);
-      } else if (kind === 2) {
-        ctx.fillStyle = '#2f9e57';
-        ctx.fillRect(x + 5, y, 4, 5);
-        roundBox(x + 2, y + 5, 10, 12, 2);
-        ctx.fill();
-      } else {
-        ctx.fillStyle = '#e0a322';
-        ctx.fillRect(x, y + 2, 14, 13);
-        ctx.fillStyle = '#d64545';
-        ctx.fillRect(x + 6, y + 2, 2, 13);
-        ctx.fillRect(x, y + 8, 14, 2);
+    function shelfSku(sh, col) {
+      var label = sh.label || '';
+      var dept = sh.dept || '';
+      if (dept === 'electronics' || label === 'LIGHTS') return ['lights', 'lights', 'candle'][col];
+      if (dept === 'cafe' || label === 'CAFE') return ['mug', 'cocoa', 'candy'][col];
+      if (label === 'SEASON') return ['globe', 'candle', 'lights'][col];
+      if (label === 'TREATS') return ['candy', 'cocoa', 'candy'][col];
+      if (label === 'WRAP') return ['paper', 'candle', 'paper'][col];
+      if (label === 'CARDS') return ['candle', 'paper', 'mug'][col];
+      if (label === 'PLUSH') return ['plush', 'plush', 'candy'][col];
+      return ['cocoa', 'plush', 'candy'][col];
+    }
+
+    function drawChunky(x, y, sku) {
+      var pack = assets && assets.spritePack;
+      var obj = pack && pack.objects && pack.objects[sku];
+      if (obj && obj.img) {
+        ctx.drawImage(obj.img, x, y, 46, 54);
+        return;
       }
+      ctx.save();
+      ctx.translate(x + 23, y + 27);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = PAL.ink;
+      if (sku === 'paper') {
+        ctx.fillStyle = '#f6f0e4';
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 16, 22, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#c4363a';
+        ctx.fillRect(-4, -22, 8, 44);
+      } else if (sku === 'candy') {
+        ctx.fillStyle = '#d64545';
+        roundBox(-16, -18, 32, 36, 8);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#f6f0e4';
+        ctx.fillRect(-10, -4, 20, 6);
+      } else if (sku === 'candle') {
+        ctx.fillStyle = '#f3e6c8';
+        roundBox(-10, -8, 20, 28, 4);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#e0a322';
+        ctx.fillRect(-2, -22, 4, 14);
+      } else if (sku === 'lights') {
+        ctx.strokeStyle = '#2f7d4a';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(0, 4, 16, Math.PI, 0);
+        ctx.stroke();
+        ctx.fillStyle = '#e0a322';
+        ctx.beginPath();
+        ctx.arc(-12, 4, 4, 0, Math.PI * 2);
+        ctx.arc(0, -10, 4, 0, Math.PI * 2);
+        ctx.arc(12, 4, 4, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (sku === 'plush') {
+        ctx.fillStyle = '#c46a3a';
+        ctx.beginPath();
+        ctx.arc(0, 4, 16, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(-12, -10, 7, 0, Math.PI * 2);
+        ctx.arc(12, -10, 7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      } else if (sku === 'globe') {
+        ctx.fillStyle = '#7ec8ff';
+        ctx.beginPath();
+        ctx.arc(0, -2, 16, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#6b4228';
+        roundBox(-14, 14, 28, 8, 2);
+        ctx.fill();
+      } else if (sku === 'mug') {
+        ctx.fillStyle = '#f6f0e4';
+        roundBox(-14, -12, 24, 28, 4);
+        ctx.fill();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(12, 2, 8, -1, 1);
+        ctx.stroke();
+      } else {
+        ctx.fillStyle = '#6b2438';
+        roundBox(-14, -16, 28, 34, 6);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#e0a322';
+        ctx.fillRect(-14, -4, 28, 6);
+      }
+      ctx.restore();
+    }
+
+    function worldOn(x, y, pad) {
+      var margin = pad == null ? 48 : pad;
+      return x >= cam.x - margin && x <= cam.x + frameView.w + margin && y >= cam.y - margin && y <= cam.y + frameView.h + margin;
+    }
+
+    function drawLighter(image, x, y, w, h) {
+      if (!image) return;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.drawImage(image, x, y, w, h);
+      ctx.restore();
+      if (sim) sim._glow = (sim._glow || 0) + 1;
     }
 
     function drawStoreDress() {
-      var stock = clamp(sim.stock, 0, 1);
-      var shown = Math.max(0, Math.round(stock * 5));
-      ctx.save();
-      ctx.globalAlpha = 0.55;
-      ctx.fillStyle = '#8d2f2f';
-      ctx.fillRect(742, 210, 22, 520);
-      ctx.fillStyle = '#1f6b3a';
-      ctx.fillRect(764, 210, 8, 520);
-      ctx.globalAlpha = 0.72;
-      ctx.fillStyle = '#6b2424';
-      roundBox(880, 808, 150, 28, 6);
-      ctx.fill();
-      ctx.fillStyle = '#f6f0e4';
-      ctx.font = '800 12px Outfit, Inter, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('HOLIDAY', 955, 826);
-      ctx.globalAlpha = 1;
-      var t = sim.t || 0;
-      for (var b = 0; b < 18; b++) {
-        var bx = 180 + b * 72;
-        var by = 78 + Math.sin(b * 0.7) * 6;
-        ctx.fillStyle = b % 3 === 0 ? '#d64545' : b % 3 === 1 ? '#e0a322' : '#2f9e57';
-        ctx.beginPath();
-        ctx.arc(bx, by, 3.2, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      var bayName = ['TOYS', 'TREATS', 'WRAP', 'CARDS'];
-      SHELVES.forEach(function (sh, si) {
-        ctx.fillStyle = '#2e2118';
-        ctx.fillRect(sh.x - 58, sh.y - 86, 8, 94);
-        ctx.fillRect(sh.x + 50, sh.y - 86, 8, 94);
-        ctx.fillStyle = '#6b4a30';
-        ctx.fillRect(sh.x - 50, sh.y - 82, 100, 80);
-        ctx.fillStyle = '#24180f';
-        ctx.fillRect(sh.x - 50, sh.y - 4, 100, 8);
-        var rails = [-64, -42, -20];
-        for (var ri = 0; ri < rails.length; ri++) {
-          ctx.fillStyle = '#e0a322';
-          ctx.fillRect(sh.x - 50, sh.y + rails[ri], 100, 4);
+      var objs = assets && assets.objects;
+      if (objs && fixtureGlows) {
+        var t = sim.t || 0;
+        var rollers = [objs['anim/belt_rollers_0.png'], objs['anim/belt_rollers_1.png'], objs['anim/belt_rollers_2.png']];
+        var roll = rollers[Math.floor(t * 8) % rollers.length];
+        var sweeps = [objs['anim/scanner_sweep_0.png'], objs['anim/scanner_sweep_1.png'], objs['anim/scanner_sweep_2.png']];
+        var sweep = sweeps[Math.floor(t * 12) % sweeps.length];
+        var regs = fixtureGlows.registers || [];
+        var shed = !!(sim && sim._shed);
+        for (var r = 0; r < regs.length; r++) {
+          var belt = regs[r];
+          if (!worldOn(belt.x, belt.y, 80)) continue;
+          if (roll) ctx.drawImage(roll, belt.x, belt.y, belt.w, belt.h);
+          var line = belt.station && queueOf(sim, belt.station).length;
+          if (line && sweep) drawLighter(sweep, belt.x, belt.y - 6, belt.w, belt.h + 12);
         }
-        for (var row = 0; row < 2; row++) {
-          for (var col = 0; col < shown; col++) {
-            drawProduct(sh.x - 46 + col * 18, sh.y - 60 - row * 22, (si + col + row * 2) % 4);
+        if (!shed) {
+          var twinkles = [objs['anim/tree_twinkle_0.png'], objs['anim/tree_twinkle_1.png'], objs['anim/tree_twinkle_2.png']];
+          var twinkle = twinkles[Math.floor(t * 4) % twinkles.length];
+          if (fixtureGlows.tree && twinkle && worldOn(fixtureGlows.tree.x, fixtureGlows.tree.y, 40)) {
+            drawLighter(twinkle, fixtureGlows.tree.x, fixtureGlows.tree.y, fixtureGlows.tree.w, fixtureGlows.tree.h);
+          }
+          if (fixtureGlows.tower && sim.stock >= 0.85 && worldOn(fixtureGlows.tower.x, fixtureGlows.tower.y, 40)) {
+            var spark = objs['gift_tower/sparkle.png'];
+            if (spark && Math.floor(t * 4) % 2 === 0) drawLighter(spark, fixtureGlows.tower.x, fixtureGlows.tower.y, fixtureGlows.tower.w, fixtureGlows.tower.h);
           }
         }
-        ctx.fillStyle = '#f6f0e4';
-        ctx.font = '800 11px Outfit, Inter, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(bayName[si % bayName.length], sh.x, sh.y - 74);
+        if (!reduceMotion && !shed) {
+          var on = objs['anim/string_bulb_0.png'];
+          var off = objs['anim/string_bulb_1.png'];
+          var phase = Math.floor(t * 4);
+          for (var b = 240; b < WORLD_W - 200; b += 150) {
+            if (!worldOn(b, 62, 24)) continue;
+            var lit = ((phase + (b / 150)) | 0) % 2 === 0;
+            if (lit) drawLighter(on, b, 62, 18, 20);
+            else if (off) ctx.drawImage(off, b, 64, 16, 18);
+          }
+        }
+        return;
+      }
+      var stock = clamp(sim.stock, 0, 1);
+      var heroes = stock <= 0.04 ? 0 : stock < 0.34 ? 1 : stock < 0.67 ? 2 : 3;
+      var t = sim.t || 0;
+      ctx.save();
+      SHELVES.forEach(function (sh) {
+        var slots = [-48, 0, 48];
+        for (var col = 0; col < heroes; col++) drawChunky(sh.x + slots[col] - 23, sh.y - 108, shelfSku(sh, col));
       });
-      var regs = ['reg1', 'reg2'];
+      var regs = registers();
       for (var r = 0; r < regs.length; r++) {
         var belt = SPOTS[regs[r]];
-        ctx.fillStyle = '#2a211c';
-        ctx.fillRect(belt.x - 28, belt.y + 8, 56, 10);
-        var slide = reduceMotion ? 8 : ((t * 36 + r * 12) % 28);
-        ctx.fillStyle = r === 0 ? '#d64545' : '#3b78d0';
-        ctx.fillRect(belt.x - 24 + slide * 0.4, belt.y + 9, 12, 8);
+        var slide = reduceMotion ? 10 : ((t * 42 + r * 18) % 46);
+        ctx.fillStyle = r === 0 ? PAL.red : PAL.blue;
+        ctx.fillRect(belt.x - 40 + slide, 754, 14, 8);
         if (queueOf(sim, regs[r]).length) {
-          ctx.strokeStyle = 'rgba(224,163,34,0.85)';
+          ctx.strokeStyle = 'rgba(255,224,138,0.9)';
           ctx.lineWidth = 2;
-          var scan = reduceMotion ? 0 : (t * 50) % 40;
+          var scan = reduceMotion ? 0 : (t * 56) % 52;
           ctx.beginPath();
-          ctx.moveTo(belt.x - 20 + scan, belt.y + 6);
-          ctx.lineTo(belt.x - 20 + scan, belt.y + 20);
+          ctx.moveTo(belt.x - 44 + scan, 748);
+          ctx.lineTo(belt.x - 44 + scan, 766);
           ctx.stroke();
         }
+      }
+      if (!reduceMotion) {
+        for (var b = 0; b < 8; b++) {
+          var pulse = 0.45 + Math.sin(t * 4 + b) * 0.4;
+          ctx.globalAlpha = pulse;
+          ctx.fillStyle = b % 2 ? PAL.gold : PAL.cream;
+          ctx.beginPath();
+          ctx.arc(120 + b * 180, 20, 3.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
       }
       ctx.restore();
     }
@@ -4302,6 +6448,15 @@
     }
 
     function drawPalletJack(j) {
+      var jack = assets && assets.objects && assets.objects['props/pallet_jack.png'];
+      if (jack) {
+        ctx.save();
+        ctx.translate(j.x, j.y);
+        if (j.face < 0) ctx.scale(-1, 1);
+        ctx.drawImage(jack, -36, -64, 74, 84);
+        ctx.restore();
+        return;
+      }
       ctx.save();
       ctx.translate(j.x, j.y);
       if (j.face < 0) ctx.scale(-1, 1);
@@ -4369,67 +6524,6 @@
       ctx.restore();
     }
 
-    function drawKidBackBody(a, size) {
-      var s = size / 78;
-      var swing = (!reduceMotion && a.anim === 'walk') ? Math.sin(a.frame * Math.PI / 2) * 7 * s : 0;
-      if (!reduceMotion && a.anim !== 'walk') swing = Math.sin(Date.now() / 320) * 2 * s;
-      ctx.fillStyle = 'rgba(20,12,16,0.25)';
-      ctx.beginPath();
-      ctx.ellipse(0, 4, 14 * s, 5 * s, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#3b78d0';
-      roundBox(-12 * s, -46 * s, 24 * s, 22 * s, 4 * s);
-      ctx.fill();
-      ctx.strokeStyle = '#1a120c';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(-6 * s, -44 * s);
-      ctx.lineTo(-6 * s, -28 * s);
-      ctx.moveTo(6 * s, -44 * s);
-      ctx.lineTo(6 * s, -28 * s);
-      ctx.stroke();
-      function limb(x, y, w, h, color) {
-        ctx.fillStyle = color;
-        roundBox(x, y, w, h, 3 * s);
-        ctx.fill();
-      }
-      limb(-8 * s + swing, -16 * s, 7 * s, 16 * s, '#f0c09a');
-      limb(2 * s - swing, -16 * s, 7 * s, 16 * s, '#f0c09a');
-      limb(-10 * s + swing, -4 * s, 10 * s, 6 * s, '#f2d15a');
-      limb(1 * s - swing, -4 * s, 10 * s, 6 * s, '#f2d15a');
-      ctx.fillStyle = '#2454a8';
-      roundBox(-13 * s, -34 * s, 26 * s, 16 * s, 3 * s);
-      ctx.fill();
-      ctx.fillStyle = '#e23b3b';
-      roundBox(-15 * s, -58 * s, 30 * s, 26 * s, 5 * s);
-      ctx.fill();
-      ctx.strokeStyle = '#2b1d2e';
-      ctx.lineWidth = Math.max(2, 2 * s);
-      ctx.stroke();
-      ctx.fillStyle = '#f6f0e4';
-      ctx.fillRect(-4 * s, -50 * s, 8 * s, 4 * s);
-      limb(-20 * s - swing, -54 * s, 8 * s, 18 * s, '#e23b3b');
-      limb(12 * s + swing, -54 * s, 8 * s, 18 * s, '#e23b3b');
-      ctx.fillStyle = '#f0c09a';
-      ctx.beginPath();
-      ctx.arc(-16 * s - swing * 0.3, -34 * s, 4 * s, 0, Math.PI * 2);
-      ctx.arc(16 * s + swing * 0.3, -34 * s, 4 * s, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#f0c09a';
-      roundBox(-6 * s, -62 * s, 12 * s, 8 * s, 3);
-      ctx.fill();
-      ctx.fillStyle = '#6b3a22';
-      ctx.beginPath();
-      ctx.arc(0, -68 * s, 14 * s, Math.PI, 0);
-      ctx.fill();
-      ctx.fillRect(-14 * s, -70 * s, 28 * s, 10 * s);
-      ctx.fillStyle = '#8a4b2a';
-      ctx.beginPath();
-      ctx.arc(-8 * s, -74 * s, 4 * s, 0, Math.PI * 2);
-      ctx.arc(7 * s, -76 * s, 3 * s, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
     function drawCarry(a, size) {
       if (a.kind !== 'cust' || a.state === 'leave') return;
       var s = size / 78;
@@ -4484,45 +6578,352 @@
       ctx.restore();
     }
 
+    function drawSpritePerson(a) {
+      var pack = assets && assets.spritePack;
+      if (!pack || !pack.ready) return false;
+      var type = spriteTypeFor(a);
+      var sheet = pack.types[type];
+      var anim = a.anim === 'walk' || a.anim === 'work' ? a.anim : 'idle';
+      var dir = (a.face < 0 || a.dir === 'side') ? 'side' : (a.dir === 'up' ? 'up' : 'down');
+      var list = spriteFrameList(sheet, anim, dir);
+      if (!list) return false;
+      var index = (a.frame || 0) % list.length;
+      var frame = list[index];
+      if (!frame || !frame.img) return false;
+      var dh = SPRITE_PACK.displayH;
+      var dw = dh * (frame.w / frame.h);
+      var foot = (SPRITE_PACK.footY / frame.h) * dh;
+      ctx.drawImage(frame.img, Math.round(-dw / 2), Math.round(-foot), Math.round(dw), Math.round(dh));
+      return true;
+    }
+
+    function drawGhostPose(a) {
+      var pack = assets && assets.spritePack;
+      if (!pack || !pack.ghosts) return false;
+      var type = spriteTypeFor(a);
+      var sheet = pack.ghosts[type];
+      if (!sheet) return false;
+      var anim = a.anim === 'walk' || a.anim === 'work' ? a.anim : 'idle';
+      var dir = (a.face < 0 || a.dir === 'side') ? 'side' : (a.dir === 'up' ? 'up' : 'down');
+      var list = spriteFrameList(sheet, anim, dir);
+      if (!list) return false;
+      var frame = list[(a.frame || 0) % list.length];
+      if (!frame || !frame.img) return false;
+      var dh = SPRITE_PACK.displayH;
+      var dw = dh * (frame.w / frame.h);
+      var foot = (SPRITE_PACK.footY / frame.h) * dh;
+      var gw = Math.max(1, Math.round(dw));
+      var gh = Math.max(1, Math.round(dh));
+      var key = gw + 'x' + gh;
+      if (!frame._ghost || frame._ghostKey !== key) {
+        var plate = document.createElement('canvas');
+        plate.width = gw;
+        plate.height = gh;
+        var g = plate.getContext('2d');
+        g.drawImage(frame.img, 0, 0, gw, gh);
+        g.globalCompositeOperation = 'source-in';
+        g.fillStyle = 'rgb(36,24,48)';
+        g.fillRect(0, 0, gw, gh);
+        frame._ghost = plate;
+        frame._ghostKey = key;
+      }
+      ctx.drawImage(frame._ghost, Math.round(-dw / 2), Math.round(-foot));
+      if (isQA() && els.stage) els.stage.dataset.pose = '1';
+      return true;
+    }
+
+    function drawSilhouette(a) {
+      if (!drawGhostPose(a)) {
+        ctx.save();
+        ctx.fillStyle = 'rgba(36,24,48,0.94)';
+        ctx.strokeStyle = '#ffe08a';
+        ctx.lineWidth = 4;
+        ctx.setLineDash([8, 5]);
+        ctx.beginPath();
+        ctx.ellipse(0, -62, 20, 22, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.ellipse(0, -16, 28, 40, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#ffe08a';
+        ctx.font = '800 28px Outfit, Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('?', 0, -6);
+        ctx.restore();
+      }
+      if (a) a._sil = 1;
+      if (isQA() && els.stage) els.stage.dataset.sils = String((+els.stage.dataset.sils || 0) + 1);
+    }
+
+    function drawLodBlob(a) {
+      ctx.save();
+      ctx.translate(a.x, a.y);
+      ctx.fillStyle = a.kind === 'staff' ? '#2f6b45' : '#6b3a28';
+      ctx.beginPath();
+      ctx.ellipse(0, -36, 10, 12, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, -10, 14, 18, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function paintPerson(a) {
+      if (drawSpritePerson(a)) return;
+      var pack = assets && assets.spritePack;
+      if (!pack || !pack.ready) {
+        drawFigure(a);
+        return;
+      }
+      if (!pack.types[spriteTypeFor(a)]) {
+        drawSilhouette(a);
+        return;
+      }
+      drawFigure(a);
+    }
+
+    function drawFigure(a) {
+      var look = LOOKS[a.charId] || LOOKS.cust_mom;
+      var sc = look.scale || 1;
+      var walking = a.anim === 'walk' && !reduceMotion;
+      var working = a.anim === 'work';
+      var phase = (walking || working) ? Math.sin((a.frame || 0) * Math.PI / 2) : 0;
+      var dir = (a.face < 0 || a.dir === 'side') ? 'side' : (a.dir === 'up' ? 'up' : 'down');
+      var mood = (a.bubble === 'angry' || a.angry) ? 'angry' : (a.heart > 0 ? 'happy' : 'ok');
+      var blink = a.anim === 'idle' && ((a.frame || 0) % 2 === 1);
+      var bob = walking ? Math.abs(phase) * -3.2 : (!reduceMotion && a.anim === 'idle' ? Math.sin(Date.now() / 420 + (a.seq || 0)) * 1.05 : 0);
+      var hoodUp = a.arch === 'lift';
+      ctx.save();
+      ctx.scale(sc, sc);
+      ctx.translate(0, bob);
+      if (look.stoop) ctx.translate(2, 4);
+      if (a.arch === 'rusher' && walking) ctx.rotate(-0.12);
+      if (walking) {
+        var sq = 1 + Math.cos((a.frame || 0) * Math.PI) * 0.045;
+        ctx.scale(1 / sq, sq);
+      }
+      ctx.fillStyle = 'rgba(42,24,18,0.3)';
+      ctx.beginPath();
+      ctx.ellipse(3, 3, 14, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      function limb(x, y, w, h, fill) {
+        traceRound(ctx, x, y, w, h, Math.min(4, Math.abs(w) / 2, Math.abs(h) / 2));
+        ctx.fillStyle = fill;
+        ctx.fill();
+        ctx.strokeStyle = PAL.ink;
+        ctx.lineWidth = 1.6;
+        ctx.stroke();
+      }
+      function head(x, y, r) {
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fillStyle = look.skin;
+        ctx.fill();
+        ctx.strokeStyle = PAL.ink;
+        ctx.lineWidth = 1.7;
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(255,244,220,0.3)';
+        ctx.beginPath();
+        ctx.arc(x - r * 0.28, y - r * 0.34, r * 0.36, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      function hair(x, y) {
+        ctx.fillStyle = look.hair;
+        if (look.style === 'hijab') {
+          ctx.fillStyle = '#14584a';
+          if (dir === 'down') {
+            ctx.beginPath();
+            ctx.arc(x, y + 2, 14, Math.PI, 0);
+            ctx.fill();
+            limb(x - 16, y - 2, 6, 26, '#14584a');
+            limb(x + 10, y - 2, 6, 26, '#14584a');
+          } else {
+            traceRound(ctx, x - 14, y - 8, 28, 32, 12);
+            ctx.fill();
+            ctx.strokeStyle = PAL.ink;
+            ctx.stroke();
+          }
+          return;
+        }
+        if (look.style === 'cap') {
+          ctx.fillStyle = PAL.blue;
+          ctx.beginPath();
+          ctx.arc(x, y, 13, Math.PI, 0);
+          ctx.fill();
+          ctx.fillRect(x - 2, y - 1, 16, 4);
+          return;
+        }
+        if (look.style === 'hood' || hoodUp) {
+          ctx.fillStyle = hoodUp ? '#16141a' : look.top;
+          ctx.beginPath();
+          ctx.arc(x, y, 14, Math.PI, 0);
+          ctx.fill();
+          ctx.fillRect(x - 14, y - 2, 28, 8);
+          return;
+        }
+        if (look.style === 'bald') {
+          ctx.beginPath();
+          ctx.arc(x, y - 6, 7, Math.PI, 0);
+          ctx.fill();
+          return;
+        }
+        var extra = look.style === 'big' ? 5 : look.style === 'curly' ? 3 : 0;
+        ctx.beginPath();
+        ctx.arc(x, y, 12 + extra, Math.PI, 0);
+        ctx.fill();
+        if (look.style === 'bun') {
+          ctx.beginPath();
+          ctx.arc(x, y - 12, 5.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        if (look.style === 'pony' && dir !== 'up') ctx.fillRect(dir === 'side' ? x + 6 : x - 2, y + 2, 5, 14);
+        if (look.style === 'curly') {
+          ctx.beginPath();
+          ctx.arc(x - 10, y + 2, 4, 0, Math.PI * 2);
+          ctx.arc(x + 10, y + 2, 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      function face(x, y) {
+        if (look.style === 'hijab' && dir !== 'down') return;
+        if (hoodUp && dir !== 'side') return;
+        ctx.fillStyle = PAL.ink;
+        if (dir === 'side') {
+          if (!blink && mood !== 'happy') ctx.fillRect(x + 5, y - 2, 3, 3);
+          ctx.strokeStyle = mood === 'angry' ? PAL.red : PAL.ink;
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.arc(x + 4, y + 5, 3, mood === 'angry' ? 1.15 * Math.PI : 0.2 * Math.PI, mood === 'angry' ? 1.85 * Math.PI : 0.8 * Math.PI);
+          ctx.stroke();
+          return;
+        }
+        if (blink || mood === 'happy') {
+          ctx.strokeStyle = PAL.ink;
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.arc(x - 5, y, 3, 0.15 * Math.PI, 0.85 * Math.PI);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(x + 5, y, 3, 0.15 * Math.PI, 0.85 * Math.PI);
+          ctx.stroke();
+        } else {
+          ctx.fillRect(x - 7, y - 2, 3.2, 3.2);
+          ctx.fillRect(x + 4, y - 2, 3.2, 3.2);
+        }
+        if (mood === 'angry') {
+          ctx.strokeStyle = PAL.ink;
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(x - 8, y - 7);
+          ctx.lineTo(x - 3, y - 4);
+          ctx.moveTo(x + 8, y - 7);
+          ctx.lineTo(x + 3, y - 4);
+          ctx.stroke();
+        }
+        ctx.strokeStyle = mood === 'angry' ? PAL.red : PAL.ink;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        if (mood === 'angry') ctx.arc(x, y + 8, 3.5, 1.15 * Math.PI, 1.85 * Math.PI);
+        else ctx.arc(x, y + 6, 3.4, 0.15 * Math.PI, 0.85 * Math.PI);
+        ctx.stroke();
+        if (look.glasses) {
+          ctx.strokeStyle = PAL.ink;
+          ctx.lineWidth = 1.3;
+          ctx.strokeRect(x - 8, y - 4, 7, 5);
+          ctx.strokeRect(x + 2, y - 4, 7, 5);
+        }
+        if (look.beard) {
+          ctx.fillStyle = look.hair;
+          ctx.beginPath();
+          ctx.arc(x, y + 6, 6, 0, Math.PI);
+          ctx.fill();
+        }
+      }
+      var leg = phase * 5.5;
+      var wide = look.wide ? 3 : 0;
+      if (dir === 'side') {
+        limb(-4 + leg, -24, 9, 20, look.bottom);
+        limb(-1 - leg * 0.5, -22, 8, 18, look.bottom);
+        limb(-6 + leg, -7, 12, 6, look.shoes);
+        limb(working ? 4 : -2, -42, working ? 14 : 8, working ? 7 : 16, look.skin);
+        limb(-11, -50, 22, 28, look.top);
+        if (look.vest) limb(-9, -48, 16, 16, look.vest);
+        if (look.tie) {
+          ctx.fillStyle = PAL.gold;
+          ctx.fillRect(4, -44, 3, 10);
+        }
+        head(2, -62, 12);
+        hair(2, -68);
+        face(2, -62);
+      } else if (dir === 'up') {
+        limb(-12 + leg, -24, 10, 20, look.bottom);
+        limb(2 - leg, -24, 10, 20, look.bottom);
+        limb(-14 + leg, -7, 12, 6, look.shoes);
+        limb(2 - leg, -7, 12, 6, look.shoes);
+        limb(-16 - phase * 4, -46, 8, 16, look.top);
+        limb(8 + phase * 4, -46, 8, 16, look.top);
+        limb(-14, -52, 28, 28, look.top);
+        if (look.vest) limb(-12, -50, 24, 16, look.vest);
+        head(0, -64, 13);
+        hair(0, -70);
+      } else {
+        limb(-12 - wide + leg, -24, 10, 20, look.bottom);
+        limb(2 + wide - leg, -24, 10, 20, look.bottom);
+        limb(-14 - wide + leg, -8, 13, 7, look.shoes);
+        limb(1 + wide - leg, -8, 13, 7, look.shoes);
+        limb(-18 - wide, -50, 8, 18, look.skin);
+        limb(10 + wide, -50 + (working ? 6 : 0), 8, working ? 12 : 18, look.skin);
+        limb(-14 - wide, -52, 28 + wide * 2, 28, look.top);
+        if (look.vest) limb(-12, -50, 24, 18, look.vest);
+        if (look.tie) {
+          ctx.fillStyle = PAL.red;
+          ctx.beginPath();
+          ctx.moveTo(0, -48);
+          ctx.lineTo(3, -36);
+          ctx.lineTo(0, -32);
+          ctx.lineTo(-3, -36);
+          ctx.closePath();
+          ctx.fill();
+        }
+        head(0, -66, 13);
+        hair(0, -72);
+        face(0, -66);
+        if (look.cane) {
+          ctx.strokeStyle = '#6b4228';
+          ctx.lineWidth = 2.2;
+          ctx.beginPath();
+          ctx.moveTo(16, -36);
+          ctx.quadraticCurveTo(22, -20, 18, 2);
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+    }
+
     function drawActor(a) {
       var dir = a.face < 0 ? 'side' : a.dir;
       if (a.face < 0) dir = 'side';
-      var count = a.anim === 'idle' ? 2 : 4;
-      var frame = a.frame % count;
-      var kidBack = a.charId === 'cust_kid' && dir === 'up';
-      var key = a.charId + '/' + dir + '_' + a.anim + '_' + frame;
-      var rect = assets.floor.frames[key];
-      if (!rect && !kidBack) return;
       var size = CONFIG.sprite;
-      var bob = 0;
-      if (a.anim === 'walk' && !reduceMotion) bob = Math.sin(a.frame * Math.PI / 2) * -4;
       var reactX = 0;
-      if ((a.bubble === 'angry' || a.angry) && !reduceMotion) reactX = Math.sin(Date.now() / 60) * 1.6;
+      if ((a.bubble === 'angry' || a.angry) && !reduceMotion) reactX = Math.sin(Date.now() / 70) * 1.8;
       ctx.save();
-      ctx.translate(a.x + reactX, a.y + bob);
+      ctx.translate(a.x + reactX, a.y);
       if (a.face < 0) ctx.scale(-1, 1);
-      if (a.anim === 'walk' && !reduceMotion) {
-        var squash = 1 + Math.sin(a.frame * 1.4) * 0.06;
-        ctx.scale(1 / squash, squash);
-      }
       if (a.pop > 0) {
-        var popS = 1 + a.pop * (reduceMotion ? 0.08 : 0.28);
+        var popS = 1 + a.pop * (reduceMotion ? 0.08 : 0.22);
         ctx.scale(popS, popS);
       }
-      ctx.fillStyle = 'rgba(20,12,16,0.22)';
-      ctx.beginPath();
-      ctx.ellipse(0, 2, 15, 5, 0, 0, Math.PI * 2);
-      ctx.fill();
-      if (a.role && ROLE_COLOR[a.role]) {
+      if (a.role && ROLE_COLOR[a.role] && !(assets && assets.spritePack && assets.spritePack.ready)) {
         ctx.fillStyle = ROLE_COLOR[a.role];
         ctx.globalAlpha = 0.9;
         ctx.beginPath();
-        ctx.ellipse(0, -4, 16, 6, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, -2, 14, 5, 0, 0, Math.PI * 2);
         ctx.fill();
         ctx.globalAlpha = 1;
       }
-      if (kidBack) drawKidBackBody(a, size);
-      else ctx.drawImage(assets.img.floor, rect[0], rect[1], rect[2], rect[3], -size / 2, -size + 8, size, size);
+      paintPerson(a);
+      if (!(assets && assets.spritePack && assets.spritePack.ready)) drawCarry(a, size);
       if (a.arch === 'rusher' && a.anim === 'walk') {
         ctx.strokeStyle = 'rgba(214,69,69,0.75)';
         ctx.lineWidth = 3;
@@ -4533,35 +6934,23 @@
         ctx.lineTo(-34, -16);
         ctx.stroke();
       }
-      if (a.arch === 'lift') {
-        ctx.fillStyle = 'rgba(20,12,16,0.55)';
-        ctx.beginPath();
-        ctx.ellipse(0, -size + 28, 16, 10, 0, Math.PI, 0);
-        ctx.fill();
-      }
-      drawCarry(a, size);
       ctx.restore();
       if (a.arch === 'family' && a.state !== 'leave') {
-        var kidSize = size * 0.68;
-        var beside = dir === 'up' ? 40 : 24;
+        var beside = dir === 'up' ? 52 : 46;
         var kx = a.x + (a.face < 0 ? -beside : beside);
-        var ky = a.y + (dir === 'up' ? 18 : 6) + bob;
-        if (dir === 'up') {
-          ctx.save();
-          ctx.translate(kx, ky);
-          drawKidBackBody(a, kidSize);
-          ctx.restore();
-        } else {
-          var kidKey = 'cust_kid/' + dir + '_' + a.anim + '_' + frame;
-          var kidRect = assets.floor.frames[kidKey];
-          if (kidRect) {
-            ctx.save();
-            ctx.translate(kx, ky);
-            if (a.face < 0) ctx.scale(-1, 1);
-            ctx.drawImage(assets.img.floor, kidRect[0], kidRect[1], kidRect[2], kidRect[3], -kidSize / 2, -kidSize + 6, kidSize, kidSize);
-            ctx.restore();
-          }
-        }
+        var ky = a.y + (dir === 'up' ? 12 : 6);
+        ctx.save();
+        ctx.translate(kx, ky);
+        if (a.face < 0) ctx.scale(-1, 1);
+        paintPerson({
+          charId: 'cust_kid',
+          dir: a.dir,
+          face: 1,
+          anim: a.anim,
+          frame: a.frame,
+          bubble: null
+        });
+        ctx.restore();
       }
       if (a.kind === 'cust' && a.arch !== 'lift' && a.state !== 'leave' && a.maxPatience) {
         drawPatience(a.x, a.y - size - 8, clamp(a.patience / a.maxPatience, 0, 1));
@@ -4576,7 +6965,12 @@
         ctx.globalAlpha = 1;
       }
       if (a.bubble) {
-        var ir = assets.icons['icons/' + a.bubble + '.png'];
+        var objIcon = assets.objects && assets.objects['icons/' + a.bubble + '.png'];
+        if (objIcon) {
+          var objPx = a.bubble === 'angry' || a.bubble === 'theft' ? 44 : 34;
+          ctx.drawImage(objIcon, a.x - objPx / 2, a.y - size - 18 - objPx, objPx, objPx);
+        }
+        var ir = objIcon ? null : assets.icons['icons/' + a.bubble + '.png'];
         if (ir) {
           var iconPx = a.bubble === 'angry' || a.bubble === 'theft' ? 44 : 34;
           ctx.drawImage(assets.img.icons, ir[0], ir[1], ir[2], ir[3], a.x - iconPx / 2, a.y - size - 18 - iconPx, iconPx, iconPx);
@@ -4599,9 +6993,11 @@
     function loop(ts) {
       raf = requestAnimationFrame(loop);
       if (document.hidden) return;
-      var dt = lastTs ? (ts - lastTs) / 1000 : 0;
+      var rawMs = lastTs ? ts - lastTs : 16;
+      var dt = rawMs / 1000;
       lastTs = ts;
       if (dt > 0.05) dt = 0.05;
+      if (sim) sim._frameMs = rawMs;
         if (sim && !sim.paused && !sim.done) {
         if (coach) {
           for (var cs = 0; cs < sim.staff.length; cs++) updateStaffActor(sim, run, sim.staff[cs], dt);
@@ -4610,15 +7006,29 @@
           decayFx(sim, dt);
         } else {
         var speed = isQA() ? qaSpeed : 1;
-        step(sim, run, dt * speed);
+        var stepDt = dt * speed;
+        if (sim._shed && sim.customers.length > 100) {
+          sim._stepAcc = (sim._stepAcc || 0) + stepDt;
+          if (sim._stepAcc < 0.05) stepDt = 0;
+          else {
+            stepDt = sim._stepAcc;
+            sim._stepAcc = 0;
+          }
+        }
+        if (stepDt > 0) step(sim, run, stepDt);
         }
         while (sim.notes.length) toast(sim.notes.shift());
         if (sim.pending && shownEvent !== sim.pending) {
           shownEvent = sim.pending;
+          shownType = null;
           renderEvent();
         }
-        if (!sim.pending) shownEvent = null;
-        paintHud();
+        if (!sim.pending && shownEvent) {
+          shownEvent = null;
+          if (!sim.typeCard) els.event.hidden = true;
+        }
+        paintPromptTimer();
+        if (!sim._shed || ((sim._frames || 0) % 4) === 0) paintHud();
         liveAcc += dt;
         if (liveAcc > 5 && els.live) {
           liveAcc = 0;
@@ -4629,9 +7039,19 @@
         simSaveAcc += dt;
         if (simSaveAcc > 1) { simSaveAcc = 0; saveRun(); }
       }
-      if (sim && sim.typeCard && shownType !== sim.typeCard) {
+      if (sim && sim.typeCard && !sim.pending && shownType !== sim.typeCard) {
         shownType = sim.typeCard;
         renderTypeCard();
+      }
+      if (sim && els.canvas && pixelBudget() !== els.canvas._dprCap) resize();
+      if (isQA() && sim && els.stage) {
+        sim._frames = (sim._frames || 0) + 1;
+        if (!sim._fpsT) sim._fpsT = ts;
+        if (ts - sim._fpsT >= 1000) {
+          els.stage.dataset.fps = String(sim._frames);
+          sim._frames = 0;
+          sim._fpsT = ts;
+        }
       }
       if (sim && !sim.typeCard && shownType) {
         shownType = null;
@@ -4668,28 +7088,115 @@
       window.addEventListener('resize', resize);
     }
 
+    var pointers = {};
+    function zoomBy(mult) {
+      cam.fit = false;
+      cam.overview = false;
+      var frameBtn = document.getElementById('hr-frame');
+      if (frameBtn) frameBtn.setAttribute('aria-pressed', 'false');
+      cam.zoom = HR.render ? HR.render.clampZoom(els.canvas._cssW || 800, (cam.zoom || 1) * mult) : (cam.zoom || 1);
+      draw();
+    }
+    function toggleFrame() {
+      cam.overview = !cam.overview;
+      cam.fit = false;
+      var frameBtn = document.getElementById('hr-frame');
+      if (frameBtn) frameBtn.setAttribute('aria-pressed', cam.overview ? 'true' : 'false');
+      cam.follow = !cam.overview;
+      draw();
+    }
+    var zoomIn = document.getElementById('hr-zoom-in');
+    var zoomOut = document.getElementById('hr-zoom-out');
+    var frameBtn = document.getElementById('hr-frame');
+    var eastBtn = document.getElementById('hr-east');
+    if (zoomIn) zoomIn.addEventListener('click', function (ev) { ev.stopPropagation(); zoomBy(1.12); });
+    if (zoomOut) zoomOut.addEventListener('click', function (ev) { ev.stopPropagation(); zoomBy(0.9); });
+    if (frameBtn) frameBtn.addEventListener('click', function (ev) { ev.stopPropagation(); toggleFrame(); });
+    if (eastBtn) eastBtn.addEventListener('click', function (ev) {
+      ev.stopPropagation();
+      var view = viewSize();
+      cam.fit = false;
+      cam.overview = false;
+      var frameNow = document.getElementById('hr-frame');
+      if (frameNow) frameNow.setAttribute('aria-pressed', 'false');
+      cam.x = Math.max(0, WORLD_W - view.viewW);
+      cam.follow = false;
+      setTimeout(function () { if (!coach) cam.follow = true; }, 2600);
+      draw();
+    });
+    ['left', 'right', 'up', 'down'].forEach(function (dir) {
+      var node = document.getElementById('hr-pan-' + dir);
+      if (!node) return;
+      node.addEventListener('click', function (ev) {
+        ev.stopPropagation();
+        var view = viewSize();
+        var stepX = view.viewW * 0.34;
+        var stepY = view.viewH * 0.34;
+        if (dir === 'left') cam.x -= stepX;
+        if (dir === 'right') cam.x += stepX;
+        if (dir === 'up') cam.y -= stepY;
+        if (dir === 'down') cam.y += stepY;
+        cam.x = clamp(cam.x, 0, Math.max(0, WORLD_W - view.viewW));
+        cam.y = clamp(cam.y, 0, Math.max(0, WORLD_H - view.viewH));
+        cam.follow = false;
+        setTimeout(function () { if (!coach) cam.follow = true; }, 2600);
+        draw();
+      });
+    });
+    els.stage.addEventListener('wheel', function (ev) {
+      if (els.sim.hidden) return;
+      ev.preventDefault();
+      zoomBy(ev.deltaY > 0 ? 0.92 : 1.08);
+    }, { passive: false });
+
     els.stage.addEventListener('pointerdown', function (ev) {
       if (els.sim.hidden || ev.button > 0) return;
-      if (ev.target.closest && ev.target.closest('button')) return;
+      pointers[ev.pointerId] = { x: ev.clientX, y: ev.clientY };
+      if (Object.keys(pointers).length >= 2) return;
+      if (ev.target.closest && ev.target.closest('button, .hr-card')) return;
+      if (sim) {
+        var preview = pickHit(ev);
+        var at = eventWorld(ev);
+        var px = at.x;
+        var py = at.y;
+        if (preview && preview.cust) { px = preview.cust.x; py = preview.cust.y; }
+        else if (preview && preview.ping) { px = preview.ping.x; py = preview.ping.y; }
+        else if (preview && preview.x != null) { px = preview.x; py = preview.y; }
+        tapFx(sim, px, py);
+        draw();
+      }
       cam.drag = { x: ev.clientX, y: ev.clientY, cx: cam.x, cy: cam.y, moved: false };
       if (!coach) cam.follow = false;
       try { els.stage.setPointerCapture(ev.pointerId); } catch (e) {}
     });
     els.stage.addEventListener('pointermove', function (ev) {
+      if (pointers[ev.pointerId]) pointers[ev.pointerId] = { x: ev.clientX, y: ev.clientY };
+      var ids = Object.keys(pointers);
+      if (ids.length >= 2 && HR.render) {
+        var a = pointers[ids[0]];
+        var b = pointers[ids[1]];
+        var dist = Math.hypot(a.x - b.x, a.y - b.y);
+        if (!cam.pinch) cam.pinch = dist;
+        else if (cam.pinch > 0) zoomBy(dist / cam.pinch);
+        cam.pinch = dist;
+        return;
+      }
       if (!cam.drag) return;
       var view = viewSize();
       var scale = view.cssW / view.viewW;
       var mx = ev.clientX - cam.drag.x;
       var my = ev.clientY - cam.drag.y;
-      if (Math.abs(mx) + Math.abs(my) > 14) cam.drag.moved = true;
+      if (Math.abs(mx) + Math.abs(my) > 10) cam.drag.moved = true;
       if (!cam.drag.moved) return;
       cam.x = clamp(cam.drag.cx - mx / scale, 0, Math.max(0, WORLD_W - view.viewW));
       cam.y = clamp(cam.drag.cy - my / scale, 0, Math.max(0, WORLD_H - view.viewH));
     });
     function endPan(ev) {
+      if (ev && ev.pointerId != null) delete pointers[ev.pointerId];
+      if (Object.keys(pointers).length < 2) cam.pinch = 0;
       var wasTap = cam.drag && !cam.drag.moved;
       if (cam.drag && cam.drag.moved) {
-        setTimeout(function () { if (!coach) cam.follow = true; }, 2200);
+        setTimeout(function () { if (!coach) cam.follow = true; }, 2600);
       } else if (!coach) cam.follow = true;
       cam.drag = null;
       if (wasTap && ev && !(ev.target && ev.target.closest && ev.target.closest('button'))) onStageTap(ev);
@@ -4705,25 +7212,55 @@
       hooks.tap();
     });
 
-      els.sim.addEventListener('click', function (ev) {
+    var lastActAt = 0;
+    function actPoint(name) {
+      if (name === 'freight') return { x: SPOTS.truck.x, y: SPOTS.truck.y };
+      if (name === 'calm') return { x: SPOTS.reg1.x, y: QUEUE.reg1.y };
+      return { x: SPOTS.reg1.x, y: SPOTS.reg1.y };
+    }
+    function pressAct(name, btn) {
+      if (!sim) return;
+      lastActAt = root.performance ? root.performance.now() : Date.now();
+      if (btn) btn.classList.add('is-down');
+      if (root.CGSfx && root.CGSfx.juice && btn) root.CGSfx.juice(btn, 'pop');
+      playerAct(name, { point: actPoint(name) });
+    }
+    els.sim.addEventListener('pointerdown', function (ev) {
+      if (ev.button > 0) return;
       if (ev.target.closest('#hr-crew-btn')) {
         ev.preventDefault();
+        lastActAt = root.performance ? root.performance.now() : Date.now();
         openCrew('live');
         return;
       }
       if (ev.target.closest('#hr-mute')) {
         ev.preventDefault();
+        lastActAt = root.performance ? root.performance.now() : Date.now();
         setAudioMuted(!audioMuted());
         return;
       }
       var btn = ev.target.closest('[data-act]');
       if (!btn || !sim) return;
-      if (root.CGSfx && root.CGSfx.juice) root.CGSfx.juice(btn, 'pop');
-      var name = btn.getAttribute('data-act');
-      var point = name === 'freight' ? { x: SPOTS.truck.x, y: SPOTS.truck.y }
-        : name === 'calm' ? { x: SPOTS.reg1.x, y: QUEUE.reg1.y }
-        : { x: SPOTS.reg1.x, y: SPOTS.reg1.y };
-      playerAct(name, { point: point });
+      ev.preventDefault();
+      pressAct(btn.getAttribute('data-act'), btn);
+    });
+    document.addEventListener('pointerup', function () {
+      var downs = document.querySelectorAll('.hr-actions button.is-down');
+      for (var di = 0; di < downs.length; di++) downs[di].classList.remove('is-down');
+    });
+    els.sim.addEventListener('click', function (ev) {
+      if ((root.performance ? root.performance.now() : Date.now()) - lastActAt < 450) return;
+      if (ev.target.closest('#hr-crew-btn')) {
+        openCrew('live');
+        return;
+      }
+      if (ev.target.closest('#hr-mute')) {
+        setAudioMuted(!audioMuted());
+        return;
+      }
+      var btn = ev.target.closest('[data-act]');
+      if (!btn || !sim) return;
+      pressAct(btn.getAttribute('data-act'), btn);
     });
 
     els.plan.addEventListener('pointerdown', function (ev) {
@@ -4852,30 +7389,28 @@
       loadCount++;
       var bar = document.getElementById('hr-loadbar');
       var lab = document.getElementById('hr-load-label');
-      var pct = Math.min(100, Math.round(100 * loadCount / 9));
+      var pct = Math.min(100, Math.round(100 * loadCount / loadGoal));
       if (bar) bar.style.width = pct + '%';
       if (bar && bar.parentNode) bar.parentNode.setAttribute('aria-valuenow', String(pct));
       if (lab) lab.textContent = pct < 100 ? 'Setting the floor' : 'Doors open';
     };
 
-    Promise.all([
-      loadImage(ART + 'floor_chars.png8.png'),
-      loadImage(ART + 'portraits_staff.png8.png'),
-      loadImage(ART + 'portraits_customers.png8.png'),
-      loadImage(ART + 'icons_ui.png8.png'),
-      loadImage(ART + 'store_layout_1600.webp'),
-      loadImage(ART + 'store_empty_1600.webp'),
-      loadJSON(ART + 'floor_chars_atlas.json'),
-      loadJSON(ART + 'portraits_atlas.json'),
-      loadJSON(ART + 'icons_ui_atlas.json')
-    ]).then(function (all) {
-      assets = {
-        img: { floor: all[0], staff: all[1], cust: all[2], icons: all[3], layout: all[4], empty: all[5] },
-        floor: all[6],
-        portraits: all[7],
-        icons: all[8]
-      };
-      bakeFloors();
+    var bootData = HR.data ? HR.data.load(ART + 'data/') : Promise.resolve(null);
+    bootData.then(function () {
+      books = HR.save ? HR.save.load(readJSON) : null;
+      if (books) {
+        var campNow = campaignGet();
+        campNow.bank = books.cash;
+        campaignPut(campNow);
+      }
+      return loadGameArt();
+    }).then(function (loaded) {
+      assets = loaded;
+      if (els.stage && loaded.spriteStatus) {
+        els.stage.dataset.sprites = loaded.spriteStatus.ready ? 'ready' : loaded.spriteStatus.reason;
+        els.stage.dataset.spriteBytes = String(loaded.spriteStatus.bytes || 0);
+      }
+      bakeStorePlate();
       resize();
       var saved = readJSON('hr_run_v1');
       var campBoot = campaignGet();
@@ -4897,16 +7432,83 @@
       }
       track('holiday_rush_open', { seed: ymd });
     }).catch(function () {
-      showFatal('The store art did not load. Refresh the page to try again.');
+      showFatal('The store did not load. Refresh the page to try again.');
     });
 
     root.HolidayRush._debug = {
       turbo: function (n) { if (isQA()) qaSpeed = n || 1; },
+      grant: function (n) {
+        if (!isQA() || !books) return;
+        books.cash += n || 0;
+        var campNow = campaignGet();
+        campNow.bank = books.cash;
+        campaignPut(campNow);
+        if (HR.save) HR.save.save(writeJSON, books);
+      },
+      stress: function (n) {
+        if (!isQA() || !sim) return;
+        var count = n || 150;
+        sim.stressCap = count;
+        sim.paused = false;
+        var i;
+        for (i = 0; i < count; i++) spawnCustomer(sim, run);
+        while (sim.staff.length < 20) {
+          var actor = makeActor('staff_flr1', 80 + sim.staff.length * 30, 240);
+          actor.kind = 'staff';
+          actor.id = 'stress_' + sim.staff.length;
+          actor.role = 'floor';
+          actor.hidden = false;
+          actor.arrived = true;
+          sim.staff.push(actor);
+        }
+        for (i = 0; i < sim.customers.length; i++) {
+          var cust = sim.customers[i];
+          cust.x = (i * 97) % Math.max(1, WORLD_W);
+          cust.y = 180 + ((i * 53) % 640);
+          cust.state = 'browse';
+          cust.patience = 999;
+          cust.maxPatience = 999;
+          cust.dead = false;
+          cust.browseT = 999;
+        }
+        sim._shed = true;
+        sim._frameMs = 32;
+        if (sim.spatial) sim.spatial.rebuild(sim.customers.concat(sim.staff));
+        resize();
+        if (els.stage) els.stage.dataset.simCount = String(sim.customers.length + sim.staff.length);
+        return { customers: sim.customers.length, staff: sim.staff.length };
+      },
+      books: function () { return books; },
       fill: function () {
         if (!isQA() || !run) return;
         run.schedule[run.day] = greedy(run, run.day);
         saveRun();
         if (run.phase === 'plan') renderPlan();
+      },
+      roomPNG: function () {
+        if (!isQA() || !storePlate) return '';
+        return storePlate.toDataURL('image/png');
+      },
+      roomPlate: function () {
+        if (!isQA() || !assets || !HR.room) return '';
+        var plate = document.createElement('canvas');
+        plate.width = 1600;
+        plate.height = 900;
+        var g = plate.getContext('2d');
+        HR.room.paint(g, assets.objects, 1600, 900, { entranceX: 960, arch: false });
+        return plate.toDataURL('image/png');
+      },
+      silhouette: function (type) {
+        if (!isQA() || !spriteSession) return false;
+        var name = type || 'regular';
+        spriteSession.hold(name);
+        var pack = spriteSession.pack();
+        return { held: !pack.types[name], pose: !!(pack.ghosts && pack.ghosts[name]) };
+      },
+      flush: function () {
+        if (!isQA()) return null;
+        saveRun();
+        return { sales: sim ? Math.round(sim.sales) : 0, cash: books ? Math.round(books.cash) : 0 };
       },
       ack: function () {
         if (!isQA() || !run) return;
@@ -4927,6 +7529,9 @@
     greedy: greedy,
     simulate: simulate,
     verifyAtlases: verifyAtlases,
+    verifySpritePack: verifySpritePack,
+    SPRITE_PACK: SPRITE_PACK,
+    renderMixdown: renderMixdown,
     startDay: startDay,
     step: step,
     scoreSnapshot: scoreSnapshot,
@@ -4944,6 +7549,7 @@
 
   if (typeof process !== 'undefined' && process.argv && process.argv.indexOf('--self-test') >= 0) {
     var atlas = verifyAtlases();
+    var sprites = verifySpritePack();
     var active0 = simulate('2026-10-19', 'active', 0)[0];
     var greedy0 = simulate('2026-10-19', 'greedy', 0)[0];
     var empty0 = simulate('2026-10-19', 'empty', 0)[0];
@@ -4957,6 +7563,7 @@
       console.log(label, 'shift', row.shift, 'sales', row.sales, 'goal', row.goal, 'pct', Math.round(row.goalPct * 100), 'stars', row.shiftStars, 'out', row.walkouts, 'in', row.checkouts);
     }
     console.log('atlas', JSON.stringify(atlas));
+    console.log('sprites', JSON.stringify(sprites));
     line('active0', active0);
     line('greedy0', greedy0);
     line('empty0', empty0);
@@ -4967,6 +7574,13 @@
     if (comboMult(10) !== 4 || comboMult(40) !== 4 || multLabel(10) !== '×4' || multLabel(24) !== '×4') bad = true;
     if (goalStars(0.74) !== 0 || goalStars(0.75) !== 1 || goalStars(1) !== 2 || goalStars(1.2) !== 3) bad = true;
     if (SHIFT_COUNT < 15) bad = true;
+    if (FLOOR_BEATS.length < SHIFT_COUNT) bad = true;
+    var beatSeen = {};
+    for (var beatI = 0; beatI < FLOOR_BEATS.length; beatI++) {
+      var beatRow = FLOOR_BEATS[beatI];
+      if (!beatRow || beatSeen[beatRow.id] || beatRow.t < 18 || beatRow.t > 44) bad = true;
+      beatSeen[beatRow.id] = 1;
+    }
     var impliedGood = greedy0.goalPct * 1.45;
     if (greedy0.goalPct < 0.78 || greedy0.goalPct > 0.94) bad = true;
     if (impliedGood < 1.1 || impliedGood > 1.32) bad = true;
@@ -4977,6 +7591,13 @@
     if (!(active14.goalPct < active0.goalPct - 0.15)) bad = true;
     if (up14.goalPct < 1) bad = true;
     if (mid8.goalPct < 0.9) bad = true;
+    ['entities', 'economy', 'layout', 'world', 'sprites', 'render', 'room'].forEach(function (name) {
+      var part = HR[name];
+      if (!part || !part.selfTest) { bad = true; console.log(name, 'missing'); return; }
+      var res = part.selfTest();
+      console.log(name, JSON.stringify(res));
+      if (!res.ok) bad = true;
+    });
     console.log('impliedGood', Math.round(impliedGood * 100));
     console.log('combo', multLabel(10), 'bad', bad);
     if (bad) process.exit(1);
