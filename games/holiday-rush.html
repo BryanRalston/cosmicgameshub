@@ -155,7 +155,21 @@
     .hr-node { min-height: 72px; border-radius: 12px; border: 1px solid rgba(224,163,34,0.4); background: #2a2118; color: #f6f0e4; font: inherit; font-weight: 800; cursor: pointer; touch-action: manipulation; padding: 0.35rem 0.2rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
     .hr-node small { font-weight: 700; color: rgba(246,240,228,0.7); font-size: 0.68rem; }
     .hr-node .hr-stars { font-size: 0.85rem; letter-spacing: 0.04em; }
-    .hr-node.is-locked { opacity: 0.4; cursor: not-allowed; }
+    .hr-node.is-locked { opacity: 0.72; cursor: not-allowed; }
+    .hr-lock { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(246,240,228,0.55); }
+    .hr-card--crew { width: min(560px, 100%); max-height: min(92vh, 740px); overflow: auto; }
+    .hr-modal { overflow: auto; }
+    .hr-presets, .hr-stations, .hr-names { display: flex; flex-wrap: wrap; gap: 8px; margin: 0.45rem 0; }
+    .hr-presets button, .hr-station, .hr-name { min-height: 44px; border-radius: 10px; border: 2px solid #2b1d2e; background: #fff; color: #2b1d2e; font: inherit; font-weight: 800; cursor: pointer; touch-action: manipulation; }
+    .hr-presets button { flex: 1 1 30%; }
+    .hr-station { flex: 1 1 42%; display: flex; flex-direction: column; align-items: flex-start; padding: 0.35rem 0.6rem; text-align: left; }
+    .hr-station small { font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; color: #6d5848; }
+    .hr-station.is-match { box-shadow: inset 4px 0 0 #2f9e57; }
+    .hr-name { padding: 0 0.7rem; }
+    .hr-name.is-armed { outline: 3px solid #e0a322; }
+    .hr-name:disabled { opacity: 0.38; cursor: not-allowed; }
+    #hr-coach { white-space: pre-line; line-height: 1.25; align-items: flex-start; }
+    #hr-score .hr-fine { color: var(--text-mid); font-size: 0.95rem; }
     .hr-node.is-next { outline: 2px solid #e0a322; }
     .hr-shop { display: flex; flex-direction: column; gap: 8px; margin: 0.6rem 0; }
     .hr-upgrade { display: flex; gap: 10px; align-items: center; background: #f6f0e4; color: #2b1d2e; border-radius: 14px; padding: 0.65rem; }
@@ -178,18 +192,20 @@
     #hr-toast { position: fixed; left: 50%; bottom: 1rem; transform: translateX(-50%) translateY(12px); background: #2b1d2e; color: #f6f0e4; border-radius: 999px; padding: 0.55rem 0.9rem; font-size: 0.85rem; font-weight: 700; opacity: 0; pointer-events: none; transition: 0.2s ease; z-index: 70; max-width: min(92vw, 420px); text-align: center; }
     #hr-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     @media (max-height: 860px) {
+      body:has(#hr-sim:not([hidden])) .nav { display: none; }
       body:has(#hr-sim:not([hidden])) .hr-hero { padding: 0.1rem 0 0; }
       body:has(#hr-sim:not([hidden])) .hr-hero p,
       body:has(#hr-sim:not([hidden])) .section__eyebrow,
       body:has(#hr-sim:not([hidden])) .hr-hint { display: none; }
       body:has(#hr-sim:not([hidden])) .hr-hero h1 { font-size: 1.25rem; margin: 0; }
       body:has(#hr-sim:not([hidden])) .hr-pills { margin: 0.25rem 0 0; }
-      body:has(#hr-sim:not([hidden])) .hr-stage { height: min(48vh, 420px); }
+      body:has(#hr-sim:not([hidden])) .hr-stage { height: min(62vh, 540px); }
     }
     @media (max-width: 720px) {
+      body:has(#hr-sim:not([hidden])) .nav { display: none; }
       body:has(#hr-sim:not([hidden])) .hr-hero h1 { font-size: 1.05rem; }
       body:has(#hr-sim:not([hidden])) .hr-hud { padding: 0.15rem 0; gap: 0.45rem; }
-      body:has(#hr-sim:not([hidden])) .hr-stage { height: min(52vh, 480px); }
+      body:has(#hr-sim:not([hidden])) .hr-stage { height: min(64vh, 560px); }
       body:has(#hr-sim:not([hidden])) .hr-wrap { padding-bottom: 0.6rem; }
     }
     @media (max-width: 640px) {
@@ -269,7 +285,7 @@
         <p id="hr-coach" hidden>Tap the long line</p>
         <button type="button" id="hr-skip" hidden>Skip</button>
       </div>
-      <p class="hr-hint">Tap a line, the truck, or a shopper. Chain checkouts for a combo. Rush hour hits near the end of Open, Mid, and Close.</p>
+      <p class="hr-hint">Tap a line, the truck, or a shopper. Chain checkouts for a combo. Crew moves people between tills and stock. Rush hour hits near the end of Open, Mid, and Close.</p>
       <div class="hr-actions"></div>
       <p class="hr-actline" id="hr-actline"></p>
     </section>

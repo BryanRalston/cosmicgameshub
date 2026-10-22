@@ -1,6 +1,8 @@
 /* Holiday Rush: Store Manager
    Floor frames: floor_chars_atlas.json (96px cells, 3 dirs × idle2/walk4/work4, left = mirrored side).
    Portraits: portraits_atlas.json. Icons: icons_ui_atlas.json.
+   Round 4 detail (pallet jack, shelf product, kid back-view, reactions) is drawn
+   on the canvas so the png/webp load stays the same size.
    localStorage only. No accounts. */
 (function (root) {
   'use strict';
@@ -87,6 +89,34 @@
   ];
 
   var CUST_IDS = ['cust_mom', 'cust_grandpa', 'cust_kid', 'cust_biz', 'cust_teen', 'cust_karen'];
+  var ARCH_ORDER = [
+    { id: 'rusher', day: 5, who: 'cust_biz' },
+    { id: 'haggle', day: 7, who: 'cust_karen' },
+    { id: 'family', day: 10, who: 'cust_mom' },
+    { id: 'lift', day: 12, who: 'cust_teen' }
+  ];
+  var ARCH_CARD = {
+    rusher: {
+      title: 'New shopper: Rusher',
+      icon: 'rush',
+      body: 'Red streaks, small basket. They cut through the aisle and leave if the line looks slow. Pull a cashier onto the till before they bail.'
+    },
+    haggle: {
+      title: 'New shopper: Coupon haggler',
+      icon: 'price',
+      body: 'They stop at the register with a coupon. Tap them to honor it and keep the full sale. Leave them and they pay less.'
+    },
+    family: {
+      title: 'New shopper: Big-cart family',
+      icon: 'line',
+      body: 'A parent, a kid, and a cart that fills the aisle. Slow, but the basket is huge. Keep a till clear for them.'
+    },
+    lift: {
+      title: 'New shopper: Shoplifter',
+      icon: 'theft',
+      body: 'Hood up, no basket, heading for the door. Tap them to catch the item. If they leave, you lose stock and a star.'
+    }
+  };
   var BY_ID = {};
   STAFF.forEach(function (s) { BY_ID[s.id] = s; });
 
@@ -899,10 +929,88 @@
     tickAnim(a, dt);
   }
 
-  function spawnCustomer(sim, run) {
-    if (sim.customers.length >= CONFIG.custCap) return;
+  function archDef(id) {
+    for (var i = 0; i < ARCH_ORDER.length; i++) if (ARCH_ORDER[i].id === id) return ARCH_ORDER[i];
+    return null;
+  }
+
+  function archKnown(run, id) {
+    if (run && run.met && run.met[id]) return true;
+    var camp = campaignGet();
+    return !!(camp.met && camp.met[id]);
+  }
+
+  function dueIntro(run) {
+    var day = run && run.day ? run.day : 0;
+    for (var i = 0; i < ARCH_ORDER.length; i++) {
+      var row = ARCH_ORDER[i];
+      if (day >= row.day && !archKnown(run, row.id)) return row.id;
+    }
+    return '';
+  }
+
+  function lifterAlive(sim) {
+    for (var i = 0; i < sim.customers.length; i++) {
+      var c = sim.customers[i];
+      if (c.arch === 'lift' && !c.dead && c.state !== 'leave') return true;
+    }
+    return false;
+  }
+
+  function rollArch(sim, run) {
+    var day = run && run.day ? run.day : 0;
+    var bag = [];
+    if (archKnown(run, 'rusher') && day >= 5) bag.push('rusher');
+    if (archKnown(run, 'haggle') && day >= 7) bag.push('haggle');
+    if (archKnown(run, 'family') && day >= 10) bag.push('family', 'family');
+    if (archKnown(run, 'lift') && day >= 12 && !lifterAlive(sim)) bag.push('lift');
+    if (!bag.length) return '';
+    var weighted = ['', '', '', '', '', ''].concat(bag);
+    return weighted[Math.floor(sim.rng() * weighted.length)];
+  }
+
+  function tuneArch(c, arch) {
+    c.arch = arch || '';
+    if (arch === 'rusher') {
+      c.speedMul = 1.72;
+      c.basketMul = 0.74;
+      c.patience *= 0.5;
+      c.maxPatience = c.patience;
+    } else if (arch === 'haggle') {
+      c.speedMul = 0.92;
+      c.patience *= 0.95;
+      c.maxPatience = c.patience;
+    } else if (arch === 'family') {
+      c.speedMul = 0.64;
+      c.basketMul = 2.25;
+      c.patience *= 1.45;
+      c.maxPatience = c.patience;
+    } else if (arch === 'lift') {
+      c.speedMul = 1.08;
+      c.state = 'prowl';
+      c.prowlT = 2.4;
+      c.path = null;
+      c.bubble = null;
+    }
+  }
+
+  function spawnCustomer(sim, run, forcedArch) {
+    if (sim.customers.length >= CONFIG.custCap) {
+      if (!forcedArch) return;
+      var dropped = false;
+      for (var n = sim.customers.length - 1; n >= 0; n--) {
+        if (sim.customers[n].state === 'leave' || !sim.customers[n].arch) {
+          sim.customers.splice(n, 1);
+          dropped = true;
+          break;
+        }
+      }
+      if (!dropped) return;
+    }
+    var arch = forcedArch || rollArch(sim, run);
+    var spec = arch ? archDef(arch) : null;
     var bag = ['cust_mom', 'cust_teen', 'cust_biz', 'cust_mom', 'cust_kid', 'cust_grandpa', 'cust_teen', 'cust_karen', 'cust_biz'];
-    var id = bag[Math.floor(sim.rng() * bag.length)];
+    var id = spec ? spec.who : bag[Math.floor(sim.rng() * bag.length)];
     var shelf = SHELVES[Math.floor(sim.rng() * SHELVES.length)];
     var heat = sim._heat || { patience: 1, rush: false };
     var patience = (0.86 + sim.rng() * 0.28) * heat.patience;
@@ -920,7 +1028,34 @@
     c.pathI = 0;
     c.seq = sim.seq++;
     c.reg = null;
+    c.speedMul = 1;
+    c.basketMul = 1;
+    c.saleMul = 1;
+    tuneArch(c, arch);
+    if (forcedArch) {
+      c.x = SPOTS.floor.x + 36;
+      c.y = SPOTS.floor.y + 16;
+      c.intro = true;
+      if (c.arch !== 'lift') {
+        c.state = 'enter';
+        c.path = pathVia(c.x, c.y, shelf.x, shelf.y);
+        c.pathI = 0;
+      }
+    }
     sim.customers.push(c);
+    return c;
+  }
+
+  function maybeTypeIntro(sim, run) {
+    if (!sim.floorOn || sim.coachHold || sim.paused || sim.done || sim.typeCard || sim._introDone) return;
+    var id = dueIntro(run);
+    if (!id || sim.t < 5.5) return;
+    var born = spawnCustomer(sim, run, id);
+    if (!born) return;
+    sim._introDone = true;
+    sim.typeCard = id;
+    sim.paused = true;
+    hooks.alert();
   }
 
   function walkout(sim, c) {
@@ -954,6 +1089,8 @@
     if (sim.stock < 0.28) basket *= 0.64;
     if (sim.t < sim.discountUntil) basket *= 0.86;
     basket *= 1 + 0.09 * upgradeLevel(run, 'baskets');
+    if (c.basketMul) basket *= c.basketMul;
+    if (c.saleMul) basket *= c.saleMul;
     var gap = sim.t - (sim.lastSaleAt == null ? -999 : sim.lastSaleAt);
     if (gap <= CONFIG.comboWindow && (sim.combo || 0) >= 1) {
       if (sim.combo < CONFIG.comboMax) sim.combo += 1;
@@ -1014,20 +1151,61 @@
     for (var n = 0; n < sim.customers.length; n++) {
       var cust = sim.customers[n];
       if (cust.dead) continue;
+      var custSpeed = speed * (cust.speedMul || 1);
       if (sim.coachHold && cust.maxPatience && cust.state !== 'leave' && cust.patience < cust.maxPatience * 0.24) {
         cust.patience = cust.maxPatience * 0.24;
       }
+      if (cust.arch === 'lift') {
+        cust.bubble = cust.state === 'flee' ? 'theft' : null;
+        if (cust.state === 'leave') {
+          cust.anim = 'walk';
+          if (follow(cust, dt, custSpeed)) cust.dead = true;
+        } else if (cust.state === 'flee') {
+          cust.anim = 'walk';
+          if (follow(cust, dt, custSpeed * 1.18)) {
+            cust.dead = true;
+            if (!cust.caught) {
+              sim.stock = Math.max(0, sim.stock - 0.07);
+              sim.stars = clamp(sim.stars - 0.2, 1, 5);
+              sim.walkouts++;
+              floater(sim, SPOTS.door.x, SPOTS.door.y - 40, 'Got away', '#ff8d8d', true);
+              hooks.angry();
+              addShake(sim, 8);
+            }
+          }
+        } else {
+          cust.state = 'prowl';
+          cust.anim = 'idle';
+          cust.prowlT = (cust.prowlT == null ? 2.2 : cust.prowlT) - dt;
+          cust.dir = ((cust.prowlT * 2) | 0) % 2 === 0 ? 'side' : 'down';
+          cust.face = 1;
+          if (cust.prowlT <= 0) {
+            cust.state = 'flee';
+            cust.bubble = 'theft';
+            cust.path = pathVia(cust.x, cust.y, SPOTS.door.x, SPOTS.door.y);
+            cust.pathI = 0;
+            cust.pop = 1;
+          }
+        }
+        tickAnim(cust, dt);
+        continue;
+      }
       if (cust.state === 'enter') {
-        if (follow(cust, dt, speed)) {
+        if (follow(cust, dt, custSpeed)) {
           cust.state = 'browse';
-          cust.browseT = 0.85 + sim.rng() * 1.35;
+          var browse = 0.85 + sim.rng() * 1.35;
+          if (cust.arch === 'rusher') browse = 0.22 + sim.rng() * 0.2;
+          if (cust.arch === 'family') browse = 1.8 + sim.rng() * 1.1;
+          cust.browseT = browse;
           cust.anim = 'idle';
           cust.bubble = null;
         }
       } else if (cust.state === 'browse') {
         cust.anim = 'idle';
+        cust.dir = 'up';
+        cust.face = 1;
         cust.browseT -= dt * (stationPower(sim, run, 'floor') > 0.5 ? 1.25 : 1);
-        cust.patience -= dt * 0.012 * cocoa * drainMul;
+        cust.patience -= dt * 0.012 * cocoa * drainMul * (cust.arch === 'rusher' ? 1.8 : 1);
         if (cust.patience <= 0) walkout(sim, cust);
         else if (cust.browseT <= 0) {
           if (sim.stock <= 0.04) walkout(sim, cust);
@@ -1041,31 +1219,58 @@
         var slot = queueOf(sim, cust.reg).length;
         var pos = QUEUE[cust.reg];
         var dest = { x: pos.x, y: pos.y + Math.min(slot, 3) * pos.dy };
-        if (moveToward(cust, dest.x, dest.y, dt, speed)) {
-          if (slot >= 6) walkout(sim, cust);
+        if (moveToward(cust, dest.x, dest.y, dt, custSpeed)) {
+          var lineCap = cust.arch === 'rusher' ? 3 : 6;
+          if (slot >= lineCap) walkout(sim, cust);
           else cust.state = 'queue';
         }
       } else if (cust.state === 'queue' || cust.state === 'checkout') {
-        var at = moveToward(cust, cust.qx || cust.x, cust.qy || cust.y, dt, speed);
+        var at = moveToward(cust, cust.qx || cust.x, cust.qy || cust.y, dt, custSpeed);
         var power = stationPower(sim, run, cust.reg);
         var drain = (power > 0.45 ? 0.042 : 0.105) * cocoa;
         if (cust.qIndex > 0) drain += 0.01 * cust.qIndex;
-        cust.patience -= dt * drain * drainMul;
-        if (cust.patience <= 0) walkout(sim, cust);
-        else if (cust.qIndex === 0 && at) {
+        if (cust.arch === 'rusher') drain *= 1.65;
+        if (cust.arch === 'haggle' && cust.qIndex === 0 && at) {
           cust.state = 'checkout';
           cust.anim = 'idle';
-          var rate = power > 0.35 ? (0.55 + power * 0.85) : 0.2;
-          cust.checkT = (cust.checkT == null ? 2.15 : cust.checkT) - dt * rate;
-          if (cust.checkT <= 0) completeSale(sim, run, cust);
+          if (!cust.haggling) {
+            cust.haggling = true;
+            cust.haggleT = 3.6;
+            cust.bubble = 'price';
+            cust.pop = 1;
+          }
+          cust.haggleT -= dt;
+          cust.patience -= dt * 0.03 * cocoa * drainMul;
+          if (cust.patience <= 0) walkout(sim, cust);
+          else if (cust.haggleT <= 0 && !cust.sold) {
+            cust.saleMul = 0.62;
+            cust.haggling = false;
+            sim.morale = clamp(sim.morale - 2, 0, 100);
+            sim.stars = clamp(sim.stars - 0.04, 1, 5);
+            note(sim, 'The coupon went through at a discount.');
+            completeSale(sim, run, cust);
+          }
         } else {
-          cust.anim = at ? 'idle' : 'walk';
-          if (cust.checkT == null && cust.qIndex === 0) cust.checkT = 2.15;
+          cust.patience -= dt * drain * drainMul;
+          if (cust.patience <= 0) walkout(sim, cust);
+          else if (cust.qIndex === 0 && at && !cust.haggling) {
+            cust.state = 'checkout';
+            cust.anim = 'idle';
+            var rate = power > 0.35 ? (0.55 + power * 0.85) : 0.2;
+            if (cust.arch === 'rusher') rate *= 1.65;
+            if (cust.arch === 'family') rate *= 0.7;
+            var checkStart = cust.arch === 'family' ? 3.3 : 2.15;
+            cust.checkT = (cust.checkT == null ? checkStart : cust.checkT) - dt * rate;
+            if (cust.checkT <= 0) completeSale(sim, run, cust);
+          } else {
+            cust.anim = at ? 'idle' : 'walk';
+            if (cust.checkT == null && cust.qIndex === 0 && cust.arch !== 'haggle') cust.checkT = cust.arch === 'family' ? 3.3 : 2.15;
+          }
+          if (!cust.haggling) cust.bubble = cust.patience < cust.maxPatience * 0.38 ? 'angry' : null;
         }
-        cust.bubble = cust.patience < cust.maxPatience * 0.38 ? 'angry' : null;
       } else if (cust.state === 'leave') {
         cust.anim = 'walk';
-        if (follow(cust, dt, speed * 1.05)) cust.dead = true;
+        if (follow(cust, dt, custSpeed * 1.05)) cust.dead = true;
       }
       tickAnim(cust, dt);
     }
@@ -1509,6 +1714,8 @@
       if (sim.live) floater(sim, SPOTS.truck.x, SPOTS.truck.y - 36, 'Truck', '#ffe08a', true);
     } else if (!sim.truck) sim.hornPlayed = false;
     maybePing(sim);
+    maybeTypeIntro(sim, run);
+    if (sim.paused) return sim;
     maybeEvent(sim, run);
     if (!sim.paused && sim.t >= sim.duration - 1e-4) sim.done = true;
     return sim;
@@ -1646,6 +1853,8 @@
       lastSaleAt: sim.lastSaleAt == null ? -99 : sim.lastSaleAt,
       goalBurst: !!sim.goalBurst,
       rushTold: !!sim.rushTold,
+      typeCard: sim.typeCard || '',
+      _introDone: !!sim._introDone,
       rngState: sim.rng && sim.rng.state ? sim.rng.state() : 0,
       pendingMeta: pendingMeta
     }));
@@ -1670,6 +1879,9 @@
     if (sim.lastSaleAt == null) sim.lastSaleAt = -99;
     sim.pending = null;
     sim.paused = false;
+    sim.typeCard = data.typeCard || '';
+    sim._introDone = !!data._introDone;
+    if (sim.typeCard) sim.paused = true;
     if (data.pendingMeta && data.pendingMeta.id) {
       sim.pending = buildEvent(data.pendingMeta.id, sim, run, { who: data.pendingMeta.who });
       sim.paused = true;
@@ -1767,6 +1979,17 @@
       var upset = target.cust || null;
       if (upset && (upset.dead || upset.state === 'leave')) upset = null;
       if (!upset) {
+        for (var li = 0; li < sim.customers.length; li++) {
+          var lifter = sim.customers[li];
+          if (lifter.arch === 'lift' && !lifter.dead && !lifter.caught && lifter.state !== 'leave') { upset = lifter; break; }
+        }
+      }
+      if (!upset) {
+        for (var hi = 0; hi < sim.customers.length; hi++) {
+          if (sim.customers[hi].haggling && !sim.customers[hi].sold && !sim.customers[hi].dead) { upset = sim.customers[hi]; break; }
+        }
+      }
+      if (!upset) {
         var low = 1e9;
         for (var c = 0; c < sim.customers.length; c++) {
           var cust = sim.customers[c];
@@ -1775,6 +1998,34 @@
         }
       }
       if (!upset) return { ok: false, msg: 'Nobody needs calming.' };
+      if (upset.arch === 'lift' && !upset.caught && upset.state !== 'leave') {
+        spend();
+        upset.caught = true;
+        upset.state = 'leave';
+        upset.bubble = null;
+        upset.pop = 1;
+        upset.path = pathVia(upset.x, upset.y, SPOTS.door.x, SPOTS.door.y);
+        upset.pathI = 0;
+        sim.stars = clamp(sim.stars + 0.1, 1, 5);
+        sim.morale = clamp(sim.morale + 3, 0, 100);
+        sim.stock = clamp(sim.stock + 0.04, 0, 1);
+        floater(sim, upset.x, upset.y - 56, 'Caught', '#b6f0c8', true);
+        flashAt(sim, upset.x, upset.y);
+        hooks.coin();
+        return { ok: true, msg: 'You caught a shoplifter.' };
+      }
+      if (upset.haggling && !upset.sold) {
+        spend();
+        upset.haggling = false;
+        upset.haggleT = 99;
+        upset.saleMul = 1.08;
+        upset.bubble = null;
+        upset.pop = 1;
+        sim.stars = clamp(sim.stars + 0.05, 1, 5);
+        completeSale(sim, run, upset);
+        floater(sim, upset.x, upset.y - 78, 'Coupon', '#ffe08a', true);
+        return { ok: true, msg: 'Coupon honored. Full sale.' };
+      }
       spend();
       upset.patience = upset.maxPatience;
       upset.bubble = null;
@@ -1818,6 +2069,19 @@
     if (sim.actions <= 0) return;
     if ((sim._nextAct || 0) > sim.t) return;
     sim._nextAct = sim.t + 0.45;
+    for (var li = 0; li < sim.customers.length; li++) {
+      var lifter = sim.customers[li];
+      if (lifter.arch === 'lift' && !lifter.dead && !lifter.caught && (lifter.state === 'flee' || lifter.state === 'prowl')) {
+        doAction(sim, run, 'calm', { cust: lifter });
+        return;
+      }
+    }
+    for (var hi = 0; hi < sim.customers.length; hi++) {
+      if (sim.customers[hi].haggling && !sim.customers[hi].sold && !sim.customers[hi].dead) {
+        doAction(sim, run, 'calm', { cust: sim.customers[hi] });
+        return;
+      }
+    }
     if (sim.truck || sim.stock < 0.34) {
       doAction(sim, run, 'freight');
       return;
@@ -1973,7 +2237,7 @@
   }
 
   function campaignDefault() {
-    return { v: 1, stars: [], bestEarn: [], bank: 0, upgrades: {}, seen: false, current: 0 };
+    return { v: 1, stars: [], bestEarn: [], bank: 0, upgrades: {}, seen: false, current: 0, met: {} };
   }
   function campaignGet() {
     var c = readJSON('hr_campaign_v1');
@@ -1981,9 +2245,88 @@
     if (!c.stars) c.stars = [];
     if (!c.bestEarn) c.bestEarn = [];
     if (!c.upgrades) c.upgrades = {};
+    if (!c.met) c.met = {};
     return c;
   }
   function campaignPut(c) { writeJSON('hr_campaign_v1', c); }
+
+  function bankCopy(snap) {
+    var rate = Math.round(CONFIG.earnRate * 100);
+    var gross = snap.earnGross || 0;
+    var prev = snap.earnPrev || 0;
+    var gain = snap.earned || 0;
+    if (gain > 0 && prev <= 0) {
+      return 'The bank keeps ' + rate + '% of sales, so ' + money(gross) + ' from this shift is in the shop bank.';
+    }
+    if (gain > 0) {
+      return 'The bank keeps ' + rate + '% of sales (' + money(gross) + ' this time). ' + money(prev) + ' was already saved on this shift, so ' + money(gain) + ' is new.';
+    }
+    return 'The bank keeps ' + rate + '% of sales (' + money(gross) + ' this time). This shift already saved ' + money(prev) + ', and a replay never shrinks the bank.';
+  }
+
+  function crewSummary(sched) {
+    var reg = 0;
+    var floor = 0;
+    var freight = 0;
+    for (var sh = 0; sh < 3; sh++) {
+      if (sched[sh].reg1) reg++;
+      if (sched[sh].reg2) reg++;
+      if (sched[sh].floor) floor++;
+      if (sched[sh].freight) freight++;
+    }
+    return reg + ' till blocks · ' + floor + ' floor · ' + freight + ' freight. A color match works faster. Two blocks max per person.';
+  }
+
+  function applyCrewPreset(run, day, mode) {
+    if (mode === 'balanced') return greedy(run, day);
+    var avail = run.days[day].avail;
+    var sched = blankDay();
+    var order = mode === 'stock'
+      ? [[0, 'freight'], [0, 'floor'], [1, 'freight'], [1, 'floor'], [2, 'freight'], [2, 'floor'], [0, 'reg1'], [1, 'reg1'], [2, 'reg1']]
+      : [[0, 'reg1'], [0, 'reg2'], [1, 'reg1'], [1, 'reg2'], [2, 'reg1'], [2, 'reg2'], [0, 'floor'], [2, 'floor'], [1, 'freight']];
+    var used = {};
+    var hours = 0;
+    for (var n = 0; n < order.length; n++) {
+      if (hours + CONFIG.slotHours > CONFIG.hoursBudget) break;
+      var shift = order[n][0];
+      var station = order[n][1];
+      var best = null;
+      var bestScore = -1;
+      for (var i = 0; i < STAFF.length; i++) {
+        var s = STAFF[i];
+        if (!avail[s.id] || !avail[s.id][shift]) continue;
+        if ((used[s.id] || 0) >= 2) continue;
+        if (scheduled(sched, shift, s.id)) continue;
+        var need = station.indexOf('reg') === 0 ? 'register' : station;
+        var sc = s.role === need ? 5 : s.role === 'manager' ? 3 : 1;
+        sc -= (used[s.id] || 0) * 0.7;
+        if (sc > bestScore) { bestScore = sc; best = s.id; }
+      }
+      if (!best) continue;
+      var placed = tryPlace(sched, avail, best, shift, station, null);
+      if (!placed.ok) continue;
+      sched = placed.schedule;
+      used[best] = (used[best] || 0) + 1;
+      hours += CONFIG.slotHours;
+    }
+    return sched;
+  }
+
+  function retargetCrew(sim, run) {
+    if (!sim) return;
+    sim.override = {};
+    sim.overrideShift = {};
+    for (var i = 0; i < STAFF.length; i++) {
+      var id = STAFF[i].id;
+      if (shiftsOf(run.schedule[run.day], id) <= 0) continue;
+      var actor = ensureStaff(sim, run, id);
+      if (!actor) continue;
+      actor.hidden = false;
+      actor.arrived = false;
+      actor.path = null;
+      actor.rush = 2.2;
+    }
+  }
   function shiftUnlocked(camp, index) {
     if (index <= 0) return true;
     return (camp.stars[index - 1] || 0) >= 1;
@@ -2078,6 +2421,9 @@
     var liveAcc = 0;
     var simSaveAcc = 0;
     var coach = null;
+    var shownType = null;
+    var crewMode = '';
+    var crewArm = null;
     var planEditing = false;
     var loadCount = 0;
     var actx = null;
@@ -2157,7 +2503,7 @@
       return actx;
     }
 
-    var music = { timer: 0, next: 0, step: 0, master: null, crowd: null, rush: false, started: false };
+    var music = { timer: 0, next: 0, step: 0, master: null, crowd: null, rush: false, started: false, level: 0.16 };
     var TUNE = [
       523.25, 659.25, 783.99, 659.25, 587.33, 523.25, 440, 523.25,
       392, 493.88, 587.33, 493.88, 440, 392, 349.23, 392,
@@ -2211,6 +2557,15 @@
       root.__hrSfx[name] = (root.__hrSfx[name] || 0) + 1;
     }
 
+    function duckMusic(a, dip, backAfter) {
+      if (!music.master || !a) return;
+      var now = a.currentTime;
+      try {
+        music.master.gain.setTargetAtTime(dip, now, 0.015);
+        music.master.gain.setTargetAtTime(music.level, now + (backAfter || 0.28), 0.1);
+      } catch (eDuck) {}
+    }
+
     function paintMute() {
       var btn = document.getElementById('hr-mute');
       if (!btn) return;
@@ -2231,14 +2586,14 @@
         var i = music.step % TUNE.length;
         var t = music.next;
         var freq = TUNE[i];
-        tone(a, freq, t, 0.24, 'sine', 0.042, freq * 0.5, music.master);
-        tone(a, freq * 2.01, t, 0.1, 'triangle', 0.016, null, music.master);
+        tone(a, freq, t, 0.22, 'triangle', 0.02, freq * 0.72, music.master);
+        tone(a, freq * 2, t, 0.08, 'sine', 0.008, null, music.master);
         if (i % 8 === 0) {
           var bass = BASS[Math.floor(i / 8) % BASS.length];
-          tone(a, bass, t, eighth * 7.2, 'triangle', 0.055, null, music.master);
-          tone(a, freq * 1.5, t, 0.07, 'sine', 0.02, null, music.master);
+          tone(a, bass, t, eighth * 7.2, 'sine', 0.028, null, music.master);
+          tone(a, freq * 1.5, t, 0.09, 'triangle', 0.01, null, music.master);
         }
-        if (music.rush && i % 2 === 0) tone(a, 1240, t, 0.035, 'square', 0.01, null, music.master);
+        if (music.rush && i % 4 === 0) tone(a, 880, t, 0.04, 'triangle', 0.008, null, music.master);
         music.next += eighth;
         music.step++;
       }
@@ -2248,15 +2603,20 @@
       if (audioMuted()) return;
       var a = hrAudio();
       if (!a) return;
-      if (music.started) {
-        if (music.master) music.master.gain.setTargetAtTime(0.9, a.currentTime, 0.04);
+        if (music.started) {
+        if (music.master) music.master.gain.setTargetAtTime(music.level, a.currentTime, 0.04);
         if (!music.timer) music.timer = setInterval(scheduleMusic, 120);
         return;
       }
       try {
+        var warm = a.createBiquadFilter();
+        warm.type = 'lowpass';
+        warm.frequency.value = 1800;
+        warm.Q.value = 0.4;
         music.master = a.createGain();
-        music.master.gain.setValueAtTime(0.9, a.currentTime);
-        music.master.connect(a.destination);
+        music.master.gain.setValueAtTime(music.level, a.currentTime);
+        music.master.connect(warm);
+        warm.connect(a.destination);
         var frames = a.sampleRate;
         var buf = a.createBuffer(1, frames, a.sampleRate);
         var data = buf.getChannelData(0);
@@ -2298,7 +2658,7 @@
     hooks.heat = function (customers, rush) {
       music.rush = !!rush;
       if (!music.crowd || !actx || audioMuted()) return;
-      var target = Math.min(0.05, 0.008 + customers * 0.0026 + (rush ? 0.02 : 0));
+      var target = Math.min(0.014, 0.003 + customers * 0.0007 + (rush ? 0.006 : 0));
       try { music.crowd.gain.setTargetAtTime(target, actx.currentTime, 0.25); } catch (e3) {}
     };
     hooks.sale = function (combo) {
@@ -2308,16 +2668,15 @@
       heard('coin');
       heard(combo > 1 ? 'combo' : 'sale');
       var t = a.currentTime;
-      noiseBurst(a, t, 0.045, 0.05, 2200);
-      tone(a, 980, t + 0.02, 0.04, 'square', 0.03);
-      tone(a, 1560, t + 0.05, 0.07, 'sine', 0.04);
-      tone(a, 2080, t + 0.09, 0.08, 'triangle', 0.028);
-      tone(a, 1480, t + 0.01, 0.06, 'square', 0.032);
-      tone(a, 1960, t + 0.07, 0.09, 'square', 0.026);
+      duckMusic(a, 0.1, combo > 1 ? 0.42 : 0.26);
+      noiseBurst(a, t, 0.03, 0.022, 2400);
+      tone(a, 880, t + 0.015, 0.05, 'triangle', 0.06);
+      tone(a, 1320, t + 0.05, 0.08, 'sine', 0.05);
+      tone(a, 1760, t + 0.09, 0.1, 'sine', 0.034);
       if (combo > 1) {
-        var f = 520 * Math.pow(1.09, Math.min(combo, 12));
-        tone(a, f, t + 0.11, 0.12, 'triangle', 0.05);
-        tone(a, f * 1.25, t + 0.16, 0.1, 'sine', 0.03);
+        var f = 523 * Math.pow(1.06, Math.min(combo, 10));
+        tone(a, f, t + 0.12, 0.14, 'triangle', 0.05);
+        tone(a, f * 1.25, t + 0.18, 0.12, 'sine', 0.03);
       }
     };
     hooks.coin = function () {
@@ -2325,8 +2684,8 @@
       if (!a) return;
       heard('coin');
       var t = a.currentTime;
-      tone(a, 1760, t, 0.05, 'sine', 0.04);
-      tone(a, 2340, t + 0.045, 0.07, 'triangle', 0.03);
+      tone(a, 1760, t, 0.05, 'sine', 0.055);
+      tone(a, 2340, t + 0.045, 0.07, 'triangle', 0.038);
     };
     hooks.kaching = function () { hooks.sale(1); };
     hooks.horn = function () {
@@ -2334,28 +2693,31 @@
       if (!a) return;
       heard('truck');
       var t = a.currentTime;
-      tone(a, 180, t, 0.18, 'sawtooth', 0.045, 120);
-      tone(a, 140, t + 0.08, 0.22, 'square', 0.035);
-      tone(a, 180, t + 0.28, 0.16, 'sawtooth', 0.04, 90);
+      duckMusic(a, 0.12, 0.4);
+      tone(a, 196, t, 0.16, 'triangle', 0.04, 130);
+      tone(a, 146, t + 0.1, 0.18, 'sine', 0.03);
+      tone(a, 164, t + 0.26, 0.14, 'triangle', 0.028, 110);
     };
     hooks.tap = function () {
       var a = hrAudio();
       if (!a) return;
-      tone(a, 740, a.currentTime, 0.035, 'triangle', 0.03);
+      tone(a, 660, a.currentTime, 0.03, 'sine', 0.02);
     };
     hooks.angry = function () {
       var a = hrAudio();
       if (!a) return;
       heard('angry');
       var t = a.currentTime;
-      tone(a, 246, t, 0.18, 'sawtooth', 0.04, 90);
-      tone(a, 185, t + 0.04, 0.22, 'square', 0.03, 70);
+      duckMusic(a, 0.12, 0.34);
+      tone(a, 220, t, 0.16, 'triangle', 0.04, 110);
+      tone(a, 165, t + 0.05, 0.18, 'sine', 0.03, 90);
     };
     hooks.goal = function () {
       var a = hrAudio();
       if (!a) return;
       heard('goal');
       var t = a.currentTime;
+      duckMusic(a, 0.08, 0.5);
       tone(a, 523, t, 0.1, 'triangle', 0.05);
       tone(a, 659, t + 0.08, 0.12, 'triangle', 0.05);
       tone(a, 784, t + 0.16, 0.16, 'sine', 0.05);
@@ -2366,6 +2728,7 @@
       if (!a) return;
       heard('fanfare');
       var t = a.currentTime;
+      duckMusic(a, 0.08, 0.7);
       var notes = [523, 659, 784, 1046];
       for (var i = 0; i < notes.length; i++) {
         tone(a, notes[i], t + i * 0.11, 0.2, 'triangle', 0.05);
@@ -2378,9 +2741,10 @@
       if (!a) return;
       heard('rush');
       var t = a.currentTime;
-      tone(a, 196, t, 0.32, 'sawtooth', 0.02, 392);
-      tone(a, 294, t + 0.08, 0.28, 'triangle', 0.025, 588);
-      for (var i = 0; i < 4; i++) tone(a, 1480, t + i * 0.1, 0.03, 'square', 0.016);
+      duckMusic(a, 0.14, 0.4);
+      tone(a, 196, t, 0.28, 'triangle', 0.03, 392);
+      tone(a, 294, t + 0.08, 0.24, 'sine', 0.028, 494);
+      for (var i = 0; i < 3; i++) tone(a, 988, t + i * 0.09, 0.04, 'triangle', 0.012);
     };
     hooks.alert = function () {
       var a = hrAudio();
@@ -2395,8 +2759,9 @@
       heard(name || 'action');
       var t = a.currentTime;
       if (name === 'freight') {
-        noiseBurst(a, t, 0.08, 0.04, 240);
-        tone(a, 160, t, 0.12, 'triangle', 0.04, 90);
+        noiseBurst(a, t, 0.07, 0.028, 280);
+        tone(a, 140, t, 0.1, 'triangle', 0.035, 80);
+        tone(a, 210, t + 0.06, 0.08, 'sine', 0.02);
         return;
       }
       if (name === 'calm') {
@@ -2459,7 +2824,8 @@
       return camp;
     }
 
-    function beginShift(index) {
+    function beginShift(index, opts) {
+      opts = opts || {};
       coach = null;
       if (!run || !run.days || run.days.length !== SHIFT_COUNT) run = newRun(ymd);
       if (index < 0) index = 0;
@@ -2472,7 +2838,9 @@
       }
       run.day = index;
       run.phase = 'sim';
-      run.schedule[index] = greedy(run, index);
+      var keepCrew = (opts && opts.keepCrew) || (run.crewLock && run.crewLock[index]);
+      if (!keepCrew) run.schedule[index] = greedy(run, index);
+      if (!run.met) run.met = campaignGet().met || {};
       run.simState = null;
       sim = startDay(run);
       camp.seen = true;
@@ -2697,6 +3065,7 @@
         '<div class="hr-combo" id="hr-combo" hidden>x2</div>' +
         '<div class="hr-rush" id="hr-rush" hidden>RUSH</div>' +
         (ops ? '<div class="hr-stat"><span>Payroll</span><strong id="hr-pay-text"></strong></div><div class="hr-stat"><span>Morale</span><strong id="hr-mor-text"></strong></div>' : '') +
+        '<button type="button" id="hr-crew-btn" class="hr-mute">Crew</button>' +
         '<button type="button" id="hr-mute" class="hr-mute" aria-pressed="false" aria-label="Mute sound">Sound</button>';
       function actButton(name, label, icon) {
         return '<button type="button" data-act="' + name + '"><span class="hr-icon" style="' + iconStyle(icon, 28) + '" aria-hidden="true"></span><span>' + label + '</span></button>';
@@ -2709,6 +3078,7 @@
       els.sim.querySelector('.hr-hud').innerHTML = hud;
       els.sim.querySelector('.hr-actions').innerHTML = actions;
       sim.live = true;
+      sim.floorOn = true;
       primeShift(sim, run);
       if (tutDone()) sim.coachHold = false;
       resize();
@@ -2777,6 +3147,29 @@
         els.stage.dataset.combo = String(sim.combo || 0);
         els.stage.dataset.sales = String(Math.round(sim.sales));
         els.stage.dataset.clock = label.textContent;
+        if (isQA()) {
+          var arches = [];
+          for (var ai = 0; ai < sim.customers.length; ai++) if (sim.customers[ai].arch) arches.push(sim.customers[ai].arch);
+          els.stage.dataset.arches = arches.join(',');
+          els.stage.dataset.typecard = sim.typeCard || '';
+          var upKids = 0;
+          var kidSpot = '';
+          for (var uk = 0; uk < sim.customers.length; uk++) {
+            var ukc = sim.customers[uk];
+            if ((ukc.charId === 'cust_kid' || ukc.arch === 'family') && ukc.dir === 'up' && ukc.state !== 'leave') {
+              upKids++;
+              if (!kidSpot) kidSpot = Math.round(ukc.x) + ',' + Math.round(ukc.y);
+            }
+          }
+          els.stage.dataset.upkids = String(upKids);
+          els.stage.dataset.kidspot = kidSpot;
+          var dirBits = [];
+          for (var di = 0; di < sim.customers.length && dirBits.length < 6; di++) {
+            var dc = sim.customers[di];
+            dirBits.push(dc.charId.replace('cust_', '') + (dc.arch ? '/' + dc.arch : '') + ':' + dc.dir);
+          }
+          els.stage.dataset.dirs = dirBits.join(' ');
+        }
       }
       var payEl = document.getElementById('hr-pay-text');
       var morEl = document.getElementById('hr-mor-text');
@@ -2785,11 +3178,17 @@
       var starEl = document.getElementById('hr-star-text');
       if (starEl) starEl.innerHTML = starGlyph(paceStars(sim));
       var act = document.getElementById('hr-actline');
+      var crewBtn = document.getElementById('hr-crew-btn');
+      if (crewBtn) crewBtn.hidden = !!coach;
       if (act) {
-        var maxA = sim.actionMax || CONFIG.baseActions;
-        var regenSec = CONFIG.actionRegen / (1 + 0.28 * upgradeLevel(run, 'hustle'));
-        var fill = sim.actions >= maxA ? 1 : clamp((sim.actionFrac || 0) / regenSec, 0, 1);
-        act.textContent = sim.actions + ' / ' + maxA + ' actions · refills every ' + (Math.round(regenSec * 10) / 10) + 's' + (sim.actions < maxA ? ' · ' + Math.round(fill * 100) + '% to the next' : '');
+        if (coach) {
+          act.textContent = 'Tutorial · clock is paused · step ' + (coach.step + 1) + ' of 3. Skip is there if you want the floor now.';
+        } else {
+          var maxA = sim.actionMax || CONFIG.baseActions;
+          var regenSec = CONFIG.actionRegen / (1 + 0.28 * upgradeLevel(run, 'hustle'));
+          var fill = sim.actions >= maxA ? 1 : clamp((sim.actionFrac || 0) / regenSec, 0, 1);
+          act.textContent = sim.actions + ' / ' + maxA + ' actions · refills every ' + (Math.round(regenSec * 10) / 10) + 's' + (sim.actions < maxA ? ' · ' + Math.round(fill * 100) + '% to the next' : '');
+        }
       }
       var buttons = els.sim.querySelectorAll('[data-act]');
       for (var i = 0; i < buttons.length; i++) buttons[i].disabled = !!sim.pending;
@@ -2833,6 +3232,8 @@
       var gain = Math.max(0, earned - prevEarn);
       if (earned > prevEarn) camp.bestEarn[run.day] = earned;
       camp.bank = (camp.bank || 0) + gain;
+      snap.earnGross = earned;
+      snap.earnPrev = prevEarn;
       camp.seen = true;
       camp.current = run.day;
       if (!camp.playedDay || camp.playedDay !== run.ymd) {
@@ -2872,6 +3273,157 @@
       renderScore();
     }
 
+    function renderTypeCard() {
+      var id = sim && sim.typeCard;
+      var card = id && ARCH_CARD[id];
+      var spec = id && archDef(id);
+      if (!card || !spec) return;
+      els.event.hidden = false;
+      var art = '<span class="hr-portrait" style="' + portraitStyle(spec.who, 'impatient', 96) + '"></span><span class="hr-icon" style="' + iconStyle(card.icon, 72) + '"></span>';
+      els.event.innerHTML = '<div class="hr-card" role="dialog" aria-modal="true" aria-labelledby="hr-type-title"><div class="hr-card__art">' + art + '</div><p class="hr-kicker">Week ' + (((run.day / 5) | 0) + 1) + '</p><h2 id="hr-type-title">' + esc(card.title) + '</h2><p>' + esc(card.body) + '</p><div class="hr-choices"><button type="button" id="hr-type-ok">Got it</button></div></div>';
+      document.getElementById('hr-type-ok').addEventListener('click', function () {
+        var metId = sim.typeCard;
+        sim.typeCard = '';
+        sim.paused = false;
+        if (!run.met) run.met = {};
+        run.met[metId] = 1;
+        var camp = campaignGet();
+        if (!camp.met) camp.met = {};
+        camp.met[metId] = 1;
+        campaignPut(camp);
+        els.event.hidden = true;
+        shownType = null;
+        toast(card.title.replace('New shopper: ', '') + ' is on the floor.');
+        sfx('place');
+        saveRun();
+      });
+      if (els.live) els.live.textContent = card.title + '. ' + card.body;
+    }
+
+    function openCrew(mode) {
+      if (!run) return;
+      if (mode === 'live') {
+        if (!sim || sim.done || coach || sim.pending || sim.typeCard) return;
+        sim.paused = true;
+        sim._hold = 'crew';
+      }
+      crewMode = mode;
+      crewArm = null;
+      paintCrew();
+    }
+
+    function paintCrew() {
+      var day = run.day;
+      var sh = crewMode === 'live' && sim ? shiftIndex(sim) : 0;
+      var sched = run.schedule[day];
+      var avail = run.days[day].avail;
+      var stations = STATIONS.map(function (st) {
+        var sid = sched[sh][st];
+        var who = sid && BY_ID[sid] ? firstName(sid) : 'Empty';
+        var match = sid && BY_ID[sid] && ((st.indexOf('reg') === 0 && BY_ID[sid].role === 'register') || BY_ID[sid].role === st || BY_ID[sid].role === 'manager');
+        return '<button type="button" class="hr-station' + (match ? ' is-match' : '') + '" data-crew-station="' + st + '"><small>' + STATION_LABEL[st] + '</small><b>' + esc(who) + '</b></button>';
+      }).join('');
+      var names = STAFF.map(function (s) {
+        var on = avail[s.id] && avail[s.id][sh];
+        var armed = crewArm === s.id ? ' is-armed' : '';
+        return '<button type="button" class="hr-name role-' + s.role + armed + '" data-crew-id="' + s.id + '"' + (on ? '' : ' disabled') + '>' + esc(firstName(s.id)) + '</button>';
+      }).join('');
+      var block = SHIFT_NAMES[sh];
+      var lead = crewMode === 'live'
+        ? block + ' is paused. Presets rewrite the whole day. A tap assigns this block only.'
+        : 'Choose who runs the retry. Presets fill Open, Mid, and Close. Then run this crew.';
+      els.modal.hidden = false;
+      els.modal.innerHTML =
+        '<div class="hr-card hr-card--crew" role="dialog" aria-modal="true" aria-labelledby="hr-crew-title">' +
+        '<p class="hr-kicker">Crew board</p><h2 id="hr-crew-title">' + (crewMode === 'live' ? block + ' crew' : 'Set the crew') + '</h2>' +
+        '<p>' + esc(lead) + '</p>' +
+        '<div class="hr-presets">' +
+        '<button type="button" data-preset="tills">Tills</button>' +
+        '<button type="button" data-preset="balanced">Balanced</button>' +
+        '<button type="button" data-preset="stock">Stock</button></div>' +
+        '<p class="hr-fine" id="hr-crew-sum">' + esc(crewSummary(sched)) + '</p>' +
+        '<div class="hr-stations">' + stations + '</div>' +
+        '<div class="hr-names">' + names + '</div>' +
+        '<p class="hr-fine">Tap a name, then a station. Gray names are off this block. Tills shorten lines and thin the shelves. Stock does the opposite.</p>' +
+        '<div class="hr-cta">' +
+        (crewMode === 'live'
+          ? '<button type="button" class="btn btn--primary" id="hr-crew-done">Back to the floor</button>'
+          : '<button type="button" class="btn btn--primary" id="hr-crew-run">Run this crew</button><button type="button" class="btn" id="hr-crew-done">Close</button>') +
+        '</div></div>';
+      els.modal.querySelector('.hr-presets').addEventListener('click', function (ev) {
+        var btn = ev.target.closest('[data-preset]');
+        if (!btn) return;
+        var preset = btn.getAttribute('data-preset');
+        run.schedule[day] = applyCrewPreset(run, day, preset);
+        if (!run.crewLock) run.crewLock = {};
+        run.crewLock[day] = true;
+        if (crewMode === 'live') retargetCrew(sim, run);
+        saveRun();
+        sfx('place');
+        var said = preset === 'tills' ? 'Tills heavy. Lines move, shelves thin.' : preset === 'stock' ? 'Stock heavy. Shelves hold, lines grow.' : 'Balanced crew.';
+        toast(said);
+        paintCrew();
+      });
+      els.modal.querySelector('.hr-names').addEventListener('click', function (ev) {
+        var btn = ev.target.closest('[data-crew-id]');
+        if (!btn || btn.disabled) return;
+        crewArm = btn.getAttribute('data-crew-id');
+        paintCrew();
+      });
+      els.modal.querySelector('.hr-stations').addEventListener('click', function (ev) {
+        var btn = ev.target.closest('[data-crew-station]');
+        if (!btn) return;
+        var station = btn.getAttribute('data-crew-station');
+        if (!crewArm) {
+          var occ = sched[sh][station];
+          if (!occ) { toast('Tap a name first.'); return; }
+          run.schedule[day][sh][station] = null;
+          if (!run.crewLock) run.crewLock = {};
+          run.crewLock[day] = true;
+          if (crewMode === 'live') retargetCrew(sim, run);
+          saveRun();
+          sfx('place');
+          paintCrew();
+          return;
+        }
+        var from = null;
+        for (var i = 0; i < STATIONS.length; i++) {
+          if (sched[sh][STATIONS[i]] === crewArm) from = { shift: sh, station: STATIONS[i] };
+        }
+        var res = tryPlace(run.schedule[day], avail, crewArm, sh, station, from);
+        if (!res.ok) { toast(res.reason); sfx('miss'); return; }
+        run.schedule[day] = res.schedule;
+        if (!run.crewLock) run.crewLock = {};
+        run.crewLock[day] = true;
+        if (sim && crewMode === 'live') {
+          delete sim.override[crewArm];
+          retargetCrew(sim, run);
+        }
+        toast(firstName(crewArm) + ' is on ' + STATION_LABEL[station] + '.');
+        crewArm = null;
+        saveRun();
+        sfx('place');
+        paintCrew();
+      });
+      document.getElementById('hr-crew-done').addEventListener('click', function () {
+        els.modal.hidden = true;
+        crewArm = null;
+        if (crewMode === 'live' && sim && sim._hold === 'crew') {
+          sim.paused = false;
+          sim._hold = '';
+        }
+        crewMode = '';
+      });
+      var runBtn = document.getElementById('hr-crew-run');
+      if (runBtn) runBtn.addEventListener('click', function () {
+        if (!run.crewLock) run.crewLock = {};
+        run.crewLock[day] = true;
+        els.modal.hidden = true;
+        crewMode = '';
+        beginShift(day, { keepCrew: true });
+      });
+    }
+
     function renderScore() {
       show('score');
       var snap = run.lastSnap || run.history[run.history.length - 1];
@@ -2883,15 +3435,20 @@
         '<p class="hr-stars hr-stars--big">' + starGlyph(snap.shiftStars || goalStars(snap.goalPct)) + '</p>' +
         '<p class="hr-thresholds">1★ ' + Math.round(CONFIG.star1 * 100) + '% · 2★ ' + Math.round(CONFIG.star2 * 100) + '% · 3★ ' + Math.round(CONFIG.star3 * 100) + '%</p>' +
         '<p class="hr-lead">Best combo ' + esc(comboBit) + ' · ' + (snap.walkouts || 0) + ' walkouts · ' + money(snap.sales) + ' / ' + money(snap.goal) + '</p>' +
-        '<p class="hr-bank">' + (snap.earned > 0 ? '+' + money(snap.earned) + ' banked' : 'No new earnings') + '</p>' +
+        '<p class="hr-bank">' + (snap.earned > 0 ? '+' + money(snap.earned) + ' banked' : 'Bank unchanged') + ' · ' + money(snap.bank || 0) + ' total</p>' +
+        '<p class="hr-fine">' + esc(bankCopy(snap)) + '</p>' +
         '<p class="hr-scorebig">' + snap.points + ' pts</p>' +
         '<div class="hr-cta">' +
         '<button type="button" class="btn btn--primary" id="hr-retry">Retry shift</button>' +
+        '<button type="button" class="btn" id="hr-to-crew">Set crew</button>' +
         '<button type="button" class="btn" id="hr-to-shop">Upgrades</button>' +
         '<button type="button" class="btn" id="hr-to-map">Shift map</button>' +
         '</div>';
       document.getElementById('hr-retry').addEventListener('click', function () {
         beginShift(run.day);
+      });
+      document.getElementById('hr-to-crew').addEventListener('click', function () {
+        openCrew('score');
       });
       document.getElementById('hr-to-shop').addEventListener('click', function () {
         run.phase = 'shop';
@@ -2922,7 +3479,7 @@
         '<p class="hr-kicker">Between shifts</p>' +
         '<h2>Upgrade shop</h2>' +
         '<p class="hr-bank">Bank ' + money(camp.bank) + '</p>' +
-        '<p class="hr-lead">Spend what the floor earned. Upgrades stay on this device.</p>' +
+        '<p class="hr-lead">Each shift saves 10% of its sales. Replaying a shift only adds the amount above the best already saved for it. Upgrades stay on this device.</p>' +
         '<div class="hr-shop" id="hr-shop-list">' + cards + '</div>' +
         '<div class="hr-cta"><button type="button" class="btn btn--primary" id="hr-shop-map">Shift map</button></div>';
       document.getElementById('hr-shop-list').addEventListener('click', function (ev) {
@@ -2954,7 +3511,7 @@
     function renderMap() {
       show('map');
       var camp = campaignGet();
-      var html = '<p class="hr-kicker">Holiday Rush Mart</p><h2>Shift map</h2><p class="hr-lead">Clear a shift with at least one star to unlock the next. Replay any open shift for a better rating.</p><p class="hr-bank">Bank ' + money(camp.bank) + '</p><div class="hr-map">';
+      var html = '<p class="hr-kicker">Holiday Rush Mart</p><h2>Shift map</h2><p class="hr-lead">Earn one star to unlock the next shift. Locked days stay blank. Replay any open shift. The bank keeps 10% of sales, and a replay only adds a better haul.</p><p class="hr-bank">Bank ' + money(camp.bank) + '</p><div class="hr-map">';
       var week = '';
       for (var i = 0; i < SHIFT_COUNT; i++) {
         var def = shiftDef(i);
@@ -2965,7 +3522,10 @@
         var open = shiftUnlocked(camp, i);
         var stars = camp.stars[i] || 0;
         var next = open && !(camp.stars[i] > 0) && (i === 0 || (camp.stars[i - 1] || 0) >= 1);
-        html += '<button type="button" class="hr-node' + (open ? '' : ' is-locked') + (next ? ' is-next' : '') + '" data-shift="' + i + '"' + (open ? '' : ' disabled') + '><b>' + esc(def.short) + '</b><small>' + (i + 1) + '</small><span class="hr-stars">' + starGlyph(stars) + '</span></button>';
+        var mark = open
+          ? '<span class="hr-stars">' + starGlyph(stars) + '</span>'
+          : '<span class="hr-lock" aria-label="Locked">Lock</span>';
+        html += '<button type="button" class="hr-node' + (open ? '' : ' is-locked') + (next ? ' is-next' : '') + '" data-shift="' + i + '"' + (open ? '' : ' disabled') + '><b>' + esc(def.short) + '</b><small>' + (i + 1) + '</small>' + mark + '</button>';
       }
       html += '</div><div class="hr-cta"><button type="button" class="btn" id="hr-map-shop">Upgrades</button></div>';
       els.map.innerHTML = html;
@@ -3093,16 +3653,16 @@
 
     function coachFocus() {
       if (!coach || !sim) return null;
-      if (coach.step === 0) return { x: SPOTS.reg1.x, y: QUEUE.reg1.y + 20, label: 'Tap the long line' };
-      if (coach.step === 1) return { x: SPOTS.truck.x, y: SPOTS.truck.y + 30, label: 'Tap the truck' };
+      if (coach.step === 0) return { x: SPOTS.reg1.x, y: QUEUE.reg1.y + 20, label: '1/3  Tap the line\nA cashier keeps the sale.' };
+      if (coach.step === 1) return { x: SPOTS.truck.x, y: SPOTS.truck.y + 30, label: '2/3  Tap the truck\nUnload it before shelves thin out.' };
       var angry = null;
       for (var i = 0; i < sim.customers.length; i++) {
         var c = sim.customers[i];
         if (c.dead || c.state === 'leave') continue;
         if (c.bubble === 'angry' || (c.maxPatience && c.patience < c.maxPatience * 0.4)) angry = c;
       }
-      if (angry) return { x: angry.x, y: angry.y - 10, label: 'Tap the angry shopper' };
-      return { x: SPOTS.reg1.x, y: QUEUE.reg1.y, label: 'Tap the angry shopper' };
+      if (angry) return { x: angry.x, y: angry.y - 10, label: '3/3  Tap the upset shopper\nA calm keeps the star.' };
+      return { x: SPOTS.floor.x, y: SPOTS.floor.y, label: '3/3  Tap the upset shopper\nA calm keeps the star.' };
     }
 
     function paintCoach() {
@@ -3143,18 +3703,17 @@
     }
 
     function angerSomeone() {
-      var pick = null;
-      for (var i = 0; i < sim.customers.length; i++) {
-        var c = sim.customers[i];
-        if (c.dead || c.state === 'leave') continue;
-        pick = c;
-        if (c.charId === 'cust_karen') break;
-      }
-      if (!pick) return;
-      pick.patience = pick.maxPatience * 0.32;
-      pick.bubble = 'angry';
-      if (pick.state !== 'checkout') pick.state = pick.reg ? 'queue' : 'browse';
-      pick.pop = 1;
+      var c = makeActor('cust_karen', SPOTS.floor.x - 20, SPOTS.floor.y + 10);
+      c.kind = 'cust';
+      c.state = 'browse';
+      c.browseT = 99;
+      c.patience = 0.22;
+      c.maxPatience = 1;
+      c.bubble = 'angry';
+      c.seq = sim.seq++;
+      c.pop = 1;
+      c.reg = null;
+      sim.customers.push(c);
     }
 
     function onCoachProgress(name) {
@@ -3170,7 +3729,10 @@
         sim.truckWork = 0;
         sim.hornPlayed = false;
       } else if (coach.step === 2) angerSomeone();
-      else endCoach();
+      else {
+        toast('Floor is yours. Chain checkouts for a combo.');
+        endCoach();
+      }
       var next = coach ? coachFocus() : null;
       if (next) focusCam(next.x, next.y);
       paintCoach();
@@ -3296,7 +3858,9 @@
       if (hit.cust) {
         var c = hit.cust;
         var angry = c.bubble === 'angry' || (c.maxPatience && c.patience < c.maxPatience * 0.38);
-        if (angry || c.state === 'browse' || c.state === 'enter') act = { name: 'calm', cust: c, point: { x: c.x, y: c.y } };
+        if (c.arch === 'lift' && c.state !== 'leave') act = { name: 'calm', cust: c, point: { x: c.x, y: c.y } };
+        else if (c.haggling) act = { name: 'calm', cust: c, point: { x: c.x, y: c.y } };
+        else if (angry || c.state === 'browse' || c.state === 'enter' || c.state === 'prowl') act = { name: 'calm', cust: c, point: { x: c.x, y: c.y } };
         else if (c.reg) act = { name: 'pull', station: c.reg, point: { x: c.x, y: c.y } };
         else act = { name: 'calm', cust: c, point: { x: c.x, y: c.y } };
       } else if (hit.station === 'freight') act = { name: 'freight', point: { x: SPOTS.truck.x, y: SPOTS.truck.y } };
@@ -3445,6 +4009,15 @@
       if (focus) {
         cam.x = focus.x - view.viewW * 0.5;
         cam.y = focus.y - view.viewH * 0.62;
+      } else if (sim && sim.typeCard) {
+        var spotC = null;
+        for (var ti = 0; ti < sim.customers.length; ti++) {
+          if (sim.customers[ti].arch === sim.typeCard && !sim.customers[ti].dead) spotC = sim.customers[ti];
+        }
+        if (spotC) {
+          cam.x = spotC.x - view.viewW * 0.5;
+          cam.y = spotC.y - view.viewH * 0.55;
+        }
       } else if (sim && cam.follow) {
         var fx = 0;
         var fy = 0;
@@ -3462,6 +4035,10 @@
       }
       cam.x = clamp(cam.x, 0, Math.max(0, WORLD_W - view.viewW));
       cam.y = clamp(cam.y, 0, Math.max(0, WORLD_H - view.viewH));
+      if (isQA() && els.stage) {
+        els.stage.dataset.cam = Math.round(cam.x) + ',' + Math.round(cam.y);
+        els.stage.dataset.view = Math.round(view.viewW) + ',' + Math.round(view.viewH);
+      }
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.fillStyle = '#1a1412';
       ctx.fillRect(0, 0, els.canvas.width, els.canvas.height);
@@ -3475,24 +4052,29 @@
       ctx.setTransform(dpr * scale, 0, 0, dpr * scale, (-cam.x + shakeX) * dpr * scale, (-cam.y + shakeY) * dpr * scale);
       var band = !sim ? 2 : sim.stock < 0.34 ? 0 : sim.stock < 0.67 ? 1 : 2;
       if (floors[band]) ctx.drawImage(floors[band], 0, 0);
+      if (sim) drawStoreDress();
       if (sim) {
         SHELVES.forEach(function (sh) {
           var pct = Math.round(clamp(sim.stock, 0, 1) * 100);
           ctx.fillStyle = 'rgba(20,12,16,0.78)';
-          ctx.fillRect(sh.x - 36, sh.y - 62, 72, 18);
+          ctx.fillRect(sh.x - 36, sh.y - 108, 72, 14);
           ctx.fillStyle = sim.stock > 0.66 ? '#2f9e57' : sim.stock > 0.33 ? '#e0a322' : '#d64545';
-          ctx.fillRect(sh.x - 34, sh.y - 60, 68 * clamp(sim.stock, 0, 1), 14);
-          ctx.font = '800 13px Outfit, Inter, sans-serif';
+          ctx.fillRect(sh.x - 34, sh.y - 106, 68 * clamp(sim.stock, 0, 1), 10);
+          ctx.font = '800 12px Outfit, Inter, sans-serif';
           ctx.textAlign = 'center';
           ctx.fillStyle = '#f6f0e4';
-          ctx.fillText(pct + '%', sh.x, sh.y - 68);
+          ctx.fillText(pct + '%', sh.x, sh.y - 112);
         });
         var drawList = [];
         for (var s = 0; s < sim.staff.length; s++) if (!sim.staff[s].hidden) drawList.push(sim.staff[s]);
         for (var c = 0; c < sim.customers.length; c++) drawList.push(sim.customers[c]);
         if (sim.you) drawList.push(sim.you);
+        drawList.push(jackPose());
         drawList.sort(function (a, b) { return a.y - b.y; });
-        for (var d = 0; d < drawList.length; d++) drawActor(drawList[d]);
+        for (var d = 0; d < drawList.length; d++) {
+          if (drawList[d].kind === 'jack') drawPalletJack(drawList[d]);
+          else drawActor(drawList[d]);
+        }
         drawPings();
         drawTrouble();
         if (sim.coins) {
@@ -3584,26 +4166,353 @@
       }
     }
 
+    function roundBox(x, y, w, h, r) {
+      var rad = Math.min(r || 3, w / 2, h / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + rad, y);
+      ctx.arcTo(x + w, y, x + w, y + h, rad);
+      ctx.arcTo(x + w, y + h, x, y + h, rad);
+      ctx.arcTo(x, y + h, x, y, rad);
+      ctx.arcTo(x, y, x + w, y, rad);
+      ctx.closePath();
+    }
+
+    function drawProduct(x, y, kind) {
+      if (kind === 0) {
+        ctx.fillStyle = '#d64545';
+        roundBox(x, y, 14, 16, 2);
+        ctx.fill();
+        ctx.fillStyle = '#f6f0e4';
+        ctx.fillRect(x + 2, y + 4, 10, 3);
+      } else if (kind === 1) {
+        ctx.fillStyle = '#3b78d0';
+        ctx.fillRect(x + 1, y + 4, 12, 12);
+        ctx.beginPath();
+        ctx.ellipse(x + 7, y + 4, 6, 3, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#e0a322';
+        ctx.fillRect(x + 1, y + 8, 12, 3);
+      } else if (kind === 2) {
+        ctx.fillStyle = '#2f9e57';
+        ctx.fillRect(x + 5, y, 4, 5);
+        roundBox(x + 2, y + 5, 10, 12, 2);
+        ctx.fill();
+      } else {
+        ctx.fillStyle = '#e0a322';
+        ctx.fillRect(x, y + 2, 14, 13);
+        ctx.fillStyle = '#d64545';
+        ctx.fillRect(x + 6, y + 2, 2, 13);
+        ctx.fillRect(x, y + 8, 14, 2);
+      }
+    }
+
+    function drawStoreDress() {
+      var stock = clamp(sim.stock, 0, 1);
+      var shown = Math.max(0, Math.round(stock * 5));
+      ctx.save();
+      ctx.globalAlpha = 0.55;
+      ctx.fillStyle = '#8d2f2f';
+      ctx.fillRect(742, 210, 22, 520);
+      ctx.fillStyle = '#1f6b3a';
+      ctx.fillRect(764, 210, 8, 520);
+      ctx.globalAlpha = 0.72;
+      ctx.fillStyle = '#6b2424';
+      roundBox(880, 808, 150, 28, 6);
+      ctx.fill();
+      ctx.fillStyle = '#f6f0e4';
+      ctx.font = '800 12px Outfit, Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('HOLIDAY', 955, 826);
+      ctx.globalAlpha = 1;
+      var t = sim.t || 0;
+      for (var b = 0; b < 18; b++) {
+        var bx = 180 + b * 72;
+        var by = 78 + Math.sin(b * 0.7) * 6;
+        ctx.fillStyle = b % 3 === 0 ? '#d64545' : b % 3 === 1 ? '#e0a322' : '#2f9e57';
+        ctx.beginPath();
+        ctx.arc(bx, by, 3.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      var bayName = ['TOYS', 'TREATS', 'WRAP', 'CARDS'];
+      SHELVES.forEach(function (sh, si) {
+        ctx.fillStyle = '#2e2118';
+        ctx.fillRect(sh.x - 58, sh.y - 86, 8, 94);
+        ctx.fillRect(sh.x + 50, sh.y - 86, 8, 94);
+        ctx.fillStyle = '#6b4a30';
+        ctx.fillRect(sh.x - 50, sh.y - 82, 100, 80);
+        ctx.fillStyle = '#24180f';
+        ctx.fillRect(sh.x - 50, sh.y - 4, 100, 8);
+        var rails = [-64, -42, -20];
+        for (var ri = 0; ri < rails.length; ri++) {
+          ctx.fillStyle = '#e0a322';
+          ctx.fillRect(sh.x - 50, sh.y + rails[ri], 100, 4);
+        }
+        for (var row = 0; row < 2; row++) {
+          for (var col = 0; col < shown; col++) {
+            drawProduct(sh.x - 46 + col * 18, sh.y - 60 - row * 22, (si + col + row * 2) % 4);
+          }
+        }
+        ctx.fillStyle = '#f6f0e4';
+        ctx.font = '800 11px Outfit, Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(bayName[si % bayName.length], sh.x, sh.y - 74);
+      });
+      var regs = ['reg1', 'reg2'];
+      for (var r = 0; r < regs.length; r++) {
+        var belt = SPOTS[regs[r]];
+        ctx.fillStyle = '#2a211c';
+        ctx.fillRect(belt.x - 28, belt.y + 8, 56, 10);
+        var slide = reduceMotion ? 8 : ((t * 36 + r * 12) % 28);
+        ctx.fillStyle = r === 0 ? '#d64545' : '#3b78d0';
+        ctx.fillRect(belt.x - 24 + slide * 0.4, belt.y + 9, 12, 8);
+        if (queueOf(sim, regs[r]).length) {
+          ctx.strokeStyle = 'rgba(224,163,34,0.85)';
+          ctx.lineWidth = 2;
+          var scan = reduceMotion ? 0 : (t * 50) % 40;
+          ctx.beginPath();
+          ctx.moveTo(belt.x - 20 + scan, belt.y + 6);
+          ctx.lineTo(belt.x - 20 + scan, belt.y + 20);
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+    }
+
+    function jackPose() {
+      var best = null;
+      for (var i = 0; i < sim.staff.length; i++) {
+        var a = sim.staff[i];
+        if (a.hidden || a.station !== 'freight') continue;
+        best = a;
+        break;
+      }
+      if (sim.you && sim.you.station === 'freight') best = sim.you;
+      if (!best) {
+        return { kind: 'jack', x: SPOTS.truck.x - 54, y: SPOTS.truck.y + 86, face: 1, roll: (sim.t || 0) * 2, parked: true };
+      }
+      var face = best.face || 1;
+      return {
+        kind: 'jack',
+        x: best.x + (face < 0 ? 30 : -30),
+        y: best.y + 8,
+        face: face,
+        roll: best.anim === 'walk' ? (sim.t || 0) * 14 : (sim.t || 0) * 2,
+        parked: false
+      };
+    }
+
+    function drawPalletJack(j) {
+      ctx.save();
+      ctx.translate(j.x, j.y);
+      if (j.face < 0) ctx.scale(-1, 1);
+      ctx.fillStyle = 'rgba(20,12,16,0.28)';
+      ctx.beginPath();
+      ctx.ellipse(0, 4, 28, 8, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#3a2a22';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(-26, -2);
+      ctx.lineTo(8, -2);
+      ctx.moveTo(-26, 4);
+      ctx.lineTo(8, 4);
+      ctx.stroke();
+      ctx.fillStyle = '#8a5a32';
+      roundBox(-24, -14, 36, 12, 2);
+      ctx.fill();
+      ctx.strokeStyle = '#5c3a22';
+      ctx.stroke();
+      var boxes = ['#d64545', '#2f9e57', '#e0a322'];
+      for (var i = 0; i < 3; i++) {
+        ctx.fillStyle = boxes[i];
+        ctx.fillRect(-20 + i * 11, -28, 10, 14);
+        ctx.fillStyle = 'rgba(246,240,228,0.8)';
+        ctx.fillRect(-18 + i * 11, -24, 6, 2);
+      }
+      ctx.fillStyle = '#e0a322';
+      roundBox(4, -18, 16, 18, 3);
+      ctx.fill();
+      ctx.fillStyle = '#2b1d2e';
+      ctx.fillRect(8, -8, 8, 3);
+      var spin = reduceMotion ? 0 : j.roll;
+      function wheel(wx, wy) {
+        ctx.save();
+        ctx.translate(wx, wy);
+        ctx.rotate(spin);
+        ctx.fillStyle = '#1a120c';
+        ctx.beginPath();
+        ctx.arc(0, 0, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#f6f0e4';
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.moveTo(-4, 0);
+        ctx.lineTo(4, 0);
+        ctx.moveTo(0, -4);
+        ctx.lineTo(0, 4);
+        ctx.stroke();
+        ctx.restore();
+      }
+      wheel(-16, 6);
+      wheel(14, 6);
+      ctx.strokeStyle = '#c9842a';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(12, -16);
+      ctx.lineTo(22, -40);
+      ctx.stroke();
+      ctx.fillStyle = '#2b1d2e';
+      roundBox(16, -46, 14, 8, 3);
+      ctx.fill();
+      ctx.fillStyle = '#d64545';
+      ctx.fillRect(18, -44, 10, 3);
+      ctx.restore();
+    }
+
+    function drawKidBackBody(a, size) {
+      var s = size / 78;
+      var swing = (!reduceMotion && a.anim === 'walk') ? Math.sin(a.frame * Math.PI / 2) * 7 * s : 0;
+      if (!reduceMotion && a.anim !== 'walk') swing = Math.sin(Date.now() / 320) * 2 * s;
+      ctx.fillStyle = 'rgba(20,12,16,0.25)';
+      ctx.beginPath();
+      ctx.ellipse(0, 4, 14 * s, 5 * s, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#3b78d0';
+      roundBox(-12 * s, -46 * s, 24 * s, 22 * s, 4 * s);
+      ctx.fill();
+      ctx.strokeStyle = '#1a120c';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-6 * s, -44 * s);
+      ctx.lineTo(-6 * s, -28 * s);
+      ctx.moveTo(6 * s, -44 * s);
+      ctx.lineTo(6 * s, -28 * s);
+      ctx.stroke();
+      function limb(x, y, w, h, color) {
+        ctx.fillStyle = color;
+        roundBox(x, y, w, h, 3 * s);
+        ctx.fill();
+      }
+      limb(-8 * s + swing, -16 * s, 7 * s, 16 * s, '#f0c09a');
+      limb(2 * s - swing, -16 * s, 7 * s, 16 * s, '#f0c09a');
+      limb(-10 * s + swing, -4 * s, 10 * s, 6 * s, '#f2d15a');
+      limb(1 * s - swing, -4 * s, 10 * s, 6 * s, '#f2d15a');
+      ctx.fillStyle = '#2454a8';
+      roundBox(-13 * s, -34 * s, 26 * s, 16 * s, 3 * s);
+      ctx.fill();
+      ctx.fillStyle = '#e23b3b';
+      roundBox(-15 * s, -58 * s, 30 * s, 26 * s, 5 * s);
+      ctx.fill();
+      ctx.strokeStyle = '#2b1d2e';
+      ctx.lineWidth = Math.max(2, 2 * s);
+      ctx.stroke();
+      ctx.fillStyle = '#f6f0e4';
+      ctx.fillRect(-4 * s, -50 * s, 8 * s, 4 * s);
+      limb(-20 * s - swing, -54 * s, 8 * s, 18 * s, '#e23b3b');
+      limb(12 * s + swing, -54 * s, 8 * s, 18 * s, '#e23b3b');
+      ctx.fillStyle = '#f0c09a';
+      ctx.beginPath();
+      ctx.arc(-16 * s - swing * 0.3, -34 * s, 4 * s, 0, Math.PI * 2);
+      ctx.arc(16 * s + swing * 0.3, -34 * s, 4 * s, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#f0c09a';
+      roundBox(-6 * s, -62 * s, 12 * s, 8 * s, 3);
+      ctx.fill();
+      ctx.fillStyle = '#6b3a22';
+      ctx.beginPath();
+      ctx.arc(0, -68 * s, 14 * s, Math.PI, 0);
+      ctx.fill();
+      ctx.fillRect(-14 * s, -70 * s, 28 * s, 10 * s);
+      ctx.fillStyle = '#8a4b2a';
+      ctx.beginPath();
+      ctx.arc(-8 * s, -74 * s, 4 * s, 0, Math.PI * 2);
+      ctx.arc(7 * s, -76 * s, 3 * s, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawCarry(a, size) {
+      if (a.kind !== 'cust' || a.state === 'leave') return;
+      var s = size / 78;
+      var sway = (!reduceMotion && a.anim === 'walk') ? Math.sin(a.frame * 1.2) * 3 : 0;
+      ctx.save();
+      ctx.translate((a.face < 0 ? -18 : 16) * s, -20 * s + sway);
+      if (a.arch === 'lift') {
+        ctx.fillStyle = '#1a120c';
+        roundBox(-8, -10, 16, 12, 2);
+        ctx.fill();
+        ctx.fillStyle = '#e0a322';
+        ctx.fillRect(-5, -7, 10, 3);
+      } else if (a.arch === 'family') {
+        ctx.fillStyle = '#5c3a22';
+        roundBox(-16, -6, 34, 16, 3);
+        ctx.fill();
+        ctx.fillStyle = '#d64545';
+        ctx.fillRect(-12, -16, 10, 12);
+        ctx.fillStyle = '#2f9e57';
+        ctx.fillRect(-1, -18, 10, 14);
+        ctx.fillStyle = '#e0a322';
+        ctx.fillRect(8, -12, 8, 8);
+        ctx.strokeStyle = '#2b1d2e';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-16, 4);
+        ctx.lineTo(-20, 14);
+        ctx.moveTo(18, 4);
+        ctx.lineTo(22, 14);
+        ctx.stroke();
+      } else if (a.arch === 'haggle') {
+        ctx.fillStyle = '#f6e27a';
+        roundBox(-10, -16, 20, 14, 2);
+        ctx.fill();
+        ctx.strokeStyle = '#2b1d2e';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.fillStyle = '#2b1d2e';
+        ctx.font = '800 9px Outfit, Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('%', 0, -5);
+      } else if (a.arch !== 'rusher') {
+        ctx.fillStyle = '#c9842a';
+        roundBox(-8, -4, 16, 10, 3);
+        ctx.fill();
+        ctx.strokeStyle = '#5c3a22';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(0, -4, 7, Math.PI, 0);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
     function drawActor(a) {
       var dir = a.face < 0 ? 'side' : a.dir;
       if (a.face < 0) dir = 'side';
       var count = a.anim === 'idle' ? 2 : 4;
       var frame = a.frame % count;
+      var kidBack = a.charId === 'cust_kid' && dir === 'up';
       var key = a.charId + '/' + dir + '_' + a.anim + '_' + frame;
       var rect = assets.floor.frames[key];
-      if (!rect) return;
+      if (!rect && !kidBack) return;
       var size = CONFIG.sprite;
+      var bob = 0;
+      if (a.anim === 'walk' && !reduceMotion) bob = Math.sin(a.frame * Math.PI / 2) * -4;
+      var reactX = 0;
+      if ((a.bubble === 'angry' || a.angry) && !reduceMotion) reactX = Math.sin(Date.now() / 60) * 1.6;
       ctx.save();
-      ctx.translate(a.x, a.y);
+      ctx.translate(a.x + reactX, a.y + bob);
       if (a.face < 0) ctx.scale(-1, 1);
       if (a.anim === 'walk' && !reduceMotion) {
-        var squash = 1 + Math.sin(a.frame * 1.4) * 0.05;
-        ctx.scale(1, squash);
+        var squash = 1 + Math.sin(a.frame * 1.4) * 0.06;
+        ctx.scale(1 / squash, squash);
       }
       if (a.pop > 0) {
         var popS = 1 + a.pop * (reduceMotion ? 0.08 : 0.28);
         ctx.scale(popS, popS);
       }
+      ctx.fillStyle = 'rgba(20,12,16,0.22)';
+      ctx.beginPath();
+      ctx.ellipse(0, 2, 15, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
       if (a.role && ROLE_COLOR[a.role]) {
         ctx.fillStyle = ROLE_COLOR[a.role];
         ctx.globalAlpha = 0.9;
@@ -3612,18 +4521,71 @@
         ctx.fill();
         ctx.globalAlpha = 1;
       }
-      ctx.drawImage(assets.img.floor, rect[0], rect[1], rect[2], rect[3], -size / 2, -size + 8, size, size);
+      if (kidBack) drawKidBackBody(a, size);
+      else ctx.drawImage(assets.img.floor, rect[0], rect[1], rect[2], rect[3], -size / 2, -size + 8, size, size);
+      if (a.arch === 'rusher' && a.anim === 'walk') {
+        ctx.strokeStyle = 'rgba(214,69,69,0.75)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(-18, -30);
+        ctx.lineTo(-32, -26);
+        ctx.moveTo(-16, -18);
+        ctx.lineTo(-34, -16);
+        ctx.stroke();
+      }
+      if (a.arch === 'lift') {
+        ctx.fillStyle = 'rgba(20,12,16,0.55)';
+        ctx.beginPath();
+        ctx.ellipse(0, -size + 28, 16, 10, 0, Math.PI, 0);
+        ctx.fill();
+      }
+      drawCarry(a, size);
       ctx.restore();
-      if (a.kind === 'cust' && a.state !== 'leave' && a.maxPatience) {
+      if (a.arch === 'family' && a.state !== 'leave') {
+        var kidSize = size * 0.68;
+        var beside = dir === 'up' ? 40 : 24;
+        var kx = a.x + (a.face < 0 ? -beside : beside);
+        var ky = a.y + (dir === 'up' ? 18 : 6) + bob;
+        if (dir === 'up') {
+          ctx.save();
+          ctx.translate(kx, ky);
+          drawKidBackBody(a, kidSize);
+          ctx.restore();
+        } else {
+          var kidKey = 'cust_kid/' + dir + '_' + a.anim + '_' + frame;
+          var kidRect = assets.floor.frames[kidKey];
+          if (kidRect) {
+            ctx.save();
+            ctx.translate(kx, ky);
+            if (a.face < 0) ctx.scale(-1, 1);
+            ctx.drawImage(assets.img.floor, kidRect[0], kidRect[1], kidRect[2], kidRect[3], -kidSize / 2, -kidSize + 6, kidSize, kidSize);
+            ctx.restore();
+          }
+        }
+      }
+      if (a.kind === 'cust' && a.arch !== 'lift' && a.state !== 'leave' && a.maxPatience) {
         drawPatience(a.x, a.y - size - 8, clamp(a.patience / a.maxPatience, 0, 1));
+      }
+      if (a.bubble === 'angry' && !reduceMotion) {
+        var puff = (Date.now() / 280 + (a.seq || 0)) % 1;
+        ctx.globalAlpha = 1 - puff;
+        ctx.fillStyle = '#ffd0d0';
+        ctx.beginPath();
+        ctx.arc(a.x + 18, a.y - size - 6 - puff * 18, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
       }
       if (a.bubble) {
         var ir = assets.icons['icons/' + a.bubble + '.png'];
         if (ir) {
-          var iconPx = a.bubble === 'angry' ? 44 : 34;
+          var iconPx = a.bubble === 'angry' || a.bubble === 'theft' ? 44 : 34;
           ctx.drawImage(assets.img.icons, ir[0], ir[1], ir[2], ir[3], a.x - iconPx / 2, a.y - size - 18 - iconPx, iconPx, iconPx);
         }
       }
+      if (a.arch === 'rusher') drawTag('Rush', a.x, a.y - size - 36);
+      else if (a.arch === 'family') drawTag('Family', a.x, a.y - size - 36);
+      else if (a.arch === 'lift') drawTag(a.state === 'flee' ? 'Catch' : 'Watch', a.x, a.y - size - 28);
+      else if (a.haggling) drawTag('Coupon', a.x, a.y - size - 36);
       if (a.kind === 'staff' && a.id) {
         var tag = firstName(a.id);
         if (a.rush > 1) tag += ' →';
@@ -3640,10 +4602,16 @@
       var dt = lastTs ? (ts - lastTs) / 1000 : 0;
       lastTs = ts;
       if (dt > 0.05) dt = 0.05;
-      if (sim && !sim.paused && !sim.done) {
+        if (sim && !sim.paused && !sim.done) {
+        if (coach) {
+          for (var cs = 0; cs < sim.staff.length; cs++) updateStaffActor(sim, run, sim.staff[cs], dt);
+          if (sim.you) updateStaffActor(sim, run, sim.you, dt);
+          for (var cc = 0; cc < sim.customers.length; cc++) tickAnim(sim.customers[cc], dt);
+          decayFx(sim, dt);
+        } else {
         var speed = isQA() ? qaSpeed : 1;
-        if (coach && sim.sales > 0) speed *= 0.34;
         step(sim, run, dt * speed);
+        }
         while (sim.notes.length) toast(sim.notes.shift());
         if (sim.pending && shownEvent !== sim.pending) {
           shownEvent = sim.pending;
@@ -3657,9 +4625,17 @@
           els.live.textContent = shiftLabel(run.day) + ' ' + clockLabel(sim.t, sim.duration) + ', sales ' + money(sim.sales) + ' of ' + money(sim.goal) + ', morale ' + Math.round(sim.morale) + '.';
         }
         if (hooks.heat) hooks.heat(sim.customers.length, !!(sim._heat && sim._heat.rush && !sim.coachHold));
-        if (sim.done) finishDay();
+        if (!coach && sim.done) finishDay();
         simSaveAcc += dt;
         if (simSaveAcc > 1) { simSaveAcc = 0; saveRun(); }
+      }
+      if (sim && sim.typeCard && shownType !== sim.typeCard) {
+        shownType = sim.typeCard;
+        renderTypeCard();
+      }
+      if (sim && !sim.typeCard && shownType) {
+        shownType = null;
+        if (!sim.pending) els.event.hidden = true;
       }
       if (!els.sim.hidden) draw();
     }
@@ -3729,7 +4705,12 @@
       hooks.tap();
     });
 
-    els.sim.addEventListener('click', function (ev) {
+      els.sim.addEventListener('click', function (ev) {
+      if (ev.target.closest('#hr-crew-btn')) {
+        ev.preventDefault();
+        openCrew('live');
+        return;
+      }
       if (ev.target.closest('#hr-mute')) {
         ev.preventDefault();
         setAudioMuted(!audioMuted());
