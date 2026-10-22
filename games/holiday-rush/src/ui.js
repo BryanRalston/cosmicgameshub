@@ -157,7 +157,10 @@
       '<section class="hr-office__block"><h3>Prices and the back room</h3>' + priceRows + send + '</section>' +
       '<section class="hr-office__block"><h3>Crew</h3>' + crew + '</section>' +
       '<section class="hr-office__block"><h3>Next build</h3>' + buildBlock + loanBlock +
-      '<button type="button" class="btn" data-layout="1">Arrange the floor</button></section>' +
+      '<button type="button" class="btn" data-layout="1">Arrange the floor</button>' +
+      '<button type="button" class="btn" data-mall="1"' + (econ.has(books, 'knock') ? '' : ' disabled') + '>Mall map</button>' +
+      (econ.has(books, 'knock') ? '' : '<p class="hr-fine">The plaza units open after you knock through the east wall.</p>') +
+      '</section>' +
       locBlock +
       '<section class="hr-office__block"><h3>Floor tools</h3><p class="hr-fine">These hit the shift you are about to run: faster stocking, a hotter till, longer patience.</p>' + upgrades + '</section>' +
       '<div class="hr-cta"><button type="button" class="btn btn--primary" data-back="1">Shift map</button></div>';
@@ -195,6 +198,9 @@
         return;
       } else if (btn.hasAttribute('data-layout')) {
         ctx.onLayout();
+        return;
+      } else if (btn.hasAttribute('data-mall')) {
+        if (ctx.onMall) ctx.onMall();
         return;
       } else if (btn.hasAttribute('data-back')) {
         ctx.onBack();
@@ -261,7 +267,139 @@
     };
   }
 
-  var api = { mountOffice: mountOffice, mountLayout: mountLayout, roster: roster };
+  var UI = '/games/holiday-rush/objects/ui/';
+  var CHIP = {
+    flagship: 'chips_4.png',
+    court: 'chips_5.png',
+    toys_pop: 'chips_0.png',
+    repair: 'chips_1.png',
+    cafe_chain: 'chips_2.png',
+    seasonal: 'chips_3.png',
+    vacant: 'chips_4.png'
+  };
+
+  function chipUrl(name) {
+    return UI + (CHIP[name] || CHIP.vacant);
+  }
+
+  function mountMall(el, ctx) {
+    var books = ctx.books;
+    var world = root.HRParts.world;
+    var data = root.HRParts.data.get();
+    var mall = world.ensureMall(books);
+    var slotId = ctx.slot || 'a';
+    var slot = null;
+    for (var i = 0; i < data.mall.slots.length; i++) {
+      if (data.mall.slots[i].id === slotId) slot = data.mall.slots[i];
+    }
+    if (!slot) slot = data.mall.slots[1];
+    var leaseRow = mall.leases[slot.id] || null;
+    var tenant = leaseRow ? data.tenants.byId[leaseRow.tenantId] : null;
+    var fronts = data.mall.slots.map(function (row) {
+      var held = row.kind === 'player' ? { name: 'Your mart' } : (mall.leases[row.id] ? data.tenants.byId[mall.leases[row.id].tenantId] : null);
+      var face = row.kind === 'player' ? 'flagship' : row.kind === 'common' ? 'court' : (held ? held.id : 'vacant');
+      var title = row.kind === 'player' ? 'Your mart' : row.kind === 'common' ? row.name : (held ? held.name : 'Vacant');
+      var sub = row.kind === 'lease'
+        ? (held ? money(mall.leases[row.id].rent) + (mall.leases[row.id].openComplaint ? ' · unhappy' : '') : 'For lease')
+        : (row.kind === 'player' ? 'Flagship' : 'Commons');
+      var cls = 'hr-front' + (row.id === slot.id ? ' is-on' : '') + (row.kind === 'player' ? ' is-you' : '') +
+        (mall.leases[row.id] && mall.leases[row.id].openComplaint ? ' is-mad' : '');
+      return '<button type="button" class="' + cls + '" data-slot="' + esc(row.id) + '" style="background-image:url(' + chipUrl(face) + ')">' +
+        '<b>' + esc(title) + '</b><small>' + esc(sub) + '</small></button>';
+    }).join('');
+    var commons = data.mall.commons.map(function (id) {
+      var on = (mall.commons[id] || 0) >= 1;
+      var cost = world.commonCost(id);
+      return '<button type="button" class="hr-common' + (on ? ' is-on' : '') + '" data-common="' + esc(id) + '">' +
+        '<i class="hr-seal" aria-hidden="true"></i><span>' + esc(world.commonName(id)) + '<small>' + (on ? 'Open' : money(cost)) + '</small></span></button>';
+    }).join('');
+    var panel = '';
+    if (slot.kind === 'player') {
+      panel = '<p class="hr-lead">This is the floor you play. The units beside it pay rent into the same register.</p>';
+    } else if (slot.kind === 'common') {
+      panel = '<p class="hr-lead">The food court is a common. Second Cup will not pay full rent until it is open.</p>';
+    } else if (tenant) {
+      panel = '<p class="hr-lead">' + esc(tenant.blurb) + '</p>' +
+        '<p class="hr-fine">Rent ' + money(leaseRow.rent) + ' · they pay ' + money(leaseRow.rentPaid || 0) + ' this close.' +
+        (leaseRow.openComplaint ? ' “' + esc(leaseRow.openComplaint) + '”' : ' The common they wanted is open.') + '</p>' +
+        '<button type="button" class="btn" data-end="' + esc(slot.id) + '">End the lease</button>';
+    } else {
+      var pick = ctx.tenant || data.tenants.tenants[0].id;
+      var chosen = data.tenants.byId[pick];
+      ctx.rents = ctx.rents || {};
+      if (ctx.rents[pick] == null) ctx.rents[pick] = Math.round(chosen.maxRent * 0.85);
+      var rent = ctx.rents[pick];
+      var chips = data.tenants.tenants.map(function (row) {
+        var on = row.id === pick ? ' is-on' : '';
+        return '<button type="button" class="hr-tenant' + on + '" data-tenant="' + esc(row.id) + '" style="background-image:url(' + chipUrl(row.id) + ')">' +
+          '<b>' + esc(row.name) + '</b><small>up to ' + money(row.maxRent) + '</small></button>';
+      }).join('');
+      var want = world.commonName(chosen.wants);
+      var ready = (mall.commons[chosen.wants] || 0) >= 1;
+      panel = '<div class="hr-tenants">' + chips + '</div>' +
+        '<p class="hr-lead">' + esc(chosen.blurb) + '</p>' +
+        '<p class="hr-fine">They want ' + esc(want) + (ready ? ', and it is open.' : '. It is dark, so they will complain on the next shift and pay 85%.') + '</p>' +
+        '<div class="hr-step"><button type="button" data-rent="-50" aria-label="Lower rent">−</button><strong>' + money(rent) + '</strong><button type="button" data-rent="50" aria-label="Raise rent">+</button></div>' +
+        '<button type="button" class="btn btn--primary" data-sign="' + esc(slot.id) + '">Hand them the keys</button>';
+    }
+    var door = mall.door && Object.keys(mall.leases).length ? Math.round(mall.door * 100) : 100;
+    el.innerHTML =
+      '<p class="hr-kicker">Mall</p><h2>' + esc(data.mall.name) + '</h2>' +
+      '<p class="hr-bank">Register ' + money(books.cash) + ' · door ' + door + '%</p>' +
+      '<p class="hr-lead">You still run the flagship. A leased unit posts rent at close. If the common they asked for is shut, the next shift opens with their complaint.</p>' +
+      '<div class="hr-rowfront">' + fronts + '</div>' +
+      '<section class="hr-office__block"><h3>' + esc(slot.name) + '</h3>' + panel + '</section>' +
+      '<section class="hr-office__block"><h3>Commons</h3><div class="hr-commons">' + commons + '</div></section>' +
+      '<div class="hr-cta"><button type="button" class="btn btn--primary" data-back="1">Back to the office</button></div>';
+    el.onclick = function (ev) {
+      var btn = ev.target.closest('button');
+      if (!btn || btn.disabled) return;
+      if (btn.hasAttribute('data-slot')) {
+        ctx.slot = btn.getAttribute('data-slot');
+        mountMall(el, ctx);
+        return;
+      }
+      if (btn.hasAttribute('data-tenant')) {
+        ctx.tenant = btn.getAttribute('data-tenant');
+        mountMall(el, ctx);
+        return;
+      }
+      if (btn.hasAttribute('data-rent')) {
+        var id = ctx.tenant || data.tenants.tenants[0].id;
+        var who = data.tenants.byId[id];
+        var next = (ctx.rents[id] || 0) + (+btn.getAttribute('data-rent') || 0);
+        if (next < 50) next = 50;
+        if (next > who.maxRent) next = who.maxRent;
+        ctx.rents[id] = next;
+        mountMall(el, ctx);
+        return;
+      }
+      if (btn.hasAttribute('data-sign')) {
+        var tid = ctx.tenant || data.tenants.tenants[0].id;
+        var res = world.signLease(books, btn.getAttribute('data-sign'), tid, ctx.rents[tid]);
+        ctx.onToast(res.accepted ? (res.tenant + ' has the keys. ' + (res.complaints[0] || 'They are settled.')) : res.reason);
+        ctx.onDirty();
+        mountMall(el, ctx);
+        return;
+      }
+      if (btn.hasAttribute('data-end')) {
+        ctx.onToast(world.endLease(books, btn.getAttribute('data-end')).msg);
+        ctx.onDirty();
+        mountMall(el, ctx);
+        return;
+      }
+      if (btn.hasAttribute('data-common')) {
+        var bought = world.buyCommon(books, btn.getAttribute('data-common'));
+        ctx.onToast(bought.msg);
+        if (bought.ok) ctx.onDirty();
+        mountMall(el, ctx);
+        return;
+      }
+      if (btn.hasAttribute('data-back')) ctx.onBack();
+    };
+  }
+
+  var api = { mountOffice: mountOffice, mountLayout: mountLayout, mountMall: mountMall, roster: roster };
   root.HRParts = root.HRParts || {};
   root.HRParts.ui = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

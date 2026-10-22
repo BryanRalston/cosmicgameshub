@@ -309,7 +309,11 @@
     }
 
     function preload(typeIds) {
-      ensure(typeIds).catch(function () {});
+      pack.preloading = typeIds.slice();
+      ensure(typeIds).then(function () {
+        pack.preloading = [];
+        pack.preloaded = typeIds.slice();
+      }).catch(function () {});
     }
 
     function fileCount(typeIds) {

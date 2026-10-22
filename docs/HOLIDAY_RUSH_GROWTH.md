@@ -1,6 +1,6 @@
 # Holiday Rush growth
 
-Holiday Rush is a floor you run, then a store you grow, then a second store that keeps running while you are on the first. The mall is the endgame and is designed here. It is not a screen in this build. A rent spreadsheet would fail the bar the floor already clears.
+Holiday Rush is a floor you run, then a store you grow, then a plaza you lease. The mall map opens after the east-wall knock-through. A complaint from a tenant is a card on the next shift, the same shape as a call-out. Dropping into a tenant’s own floor is still later.
 
 The shift tick in `games/holiday-rush.js` (`startDay`, `step`, `updateCustomers`) stays the tuned sim. New content enters through `sim.books`, the layout, and JSON. A new SKU, hire, or build does not require an edit to the tick. Headless `simulate()` does not set `sim.books`, so the pinned shift-0 balance is unchanged.
 
@@ -12,17 +12,19 @@ The shift tick in `games/holiday-rush.js` (`startDay`, `step`, `updateCustomers`
 - Knock-through expansion, a third register, departments, a flagship wing, and a plaza kiosk.
 - A grid editor. Traffic is a flood from the door. A walled-off register, gondola, or cafe does not sell.
 - A world layer: the store you are in runs at full fidelity. Every other open store posts an aggregate tape.
-- Per-type sprite budgets and lazy loads. The camera stays close when the building grows.
+- A mall map after the knock-through: four lease units, rent you set, five commons you can open, and a complaint card on the next shift. Lease rent hits the tape only when a lease exists.
+- A price the aisle can see. A tag on the gondola, an aisle mood on the HUD, a grumble above 1.2×, and a walkout at 1.45×. Headless `simulate()` still has no books, so the pinned shift does not feel it.
+- Per-type sprite budgets and lazy loads. The camera stays close when the building grows. Glow and smoothing drop when the frame is late or the crowd is large.
 
 ## How this sits next to the games it is measured against
 
 **Diner Dash.** The chain is still the skill: combo multiplies the ring, not the cost of goods, and it still dies on a walkout. Patience, rush, and the coach are the first three taps. Growth does not replace that chain. It gives the chain a margin. A long combo on a steep price is a loud shift and a thin tape.
 
-**Good Pizza Great Pizza.** Ingredient cost is wholesale, and the chapter unlock is a knock-through you can see. Reviews are three lines with a number, tied to the wait, the hole in the shelf, or a price above the tag. Eight SKUs, not a topping catalog. The products on the gondola are drawn large enough to read on a phone.
+**Good Pizza Great Pizza.** Ingredient cost is wholesale, and the chapter unlock is a knock-through you can see. Reviews are three lines with a number, tied to the wait, the hole in the shelf, or a price above the tag. Eight SKUs, not a topping catalog. The products on the gondola are drawn large enough to read on a phone. A cocoa tin at the ceiling is not a hidden modifier: the treats gondola says WON’T PAY, that shopper turns around, and the close names the price against the tag. That is the GPGP beat where a bad price shows up in the shop, not only in the ledger.
 
-**Supermarket Simulator.** The price the shopper expects is the printed MSRP. It does not drift in the background. Raise it and the aisle thins. Raise it past 1.45× and they refuse. Empty back room stops the shelf from refilling. Expansion happens when the floor is full, and the camera does not zoom out to show the new bay. You drag there.
+**Supermarket Simulator.** The price the shopper expects is the printed MSRP. It does not drift in the background. Raise it and the HUD aisle mood goes Thin, because demand is the weighted price pressure. Raise one SKU past 1.45× and the shopper at that gondola walks. The others still queue. Empty back room stops the shelf from refilling. Expansion happens when the floor is full, and the camera does not zoom out to show the new bay. You drag there.
 
-**Two Point Hospital.** Reputation moves the crowd. Training pulls a person off the next shift. Firing costs severance and a hit to reviews, and the last till lead cannot be fired. The loan is one product, offered when the next build is close and unaffordable. The crowd you manage is the crowd on the floor you are standing in.
+**Two Point Hospital.** Reputation moves the crowd. Training pulls a person off the next shift. Firing costs severance and a hit to reviews, and the last till lead cannot be fired. The loan is one product, offered when the next build is close and unaffordable. The crowd you manage is the crowd on the floor you are standing in. A tenant complaint is that kind of interrupt: Quick Fix says the parking row is dark, and you either open Security for $900 or let the door stay thin.
 
 **Game Dev Tycoon.** The second site waits on cash, reviews, and a trained lead. There is no investor skim and no publishing deal. The old 10% bank cut is gone from the player-facing tape. Campaign stars still unlock the next shift.
 
@@ -156,24 +158,22 @@ Key `hr_books_v4`. Version 4. `hr_campaign_v1.bank` migrates into `cash` once. C
 | sim | The adapter the tick calls. Not a second copy of `step` |
 | render | Camera math. The tick does not know the viewport |
 | room | Modular floor: walls from x=222, corners, end-band, fixture blit |
-| ui | Office and the layout grid |
+| ui | Office, the layout grid, and the mall map |
 
-`world.fidelity(books, id)` is `full` for the active store and `aggregate` otherwise. `world.lease(state, slot, tenant, rent, commons)` is tested and unused by the UI. Tenants and the mall map live in `data/tenants.json` and `data/mall.json`.
+`world.fidelity(books, id)` is `full` for the active store and `aggregate` otherwise. `world.lease()` is the accept/refuse math. `signLease`, `buyCommon`, and `nextComplaint` are what the map and the shift card call. Tenants and costs live in `data/tenants.json` and `data/mall.json`.
 
-## Mall roadmap
+## Mall
 
-Phase A, this build. You own one mart and, later, one kiosk. The world layer and the aggregate tick are the proof. Tenant rows and `lease()` exist so Phase B does not invent a second model.
+Phase A, shipped earlier. One mart, then a kiosk. The active store is full fidelity. The other store posts an aggregate tape.
 
-Phase B, the mall map. Storefront slots from `mall.json`. The flagship slot is the store you already run. The other slots take a tenant from `tenants.json`. You set rent. Rent above `maxRent` is refused. If the common area that tenant `wants` is below 1, they complain and their traffic drops to 70%, and they pay 85% of the rent. A complaint is a card on the shift, the same shape as the truck and the call-out, and the choice drops you into that unit for the rest of the shift. That is the bar. A list of rents is not a phase.
+Phase B, this build. The mall map unlocks with the east-wall knock-through, so day one stays a floor. Storefronts are the chip sheets. You pick a tenant, set rent under their ceiling, and hand them the keys. Commons are stamp buttons: decor $800, security $900, parking lights $700, food court $1,200, holiday event $600. If the common they `want` is still 0, they complain, traffic drops to 70% of their number, and they pay 85%. The next shift shows that complaint as a card. Fix it and the common opens, cash leaves the register, and this close collects full rent. Let them grumble and the door stays thin. Rent is added in `closeShift` only when `books.mall.leases` exists, so a save with `mall: null` still posts the pinned $3,010.
 
-Phase C, the commons and the holiday. Decor, security, parking, food court, and events are levels you spend on. A mall-wide event changes the shift you drop into: a parade slows the door, a blackout hits the tills, a visit from the plaza fills every register. Other units keep posting aggregate tapes while you are inside one of them.
-
-`mall: null` in the save is the slot those phases fill.
+Phase C, not a screen. You do not drop into a tenant’s floor and play their shift. A parade, a blackout, or a plaza visit that retunes the flagship is still ahead. Commons are a purchase and a card, not a mall-wide event system.
 
 ## What was cut
 
-An investor who skims every shift. A catalog of 80–150 SKUs. Hundreds of decorations. A research tree. A gardening minigame. Prices that move with no tell. A mall screen in this pull request. A taller store. A 40-person roster. The 20 staff and 150 customers in the stress test are the pool and the spatial hash, not a hiring catalog. The crew you learn by name stays the original eight plus four hires.
+An investor who skims every shift. A catalog of 80–150 SKUs. Hundreds of decorations. A research tree. A gardening minigame. Prices that move with no tell. Playing a tenant’s store as its own shift. A taller store. A 40-person roster. The 20 staff and 150 customers in the stress test are the pool and the spatial hash, not a hiring catalog. The crew you learn by name stays the original eight plus four hires.
 
 ## Self-test
 
-`node games/holiday-rush.js --self-test` still pins combo, stars, and the shift-0 bands. It also runs the module tests: basket mean, the $3,010 tape, migration of an $1,800 bank, starter traffic, a walled-off register, the path into the east bay, aggregate profit, a refused over-rent lease, a complaint when security is 0, phone sprite size, and the per-type sprite budget.
+`node games/holiday-rush.js --self-test` still pins combo, stars, and the shift-0 bands. It also runs the module tests: basket mean, the $3,010 tape, a $400 lease that posts $3,410, a shelf that refuses at 1.45× and grumbles above 1.2×, migration of an $1,800 bank, starter traffic, a walled-off register, the path into the east bay, aggregate profit, a refused over-rent lease, a complaint when security is 0, buying security to clear that complaint, phone sprite size, and the per-type sprite budget.

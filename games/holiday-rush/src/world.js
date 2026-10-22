@@ -120,6 +120,118 @@
     };
   }
 
+  function blankMall() {
+    var data = root.HRParts.data.get();
+    var commons = {};
+    var list = data.mall.commons || [];
+    for (var i = 0; i < list.length; i++) commons[list[i]] = 0;
+    return { leases: {}, commons: commons, door: 1 };
+  }
+
+  function ensureMall(books) {
+    if (!books.mall) books.mall = blankMall();
+    if (!books.mall.leases) books.mall.leases = {};
+    if (!books.mall.commons) books.mall.commons = blankMall().commons;
+    return books.mall;
+  }
+
+  function commonCost(id) {
+    var costs = root.HRParts.data.get().mall.commonCosts || {};
+    return costs[id] || 0;
+  }
+
+  function commonName(id) {
+    var names = root.HRParts.data.get().mall.commonNames || {};
+    return names[id] || id;
+  }
+
+  function remember(row, res) {
+    row.rentPaid = res.rentPaid;
+    row.traffic = res.traffic;
+    row.openComplaint = res.complaints && res.complaints[0] ? res.complaints[0] : '';
+  }
+
+  function refreshMall(books) {
+    var mall = books.mall;
+    if (!mall || !mall.leases) return 1;
+    var keys = Object.keys(mall.leases);
+    var bump = 0;
+    var n = 0;
+    for (var i = 0; i < keys.length; i++) {
+      var slotId = keys[i];
+      var row = mall.leases[slotId];
+      if (!row) continue;
+      var res = lease(mall, slotId, row.tenantId, row.rent, mall.commons);
+      if (!res.accepted) continue;
+      remember(mall.leases[slotId], res);
+      bump += res.traffic - 1;
+      n++;
+    }
+    mall.door = n ? Math.max(0.62, Math.min(1.55, 1 + bump)) : 1;
+    return mall.door;
+  }
+
+  function signLease(books, slotId, tenantId, rent) {
+    var mall = ensureMall(books);
+    var res = lease(mall, slotId, tenantId, rent, mall.commons);
+    if (!res.accepted) return res;
+    remember(mall.leases[slotId], res);
+    refreshMall(books);
+    return res;
+  }
+
+  function endLease(books, slotId) {
+    if (!books.mall || !books.mall.leases || !books.mall.leases[slotId]) {
+      return { ok: false, msg: 'That unit is empty.' };
+    }
+    delete books.mall.leases[slotId];
+    refreshMall(books);
+    return { ok: true, msg: 'The unit is empty again.' };
+  }
+
+  function buyCommon(books, id) {
+    var mall = ensureMall(books);
+    var cost = commonCost(id);
+    if (!cost) return { ok: false, msg: 'That common is not on the map.' };
+    if ((mall.commons[id] || 0) >= 1) return { ok: true, msg: commonName(id) + ' is already open.' };
+    if ((books.cash || 0) < cost) return { ok: false, msg: commonName(id) + ' is ' + cost + '. The register is short.' };
+    books.cash -= cost;
+    mall.commons[id] = 1;
+    refreshMall(books);
+    return { ok: true, msg: commonName(id) + ' is open. A tenant who wanted it pays full rent from this close.' };
+  }
+
+  function income(books) {
+    if (!books || !books.mall || !books.mall.leases) return 0;
+    var sum = 0;
+    Object.keys(books.mall.leases).forEach(function (id) {
+      var row = books.mall.leases[id];
+      sum += row.rentPaid || 0;
+    });
+    return sum;
+  }
+
+  function nextComplaint(books) {
+    if (!books || !books.mall || !books.mall.leases) return null;
+    var data = root.HRParts.data.get();
+    var keys = Object.keys(books.mall.leases);
+    for (var i = 0; i < keys.length; i++) {
+      var row = books.mall.leases[keys[i]];
+      if (!row || !row.openComplaint) continue;
+      var tenant = data.tenants.byId[row.tenantId];
+      if (!tenant) continue;
+      return {
+        slotId: keys[i],
+        tenantId: row.tenantId,
+        name: tenant.name,
+        complaint: row.openComplaint,
+        wants: tenant.wants,
+        cost: commonCost(tenant.wants)
+      };
+    }
+    return null;
+  }
+
   function selfTest() {
     var data = root.HRParts.data;
     data.loadSync();
@@ -155,6 +267,17 @@
     if (!yes.accepted || !yes.complaints.length || yes.traffic >= 0.82) reasons.push('complaint');
     var happy = lease(mall, 'b', 'repair', 1000, { security: 1 });
     if (!happy.accepted || happy.complaints.length) reasons.push('happy');
+    var player = econ.blankBooks();
+    player.cash = 5000;
+    var signed = signLease(player, 'a', 'repair', 1000);
+    if (!signed.accepted || !signed.complaints.length) reasons.push('sign');
+    if (income(player) !== signed.rentPaid) reasons.push('income ' + income(player));
+    var card = nextComplaint(player);
+    if (!card || card.wants !== 'security' || card.cost !== 900) reasons.push('card');
+    if (!(player.mall.door < 0.9)) reasons.push('door ' + player.mall.door);
+    var bought = buyCommon(player, 'security');
+    if (!bought.ok || nextComplaint(player) || player.mall.leases.a.rentPaid !== 1000) reasons.push('bought');
+    if (player.cash !== 4100) reasons.push('cash ' + player.cash);
     return { ok: reasons.length === 0, reason: reasons.join('; '), sample: tape.profit };
   }
 
@@ -164,6 +287,15 @@
     tickAggregate: tickAggregate,
     closeBackground: closeBackground,
     lease: lease,
+    ensureMall: ensureMall,
+    signLease: signLease,
+    endLease: endLease,
+    buyCommon: buyCommon,
+    refreshMall: refreshMall,
+    income: income,
+    nextComplaint: nextComplaint,
+    commonCost: commonCost,
+    commonName: commonName,
     selfTest: selfTest
   };
   root.HRParts = root.HRParts || {};

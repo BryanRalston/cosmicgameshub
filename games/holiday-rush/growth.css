@@ -130,3 +130,115 @@
     grid-template-columns: 1fr;
   }
 }
+
+.hr-hud .hr-stat,
+.hr-hud .hr-sales {
+  background: url("/games/holiday-rush/objects/ui/hud_0.png") center / 100% 100% no-repeat;
+  border-radius: 10px;
+  padding: 4px 8px;
+  color: #24180f;
+}
+
+.hr-hud .hr-stat span,
+.hr-hud .hr-sales__top span {
+  color: #5c4632;
+}
+
+.hr-hud .hr-stat strong,
+.hr-hud .hr-sales__top strong {
+  color: #24180f;
+}
+
+.hr-actions button,
+#hr-shop .btn,
+#hr-score .btn,
+#hr-map .btn,
+.hr-choices button {
+  background-color: #d7c48a;
+  background-image: url("/games/holiday-rush/objects/ui/buttons_0.png");
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  color: #24180f;
+  border-color: transparent;
+}
+
+.hr-actions button {
+  color: #24180f;
+}
+
+#hr-shop .btn:disabled,
+.hr-choices button:disabled,
+.hr-actions button:disabled {
+  opacity: 0.5;
+}
+
+.hr-rowfront,
+.hr-tenants,
+.hr-commons {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.hr-front,
+.hr-tenant {
+  flex: 0 0 132px;
+  min-height: 176px;
+  border: 0;
+  border-radius: 16px;
+  background-color: #f3e6c8;
+  background-repeat: no-repeat;
+  background-position: center 12px;
+  background-size: 72px 90px;
+  color: #24180f;
+  font: 800 13px/1.2 Outfit, Inter, sans-serif;
+  padding: 108px 8px 10px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.hr-front small,
+.hr-tenant small,
+.hr-common small {
+  display: block;
+  font-weight: 650;
+  color: #5c4632;
+}
+
+.hr-front.is-on,
+.hr-tenant.is-on {
+  outline: 3px solid #e0a322;
+}
+
+.hr-front.is-you {
+  box-shadow: inset 0 0 0 3px #2f9e57;
+}
+
+.hr-front.is-mad {
+  box-shadow: inset 0 -6px 0 #c4363a;
+}
+
+.hr-common {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 64px;
+  border: 0;
+  background: transparent;
+  color: #24180f;
+  font: 800 13px/1.15 Outfit, Inter, sans-serif;
+  text-align: left;
+  cursor: pointer;
+}
+
+.hr-seal {
+  width: 42px;
+  height: 60px;
+  background: url("/games/holiday-rush/objects/ui/stamp_0.png") center / contain no-repeat;
+  flex: 0 0 auto;
+}
+
+.hr-common.is-on .hr-seal {
+  background-image: url("/games/holiday-rush/objects/ui/stamp_1.png");
+}

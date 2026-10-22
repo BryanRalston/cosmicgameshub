@@ -75,6 +75,13 @@
     return clamp(1 - (m - 1) * econ.priceElasticity, 0.42, 1.22);
   }
 
+  function shelfReaction(item, price, roll) {
+    if (!item) return { act: 'take' };
+    if (priceDemand(item, price) === 0) return { act: 'refuse', bubble: 'price' };
+    if (markup(item, price) > 1.2 && roll < 0.55) return { act: 'grumble', bubble: 'price', patience: 0.72 };
+    return { act: 'take' };
+  }
+
   function priceHint(item, price) {
     var m = markup(item, price);
     if (m >= 1.45) return 'They will not pay this.';
@@ -306,7 +313,11 @@
     if (books.loan && books.loan.left > 0) {
       loanPay = Math.min(books.loan.payment, books.loan.remaining);
     }
-    var profit = sales - cogs - wages - rent - loanPay;
+    var leaseIn = 0;
+    if (books.mall && books.mall.leases && root.HRParts.world && root.HRParts.world.income) {
+      leaseIn = root.HRParts.world.income(books);
+    }
+    var profit = sales - cogs - wages - rent - loanPay + leaseIn;
     books.cash = Math.round((books.cash || 0) + profit);
     if (books.loan && loanPay > 0) {
       books.loan.remaining -= loanPay;
@@ -345,6 +356,7 @@
       wages: wages,
       rent: rent,
       loanPay: loanPay,
+      leaseIn: leaseIn,
       profit: profit,
       cash: books.cash,
       reputation: Math.round(books.reputation * 100) / 100,
@@ -757,6 +769,16 @@
     if (broke.ok) fail('price floor');
     var steep = setPrice(blankBooks(), 'cocoa', 26);
     if (!steep.ok) fail('msrp');
+    var cocoa = data.get().items.byId.cocoa;
+    var refused = shelfReaction(cocoa, Math.round(cocoa.msrp * 1.45), 0);
+    if (refused.act !== 'refuse') fail('refuse');
+    if (shelfReaction(cocoa, cocoa.msrp, 0).act !== 'take') fail('take');
+    if (shelfReaction(cocoa, Math.round(cocoa.msrp * 1.3), 0.1).act !== 'grumble') fail('grumble');
+    if (shelfReaction(cocoa, Math.round(cocoa.msrp * 1.3), 0.9).act !== 'take') fail('grumble pass');
+    var leased = blankBooks();
+    leased.mall = { leases: { a: { rentPaid: 400 } } };
+    var withRent = closeShift(leased, { sales: 7500, cogs: 3750, wages: 520, walkouts: 0, checkouts: 30, stockouts: 0, goalPct: 1 });
+    if (withRent.profit !== 3410 || withRent.leaseIn !== 400) fail('lease profit ' + withRent.profit);
     return { ok: reasons.length === 0, reason: reasons.join('; '), mean: Math.round(mean * 10) / 10 };
   }
 
@@ -774,6 +796,9 @@
     shiftUse: shiftUse,
     caseCost: caseCost,
     priceOf: priceOf,
+    priceDemand: priceDemand,
+    markup: markup,
+    shelfReaction: shelfReaction,
     priceHint: priceHint,
     bounds: bounds,
     availableItems: availableItems,

@@ -1,6 +1,20 @@
 {
-  "phase": "roadmap",
+  "phase": "play",
   "name": "Holiday Rush Mall",
+  "commonCosts": {
+    "decor": 800,
+    "security": 900,
+    "parking": 700,
+    "foodcourt": 1200,
+    "events": 600
+  },
+  "commonNames": {
+    "decor": "Decor",
+    "security": "Security",
+    "parking": "Parking lights",
+    "foodcourt": "Food court",
+    "events": "Holiday event"
+  },
   "slots": [
     {"id": "flagship", "kind": "player", "name": "Your mart"},
     {"id": "a", "kind": "lease", "name": "Unit A"},
