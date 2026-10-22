@@ -2585,29 +2585,55 @@
   function buildMixGraph(ctx) {
     var now = ctx.currentTime || 0;
     var comp = ctx.createDynamicsCompressor();
-    comp.threshold.setValueAtTime(-10, now);
-    comp.knee.setValueAtTime(8, now);
-    comp.ratio.setValueAtTime(3, now);
-    comp.attack.setValueAtTime(0.004, now);
-    comp.release.setValueAtTime(0.16, now);
+    comp.threshold.setValueAtTime(-8, now);
+    comp.knee.setValueAtTime(6, now);
+    comp.ratio.setValueAtTime(2.4, now);
+    comp.attack.setValueAtTime(0.008, now);
+    comp.release.setValueAtTime(0.2, now);
     var shelf = ctx.createBiquadFilter();
     shelf.type = 'highshelf';
-    shelf.frequency.value = 4800;
-    shelf.gain.value = -6;
+    shelf.frequency.value = 5600;
+    shelf.gain.value = -3.5;
     var musicLp = ctx.createBiquadFilter();
     musicLp.type = 'lowpass';
-    musicLp.frequency.value = 3400;
-    musicLp.Q.value = 0.45;
+    musicLp.frequency.value = 5200;
+    musicLp.Q.value = 0.4;
     var music = ctx.createGain();
     music.gain.setValueAtTime(1, now);
+    var lift = ctx.createGain();
+    lift.gain.setValueAtTime(1, now);
     var sfx = ctx.createGain();
-    sfx.gain.setValueAtTime(1, now);
+    sfx.gain.setValueAtTime(1.35, now);
+    var makeup = ctx.createGain();
+    makeup.gain.setValueAtTime(2.5, now);
     music.connect(musicLp);
-    musicLp.connect(shelf);
+    musicLp.connect(lift);
+    lift.connect(shelf);
     sfx.connect(shelf);
-    shelf.connect(comp);
+    shelf.connect(makeup);
+    makeup.connect(comp);
     comp.connect(ctx.destination);
-    return { music: music, sfx: sfx, comp: comp };
+    return { music: music, sfx: sfx, lift: lift, comp: comp };
+  }
+
+  function mixDrone(ctx, dest, start, dur, rushAt) {
+    var freqs = [196, 246.94, 293.66];
+    var vols = [0.042, 0.02, 0.016];
+    for (var i = 0; i < freqs.length; i++) {
+      var o = ctx.createOscillator();
+      var g = ctx.createGain();
+      o.type = i === 2 ? 'triangle' : 'sine';
+      o.frequency.setValueAtTime(freqs[i], start);
+      g.gain.setValueAtTime(vols[i], start);
+      if (rushAt != null) {
+        g.gain.setValueAtTime(vols[i], rushAt);
+        g.gain.linearRampToValueAtTime(vols[i] * 1.55, Math.min(start + dur, rushAt + 0.4));
+      }
+      o.connect(g);
+      g.connect(dest);
+      o.start(start);
+      if (dur) o.stop(start + dur);
+    }
   }
 
   function goertzelPower(data, i0, n, freq, rate) {
@@ -2780,6 +2806,10 @@
       mixSfx(ctx, buses.sfx, cues[c].name, cues[c].t, { combo: cues[c].name === 'combo' ? 6 : 1 });
     }
     mixCrowd(ctx, buses.music, 0, seconds, 3.2);
+    mixDrone(ctx, buses.music, 0, seconds, 3.2);
+    buses.lift.gain.setValueAtTime(1, 0);
+    buses.lift.gain.setValueAtTime(1, 3.2);
+    buses.lift.gain.linearRampToValueAtTime(1.32, 3.65);
     return ctx.startRendering().then(function (buffer) {
       var stats = analyzeMix(buffer, cues);
       if (opts.wav) stats.wavBase64 = encodeWavB64(buffer);
@@ -3000,6 +3030,8 @@
           var buses = buildMixGraph(a);
           music.master = buses.music;
           music.sfx = buses.sfx;
+          music.lift = buses.lift;
+          mixDrone(a, buses.music, a.currentTime, 0, null);
           var src = a.createBufferSource();
           src.buffer = noiseBuffer(a, 2, 11);
           src.loop = true;
@@ -3048,9 +3080,14 @@
 
     hooks.heat = function (customers, rush) {
       music.rush = !!rush;
-      if (!music.crowd || !actx || audioMuted()) return;
-      var target = Math.min(0.02, 0.005 + customers * 0.0006 + (rush ? 0.008 : 0));
-      try { music.crowd.gain.setTargetAtTime(target, actx.currentTime, 0.3); } catch (eHeat) {}
+      if (!actx || audioMuted()) return;
+      if (music.crowd) {
+        var target = Math.min(0.028, 0.008 + customers * 0.0008 + (rush ? 0.012 : 0));
+        try { music.crowd.gain.setTargetAtTime(target, actx.currentTime, 0.3); } catch (eHeat) {}
+      }
+      if (music.lift) {
+        try { music.lift.gain.setTargetAtTime(rush ? 1.32 : 1, actx.currentTime, 0.28); } catch (eLift) {}
+      }
     };
     hooks.sale = function (combo) {
       heard('scan');
@@ -4611,9 +4648,10 @@
       }
       cam.x = clamp(cam.x, 0, Math.max(0, WORLD_W - view.viewW));
       cam.y = clamp(cam.y, 0, Math.max(0, WORLD_H - view.viewH));
-      if (isQA() && els.stage) {
+      if (isQA() && els.stage && sim) {
         els.stage.dataset.cam = Math.round(cam.x) + ',' + Math.round(cam.y);
         els.stage.dataset.view = Math.round(view.viewW) + ',' + Math.round(view.viewH);
+        els.stage.dataset.paused = sim.paused ? '1' : '0';
       }
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.fillStyle = '#1a1412';
