@@ -12,229 +12,323 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>FPS Aim Trainer — CosmicGamesHub</title>
-  <meta name="description" content="Train your FPS aim. Click targets before they disappear. Track accuracy, hits per second, and personal best." />
+  <meta name="description" content="Train FPS aim in the browser. Accuracy counts misclicks only. Compare 30, 60, and 90 second runs, reaction time, and a daily seeded challenge." />
   <meta property="og:title" content="FPS Aim Trainer — CosmicGamesHub" />
-  <meta property="og:description" content="Train your FPS aim. How accurate are you?" />
+  <meta property="og:description" content="Train your FPS aim. Accuracy, reaction time, and a fair grade across every round length." />
   <meta property="og:image" content="https://www.cosmicgameshub.com/images/game-aim-trainer.jpg" />
   <link rel="canonical" href="https://www.cosmicgameshub.com/games/aim-trainer" />
   <link rel="stylesheet" href="../styles.css" />
   <style>
     .at-wrap {
-      max-width: 700px;
+      max-width: 1040px;
       margin: 0 auto;
-      padding: 0 1rem;
+      padding: 0 1rem 1rem;
     }
     .at-back {
       display: inline-flex;
       align-items: center;
       gap: 0.4rem;
-      color: var(--text-muted);
+      color: var(--text-mid, #a8a8c0);
       text-decoration: none;
       font-size: 0.85rem;
-      margin-bottom: 1rem;
+      margin-bottom: 0.75rem;
     }
-    .at-back:hover { color: var(--accent); }
-    .at-header {
-      text-align: center;
-      margin-bottom: 1rem;
-    }
+    .at-back:hover { color: var(--accent, #00d4ff); text-decoration: none; }
+    .at-header { margin-bottom: 0.75rem; }
     .at-title {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      margin: 0 0 0.25rem;
+      font-family: Outfit, Inter, system-ui, sans-serif;
+      font-size: clamp(1.6rem, 2vw, 2rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--text-hi, #eee);
+      margin: 0;
     }
     .at-subtitle {
-      color: var(--text-muted);
-      font-size: 0.85rem;
-      margin: 0;
+      margin: 0.3rem 0 0;
+      color: var(--text-mid, #a8a8c0);
+      font-size: 0.92rem;
+      max-width: 40rem;
+    }
+    .at-stage {
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+      overflow: hidden;
+      background: #12141c;
+      box-shadow: 0 18px 50px rgba(0,0,0,0.28);
     }
     .at-hud {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.5rem 0.75rem;
-      background: var(--bg-surface);
-      border: 1px solid var(--border);
-      border-radius: 10px 10px 0 0;
-      border-bottom: none;
-      gap: 0.5rem;
-      flex-wrap: wrap;
+      align-items: stretch;
+      gap: 0.35rem;
+      padding: 0.45rem 0.55rem 0.45rem 0.35rem;
+      background: rgba(255,255,255,0.03);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
     }
-    .at-hud__stat {
-      text-align: center;
-      min-width: 60px;
+    .at-hud__stats {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 0.15rem;
     }
+    .at-hud__stat { text-align: center; min-width: 0; padding: 0.15rem 0; }
+    .at-hud__stat.is-off { display: none; }
     .at-hud__val {
-      font-size: 1.15rem;
+      font-size: 1.2rem;
       font-weight: 700;
-      color: var(--text-primary);
-      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: -0.03em;
+      color: var(--text-hi, #eee);
+      font-variant-numeric: tabular-nums;
+      font-family: "SF Mono", ui-monospace, "JetBrains Mono", monospace;
+      line-height: 1.1;
     }
-    .at-hud__val--timer { color: var(--accent); }
-    .at-hud__val--acc { color: #22d36e; }
+    .at-hud__val--timer { color: var(--accent, #00d4ff); }
+    .at-hud__val--acc { color: #3dd68c; }
     .at-hud__lbl {
-      font-size: 0.65rem;
-      color: var(--text-muted);
+      margin-top: 0.12rem;
+      font-size: 0.62rem;
+      font-weight: 650;
+      color: var(--text-lo, #8b8ba3);
       text-transform: uppercase;
-      letter-spacing: 0.07em;
+      letter-spacing: 0.08em;
     }
+    .at-pause {
+      flex: 0 0 auto;
+      align-self: center;
+      min-width: 44px;
+      min-height: 44px;
+      padding: 0 0.85rem;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.04);
+      color: var(--text-hi, #fff);
+      font: 650 0.82rem/1 Inter, system-ui, sans-serif;
+      cursor: pointer;
+    }
+    .at-pause:hover { border-color: var(--accent, #00d4ff); color: var(--accent, #00d4ff); }
     .at-canvas-wrap {
       position: relative;
-      border: 1px solid var(--border);
-      border-radius: 0 0 10px 10px;
-      overflow: hidden;
-      background: #07070f;
+      background: #10131a;
       cursor: crosshair;
-    }
-    html { overflow-x: hidden; }
-    #atCanvas {
-      display: block;
-      width: 100%;
       touch-action: none;
+      user-select: none;
     }
-    .at-btn, .at-mode-btn, .at-result-btn-sec {
-      min-height: 44px;
-    }
-    .at-mode-btn { padding: 0.55rem 1.05rem; }
-    @media (max-width: 480px) {
-      main { padding: 0.35rem 0 1.25rem !important; }
-      .at-back { display: none; }
-      .at-header { margin-bottom: 0.35rem; }
-      .at-title { font-size: 1.1rem; }
-      .at-subtitle { display: none; }
-      .at-wrap { padding: 0 0.5rem; max-width: 100%; }
-      .at-hud { padding: 0.35rem 0.5rem; gap: 0.25rem; }
-      .at-hud__val { font-size: 1rem; }
-      .rg-section { margin-top: 1rem; padding-top: 1.25rem; }
-    }
+    #atCanvas { display: block; width: 100%; touch-action: none; }
     .at-overlay {
       position: absolute;
       inset: 0;
+      z-index: 5;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      background: rgba(7,7,15,0.92);
-      backdrop-filter: blur(4px);
-      overflow-y: auto;
+      justify-content: safe center;
+      overflow: auto;
+      overscroll-behavior: contain;
+      background: rgba(10,12,18,0.72);
+      backdrop-filter: blur(18px) saturate(1.2);
+      -webkit-backdrop-filter: blur(18px) saturate(1.2);
     }
     .at-overlay.hidden { display: none; }
-    .at-overlay__title {
-      font-size: 1.6rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      margin-bottom: 0.5rem;
-    }
-    .at-overlay__sub {
-      color: var(--text-muted);
-      font-size: 0.875rem;
-      margin-bottom: 1.5rem;
-      text-align: center;
-      max-width: 280px;
-    }
-    .at-overlay__mode {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-    .at-mode-btn {
-      padding: 0.45rem 1rem;
-      border-radius: 6px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      border: 1px solid rgba(255,255,255,0.12);
+    .at-shield {
+      position: absolute;
+      inset: 0;
+      z-index: 4;
       background: transparent;
-      color: var(--text-secondary);
-      font-family: inherit;
-      transition: background 0.15s, border-color 0.15s, color 0.15s;
     }
-    .at-mode-btn.active, .at-mode-btn:hover {
-      background: rgba(34,211,238,0.12);
-      border-color: var(--accent);
-      color: var(--accent);
+    .at-shield.hidden { display: none; }
+    .at-panel {
+      width: min(520px, 100%);
+      margin: 0 auto;
+      padding: 1.15rem 1rem 1.25rem;
+      text-align: center;
+    }
+    .at-banner {
+      margin: 0 0 0.75rem;
+      padding: 0.55rem 0.75rem;
+      border-radius: 12px;
+      background: rgba(0,212,255,0.1);
+      color: var(--text-hi, #fff);
+      font-size: 0.82rem;
+    }
+    .at-banner[hidden] { display: none; }
+    .at-kicker {
+      margin: 0 0 0.35rem;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent, #00d4ff);
+    }
+    .at-blurb, .at-note, .at-best, .at-formula, .at-share-msg {
+      color: var(--text-mid, #b7b7cc);
+      font-size: 0.84rem;
+      line-height: 1.45;
+      margin: 0.45rem 0;
+    }
+    .at-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      justify-content: center;
+      margin: 0.7rem 0;
+    }
+    .at-chip, .at-btn, .at-btn-sec, .at-settings summary {
+      min-height: 44px;
+      font-family: Inter, system-ui, sans-serif;
+      cursor: pointer;
+    }
+    .at-chip {
+      padding: 0.4rem 0.9rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.03);
+      color: var(--text-mid, #c8c8dc);
+      font-size: 0.84rem;
+      font-weight: 650;
+    }
+    .at-chip.is-on, .at-chip[aria-pressed="true"] {
+      background: rgba(0,212,255,0.14);
+      border-color: var(--accent, #00d4ff);
+      color: var(--accent, #00d4ff);
+    }
+    .at-chip:disabled { opacity: 0.7; cursor: default; }
+    .at-btn, .at-btn-sec {
+      border-radius: 12px;
+      padding: 0.65rem 1.1rem;
+      font-size: 0.95rem;
+      font-weight: 700;
     }
     .at-btn {
-      padding: 0.7rem 1.8rem;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: 700;
-      cursor: pointer;
-      border: none;
-      font-family: inherit;
-      background: var(--accent);
-      color: #000;
-      transition: opacity 0.15s;
+      border: 0;
+      background: var(--accent, #00d4ff);
+      color: #061016;
     }
-    .at-btn:hover { opacity: 0.9; }
-    .at-result-panel {
-      text-align: center;
-      padding: 1rem;
-      width: 100%;
-      max-width: 360px;
+    .at-btn:hover { filter: brightness(1.05); }
+    .at-btn-sec {
+      border: 1px solid rgba(255,255,255,0.14);
+      background: transparent;
+      color: var(--text-hi, #fff);
     }
-    .at-grade {
-      font-size: 3.5rem;
-      font-weight: 900;
-      line-height: 1;
-      margin-bottom: 0.25rem;
+    .at-btn-sec:hover { border-color: var(--accent, #00d4ff); color: var(--accent, #00d4ff); }
+    .at-actions {
+      position: sticky;
+      bottom: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: center;
+      padding: 0.75rem 0 0.2rem;
+      background: linear-gradient(to top, rgba(10,12,18,0.96), rgba(10,12,18,0.88) 68%, transparent);
     }
-    .at-grade--S { color: #ffd700; text-shadow: 0 0 20px rgba(255,215,0,0.5); }
-    .at-grade--A { color: #22d36e; }
-    .at-grade--B { color: var(--accent); }
-    .at-grade--C { color: #a78bfa; }
-    .at-grade--D { color: #f97316; }
-    .at-grade--F { color: #ef4444; }
-    .at-result-avg {
-      font-size: 1.2rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      margin-bottom: 0.15rem;
+    .at-settings { margin-top: 0.8rem; text-align: left; }
+    .at-settings summary {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-mid, #c8c8dc);
+      font-size: 0.84rem;
+      font-weight: 650;
+      list-style: none;
     }
-    .at-result-desc {
+    .at-settings summary::-webkit-details-marker { display: none; }
+    .at-set-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.45rem 0.6rem;
+      margin-top: 0.55rem;
+      color: var(--text-mid, #c8c8dc);
       font-size: 0.8rem;
-      color: var(--text-muted);
-      margin-bottom: 1rem;
     }
-    .at-result-rows {
-      border-top: 1px solid rgba(255,255,255,0.06);
-      margin-bottom: 1rem;
+    .at-seg { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+    .at-history { margin-top: 0.8rem; }
+    .at-history[hidden], .at-heat[hidden], .at-share-msg[hidden], .at-streak[hidden] { display: none !important; }
+    #spark { width: min(240px, 100%); height: 36px; display: block; margin: 0 auto; }
+    .at-grade {
+      font-family: Outfit, Inter, system-ui, sans-serif;
+      font-size: 4.4rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 0.9;
+      margin: 0;
+    }
+    .at-grade--S { color: #ffe14a; }
+    .at-grade--A { color: #3dd68c; }
+    .at-grade--B { color: var(--accent, #00d4ff); }
+    .at-grade--C { color: #c4b5fd; }
+    .at-grade--D { color: #fb923c; }
+    .at-grade--F { color: #f87171; }
+    .at-hero {
+      margin: 0.35rem 0 0;
+      font-family: Outfit, Inter, system-ui, sans-serif;
+      font-size: 1.35rem;
+      font-weight: 750;
+      letter-spacing: -0.03em;
+      color: var(--text-hi, #fff);
+    }
+    .at-new {
+      margin: 0 0 0.25rem;
+      color: #ffe14a;
+      font-size: 0.86rem;
+      font-weight: 700;
+    }
+    .at-new[hidden] { display: none; }
+    .at-rows {
+      margin: 0.7rem 0;
+      text-align: left;
+      border-top: 1px solid rgba(255,255,255,0.08);
     }
     .at-result-row {
       display: flex;
       justify-content: space-between;
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      padding: 0.3rem 0;
-      border-bottom: 1px solid rgba(255,255,255,0.04);
+      gap: 1rem;
+      padding: 0.38rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      color: var(--text-mid, #b7b7cc);
+      font-size: 0.84rem;
     }
-    .at-result-row span:last-child { color: var(--text-primary); font-family: 'JetBrains Mono', monospace; }
-    .at-result-btns { display: flex; gap: 0.6rem; justify-content: center; flex-wrap: wrap; }
-    .at-result-btn-sec {
-      padding: 0.55rem 1.2rem;
-      border-radius: 8px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      background: transparent;
-      border: 1px solid rgba(255,255,255,0.14);
-      color: var(--text-secondary);
-      font-family: inherit;
+    .at-result-row span:last-child {
+      color: var(--text-hi, #fff);
+      font-variant-numeric: tabular-nums;
+      font-family: ui-monospace, "SF Mono", monospace;
     }
-    .at-best-line {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      margin-top: 0.75rem;
-      text-align: center;
+    .at-heat {
+      width: 100%;
+      height: 110px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.08);
+      margin: 0.4rem 0;
     }
-    .at-best-line span { color: var(--accent); font-family: 'JetBrains Mono', monospace; }
-    .at-new-best {
-      font-size: 0.8rem;
-      color: #ffd700;
-      margin-bottom: 0.5rem;
+    .at-share-link {
+      width: 100%;
+      margin-top: 0.35rem;
+      padding: 0.55rem 0.7rem;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(0,0,0,0.28);
+      color: var(--text-hi, #fff);
+      font: 500 0.75rem/1.4 ui-monospace, monospace;
+    }
+    .at-streak { color: var(--accent, #00d4ff); font-weight: 700; font-size: 0.88rem; margin: 0.2rem 0; }
+    button:focus-visible, summary:focus-visible, .at-share-link:focus-visible {
+      outline: 2px solid var(--accent, #00d4ff);
+      outline-offset: 2px;
+    }
+    @media (max-width: 720px) {
+      .at-hud__stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @media (max-width: 480px) {
+      main { padding: 0.35rem 0 1.25rem !important; }
+      .at-back, .at-subtitle { display: none; }
+      .at-wrap { padding: 0 0.5rem; }
+      .at-header { margin-bottom: 0.4rem; }
+      .at-title { font-size: 1.15rem; }
+      .at-hud { padding: 0.3rem; }
+      .at-hud__val { font-size: 1rem; }
+      .at-panel { padding: 0.85rem 0.65rem 1rem; }
+      .at-grade { font-size: 3.4rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .at-chip, .at-btn, .at-btn-sec, .at-pause { transition: none; }
     }
   </style>
   <script type="application/ld+json">
@@ -242,7 +336,7 @@
   "@context": "https://schema.org",
   "@type": "VideoGame",
   "name": "FPS Aim Trainer",
-  "description": "Train your FPS aim. Click targets before they disappear. Track accuracy, hits per second, and personal best.",
+  "description": "Train your FPS aim. Accuracy counts misclicks only. Track reaction time and a fair grade across 30, 60, and 90 second runs.",
   "url": "https://www.cosmicgameshub.com/games/aim-trainer",
   "image": "https://www.cosmicgameshub.com/images/game-aim-trainer.jpg",
   "genre": "Action",
@@ -265,7 +359,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:site" content="@CosmicGamesHub">
   <meta name="twitter:title" content="FPS Aim Trainer — CosmicGamesHub">
-  <meta name="twitter:description" content="Train your FPS aim. Click targets before they disappear. Track accuracy, hits per second, and personal best.">
+  <meta name="twitter:description" content="Train your FPS aim. Accuracy, reaction time, and a fair grade across every round length.">
   <meta name="twitter:image" content="https://www.cosmicgameshub.com/images/game-aim-trainer.jpg">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="CosmicGamesHub">
@@ -295,85 +389,152 @@
   </div>
 </nav>
 
-<main style="padding: 1.5rem 0 4rem;">
+<main style="padding: 1rem 0 3rem;">
   <div class="at-wrap">
     <a href="/games" class="at-back">← Back to Games</a>
-    <div class="at-header">
-      <h1 class="at-title">🎯 FPS Aim Trainer</h1>
-      <p class="at-subtitle">Tap targets before they expire · Esc pauses · Enter after a round returns to start</p>
-    </div>
+    <header class="at-header">
+      <h1 class="at-title">Aim Trainer</h1>
+      <p class="at-subtitle">Accuracy uses misclicks only. Expired targets are separate. Esc pauses. R restarts.</p>
+    </header>
 
-    <!-- HUD -->
-    <div class="at-hud">
-      <div class="at-hud__stat">
-        <div class="at-hud__val at-hud__val--timer" id="hudTimer">30</div>
-        <div class="at-hud__lbl">Time</div>
-      </div>
-      <div class="at-hud__stat">
-        <div class="at-hud__val" id="hudHits">0</div>
-        <div class="at-hud__lbl">Hits</div>
-      </div>
-      <div class="at-hud__stat">
-        <div class="at-hud__val" id="hudMisses">0</div>
-        <div class="at-hud__lbl">Misses</div>
-      </div>
-      <div class="at-hud__stat">
-        <div class="at-hud__val at-hud__val--acc" id="hudAcc">—</div>
-        <div class="at-hud__lbl">Accuracy</div>
-      </div>
-    </div>
-
-    <!-- Canvas -->
-    <div class="at-canvas-wrap" id="atCanvasWrap">
-      <canvas id="atCanvas"></canvas>
-
-      <!-- Start overlay -->
-      <div class="at-overlay" id="startOverlay">
-        <div class="at-overlay__title">🎯 Aim Trainer</div>
-        <div class="at-overlay__sub">Tap every target before it disappears. How many can you hit in time?</div>
-        <div class="at-overlay__mode">
-          <button class="at-mode-btn active" data-dur="30" id="mode30">30s</button>
-          <button class="at-mode-btn" data-dur="60" id="mode60">60s</button>
-          <button class="at-mode-btn" data-dur="90" id="mode90">90s</button>
+    <div class="at-stage">
+      <div class="at-hud">
+        <div class="at-hud__stats">
+          <div class="at-hud__stat" id="statTime">
+            <div class="at-hud__val at-hud__val--timer" id="hudTime">30</div>
+            <div class="at-hud__lbl" id="hudTimeLbl">Time</div>
+          </div>
+          <div class="at-hud__stat" id="statScore">
+            <div class="at-hud__val" id="hudScore">0</div>
+            <div class="at-hud__lbl" id="hudScoreLbl">Score</div>
+          </div>
+          <div class="at-hud__stat" id="statHits">
+            <div class="at-hud__val" id="hudHits">0</div>
+            <div class="at-hud__lbl" id="hudHitsLbl">Hits</div>
+          </div>
+          <div class="at-hud__stat" id="statMiss">
+            <div class="at-hud__val" id="hudMiss">0</div>
+            <div class="at-hud__lbl" id="hudMissLbl">Misclick</div>
+          </div>
+          <div class="at-hud__stat" id="statExp">
+            <div class="at-hud__val" id="hudExp">0</div>
+            <div class="at-hud__lbl" id="hudExpLbl">Expired</div>
+          </div>
+          <div class="at-hud__stat" id="statAcc">
+            <div class="at-hud__val at-hud__val--acc" id="hudAcc">—</div>
+            <div class="at-hud__lbl" id="hudAccLbl">Accuracy</div>
+          </div>
         </div>
-        <button class="at-btn" id="btnStart">Start</button>
-        <div class="at-best-line" id="startBestLine"></div>
+        <button type="button" class="at-pause" id="btnPause" hidden>Pause</button>
       </div>
 
-      <!-- Results overlay -->
-      <div class="at-overlay hidden" id="resultOverlay">
-        <div class="at-result-panel">
-          <div class="at-new-best" id="resNewBest" style="display:none;">🥇 New personal best!</div>
-          <div class="at-grade" id="resGrade">A</div>
-          <div class="at-result-avg" id="resHits">— hits</div>
-          <div class="at-result-desc" id="resDesc"></div>
-          <div class="at-result-rows">
-            <div class="at-result-row"><span>Accuracy</span><span id="resAcc">—</span></div>
-            <div class="at-result-row"><span>Misses</span><span id="resMisses">—</span></div>
-            <div class="at-result-row"><span>Hits/sec</span><span id="resHPS">—</span></div>
-          </div>
-          <div class="at-result-btns">
-            <button class="at-btn" id="btnPlayAgain">Play Again</button>
-            <button class="at-result-btn-sec" id="btnShare">📋 Share</button>
-          </div>
-          <aside class="gear-hop gear-hop--compact" aria-label="Recommended gear">
-            <button type="button" class="gear-hop__dismiss" aria-label="Dismiss gear suggestion" onclick="var h=this.closest('.gear-hop'); h.hidden=true; h.style.display='none';">&times;</button>
-            <div class="gear-hop__eyebrow">Upgrade Your Mouse</div>
-            <div class="gear-hop__name">Logitech G Pro X Superlight 2 DEX</div>
-            <p class="gear-hop__blurb">You just trained aim. One hop to the Valorant mice guide, or the Superlight listing we already use.</p>
-            <div class="gear-hop__actions">
-              <a href="/guides/best-gaming-mouse-for-valorant-2026" class="btn btn--outline">Valorant mouse guide →</a>
-              <a href="https://www.amazon.com/dp/B0DG2XJPTC?tag=cosmicgameshu-20" class="btn btn--amazon-sm" target="_blank" rel="nofollow sponsored noopener">Check price on Amazon</a>
+      <div class="at-canvas-wrap" id="atCanvasWrap">
+        <canvas id="atCanvas" aria-label="Aim trainer playfield"></canvas>
+        <div class="at-shield hidden" id="countShield"></div>
+
+        <div class="at-overlay" id="startOverlay">
+          <div class="at-panel">
+            <p class="at-kicker">Train</p>
+            <p class="at-banner" id="atBanner" hidden></p>
+            <div class="at-chips" id="modeList" role="group" aria-label="Mode"></div>
+            <p class="at-blurb" id="modeBlurb"></p>
+            <div class="at-chips" id="durList" role="group" aria-label="Duration"></div>
+            <button type="button" class="at-btn" id="btnStart">Start</button>
+            <p class="at-note">Accuracy is hits divided by hits plus misclicks. Leaving a target to expire does not lower it.</p>
+            <p class="at-best" id="startBest"></p>
+            <div class="at-history" id="atHistory" hidden>
+              <svg id="spark" viewBox="0 0 240 36" aria-hidden="true"></svg>
+              <p class="at-note" id="histNote"></p>
             </div>
-          </aside>
+            <details class="at-settings" id="atSettings">
+              <summary>Settings</summary>
+              <div class="at-set-row">
+                <span>Size</span>
+                <div class="at-seg" data-set="size" role="group" aria-label="Target size">
+                  <button type="button" class="at-chip" data-value="sm">S</button>
+                  <button type="button" class="at-chip" data-value="md">M</button>
+                  <button type="button" class="at-chip" data-value="lg">L</button>
+                </div>
+              </div>
+              <div class="at-set-row">
+                <span>Crosshair</span>
+                <div class="at-seg" data-set="crosshair" role="group" aria-label="Crosshair">
+                  <button type="button" class="at-chip" data-value="off">Off</button>
+                  <button type="button" class="at-chip" data-value="dot">Dot</button>
+                  <button type="button" class="at-chip" data-value="cross">Cross</button>
+                </div>
+              </div>
+              <div class="at-set-row">
+                <span>Colors</span>
+                <div class="at-seg" data-set="palette" role="group" aria-label="Color palette">
+                  <button type="button" class="at-chip" data-value="classic">Standard</button>
+                  <button type="button" class="at-chip" data-value="safe">Colorblind</button>
+                </div>
+              </div>
+              <div class="at-set-row">
+                <span>Motion</span>
+                <div class="at-seg" data-set="motion" role="group" aria-label="Motion">
+                  <button type="button" class="at-chip" data-value="auto">System</button>
+                  <button type="button" class="at-chip" data-value="reduce">Reduced</button>
+                </div>
+              </div>
+              <div class="at-set-row">
+                <span>Sound</span>
+                <button type="button" class="at-chip" id="btnMute" aria-pressed="false">Sound on</button>
+              </div>
+            </details>
+          </div>
+        </div>
+
+        <div class="at-overlay hidden" id="pauseOverlay" role="dialog" aria-label="Paused">
+          <div class="at-panel">
+            <p class="at-kicker">Paused</p>
+            <h2 class="at-hero">Targets are frozen</h2>
+            <p class="at-blurb">Time is stopped, including while this tab is hidden. Tap to resume.</p>
+            <button type="button" class="at-btn" id="btnResume">Resume</button>
+            <div style="height:0.6rem"></div>
+            <button type="button" class="at-btn-sec" id="btnModes">Change mode</button>
+            <div style="height:0.6rem"></div>
+            <button type="button" class="at-btn-sec" id="btnMutePause" aria-pressed="false">Sound on</button>
+          </div>
+        </div>
+
+        <div class="at-overlay hidden" id="resultOverlay" role="region" aria-label="Results">
+          <div class="at-panel">
+            <p class="at-new" id="resNewBest" hidden>New personal best</p>
+            <p class="at-grade" id="resGrade">A</p>
+            <p class="at-hero" id="resHero">—</p>
+            <p class="at-blurb" id="resDesc"></p>
+            <p class="at-streak" id="resStreak" hidden></p>
+            <div class="at-rows" id="resRows"></div>
+            <canvas class="at-heat" id="resHeat" aria-label="Click map"></canvas>
+            <p class="at-note" id="resRegion" hidden></p>
+            <p class="at-note" id="resEstimate" hidden></p>
+            <p class="at-formula" id="resFormula"></p>
+            <aside class="gear-hop gear-hop--compact" aria-label="Recommended gear">
+              <button type="button" class="gear-hop__dismiss" aria-label="Dismiss gear suggestion" onclick="var h=this.closest('.gear-hop'); h.hidden=true; h.style.display='none';">&times;</button>
+              <div class="gear-hop__eyebrow">Upgrade Your Mouse</div>
+              <div class="gear-hop__name">Logitech G Pro X Superlight 2 DEX</div>
+              <p class="gear-hop__blurb">You just trained aim. One hop to the Valorant mice guide, or the Superlight listing we already use.</p>
+              <div class="gear-hop__actions">
+                <a href="/guides/best-gaming-mouse-for-valorant-2026" class="btn btn--outline">Valorant mouse guide →</a>
+                <a href="https://www.amazon.com/dp/B0DG2XJPTC?tag=cosmicgameshu-20" class="btn btn--amazon-sm" target="_blank" rel="nofollow sponsored noopener">Check price on Amazon</a>
+              </div>
+            </aside>
+            <div class="at-actions">
+              <button type="button" class="at-btn" id="btnPlayAgain">Play Again</button>
+              <button type="button" class="at-btn-sec" id="btnRetry">Same targets</button>
+              <button type="button" class="at-btn-sec" id="btnShare">Share</button>
+              <button type="button" class="at-btn-sec" id="btnCard">Save card</button>
+            </div>
+            <input class="at-share-link" id="atShareLink" readonly aria-label="Challenge link" />
+            <p class="at-share-msg" id="atShareMsg" hidden aria-live="polite"></p>
+          </div>
         </div>
       </div>
     </div>
-
-    <div class="at-best-line" id="bottomBestLine" style="margin-top:0.5rem;"></div>
   </div>
 </main>
-
 
 <section class="rg-section">
   <div class="container">
@@ -429,395 +590,10 @@
       <p>© 2026 CosmicGamesHub. <a href="/games">← More Games</a></p>
     </div>
   </div>
-
 </footer>
 
-<script>
-(function() {
-  const BEST_KEY_PREFIX = 'at_best_';
-  const canvas = document.getElementById('atCanvas');
-  const ctx = canvas.getContext('2d');
-  const wrap = document.getElementById('atCanvasWrap');
-  const startOverlay = document.getElementById('startOverlay');
-  const resultOverlay = document.getElementById('resultOverlay');
-  const hudTimer = document.getElementById('hudTimer');
-  const hudHits = document.getElementById('hudHits');
-  const hudMisses = document.getElementById('hudMisses');
-  const hudAcc = document.getElementById('hudAcc');
-
-  function usableCanvasH() {
-    const nav = document.querySelector('.nav');
-    const hud = document.querySelector('.at-hud');
-    const header = document.querySelector('.at-header');
-    const used = (nav ? nav.offsetHeight : 0) + (hud ? hud.offsetHeight : 0) + (header ? header.offsetHeight : 0) + 12;
-    if (window.innerWidth <= 480) return Math.max(280, Math.floor(window.innerHeight - used));
-    return Math.min(640, Math.max(420, Math.floor(window.innerHeight * 0.55)));
-  }
-  let CANVAS_H = usableCanvasH();
-  const TARGET_R_MIN = 22;
-  const TARGET_R_MAX = 42;
-  const TARGET_LIFE_MIN = 1200;
-  const TARGET_LIFE_MAX = 2400;
-  // Max simultaneous targets scales: 3 early → 5 at the climax.
-  function maxTargets() { return Math.round(3 + progress() * 2); }
-  const MAX_TARGETS = 3; // legacy constant, no longer used directly
-
-  let duration = 30;
-  let timeLeft = 30;
-  let hits = 0;
-  let misses = 0;
-  let targets = [];
-  let running = false;
-  let gameTimer = null;
-  let spawnTimer = null;
-  let animFrame = null;
-  let lastTs = 0;
-
-  let paused = false;
-  function initCanvas() {
-    CANVAS_H = usableCanvasH();
-    const w = wrap.clientWidth;
-    canvas.width = w * devicePixelRatio;
-    canvas.height = CANVAS_H * devicePixelRatio;
-    canvas.style.height = CANVAS_H + 'px';
-    ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
-  }
-
-  function cw() { return wrap.clientWidth; }
-  function ch() { return CANVAS_H; }
-
-  // Difficulty ramp: returns 0 at session start, 1 at the very end.
-  // Used to shrink targets, shorten lifetime, and tighten spawn intervals
-  // so the game escalates instead of feeling flat for 30s.
-  function progress() {
-    if (!duration || duration <= 0) return 0;
-    return Math.max(0, Math.min(1, 1 - timeLeft / duration));
-  }
-
-  function spawnTarget() {
-    if (!running) return;
-    if (targets.length >= maxTargets()) return;
-    const p = progress();
-    // Targets shrink from full size to 60% over the run.
-    const sizeScale = 1 - p * 0.40;
-    const rMin = TARGET_R_MIN * sizeScale;
-    const rMax = TARGET_R_MAX * sizeScale;
-    const r = rMin + Math.random() * (rMax - rMin);
-    const x = r + 10 + Math.random() * (cw() - 2 * r - 20);
-    const y = r + 10 + Math.random() * (ch() - 2 * r - 20);
-    // Lifetime shrinks 50% over the run.
-    const lifeScale = 1 - p * 0.50;
-    const life = (TARGET_LIFE_MIN + Math.random() * (TARGET_LIFE_MAX - TARGET_LIFE_MIN)) * lifeScale;
-    targets.push({ x, y, r, born: performance.now(), life, hit: false, hitAt: 0 });
-  }
-
-  function scheduleSpawn() {
-    if (!running) return;
-    const p = progress();
-    // Spawn 50% faster by end of session.
-    const delayScale = 1 - p * 0.50;
-    const delay = (300 + Math.random() * 500) * delayScale;
-    spawnTimer = setTimeout(() => {
-      spawnTarget();
-      scheduleSpawn();
-    }, delay);
-  }
-
-  function draw(ts) {
-    if (!running) return;
-    animFrame = requestAnimationFrame(draw);
-    const now = performance.now();
-
-    ctx.clearRect(0, 0, cw(), ch());
-
-    // Draw grid lines (subtle)
-    ctx.strokeStyle = 'rgba(255,255,255,0.025)';
-    ctx.lineWidth = 1;
-    for (let x = 0; x < cw(); x += 60) {
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, ch()); ctx.stroke();
-    }
-    for (let y = 0; y < ch(); y += 60) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(cw(), y); ctx.stroke();
-    }
-
-    targets = targets.filter(t => {
-      if (t.hit) {
-        const age = now - t.hitAt;
-        if (age > 300) return false;
-        const alpha = 1 - age / 300;
-        ctx.save();
-        ctx.globalAlpha = alpha;
-        ctx.strokeStyle = 'rgba(34,211,238,' + alpha + ')';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(t.x, t.y, t.r * (1 + age / 300 * 0.5), 0, Math.PI * 2);
-        ctx.stroke();
-        // hit marker cross
-        ctx.strokeStyle = 'rgba(34,211,238,' + alpha * 0.6 + ')';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(t.x - 8, t.y); ctx.lineTo(t.x + 8, t.y);
-        ctx.moveTo(t.x, t.y - 8); ctx.lineTo(t.x, t.y + 8);
-        ctx.stroke();
-        ctx.restore();
-        return true;
-      }
-
-      const age = now - t.born;
-      if (age > t.life) {
-        misses++;
-        hudMisses.textContent = misses;
-        const total = hits + misses;
-        hudAcc.textContent = Math.round(hits / total * 100) + '%';
-        return false;
-      }
-
-      const pct = age / t.life;
-      const urgency = pct > 0.7 ? (pct - 0.7) / 0.3 : 0;
-
-      // ring that shrinks as time runs out
-      const ringAlpha = 0.15 + 0.1 * Math.sin(now / 200);
-      ctx.save();
-
-      // outer glow
-      const grad = ctx.createRadialGradient(t.x, t.y, 0, t.x, t.y, t.r + 8);
-      const baseColor = urgency > 0 ? `rgba(255,${Math.round(100 - urgency * 100)},0` : 'rgba(220,50,50';
-      grad.addColorStop(0, baseColor + ',0)');
-      grad.addColorStop(1, baseColor + ',' + (0.08 + urgency * 0.15) + ')');
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.arc(t.x, t.y, t.r + 8, 0, Math.PI * 2);
-      ctx.fill();
-
-      // target fill
-      ctx.fillStyle = urgency > 0
-        ? `rgba(${Math.round(60 + urgency * 40)},${Math.round(10 - urgency * 5)},10,0.9)`
-        : 'rgba(50,8,8,0.9)';
-      ctx.beginPath();
-      ctx.arc(t.x, t.y, t.r, 0, Math.PI * 2);
-      ctx.fill();
-
-      // outer ring
-      ctx.strokeStyle = urgency > 0
-        ? `rgba(255,${Math.round(60 - urgency * 60)},0,0.9)`
-        : 'rgba(220,50,50,0.85)';
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.arc(t.x, t.y, t.r, 0, Math.PI * 2);
-      ctx.stroke();
-
-      // inner rings (classic target look)
-      ctx.strokeStyle = urgency > 0
-        ? `rgba(255,${Math.round(120 - urgency * 100)},0,0.5)`
-        : 'rgba(255,80,80,0.5)';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.arc(t.x, t.y, t.r * 0.6, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(t.x, t.y, t.r * 0.25, 0, Math.PI * 2);
-      ctx.stroke();
-
-      // center dot
-      ctx.fillStyle = urgency > 0 ? 'rgba(255,160,0,0.95)' : 'rgba(255,80,80,0.95)';
-      ctx.beginPath();
-      ctx.arc(t.x, t.y, 4, 0, Math.PI * 2);
-      ctx.fill();
-
-      // timer arc (shrinks as time runs out)
-      ctx.strokeStyle = urgency > 0 ? 'rgba(255,180,0,0.6)' : 'rgba(255,100,100,0.4)';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.arc(t.x, t.y, t.r + 5, -Math.PI / 2, -Math.PI / 2 + (1 - pct) * Math.PI * 2);
-      ctx.stroke();
-
-      ctx.restore();
-      return true;
-    });
-  }
-
-  function startGame() {
-    hits = 0; misses = 0; targets = [];
-    timeLeft = duration;
-    paused = false;
-    running = true;
-    hudTimer.textContent = timeLeft;
-    hudHits.textContent = '0';
-    hudMisses.textContent = '0';
-    hudAcc.textContent = '—';
-
-    startOverlay.classList.add('hidden');
-    resultOverlay.classList.add('hidden');
-
-    initCanvas();
-    spawnTarget(); spawnTarget();
-    scheduleSpawn();
-
-    gameTimer = setInterval(() => {
-      timeLeft--;
-      hudTimer.textContent = timeLeft;
-      if (timeLeft <= 0) endGame();
-    }, 1000);
-
-    animFrame = requestAnimationFrame(draw);
-  }
-
-  function endGame() {
-    running = false;
-    clearInterval(gameTimer);
-    clearTimeout(spawnTimer);
-    cancelAnimationFrame(animFrame);
-    ctx.clearRect(0, 0, cw(), ch());
-
-    const total = hits + misses;
-    const acc = total > 0 ? Math.round(hits / total * 100) : 0;
-    const hps = (hits / duration).toFixed(2);
-
-    hudAcc.textContent = acc + '%';
-
-    const grade = hits >= 40 ? 'S' : hits >= 30 ? 'A' : hits >= 22 ? 'B' : hits >= 14 ? 'C' : hits >= 8 ? 'D' : 'F';
-    const descs = {
-      S: 'Insane accuracy. Pro-level aim.',
-      A: 'Excellent. Top-tier FPS aim.',
-      B: 'Solid aim. Competitive ready.',
-      C: 'Average. Keep practicing.',
-      D: 'Below average. More reps needed.',
-      F: 'Keep practicing — you\'ll improve!'
-    };
-
-    document.getElementById('resGrade').textContent = grade;
-    document.getElementById('resGrade').className = 'at-grade at-grade--' + grade;
-    document.getElementById('resHits').textContent = hits + ' hits in ' + duration + 's';
-    document.getElementById('resDesc').textContent = descs[grade];
-    document.getElementById('resAcc').textContent = acc + '%';
-    document.getElementById('resMisses').textContent = misses;
-    document.getElementById('resHPS').textContent = hps;
-
-    const bestKey = BEST_KEY_PREFIX + duration;
-    const prev = parseInt(localStorage.getItem(bestKey) || '0', 10);
-    if (hits > prev) {
-      localStorage.setItem(bestKey, hits);
-      document.getElementById('resNewBest').style.display = '';
-    } else {
-      document.getElementById('resNewBest').style.display = 'none';
-    }
-
-    resultOverlay.classList.remove('hidden');
-    updateBestLines();
-  }
-
-  function updateBestLines() {
-    const best = localStorage.getItem(BEST_KEY_PREFIX + duration);
-    const txt = best ? 'Personal best (' + duration + 's): <span>' + best + ' hits</span>' : '';
-    document.getElementById('startBestLine').innerHTML = txt;
-    document.getElementById('bottomBestLine').innerHTML = txt;
-  }
-
-  // Click / tap on canvas — pointerdown unifies mouse and touch with no 300ms delay
-  canvas.style.touchAction = 'none';
-  canvas.addEventListener('pointerdown', e => {
-    if (!running) return;
-    e.preventDefault();
-    const rect = canvas.getBoundingClientRect();
-    const mx = (e.clientX - rect.left);
-    const my = (e.clientY - rect.top);
-
-    let hit = false;
-    for (let i = targets.length - 1; i >= 0; i--) {
-      const t = targets[i];
-      if (t.hit) continue;
-      const dx = mx - t.x, dy = my - t.y;
-      if (dx * dx + dy * dy <= t.r * t.r) {
-        t.hit = true;
-        t.hitAt = performance.now();
-        hits++;
-        hudHits.textContent = hits;
-        try { if (navigator.vibrate) navigator.vibrate(10); } catch (err) {}
-        const total = hits + misses;
-        hudAcc.textContent = Math.round(hits / total * 100) + '%';
-        hit = true;
-        break;
-      }
-    }
-    if (!hit) {
-      misses++;
-      hudMisses.textContent = misses;
-      const total = hits + misses;
-      hudAcc.textContent = Math.round(hits / total * 100) + '%';
-      wrap.style.boxShadow = 'inset 0 0 0 2px rgba(248,113,113,0.7)';
-      setTimeout(function () { wrap.style.boxShadow = ''; }, 90);
-    }
-  });
-
-  // Mode buttons
-  document.querySelectorAll('.at-mode-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.at-mode-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      duration = parseInt(btn.dataset.dur, 10);
-      hudTimer.textContent = duration;
-      updateBestLines();
-    });
-  });
-
-  document.getElementById('btnStart').addEventListener('click', startGame);
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && (running || paused)) {
-      if (!paused) {
-        paused = true;
-        running = false;
-        clearInterval(gameTimer);
-        clearTimeout(spawnTimer);
-        cancelAnimationFrame(animFrame);
-        hudTimer.textContent = 'II';
-      } else {
-        paused = false;
-        running = true;
-        hudTimer.textContent = timeLeft;
-        gameTimer = setInterval(function () {
-          timeLeft--;
-          hudTimer.textContent = timeLeft;
-          if (timeLeft <= 0) endGame();
-        }, 1000);
-        scheduleSpawn();
-        animFrame = requestAnimationFrame(draw);
-      }
-    }
-    if (e.key === 'Enter' && !running && resultOverlay && !resultOverlay.classList.contains('hidden')) {
-      resultOverlay.classList.add('hidden');
-      startOverlay.classList.remove('hidden');
-    }
-  });
-  document.getElementById('btnPlayAgain').addEventListener('click', () => {
-    resultOverlay.classList.add('hidden');
-    startOverlay.classList.remove('hidden');
-    hudTimer.textContent = duration;
-    hudHits.textContent = '0';
-    hudMisses.textContent = '0';
-    hudAcc.textContent = '—';
-    ctx.clearRect(0, 0, cw(), ch());
-  });
-
-  document.getElementById('btnShare').addEventListener('click', () => {
-    const acc = hits + misses > 0 ? Math.round(hits / (hits + misses) * 100) : 0;
-    const grade = hits >= 40 ? 'S' : hits >= 30 ? 'A' : hits >= 22 ? 'B' : hits >= 14 ? 'C' : hits >= 8 ? 'D' : 'F';
-    const text = '🎯 FPS Aim Trainer — ' + hits + ' hits · ' + acc + '% accuracy · Grade ' + grade + ' (' + duration + 's)\ncosmicgameshub.com/games/aim-trainer';
-    navigator.clipboard.writeText(text).then(() => {
-      const btn = document.getElementById('btnShare');
-      btn.textContent = '✓ Copied!';
-      setTimeout(() => { btn.textContent = '📋 Share'; }, 2000);
-    }).catch(() => {});
-  });
-
-  window.addEventListener('resize', () => {
-    if (!running) initCanvas();
-  });
-
-  initCanvas();
-  updateBestLines();
-})();
-</script>
-
+<script src="/games/cg-sfx.js"></script>
+<script src="/games/aim-trainer.js"></script>
 <script>
   const hamburger = document.getElementById('hamburger') || document.querySelector('.nav__hamburger');
   const navLinks = document.getElementById('navLinks');
@@ -827,6 +603,5 @@
   }); }
 </script>
 <script src="/global.js" defer></script>
-
 </body>
 </html>

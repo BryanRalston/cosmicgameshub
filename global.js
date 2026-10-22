@@ -574,6 +574,8 @@
       watchComplete('resultPanel', 'show', complete);
     } else if (slug === 'pixle') {
       watchComplete('result-modal', 'open', complete);
+    } else if (slug === 'aim-trainer') {
+      watchComplete('resultOverlay', 'show', complete);
     }
   }
 
