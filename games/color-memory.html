@@ -63,21 +63,21 @@
     }
     .cm-toolbar {
       display: flex;
-      flex-direction: row;
+      flex-wrap: wrap;
       align-items: center;
+      justify-content: center;
       gap: 8px;
       margin-bottom: 8px;
     }
     .cm-modes {
       display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
       gap: 6px;
-      overflow-x: auto;
+      flex: 1 1 16rem;
       min-width: 0;
-      scrollbar-width: none;
-      -webkit-overflow-scrolling: touch;
-      padding-bottom: 2px;
+      overflow: visible;
     }
-    .cm-modes::-webkit-scrollbar { display: none; }
     .cm-mode, .cm-tool {
       appearance: none;
       font-family: inherit;
@@ -87,6 +87,7 @@
       border-radius: 999px;
       cursor: pointer;
       border: none;
+      white-space: nowrap;
     }
     .cm-mode {
       flex: 0 0 auto;
@@ -100,7 +101,7 @@
       color: #fff;
     }
     .cm-mode:disabled { opacity: 0.45; cursor: default; }
-    .cm-tools { display: flex; gap: 6px; justify-content: flex-end; }
+    .cm-tools { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
     .cm-tool {
       padding: 0 12px;
       background: #fff;
@@ -268,20 +269,21 @@
     .cm-stage.is-over .cm-seq,
     .cm-stage.is-over .cm-hint { display: none; }
     .cm-dot {
-      width: 16px;
-      height: 16px;
-      border-radius: 4px;
-      opacity: 0.4;
-      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.12);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 8px;
-      font-weight: 700;
-      line-height: 1;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: transparent;
+      box-shadow: inset 0 0 0 1.5px #c7c7cc;
+      display: inline-block;
     }
-    .cm-dot--done { opacity: 1; }
-    .cm-dot--active { opacity: 1; outline: 2px solid #1d1d1f; outline-offset: 1px; }
+    .cm-dot--done {
+      background: #1d1d1f;
+      box-shadow: none;
+    }
+    .cm-dot--active {
+      background: #fff;
+      box-shadow: inset 0 0 0 2px #0071e3;
+    }
     .cm-live {
       display: flex;
       align-items: baseline;
@@ -361,6 +363,7 @@
       font-size: 0.78rem;
       font-weight: 700;
     }
+    .cm-new[hidden] { display: none !important; }
     .cm-scoreline {
       display: flex;
       align-items: center;
@@ -482,13 +485,22 @@
       .cm-stage { padding: 12px 10px 12px; border-radius: 22px; }
       .cm-board { width: min(280px, 100%); }
       .cm-score { font-size: 2.4rem; }
+      .cm-mode, .cm-tool { min-height: 36px; font-size: 0.78rem; padding: 0 11px; }
+      .cm-toolbar, .cm-modes { gap: 6px; }
     }
     @media (max-height: 860px) {
       main { padding-top: 0.85rem !important; }
       h1.cm-title { font-size: 1.4rem; }
       .cm-rules { margin-bottom: 0.4rem; }
-      .cm-board { width: min(248px, 100%); }
-      .cm-stage { padding-top: 12px; padding-bottom: 12px; }
+      .cm-board { width: min(188px, 100%); }
+      .cm-stage { padding-top: 8px; padding-bottom: 8px; }
+      .cm-hud { margin-bottom: 2px; }
+      .cm-hud__val { font-size: 1.15rem; }
+      .cm-mode, .cm-tool { min-height: 36px; font-size: 0.76rem; }
+      .cm-btns { margin-top: 0.3rem; }
+      .cm-replay { margin-top: 0.35rem; }
+      .cm-live { margin-top: 0.15rem; }
+      .cm-score { font-size: 2.2rem; }
     }
   </style>
   <script type="application/ld+json">
@@ -566,7 +578,7 @@
           <button type="button" class="cm-mode" role="radio" data-mode="daily">Daily</button>
         </div>
         <div class="cm-tools">
-          <button type="button" class="cm-tool" id="cmMute" aria-pressed="false">Sound</button>
+          <button type="button" class="cm-tool" id="cmMute" aria-pressed="false" aria-label="Sound on">Sound on</button>
           <button type="button" class="cm-tool" id="cmShapes" aria-pressed="true">Shapes</button>
         </div>
       </div>
@@ -1310,23 +1322,12 @@
   function buildSeqViz() {
     seqViz.replaceChildren();
     if (!isSequenceMode() || !sequence.length) return;
-    var target = -1;
-    if (inputEnabled) {
-      target = mode === 'reverse' ? sequence.length - 1 - playerIndex : playerIndex;
-    }
-    sequence.forEach(function (id, i) {
-      var pad = padById(id);
+    sequence.forEach(function (_id, i) {
       var dot = document.createElement('span');
       dot.className = 'cm-dot';
-      if (pad) {
-        dot.style.background = pad.color;
-        dot.style.color = pad.ink;
-        dot.textContent = pad.keyLabel;
-      }
       if (inputEnabled) {
-        var done = mode === 'reverse' ? i > target : i < playerIndex;
-        if (done) dot.classList.add('cm-dot--done');
-        else if (i === target) dot.classList.add('cm-dot--active');
+        if (i < playerIndex) dot.classList.add('cm-dot--done');
+        else if (i === playerIndex) dot.classList.add('cm-dot--active');
       }
       seqViz.appendChild(dot);
     });
@@ -1377,8 +1378,7 @@
     stage.classList.toggle('is-over', phase === 'over');
     shapesBtn.setAttribute('aria-pressed', shapesOn ? 'true' : 'false');
     shapesBtn.textContent = shapesOn ? 'Shapes' : 'Shapes off';
-    muteBtn.setAttribute('aria-pressed', muted ? 'true' : 'false');
-    muteBtn.textContent = muted ? 'Muted' : 'Sound';
+    paintMute();
     rulesEl.textContent = rulesFor(mode);
     hintEl.textContent = hintFor(mode);
     updateHud();
@@ -1503,7 +1503,7 @@
   function recordScore(score) {
     var bucket = slot();
     var prev = bucket.best;
-    var isNew = score > prev;
+    var isNew = score > 0 && score > prev;
     bucket.games += 1;
     bucket.sum += score;
     if (isNew) bucket.best = score;
@@ -1948,11 +1948,18 @@
   $('cmNewPattern').addEventListener('click', newPattern);
   $('cmShare').addEventListener('click', shareScore);
 
+  function paintMute() {
+    var label = muted ? 'Sound off' : 'Sound on';
+    muteBtn.setAttribute('aria-pressed', muted ? 'true' : 'false');
+    muteBtn.setAttribute('aria-label', label);
+    muteBtn.textContent = label;
+  }
+
   muteBtn.addEventListener('click', function () {
     muted = !muted;
     writeStore(MUTE_KEY, muted ? '1' : '0');
+    paintMute();
     if (!muted) unlockAudio();
-    updateChrome();
   });
 
   shapesBtn.addEventListener('click', function () {
@@ -1995,8 +2002,6 @@
     renderBoard();
     setStatus('Press Start to play', '', false);
     updateChrome();
-    var checked = stage.querySelector('.cm-mode[aria-checked="true"]');
-    if (checked && checked.scrollIntoView) checked.scrollIntoView({ inline: 'nearest', block: 'nearest' });
   })();
 })();
 </script>
