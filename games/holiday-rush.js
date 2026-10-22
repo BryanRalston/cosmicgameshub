@@ -4605,6 +4605,7 @@
     function renderSim(opts) {
       opts = opts || {};
       show('sim');
+      revealTop();
       els.modal.hidden = true;
       els.event.hidden = true;
       if (!opts.resume) applyMallRetune(sim);
