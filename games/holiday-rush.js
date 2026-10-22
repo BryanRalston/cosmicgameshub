@@ -4862,17 +4862,22 @@
       camp.seen = true;
       camp.current = run.day;
       var inBlack = !!(snap.tape && snap.tape.profit > 0);
-      if (inBlack) toast('In the black.', true);
+      var streakLine = '';
       if (!camp.playedDay || camp.playedDay !== run.ymd) {
         var streakBefore = metaGet().streak;
         var streakNow = bumpStreak(run.ymd);
         camp.playedDay = run.ymd;
         paintMeta();
-        if (streakNow && streakNow.streak > streakBefore) toast('Streak ' + streakNow.streak + '.', !inBlack);
+        if (streakNow && streakNow.lastYmd === run.ymd && streakNow.streak !== streakBefore) {
+          streakLine = 'Streak ' + streakNow.streak + '.';
+        }
         if (books && streakNow && streakNow.streak >= 3 && HR.economy && HR.economy.milestone) {
           HR.economy.milestone(books, 'streak-3');
         }
       }
+      if (inBlack && streakLine) toast('In the black. ' + streakLine, true);
+      else if (inBlack) toast('In the black.', true);
+      else if (streakLine) toast(streakLine, true);
       campaignPut(camp);
       snap.shiftStars = stars;
       snap.bestComboLabel = (snap.bestCombo || 0) > 1 ? multLabel(snap.bestCombo) : '';
@@ -5133,8 +5138,19 @@
       try { localStorage.setItem(which === 'mall' ? 'hr_coach_mall' : 'hr_coach_price', '1'); } catch (e) {}
     }
 
+    function revealTop() {
+      try {
+        document.documentElement.style.overflowAnchor = 'none';
+        document.body.style.overflowAnchor = 'none';
+        document.documentElement.style.scrollBehavior = 'auto';
+        if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      } catch (e) {}
+    }
+
     function renderShop() {
       show('shop');
+      revealTop();
       if (!books || !HR.ui) return renderShopLegacy();
       syncHires();
       var camp = campaignGet();
@@ -5190,6 +5206,7 @@
         renderShop();
         return;
       }
+      revealTop();
       HR.ui.mountMall(els.shop, {
         books: books,
         coachMall: officeCoachNeeded('mall'),
@@ -5222,6 +5239,9 @@
         },
         onBack: function () { renderShop(); }
       });
+      revealTop();
+      requestAnimationFrame(revealTop);
+      setTimeout(revealTop, 0);
     }
 
     function renderLayout() {
@@ -7377,6 +7397,7 @@
       if (Object.keys(pointers).length >= 2) return;
       if (ev.target.closest && ev.target.closest('button, .hr-card')) return;
       var phonePan = (els.canvas._cssW || window.innerWidth) < 720;
+      if (phonePan && ev.pointerType === 'touch') return;
       if (sim && !phonePan) {
         var preview = pickHit(ev);
         var at = eventWorld(ev);
@@ -7393,7 +7414,7 @@
         if (!coach) cam.follow = false;
         try { els.stage.setPointerCapture(ev.pointerId); } catch (e) {}
       }
-    });
+    }, { passive: true });
     els.stage.addEventListener('pointermove', function (ev) {
       if (pointers[ev.pointerId]) pointers[ev.pointerId] = { x: ev.clientX, y: ev.clientY };
       var ids = Object.keys(pointers);
@@ -7428,7 +7449,7 @@
       if (!cam.drag.moved) return;
       cam.x = clamp(cam.drag.cx - mx / scale, 0, Math.max(0, WORLD_W - view.viewW));
       cam.y = clamp(cam.drag.cy - my / scale, 0, Math.max(0, WORLD_H - view.viewH));
-    });
+    }, { passive: true });
     function endPan(ev) {
       if (ev && ev.pointerId != null) delete pointers[ev.pointerId];
       if (Object.keys(pointers).length < 2) cam.pinch = 0;
@@ -7702,9 +7723,9 @@
 
     root.HolidayRush._debug = {
       cam: function () { return { x: cam.x, y: cam.y, zoom: cam.zoom || 1 }; },
-      zeroFinish: function () {
+      zeroFinish: function (sales) {
         if (!isQA() || !sim) return;
-        sim.sales = 0;
+        sim.sales = sales == null ? 0 : sales;
         sim.done = true;
         finishDay();
       },

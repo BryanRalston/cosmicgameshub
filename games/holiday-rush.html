@@ -206,7 +206,7 @@
       body:has(#hr-sim:not([hidden])) .nav { display: none; }
       body:has(#hr-sim:not([hidden])) .hr-hero h1 { font-size: 1.05rem; }
       body:has(#hr-sim:not([hidden])) .hr-hud { padding: 0.15rem 0; gap: 0.45rem; }
-      .hr-stage { touch-action: pan-y; }
+      html, body, #hr-app, .hr-stage, #hr-canvas { touch-action: pan-y; }
       body:has(#hr-sim:not([hidden])) .hr-stage { height: min(64vh, 560px); }
       body:has(#hr-sim:not([hidden])) .hr-wrap { padding-bottom: 0.6rem; }
     }

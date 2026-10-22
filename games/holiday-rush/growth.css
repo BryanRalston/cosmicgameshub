@@ -310,6 +310,15 @@
   cursor: pointer;
 }
 
+.hr-front.is-kiosk {
+  flex-basis: 168px;
+  min-height: 210px;
+}
+
+.hr-front.is-kiosk small {
+  white-space: normal;
+}
+
 .hr-front small,
 .hr-tenant small,
 .hr-common small {

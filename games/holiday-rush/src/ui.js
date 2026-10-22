@@ -409,8 +409,9 @@
         '<b>' + esc(title) + '</b><small>' + esc(sub) + '</small></button>';
     }).join('');
     var kiosk = kioskStatus(books);
+    var kioskSmall = kiosk.open ? (kiosk.here ? 'This floor' : 'Open · tap to play') : kiosk.short;
     fronts += '<button type="button" class="hr-front is-kiosk' + (kiosk.open ? '' : ' is-locked') + (kiosk.here ? ' is-on' : '') + '" data-kiosk="1" id="hr-kiosk-card">' +
-      '<b>Plaza Kiosk</b><small>' + esc(kiosk.open ? (kiosk.here ? 'This floor' : 'Open · tap to play') : 'Locked') + '</small></button>';
+      '<b>Plaza Kiosk</b><small>' + esc(kioskSmall) + '</small></button>';
     var commons = data.mall.commons.map(function (id) {
       var on = (mall.commons[id] || 0) >= 1;
       var cost = world.commonCost(id);
@@ -492,8 +493,8 @@
       '<p class="hr-kicker">Mall</p><h2>' + esc(data.mall.name) + '</h2>' +
       '<p class="hr-bank">Register ' + money(books.cash) + ' · door ' + door + '%</p>' +
       '<p class="hr-lead">You still run the flagship. A leased unit posts rent at close. If the common they asked for is shut, the next shift opens with their complaint.</p>' +
-      '<div class="hr-rowfront">' + fronts + '</div>' +
       '<p class="hr-fine" id="hr-kiosk-path">' + esc(kiosk.path) + '</p>' +
+      '<div class="hr-rowfront">' + fronts + '</div>' +
       '<section class="hr-office__block"><h3>' + esc(slot.name) + '</h3>' + panel + '</section>' +
       '<section class="hr-office__block"><h3>Commons</h3><div class="hr-commons">' + commons + '</div></section>' +
       cal +
@@ -505,6 +506,7 @@
       '</div></section>' +
       '<div class="hr-cta"><button type="button" class="btn btn--primary" data-back="1">Back to the office</button></div>';
     el.onclick = function (ev) {
+      if (ev && ev.preventDefault) ev.preventDefault();
       var btn = ev.target.closest('button');
       if (!btn || btn.disabled) return;
       if (btn.hasAttribute('data-kiosk')) {
