@@ -55,6 +55,9 @@
     "worldW": 1280,
     "worldH": 900,
     "edited": false,
+    "goalMul": 0.64,
+    "spawnMul": 0.72,
+    "mechanic": "wrap",
     "owned": [{"x": 0, "y": 0, "w": 1280, "h": 900}],
     "fixtures": [
       {"id": "k_door", "type": "door", "x": 640, "y": 855},
@@ -64,6 +67,7 @@
       {"id": "k_window", "type": "gondola", "dept": "toys", "x": 260, "y": 340, "label": "WINDOW"},
       {"id": "k_wrap", "type": "gondola", "dept": "seasonal", "x": 980, "y": 340, "label": "WRAP"},
       {"id": "k_counter", "type": "cafe", "dept": "cafe", "x": 640, "y": 460, "label": "COCOA"},
+      {"id": "k_table", "type": "cafe", "dept": "cafe", "x": 470, "y": 560, "label": "TABLE"},
       {"id": "k_freight", "type": "freight", "x": 1080, "y": 200},
       {"id": "k_truck", "type": "truck", "x": 1160, "y": 130}
     ]

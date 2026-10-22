@@ -1502,6 +1502,7 @@
     if (sim.floorOn && sim.doubleUntil && sim.t < sim.doubleUntil) basket *= 2;
     sim.sales += basket;
     sim.checkouts++;
+    if (sim.mechanic === 'wrap' && sim.floorOn && sim.live && sim.rng() < 0.8) offerWrap(sim);
     sim.stock = Math.max(0, sim.stock - CONFIG.stockPerSale);
     sim.stars = clamp(sim.stars + 0.014, 1, 5);
     c.pop = 1;
@@ -1842,7 +1843,11 @@
       card.who = 'cust_biz';
       card.expr = 'impatient';
       card.title = 'District manager on the floor';
-      card.body = 'Adler from district is walking the aisles with a clipboard. Holiday Rush Mart is the stop today.';
+      var stopName = 'Holiday Rush Mart';
+      if (sim.books && sim.books.locations && sim.books.locations[sim.books.active] && sim.books.locations[sim.books.active].name) {
+        stopName = sim.books.locations[sim.books.active].name;
+      }
+      card.body = 'Adler from district is walking the aisles with a clipboard. ' + stopName + ' is the stop today.';
       card.choices = [
         choice('Hide in the office', 0, function () { sim.morale = clamp(sim.morale - 4, 0, 100); sim.stars = clamp(sim.stars - 0.12, 1, 5); }),
         choice('Point at the best aisle', 0, function () {
@@ -2068,6 +2073,7 @@
     if (id === 'bench') return 'Repair bench';
     if (id === 'cups') return 'Cup line';
     if (id === 'window') return 'Window';
+    if (id === 'wrap') return 'Gift wrap';
     return id || '';
   }
 
@@ -2131,6 +2137,10 @@
     }
     var next = sim.t + dt;
     if (next > limit) next = limit;
+    if (!(next >= sim.t)) {
+      sim._clockBack = (sim._clockBack || 0) + 1;
+      next = sim.t;
+    }
     var used = next - sim.t;
     sim.t = next;
     if (!(used > 0)) {
@@ -2193,6 +2203,7 @@
     if (sim.plazaMul && sim.plazaMul !== 1) rate *= sim.plazaMul;
     if (!sim.tenant && sim.calendarMul && sim.calendarMul !== 1) rate *= sim.calendarMul;
     if (sim.tenant && sim.tenant.spawnMul) rate *= sim.tenant.spawnMul;
+    if (sim.spawnMul) rate *= sim.spawnMul;
     if (sim.tenant && sim.tenant.mechanic === 'cups') rate *= 1.25;
     if (sim.tenant && sim.tenant.mechanic === 'window') rate *= (sim.calendarDoor > 1 ? 1.25 : 0.78);
     rate *= 0.74 + Math.min(stationPower(sim, run, 'floor'), 1.6) * 0.2;
@@ -2459,6 +2470,16 @@
   function maybeLiveBeat(sim, run) {
     if (!sim.floorOn || sim.coachHold || sim.paused || sim.pending || sim.done) return;
     if (!sim._beats) sim._beats = {};
+    if (sim._forceBus == null) sim._forceBus = previewHas('bus');
+    if (sim._forceBus && !sim._beats.bus && sim.t >= 6) {
+      var busBeat = null;
+      for (var bi = 0; bi < FLOOR_BEATS.length; bi++) if (FLOOR_BEATS[bi].id === 'bus') busBeat = FLOOR_BEATS[bi];
+      if (busBeat) {
+        sim._beats.bus = 1;
+        beatCard(sim, busBeat.id, busBeat.title, busBeat.body, busBeat.choices(sim, run));
+        return;
+      }
+    }
     var dayN = run && run.day ? run.day : 0;
     var beat = FLOOR_BEATS[dayN] || FLOOR_BEATS[dayN % FLOOR_BEATS.length];
     if (beat && !sim._beats[beat.id] && sim.t >= beat.t) {
@@ -2479,6 +2500,31 @@
       }),
       choice('Hold the tag', 0, function () { note(sim, 'The tag stays. They can grumble.'); })
     ]);
+  }
+
+  function wrapSpot() {
+    var i;
+    for (i = 0; i < SHELVES.length; i++) {
+      if (SHELVES[i].label === 'WRAP') return SHELVES[i];
+    }
+    for (i = 0; i < SHELVES.length; i++) {
+      if (SHELVES[i].label === 'TABLE' || SHELVES[i].label === 'COCOA') return SHELVES[i];
+    }
+    return SHELVES[0] || { x: 640, y: 460 };
+  }
+
+  function offerWrap(sim) {
+    if (!sim) return;
+    if (!sim.pings) sim.pings = [];
+    var open = 0;
+    for (var i = 0; i < sim.pings.length; i++) {
+      if (sim.pings[i].kind === 'wrap' && !sim.pings[i].dead) open++;
+    }
+    if (open >= 2) return;
+    var spot = wrapSpot();
+    var fee = 18 + Math.round(sim.rng() * 18);
+    sim.pings.push({ kind: 'wrap', x: spot.x, y: spot.y - 36, life: 8, pop: 1, dead: false, fee: fee });
+    floater(sim, spot.x, spot.y - 78, 'Wrap?', '#ffe08a', true);
   }
 
   function maybePing(sim) {
@@ -2504,6 +2550,16 @@
     ping.dead = true;
     ping.pop = 1;
     flashAt(sim, ping.x, ping.y);
+    if (ping.kind === 'wrap') {
+      var fee = ping.fee || 24;
+      sim.sales += fee;
+      sim.wraps = (sim.wraps || 0) + 1;
+      burstCoins(sim, ping.x, ping.y);
+      floater(sim, ping.x, ping.y - 28, 'Wrapped +$' + fee, '#ffe08a', true);
+      hooks.coin();
+      markGoal(sim, ping.x, ping.y);
+      return;
+    }
     if (ping.kind === 'basket') {
       var amt = 18 + Math.round(sim.rng() * 18);
       sim.sales += amt;
@@ -2965,6 +3021,7 @@
   }
 
   function clockLabel(t, dur) {
+    if (!(t >= 0)) t = 0;
     var hours = 8 + (dur > 0 ? t / dur : 0) * 12;
     if (hours >= 20) hours = 19.99;
     var h = Math.floor(hours);
@@ -3339,12 +3396,23 @@
     return typeof location !== 'undefined' && /(?:\?|&)qa=1(?:&|$)/.test(location.search);
   }
 
-  function previewSeed() {
-    if (typeof location === 'undefined') return '';
+  function previewSeeds() {
+    if (typeof location === 'undefined') return [];
     var host = (location.hostname || '').toLowerCase();
-    if (host === 'cosmicgameshub.com' || host === 'www.cosmicgameshub.com') return '';
-    var match = /(?:\?|&)seed=([a-z0-9_-]+)(?:&|$)/.exec(location.search || '');
-    return match ? match[1] : '';
+    if (host === 'cosmicgameshub.com' || host === 'www.cosmicgameshub.com') return [];
+    var match = /(?:\?|&)seed=([a-z0-9_,+-]+)(?:&|$)/.exec(location.search || '');
+    if (!match) return [];
+    return match[1].toLowerCase().split(/[,+]/).filter(Boolean);
+  }
+  function previewHas(id) {
+    var all = previewSeeds();
+    for (var i = 0; i < all.length; i++) if (all[i] === id) return true;
+    return false;
+  }
+  function previewSeed() {
+    if (previewHas('kiosk')) return 'kiosk';
+    var all = previewSeeds();
+    return all.length ? all[0] : '';
   }
 
   var MELODY = [392, 493.88, 587.33, 659.25, 587.33, 493.88, 440, 392, 493.88, 587.33, 659.25, 783.99, 659.25, 587.33, 493.88, 440];
@@ -3787,9 +3855,10 @@
         '#hr-event.hr-inline .hr-card p{font-size:0.72rem;line-height:1.25;margin:0 0 0.22rem;-webkit-line-clamp:2;}',
         '#hr-event.hr-inline .hr-card__art{display:none;}',
         '#hr-event.hr-inline .hr-card__timer{margin:0 0 0.2rem;}',
-        '#hr-event.hr-inline .hr-choices{flex-wrap:nowrap;gap:6px;}',
-        '#hr-event.hr-inline .hr-choices button{min-height:44px;font-size:0.74rem;padding:0.25rem 0.35rem;}',
-        '#hr-event.hr-inline .hr-choice-cost{font-size:0.58rem;padding:0.08rem 0.28rem;}',
+        '#hr-event.hr-inline{max-height:52%;}',
+        '#hr-event.hr-inline .hr-choices{flex-direction:column;flex-wrap:nowrap;gap:8px;}',
+        '#hr-event.hr-inline .hr-choices button{width:100%;flex:0 0 auto;min-height:48px;font-size:0.95rem;padding:0.45rem 0.75rem;white-space:nowrap;justify-content:flex-start;}',
+        '#hr-event.hr-inline .hr-choice-cost{font-size:0.68rem;padding:0.12rem 0.4rem;}',
         '}',
         '.hr-card__timer{height:4px;border-radius:99px;background:rgba(43,29,46,0.15);overflow:hidden;margin:0 0 0.35rem;}',
         '.hr-card__timer i{display:block;height:100%;width:100%;background:#e0a322;}',
@@ -4256,6 +4325,28 @@
       });
     }
 
+    function applyStoreTune(sim) {
+      if (!sim || !books || !HR.data || !HR.data.get()) return;
+      var pack = HR.data.get().layouts[books.active];
+      if (!pack || books.active === 'mart') return;
+      if (pack.goalMul) sim.goal = Math.max(900, Math.round((sim.goal || 0) * pack.goalMul));
+      if (pack.spawnMul) sim.spawnMul = pack.spawnMul;
+      if (pack.mechanic) sim.mechanic = pack.mechanic;
+      var loc = books.locations[books.active];
+      if (loc && books.active === 'kiosk' && !loc.leadId) loc.leadId = 'staff_reg1';
+    }
+
+    function activeStoreName() {
+      var loc = books && books.locations && books.locations[books.active];
+      return (loc && loc.name) || 'Holiday Rush Mart';
+    }
+
+    function activeLeadName() {
+      var loc = books && books.locations && books.locations[books.active];
+      if (loc && loc.leadId && HR.economy && HR.economy.nameOf) return HR.economy.nameOf(loc.leadId);
+      return 'You';
+    }
+
     function prepareFloor(index) {
       if (!books || !HR.economy || !HR.sim) return;
       HR.economy.beginShiftBooks(books);
@@ -4292,6 +4383,7 @@
         sim.cogs = 0;
         sim.stockouts = 0;
       }
+      applyStoreTune(sim);
       camp.seen = true;
       camp.current = index;
       campaignPut(camp);
@@ -4676,6 +4768,10 @@
       else paintCoach();
       paintHud();
       paintMute();
+      if (sim.mechanic === 'wrap' && !opts.resume && !sim._wrapTold) {
+        sim._wrapTold = true;
+        toast('Plaza Kiosk. Tap Wrap at the wrap table. Each gift adds to this drawer.', true);
+      }
       draw();
       saveRun();
       if (!root.__hrReadyAt) root.__hrReadyAt = root.performance ? root.performance.now() : 0;
@@ -4695,10 +4791,12 @@
       var clock = document.getElementById('hr-clock');
       var salesText = document.getElementById('hr-sales-text');
       if (!label || !salesText) return;
-      label.textContent = clockLabel(sim.t, sim.duration);
+      if (sim._clockT == null || sim.t > sim._clockT) sim._clockT = sim.t;
+      else if (sim.t < sim._clockT) sim._clockBack = (sim._clockBack || 0) + 1;
+      label.textContent = clockLabel(sim._clockT, sim.duration);
       var rushing = !!(sim._qaRush || (sim._heat && sim._heat.rush && !sim.coachHold));
       if (clock) {
-        clock.style.setProperty('--p', String(clamp(sim.t / sim.duration, 0, 1)));
+        clock.style.setProperty('--p', String(clamp(sim._clockT / sim.duration, 0, 1)));
         clock.classList.toggle('rush', rushing);
       }
       var salesLab = salesText.parentNode && salesText.parentNode.querySelector('span');
@@ -4759,9 +4857,12 @@
           } else if (els.stage.dataset.warehouse) {
             delete els.stage.dataset.warehouse;
           }
-          els.stage.dataset.mechanic = (sim.tenant && sim.tenant.mechanic) || '';
+          els.stage.dataset.mechanic = (sim.tenant && sim.tenant.mechanic) || sim.mechanic || '';
+          els.stage.dataset.goal = String(Math.round(sim.goal || 0));
+          if (sim.wraps) els.stage.dataset.wraps = String(sim.wraps);
           els.stage.dataset.calendar = sim.calendarName || '';
         els.stage.dataset.clock = label.textContent;
+        if (isQA()) els.stage.dataset.clockBack = String(sim._clockBack || 0);
         fitHud();
         if (isQA()) {
           var arches = [];
@@ -4919,8 +5020,12 @@
           goalPct: snap.goalPct
         });
         if (!firstClose) books.cash = Math.round(books.cash - prevPost);
-        else if (HR.world) {
+        else         if (HR.world) {
           snap.background = HR.world.closeBackground(books);
+        }
+        if (books.active && books.active !== 'mart') {
+          snap.storeName = activeStoreName();
+          snap.leadName = activeLeadName();
         }
         books.posted[postKey] = tape.profit;
         books.closed[postKey] = 1;
@@ -5148,6 +5253,7 @@
         '<p class="hr-thresholds">1★ ' + Math.round(CONFIG.star1 * 100) + '% · 2★ ' + Math.round(CONFIG.star2 * 100) + '% · 3★ ' + Math.round(CONFIG.star3 * 100) + '%</p>' +
         (snap.tenant ? '<p class="hr-lead">You ran ' + esc(snap.tenant) + '. Their drawer did ' + money(snap.sales) + '. You keep 15% (' + money(snap.cut || 0) + '). The other 85% stays on their tape.</p>' : '') +
         (snap.closeNote ? '<p class="hr-lead" id="hr-close-note">' + esc(snap.closeNote) + '</p>' : '') +
+        (snap.storeName ? '<p class="hr-lead" id="hr-score-store">' + esc(snap.storeName) + '. ' + esc(snap.leadName || 'You') + ' ran this floor.</p>' : '') +
         '<p class="hr-lead">Best combo ' + esc(comboBit) + ' · ' + (snap.walkouts || 0) + ' walkouts · ' + money(snap.sales) + ' / ' + money(snap.goal) + '</p>' +
         '<p class="hr-bank">' + (snap.tape ? money(snap.tape.profit) + ' profit' : (snap.earned > 0 ? '+' + money(snap.earned) + ' banked' : 'Register unchanged')) + ' · ' + money(snap.bank || 0) + ' in the register</p>' +
         '<p class="hr-fine">' + esc(bankCopy(snap)) + '</p>' +
@@ -5156,6 +5262,7 @@
         (snap.tape && snap.tape.leaseIn ? '<p class="hr-fine">Mall rent collected ' + money(snap.tape.leaseIn) + '.</p>' : '') +
         (snap.tape && snap.tape.reviews ? snap.tape.reviews.map(function (line) { return '<p class="hr-fine">“' + esc(line) + '”</p>'; }).join('') : '') +
         (snap.background && snap.background.tapes && snap.background.tapes.length ? snap.background.tapes.map(function (row) {
+          if (snap.storeName) return '<p class="hr-fine">The other floor posted ' + money(row.profit) + '.</p>';
           return '<p class="hr-fine">' + esc(row.name) + ' posted ' + money(row.profit) + (row.complaints && row.complaints[0] ? '. ' + esc(row.complaints[0]) : '.') + '</p>';
         }).join('') : '') +
         '<p class="hr-scorebig">' + snap.points + ' pts</p>' +
@@ -5835,25 +5942,48 @@
       }
       var salesLab = hud.querySelector('.hr-sales__top span');
       var salesText = document.getElementById('hr-sales-text');
+      var rushOn = hud.querySelector('#hr-rush.is-on') ? 1 : 0;
       var key = [
         hud.clientWidth,
         salesLab ? salesLab.textContent : '',
         salesText ? salesText.textContent : '',
-        hud.querySelectorAll('.hr-combo:not([hidden]), .hr-rush:not([hidden]), #hr-tenant-name').length
+        rushOn,
+        hud.querySelectorAll('.hr-combo:not([hidden]), #hr-tenant-name').length
       ].join('|');
       if (hud._fitKey === key) return;
       var extras = hud.querySelectorAll('.hr-hud__extra');
       var i;
       for (i = 0; i < extras.length; i++) extras[i].classList.remove('is-hud-off');
-      function overflows() {
+      var aisle = [];
+      var other = [];
+      for (i = 0; i < extras.length; i++) {
+        if (extras[i].classList.contains('hr-aisle') || extras[i].querySelector('#hr-aisle-text')) aisle.push(extras[i]);
+        else other.push(extras[i]);
+      }
+      var hideOrder = aisle.concat(other);
+      function crowded() {
+        var tools = hud.querySelector('.hr-hud__tools');
+        if (tools) {
+          var tb = tools.getBoundingClientRect();
+          var kids = hud.querySelectorAll('.hr-hud__stats > *');
+          for (var k = 0; k < kids.length; k++) {
+            var el = kids[k];
+            if (el.classList.contains('is-hud-off')) continue;
+            var cs = window.getComputedStyle(el);
+            if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+            var box = el.getBoundingClientRect();
+            var sameRow = box.bottom > tb.top + 4 && box.top < tb.bottom - 4;
+            if (sameRow && box.right > tb.left - 6) return true;
+          }
+        }
         return hud.scrollWidth > hud.clientWidth + 1;
       }
-      for (i = extras.length - 1; i >= 0 && overflows(); i--) extras[i].classList.add('is-hud-off');
+      for (i = hideOrder.length - 1; i >= 0 && crowded(); i--) hideOrder[i].classList.add('is-hud-off');
       hud._fitKey = key;
       if (isQA() && els.stage) {
         var weekClip = !!(salesLab && salesLab.scrollWidth > salesLab.clientWidth + 1);
         var moneyClip = !!(salesText && salesText.scrollWidth > salesText.clientWidth + 1);
-        els.stage.dataset.hudOverflow = overflows() ? '1' : '0';
+        els.stage.dataset.hudOverflow = crowded() ? '1' : '0';
         els.stage.dataset.weekClip = weekClip ? '1' : '0';
         els.stage.dataset.moneyClip = moneyClip ? '1' : '0';
         els.stage.dataset.weekText = salesLab ? salesLab.textContent : '';
@@ -6158,8 +6288,8 @@
         var ping = sim.pings[i];
         if (ping.dead) continue;
         var bob = reduceMotion ? 0 : Math.sin(Date.now() / 200 + i) * 4;
-        var icon = ping.kind === 'basket' ? 'price' : ping.kind === 'box' ? 'truck' : 'line';
-        var label = ping.kind === 'basket' ? '+$' : ping.kind === 'box' ? 'Box' : 'Help';
+        var icon = ping.kind === 'wrap' ? 'return' : ping.kind === 'basket' ? 'price' : ping.kind === 'box' ? 'truck' : 'line';
+        var label = ping.kind === 'wrap' ? 'Wrap' : ping.kind === 'basket' ? '+$' : ping.kind === 'box' ? 'Box' : 'Help';
         ctx.strokeStyle = 'rgba(224,163,34,0.85)';
         ctx.lineWidth = 3;
         ctx.beginPath();
@@ -7382,6 +7512,7 @@
       var rawMs = lastTs ? ts - lastTs : 16;
       var dt = rawMs / 1000;
       lastTs = ts;
+      if (!(dt >= 0)) dt = 0;
       if (dt > 0.05) dt = 0.05;
       if (sim) sim._frameMs = rawMs;
         if (sim && !sim.paused && !sim.done) {
@@ -7418,7 +7549,7 @@
         liveAcc += dt;
         if (liveAcc > 5 && els.live) {
           liveAcc = 0;
-          els.live.textContent = shiftLabel(run.day) + ' ' + clockLabel(sim.t, sim.duration) + ', sales ' + money(sim.sales) + ' of ' + money(sim.goal) + ', morale ' + Math.round(sim.morale) + '.';
+          els.live.textContent = shiftLabel(run.day) + ' ' + clockLabel(sim._clockT == null ? sim.t : sim._clockT, sim.duration) + ', sales ' + money(sim.sales) + ' of ' + money(sim.goal) + ', morale ' + Math.round(sim.morale) + '.';
         }
         if (hooks.heat) hooks.heat(sim.customers.length, !!(sim._heat && sim._heat.rush && !sim.coachHold));
         if (!coach && sim.done) finishDay();
@@ -7871,13 +8002,16 @@
       var saved = readJSON('hr_run_v1');
       var campBoot = campaignGet();
       var resumable = saved && saved.v === 3 && saved.ymd === ymd && saved.phase && saved.phase !== 'intro' && saved.days && saved.days.length === SHIFT_COUNT;
-      if (previewSeed() === 'kiosk' && books && HR.economy) {
-        books.cash = Math.max(books.cash || 0, 20000);
-        ['knock', 'lane', 'kiosk'].forEach(function (id) {
-          if (!HR.economy.has(books, id)) HR.economy.expand(books, id);
-        });
-        if (books.locations.kiosk && books.locations.kiosk.open) HR.economy.switchLocation(books, 'kiosk');
-        if (books.locations.mart && books.active !== 'mart') HR.economy.assignManager(books, 'mart', 'staff_mgr');
+      if ((previewHas('kiosk') || previewHas('bus')) && books && HR.economy) {
+        if (previewHas('kiosk')) {
+          books.cash = Math.max(books.cash || 0, 20000);
+          ['knock', 'lane', 'kiosk'].forEach(function (id) {
+            if (!HR.economy.has(books, id)) HR.economy.expand(books, id);
+          });
+          if (books.locations.kiosk && books.locations.kiosk.open) HR.economy.switchLocation(books, 'kiosk');
+          if (books.locations.kiosk) books.locations.kiosk.leadId = 'staff_reg1';
+          if (books.locations.mart && books.active !== 'mart') HR.economy.assignManager(books, 'mart', 'staff_mgr');
+        }
         if (HR.save) HR.save.save(writeJSON, books);
         try {
           localStorage.setItem('hr_tut_done', '1');
@@ -7894,8 +8028,12 @@
         run.phase = 'map';
         syncFloor(true);
         renderMap();
-        toast('Plaza Kiosk is unlocked. Pick a shift to play that floor.', true);
-        if (els.stage) els.stage.dataset.seed = 'kiosk';
+        var seedMsg = previewHas('kiosk')
+          ? 'Plaza Kiosk is unlocked. Pick a shift to play that floor.'
+          : 'Pick a shift. The tour bus is queued.';
+        if (previewHas('kiosk') && previewHas('bus')) seedMsg = 'Plaza Kiosk is unlocked. The tour bus is queued on this shift.';
+        toast(seedMsg, true);
+        if (els.stage) els.stage.dataset.seed = previewSeeds().join(',');
       } else if (resumable) {
         run = saved;
         applyCampaign(run);
@@ -7935,6 +8073,24 @@
         sim._qaRush = on !== false;
         sim.coachHold = false;
         paintHud();
+      },
+      card: function (id) {
+        if (!isQA() || !sim) return '';
+        sim.coachHold = false;
+        sim.paused = false;
+        sim.pending = buildEvent(id || 'boss', sim, run);
+        sim.pendingUntil = sim.t + 40;
+        renderEvent();
+        var title = document.getElementById('hr-ev-title');
+        var body = els.event ? els.event.querySelector('p') : null;
+        return (title ? title.textContent : '') + ' | ' + (body ? body.textContent : '');
+      },
+      wraps: function () {
+        if (!isQA() || !sim) return 0;
+        offerWrap(sim);
+        paintHud();
+        draw();
+        return sim.pings ? sim.pings.length : 0;
       },
       setSales: function (sales, goal) {
         if (!isQA() || !sim) return;
@@ -8111,6 +8267,19 @@
     if (goalStars(0.74) !== 0 || goalStars(0.75) !== 1 || goalStars(1) !== 2 || goalStars(1.2) !== 3) bad = true;
     if (SHIFT_COUNT < 15) bad = true;
     if (FLOOR_BEATS.length < SHIFT_COUNT) bad = true;
+    function clockMinutes(label) {
+      var parsed = /^(\d+):(\d+) (AM|PM)$/.exec(label);
+      if (!parsed) return -1;
+      var hh = (+parsed[1]) % 12;
+      if (parsed[3] === 'PM') hh += 12;
+      return hh * 60 + (+parsed[2]);
+    }
+    var prevMin = -1;
+    for (var ct = 0; ct <= 62; ct += 0.05) {
+      var mins = clockMinutes(clockLabel(ct, 62));
+      if (mins < prevMin) bad = true;
+      prevMin = mins;
+    }
     var beatSeen = {};
     for (var beatI = 0; beatI < FLOOR_BEATS.length; beatI++) {
       var beatRow = FLOOR_BEATS[beatI];

@@ -363,6 +363,10 @@
   }
 
   function deptFrame(sh) {
+    if (sh.label === 'WRAP') return 'dept/seasonal/wrap_station.png';
+    if (sh.label === 'COCOA') return 'dept/cafe/counter.png';
+    if (sh.label === 'TABLE') return 'dept/cafe/table_4.png';
+    if (sh.label === 'WINDOW') return 'dept/toys/endcap_bear.png';
     var dept = sh.dept || (sh.type === 'cafe' ? 'cafe' : '');
     var list = DEPT[dept];
     if (!list) return '';

@@ -647,7 +647,8 @@
         kind: 'store',
         stock: starterStock(0.55),
         layout: layout,
-        managerId: null
+        managerId: null,
+        leadId: 'staff_reg1'
       };
       milestone(books, 'kiosk');
     } else {

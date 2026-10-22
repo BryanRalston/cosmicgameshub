@@ -483,6 +483,9 @@
     if (!cafeGoal || Math.abs(cafeGoal.goalMul - 1) > 0.02) reasons.push('cafe goal');
     var seasonGoal = tenantLayout('seasonal');
     if (!seasonGoal || Math.abs(seasonGoal.goalMul - 1.12) > 0.02) reasons.push('season goal');
+    var kioskLayout = data.get().layouts.kiosk;
+    if (!kioskLayout || !(kioskLayout.goalMul > 0.5 && kioskLayout.goalMul < 0.8)) reasons.push('kiosk goal');
+    if (!kioskLayout || kioskLayout.mechanic !== 'wrap') reasons.push('kiosk mechanic');
     var ev0 = calendarEvent(0);
     if (!ev0 || ev0.id !== 'lighting') reasons.push('cal');
     var goal = dailyGoal('2026-10-22');
