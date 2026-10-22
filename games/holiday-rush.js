@@ -6376,7 +6376,7 @@
     }
 
     function drawPings() {
-      if (!sim.pings) return;
+      if (!sim.pings || root.__hrShot) return;
       for (var i = 0; i < sim.pings.length; i++) {
         var ping = sim.pings[i];
         if (ping.dead) continue;
@@ -6400,6 +6400,7 @@
     }
 
     function drawTrouble() {
+      if (root.__hrShot) return;
       var regs = registers();
       for (var i = 0; i < regs.length; i++) {
         var n = queueOf(sim, regs[i]).length;
