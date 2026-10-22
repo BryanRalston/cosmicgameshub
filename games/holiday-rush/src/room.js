@@ -363,6 +363,13 @@
   }
 
   function deptFrame(sh) {
+    if (sh.label === 'BOOTH') return 'dept/cafe/kiosk_booth.png';
+    if (sh.label === 'WRAP') return 'dept/seasonal/wrap_station.png';
+    if (sh.label === 'COCOA') return 'dept/cafe/counter.png';
+    if (sh.label === 'MENU') return 'dept/cafe/menu_board.png';
+    if (sh.label === 'CART') return 'dept/cafe/cocoa_cart.png';
+    if (sh.label === 'TABLE') return 'dept/cafe/table_4.png';
+    if (sh.label === 'WINDOW') return 'dept/toys/endcap_bear.png';
     var dept = sh.dept || (sh.type === 'cafe' ? 'cafe' : '');
     var list = DEPT[dept];
     if (!list) return '';
@@ -379,10 +386,12 @@
     var shelves = model.shelves || [];
     for (var i = 0; i < shelves.length; i++) {
       var sh = shelves[i];
-      var key = stock < 0.25 ? 'env/shelf_empty.png' : stock < 0.7 ? 'env/shelf_half.png' : (deptFrame(sh) || 'env/shelf_full.png');
+      var pinned = sh.label === 'BOOTH' || sh.label === 'WRAP' || sh.label === 'COCOA' || sh.label === 'MENU' || sh.label === 'CART' || sh.label === 'TABLE' || sh.label === 'WINDOW';
+      var key = pinned ? (deptFrame(sh) || 'env/shelf_full.png') : (stock < 0.25 ? 'env/shelf_empty.png' : stock < 0.7 ? 'env/shelf_half.png' : (deptFrame(sh) || 'env/shelf_full.png'));
       var shelf = img(images, key) || img(images, 'env/shelf_full.png');
       if (!shelf) continue;
-      var box = contain(shelf, sh.type === 'cafe' || sh.dept === 'cafe' ? 200 : 150, 230);
+      var cafePiece = sh.type === 'cafe' || sh.dept === 'cafe';
+      var box = contain(shelf, sh.label === 'BOOTH' ? 360 : cafePiece ? 200 : 150, sh.label === 'BOOTH' ? 400 : 230);
       ctx.drawImage(shelf, sh.x - box.w / 2, sh.y - box.h, box.w, box.h);
     }
     var regs = model.registers || [];
@@ -397,7 +406,7 @@
       glows.registers.push({ x: rx + boxR.w * 0.22, y: ry + boxR.h * 0.38, w: boxR.w * 0.46, h: boxR.h * 0.28, live: !!regs[r].live });
     }
     var tree = img(images, 'decor/tree.png');
-    if (tree) {
+    if (tree && !model.kiosk) {
       var boxT = contain(tree, 120, 168);
       var tx = 210;
       var ty = 300 - boxT.h;
@@ -421,7 +430,7 @@
     }
     var towerKey = stock < 0.25 ? 'gift_tower/empty_spot.png' : stock < 0.55 ? 'gift_tower/one_left.png' : stock < 0.85 ? 'gift_tower/two_left.png' : 'gift_tower/full.png';
     var tower = img(images, towerKey) || img(images, 'gift_tower/full.png');
-    if (tower && model.door) {
+    if (tower && model.door && !model.kiosk) {
       var boxG = contain(tower, 84, 84);
       var gx = model.door.x + 150;
       var gy = model.door.y - 150;
@@ -429,7 +438,7 @@
       glows.tower = { x: gx - boxG.w / 2, y: gy - boxG.h, w: boxG.w, h: boxG.h };
     }
     var display = img(images, 'decor/gift_display.png');
-    if (display && model.door) {
+    if (display && model.door && !model.kiosk) {
       var boxD = contain(display, 110, 120);
       ctx.drawImage(display, model.door.x - 220, model.door.y - 170, boxD.w, boxD.h);
     }
