@@ -32,7 +32,7 @@
       color: var(--text-mid, #a8a8c0);
       text-decoration: none;
       font-size: 0.85rem;
-      margin-bottom: 1rem;
+      margin-bottom: 0.45rem;
     }
     .cm-back:hover { color: var(--accent, #00d4ff); }
     h1.cm-title {
@@ -45,11 +45,11 @@
     }
     .cm-rules {
       color: var(--text-mid, #a8a8c0);
-      font-size: 0.92rem;
-      line-height: 1.45;
+      font-size: 0.88rem;
+      line-height: 1.35;
       text-align: center;
-      margin: 0 0 1rem;
-      min-height: 2.6em;
+      margin: 0 auto 0.65rem;
+      max-width: 36rem;
     }
     .cm-stage {
       background: linear-gradient(180deg, #ffffff 0%, #f5f5f7 42%);
@@ -63,10 +63,10 @@
     }
     .cm-toolbar {
       display: flex;
-      flex-direction: column;
-      align-items: stretch;
+      flex-direction: row;
+      align-items: center;
       gap: 8px;
-      margin-bottom: 14px;
+      margin-bottom: 8px;
     }
     .cm-modes {
       display: flex;
@@ -113,7 +113,7 @@
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 8px;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
     .cm-hud__val {
       font-size: 1.45rem;
@@ -131,7 +131,7 @@
     }
     .cm-board {
       position: relative;
-      width: min(360px, 100%);
+      width: min(300px, 100%);
       margin: 0 auto;
       aspect-ratio: 1;
     }
@@ -265,6 +265,8 @@
       margin: 10px 0 0;
     }
     .cm-seq:empty { display: none; }
+    .cm-stage.is-over .cm-seq,
+    .cm-stage.is-over .cm-hint { display: none; }
     .cm-dot {
       width: 16px;
       height: 16px;
@@ -285,8 +287,8 @@
       align-items: baseline;
       justify-content: center;
       gap: 10px;
-      min-height: 1.5em;
-      margin: 0.85rem 0 0.35rem;
+      min-height: 1.4em;
+      margin: 0.45rem 0 0.15rem;
     }
     .cm-status {
       margin: 0;
@@ -317,7 +319,7 @@
       .cm-btn, .cm-btn--lit { transition: none; }
     }
     .cm-hint {
-      margin: 0 0 0.8rem;
+      margin: 0 0 0.25rem;
       color: #6e6e73;
       font-size: 0.78rem;
     }
@@ -335,6 +337,7 @@
       border: none;
       background: #0071e3;
       color: #fff;
+      scroll-margin: 16px;
     }
     .cm-go:hover { background: #0077ed; }
     .cm-go:focus-visible, .cm-secondary:focus-visible, .cm-mode:focus-visible, .cm-tool:focus-visible {
@@ -358,18 +361,26 @@
       font-size: 0.78rem;
       font-weight: 700;
     }
+    .cm-scoreline {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      text-align: left;
+    }
     .cm-score {
       margin: 0;
-      font-size: 3.4rem;
+      font-size: 2.8rem;
       font-weight: 700;
       letter-spacing: -0.045em;
-      line-height: 0.95;
+      line-height: 0.9;
       font-variant-numeric: tabular-nums;
     }
+    .cm-scorecopy p { margin: 0; }
     .cm-score-label, .cm-detail, .cm-pct, .cm-replay-note, .cm-share-msg, .cm-note, .cm-recent {
-      margin: 0.2rem 0 0;
+      margin: 0;
       color: #6e6e73;
-      font-size: 0.86rem;
+      font-size: 0.84rem;
     }
     .cm-score-label { color: #1d1d1f; font-weight: 600; }
     .cm-pct { color: #1d1d1f; font-weight: 600; font-size: 0.95rem; }
@@ -378,7 +389,7 @@
       flex-wrap: wrap;
       gap: 8px;
       justify-content: center;
-      margin-top: 0.85rem;
+      margin-top: 0.65rem;
     }
     .cm-replay {
       display: flex;
@@ -464,12 +475,20 @@
       margin-top: 2px;
     }
     @media (max-width: 480px) {
-      main { padding: 0.75rem 0 2rem !important; }
+      main { padding: 0.6rem 0 2rem !important; }
       .cm-back { display: none; }
-      h1.cm-title { font-size: 1.35rem; }
-      .cm-wrap { padding: 0 0.75rem; }
-      .cm-stage { padding: 14px 12px 14px; border-radius: 22px; }
-      .cm-score { font-size: 2.8rem; }
+      h1.cm-title { font-size: 1.3rem; }
+      .cm-wrap { padding: 0 0.7rem; }
+      .cm-stage { padding: 12px 10px 12px; border-radius: 22px; }
+      .cm-board { width: min(280px, 100%); }
+      .cm-score { font-size: 2.4rem; }
+    }
+    @media (max-height: 860px) {
+      main { padding-top: 0.85rem !important; }
+      h1.cm-title { font-size: 1.4rem; }
+      .cm-rules { margin-bottom: 0.4rem; }
+      .cm-board { width: min(248px, 100%); }
+      .cm-stage { padding-top: 12px; padding-bottom: 12px; }
     }
   </style>
   <script type="application/ld+json">
@@ -530,7 +549,7 @@
   </div>
 </nav>
 
-<main style="padding: 2rem 0 4rem;">
+<main style="padding: 1.15rem 0 3rem;">
   <div class="cm-wrap">
     <a href="/games" class="cm-back">← Back to Games</a>
     <h1 class="cm-title">Color Memory</h1>
@@ -587,17 +606,21 @@
 
       <div class="cm-result" id="cmResult" hidden>
         <p class="cm-new" id="cmNewBest" hidden>New personal best</p>
-        <p class="cm-score" id="cmScore">0</p>
-        <p class="cm-score-label" id="cmScoreLabel">Rounds completed</p>
-        <p class="cm-detail" id="cmDetail"></p>
-        <p class="cm-pct" id="cmPct"></p>
-        <div class="cm-replay" id="cmReplay"></div>
-        <p class="cm-replay-note" id="cmReplayNote"></p>
+        <div class="cm-scoreline">
+          <p class="cm-score" id="cmScore">0</p>
+          <div class="cm-scorecopy">
+            <p class="cm-score-label" id="cmScoreLabel">Rounds completed</p>
+            <p class="cm-detail" id="cmDetail"></p>
+            <p class="cm-pct" id="cmPct"></p>
+          </div>
+        </div>
         <div class="cm-btns">
           <button type="button" class="cm-go" id="cmPlayAgain">Play Again</button>
           <button type="button" class="cm-secondary" id="cmNewPattern" hidden>New pattern</button>
           <button type="button" class="cm-secondary" id="cmShare">Share</button>
         </div>
+        <div class="cm-replay" id="cmReplay"></div>
+        <p class="cm-replay-note" id="cmReplayNote"></p>
         <p class="cm-share-msg" id="cmShareMsg" aria-live="polite"></p>
         <textarea id="cmShareBox" class="cm-sharebox" rows="3" hidden readonly spellcheck="false"></textarea>
       </div>
@@ -1351,6 +1374,7 @@
       btn.disabled = phase === 'play';
     }
     stage.classList.toggle('is-shapes', shapesOn);
+    stage.classList.toggle('is-over', phase === 'over');
     shapesBtn.setAttribute('aria-pressed', shapesOn ? 'true' : 'false');
     shapesBtn.textContent = shapesOn ? 'Shapes' : 'Shapes off';
     muteBtn.setAttribute('aria-pressed', muted ? 'true' : 'false');
@@ -1463,6 +1487,10 @@
     startBtn.hidden = true;
     resultEl.hidden = false;
     setStatus(reason + ' ' + scoreNoun() + ': ' + score + '.', 'fail', false);
+    var againBtn = $('cmPlayAgain');
+    if (againBtn && againBtn.getBoundingClientRect().bottom > window.innerHeight - 12) {
+      againBtn.scrollIntoView({ block: 'nearest' });
+    }
     renderStats();
     track('game_over', {
       game: 'color-memory',
