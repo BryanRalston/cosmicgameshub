@@ -367,6 +367,32 @@
 <div id="hr-event" class="hr-modal" hidden></div>
 <div id="hr-toast" role="status"></div>
 
+<script>
+(function () {
+  var search = location.search || '';
+  var path = location.pathname || '';
+  if (/\.html$/i.test(path)) {
+    try { sessionStorage.setItem('hr_preview_search', search); } catch (e) {}
+    var clean = path.replace(/\.html$/i, '') || '/';
+    if (history.replaceState) history.replaceState(null, '', clean + search + (location.hash || ''));
+  }
+  var match = /(?:\?|&)seed=([^&]*)/.exec(location.search || '');
+  if (!match) return;
+  var raw = match[1];
+  var n;
+  for (n = 0; n < 2; n++) {
+    if (raw.indexOf('%') < 0) break;
+    try {
+      var next = decodeURIComponent(raw);
+      if (next === raw) break;
+      raw = next;
+    } catch (err) { break; }
+  }
+  var seeds = raw.toLowerCase().split(/[,+\s]+/).filter(Boolean);
+  var pill = document.getElementById('hr-seed');
+  if (pill && seeds.length) pill.textContent = seeds.join(', ');
+})();
+</script>
 <script src="/games/holiday-rush/src/data.js"></script>
 <script src="/games/holiday-rush/src/entities.js"></script>
 <script src="/games/holiday-rush/src/economy.js"></script>

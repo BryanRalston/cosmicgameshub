@@ -460,11 +460,11 @@
   }
 
   function isBootFile(file) {
+    if (file === 'env/kiosk_register.png') return false;
     if (file.indexOf('floor/') === 0 || file.indexOf('env/') === 0) return true;
     if (file === 'decor/tree.png' || file === 'decor/wreath.png' || file === 'decor/gift_display.png') return true;
     if (file === 'props/stock_box_stack.png' || file === 'icons/truck.png') return true;
     if (file.indexOf('sprites/objects/gift_tower/') === 0) return true;
-    if (file === 'dept/cafe/kiosk_booth.png' || file === 'dept/cafe/kiosk_table.png') return true;
     return false;
   }
 

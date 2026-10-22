@@ -3476,7 +3476,17 @@
     if (typeof location === 'undefined') return [];
     var host = (location.hostname || '').toLowerCase();
     if (host === 'cosmicgameshub.com' || host === 'www.cosmicgameshub.com') return [];
-    return seedsFromSearch(location.search || '');
+    var fromUrl = seedsFromSearch(location.search || '');
+    if (fromUrl.length) {
+      try { sessionStorage.removeItem('hr_preview_search'); } catch (eClear) {}
+      return fromUrl;
+    }
+    var stashed = '';
+    try {
+      stashed = sessionStorage.getItem('hr_preview_search') || '';
+      sessionStorage.removeItem('hr_preview_search');
+    } catch (eStash) { stashed = ''; }
+    return seedsFromSearch(stashed);
   }
   function previewHas(id) {
     var all = previewSeeds();
@@ -3919,9 +3929,10 @@
         '#hr-event.hr-inline .hr-card{pointer-events:auto;width:min(640px,100%);max-height:100%;overflow:auto;padding:0.45rem 0.6rem 0.5rem;border-radius:14px;background:rgba(246,240,228,0.96);box-shadow:0 10px 28px rgba(0,0,0,0.35);}',
         '#hr-event.hr-inline .hr-card h2{font-size:1rem;margin:0 0 0.12rem;}',
         '#hr-event.hr-inline .hr-card p{font-size:0.82rem;margin:0 0 0.35rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}',
-        '#hr-event.hr-inline .hr-choices{flex-direction:row;flex-wrap:wrap;gap:6px;}',
-        '#hr-event.hr-inline .hr-choices button{width:auto;flex:1 1 168px;min-width:0;height:auto;min-height:44px;font-size:0.85rem;padding:0.4rem 0.6rem;white-space:normal;line-height:1.25;align-items:center;}',
-        '#hr-event.hr-inline .hr-choices button span{flex:1 1 auto;min-width:0;white-space:normal;overflow-wrap:break-word;line-height:1.25;}',
+        '#hr-event.hr-inline .hr-choices{flex-direction:row;flex-wrap:wrap;gap:6px;align-items:stretch;}',
+        '#hr-event.hr-inline .hr-choices button{width:auto;flex:0 0 auto;max-width:100%;height:auto;min-height:44px;font-size:0.85rem;padding:0.4rem 0.6rem;white-space:nowrap;line-height:1.25;align-items:center;}',
+        '#hr-event.hr-inline .hr-choices button span{flex:0 0 auto;white-space:nowrap;line-height:1.25;}',
+        '#hr-event.hr-inline .hr-choice-cost{flex:0 0 auto;white-space:nowrap;}',
         '#hr-event.hr-inline .hr-card__art .hr-portrait,#hr-event.hr-inline .hr-card__art .hr-icon{width:36px !important;height:36px !important;border-radius:8px;}',
         '@media (max-width:720px){',
         '#hr-event.hr-inline{top:136px;bottom:32%;padding:6px 8px;}',
@@ -3930,8 +3941,8 @@
         '#hr-event.hr-inline .hr-card p{font-size:0.78rem;line-height:1.25;margin:0 0 0.28rem;-webkit-line-clamp:2;}',
         '#hr-event.hr-inline .hr-card__art{display:none;}',
         '#hr-event.hr-inline .hr-choices{flex-direction:column;flex-wrap:nowrap;gap:6px;}',
-        '#hr-event.hr-inline .hr-choices button{width:100%;flex:0 0 auto;min-height:44px;height:auto;font-size:0.9rem;padding:0.35rem 0.65rem;white-space:normal;line-height:1.25;justify-content:flex-start;}',
-        '#hr-event.hr-inline .hr-choice-cost{font-size:0.68rem;padding:0.12rem 0.4rem;}',
+        '#hr-event.hr-inline .hr-choices button{width:100%;flex:0 0 auto;min-height:44px;height:auto;font-size:0.9rem;padding:0.35rem 0.65rem;white-space:nowrap;line-height:1.25;justify-content:flex-start;}',
+        '#hr-event.hr-inline .hr-choice-cost{font-size:0.68rem;padding:0.12rem 0.4rem;flex:0 0 auto;white-space:nowrap;}',
         '}',
         '.hr-card__timer{height:4px;border-radius:99px;background:rgba(43,29,46,0.15);overflow:hidden;margin:0 0 0.35rem;}',
         '.hr-card__timer i{display:block;height:100%;width:100%;background:#e0a322;}',
@@ -3975,7 +3986,9 @@
     var actx = null;
     try { reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
 
-    els.seed.textContent = ymd;
+    var shownSeeds = previewSeeds();
+    els.seed.textContent = shownSeeds.length ? shownSeeds.join(', ') : ymd;
+    if (els.stage && shownSeeds.length) els.stage.dataset.seed = shownSeeds.join(',');
     paintMeta();
 
     function paintMeta() {
@@ -8504,6 +8517,7 @@
     var seedPlus = seedsFromSearch('?qa=1&seed=kiosk+bus').join(',');
     var seedBus = seedsFromSearch('?seed=bus').join(',');
     if (seedEnc !== 'kiosk,bus' || seedDbl !== 'kiosk,bus' || seedPlus !== 'kiosk,bus' || seedBus !== 'bus') bad = true;
+    if (seedsFromSearch('?seed=kiosk%2Cbus').join(',') !== 'kiosk,bus') bad = true;
     var wrapSim = { rng: function () { return 0.5; }, pings: [], floorOn: true, live: true, mechanic: 'wrap', t: 1 };
     offerWrap(wrapSim);
     if (!wrapSim.pings[0] || wrapSim.pings[0].life !== 22) bad = true;
