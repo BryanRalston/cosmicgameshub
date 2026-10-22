@@ -6565,6 +6565,7 @@
         if (!isQA() || !sim) return;
         var count = n || 150;
         sim.stressCap = count;
+        sim.paused = false;
         var i;
         for (i = 0; i < count; i++) spawnCustomer(sim, run);
         while (sim.staff.length < 20) {
@@ -6573,14 +6574,22 @@
           actor.id = 'stress_' + sim.staff.length;
           actor.role = 'floor';
           actor.hidden = false;
+          actor.arrived = true;
           sim.staff.push(actor);
         }
         for (i = 0; i < sim.customers.length; i++) {
-          sim.customers[i].x = (i * 97) % Math.max(1, WORLD_W);
-          sim.customers[i].y = 180 + ((i * 53) % 640);
+          var cust = sim.customers[i];
+          cust.x = (i * 97) % Math.max(1, WORLD_W);
+          cust.y = 180 + ((i * 53) % 640);
+          cust.state = 'browse';
+          cust.patience = 999;
+          cust.maxPatience = 999;
+          cust.dead = false;
+          cust.browseT = 999;
         }
         if (sim.spatial) sim.spatial.rebuild(sim.customers.concat(sim.staff));
         if (els.stage) els.stage.dataset.simCount = String(sim.customers.length + sim.staff.length);
+        return { customers: sim.customers.length, staff: sim.staff.length };
       },
       books: function () { return books; },
       fill: function () {
