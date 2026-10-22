@@ -3395,10 +3395,11 @@ body.search-open { overflow: hidden; }
   border-radius: var(--radius-lg);
   overflow: visible;
   text-decoration: none;
-  color: #fff;
+  color: #1d1d1f;
   background: transparent;
   box-shadow: none;
-  min-height: clamp(420px, 62vh, 640px);
+  aspect-ratio: 16 / 9;
+  min-height: 0;
 }
 .gotw::before {
   content: "";
@@ -3453,42 +3454,48 @@ body.search-open { overflow: hidden; }
   flex-direction: column;
   align-items: flex-start;
   justify-content: flex-end;
-  min-height: clamp(420px, 62vh, 640px);
-  padding: clamp(1.5rem, 4vw, 3.5rem);
-  background: linear-gradient(180deg, transparent 42%, rgba(0,0,0,0.45) 100%);
+  height: 100%;
+  min-height: 100%;
+  padding: clamp(1.15rem, 3vw, 3rem);
+  background: linear-gradient(180deg, rgba(255,255,255,0) 40%, rgba(255,255,255,0.72) 58%, rgba(255,255,255,0.92) 72%, rgba(255,255,255,0.97) 100%);
   border-radius: inherit;
 }
 .gotw__badge,
 .gotw-tag {
   display: inline-flex;
-  margin: 0 0 0.7rem;
-  color: rgba(255,255,255,0.82);
+  margin: 0 0 0.55rem;
+  color: rgba(29,29,31,0.62);
   font-size: 0.78rem;
   font-weight: 600;
   letter-spacing: 0.02em;
 }
 .gotw__week {
   position: absolute;
-  top: clamp(1.25rem, 3vw, 2rem);
-  right: clamp(1.25rem, 3vw, 2rem);
-  color: rgba(255,255,255,0.86);
+  top: clamp(1rem, 2.4vw, 1.6rem);
+  right: clamp(1rem, 2.4vw, 1.6rem);
+  color: #1d1d1f;
   font-size: 0.82rem;
   font-weight: 500;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-pill);
+  background: rgba(255,255,255,0.82);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 .gotw__title {
   margin: 0;
-  color: #fff;
+  color: #1d1d1f;
   font-family: var(--font-display);
-  font-size: clamp(2.4rem, 5vw, 4.25rem);
+  font-size: clamp(2rem, 4.4vw, 3.75rem);
   font-weight: 600;
   letter-spacing: -0.045em;
   line-height: 1;
 }
 .gotw__blurb {
-  max-width: 36rem;
-  margin: 0.7rem 0 1.25rem;
-  color: rgba(255,255,255,0.88);
-  font-size: clamp(1rem, 1.5vw, 1.2rem);
+  max-width: 34rem;
+  margin: 0.55rem 0 1rem;
+  color: rgba(29,29,31,0.78);
+  font-size: clamp(0.95rem, 1.35vw, 1.12rem);
   line-height: 1.35;
   font-weight: 400;
 }
@@ -3496,19 +3503,18 @@ body.search-open { overflow: hidden; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 48px;
-  padding: 0 1.4rem;
+  min-height: 44px;
+  padding: 0 1.3rem;
   border-radius: var(--radius-pill);
-  background: #fff;
-  color: #1d1d1f;
+  background: #0071e3;
+  color: #fff;
   font-weight: 600;
   letter-spacing: -0.01em;
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.7) inset,
-    0 8px 28px rgba(110, 150, 255, 0.35),
-    0 2px 12px rgba(255, 150, 186, 0.28);
+    0 0 0 1px rgba(255, 255, 255, 0.35) inset,
+    0 8px 24px rgba(0, 113, 227, 0.32);
 }
-.gotw:hover .gotw__play { background: #fff; }
+.gotw:hover .gotw__play { background: #0077ed; }
 
 .chips {
   display: flex;
@@ -3727,7 +3733,7 @@ body.search-open { overflow: hidden; }
   .guide-card {
     transition: transform 0.55s var(--ease), box-shadow 0.55s var(--ease);
   }
-  .gotw:hover .gotw__media img { transform: scale(1.015); }
+  .gotw:hover .gotw__media img { transform: none; }
   .tile:hover .tile__art,
   .secondary-card:hover,
   .gh-card:hover,
@@ -3768,9 +3774,18 @@ body.search-open { overflow: hidden; }
 @media (max-width: 720px) {
   .portal { padding-top: var(--space-6); }
   .portal__tagline { margin-bottom: var(--space-6); }
-  .gotw,
-  .gotw__copy { min-height: 460px; }
-  .gotw__week { position: static; margin-bottom: 0.35rem; }
+  .gotw { min-height: 0; aspect-ratio: 16 / 9; }
+  .gotw__copy {
+    min-height: 0;
+    aspect-ratio: auto;
+    height: 100%;
+    padding: 0.9rem 1rem 1rem;
+    background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 16%, rgba(255,255,255,0.86) 34%, rgba(255,255,255,0.96) 58%, rgba(255,255,255,0.98) 100%);
+  }
+  .gotw__title { font-size: 1.85rem; }
+  .gotw__blurb { margin: 0.3rem 0 0.65rem; font-size: 0.9rem; }
+  .gotw__play { min-height: 40px; }
+  .gotw__badge { margin-bottom: 0.3rem; }
   .tile { flex-basis: 148px; }
   .tile__art { border-radius: 18px; }
   .page-home .email-band__input-wrap { flex-direction: column; }

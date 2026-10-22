@@ -6615,7 +6615,7 @@
       if (sim) {
         if (isQA() && els.stage) els.stage.dataset.sils = '0';
         SHELVES.forEach(function (sh) {
-          if (sim._shed) return;
+          if (sim._shed || root.__hrShot) return;
           if (!worldOn(sh.x, sh.y, 80)) return;
           var pct = Math.round(clamp(sim.stock, 0, 1) * 100);
           ctx.fillStyle = 'rgba(20,12,16,0.78)';
@@ -6747,7 +6747,7 @@
             ctx.stroke();
           }
         }
-        if (sim.taps && !sim._shed) {
+        if (sim.taps && !sim._shed && !root.__hrShot) {
           for (var ti = 0; ti < sim.taps.length; ti++) {
             var tapRing = sim.taps[ti];
             var tu = 1 - clamp(tapRing.life / 0.32, 0, 1);
@@ -6777,7 +6777,7 @@
         var floatSm = view.cssW < 720 ? 12 : 20;
         var floatScale = scale || 1;
         if (els.stage) els.stage.dataset.floatPx = String(floatBig);
-        if (!sim._shed) for (var f = 0; f < sim.floats.length; f++) {
+        if (!sim._shed && !root.__hrShot) for (var f = 0; f < sim.floats.length; f++) {
           var fl = sim.floats[f];
           ctx.globalAlpha = clamp(fl.life, 0, 1);
           ctx.fillStyle = fl.color;
@@ -7572,10 +7572,10 @@
         });
         ctx.restore();
       }
-      if (a.kind === 'cust' && a.arch !== 'lift' && a.state !== 'leave' && a.maxPatience) {
+      if (!root.__hrShot && a.kind === 'cust' && a.arch !== 'lift' && a.state !== 'leave' && a.maxPatience) {
         drawPatience(a.x, a.y - size - 8, clamp(a.patience / a.maxPatience, 0, 1));
       }
-      if (a.bubble === 'angry' && !reduceMotion) {
+      if (!root.__hrShot && a.bubble === 'angry' && !reduceMotion) {
         var puff = (Date.now() / 280 + (a.seq || 0)) % 1;
         ctx.globalAlpha = 1 - puff;
         ctx.fillStyle = '#ffd0d0';
@@ -7584,7 +7584,7 @@
         ctx.fill();
         ctx.globalAlpha = 1;
       }
-      if (a.bubble) {
+      if (!root.__hrShot && a.bubble) {
         var objIcon = assets.objects && assets.objects['icons/' + a.bubble + '.png'];
         if (objIcon) {
           var objPx = a.bubble === 'angry' || a.bubble === 'theft' ? 44 : 34;
@@ -7596,18 +7596,18 @@
           ctx.drawImage(assets.img.icons, ir[0], ir[1], ir[2], ir[3], a.x - iconPx / 2, a.y - size - 18 - iconPx, iconPx, iconPx);
         }
       }
-      if (a.arch === 'rusher') drawTag('Rush', a.x, a.y - size - 36);
-      else if (a.arch === 'family') drawTag('Family', a.x, a.y - size - 36);
-      else if (a.arch === 'lift') drawTag(a.state === 'flee' ? 'Catch' : 'Watch', a.x, a.y - size - 28);
-      else if (a.haggling) drawTag('Coupon', a.x, a.y - size - 36);
-      if (a.kind === 'staff' && a.id) {
+      if (!root.__hrShot && a.arch === 'rusher') drawTag('Rush', a.x, a.y - size - 36);
+      else if (!root.__hrShot && a.arch === 'family') drawTag('Family', a.x, a.y - size - 36);
+      else if (!root.__hrShot && a.arch === 'lift') drawTag(a.state === 'flee' ? 'Catch' : 'Watch', a.x, a.y - size - 28);
+      else if (!root.__hrShot && a.haggling) drawTag('Coupon', a.x, a.y - size - 36);
+      if (!root.__hrShot && a.kind === 'staff' && a.id) {
         var tag = firstName(a.id);
         if (a.rush > 1) tag += ' →';
         drawTag(tag, a.x, a.y - size - 16);
-      } else if (a.kind === 'you') {
+      } else if (!root.__hrShot && a.kind === 'you') {
         drawTag('YOU', a.x, a.y - size - 16);
       }
-      if (a.heart > 0) drawTag('♥', a.x, a.y - size - 40);
+      if (!root.__hrShot && a.heart > 0) drawTag('♥', a.x, a.y - size - 40);
     }
 
     function loop(ts) {
