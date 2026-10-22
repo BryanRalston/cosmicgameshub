@@ -1,9 +1,8 @@
 /* Holiday Rush: Store Manager
-   The store is a 2× canvas plate. People are transparent PNG sprites listed in
-   games/holiday-rush/sprites/manifest.json (idle, walk, and work frames, plus
-   illustrated portraits). That list is empty until the Grok Imagine pack is
-   dropped in. Until then the floor keeps the temporary vector figures and the
-   photo portraits. Do not draw new character art in code.
+   The store is a 2× canvas plate. People are the Grok Imagine PNG pack in
+   games/holiday-rush/sprites/ (down-facing idle/walk/work frames and
+   illustrated portraits). Walk frames face right and are mirrored when
+   someone walks left. No character art is drawn in code once that pack loads.
    The photo floor and 96px character sheet are not downloaded.
    localStorage only. No accounts. */
 (function (root) {
@@ -120,16 +119,14 @@
     cust_teen: { scale: 1.02, skin: '#c68642', hair: '#1a120c', style: 'hood', top: '#2a2a32', bottom: '#3a3a44', shoes: '#f6f0e4' },
     cust_karen: { scale: 1, skin: '#f3d0b0', hair: '#e6c878', style: 'big', top: '#7a3e86', bottom: '#3a2444', shoes: '#2a1c18', wide: 1 }
   };
-  // Drop-in body art. One transparent PNG per frame, named
-  // <type>/<anim>_<dir>_<index>.png under games/holiday-rush/sprites/.
-  // Portraits are portraits/<type-or-id>_<expr>.png. Recommended frame
-  // 128×160 and portrait 160×160 (2× the on-screen size). Color type must
-  // be RGBA or gray+alpha. The whole pack stays within budget, which is the
-  // photo-portrait download it replaces. Manifest files:[] means not shipped.
+  // Body frames are <type>/<anim>_<dir>_<index>.png. Portraits are
+  // portraits/<type>_<expr>.png. Indexed PNGs with a tRNS chunk count as
+  // transparent. Feet sit on source y=158. displayH matches CONFIG.sprite
+  // so the whole cast shares one scale and the camera stays sharp.
   var SPRITE_PACK = {
     budget: 750 * 1024,
-    displayH: 80,
-    foot: 6,
+    displayH: 78,
+    footY: 158,
     types: ['rusher', 'haggle', 'family', 'lift', 'regular', 'kid', 'crew_manager', 'crew_register', 'crew_freight', 'crew_floor'],
     crewExpr: ['neutral', 'happy', 'stressed', 'angry', 'sick', 'proud'],
     custExpr: ['neutral', 'impatient', 'angry', 'delighted']
@@ -193,6 +190,24 @@
     var w = (bytes[16] << 24) | (bytes[17] << 16) | (bytes[18] << 8) | bytes[19];
     var h = (bytes[20] << 24) | (bytes[21] << 16) | (bytes[22] << 8) | bytes[23];
     return { w: w >>> 0, h: h >>> 0, color: bytes[25] };
+  }
+
+  function pngHasAlpha(bytes) {
+    var info = pngInfo(bytes);
+    if (!info) return false;
+    if (info.color === 4 || info.color === 6) return true;
+    if (info.color !== 3) return false;
+    var i = 8;
+    var n = bytes.length;
+    while (i + 12 <= n) {
+      var len = ((bytes[i] << 24) | (bytes[i + 1] << 16) | (bytes[i + 2] << 8) | bytes[i + 3]) >>> 0;
+      var kind = String.fromCharCode(bytes[i + 4], bytes[i + 5], bytes[i + 6], bytes[i + 7]);
+      if (kind === 'tRNS') return true;
+      if (kind === 'IDAT' || kind === 'IEND') return false;
+      if (len > n) return false;
+      i += 12 + len;
+    }
+    return false;
   }
 
   function spriteFrameList(sheet, anim, dir) {
@@ -995,11 +1010,17 @@
   }
 
   function tickAnim(a, dt) {
+    if (a.anim === 'work') {
+      a.frame = 0;
+      a.frameT = 0;
+      return;
+    }
     a.frameT += dt;
-    var fps = a.anim === 'idle' ? 3.2 : 8;
-    var count = a.anim === 'idle' ? 2 : 4;
+    var fps = a.anim === 'walk' ? 8 : 2;
+    var count = a.anim === 'walk' ? 4 : 2;
     if (a.frameT >= 1 / fps) {
       a.frameT -= 1 / fps;
+      if (a.frameT > 1 / fps) a.frameT = 0;
       a.frame = (a.frame + 1) % count;
     }
   }
@@ -2410,7 +2431,7 @@
       var bytes = new Uint8Array(buf);
       var png = pngInfo(bytes);
       if (!png) return { reject: 'not-png', file: url, bytes: buf.byteLength, spec: spec };
-      if (png.color !== 4 && png.color !== 6) return { reject: 'no-alpha', file: url, bytes: buf.byteLength, spec: spec };
+      if (!pngHasAlpha(bytes)) return { reject: 'no-alpha', file: url, bytes: buf.byteLength, spec: spec };
       if (png.w < 32 || png.h < 32 || png.w > 512 || png.h > 512) return { reject: 'dimensions', file: url, bytes: buf.byteLength, spec: spec };
       onAsset();
       var blob = new Blob([buf], { type: 'image/png' });
@@ -2522,7 +2543,7 @@
   }
 
   function verifySpritePack() {
-    if (SPRITE_PACK.types.length !== 10 || SPRITE_PACK.budget !== 750 * 1024 || SPRITE_PACK.displayH !== 80) {
+    if (SPRITE_PACK.types.length !== 10 || SPRITE_PACK.budget !== 750 * 1024 || SPRITE_PACK.displayH !== 78 || SPRITE_PACK.footY !== 158) {
       throw new Error('sprite spec');
     }
     var sample = classifySpriteFile('rusher/walk_side_3.png');
@@ -2550,7 +2571,7 @@
         if (!fs.existsSync(abs)) throw new Error('missing ' + files[i]);
         var buf = fs.readFileSync(abs);
         var png = pngInfo(buf);
-        if (!png || (png.color !== 4 && png.color !== 6)) throw new Error('alpha ' + files[i]);
+        if (!png || !pngHasAlpha(buf)) throw new Error('alpha ' + files[i]);
         if (png.w < 32 || png.h < 32 || png.w > 512 || png.h > 512) throw new Error('dim ' + files[i]);
         bytes += buf.length;
       }
@@ -4935,6 +4956,15 @@
         els.stage.dataset.cam = Math.round(cam.x) + ',' + Math.round(cam.y);
         els.stage.dataset.view = Math.round(view.viewW) + ',' + Math.round(view.viewH);
         els.stage.dataset.paused = sim.paused ? '1' : '0';
+        var cast = [];
+        function pushCast(actor) {
+          if (!actor || actor.hidden || cast.length >= 14) return;
+          cast.push(Math.round(actor.x) + ',' + Math.round(actor.y) + ',' + spriteTypeFor(actor) + ',' + (actor.anim || 'idle') + ',' + (actor.face < 0 ? 'L' : 'R'));
+        }
+        for (var cc = 0; cc < sim.customers.length; cc++) pushCast(sim.customers[cc]);
+        for (var cs = 0; cs < sim.staff.length; cs++) pushCast(sim.staff[cs]);
+        if (sim.you) pushCast(sim.you);
+        els.stage.dataset.cast = cast.join(' ');
       }
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.fillStyle = '#1a1412';
@@ -5313,17 +5343,21 @@
       var dir = (a.face < 0 || a.dir === 'side') ? 'side' : (a.dir === 'up' ? 'up' : 'down');
       var list = spriteFrameList(sheet, anim, dir);
       if (!list) return false;
-      var frame = list[(a.frame || 0) % list.length];
+      var index = anim === 'work' ? 0 : ((a.frame || 0) % list.length);
+      var frame = list[index];
       if (!frame || !frame.img) return false;
-      var look = LOOKS[a.charId] || LOOKS.cust_mom;
-      var dh = SPRITE_PACK.displayH * (look.scale || 1);
+      var dh = SPRITE_PACK.displayH;
       var dw = dh * (frame.w / frame.h);
-      ctx.drawImage(frame.img, -dw / 2, -dh + SPRITE_PACK.foot, dw, dh);
+      var foot = (SPRITE_PACK.footY / frame.h) * dh;
+      ctx.imageSmoothingEnabled = true;
+      if ('imageSmoothingQuality' in ctx) ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(frame.img, Math.round(-dw / 2), Math.round(-foot), Math.round(dw), Math.round(dh));
       return true;
     }
 
     function paintPerson(a) {
       if (drawSpritePerson(a)) return;
+      if (assets && assets.spritePack && assets.spritePack.ready) return;
       drawFigure(a);
     }
 
@@ -5558,7 +5592,7 @@
         var popS = 1 + a.pop * (reduceMotion ? 0.08 : 0.22);
         ctx.scale(popS, popS);
       }
-      if (a.role && ROLE_COLOR[a.role]) {
+      if (a.role && ROLE_COLOR[a.role] && !(assets && assets.spritePack && assets.spritePack.ready)) {
         ctx.fillStyle = ROLE_COLOR[a.role];
         ctx.globalAlpha = 0.9;
         ctx.beginPath();
@@ -5567,6 +5601,7 @@
         ctx.globalAlpha = 1;
       }
       paintPerson(a);
+      if (!(assets && assets.spritePack && assets.spritePack.ready)) drawCarry(a, size);
       if (a.arch === 'rusher' && a.anim === 'walk') {
         ctx.strokeStyle = 'rgba(214,69,69,0.75)';
         ctx.lineWidth = 3;
@@ -5577,10 +5612,9 @@
         ctx.lineTo(-34, -16);
         ctx.stroke();
       }
-      drawCarry(a, size);
       ctx.restore();
       if (a.arch === 'family' && a.state !== 'leave') {
-        var beside = dir === 'up' ? 36 : 26;
+        var beside = dir === 'up' ? 52 : 46;
         var kx = a.x + (a.face < 0 ? -beside : beside);
         var ky = a.y + (dir === 'up' ? 12 : 6);
         ctx.save();
@@ -5948,7 +5982,10 @@
 
     loadGameArt().then(function (loaded) {
       assets = loaded;
-      if (els.stage && loaded.spriteStatus) els.stage.dataset.sprites = loaded.spriteStatus.ready ? 'ready' : loaded.spriteStatus.reason;
+      if (els.stage && loaded.spriteStatus) {
+        els.stage.dataset.sprites = loaded.spriteStatus.ready ? 'ready' : loaded.spriteStatus.reason;
+        els.stage.dataset.spriteBytes = String(loaded.spriteStatus.bytes || 0);
+      }
       bakeStorePlate();
       resize();
       var saved = readJSON('hr_run_v1');
