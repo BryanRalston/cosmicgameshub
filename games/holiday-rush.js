@@ -7,6 +7,21 @@
    localStorage only. No accounts. */
 (function (root) {
   'use strict';
+  if (typeof document === 'undefined' && typeof require === 'function') {
+    var hrJoin = require('path');
+    var hrSrc = hrJoin.join(__dirname, 'holiday-rush', 'src');
+    require(hrJoin.join(hrSrc, 'data.js'));
+    require(hrJoin.join(hrSrc, 'entities.js'));
+    require(hrJoin.join(hrSrc, 'economy.js'));
+    require(hrJoin.join(hrSrc, 'layout.js'));
+    require(hrJoin.join(hrSrc, 'world.js'));
+    require(hrJoin.join(hrSrc, 'save.js'));
+    require(hrJoin.join(hrSrc, 'sprites.js'));
+    require(hrJoin.join(hrSrc, 'sim.js'));
+    require(hrJoin.join(hrSrc, 'render.js'));
+    require(hrJoin.join(hrSrc, 'ui.js'));
+  }
+  var HR = root.HRParts || {};
 
   var ART = 'holiday-rush/';
   var WORLD_W = 1600;
@@ -15,7 +30,11 @@
   var SHIFT_NAMES = ['Open', 'Mid', 'Close'];
   var SHIFT_HOURS = ['8–12', '12–4', '4–8'];
   var STATIONS = ['reg1', 'reg2', 'floor', 'freight'];
-  var STATION_LABEL = { reg1: 'Register A', reg2: 'Register B', floor: 'Floor', freight: 'Freight' };
+  var STATION_LABEL = { reg1: 'Register A', reg2: 'Register B', reg3: 'Register C', floor: 'Floor', freight: 'Freight' };
+  var reg3Live = false;
+  var activeLayout = null;
+  var spriteSession = null;
+  var floorDirty = false;
   var PAL = {
     ink: '#2a1c18',
     cream: '#f6f0e4',
@@ -124,7 +143,8 @@
   // transparent. Feet sit on source y=158. displayH matches CONFIG.sprite
   // so the whole cast shares one scale and the camera stays sharp.
   var SPRITE_PACK = {
-    budget: 750 * 1024,
+    perTypeBudget: 110 * 1024,
+    budget: 110 * 1024,
     displayH: 78,
     footY: 158,
     types: ['rusher', 'haggle', 'family', 'lift', 'regular', 'kid', 'crew_manager', 'crew_register', 'crew_freight', 'crew_floor'],
@@ -167,6 +187,13 @@
   }
 
   function classifySpriteFile(rel) {
+    if (HR.sprites && HR.sprites.classify) {
+      var spec = HR.sprites.classify(rel);
+      if (!spec) return null;
+      if (spec.kind === 'frame') return { kind: 'frame', type: spec.type, anim: spec.anim, dir: spec.dir, index: spec.index };
+      if (spec.kind === 'portrait') return { kind: 'portrait', key: spec.key, expr: spec.expr };
+      return spec;
+    }
     var name = String(rel || '').replace(/\\/g, '/').replace(/^\//, '');
     var frame = name.match(/^([a-z0-9_]+)\/(idle|walk|work)_(down|side|up)_(\d+)\.png$/);
     if (frame) {
@@ -288,6 +315,47 @@
     reg2: { x: 752, y: 800, dy: 32 }
   };
 
+  function stationList() {
+    if (!reg3Live) return STATIONS;
+    return ['reg1', 'reg2', 'reg3', 'floor', 'freight'];
+  }
+
+  function isTill(st) {
+    return st === 'reg1' || st === 'reg2' || st === 'reg3';
+  }
+
+  function registers() {
+    var list = [];
+    if (SPOTS.reg1) list.push('reg1');
+    if (SPOTS.reg2) list.push('reg2');
+    if (SPOTS.reg3) list.push('reg3');
+    return list;
+  }
+
+  function trafficBlocked(id) {
+    if (!id || !activeLayout || !HR.layout || !HR.layout.wantsGrid(activeLayout)) return false;
+    if (trafficBlocked._layout !== activeLayout || trafficBlocked._n !== activeLayout.fixtures.length) {
+      trafficBlocked._layout = activeLayout;
+      trafficBlocked._n = activeLayout.fixtures.length;
+      trafficBlocked._set = {};
+      var report = HR.layout.traffic(activeLayout);
+      for (var i = 0; i < report.blocked.length; i++) trafficBlocked._set[report.blocked[i]] = true;
+    }
+    return !!trafficBlocked._set[id];
+  }
+
+  function busiestRegister(sim) {
+    var regs = registers();
+    var best = regs[0] || 'reg1';
+    var n = -1;
+    for (var i = 0; i < regs.length; i++) {
+      if (trafficBlocked(regs[i])) continue;
+      var q = queueOf(sim, regs[i]).length;
+      if (q > n) { n = q; best = regs[i]; }
+    }
+    return best;
+  }
+
   var PERKS = [
     { id: 'key', name: 'Better key carrier', icon: 'boss', body: 'Maren works any station like a specialist for the rest of the week.' },
     { id: 'freight', name: 'Faster freight', icon: 'truck', body: 'Truck and shelf work restocks about 60% faster.' },
@@ -343,7 +411,7 @@
     return next;
   }
 
-  function blankShift() { return { reg1: null, reg2: null, floor: null, freight: null }; }
+  function blankShift() { return { reg1: null, reg2: null, reg3: null, floor: null, freight: null }; }
   function blankDay() { return [blankShift(), blankShift(), blankShift()]; }
   function blankCampaign() {
     var days = [];
@@ -366,36 +434,42 @@
   function clone(obj) { return JSON.parse(JSON.stringify(obj)); }
 
   function hoursOf(daySched) {
+    var stations = stationList();
     var h = 0;
     for (var s = 0; s < 3; s++) {
-      for (var i = 0; i < STATIONS.length; i++) if (daySched[s][STATIONS[i]]) h += CONFIG.slotHours;
+      for (var i = 0; i < stations.length; i++) if (daySched[s][stations[i]]) h += CONFIG.slotHours;
     }
     return h;
   }
 
   function shiftsOf(daySched, id) {
+    var stations = stationList();
     var n = 0;
     for (var s = 0; s < 3; s++) {
-      for (var i = 0; i < STATIONS.length; i++) if (daySched[s][STATIONS[i]] === id) n++;
+      for (var i = 0; i < stations.length; i++) if (daySched[s][stations[i]] === id) n++;
     }
     return n;
   }
 
   function payrollOf(daySched, extra) {
+    var stations = stationList();
     var pay = extra || 0;
     for (var s = 0; s < 3; s++) {
-      for (var i = 0; i < STATIONS.length; i++) {
-        var id = daySched[s][STATIONS[i]];
+      for (var i = 0; i < stations.length; i++) {
+        var id = daySched[s][stations[i]];
         if (!id || !BY_ID[id]) continue;
-        pay += (BY_ID[id].role === 'manager' ? CONFIG.rateMgr : CONFIG.rate) * CONFIG.slotHours;
+        var person = BY_ID[id];
+        var rate = person.wage || (person.role === 'manager' ? CONFIG.rateMgr : CONFIG.rate);
+        pay += rate * CONFIG.slotHours;
       }
     }
     return pay;
   }
 
   function scheduled(daySched, shift, id) {
-    for (var i = 0; i < STATIONS.length; i++) {
-      if (daySched[shift][STATIONS[i]] === id) return STATIONS[i];
+    var stations = stationList();
+    for (var i = 0; i < stations.length; i++) {
+      if (daySched[shift][stations[i]] === id) return stations[i];
     }
     return null;
   }
@@ -508,6 +582,7 @@
       [2, 'reg1'], [2, 'floor'], [2, 'freight'],
       [0, 'reg2'], [2, 'reg2']
     ];
+    if (reg3Live) order.push([1, 'reg3'], [0, 'reg3'], [2, 'reg3']);
     var hours = 0;
     for (var n = 0; n < order.length; n++) {
       if (hours + CONFIG.slotHours > CONFIG.hoursBudget) break;
@@ -540,8 +615,9 @@
     }
     var copy = clone(daySched);
     if (from) copy[from.shift][from.station] = null;
-    for (var i = 0; i < STATIONS.length; i++) {
-      if (copy[shift][STATIONS[i]] === id) copy[shift][STATIONS[i]] = null;
+    var clearStations = stationList();
+    for (var i = 0; i < clearStations.length; i++) {
+      if (copy[shift][clearStations[i]] === id) copy[shift][clearStations[i]] = null;
     }
     copy[shift][station] = id;
     if (hoursOf(copy) > CONFIG.hoursBudget) {
@@ -553,24 +629,49 @@
     return { ok: true, schedule: copy };
   }
 
-  function makeActor(charId, x, y) {
-    return {
-      charId: charId,
-      x: x, y: y,
-      dir: 'down',
-      face: 1,
-      anim: 'idle',
-      frame: 0,
-      frameT: 0,
-      arrived: false,
-      path: null,
-      pathI: 0,
-      hidden: false,
-      station: null,
-      shelfI: 0,
-      workT: 0,
-      bubble: null
-    };
+  function makeActor(charId, x, y, pooled) {
+    var a = pooled || {};
+    a.charId = charId;
+    a.x = x; a.y = y;
+    a.dir = 'down';
+    a.face = 1;
+    a.anim = 'idle';
+    a.frame = 0;
+    a.frameT = 0;
+    a.arrived = false;
+    a.path = null;
+    a.pathI = 0;
+    a.hidden = false;
+    a.station = null;
+    a.shelfI = 0;
+    a.workT = 0;
+    a.bubble = null;
+    a.dead = false;
+    a.sold = false;
+    a.walked = false;
+    a.arch = '';
+    a.receipt = '';
+    a.haggling = false;
+    a.haggleT = 0;
+    a.checkT = null;
+    a.intro = false;
+    a.angry = false;
+    a.saleMul = 1;
+    a.basketMul = 1;
+    a.speedMul = 1;
+    a.reg = null;
+    a.heart = 0;
+    a.caught = false;
+    a.prowlT = 0;
+    a.state = '';
+    a.kind = '';
+    a.id = null;
+    a.role = null;
+    a.qIndex = 0;
+    a.pop = 0;
+    a.tired = false;
+    a.rush = 0;
+    return a;
   }
 
   function moveToward(a, tx, ty, dt, speed) {
@@ -609,6 +710,10 @@
   }
 
   function pathVia(x, y, tx, ty) {
+    if (activeLayout && HR.layout) {
+      var routed = HR.layout.route(activeLayout, x, y, tx, ty);
+      if (routed && routed.length) return routed;
+    }
     return [
       { x: x, y: Math.min(820, Math.max(y, 780)) },
       { x: tx, y: 810 },
@@ -688,7 +793,7 @@
   function hasPerk(run, id) { return run.perks.indexOf(id) >= 0; }
 
   function skillMul(actor, station, run, sim) {
-    var need = station === 'reg1' || station === 'reg2' ? 'register' : station;
+    var need = isTill(station) ? 'register' : station;
     var m = 0.56;
     if (actor.role === need) m = 1.34;
     if (actor.role === 'manager') m = hasPerk(run, 'key') ? 1.75 : 1.2;
@@ -696,6 +801,7 @@
     var morale = sim ? sim.morale : 70;
     m *= 0.76 + clamp(morale, 0, 100) / 260;
     m *= actor.arrived ? 1 : 0.5;
+    if (sim && sim.books && actor && actor.id && HR.sim) m *= HR.sim.trainMul(sim.books, actor.id);
     return m;
   }
 
@@ -709,7 +815,7 @@
     if (sim.you && sim.you.station === station && sim.t < sim.you.until) {
       p += skillMul(sim.you, station, run, sim);
     }
-    if (station === 'reg1' || station === 'reg2') p += 0.62 * upgradeLevel(run, 'register');
+    if (isTill(station)) p += 0.62 * upgradeLevel(run, 'register');
     return p;
   }
 
@@ -726,7 +832,8 @@
 
   function floater(sim, x, y, text, color, big) {
     if (!sim.floats) sim.floats = [];
-    if (sim.floats.length > 16) sim.floats.shift();
+    var cap = sim.customers && sim.customers.length > 40 ? 6 : 16;
+    if (sim.floats.length > cap) sim.floats.shift();
     sim.floats.push({ x: x, y: y, text: text, color: color || '#ffe08a', life: big ? 1.25 : 1.05, big: !!big });
   }
 
@@ -751,6 +858,7 @@
   } catch (e1) {}
 
   function burstCoins(sim, x, y) {
+    if (sim.customers && sim.customers.length > 40) return;
     if (!sim.coins) sim.coins = [];
     for (var i = 0; i < 5; i++) {
       if (sim.coins.length > 28) sim.coins.shift();
@@ -783,6 +891,7 @@
   }
 
   function spawnConfetti(sim, x, y) {
+    if (sim.customers && sim.customers.length > 40) return;
     if (!sim.confetti) sim.confetti = [];
     var n = reduceMotion ? 8 : 40;
     var colors = ['#d64545', '#2f9e57', '#e0a322', '#f6f0e4', '#7ec8ff'];
@@ -1006,6 +1115,8 @@
         actor.hidden = false;
       }
     }
+    sim.pool = HR.entities ? HR.entities.createPool() : null;
+    sim.spatial = HR.entities ? HR.entities.createSpatial(96) : null;
     return sim;
   }
 
@@ -1057,7 +1168,7 @@
       a.path = null;
     }
     var target = SPOTS.stock;
-    if (st === 'reg1' || st === 'reg2') target = SPOTS[st];
+    if (isTill(st) && SPOTS[st]) target = SPOTS[st];
     else if (st === 'floor') target = SHELVES[a.shelfI % SHELVES.length];
     else if (st === 'freight') {
       var loop = [SPOTS.truck, SHELVES[0], SHELVES[1], SHELVES[3]];
@@ -1075,12 +1186,12 @@
       a.anim = 'work';
       a.workT += dt;
       var dwell = st === 'floor' ? 1.15 : 1.35;
-      if (a.workT > dwell && st !== 'reg1' && st !== 'reg2') {
+      if (a.workT > dwell && !isTill(st)) {
         a.workT = 0;
         a.arrived = false;
         a.shelfI++;
       }
-      if (st === 'reg1' || st === 'reg2') {
+      if (isTill(st)) {
         var qn = queueOf(sim, st).length;
         a.anim = qn > 0 ? 'work' : 'idle';
         a.bubble = qn >= 3 ? 'line' : null;
@@ -1160,7 +1271,8 @@
   }
 
   function spawnCustomer(sim, run, forcedArch) {
-    if (sim.customers.length >= CONFIG.custCap) {
+    var cap = HR.sim ? HR.sim.custCap(sim, CONFIG.custCap) : CONFIG.custCap;
+    if (sim.customers.length >= cap) {
       if (!forcedArch) return;
       var dropped = false;
       for (var n = sim.customers.length - 1; n >= 0; n--) {
@@ -1174,16 +1286,28 @@
     }
     var arch = forcedArch || rollArch(sim, run);
     var spec = arch ? archDef(arch) : null;
+    var dayN = run && run.day ? run.day : 0;
     var bag = ['cust_mom', 'cust_teen', 'cust_biz', 'cust_mom', 'cust_kid', 'cust_grandpa', 'cust_teen', 'cust_karen', 'cust_biz'];
+    if (sim.live) {
+      bag = ['cust_grandpa', 'cust_mom', 'cust_kid', 'cust_mom', 'cust_grandpa'];
+      if (dayN >= 5) bag.push('cust_biz', 'cust_biz');
+      if (dayN >= 7) bag.push('cust_karen');
+      if (dayN >= 12) bag.push('cust_teen', 'cust_teen');
+    }
     var id = spec ? spec.who : bag[Math.floor(sim.rng() * bag.length)];
     var shelf = SHELVES[Math.floor(sim.rng() * SHELVES.length)];
+    if (sim.live && shelf && shelf.id && trafficBlocked(shelf.id)) {
+      for (var si = 0; si < SHELVES.length; si++) {
+        if (!trafficBlocked(SHELVES[si].id)) { shelf = SHELVES[si]; break; }
+      }
+    }
     var heat = sim._heat || { patience: 1, rush: false };
     var patience = (0.86 + sim.rng() * 0.28) * heat.patience;
     if (id === 'cust_karen') patience *= 0.7;
     if (id === 'cust_kid') patience *= 0.88;
     if (id === 'cust_grandpa') patience *= 1.18;
     if (hasPerk(run, 'cocoa')) patience *= 1.14;
-    var c = makeActor(id, SPOTS.door.x + (sim.rng() * 50 - 25), SPOTS.door.y);
+    var c = makeActor(id, SPOTS.door.x + (sim.rng() * 50 - 25), SPOTS.door.y, sim.pool ? sim.pool.acquire() : null);
     c.kind = 'cust';
     c.state = 'enter';
     c.shelf = shelf;
@@ -1263,15 +1387,42 @@
 
   function completeSale(sim, run, c) {
     if (c.sold) return;
-    if (sim.stock <= 0.025) { walkout(sim, c); return; }
+    if (sim.stock <= 0.025) {
+      if (sim.books) {
+        sim.stockouts = (sim.stockouts || 0) + 1;
+        floater(sim, c.x, c.y - 96, 'Empty shelf', '#ffb4b4', true);
+      }
+      walkout(sim, c);
+      return;
+    }
+    var basket;
+    if (sim.books && HR.sim && HR.economy) {
+      var quoted = HR.sim.checkout(sim.books, c, sim.rng);
+      if (!quoted.ok) {
+        sim.stockouts = (sim.stockouts || 0) + 1;
+        floater(sim, c.x, c.y - 96, 'Back room is empty', '#ffb4b4', true);
+        walkout(sim, c);
+        return;
+      }
+      HR.economy.consume(sim.books, quoted);
+      basket = quoted.revenue;
+      if (stationPower(sim, run, 'floor') > 0.55) basket *= 1.1;
+      if (sim.stock < 0.28) basket *= 0.64;
+      if (sim.t < sim.discountUntil) basket *= 0.86;
+      basket *= 1 + 0.09 * upgradeLevel(run, 'baskets');
+      if (c.saleMul) basket *= c.saleMul;
+      sim.cogs = (sim.cogs || 0) + quoted.cogs;
+      c.receipt = quoted.label;
+    } else {
+      basket = CONFIG.basketMin + sim.rng() * (CONFIG.basketMax - CONFIG.basketMin);
+      if (stationPower(sim, run, 'floor') > 0.55) basket *= 1.1;
+      if (sim.stock < 0.28) basket *= 0.64;
+      if (sim.t < sim.discountUntil) basket *= 0.86;
+      basket *= 1 + 0.09 * upgradeLevel(run, 'baskets');
+      if (c.basketMul) basket *= c.basketMul;
+      if (c.saleMul) basket *= c.saleMul;
+    }
     c.sold = true;
-    var basket = CONFIG.basketMin + sim.rng() * (CONFIG.basketMax - CONFIG.basketMin);
-    if (stationPower(sim, run, 'floor') > 0.55) basket *= 1.1;
-    if (sim.stock < 0.28) basket *= 0.64;
-    if (sim.t < sim.discountUntil) basket *= 0.86;
-    basket *= 1 + 0.09 * upgradeLevel(run, 'baskets');
-    if (c.basketMul) basket *= c.basketMul;
-    if (c.saleMul) basket *= c.saleMul;
     var gap = sim.t - (sim.lastSaleAt == null ? -999 : sim.lastSaleAt);
     if (gap <= CONFIG.comboWindow && (sim.combo || 0) >= 1) {
       if (sim.combo < CONFIG.comboMax) sim.combo += 1;
@@ -1302,18 +1453,22 @@
   }
 
   function pickRegister(sim, run) {
-    var best = 'reg1';
+    var regs = registers();
+    var best = regs[0] || 'reg1';
     var bestScore = 1e9;
-    for (var i = 0; i < 2; i++) {
-      var reg = i === 0 ? 'reg1' : 'reg2';
+    var any = false;
+    for (var i = 0; i < regs.length; i++) {
+      var reg = regs[i];
+      if (trafficBlocked(reg)) continue;
+      any = true;
       var score = queueOf(sim, reg).length * 2 - stationPower(sim, run, reg) * 1.4;
       if (score < bestScore) { bestScore = score; best = reg; }
     }
-    return best;
+    return any ? best : regs[0];
   }
 
   function updateCustomers(sim, run, dt) {
-    var regs = ['reg1', 'reg2'];
+    var regs = registers();
     for (var r = 0; r < regs.length; r++) {
       var list = queueOf(sim, regs[r]);
       for (var i = 0; i < list.length; i++) {
@@ -1391,9 +1546,12 @@
         else if (cust.browseT <= 0) {
           if (sim.stock <= 0.04) walkout(sim, cust);
           else {
-            cust.state = 'toQueue';
             cust.reg = pickRegister(sim, run);
-            cust.path = null;
+            if (trafficBlocked(cust.reg)) walkout(sim, cust);
+            else {
+              cust.state = 'toQueue';
+              cust.path = null;
+            }
           }
         }
       } else if (cust.state === 'toQueue') {
@@ -1455,7 +1613,9 @@
       }
       tickAnim(cust, dt);
     }
-    sim.customers = sim.customers.filter(function (c) { return !c.dead; });
+    if (sim.pool) sim.pool.compact(sim.customers);
+    else sim.customers = sim.customers.filter(function (c) { return !c.dead; });
+    if (sim.spatial) sim.spatial.rebuild(sim.customers.concat(sim.staff));
   }
 
   function firstName(id) {
@@ -1563,13 +1723,13 @@
             if (sim.staff[i].station === 'floor' || sim.staff[i].station === 'freight') { pull = sim.staff[i]; break; }
           }
           if (!pull) { note(sim, 'No one to pull.'); return; }
-          var reg = queueOf(sim, 'reg1').length >= queueOf(sim, 'reg2').length ? 'reg1' : 'reg2';
+          var reg = busiestRegister(sim);
           sim.override[pull.id] = reg;
           sim.overrideShift[pull.id] = shiftIndex(sim);
           note(sim, firstName(pull.id) + ' jumped on a till.');
         }),
         choice('Hop on a till', 1, function () {
-          var reg = queueOf(sim, 'reg1').length >= queueOf(sim, 'reg2').length ? 'reg1' : 'reg2';
+          var reg = busiestRegister(sim);
           sim.you = makeActor('staff_mgr', SPOTS[reg].x, SPOTS[reg].y + 30);
           sim.you.kind = 'you'; sim.you.role = 'manager'; sim.you.station = reg; sim.you.until = sim.t + 12;
         })
@@ -1851,7 +2011,8 @@
     var fp = stationPower(sim, run, 'freight');
     var stockLv = upgradeLevel(run, 'stock');
     var regen = CONFIG.freightRegen * fp * (hasPerk(run, 'freight') ? 1.6 : 1) * (1 + 0.45 * stockLv);
-    if (sim.truck) {
+    var warehouseOpen = !(sim.books && HR.economy && HR.economy.unitsLeft(sim.books) <= 0);
+    if (warehouseOpen && sim.truck) {
       sim.stock = Math.max(0, sim.stock - used * 0.01);
       if (fp > 0.35) sim.truckWork += used * fp;
       if (sim.truckWork > 5.5 / (1 + 0.25 * stockLv)) {
@@ -1859,7 +2020,7 @@
         sim.stock = clamp(sim.stock + 0.12, 0, 1);
         note(sim, 'Truck is cleared.');
       }
-    } else {
+    } else if (warehouseOpen) {
       sim.stock = clamp(sim.stock + used * regen, 0, 1);
     }
     if (sim.spillUntil > sim.t) {
@@ -1874,6 +2035,7 @@
     if (sim.t < sim.rushUntil) rate *= 1.72;
     if (sim.t < sim.slowUntil) rate *= 0.62;
     rate *= 0.74 + Math.min(stationPower(sim, run, 'floor'), 1.6) * 0.2;
+    if (sim.books && HR.sim) rate *= HR.sim.demandMul(sim.books);
     if (sim.stock < 0.22) rate *= 0.58;
     sim.spawnAcc += used * rate;
     var guard = 0;
@@ -1975,7 +2137,7 @@
     sim.live = true;
     var reg = 'reg1';
     if (stationPower(sim, run, 'reg1') < 0.2 && stationPower(sim, run, 'reg2') > 0.2) reg = 'reg2';
-    var ids = ['cust_mom', 'cust_teen', 'cust_biz', 'cust_karen'];
+    var ids = ['cust_grandpa', 'cust_mom', 'cust_kid', 'cust_mom'];
     for (var i = 0; i < 4; i++) {
       var c = makeActor(ids[i], QUEUE[reg].x, QUEUE[reg].y + i * QUEUE[reg].dy);
       c.kind = 'cust';
@@ -1996,6 +2158,8 @@
       t: sim.t,
       duration: sim.duration,
       sales: sim.sales,
+      cogs: sim.cogs || 0,
+      stockouts: sim.stockouts || 0,
       goal: sim.goal,
       payroll: sim.payroll,
       morale: sim.morale,
@@ -2087,14 +2251,13 @@
     if (!free && sim.actions <= 0) return { ok: false, msg: 'Actions are refilling.' };
     function spend() { if (!free) sim.actions--; }
     if (name === 'pull') {
-      var reg = (target.station === 'reg1' || target.station === 'reg2') ? target.station
-        : (queueOf(sim, 'reg1').length >= queueOf(sim, 'reg2').length ? 'reg1' : 'reg2');
+      var reg = (isTill(target.station) && SPOTS[target.station]) ? target.station : busiestRegister(sim);
       var pull = null;
       for (var p = 0; p < sim.staff.length; p++) {
         var cand = sim.staff[p];
         if (!cand.id || sim.removed[cand.id]) continue;
         if (cand.station === reg) continue;
-        if (cand.station === 'floor' || cand.station === 'freight' || cand.station === 'reg1' || cand.station === 'reg2') {
+        if (cand.station === 'floor' || cand.station === 'freight' || isTill(cand.station)) {
           pull = cand;
           if (cand.station === 'floor' || cand.station === 'freight') break;
         }
@@ -2287,11 +2450,12 @@
       doAction(sim, run, 'calm', { cust: upset });
       return;
     }
-    var q1 = queueOf(sim, 'reg1').length;
-    var q2 = queueOf(sim, 'reg2').length;
-    if (q1 + q2 >= 3) doAction(sim, run, 'pull');
+    var qSum = 0;
+    var qRegs = registers();
+    for (var qi = 0; qi < qRegs.length; qi++) qSum += queueOf(sim, qRegs[qi]).length;
+    if (qSum >= 3) doAction(sim, run, 'pull');
     else if (sim.stock < 0.55) doAction(sim, run, 'freight');
-    else doAction(sim, run, 'cover', { station: q1 >= q2 ? 'reg1' : 'reg2' });
+    else doAction(sim, run, 'cover', { station: busiestRegister(sim) });
   }
 
   function simulate(ymd, mode, onlyShift) {
@@ -2518,32 +2682,37 @@
   function loadGameArt() {
     var iconImg = loadImage(ART + 'icons_ui.png8.png');
     var iconJson = loadJSON(ART + 'icons_ui_atlas.json');
-    return fetch(ART + 'sprites/manifest.json').then(function (res) {
-      if (!res.ok) return { files: [] };
-      return res.json();
-    }).catch(function () {
-      return { files: [] };
-    }).then(function (man) {
-      var listed = man && man.files ? man.files : [];
-      if (!listed.length) return loadPhotoArt(iconImg, iconJson, { ready: false, reason: 'empty', bytes: 0, budget: SPRITE_PACK.budget });
-      loadGoal = 2 + listed.length;
-      return loadSpriteFiles(listed).then(function (pack) {
-        if (!pack.ready) return loadPhotoArt(iconImg, iconJson, pack);
-        return Promise.all([iconImg, iconJson]).then(function (icons) {
-          return {
-            img: { staff: null, cust: null, icons: icons[0] },
-            portraits: {},
-            icons: icons[1],
-            spritePack: pack,
-            spriteStatus: pack
-          };
-        });
+    if (!HR.sprites) return loadPhotoArt(iconImg, iconJson, { ready: false, reason: 'empty', bytes: 0 });
+    var types = HR.sprites.typesForDay(0, null);
+    spriteSession = HR.sprites.createSession(ART, function () {
+      if (typeof onAsset === 'function') onAsset();
+    });
+    return spriteSession.loadManifest().then(function () {
+      loadGoal = 2 + spriteSession.fileCount(types);
+      return spriteSession.ensure(types);
+    }).then(function (pack) {
+      return Promise.all([iconImg, iconJson]).then(function (icons) {
+        var status = {
+          ready: !!(pack && pack.ready && Object.keys(pack.types || {}).length),
+          reason: pack && pack.ready ? 'ready' : 'partial',
+          bytes: (pack && pack.bytes) || 0,
+          partial: true
+        };
+        if (!status.ready) return loadPhotoArt(iconImg, iconJson, status);
+        return {
+          img: { staff: null, cust: null, icons: icons[0] },
+          portraits: pack.portraits,
+          icons: icons[1],
+          spritePack: pack,
+          spriteStatus: status,
+          session: spriteSession
+        };
       });
     });
   }
 
   function verifySpritePack() {
-    if (SPRITE_PACK.types.length !== 10 || SPRITE_PACK.budget !== 750 * 1024 || SPRITE_PACK.displayH !== 78 || SPRITE_PACK.footY !== 158) {
+    if (SPRITE_PACK.types.length !== 10 || SPRITE_PACK.perTypeBudget !== 110 * 1024 || SPRITE_PACK.displayH !== 78 || SPRITE_PACK.footY !== 158) {
       throw new Error('sprite spec');
     }
     var sample = classifySpriteFile('rusher/walk_side_3.png');
@@ -2557,27 +2726,8 @@
     var crew = spriteTypeFor({ kind: 'staff', id: 'staff_frt1', role: 'freight' });
     var kid = spriteTypeFor({ charId: 'cust_kid', arch: 'family' });
     if (rusher !== 'rusher' || regular !== 'regular' || crew !== 'crew_freight' || kid !== 'kid') throw new Error('sprite type');
-    var files = [];
-    var bytes = 0;
-    if (typeof require !== 'undefined') {
-      var fs = require('fs');
-      var path = require('path');
-      var manPath = path.join(__dirname, 'holiday-rush', 'sprites', 'manifest.json');
-      var man = JSON.parse(fs.readFileSync(manPath, 'utf8'));
-      files = man.files || [];
-      for (var i = 0; i < files.length; i++) {
-        if (!classifySpriteFile(files[i])) throw new Error('manifest name ' + files[i]);
-        var abs = path.join(__dirname, 'holiday-rush', 'sprites', files[i]);
-        if (!fs.existsSync(abs)) throw new Error('missing ' + files[i]);
-        var buf = fs.readFileSync(abs);
-        var png = pngInfo(buf);
-        if (!png || !pngHasAlpha(buf)) throw new Error('alpha ' + files[i]);
-        if (png.w < 32 || png.h < 32 || png.w > 512 || png.h > 512) throw new Error('dim ' + files[i]);
-        bytes += buf.length;
-      }
-      if (bytes > SPRITE_PACK.budget) throw new Error('sprite budget ' + bytes);
-    }
-    return { ok: true, budget: SPRITE_PACK.budget, listed: files.length, present: files.length, bytes: bytes };
+    if (!HR.sprites) throw new Error('sprites module');
+    return HR.sprites.verify(typeof __dirname !== 'undefined' ? __dirname : '');
   }
 
   function campaignDefault() {
@@ -2595,6 +2745,11 @@
   function campaignPut(c) { writeJSON('hr_campaign_v1', c); }
 
   function bankCopy(snap) {
+    if (snap && snap.tape) {
+      var tape = snap.tape;
+      var loanBit = tape.loanPay ? ' − loan ' + money(tape.loanPay) : '';
+      return 'Sales ' + money(tape.sales) + ' − goods ' + money(tape.cogs) + ' − wages ' + money(tape.wages) + ' − rent ' + money(tape.rent) + loanBit + ' = ' + money(tape.profit) + '. The register holds ' + money(tape.cash) + '.';
+    }
     var rate = Math.round(CONFIG.earnRate * 100);
     var gross = snap.earnGross || 0;
     var prev = snap.earnPrev || 0;
@@ -3164,6 +3319,7 @@
     }
     var ymd = utcYmd(new Date());
     var run = null;
+    var books = null;
     var sim = null;
     var assets = null;
     var armed = null;
@@ -3490,6 +3646,82 @@
       return camp;
     }
 
+    function layoutApi() {
+      return {
+        spots: SPOTS,
+        shelves: SHELVES,
+        queue: QUEUE,
+        setWorld: function (w, h) { WORLD_W = w; WORLD_H = h; },
+        setReg3: function (on) { reg3Live = !!on; }
+      };
+    }
+
+    function syncFloor(force) {
+      if (!books || !HR.layout || !HR.world || !HR.data.get()) return;
+      var layout = HR.world.activeLayout(books);
+      var custom = layout && (layout.edited || layout.worldW > 1600 || books.active !== 'mart');
+      if (!custom && !floorDirty && !force) {
+        activeLayout = null;
+        reg3Live = false;
+        return;
+      }
+      var source = custom ? layout : HR.data.get().layouts.starter;
+      HR.layout.apply(source, layoutApi());
+      activeLayout = HR.layout.wantsGrid(source) ? source : null;
+      floorDirty = !!custom;
+      trafficBlocked._layout = null;
+      bakeStorePlate();
+    }
+
+    function syncHires() {
+      if (!books || !HR.data.get()) return;
+      var hires = HR.data.get().staff.hires;
+      hires.forEach(function (h) {
+        var rec = books.staff[h.id];
+        var employed = !!(rec && rec.employed);
+        var idx = -1;
+        for (var i = 0; i < STAFF.length; i++) if (STAFF[i].id === h.id) idx = i;
+        if (!employed) {
+          if (idx >= 0) STAFF.splice(idx, 1);
+          delete BY_ID[h.id];
+          if (run && run.schedule) {
+            for (var d = 0; d < run.schedule.length; d++) {
+              for (var s = 0; s < 3; s++) {
+                var stations = stationList();
+                for (var k = 0; k < stations.length; k++) {
+                  if (run.schedule[d][s][stations[k]] === h.id) run.schedule[d][s][stations[k]] = null;
+                }
+              }
+            }
+          }
+          return;
+        }
+        if (idx < 0) {
+          var twin = h.role === 'manager' ? 'staff_mgr' : h.role === 'register' ? 'staff_reg1' : h.role === 'freight' ? 'staff_frt1' : 'staff_flr1';
+          var person = { id: h.id, name: h.name, role: h.role, blurb: h.blurb, wage: h.wage };
+          STAFF.push(person);
+          BY_ID[h.id] = person;
+          LOOKS[h.id] = LOOKS[twin];
+          SPRITE_TYPE_BY_ID[h.id] = h.sprite;
+        }
+        if (run && run.days) {
+          for (var day = 0; day < run.days.length; day++) {
+            if (!run.days[day].avail[h.id]) run.days[day].avail[h.id] = [1, 1, 1];
+          }
+        }
+      });
+    }
+
+    function prepareFloor(index) {
+      if (!books || !HR.economy || !HR.sim) return;
+      HR.economy.beginShiftBooks(books);
+      var away = HR.economy.awayIds(books);
+      var pulled = HR.sim.pullAway(run.schedule[index], away);
+      run._awayNote = pulled || [];
+      syncFloor(false);
+      if (spriteSession && HR.sprites) spriteSession.ensure(HR.sprites.typesForDay(index, books));
+    }
+
     function beginShift(index, opts) {
       opts = opts || {};
       coach = null;
@@ -3505,10 +3737,17 @@
       run.day = index;
       run.phase = 'sim';
       var keepCrew = (opts && opts.keepCrew) || (run.crewLock && run.crewLock[index]);
+      syncHires();
       if (!keepCrew) run.schedule[index] = greedy(run, index);
+      prepareFloor(index);
       if (!run.met) run.met = campaignGet().met || {};
       run.simState = null;
       sim = startDay(run);
+      if (books) {
+        sim.books = books;
+        sim.cogs = 0;
+        sim.stockouts = 0;
+      }
       camp.seen = true;
       camp.current = index;
       campaignPut(camp);
@@ -3544,6 +3783,9 @@
         if (snap && typeof snap.t === 'number' && !snap.done) {
           try {
             sim = restoreSim(snap, run);
+            if (books) sim.books = books;
+            sim.cogs = sim.cogs || 0;
+            sim.stockouts = sim.stockouts || 0;
             renderSim({ resume: true });
             if (snap.t > 0.4) toast('Shift resumed.');
           } catch (err) {
@@ -3552,7 +3794,13 @@
           }
         } else {
           if (run.day === 0 && hoursOf(run.schedule[0]) < 1) run.schedule[0] = greedy(run, 0);
+          prepareFloor(run.day);
           sim = startDay(run);
+          if (books) {
+            sim.books = books;
+            sim.cogs = 0;
+            sim.stockouts = 0;
+          }
           renderSim({ resume: false });
         }
       } else if (run.phase === 'score' || run.phase === 'perk') renderScore();
@@ -3583,8 +3831,8 @@
             run.callouts++;
           }
           for (var s = 0; s < 3; s++) {
-            for (var i = 0; i < STATIONS.length; i++) {
-              if (run.schedule[day][s][STATIONS[i]] === person.id) run.schedule[day][s][STATIONS[i]] = null;
+            for (var i = 0; i < stationList().length; i++) {
+              if (run.schedule[day][s][stationList()[i]] === person.id) run.schedule[day][s][stationList()[i]] = null;
             }
           }
           els.modal.hidden = true;
@@ -3600,7 +3848,7 @@
       for (var h = 0; h < 3; h++) {
         cells += '<div class="hr-grid__head">' + SHIFT_NAMES[h] + '<small>' + SHIFT_HOURS[h] + '</small></div>';
       }
-      STATIONS.forEach(function (st) {
+      stationList().forEach(function (st) {
         var role = st.indexOf('reg') === 0 ? 'register' : st;
         cells += '<div class="hr-grid__label"><i style="background:' + ROLE_COLOR[role] + '"></i>' + STATION_LABEL[st] + '</div>';
         for (var sh = 0; sh < 3; sh++) {
@@ -3635,7 +3883,7 @@
           ? '<div class="hr-grid" id="hr-grid">' + cells + '</div><div class="hr-tray" id="hr-tray">' + tray + '</div>'
           : '<div class="hr-crew" id="hr-crew">' + [0, 1, 2].map(function (sh) {
             var names = [];
-            STATIONS.forEach(function (st) {
+            stationList().forEach(function (st) {
               var id = run.schedule[day][sh][st];
               if (id && BY_ID[id]) names.push(firstName(id));
             });
@@ -3693,10 +3941,10 @@
       var avail = run.days[run.day].avail;
       var next = blankDay();
       for (var sh = 0; sh < 3; sh++) {
-        for (var i = 0; i < STATIONS.length; i++) {
-          var id = prev[sh][STATIONS[i]];
+        for (var i = 0; i < stationList().length; i++) {
+          var id = prev[sh][stationList()[i]];
           if (!id) continue;
-          var placed = tryPlace(next, avail, id, sh, STATIONS[i], null);
+          var placed = tryPlace(next, avail, id, sh, stationList()[i], null);
           if (placed.ok) next = placed.schedule;
         }
       }
@@ -3745,6 +3993,10 @@
       els.sim.querySelector('.hr-actions').innerHTML = actions;
       sim.live = true;
       sim.floorOn = true;
+      if (run._awayNote && run._awayNote.length) {
+        toast(run._awayNote.map(firstName).join(', ') + ' is off this floor.');
+        run._awayNote = [];
+      }
       primeShift(sim, run);
       if (tutDone()) sim.coachHold = false;
       resize();
@@ -3908,13 +4160,44 @@
       var stars = goalStars(snap.goalPct);
       var prevStars = camp.stars[run.day] || 0;
       if (stars > prevStars) camp.stars[run.day] = stars;
-      var earned = Math.round((snap.sales || 0) * CONFIG.earnRate);
-      var prevEarn = camp.bestEarn[run.day] || 0;
-      var gain = Math.max(0, earned - prevEarn);
-      if (earned > prevEarn) camp.bestEarn[run.day] = earned;
-      camp.bank = (camp.bank || 0) + gain;
-      snap.earnGross = earned;
-      snap.earnPrev = prevEarn;
+      if (books && sim && HR.economy) {
+        var postKey = String(run.day);
+        books.posted = books.posted || {};
+        books.closed = books.closed || {};
+        var firstClose = !books.closed[postKey];
+        var prevPost = books.posted[postKey] || 0;
+        var tape = HR.economy.closeShift(books, {
+          sales: snap.sales,
+          cogs: sim.cogs || 0,
+          wages: snap.payroll,
+          walkouts: snap.walkouts,
+          checkouts: snap.checkouts,
+          stockouts: sim.stockouts || 0,
+          goalPct: snap.goalPct
+        });
+        if (!firstClose) books.cash = Math.round(books.cash - prevPost);
+        else if (HR.world) {
+          snap.background = HR.world.closeBackground(books);
+        }
+        books.posted[postKey] = tape.profit;
+        books.closed[postKey] = 1;
+        tape.cash = books.cash;
+        snap.tape = tape;
+        snap.earned = tape.profit;
+        snap.bank = books.cash;
+        camp.bank = books.cash;
+        if (HR.save) HR.save.save(writeJSON, books);
+      } else {
+        var earned = Math.round((snap.sales || 0) * CONFIG.earnRate);
+        var prevEarn = camp.bestEarn[run.day] || 0;
+        var gain = Math.max(0, earned - prevEarn);
+        if (earned > prevEarn) camp.bestEarn[run.day] = earned;
+        camp.bank = (camp.bank || 0) + gain;
+        snap.earnGross = earned;
+        snap.earnPrev = prevEarn;
+        snap.earned = gain;
+        snap.bank = camp.bank;
+      }
       camp.seen = true;
       camp.current = run.day;
       if (!camp.playedDay || camp.playedDay !== run.ymd) {
@@ -3924,8 +4207,6 @@
       }
       campaignPut(camp);
       snap.shiftStars = Math.max(prevStars, stars);
-      snap.earned = gain;
-      snap.bank = camp.bank;
       snap.bestComboLabel = (snap.bestCombo || 0) > 1 ? multLabel(snap.bestCombo) : '';
       return snap;
     }
@@ -3995,7 +4276,7 @@
       var sh = crewMode === 'live' && sim ? shiftIndex(sim) : 0;
       var sched = run.schedule[day];
       var avail = run.days[day].avail;
-      var stations = STATIONS.map(function (st) {
+      var stations = stationList().map(function (st) {
         var sid = sched[sh][st];
         var who = sid && BY_ID[sid] ? firstName(sid) : 'Empty';
         var match = sid && BY_ID[sid] && ((st.indexOf('reg') === 0 && BY_ID[sid].role === 'register') || BY_ID[sid].role === st || BY_ID[sid].role === 'manager');
@@ -4065,8 +4346,8 @@
           return;
         }
         var from = null;
-        for (var i = 0; i < STATIONS.length; i++) {
-          if (sched[sh][STATIONS[i]] === crewArm) from = { shift: sh, station: STATIONS[i] };
+        for (var i = 0; i < stationList().length; i++) {
+          if (sched[sh][stationList()[i]] === crewArm) from = { shift: sh, station: stationList()[i] };
         }
         var res = tryPlace(run.schedule[day], avail, crewArm, sh, station, from);
         if (!res.ok) { toast(res.reason); sfx('miss'); return; }
@@ -4113,13 +4394,17 @@
         '<p class="hr-stars hr-stars--big">' + starGlyph(snap.shiftStars || goalStars(snap.goalPct)) + '</p>' +
         '<p class="hr-thresholds">1★ ' + Math.round(CONFIG.star1 * 100) + '% · 2★ ' + Math.round(CONFIG.star2 * 100) + '% · 3★ ' + Math.round(CONFIG.star3 * 100) + '%</p>' +
         '<p class="hr-lead">Best combo ' + esc(comboBit) + ' · ' + (snap.walkouts || 0) + ' walkouts · ' + money(snap.sales) + ' / ' + money(snap.goal) + '</p>' +
-        '<p class="hr-bank">' + (snap.earned > 0 ? '+' + money(snap.earned) + ' banked' : 'Bank unchanged') + ' · ' + money(snap.bank || 0) + ' total</p>' +
+        '<p class="hr-bank">' + (snap.tape ? money(snap.tape.profit) + ' profit' : (snap.earned > 0 ? '+' + money(snap.earned) + ' banked' : 'Register unchanged')) + ' · ' + money(snap.bank || 0) + ' in the register</p>' +
         '<p class="hr-fine">' + esc(bankCopy(snap)) + '</p>' +
+        (snap.tape && snap.tape.reviews ? snap.tape.reviews.map(function (line) { return '<p class="hr-fine">“' + esc(line) + '”</p>'; }).join('') : '') +
+        (snap.background && snap.background.tapes && snap.background.tapes.length ? snap.background.tapes.map(function (row) {
+          return '<p class="hr-fine">' + esc(row.name) + ' posted ' + money(row.profit) + (row.complaints && row.complaints[0] ? '. ' + esc(row.complaints[0]) : '.') + '</p>';
+        }).join('') : '') +
         '<p class="hr-scorebig">' + snap.points + ' pts</p>' +
         '<div class="hr-cta">' +
         '<button type="button" class="btn btn--primary" id="hr-retry">Retry shift</button>' +
         '<button type="button" class="btn" id="hr-to-crew">Set crew</button>' +
-        '<button type="button" class="btn" id="hr-to-shop">Upgrades</button>' +
+        '<button type="button" class="btn" id="hr-to-shop">Office</button>' +
         '<button type="button" class="btn" id="hr-to-map">Shift map</button>' +
         '</div>';
       document.getElementById('hr-retry').addEventListener('click', function () {
@@ -4133,6 +4418,9 @@
         saveRun();
         renderShop();
       });
+      if (spriteSession && HR.sprites && books) {
+        spriteSession.preload(HR.sprites.typesForDay(Math.min(SHIFT_COUNT - 1, run.day + 1), books));
+      }
       document.getElementById('hr-to-map').addEventListener('click', function () {
         run.phase = 'map';
         saveRun();
@@ -4141,6 +4429,69 @@
     }
 
     function renderShop() {
+      show('shop');
+      if (!books || !HR.ui) return renderShopLegacy();
+      syncHires();
+      var camp = campaignGet();
+      camp.bank = books.cash;
+      if (run) run.upgrades = camp.upgrades;
+      HR.ui.mountOffice(els.shop, {
+        books: books,
+        upgrades: UPGRADES,
+        upgradeLevel: function (id) { return (camp.upgrades && camp.upgrades[id]) || 0; },
+        onToast: toast,
+        onDirty: function () {
+          camp.bank = books.cash;
+          campaignPut(camp);
+          if (HR.save) HR.save.save(writeJSON, books);
+          syncHires();
+          saveRun();
+        },
+        onUpgrade: function (id) {
+          var def = null;
+          for (var i = 0; i < UPGRADES.length; i++) if (UPGRADES[i].id === id) def = UPGRADES[i];
+          if (!def) return;
+          var live = campaignGet();
+          var lvl = live.upgrades[id] || 0;
+          if (lvl >= def.max) return;
+          var cost = def.costs[lvl];
+          if (books.cash < cost) { toast('Not enough in the register.'); return; }
+          books.cash -= cost;
+          live.bank = books.cash;
+          live.upgrades[id] = lvl + 1;
+          campaignPut(live);
+          if (run) run.upgrades = live.upgrades;
+          if (HR.save) HR.save.save(writeJSON, books);
+          sfx('correct');
+          toast(def.name + ' is on the floor.');
+          renderShop();
+        },
+        onLayout: function () { renderLayout(); },
+        onBack: function () {
+          if (run) { run.phase = 'map'; saveRun(); }
+          renderMap();
+        }
+      });
+    }
+
+    function renderLayout() {
+      show('shop');
+      if (!books || !HR.ui || !HR.layout) return;
+      var loc = books.locations[books.active];
+      HR.ui.mountLayout(els.shop, {
+        layout: loc.layout,
+        tool: 'shelf-toys',
+        onToast: toast,
+        onPlaced: function () {
+          trafficBlocked._layout = null;
+          syncFloor(true);
+          if (HR.save) HR.save.save(writeJSON, books);
+        },
+        onDone: function () { renderShop(); }
+      });
+    }
+
+    function renderShopLegacy() {
       show('shop');
       var camp = campaignGet();
       if (run) run.upgrades = camp.upgrades;
@@ -4189,7 +4540,8 @@
     function renderMap() {
       show('map');
       var camp = campaignGet();
-      var html = '<p class="hr-kicker">Holiday Rush Mart</p><h2>Shift map</h2><p class="hr-lead">Earn one star to unlock the next shift. Locked days stay blank. Replay any open shift. The bank keeps 10% of sales, and a replay only adds a better haul.</p><p class="hr-bank">Bank ' + money(camp.bank) + '</p><div class="hr-map">';
+      var purse = books ? books.cash : camp.bank;
+      var html = '<p class="hr-kicker">Holiday Rush Mart</p><h2>Shift map</h2><p class="hr-lead">Earn one star to unlock the next shift. Locked days stay blank. Replay any open shift. A retry replaces that shift’s profit in the register.</p><p class="hr-bank">Register ' + money(purse) + '</p><div class="hr-map">';
       var week = '';
       for (var i = 0; i < SHIFT_COUNT; i++) {
         var def = shiftDef(i);
@@ -4304,6 +4656,15 @@
     function paintStorePlate(g) {
       g.fillStyle = PAL.floorB;
       g.fillRect(0, 0, WORLD_W, WORLD_H);
+      if (WORLD_W > 1600) {
+        g.fillStyle = 'rgba(224,163,34,0.16)';
+        g.fillRect(1600, 124, WORLD_W - 1600, WORLD_H - 124);
+        g.fillStyle = PAL.floorA;
+        g.fillRect(1576, 400, 48, 180);
+        g.fillStyle = PAL.gold;
+        g.fillRect(1576, 400, 48, 6);
+        g.fillRect(1576, 574, 48, 6);
+      }
       var rowH = 28;
       for (var y = 118; y < WORLD_H; y += rowH) {
         var row = ((y - 118) / rowH) | 0;
@@ -4486,7 +4847,7 @@
         g.fillText(label, x, y - 124);
       }
       var bayName = ['TOYS', 'TREATS', 'WRAP', 'CARDS'];
-      for (var si = 0; si < SHELVES.length; si++) gondola(SHELVES[si].x, SHELVES[si].y, bayName[si]);
+      for (var si = 0; si < SHELVES.length; si++) gondola(SHELVES[si].x, SHELVES[si].y, SHELVES[si].label || bayName[si] || 'AISLE');
       function counter(x, y, accent) {
         g.fillStyle = 'rgba(42,24,18,0.28)';
         traceRound(g, x - 62, y + 8, 132, 48, 8);
@@ -4518,7 +4879,8 @@
         g.fill();
       }
       counter(SPOTS.reg1.x, 748, PAL.red);
-      counter(SPOTS.reg2.x, 748, PAL.blue);
+      if (SPOTS.reg2) counter(SPOTS.reg2.x, 748, PAL.blue);
+      if (SPOTS.reg3) counter(SPOTS.reg3.x, 748, PAL.gold);
       g.fillStyle = 'rgba(42,24,18,0.2)';
       g.fillRect(SPOTS.reg1.x - 18, 800, 36, 70);
       g.fillRect(SPOTS.reg2.x - 18, 800, 36, 70);
@@ -4742,11 +5104,12 @@
         }
       }
       var zones = [
-        { station: 'reg1', x: SPOTS.reg1.x, y: (SPOTS.reg1.y + QUEUE.reg1.y) * 0.5 },
-        { station: 'reg2', x: SPOTS.reg2.x, y: (SPOTS.reg2.y + QUEUE.reg2.y) * 0.5 },
         { station: 'freight', x: SPOTS.truck.x, y: SPOTS.truck.y + 20 },
         { station: 'floor', x: SPOTS.floor.x, y: SPOTS.floor.y }
       ];
+      registers().forEach(function (reg) {
+        zones.unshift({ station: reg, x: SPOTS[reg].x, y: (SPOTS[reg].y + QUEUE[reg].y) * 0.5 });
+      });
       var zone = null;
       var zoneD = 72;
       for (var z = 0; z < zones.length; z++) {
@@ -4843,7 +5206,7 @@
     }
 
     function drawTrouble() {
-      var regs = ['reg1', 'reg2'];
+      var regs = registers();
       for (var i = 0; i < regs.length; i++) {
         var n = queueOf(sim, regs[i]).length;
         if (n >= 3) {
@@ -4914,7 +5277,8 @@
     function viewSize() {
       var cssW = els.canvas._cssW || 800;
       var cssH = els.canvas._cssH || 450;
-      var target = cssW < 720 ? 84 : 96;
+      if (HR.render) return HR.render.view(cssW, cssH, WORLD_W, WORLD_H, cam.zoom || 1, CONFIG.sprite);
+      var target = cssW < 520 ? 118 : cssW < 900 ? 112 : 108;
       var viewW = CONFIG.sprite * cssW / target;
       if (viewW > WORLD_W) viewW = WORLD_W;
       var viewH = viewW * cssH / cssW;
@@ -4923,7 +5287,25 @@
         viewW = viewH * cssW / cssH;
         if (viewW > WORLD_W) viewW = WORLD_W;
       }
-      return { viewW: viewW, viewH: viewH, cssW: cssW, cssH: cssH };
+      return { viewW: viewW, viewH: viewH, cssW: cssW, cssH: cssH, spritePx: CONFIG.sprite * cssW / viewW, productPx: 46 * cssW / viewW, zoom: 1 };
+    }
+
+    function paintEdges(view) {
+      if (els.stage) {
+        els.stage.dataset.spritePx = String(Math.round(view.spritePx || 0));
+        els.stage.dataset.productPx = String(Math.round(view.productPx || 0));
+        els.stage.dataset.zoom = String(view.zoom || cam.zoom || 1);
+        els.stage.dataset.world = WORLD_W + 'x' + WORLD_H;
+      }
+      if (!HR.render) return;
+      var edge = HR.render.edges(cam.x, cam.y, view.viewW, view.viewH, WORLD_W, WORLD_H);
+      var map = { left: 'hr-pan-left', right: 'hr-pan-right', up: 'hr-pan-up', down: 'hr-pan-down' };
+      Object.keys(map).forEach(function (key) {
+        var node = document.getElementById(map[key]);
+        if (node) node.hidden = !edge[key];
+      });
+      var east = document.getElementById('hr-east');
+      if (east) east.hidden = WORLD_W <= 1600;
     }
 
     function draw() {
@@ -4952,6 +5334,7 @@
       }
       cam.x = clamp(cam.x, 0, Math.max(0, WORLD_W - view.viewW));
       cam.y = clamp(cam.y, 0, Math.max(0, WORLD_H - view.viewH));
+      paintEdges(view);
       if (isQA() && els.stage && sim) {
         els.stage.dataset.cam = Math.round(cam.x) + ',' + Math.round(cam.y);
         els.stage.dataset.view = Math.round(view.viewW) + ',' + Math.round(view.viewH);
@@ -5007,9 +5390,19 @@
         if (sim.you) drawList.push(sim.you);
         drawList.push(jackPose());
         drawList.sort(function (a, b) { return a.y - b.y; });
+        var heavy = sim.customers.length > 40;
+        var drawn = 0;
         for (var d = 0; d < drawList.length; d++) {
-          if (drawList[d].kind === 'jack') drawPalletJack(drawList[d]);
-          else drawActor(drawList[d]);
+          var actor = drawList[d];
+          var visible = !heavy || actor.kind === 'jack' || !HR.render || HR.render.onScreen(actor, cam.x, cam.y, view.viewW, view.viewH, 140);
+          if (!visible) continue;
+          drawn++;
+          if (actor.kind === 'jack') drawPalletJack(actor);
+          else drawActor(actor);
+        }
+        if (isQA() && els.stage) {
+          els.stage.dataset.drawCount = String(drawn);
+          els.stage.dataset.simCount = String(sim.customers.length + sim.staff.length);
         }
         drawPings();
         drawTrouble();
@@ -5116,50 +5509,113 @@
       ctx.closePath();
     }
 
-    function drawProduct(x, y, kind) {
-      if (kind === 0) {
-        ctx.fillStyle = '#d64545';
-        roundBox(x, y, 14, 16, 2);
-        ctx.fill();
-        ctx.fillStyle = '#f6f0e4';
-        ctx.fillRect(x + 2, y + 4, 10, 3);
-      } else if (kind === 1) {
-        ctx.fillStyle = '#3b78d0';
-        ctx.fillRect(x + 1, y + 4, 12, 12);
-        ctx.beginPath();
-        ctx.ellipse(x + 7, y + 4, 6, 3, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#e0a322';
-        ctx.fillRect(x + 1, y + 8, 12, 3);
-      } else if (kind === 2) {
-        ctx.fillStyle = '#2f9e57';
-        ctx.fillRect(x + 5, y, 4, 5);
-        roundBox(x + 2, y + 5, 10, 12, 2);
-        ctx.fill();
-      } else {
-        ctx.fillStyle = '#e0a322';
-        ctx.fillRect(x, y + 2, 14, 13);
-        ctx.fillStyle = '#d64545';
-        ctx.fillRect(x + 6, y + 2, 2, 13);
-        ctx.fillRect(x, y + 8, 14, 2);
+    function shelfSku(sh, col) {
+      var label = sh.label || '';
+      var dept = sh.dept || '';
+      if (dept === 'electronics' || label === 'LIGHTS') return ['lights', 'lights', 'candle'][col];
+      if (dept === 'cafe' || label === 'CAFE') return ['mug', 'cocoa', 'candy'][col];
+      if (label === 'SEASON') return ['globe', 'candle', 'lights'][col];
+      if (label === 'TREATS') return ['candy', 'cocoa', 'candy'][col];
+      if (label === 'WRAP') return ['paper', 'candle', 'paper'][col];
+      if (label === 'CARDS') return ['candle', 'paper', 'mug'][col];
+      if (label === 'PLUSH') return ['plush', 'plush', 'candy'][col];
+      return ['cocoa', 'plush', 'candy'][col];
+    }
+
+    function drawChunky(x, y, sku) {
+      var pack = assets && assets.spritePack;
+      var obj = pack && pack.objects && pack.objects[sku];
+      if (obj && obj.img) {
+        ctx.drawImage(obj.img, x, y, 46, 54);
+        return;
       }
+      ctx.save();
+      ctx.translate(x + 23, y + 27);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = PAL.ink;
+      if (sku === 'paper') {
+        ctx.fillStyle = '#f6f0e4';
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 16, 22, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#c4363a';
+        ctx.fillRect(-4, -22, 8, 44);
+      } else if (sku === 'candy') {
+        ctx.fillStyle = '#d64545';
+        roundBox(-16, -18, 32, 36, 8);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#f6f0e4';
+        ctx.fillRect(-10, -4, 20, 6);
+      } else if (sku === 'candle') {
+        ctx.fillStyle = '#f3e6c8';
+        roundBox(-10, -8, 20, 28, 4);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#e0a322';
+        ctx.fillRect(-2, -22, 4, 14);
+      } else if (sku === 'lights') {
+        ctx.strokeStyle = '#2f7d4a';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(0, 4, 16, Math.PI, 0);
+        ctx.stroke();
+        ctx.fillStyle = '#e0a322';
+        ctx.beginPath();
+        ctx.arc(-12, 4, 4, 0, Math.PI * 2);
+        ctx.arc(0, -10, 4, 0, Math.PI * 2);
+        ctx.arc(12, 4, 4, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (sku === 'plush') {
+        ctx.fillStyle = '#c46a3a';
+        ctx.beginPath();
+        ctx.arc(0, 4, 16, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(-12, -10, 7, 0, Math.PI * 2);
+        ctx.arc(12, -10, 7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      } else if (sku === 'globe') {
+        ctx.fillStyle = '#7ec8ff';
+        ctx.beginPath();
+        ctx.arc(0, -2, 16, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#6b4228';
+        roundBox(-14, 14, 28, 8, 2);
+        ctx.fill();
+      } else if (sku === 'mug') {
+        ctx.fillStyle = '#f6f0e4';
+        roundBox(-14, -12, 24, 28, 4);
+        ctx.fill();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(12, 2, 8, -1, 1);
+        ctx.stroke();
+      } else {
+        ctx.fillStyle = '#6b2438';
+        roundBox(-14, -16, 28, 34, 6);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#e0a322';
+        ctx.fillRect(-14, -4, 28, 6);
+      }
+      ctx.restore();
     }
 
     function drawStoreDress() {
       var stock = clamp(sim.stock, 0, 1);
-      var shown = Math.max(0, Math.round(stock * 5));
+      var heroes = stock <= 0.04 ? 0 : stock < 0.34 ? 1 : stock < 0.67 ? 2 : 3;
       var t = sim.t || 0;
       ctx.save();
-      SHELVES.forEach(function (sh, si) {
-        var rails = [-100, -74, -48];
-        for (var row = 0; row < rails.length; row++) {
-          var count = row === 2 ? Math.max(0, shown - 1) : shown;
-          for (var col = 0; col < count; col++) {
-            drawProduct(sh.x - 52 + col * 20, sh.y + rails[row], (si + col + row) % 4);
-          }
-        }
+      SHELVES.forEach(function (sh) {
+        var slots = [-48, 0, 48];
+        for (var col = 0; col < heroes; col++) drawChunky(sh.x + slots[col] - 23, sh.y - 108, shelfSku(sh, col));
       });
-      var regs = ['reg1', 'reg2'];
+      var regs = registers();
       for (var r = 0; r < regs.length; r++) {
         var belt = SPOTS[regs[r]];
         var slide = reduceMotion ? 10 : ((t * 42 + r * 18) % 46);
@@ -5355,10 +5811,27 @@
       return true;
     }
 
+    function drawSilhouette(a) {
+      ctx.save();
+      ctx.fillStyle = 'rgba(42,28,24,0.72)';
+      ctx.beginPath();
+      ctx.ellipse(0, -36, 12, 14, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(0, -4, 16, 22, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      if (a) a._sil = 1;
+    }
+
     function paintPerson(a) {
       if (drawSpritePerson(a)) return;
-      if (assets && assets.spritePack && assets.spritePack.ready) return;
-      drawFigure(a);
+      var pack = assets && assets.spritePack;
+      if (!pack || !pack.ready) {
+        drawFigure(a);
+        return;
+      }
+      if (pack.partial && !pack.types[spriteTypeFor(a)]) drawSilhouette(a);
     }
 
     function drawFigure(a) {
@@ -5749,8 +6222,53 @@
       window.addEventListener('resize', resize);
     }
 
+    var pointers = {};
+    function zoomBy(mult) {
+      cam.zoom = HR.render ? HR.render.clampZoom(els.canvas._cssW || 800, (cam.zoom || 1) * mult) : (cam.zoom || 1);
+      draw();
+    }
+    var zoomIn = document.getElementById('hr-zoom-in');
+    var zoomOut = document.getElementById('hr-zoom-out');
+    var eastBtn = document.getElementById('hr-east');
+    if (zoomIn) zoomIn.addEventListener('click', function (ev) { ev.stopPropagation(); zoomBy(1.12); });
+    if (zoomOut) zoomOut.addEventListener('click', function (ev) { ev.stopPropagation(); zoomBy(0.9); });
+    if (eastBtn) eastBtn.addEventListener('click', function (ev) {
+      ev.stopPropagation();
+      var view = viewSize();
+      cam.x = Math.max(0, WORLD_W - view.viewW);
+      cam.follow = false;
+      setTimeout(function () { if (!coach) cam.follow = true; }, 2600);
+      draw();
+    });
+    ['left', 'right', 'up', 'down'].forEach(function (dir) {
+      var node = document.getElementById('hr-pan-' + dir);
+      if (!node) return;
+      node.addEventListener('click', function (ev) {
+        ev.stopPropagation();
+        var view = viewSize();
+        var stepX = view.viewW * 0.34;
+        var stepY = view.viewH * 0.34;
+        if (dir === 'left') cam.x -= stepX;
+        if (dir === 'right') cam.x += stepX;
+        if (dir === 'up') cam.y -= stepY;
+        if (dir === 'down') cam.y += stepY;
+        cam.x = clamp(cam.x, 0, Math.max(0, WORLD_W - view.viewW));
+        cam.y = clamp(cam.y, 0, Math.max(0, WORLD_H - view.viewH));
+        cam.follow = false;
+        setTimeout(function () { if (!coach) cam.follow = true; }, 2600);
+        draw();
+      });
+    });
+    els.stage.addEventListener('wheel', function (ev) {
+      if (els.sim.hidden) return;
+      ev.preventDefault();
+      zoomBy(ev.deltaY > 0 ? 0.92 : 1.08);
+    }, { passive: false });
+
     els.stage.addEventListener('pointerdown', function (ev) {
       if (els.sim.hidden || ev.button > 0) return;
+      pointers[ev.pointerId] = { x: ev.clientX, y: ev.clientY };
+      if (Object.keys(pointers).length >= 2) return;
       if (ev.target.closest && ev.target.closest('button, .hr-card')) return;
       if (sim) {
         var preview = pickHit(ev);
@@ -5768,6 +6286,17 @@
       try { els.stage.setPointerCapture(ev.pointerId); } catch (e) {}
     });
     els.stage.addEventListener('pointermove', function (ev) {
+      if (pointers[ev.pointerId]) pointers[ev.pointerId] = { x: ev.clientX, y: ev.clientY };
+      var ids = Object.keys(pointers);
+      if (ids.length >= 2 && HR.render) {
+        var a = pointers[ids[0]];
+        var b = pointers[ids[1]];
+        var dist = Math.hypot(a.x - b.x, a.y - b.y);
+        if (!cam.pinch) cam.pinch = dist;
+        else if (cam.pinch > 0) zoomBy(dist / cam.pinch);
+        cam.pinch = dist;
+        return;
+      }
       if (!cam.drag) return;
       var view = viewSize();
       var scale = view.cssW / view.viewW;
@@ -5779,9 +6308,11 @@
       cam.y = clamp(cam.drag.cy - my / scale, 0, Math.max(0, WORLD_H - view.viewH));
     });
     function endPan(ev) {
+      if (ev && ev.pointerId != null) delete pointers[ev.pointerId];
+      if (Object.keys(pointers).length < 2) cam.pinch = 0;
       var wasTap = cam.drag && !cam.drag.moved;
       if (cam.drag && cam.drag.moved) {
-        setTimeout(function () { if (!coach) cam.follow = true; }, 2200);
+        setTimeout(function () { if (!coach) cam.follow = true; }, 2600);
       } else if (!coach) cam.follow = true;
       cam.drag = null;
       if (wasTap && ev && !(ev.target && ev.target.closest && ev.target.closest('button'))) onStageTap(ev);
@@ -5980,7 +6511,16 @@
       if (lab) lab.textContent = pct < 100 ? 'Setting the floor' : 'Doors open';
     };
 
-    loadGameArt().then(function (loaded) {
+    var bootData = HR.data ? HR.data.load(ART + 'data/') : Promise.resolve(null);
+    bootData.then(function () {
+      books = HR.save ? HR.save.load(readJSON) : null;
+      if (books) {
+        var campNow = campaignGet();
+        campNow.bank = books.cash;
+        campaignPut(campNow);
+      }
+      return loadGameArt();
+    }).then(function (loaded) {
       assets = loaded;
       if (els.stage && loaded.spriteStatus) {
         els.stage.dataset.sprites = loaded.spriteStatus.ready ? 'ready' : loaded.spriteStatus.reason;
@@ -6008,11 +6548,41 @@
       }
       track('holiday_rush_open', { seed: ymd });
     }).catch(function () {
-      showFatal('The store art did not load. Refresh the page to try again.');
+      showFatal('The store did not load. Refresh the page to try again.');
     });
 
     root.HolidayRush._debug = {
       turbo: function (n) { if (isQA()) qaSpeed = n || 1; },
+      grant: function (n) {
+        if (!isQA() || !books) return;
+        books.cash += n || 0;
+        var campNow = campaignGet();
+        campNow.bank = books.cash;
+        campaignPut(campNow);
+        if (HR.save) HR.save.save(writeJSON, books);
+      },
+      stress: function (n) {
+        if (!isQA() || !sim) return;
+        var count = n || 150;
+        sim.stressCap = count;
+        var i;
+        for (i = 0; i < count; i++) spawnCustomer(sim, run);
+        while (sim.staff.length < 20) {
+          var actor = makeActor('staff_flr1', 80 + sim.staff.length * 30, 240);
+          actor.kind = 'staff';
+          actor.id = 'stress_' + sim.staff.length;
+          actor.role = 'floor';
+          actor.hidden = false;
+          sim.staff.push(actor);
+        }
+        for (i = 0; i < sim.customers.length; i++) {
+          sim.customers[i].x = (i * 97) % Math.max(1, WORLD_W);
+          sim.customers[i].y = 180 + ((i * 53) % 640);
+        }
+        if (sim.spatial) sim.spatial.rebuild(sim.customers.concat(sim.staff));
+        if (els.stage) els.stage.dataset.simCount = String(sim.customers.length + sim.staff.length);
+      },
+      books: function () { return books; },
       fill: function () {
         if (!isQA() || !run) return;
         run.schedule[run.day] = greedy(run, run.day);
@@ -6093,6 +6663,13 @@
     if (!(active14.goalPct < active0.goalPct - 0.15)) bad = true;
     if (up14.goalPct < 1) bad = true;
     if (mid8.goalPct < 0.9) bad = true;
+    ['entities', 'economy', 'layout', 'world', 'sprites', 'render'].forEach(function (name) {
+      var part = HR[name];
+      if (!part || !part.selfTest) { bad = true; console.log(name, 'missing'); return; }
+      var res = part.selfTest();
+      console.log(name, JSON.stringify(res));
+      if (!res.ok) bad = true;
+    });
     console.log('impliedGood', Math.round(impliedGood * 100));
     console.log('combo', multLabel(10), 'bad', bad);
     if (bad) process.exit(1);

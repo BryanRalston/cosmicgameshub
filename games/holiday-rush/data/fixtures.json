@@ -1,0 +1,16 @@
+{
+  "cell": 80,
+  "productSlot": [96, 112],
+  "drawSlot": [46, 54],
+  "types": [
+    {"id": "door", "name": "Door", "blocks": false},
+    {"id": "aisle", "name": "Aisle", "blocks": false},
+    {"id": "gondola", "name": "Gondola", "blocks": true},
+    {"id": "register", "name": "Register", "blocks": true},
+    {"id": "cafe", "name": "Cafe counter", "blocks": true},
+    {"id": "wall", "name": "Wall", "blocks": true},
+    {"id": "freight", "name": "Freight", "blocks": true},
+    {"id": "truck", "name": "Dock", "blocks": false},
+    {"id": "floor", "name": "Floor lead", "blocks": false}
+  ]
+}

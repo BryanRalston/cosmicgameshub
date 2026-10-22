@@ -1,0 +1,10 @@
+{
+  "types": [
+    {"id": "regular", "sprite": "regular", "units": 1, "prefs": {"cocoa": 1, "paper": 1, "candy": 1, "candle": 1, "lights": 1, "plush": 1, "globe": 1, "mug": 1}},
+    {"id": "family", "sprite": "family", "units": 1.15, "prefs": {"candy": 2, "plush": 3, "cocoa": 2, "paper": 1, "mug": 1}},
+    {"id": "kid", "sprite": "kid", "units": 0.72, "prefs": {"candy": 3, "plush": 2, "mug": 1}},
+    {"id": "rusher", "sprite": "rusher", "units": 0.85, "prefs": {"lights": 3, "cocoa": 1, "mug": 1}},
+    {"id": "haggle", "sprite": "haggle", "units": 1, "prefs": {"paper": 2, "candle": 2, "globe": 1}},
+    {"id": "lift", "sprite": "lift", "units": 0.4, "prefs": {"plush": 1, "lights": 1}}
+  ]
+}

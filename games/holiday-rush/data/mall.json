@@ -1,0 +1,13 @@
+{
+  "phase": "roadmap",
+  "name": "Holiday Rush Mall",
+  "slots": [
+    {"id": "flagship", "kind": "player", "name": "Your mart"},
+    {"id": "a", "kind": "lease", "name": "Unit A"},
+    {"id": "b", "kind": "lease", "name": "Unit B"},
+    {"id": "c", "kind": "lease", "name": "Unit C"},
+    {"id": "d", "kind": "lease", "name": "Unit D"},
+    {"id": "court", "kind": "common", "name": "Food court"}
+  ],
+  "commons": ["decor", "security", "parking", "foodcourt", "events"]
+}

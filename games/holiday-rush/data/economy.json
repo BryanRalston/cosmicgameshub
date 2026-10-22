@@ -1,0 +1,26 @@
+{
+  "startReputation": 3.4,
+  "rent": {"base": 220, "knock": 360, "lane": 480, "departments": 680, "flagship": 920, "kiosk": 520},
+  "demand": {"anchor": 3.4, "perPoint": 0.11, "min": 0.78, "max": 1.42},
+  "priceElasticity": 0.9,
+  "refuseMarkup": 1.45,
+  "priceMin": 0.7,
+  "priceMax": 1.45,
+  "repMemory": 0.72,
+  "caseUnits": 40,
+  "checkoutsPerShift": 36,
+  "unitsPerBasket": 3.2,
+  "loan": {"id": "bridge", "name": "District bridge", "principal": 4000, "payment": 560, "terms": 8},
+  "builds": [
+    {"id": "knock", "name": "Knock through the east wall", "cost": 2700, "needs": [], "blurb": "One new aisle for lights and plush. The camera stays close. Drag the floor to the new bay."},
+    {"id": "lane", "name": "Third register", "cost": 5400, "needs": ["knock"], "blurb": "Register C sits in the new bay. Pull someone onto it or the lane just watches the line."},
+    {"id": "departments", "name": "Seasonal bay and the cafe", "cost": 9600, "needs": ["lane"], "blurb": "A snow-globe gondola and a cafe counter. Mugs only sell if the counter is on the floor."},
+    {"id": "flagship", "name": "Flagship wing", "cost": 16000, "needs": ["departments"], "needsRep": 3.8, "blurb": "Another knock-through. The mart is now a floor you cross, not a room you see at once."},
+    {"id": "kiosk", "name": "Plaza kiosk", "cost": 26000, "needs": ["flagship"], "needsRep": 4, "needsSkill": 3, "blurb": "A second store. You play one floor. A trained lead runs the other, and the company register is shared."}
+  ],
+  "custCap": {"base": 14, "knock": 18, "lane": 22, "departments": 26, "flagship": 32},
+  "trainCostPerSkill": 450,
+  "maxSkill": 5,
+  "fireRep": 0.2,
+  "severanceShifts": 2
+}

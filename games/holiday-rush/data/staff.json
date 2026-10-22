@@ -1,0 +1,18 @@
+{
+  "starters": [
+    {"id": "staff_mgr", "name": "Maren Cole", "role": "manager", "skill": 2},
+    {"id": "staff_reg1", "name": "Jun Park", "role": "register", "skill": 2},
+    {"id": "staff_reg2", "name": "Priya Shah", "role": "register", "skill": 2},
+    {"id": "staff_frt1", "name": "Ellis Ward", "role": "freight", "skill": 2},
+    {"id": "staff_frt2", "name": "Noor Hale", "role": "freight", "skill": 2},
+    {"id": "staff_flr1", "name": "Sam Ortiz", "role": "floor", "skill": 2},
+    {"id": "staff_flr2", "name": "Bea Lin", "role": "floor", "skill": 2},
+    {"id": "staff_flr3", "name": "Theo Brooks", "role": "floor", "skill": 2}
+  ],
+  "hires": [
+    {"id": "hire_nia", "name": "Nia Pell", "role": "register", "wage": 14, "skill": 1, "sprite": "crew_register", "signing": 200, "blurb": "Quick hands, new to the drawer. Slower until she is trained."},
+    {"id": "hire_otis", "name": "Otis Berg", "role": "freight", "wage": 15, "skill": 1, "sprite": "crew_freight", "signing": 200, "blurb": "Strong back. The truck moves, the shelves fill late."},
+    {"id": "hire_lila", "name": "Lila Cho", "role": "floor", "wage": 14, "skill": 1, "sprite": "crew_floor", "signing": 200, "blurb": "Finds the right size if you give her a shift to learn the aisle."},
+    {"id": "hire_andre", "name": "Andre Voss", "role": "manager", "wage": 24, "skill": 2, "sprite": "crew_manager", "signing": 900, "needsRep": 3.8, "blurb": "Can run the store you are not standing in."}
+  ]
+}

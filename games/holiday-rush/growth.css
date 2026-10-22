@@ -1,0 +1,132 @@
+.hr-zoom,
+.hr-pan {
+  position: absolute;
+  z-index: 4;
+  display: flex;
+  gap: 6px;
+}
+
+.hr-zoom {
+  top: 8px;
+  right: 8px;
+}
+
+.hr-zoom button,
+.hr-pan button,
+.hr-office button,
+.hr-tools button,
+.hr-tile {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.hr-zoom button,
+.hr-pan button {
+  border: 0;
+  border-radius: 10px;
+  background: #2a1c18;
+  color: #f6f0e4;
+  font: 700 16px/1 Outfit, Inter, sans-serif;
+  padding: 0 12px;
+}
+
+.hr-pan--left { left: 8px; top: 50%; }
+.hr-pan--right { right: 8px; top: 50%; }
+.hr-pan--up { left: 50%; top: 48px; transform: translateX(-50%); }
+.hr-pan--down { left: 50%; bottom: 8px; transform: translateX(-50%); }
+
+.hr-office__block {
+  margin: 16px 0;
+  padding: 12px;
+  background: rgba(255, 244, 220, 0.55);
+  border-radius: 14px;
+}
+
+.hr-sku,
+.hr-crewline,
+.hr-upgrade {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(42, 28, 24, 0.12);
+}
+
+.hr-step,
+.hr-crewline__act,
+.hr-row,
+.hr-tools,
+.hr-send {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.hr-step strong {
+  min-width: 64px;
+  text-align: center;
+}
+
+.hr-board {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), 44px);
+  gap: 4px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  margin: 12px 0;
+}
+
+.hr-tile {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 6px;
+  border: 1px solid #2a1c18;
+  font: 700 8px/1 Outfit, Inter, sans-serif;
+  color: #2a1c18;
+  background: #c4a574;
+}
+
+.hr-tile.is-walk { background: #f3e6c8; }
+.hr-tile.is-void { background: #2a1c18; color: transparent; border-color: #2a1c18; }
+.hr-tile.is-gondola,
+.hr-tile.is-cafe { background: #6b4228; color: #f6f0e4; }
+.hr-tile.is-register { background: #c4363a; color: #f6f0e4; }
+.hr-tile.is-wall,
+.hr-tile.is-freight { background: #3e2618; color: #f6f0e4; }
+.hr-tile.is-door,
+.hr-tile.is-truck,
+.hr-tile.is-floor { background: #e0a322; }
+.hr-tile.is-shut { outline: 3px solid #e0a322; }
+
+.hr-warn {
+  color: #8a2a22;
+  font-weight: 700;
+}
+
+.hr-tools .is-on,
+.hr-row .is-on {
+  outline: 3px solid #e0a322;
+}
+
+.hr-leadpick {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.hr-leadpick select,
+.hr-send select {
+  min-height: 44px;
+  font: 600 16px/1.2 Outfit, Inter, sans-serif;
+}
+
+@media (max-width: 520px) {
+  .hr-sku,
+  .hr-crewline,
+  .hr-upgrade {
+    grid-template-columns: 1fr;
+  }
+}

@@ -15,6 +15,7 @@
   <meta name="description" content="Play Holiday Rush free in the browser. Run the store through the holiday rush: check out shoppers, restock shelves, chain combos. No download."/>
   <link rel="canonical" href="https://www.cosmicgameshub.com/games/holiday-rush"/>
   <link rel="stylesheet" href="../styles.css"/>
+  <link rel="stylesheet" href="/games/holiday-rush/growth.css"/>
   <meta property="og:type" content="website"/>
   <meta property="og:site_name" content="CosmicGamesHub"/>
   <meta property="og:title" content="Holiday Rush: Store Manager — Free Browser Game"/>
@@ -282,6 +283,15 @@
       <div class="hr-hud"></div>
       <div class="hr-stage" id="hr-stage">
         <canvas id="hr-canvas" width="800" height="450" aria-hidden="true"></canvas>
+        <div class="hr-zoom" id="hr-zoom">
+          <button type="button" id="hr-zoom-out" aria-label="Zoom out">−</button>
+          <button type="button" id="hr-zoom-in" aria-label="Zoom in">+</button>
+          <button type="button" id="hr-east" hidden>East bay</button>
+        </div>
+        <button type="button" class="hr-pan hr-pan--left" id="hr-pan-left" hidden aria-label="Pan left">‹</button>
+        <button type="button" class="hr-pan hr-pan--right" id="hr-pan-right" hidden aria-label="Pan right">›</button>
+        <button type="button" class="hr-pan hr-pan--up" id="hr-pan-up" hidden aria-label="Pan up">ˆ</button>
+        <button type="button" class="hr-pan hr-pan--down" id="hr-pan-down" hidden aria-label="Pan down">ˇ</button>
         <p id="hr-coach" hidden>Tap the long line</p>
         <button type="button" id="hr-skip" hidden>Skip</button>
       </div>
@@ -306,6 +316,16 @@
 <div id="hr-event" class="hr-modal" hidden></div>
 <div id="hr-toast" role="status"></div>
 
+<script src="/games/holiday-rush/src/data.js"></script>
+<script src="/games/holiday-rush/src/entities.js"></script>
+<script src="/games/holiday-rush/src/economy.js"></script>
+<script src="/games/holiday-rush/src/layout.js"></script>
+<script src="/games/holiday-rush/src/world.js"></script>
+<script src="/games/holiday-rush/src/save.js"></script>
+<script src="/games/holiday-rush/src/sprites.js"></script>
+<script src="/games/holiday-rush/src/sim.js"></script>
+<script src="/games/holiday-rush/src/render.js"></script>
+<script src="/games/holiday-rush/src/ui.js"></script>
 <script src="/games/holiday-rush.js"></script>
 <script src="/games/cg-sfx.js"></script>
 <script src="/games/daily-kit.js" defer></script>
