@@ -56,7 +56,7 @@
     "worldH": 900,
     "edited": false,
     "goalMul": 0.64,
-    "spawnMul": 0.72,
+    "spawnMul": 0.58,
     "mechanic": "wrap",
     "owned": [{"x": 0, "y": 0, "w": 1280, "h": 900}],
     "fixtures": [

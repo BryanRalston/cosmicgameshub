@@ -2522,7 +2522,7 @@
     }
     if (open >= 2) return;
     var spot = wrapSpot();
-    var fee = 18 + Math.round(sim.rng() * 18);
+    var fee = 28 + Math.round(sim.rng() * 24);
     sim.pings.push({ kind: 'wrap', x: spot.x, y: spot.y - 36, life: 8, pop: 1, dead: false, fee: fee });
     floater(sim, spot.x, spot.y - 78, 'Wrap?', '#ffe08a', true);
   }
@@ -5973,7 +5973,7 @@
             if (cs.display === 'none' || cs.visibility === 'hidden') continue;
             var box = el.getBoundingClientRect();
             var sameRow = box.bottom > tb.top + 4 && box.top < tb.bottom - 4;
-            if (sameRow && box.right > tb.left - 6) return true;
+            if (sameRow && box.right > tb.left + 1) return true;
           }
         }
         return hud.scrollWidth > hud.clientWidth + 1;
@@ -6182,6 +6182,17 @@
     }
 
     function pickHit(ev) {
+      if (sim.pings) {
+        var pingHit = null;
+        var pingD = 56;
+        for (var p = 0; p < sim.pings.length; p++) {
+          var ping = sim.pings[p];
+          if (ping.dead) continue;
+          var pd = screenDist(ping.x, ping.y, ev);
+          if (pd < pingD) { pingD = pd; pingHit = ping; }
+        }
+        if (pingHit) return { ping: pingHit };
+      }
       var best = null;
       var bestD = 64;
       for (var i = 0; i < sim.customers.length; i++) {
@@ -6191,13 +6202,6 @@
         if (d < bestD) { bestD = d; best = { cust: c }; }
       }
       if (best) return best;
-      if (sim.pings) {
-        for (var p = 0; p < sim.pings.length; p++) {
-          var ping = sim.pings[p];
-          if (ping.dead) continue;
-          if (screenDist(ping.x, ping.y, ev) < 48) return { ping: ping };
-        }
-      }
       var zones = [
         { station: 'freight', x: SPOTS.truck.x, y: SPOTS.truck.y + 20 },
         { station: 'floor', x: SPOTS.floor.x, y: SPOTS.floor.y }
@@ -8086,11 +8090,54 @@
         return (title ? title.textContent : '') + ' | ' + (body ? body.textContent : '');
       },
       wraps: function () {
-        if (!isQA() || !sim) return 0;
+        if (!isQA() || !sim) return null;
         offerWrap(sim);
+        var ping = null;
+        for (var i = sim.pings.length - 1; i >= 0; i--) {
+          if (sim.pings[i].kind === 'wrap' && !sim.pings[i].dead) { ping = sim.pings[i]; break; }
+        }
+        if (ping) {
+          cam.follow = false;
+          focusCam(ping.x, ping.y + 80);
+        }
         paintHud();
         draw();
-        return sim.pings ? sim.pings.length : 0;
+        var at = null;
+        if (ping && els.canvas) {
+          var rect = els.canvas.getBoundingClientRect();
+          var view = viewSize();
+          var scale = view.viewW ? view.cssW / view.viewW : 1;
+          at = {
+            x: (ping.x - cam.x) * scale + rect.left,
+            y: (ping.y - cam.y) * scale + rect.top,
+            fee: ping.fee
+          };
+        }
+        return { sales: sim.sales, wraps: sim.wraps || 0, at: at };
+      },
+      tapWrap: function () {
+        if (!isQA() || !sim || !sim.pings) return null;
+        var ping = null;
+        for (var i = 0; i < sim.pings.length; i++) {
+          if (sim.pings[i].kind === 'wrap' && !sim.pings[i].dead) ping = sim.pings[i];
+        }
+        if (!ping) return null;
+        var before = sim.sales;
+        resolvePing(sim, ping);
+        paintHud();
+        draw();
+        return { before: Math.round(before), sales: Math.round(sim.sales), wraps: sim.wraps || 0, fee: ping.fee };
+      },
+      seek: function (u) {
+        if (!isQA() || !sim) return '';
+        var t = (u == null ? 0.8 : u) * sim.duration;
+        if (!(t >= sim.t)) t = sim.t;
+        sim.t = t;
+        if (sim._clockT == null || sim.t > sim._clockT) sim._clockT = sim.t;
+        sim._heat = heatOf(sim, run);
+        paintHud();
+        var lab = document.querySelector('.hr-sales__top span');
+        return lab ? lab.textContent : '';
       },
       setSales: function (sales, goal) {
         if (!isQA() || !sim) return;
