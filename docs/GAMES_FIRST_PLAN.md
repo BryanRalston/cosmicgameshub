@@ -124,7 +124,7 @@ Future URL, not created yet: `/games/noonsworn`, copied from `games/embed-templa
 `data/featured.json` is the only file to edit. It is one JSON object, one line:
 
 ```json
-{"slug":"holiday-rush","weekStart":"2026-10-19","blurb":"Schedule the floor and survive three holiday rushes."}
+{"slug":"holiday-rush","weekStart":"2026-10-19","blurb":"Run the store through the holiday rush: check out shoppers, restock shelves, chain combos."}
 ```
 
 - `slug` is the path segment in `/games/<slug>`.

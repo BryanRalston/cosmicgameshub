@@ -438,7 +438,7 @@
     return '<aside class="play-break" data-play-break="1" aria-label="Take a break: play our free games">' +
       '<p class="play-break__title">Take a break: play our free games</p>' +
       '<ul>' +
-        '<li><a href="/games/holiday-rush">Holiday Rush</a><span> — schedule the floor</span></li>' +
+        '<li><a href="/games/holiday-rush">Holiday Rush</a><span> — check out shoppers, chain combos</span></li>' +
         '<li><a href="/games/rift">RIFT</a><span> — three daily word zones</span></li>' +
         '<li><a href="/games/gamerdle">Gamerdle</a><span> — guess the mystery game</span></li>' +
       '</ul>' +
