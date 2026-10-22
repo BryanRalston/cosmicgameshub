@@ -5600,9 +5600,14 @@
           ctx.fillText(pct + '%', sh.x, sh.y - 112);
           var tag = shelfPriceTag(sh, sim.books);
           if (tag) {
-            ctx.font = '800 13px Outfit, Inter, sans-serif';
-            ctx.fillStyle = tag.markup >= 1.45 ? '#ffb4b4' : tag.markup > 1.2 ? '#ffd0a8' : '#ffe08a';
-            ctx.fillText(tag.markup >= 1.45 ? 'WON\'T PAY ' + money(tag.price) : money(tag.price), sh.x, sh.y - 90);
+            var label = tag.markup >= 1.45 ? 'WON\'T PAY ' + money(tag.price) : money(tag.price);
+            ctx.font = '800 16px Outfit, Inter, sans-serif';
+            var tw = ctx.measureText(label).width + 18;
+            var ty = sh.y - 142;
+            ctx.fillStyle = tag.markup >= 1.45 ? '#8a1e22' : tag.markup > 1.2 ? '#8a5a22' : '#2a1c18';
+            ctx.fillRect(sh.x - tw / 2, ty, tw, 22);
+            ctx.fillStyle = '#fff4d2';
+            ctx.fillText(label, sh.x, ty + 16);
           }
         });
         var drawList = [];
