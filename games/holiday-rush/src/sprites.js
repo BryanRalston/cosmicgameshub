@@ -20,6 +20,8 @@
       if (allowed.indexOf(expr) < 0) return null;
       return { kind: 'portrait', key: key, expr: expr, ext: port[3] };
     }
+    var state = name.match(/^objects\/([a-z0-9_]+)\/([a-z0-9_]+)\.(png|webp)$/);
+    if (state) return { kind: 'state', type: state[1], state: state[2], ext: state[3] };
     var obj = name.match(/^(products|objects)\/([a-z0-9_]+)\.(png|webp)$/);
     if (obj) return { kind: 'object', bucket: obj[1], type: obj[2], ext: obj[3] };
     return null;
@@ -33,7 +35,8 @@
     }
     var listed = man && man.types ? man.types : {};
     Object.keys(listed).forEach(function (type) {
-      var files = listed[type] || [];
+      var entry = listed[type] || [];
+      var files = entry.files || entry;
       for (var i = 0; i < files.length; i++) add(type, files[i]);
     });
     var files = (man && man.files) || [];
@@ -58,6 +61,7 @@
 
   function typesForDay(day, books) {
     var types = ['regular', 'kid', 'family', 'crew_manager', 'crew_register', 'crew_freight', 'crew_floor'];
+    if (day >= 1) types.push('ugly_sweater');
     if (day >= 5) types.push('rusher');
     if (day >= 7) types.push('haggle');
     if (day >= 12) types.push('lift');
@@ -240,7 +244,8 @@
 
     function loadType(type) {
       if (pack.types[type] || loading[type] || failed[type]) return loading[type] || Promise.resolve(!!pack.types[type]);
-      var files = (manifest && manifest.types[type]) || [];
+      var entry = (manifest && manifest.types[type]) || [];
+      var files = entry.files || entry;
       if (!files.length) {
         failed[type] = true;
         return Promise.resolve(false);
@@ -252,25 +257,35 @@
       })).then(function (rows) {
         var sheet = {};
         var portraits = {};
+        var states = {};
+        var frames = 0;
         var sum = 0;
         for (var i = 0; i < rows.length; i++) {
           sum += rows[i].bytes;
           var spec = rows[i].spec;
           if (spec.kind === 'frame') {
+            frames++;
             var frameKey = spec.anim + '|' + spec.dir;
             if (!sheet[frameKey]) sheet[frameKey] = [];
             sheet[frameKey].push(rows[i]);
           } else if (spec.kind === 'portrait') {
             portraits[spec.expr] = rows[i];
+          } else if (spec.kind === 'state') {
+            states[spec.state] = rows[i];
           }
         }
         if (sum > pack.perTypeBudget) throw new Error('budget ' + type);
         Object.keys(sheet).forEach(function (k) {
           sheet[k].sort(function (a, b) { return a.spec.index - b.spec.index; });
         });
-        if (!sheet['idle|down'] || !sheet['walk|down']) throw new Error('frames ' + type);
-        pack.types[type] = sheet;
-        pack.portraits[type] = portraits;
+        if (frames) {
+          if (!sheet['idle|down'] || !sheet['walk|down']) throw new Error('frames ' + type);
+          pack.types[type] = sheet;
+          pack.portraits[type] = portraits;
+        } else if (!Object.keys(states).length) {
+          throw new Error('frames ' + type);
+        }
+        if (Object.keys(states).length) pack.objects[type] = states;
         pack.bytes += sum;
         pack.ready = true;
         return true;
@@ -301,7 +316,8 @@
       if (!manifest) return typeIds.length;
       var n = 0;
       for (var i = 0; i < typeIds.length; i++) {
-        var list = manifest.types[typeIds[i]] || [];
+        var entry = manifest.types[typeIds[i]] || [];
+        var list = entry.files || entry;
         n += list.length;
       }
       return n;
@@ -321,6 +337,9 @@
     var reasons = [];
     if (classify('lantern/idle_down_0.webp').type !== 'lantern') reasons.push('webp type');
     if (typesForDay(0).indexOf('rusher') >= 0) reasons.push('day0 rusher');
+    if (typesForDay(0).indexOf('ugly_sweater') >= 0) reasons.push('day0 sweater');
+    if (typesForDay(1).indexOf('ugly_sweater') < 0) reasons.push('day1 sweater');
+    if (!classify('objects/gift_tower/sparkle.png') || classify('objects/gift_tower/sparkle.png').kind !== 'state') reasons.push('gift state');
     if (typesForDay(5).indexOf('rusher') < 0) reasons.push('day5');
     if (typesForDay(7).indexOf('haggle') < 0) reasons.push('day7');
     if (typesForDay(12).indexOf('lift') < 0) reasons.push('day12');

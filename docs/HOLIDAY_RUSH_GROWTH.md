@@ -105,7 +105,9 @@ Products draw in a 46×54 world slot, about 70px on that phone. Illustrated art,
 
 There is no total art cap. Each character type, body frames plus portraits, stays within 110KB (`perTypeBudget` 112640). PNG and WebP with alpha both count. `manifest.json` keeps the flat `files` list and adds a `types` map. The grouper unions both, so a new file is picked up even before someone edits the map.
 
-The boot loads only the types on today's shift. Day 0 is regular, kid, family, and the four crew bodies. Rusher preloads from day 5, haggle from day 7, lift from day 12. The end-of-shift screen preloads the next day's new types. A type that is not in the pack yet draws as a silhouette. The opening line is grandpa, mom, and kid so the first shift does not ask for sprites it has not loaded. Headless simulate still uses the old customer mix, because that mix is part of the pinned balance.
+The boot loads only the types on today's shift. Day 0 is regular, kid, family, and the four crew bodies. The ugly-sweater shopper preloads with day 1, rusher from day 5, haggle from day 7, lift from day 12. The end-of-shift screen preloads the next day's new types. A type that is not in the pack yet draws as a silhouette. The opening line is grandpa, mom, and kid so the first shift does not ask for sprites it has not loaded. Headless simulate still uses the old customer mix, because that mix is part of the pinned balance.
+
+The v10 pack replaces the v3 bodies. Each type stays under 110 KB and keeps its own manifest. The floor is no longer a baked photo or a code-drawn room. `room.js` paints side walls, then back-wall segments from x=222, then the 222×125 corners. `wall_back_arch` stays 125 px tall. Each side-wall end piece redraws its bottom 14 px band 6 px lower onto the front ledge. About one in six floor cells swaps to a same-parity scuff tile. Shelves, registers, the truck, the jack, and the tree are object sprites. Tree twinkle, the scanner sweep, the gift sparkle, and lit string bulbs composite with `lighter`. The static room is one canvas blit, so the glow pass stays a handful of images while 150 shoppers are on the floor.
 
 ## Save
 
@@ -153,6 +155,7 @@ Key `hr_books_v4`. Version 4. `hr_campaign_v1.bank` migrates into `cash` once. C
 | sprites | Per-type budget, classify, lazy session |
 | sim | The adapter the tick calls. Not a second copy of `step` |
 | render | Camera math. The tick does not know the viewport |
+| room | Modular floor: walls from x=222, corners, end-band, fixture blit |
 | ui | Office and the layout grid |
 
 `world.fidelity(books, id)` is `full` for the active store and `aggregate` otherwise. `world.lease(state, slot, tenant, rent, commons)` is tested and unused by the UI. Tenants and the mall map live in `data/tenants.json` and `data/mall.json`.

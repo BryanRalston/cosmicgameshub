@@ -1,0 +1,33 @@
+{
+ "kid": {
+  "kind": "character",
+  "files": [
+   "kid/idle_down_0.png",
+   "kid/idle_down_1.png",
+   "kid/idle_side_0.png",
+   "kid/idle_side_1.png",
+   "kid/idle_up_0.png",
+   "kid/idle_up_1.png",
+   "kid/walk_down_0.png",
+   "kid/walk_down_1.png",
+   "kid/walk_down_2.png",
+   "kid/walk_down_3.png",
+   "kid/walk_side_0.png",
+   "kid/walk_side_1.png",
+   "kid/walk_side_2.png",
+   "kid/walk_side_3.png",
+   "kid/walk_up_0.png",
+   "kid/walk_up_1.png",
+   "kid/walk_up_2.png",
+   "kid/walk_up_3.png",
+   "kid/work_down_0.png",
+   "kid/work_down_1.png",
+   "portraits/kid_angry.png",
+   "portraits/kid_delighted.png",
+   "portraits/kid_impatient.png",
+   "portraits/kid_neutral.png"
+  ],
+  "bytes": 77723,
+  "budget": 110000
+ }
+}

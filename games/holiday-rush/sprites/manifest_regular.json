@@ -1,0 +1,33 @@
+{
+ "regular": {
+  "kind": "character",
+  "files": [
+   "portraits/regular_angry.png",
+   "portraits/regular_delighted.png",
+   "portraits/regular_impatient.png",
+   "portraits/regular_neutral.png",
+   "regular/idle_down_0.png",
+   "regular/idle_down_1.png",
+   "regular/idle_side_0.png",
+   "regular/idle_side_1.png",
+   "regular/idle_up_0.png",
+   "regular/idle_up_1.png",
+   "regular/walk_down_0.png",
+   "regular/walk_down_1.png",
+   "regular/walk_down_2.png",
+   "regular/walk_down_3.png",
+   "regular/walk_side_0.png",
+   "regular/walk_side_1.png",
+   "regular/walk_side_2.png",
+   "regular/walk_side_3.png",
+   "regular/walk_up_0.png",
+   "regular/walk_up_1.png",
+   "regular/walk_up_2.png",
+   "regular/walk_up_3.png",
+   "regular/work_down_0.png",
+   "regular/work_down_1.png"
+  ],
+  "bytes": 99728,
+  "budget": 110000
+ }
+}

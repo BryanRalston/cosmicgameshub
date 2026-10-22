@@ -1,0 +1,33 @@
+{
+ "ugly_sweater": {
+  "kind": "character",
+  "files": [
+   "portraits/ugly_sweater_angry.png",
+   "portraits/ugly_sweater_delighted.png",
+   "portraits/ugly_sweater_impatient.png",
+   "portraits/ugly_sweater_neutral.png",
+   "ugly_sweater/idle_down_0.png",
+   "ugly_sweater/idle_down_1.png",
+   "ugly_sweater/idle_side_0.png",
+   "ugly_sweater/idle_side_1.png",
+   "ugly_sweater/idle_up_0.png",
+   "ugly_sweater/idle_up_1.png",
+   "ugly_sweater/walk_down_0.png",
+   "ugly_sweater/walk_down_1.png",
+   "ugly_sweater/walk_down_2.png",
+   "ugly_sweater/walk_down_3.png",
+   "ugly_sweater/walk_side_0.png",
+   "ugly_sweater/walk_side_1.png",
+   "ugly_sweater/walk_side_2.png",
+   "ugly_sweater/walk_side_3.png",
+   "ugly_sweater/walk_up_0.png",
+   "ugly_sweater/walk_up_1.png",
+   "ugly_sweater/walk_up_2.png",
+   "ugly_sweater/walk_up_3.png",
+   "ugly_sweater/work_down_0.png",
+   "ugly_sweater/work_down_1.png"
+  ],
+  "bytes": 106391,
+  "budget": 110000
+ }
+}

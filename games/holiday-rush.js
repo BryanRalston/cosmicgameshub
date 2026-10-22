@@ -1,10 +1,8 @@
 /* Holiday Rush: Store Manager
-   The store is a 2× canvas plate. People are the Grok Imagine PNG pack in
-   games/holiday-rush/sprites/ (down-facing idle/walk/work frames and
-   illustrated portraits). Walk frames face right and are mirrored when
-   someone walks left. No character art is drawn in code once that pack loads.
-   The photo floor and 96px character sheet are not downloaded.
-   localStorage only. No accounts. */
+   People are the v10 per-type sprite packs in games/holiday-rush/sprites/.
+   The room is assembled from games/holiday-rush/objects/ (floor kit, fixtures,
+   props). Glow overlays use additive blending. A missing type draws as a
+   silhouette. localStorage only. No accounts. */
 (function (root) {
   'use strict';
   if (typeof document === 'undefined' && typeof require === 'function') {
@@ -19,6 +17,7 @@
     require(hrJoin.join(hrSrc, 'sprites.js'));
     require(hrJoin.join(hrSrc, 'sim.js'));
     require(hrJoin.join(hrSrc, 'render.js'));
+    require(hrJoin.join(hrSrc, 'room.js'));
     require(hrJoin.join(hrSrc, 'ui.js'));
   }
   var HR = root.HRParts || {};
@@ -136,7 +135,8 @@
     cust_kid: { scale: 0.68, skin: '#f0c8a0', hair: '#6b3a22', style: 'short', top: '#e23b3b', bottom: '#2a4e96', shoes: '#f2d15a' },
     cust_biz: { scale: 1.04, skin: '#d2a679', hair: '#2a241c', style: 'neat', top: '#243656', bottom: '#1c2740', shoes: '#141820', tie: 1 },
     cust_teen: { scale: 1.02, skin: '#c68642', hair: '#1a120c', style: 'hood', top: '#2a2a32', bottom: '#3a3a44', shoes: '#f6f0e4' },
-    cust_karen: { scale: 1, skin: '#f3d0b0', hair: '#e6c878', style: 'big', top: '#7a3e86', bottom: '#3a2444', shoes: '#2a1c18', wide: 1 }
+    cust_karen: { scale: 1, skin: '#f3d0b0', hair: '#e6c878', style: 'big', top: '#7a3e86', bottom: '#3a2444', shoes: '#2a1c18', wide: 1 },
+    cust_sweater: { scale: 1, skin: '#e7b896', hair: '#c45a28', style: 'short', top: '#c4363a', bottom: '#c4a574', shoes: '#6b4228' }
   };
   // Body frames are <type>/<anim>_<dir>_<index>.png. Portraits are
   // portraits/<type>_<expr>.png. Indexed PNGs with a tRNS chunk count as
@@ -165,12 +165,14 @@
     cust_kid: 'kid',
     cust_biz: 'rusher',
     cust_teen: 'lift',
-    cust_karen: 'haggle'
+    cust_karen: 'haggle',
+    cust_sweater: 'ugly_sweater'
   };
 
   function spriteTypeFor(actor) {
     if (!actor) return 'regular';
     if (actor.charId === 'cust_kid') return 'kid';
+    if (actor.charId === 'cust_sweater') return 'ugly_sweater';
     if (actor.kind === 'you') return 'crew_manager';
     if (actor.kind === 'staff' || (actor.id && BY_ID[actor.id])) {
       var role = actor.role || (BY_ID[actor.id] && BY_ID[actor.id].role) || 'floor';
@@ -305,10 +307,10 @@
     truck: { x: 1200, y: 130 }
   };
   var SHELVES = [
-    { x: 480, y: 460 },
-    { x: 800, y: 260 },
-    { x: 800, y: 520 },
-    { x: 1140, y: 460 }
+    { id: 'g1', type: 'gondola', dept: 'toys', x: 480, y: 460, label: 'TOYS' },
+    { id: 'g2', type: 'gondola', dept: 'seasonal', x: 800, y: 260, label: 'TREATS' },
+    { id: 'g3', type: 'gondola', dept: 'seasonal', x: 800, y: 520, label: 'WRAP' },
+    { id: 'g4', type: 'gondola', dept: 'toys', x: 1140, y: 460, label: 'CARDS' }
   ];
   var QUEUE = {
     reg1: { x: 496, y: 800, dy: 32 },
@@ -1290,6 +1292,7 @@
     var bag = ['cust_mom', 'cust_teen', 'cust_biz', 'cust_mom', 'cust_kid', 'cust_grandpa', 'cust_teen', 'cust_karen', 'cust_biz'];
     if (sim.live) {
       bag = ['cust_grandpa', 'cust_mom', 'cust_kid', 'cust_mom', 'cust_grandpa'];
+      if (dayN >= 1) bag.push('cust_sweater');
       if (dayN >= 5) bag.push('cust_biz', 'cust_biz');
       if (dayN >= 7) bag.push('cust_karen');
       if (dayN >= 12) bag.push('cust_teen', 'cust_teen');
@@ -2687,10 +2690,15 @@
     spriteSession = HR.sprites.createSession(ART, function () {
       if (typeof onAsset === 'function') onAsset();
     });
+    var objectPromise = HR.room ? HR.room.load(ART, function () {
+      if (typeof onAsset === 'function') onAsset();
+    }).catch(function () { return null; }) : Promise.resolve(null);
     return spriteSession.loadManifest().then(function () {
       loadGoal = 2 + spriteSession.fileCount(types);
-      return spriteSession.ensure(types);
-    }).then(function (pack) {
+      return Promise.all([spriteSession.ensure(types), objectPromise]);
+    }).then(function (loadedArt) {
+      var pack = loadedArt[0];
+      var objects = loadedArt[1];
       return Promise.all([iconImg, iconJson]).then(function (icons) {
         var status = {
           ready: !!(pack && pack.ready && Object.keys(pack.types || {}).length),
@@ -2705,7 +2713,8 @@
           icons: icons[1],
           spritePack: pack,
           spriteStatus: status,
-          session: spriteSession
+          session: spriteSession,
+          objects: objects
         };
       });
     });
@@ -3333,6 +3342,8 @@
     var moved = false;
     var suppressClick = false;
     var storePlate = null;
+    var bakedKey = '';
+    var fixtureGlows = null;
     var toastTimer = 0;
     var liveAcc = 0;
     var simSaveAcc = 0;
@@ -3615,6 +3626,13 @@
     }
 
     function iconStyle(name, size) {
+      var illustrated = {
+        angry: 1, boss: 1, break: 1, callout: 1, line: 1, outstock: 1,
+        price: 1, return: 1, rush: 1, spill: 1, theft: 1, truck: 1
+      };
+      if (illustrated[name]) {
+        return 'background-image:url(' + ART + 'objects/icons/' + name + '.png);background-size:contain;background-repeat:no-repeat;background-position:center;width:' + size + 'px;height:' + size + 'px;';
+      }
       var rec = assets.icons['icons/' + name + '.png'] || assets.icons['ui/' + name + '.png'];
       if (!rec) return '';
       var img = assets.img.icons;
@@ -4635,16 +4653,49 @@
       paintMeta();
     }
 
+    function plateKey() {
+      var band = sim && sim.stock < 0.25 ? 0 : sim && sim.stock < 0.7 ? 1 : 2;
+      var art = assets && assets.objects && assets.objects['floor/floor_tile.png'] ? 1 : 0;
+      return WORLD_W + 'x' + WORLD_H + ':' + band + ':' + (SPOTS.reg3 ? 1 : 0) + ':' + SHELVES.length + ':' + art;
+    }
+
     function bakeStorePlate() {
+      var objs = assets && assets.objects;
       var c = document.createElement('canvas');
-      c.width = WORLD_W * 2;
-      c.height = WORLD_H * 2;
-      var g = c.getContext('2d');
-      g.scale(2, 2);
-      g.lineJoin = 'round';
-      g.lineCap = 'round';
-      paintStorePlate(g);
+      if (objs && HR.room && objs['floor/floor_tile.png'] && objs['floor/wall_back.png']) {
+        c.width = WORLD_W;
+        c.height = WORLD_H;
+        var g = c.getContext('2d');
+        HR.room.paint(g, objs, WORLD_W, WORLD_H, {
+          entranceX: SPOTS.door.x,
+          arch: WORLD_W > 1600,
+          archX: 1600
+        });
+        var regs = registers().map(function (id) {
+          return { x: SPOTS[id].x, y: SPOTS[id].y, station: id };
+        });
+        fixtureGlows = HR.room.paintFixtures(g, objs, {
+          shelves: SHELVES,
+          registers: regs,
+          stock: sim ? sim.stock : 1,
+          stockSpot: SPOTS.stock,
+          truck: SPOTS.truck,
+          door: SPOTS.door,
+          worldH: WORLD_H
+        });
+      } else {
+        c.width = WORLD_W * 2;
+        c.height = WORLD_H * 2;
+        var fallback = c.getContext('2d');
+        fallback.scale(2, 2);
+        fallback.lineJoin = 'round';
+        fallback.lineCap = 'round';
+        paintStorePlate(fallback);
+        fixtureGlows = null;
+      }
       storePlate = c;
+      bakedKey = plateKey();
+      if (els.stage) els.stage.dataset.art = fixtureGlows ? 'v10' : 'code';
     }
 
     function plateHash(x, y) {
@@ -5362,12 +5413,13 @@
       ctx.setTransform(dpr * scale, 0, 0, dpr * scale, (-cam.x + shakeX) * dpr * scale, (-cam.y + shakeY) * dpr * scale);
       ctx.lineJoin = 'round';
       ctx.lineCap = 'round';
+      if (plateKey() !== bakedKey) bakeStorePlate();
       if (storePlate) ctx.drawImage(storePlate, 0, 0, WORLD_W, WORLD_H);
       else {
         ctx.fillStyle = PAL.floorB;
         ctx.fillRect(0, 0, WORLD_W, WORLD_H);
       }
-      if (sim && sim.stock < 0.67) {
+      if (sim && sim.stock < 0.67 && !fixtureGlows) {
         ctx.fillStyle = sim.stock < 0.34 ? 'rgba(62,32,24,0.16)' : 'rgba(62,32,24,0.07)';
         ctx.fillRect(0, 0, WORLD_W, WORLD_H);
       }
@@ -5606,7 +5658,49 @@
       ctx.restore();
     }
 
+    function drawLighter(image, x, y, w, h) {
+      if (!image) return;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.drawImage(image, x, y, w, h);
+      ctx.restore();
+      if (isQA() && els.stage) els.stage.dataset.glow = String((+(els.stage.dataset.glow || 0)) + 1);
+    }
+
     function drawStoreDress() {
+      var objs = assets && assets.objects;
+      if (objs && fixtureGlows) {
+        var t = sim.t || 0;
+        var rollers = [objs['anim/belt_rollers_0.png'], objs['anim/belt_rollers_1.png'], objs['anim/belt_rollers_2.png']];
+        var roll = rollers[Math.floor(t * 8) % rollers.length];
+        var sweeps = [objs['anim/scanner_sweep_0.png'], objs['anim/scanner_sweep_1.png'], objs['anim/scanner_sweep_2.png']];
+        var sweep = sweeps[Math.floor(t * 12) % sweeps.length];
+        var regs = fixtureGlows.registers || [];
+        for (var r = 0; r < regs.length; r++) {
+          var belt = regs[r];
+          if (roll) ctx.drawImage(roll, belt.x, belt.y, belt.w, belt.h);
+          var line = belt.station && queueOf(sim, belt.station).length;
+          if (line && sweep) drawLighter(sweep, belt.x, belt.y - 6, belt.w, belt.h + 12);
+        }
+        var twinkles = [objs['anim/tree_twinkle_0.png'], objs['anim/tree_twinkle_1.png'], objs['anim/tree_twinkle_2.png']];
+        var twinkle = twinkles[Math.floor(t * 4) % twinkles.length];
+        if (fixtureGlows.tree && twinkle) drawLighter(twinkle, fixtureGlows.tree.x, fixtureGlows.tree.y, fixtureGlows.tree.w, fixtureGlows.tree.h);
+        if (fixtureGlows.tower && sim.stock >= 0.85) {
+          var spark = objs['gift_tower/sparkle.png'];
+          if (spark && Math.floor(t * 4) % 2 === 0) drawLighter(spark, fixtureGlows.tower.x, fixtureGlows.tower.y, fixtureGlows.tower.w, fixtureGlows.tower.h);
+        }
+        if (!reduceMotion) {
+          var on = objs['anim/string_bulb_0.png'];
+          var off = objs['anim/string_bulb_1.png'];
+          var phase = Math.floor(t * 4);
+          for (var b = 240; b < WORLD_W - 200; b += 150) {
+            var lit = ((phase + (b / 150)) | 0) % 2 === 0;
+            if (lit) drawLighter(on, b, 62, 18, 20);
+            else if (off) ctx.drawImage(off, b, 64, 16, 18);
+          }
+        }
+        return;
+      }
       var stock = clamp(sim.stock, 0, 1);
       var heroes = stock <= 0.04 ? 0 : stock < 0.34 ? 1 : stock < 0.67 ? 2 : 3;
       var t = sim.t || 0;
@@ -5669,6 +5763,15 @@
     }
 
     function drawPalletJack(j) {
+      var jack = assets && assets.objects && assets.objects['props/pallet_jack.png'];
+      if (jack) {
+        ctx.save();
+        ctx.translate(j.x, j.y);
+        if (j.face < 0) ctx.scale(-1, 1);
+        ctx.drawImage(jack, -36, -64, 74, 84);
+        ctx.restore();
+        return;
+      }
       ctx.save();
       ctx.translate(j.x, j.y);
       if (j.face < 0) ctx.scale(-1, 1);
@@ -5799,7 +5902,7 @@
       var dir = (a.face < 0 || a.dir === 'side') ? 'side' : (a.dir === 'up' ? 'up' : 'down');
       var list = spriteFrameList(sheet, anim, dir);
       if (!list) return false;
-      var index = anim === 'work' ? 0 : ((a.frame || 0) % list.length);
+      var index = (a.frame || 0) % list.length;
       var frame = list[index];
       if (!frame || !frame.img) return false;
       var dh = SPRITE_PACK.displayH;
@@ -6116,7 +6219,12 @@
         ctx.globalAlpha = 1;
       }
       if (a.bubble) {
-        var ir = assets.icons['icons/' + a.bubble + '.png'];
+        var objIcon = assets.objects && assets.objects['icons/' + a.bubble + '.png'];
+        if (objIcon) {
+          var objPx = a.bubble === 'angry' || a.bubble === 'theft' ? 44 : 34;
+          ctx.drawImage(objIcon, a.x - objPx / 2, a.y - size - 18 - objPx, objPx, objPx);
+        }
+        var ir = objIcon ? null : assets.icons['icons/' + a.bubble + '.png'];
         if (ir) {
           var iconPx = a.bubble === 'angry' || a.bubble === 'theft' ? 44 : 34;
           ctx.drawImage(assets.img.icons, ir[0], ir[1], ir[2], ir[3], a.x - iconPx / 2, a.y - size - 18 - iconPx, iconPx, iconPx);
@@ -6672,7 +6780,7 @@
     if (!(active14.goalPct < active0.goalPct - 0.15)) bad = true;
     if (up14.goalPct < 1) bad = true;
     if (mid8.goalPct < 0.9) bad = true;
-    ['entities', 'economy', 'layout', 'world', 'sprites', 'render'].forEach(function (name) {
+    ['entities', 'economy', 'layout', 'world', 'sprites', 'render', 'room'].forEach(function (name) {
       var part = HR[name];
       if (!part || !part.selfTest) { bad = true; console.log(name, 'missing'); return; }
       var res = part.selfTest();
