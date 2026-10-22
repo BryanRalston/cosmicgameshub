@@ -3812,10 +3812,17 @@
 
     var toastQueue = [];
     var toastOn = false;
-    function toast(msg) {
+    function toast(msg, first) {
       if (!msg) return;
-      toastQueue.push(msg);
+      if (first) toastQueue.unshift(msg);
+      else toastQueue.push(msg);
       if (!toastOn) playToast();
+      else if (first) {
+        clearTimeout(toastTimer);
+        if (els.toast) els.toast.classList.remove('show');
+        toastOn = false;
+        playToast();
+      }
     }
     function playToast() {
       if (!els.toast || !toastQueue.length) { toastOn = false; return; }
@@ -3837,7 +3844,7 @@
         var list = data && data.goals && data.goals.achievements || [];
         var row = null;
         for (var mi = 0; mi < list.length; mi++) if (list[mi].id === id) row = list[mi];
-        toast(row ? ('Achievement: ' + row.name + '. ' + row.blurb) : 'Achievement unlocked.');
+        toast(row ? ('Achievement: ' + row.name + '. ' + row.blurb) : 'Achievement unlocked.', true);
       });
     }
 
@@ -7270,7 +7277,7 @@
       });
     }
     bindZoom(zoomIn, 1.12);
-    bindZoom(zoomOut, 0.9);
+    bindZoom(zoomOut, 0.88);
     if (frameBtn) frameBtn.addEventListener('click', function (ev) { ev.stopPropagation(); toggleFrame(); });
     if (eastBtn) eastBtn.addEventListener('click', function (ev) {
       ev.stopPropagation();
