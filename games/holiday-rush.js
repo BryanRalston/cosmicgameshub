@@ -1432,7 +1432,7 @@
   }
 
   function maybeTypeIntro(sim, run) {
-    if (!sim.floorOn || sim.coachHold || sim.paused || sim.done || sim.typeCard || sim._introDone) return;
+    if (!sim.floorOn || sim.coachHold || sim.paused || sim.done || sim.typeCard || sim._introDone || cardCooling(sim)) return;
     var id = dueIntro(run);
     if (!id || sim.t < 5.5) return;
     var born = spawnCustomer(sim, run, id);
@@ -2093,7 +2093,7 @@
 
   function maybeMallCard(sim) {
     if (!sim.live || !sim.books || sim._mallShown || sim.coachHold || sim.pending || sim.paused) return;
-    if (sim.t < 2.2 || sim.typeCard) return;
+    if (sim.t < 2.2 || sim.typeCard || cardCooling(sim)) return;
     sim._mallShown = true;
     var card = buildMallCard(sim);
     if (!card) return;
@@ -2111,6 +2111,12 @@
     if (sim.pending || sim.typeCard) return;
     sim._hold = '';
     sim.paused = false;
+    sim._clockArm = 1;
+    if (sim.floorOn) sim._nextCardAt = sim.t + (sim.duration || 62) / 12;
+  }
+
+  function cardCooling(sim) {
+    return !!(sim && sim.floorOn && sim._nextCardAt && sim.t + 1e-4 < sim._nextCardAt);
   }
 
   function openPending(sim, card, seconds) {
@@ -2136,7 +2142,7 @@
 
   function maybeEvent(sim, run) {
     if (sim.coachHold) return;
-    if (sim.paused || sim.pending || sim.typeCard) return;
+    if (sim.paused || sim.pending || sim.typeCard || cardCooling(sim)) return;
     if (sim.eventIndex >= sim.events.length) return;
     var when = sim.eventTimes[sim.eventIndex];
     if (sim.t + 1e-4 < when) return;
@@ -2165,7 +2171,7 @@
       if (dt <= 1e-4) return sim;
     }
     var limit = sim.duration;
-    if (sim.eventIndex < sim.events.length) {
+    if (!cardCooling(sim) && sim.eventIndex < sim.events.length) {
       var when = sim.eventTimes[sim.eventIndex];
       if (when > sim.t && when < limit) limit = when;
     }
@@ -2502,7 +2508,7 @@
   ];
 
   function maybeLiveBeat(sim, run) {
-    if (!sim.floorOn || sim.coachHold || sim.paused || sim.pending || sim.done) return;
+    if (!sim.floorOn || sim.coachHold || sim.paused || sim.pending || sim.done || cardCooling(sim)) return;
     if (!sim._beats) sim._beats = {};
     if (sim._forceBus == null) sim._forceBus = previewHas('bus');
     if (sim._forceBus && !sim._beats.bus && sim.t >= 6) {
@@ -3903,34 +3909,29 @@
       seed: document.getElementById('hr-seed')
     };
     var ctx = els.canvas.getContext('2d', { alpha: false });
-    if (els.sim && els.event) {
-      var actionRow = els.sim.querySelector('.hr-actions');
-      if (actionRow && els.event.parentNode !== els.sim) els.sim.insertBefore(els.event, actionRow);
-      else if (actionRow && els.event.nextElementSibling !== actionRow) els.sim.insertBefore(els.event, actionRow);
-    }
+    if (els.stage && els.event && els.event.parentNode !== els.stage) els.stage.appendChild(els.event);
     if (!document.getElementById('hr-feel-css')) {
       var feelCss = document.createElement('style');
       feelCss.id = 'hr-feel-css';
       feelCss.textContent = [
-        '#hr-event.hr-inline{position:relative;inset:auto;z-index:2;margin:8px 0 0;background:transparent;padding:0;display:flex;justify-content:center;align-items:stretch;pointer-events:none;overflow:visible;}',
+        '#hr-event.hr-inline{position:absolute;left:0;right:0;top:72px;bottom:34%;z-index:6;margin:0;padding:8px 12px;background:rgba(12,8,10,0.42);display:flex;justify-content:center;align-items:flex-start;pointer-events:auto;overflow:hidden;}',
         '#hr-event.hr-inline[hidden]{display:none !important;}',
-        '#hr-event.hr-inline .hr-card{pointer-events:auto;width:min(640px,100%);max-height:none;padding:0.4rem 0.55rem 0.5rem;border-radius:14px;box-shadow:0 8px 22px rgba(0,0,0,0.28);overflow:visible;}',
+        '#hr-event.hr-inline .hr-card{pointer-events:auto;width:min(640px,100%);max-height:100%;overflow:auto;padding:0.45rem 0.6rem 0.5rem;border-radius:14px;background:rgba(246,240,228,0.96);box-shadow:0 10px 28px rgba(0,0,0,0.35);}',
         '#hr-event.hr-inline .hr-card h2{font-size:1rem;margin:0 0 0.12rem;}',
         '#hr-event.hr-inline .hr-card p{font-size:0.82rem;margin:0 0 0.35rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}',
         '#hr-event.hr-inline .hr-choices{flex-direction:row;flex-wrap:wrap;gap:6px;}',
-        '#hr-event.hr-inline .hr-choices button{width:auto;flex:1 1 140px;min-width:0;min-height:44px;font-size:0.85rem;padding:0.35rem 0.55rem;white-space:nowrap;}',
+        '#hr-event.hr-inline .hr-choices button{width:auto;flex:1 1 168px;min-width:0;height:auto;min-height:44px;font-size:0.85rem;padding:0.4rem 0.6rem;white-space:normal;line-height:1.25;align-items:center;}',
+        '#hr-event.hr-inline .hr-choices button span{flex:1 1 auto;min-width:0;white-space:normal;overflow-wrap:break-word;line-height:1.25;}',
         '#hr-event.hr-inline .hr-card__art .hr-portrait,#hr-event.hr-inline .hr-card__art .hr-icon{width:36px !important;height:36px !important;border-radius:8px;}',
-        'body:has(#hr-event.hr-inline:not([hidden])) .hr-stage{height:min(46vh,400px) !important;}',
         '@media (max-width:720px){',
-        '#hr-event.hr-inline{margin:6px 0 0;}',
+        '#hr-event.hr-inline{top:136px;bottom:32%;padding:6px 8px;}',
         '#hr-event.hr-inline .hr-card{padding:0.35rem 0.45rem 0.42rem;}',
         '#hr-event.hr-inline .hr-card h2{font-size:0.95rem;line-height:1.15;margin:0 0 0.08rem;}',
         '#hr-event.hr-inline .hr-card p{font-size:0.78rem;line-height:1.25;margin:0 0 0.28rem;-webkit-line-clamp:2;}',
         '#hr-event.hr-inline .hr-card__art{display:none;}',
         '#hr-event.hr-inline .hr-choices{flex-direction:column;flex-wrap:nowrap;gap:6px;}',
-        '#hr-event.hr-inline .hr-choices button{width:100%;flex:0 0 auto;min-height:44px;font-size:0.92rem;padding:0.35rem 0.7rem;white-space:nowrap;justify-content:flex-start;}',
+        '#hr-event.hr-inline .hr-choices button{width:100%;flex:0 0 auto;min-height:44px;height:auto;font-size:0.9rem;padding:0.35rem 0.65rem;white-space:normal;line-height:1.25;justify-content:flex-start;}',
         '#hr-event.hr-inline .hr-choice-cost{font-size:0.68rem;padding:0.12rem 0.4rem;}',
-        'body:has(#hr-event.hr-inline:not([hidden])) .hr-stage{height:min(42vh,340px) !important;}',
         '}',
         '.hr-card__timer{height:4px;border-radius:99px;background:rgba(43,29,46,0.15);overflow:hidden;margin:0 0 0.35rem;}',
         '.hr-card__timer i{display:block;height:100%;width:100%;background:#e0a322;}',
@@ -5112,7 +5113,7 @@
         });
         if (!firstClose) books.cash = Math.round(books.cash - prevPost);
         else if (HR.world) {
-          snap.background = HR.world.closeBackground(books);
+          snap.background = HR.world.closeBackground(books, { day: run.day, ymd: run.ymd });
           if (snap.background) books.lastBackground = snap.background;
         }
         if (!firstClose && books.active && books.active !== 'mart' && books.lastBackground) {
@@ -7662,6 +7663,11 @@
       lastTs = ts;
       if (!(dt >= 0)) dt = 0;
       if (dt > 0.05) dt = 0.05;
+      if (sim && sim._clockArm) {
+        sim._clockArm = 0;
+        dt = 0;
+        lastTs = ts;
+      }
       if (sim) sim._frameMs = rawMs;
         if (sim && !sim.paused && !sim.done) {
         if (coach) {
@@ -8527,6 +8533,37 @@
       if (mins < prevMin) bad = true;
       prevMin = mins;
     }
+    var gapSim = {
+      floorOn: true,
+      live: true,
+      t: 10,
+      duration: 62,
+      pending: null,
+      typeCard: '',
+      paused: false,
+      _hold: '',
+      coachHold: false,
+      events: ['boss'],
+      eventIndex: 0,
+      eventTimes: [10],
+      actions: 3,
+      morale: 50,
+      stars: 3,
+      notes: [],
+      customers: [],
+      staff: []
+    };
+    openPending(gapSim, buildEvent('boss', gapSim, { day: 0 }), 7);
+    if (!gapSim.paused || gapSim._hold !== 'card') bad = true;
+    var heldT = gapSim.t;
+    resolvePending(gapSim, { day: 0 }, 0);
+    if (gapSim.paused || gapSim._clockArm !== 1) bad = true;
+    if (Math.abs((gapSim._nextCardAt - heldT) - (62 / 12)) > 0.02) bad = true;
+    maybeEvent(gapSim, { day: 0 });
+    if (gapSim.eventIndex !== 0 || gapSim.pending) bad = true;
+    gapSim.t = gapSim._nextCardAt;
+    maybeEvent(gapSim, { day: 0 });
+    if (!gapSim.pending || gapSim.pending.id !== 'boss' || gapSim.eventIndex !== 1) bad = true;
     var beatSeen = {};
     for (var beatI = 0; beatI < FLOOR_BEATS.length; beatI++) {
       var beatRow = FLOOR_BEATS[beatI];

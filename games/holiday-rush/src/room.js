@@ -375,7 +375,8 @@
     return { w: image.width * s, h: image.height * s };
   }
 
-  function deptFrame(sh) {
+  function deptFrame(sh, kiosk) {
+    if (kiosk && sh.label === 'TABLE') return 'dept/cafe/kiosk_table.png';
     if (sh.label === 'BOOTH') return 'dept/cafe/kiosk_booth.png';
     if (sh.label === 'WRAP') return 'dept/seasonal/wrap_station.png';
     if (sh.label === 'COCOA') return 'dept/cafe/counter.png';
@@ -400,7 +401,7 @@
     for (var i = 0; i < shelves.length; i++) {
       var sh = shelves[i];
       var pinned = sh.label === 'BOOTH' || sh.label === 'WRAP' || sh.label === 'COCOA' || sh.label === 'MENU' || sh.label === 'CART' || sh.label === 'TABLE' || sh.label === 'WINDOW';
-      var key = pinned ? (deptFrame(sh) || 'env/shelf_full.png') : (stock < 0.25 ? 'env/shelf_empty.png' : stock < 0.7 ? 'env/shelf_half.png' : (deptFrame(sh) || 'env/shelf_full.png'));
+      var key = pinned ? (deptFrame(sh, model.kiosk) || 'env/shelf_full.png') : (stock < 0.25 ? 'env/shelf_empty.png' : stock < 0.7 ? 'env/shelf_half.png' : (deptFrame(sh, model.kiosk) || 'env/shelf_full.png'));
       var shelf = img(images, key) || img(images, 'env/shelf_full.png');
       if (!shelf) continue;
       var cafePiece = sh.type === 'cafe' || sh.dept === 'cafe';
@@ -408,7 +409,7 @@
       ctx.drawImage(shelf, sh.x - box.w / 2, sh.y - box.h, box.w, box.h);
     }
     var regs = model.registers || [];
-    var counter = img(images, 'env/register_counter.png');
+    var counter = img(images, model.kiosk ? 'env/kiosk_register.png' : 'env/register_counter.png') || img(images, 'env/register_counter.png');
     for (var r = 0; r < regs.length; r++) {
       if (!counter) break;
       var boxR = contain(counter, 176, 150);
@@ -463,6 +464,7 @@
     if (file === 'decor/tree.png' || file === 'decor/wreath.png' || file === 'decor/gift_display.png') return true;
     if (file === 'props/stock_box_stack.png' || file === 'icons/truck.png') return true;
     if (file.indexOf('sprites/objects/gift_tower/') === 0) return true;
+    if (file === 'dept/cafe/kiosk_booth.png' || file === 'dept/cafe/kiosk_table.png') return true;
     return false;
   }
 

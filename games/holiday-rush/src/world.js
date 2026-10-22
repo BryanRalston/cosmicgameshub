@@ -14,7 +14,8 @@
     return locId === books.active ? 'full' : 'aggregate';
   }
 
-  function tickAggregate(books, loc) {
+  function tickAggregate(books, loc, ctx) {
+    ctx = ctx || {};
     var econ = economy();
     var manager = null;
     if (loc.managerId && books.staff[loc.managerId] && books.staff[loc.managerId].employed) {
@@ -28,7 +29,14 @@
     var id;
     for (id in loc.stock) units += loc.stock[id] || 0;
     var stockMul = units < 20 ? 0.25 : units < 80 ? 0.7 : 1;
-    var sales = Math.round(4200 * demand * eff * stockMul * (loc.kind === 'flagship' ? 1 : 0.72));
+    var kindMul = loc.kind === 'flagship' ? 1 : 0.72;
+    var day = ctx.day != null ? ctx.day : 0;
+    var ymd = ctx.ymd || '';
+    var cal = calendarEvent(day);
+    var eventMul = cal && cal.door ? cal.door : 1;
+    var swing = ((ymdHash(String(ymd) + ':' + day + ':' + (loc.id || '')) % 37) - 18) / 100;
+    var sales = Math.round(4200 * demand * eff * stockMul * kindMul * eventMul * (1 + swing));
+    if (sales < 0) sales = 0;
     var cogsRate = 0.5;
     var items = econ.availableItems(books);
     if (items.length) {
@@ -74,14 +82,14 @@
     };
   }
 
-  function closeBackground(books) {
+  function closeBackground(books, ctx) {
     var tapes = [];
     var profit = 0;
     Object.keys(books.locations).forEach(function (id) {
       if (id === books.active) return;
       var loc = books.locations[id];
       if (!loc || !loc.open) return;
-      var tape = tickAggregate(books, loc);
+      var tape = tickAggregate(books, loc, ctx);
       tapes.push(tape);
       profit += tape.profit;
     });
@@ -465,6 +473,26 @@
       managerId: 'staff_mgr'
     });
     if (flagTape.rent !== 220) reasons.push('flag rent ' + flagTape.rent);
+    var martLoc = function () {
+      return {
+        id: 'mart',
+        name: 'Holiday Rush Mart',
+        open: true,
+        kind: 'flagship',
+        stock: { cocoa: 90, paper: 80, candy: 70 },
+        managerId: 'staff_mgr'
+      };
+    };
+    var dayA = tickAggregate(econ.blankBooks(), martLoc(), { day: 0, ymd: '2026-10-22' });
+    var dayB = tickAggregate(econ.blankBooks(), martLoc(), { day: 6, ymd: '2026-10-22' });
+    if (!(dayA.profit > 0 && dayB.profit > 0) || dayA.profit === dayB.profit) reasons.push('flat day ' + dayA.profit + ' ' + dayB.profit);
+    var skilledBooks = econ.blankBooks();
+    skilledBooks.staff.staff_mgr.skill = 5;
+    var trained = tickAggregate(skilledBooks, martLoc(), { day: 1, ymd: '2026-10-22' });
+    var greenBooks = econ.blankBooks();
+    greenBooks.staff.staff_mgr.skill = 1;
+    var green = tickAggregate(greenBooks, martLoc(), { day: 1, ymd: '2026-10-22' });
+    if (!(trained.sales > green.sales)) reasons.push('staff ' + trained.sales + ' ' + green.sales);
     var walked = negotiate(econ.blankBooks(), 'a', 'repair', 500);
     if (walked.status !== 'walk') reasons.push('walk ' + walked.status);
     var countered = negotiate(econ.blankBooks(), 'a', 'repair', 1000);
