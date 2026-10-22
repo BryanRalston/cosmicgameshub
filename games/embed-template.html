@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<!--
+  External game embed template. Unused until a game is ready to list.
+  Copy this file to games/<slug>.html (the first planned copy is games/noonsworn.html).
+  Then:
+    1. Set <title>, description, canonical, and Open Graph tags.
+    2. Set the iframe src, title, and width/height. Noonsworn will be
+       https://bryanralston.github.io/noonsworn/ — do not set that src here.
+    3. Remove the robots noindex tag on the copy.
+    4. Add the copy to the homepage grid, /games originals, the more-games
+       list in global.js, and sitemap.xml.
+    5. Adjust sandbox and allow if the game needs pointer lock, popups, or mic.
+  This template stays noindex and is disallowed in robots.txt. Do not link it.
+-->
+<html lang="en">
+<head>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-D272MF8NQP"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-D272MF8NQP');
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>External game embed template | CosmicGamesHub</title>
+  <meta name="description" content="Reusable iframe shell for an external browser game. Not a published game page." />
+  <link rel="canonical" href="https://www.cosmicgameshub.com/games/embed-template" />
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+<body>
+<nav class="nav" role="navigation" aria-label="Main navigation">
+  <div class="container">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo" aria-label="CosmicGamesHub home">
+        <span class="nav__logo-icon" aria-hidden="true">🎮</span>
+        <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
+      </a>
+      <ul class="nav__links">
+        <li><a href="/games" class="nav__primary">Games</a></li>
+        <li><a href="/guides" class="nav__secondary">Guides</a></li>
+      </ul>
+      <button class="nav__hamburger" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<main class="embed-page">
+  <span class="section__eyebrow">Embed template · not listed</span>
+  <h1 style="margin:0.4rem 0 0.5rem;">External game</h1>
+  <p style="color:var(--text-mid);margin:0 0 1rem;max-width:40rem;">Replace this heading and point the iframe at the game when the page is copied. The frame stays blank in the template.</p>
+  <iframe
+    class="embed-frame"
+    title="External game"
+    src="about:blank"
+    loading="lazy"
+    referrerpolicy="strict-origin-when-cross-origin"
+    allow="fullscreen; gamepad; autoplay"
+    sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-popups"
+  ></iframe>
+  <nav class="more-games" data-more-games="1" aria-label="More games">
+    <span class="more-games__label">More games</span>
+    <ul class="more-games__list">
+      <li><a href="/games/holiday-rush">Holiday Rush</a></li>
+      <li><a href="/games/rift">RIFT</a></li>
+      <li><a href="/games/gamerdle">Gamerdle</a></li>
+      <li><a href="/games/brix3d">BRIX 3D</a></li>
+      <li><a href="/games/rootweave">Rootweave</a></li>
+      <li><a href="/games/pixle">Pixle</a></li>
+      <li><a href="/games">All games</a></li>
+    </ul>
+  </nav>
+</main>
+<script src="/global.js" defer></script>
+</body>
+</html>

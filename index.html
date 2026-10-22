@@ -12,48 +12,90 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name='impact-site-verification' value='7d4a28cc-892b-47ec-a78e-5088bd3133b7'>
-  <title>CosmicGamesHub — Play. Compete. Discover your setup.</title>
-  <meta name="description" content="The gaming hub for better games, better gear, and better setups. Free browser games, 68 pro setups, and honest gear guides. Always free." />
-  <meta name="keywords" content="free browser games, pro gaming setups, best gaming gear, gaming headsets, gaming mice, daily puzzles" />
-  <meta property="og:title" content="CosmicGamesHub — Play. Compete. Discover your setup." />
-  <meta property="og:description" content="The gaming hub for better games, better gear, and better setups." />
+  <title>Free Browser Games, No Downloads | CosmicGamesHub</title>
+  <meta name="description" content="Free browser games, no downloads. Play Holiday Rush, RIFT, Gamerdle, BRIX 3D, Rootweave, and Pixle right in the browser." />
+  <meta name="keywords" content="free browser games, Holiday Rush, RIFT, Gamerdle, BRIX 3D, Rootweave, Pixle" />
+  <meta property="og:title" content="Free Browser Games, No Downloads | CosmicGamesHub" />
+  <meta property="og:description" content="Free browser games, no downloads. Play Holiday Rush, RIFT, Gamerdle, BRIX 3D, Rootweave, and Pixle right in the browser." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://www.cosmicgameshub.com/" />
+  <meta property="og:image" content="https://www.cosmicgameshub.com/games/holiday-rush/store_layout_1600.webp" />
   <link rel="canonical" href="https://www.cosmicgameshub.com/" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="styles.css" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://www.cosmicgameshub.com/#website",
+        "name": "CosmicGamesHub",
+        "url": "https://www.cosmicgameshub.com/",
+        "description": "Free browser games, no downloads.",
+        "publisher": {
+          "@type": "Organization",
+          "name": "CosmicGamesHub",
+          "url": "https://www.cosmicgameshub.com/"
+        }
+      },
+      {
+        "@type": "ItemList",
+        "@id": "https://www.cosmicgameshub.com/#original-games",
+        "name": "Original free browser games",
+        "itemListOrder": "https://schema.org/ItemListOrderAscending",
+        "numberOfItems": 6,
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Holiday Rush",
+            "description": "Schedule the floor and survive three holiday rushes.",
+            "url": "https://www.cosmicgameshub.com/games/holiday-rush"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "RIFT",
+            "description": "Three daily word zones — chain, grow, and decode.",
+            "url": "https://www.cosmicgameshub.com/games/rift"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Gamerdle",
+            "description": "Guess the mystery video game in six tries.",
+            "url": "https://www.cosmicgameshub.com/games/gamerdle"
+          },
+          {
+            "@type": "ListItem",
+            "position": 4,
+            "name": "BRIX 3D",
+            "description": "Build 3D brick creations in the browser.",
+            "url": "https://www.cosmicgameshub.com/games/brix3d"
+          },
+          {
+            "@type": "ListItem",
+            "position": 5,
+            "name": "Rootweave",
+            "description": "Heal a dying valley in a regenerative farm sim.",
+            "url": "https://www.cosmicgameshub.com/games/rootweave"
+          },
+          {
+            "@type": "ListItem",
+            "position": 6,
+            "name": "Pixle",
+            "description": "Five-letter gaming words, six tries, one a day.",
+            "url": "https://www.cosmicgameshub.com/games/pixle"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
 </head>
-<body>
+<body class="page-home">
 
-<!-- ─── Ticker Bar ───────────────────────────────────── -->
-<div class="ticker-bar" role="note" aria-label="Today's live content">
-  <div class="ticker-bar__inner">
-    <span class="ticker-bar__live" aria-hidden="true">LIVE</span>
-    <div class="ticker-bar__track">
-      <span id="tickerDay">Today's dailies are live</span>
-      <span class="ticker-sep">·</span>
-      <span>RIFT, Gamerdle, Pixle, Crossword</span>
-      <span class="ticker-sep">·</span>
-      <span id="tickerGamerdle">Gamerdle: new mystery game</span>
-      <span class="ticker-sep">·</span>
-      <span>Play today's dailies — same UTC board for everyone</span>
-    </div>
-    <a href="/games/daily" class="ticker-bar__cta">Play today's dailies →</a>
-  </div>
-</div>
-<script>
-(function () {
-  var day = Math.floor((Date.now() - Date.UTC(2026, 0, 1)) / 86400000);
-  var d = document.getElementById('tickerDay');
-  var g = document.getElementById('tickerGamerdle');
-  if (d) d.textContent = 'Day #' + day + ' is live';
-  if (g) g.textContent = 'Gamerdle: mystery game #' + day;
-})();
-</script>
-
-<!-- ─── Navigation ─────────────────────────────────── -->
-<nav class="nav nav--hero" id="mainNav" role="navigation" aria-label="Main navigation">
+<nav class="nav" id="mainNav" role="navigation" aria-label="Main navigation">
   <div class="container">
     <div class="nav__inner">
       <a href="/" class="nav__logo" aria-label="CosmicGamesHub home">
@@ -61,11 +103,8 @@
         <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
       </a>
       <ul class="nav__links" id="navLinks">
-        <li><a href="/games">Play</a></li>
-        <li><a href="/guides">Gear</a></li>
-        <li><a href="/pros">Pros</a></li>
-        <li><a href="/games/daily">Daily</a></li>
-        <li><a href="/versus">Compare</a></li>
+        <li><a href="/games" class="nav__primary">Games</a></li>
+        <li><a href="/guides" class="nav__secondary">Guides</a></li>
       </ul>
       <button class="nav__hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
         <span></span><span></span><span></span>
@@ -74,674 +113,190 @@
   </div>
 </nav>
 
-<!-- ─── Category Sub-Nav ─────────────────────────────── -->
-<div class="cat-subnav" id="catSubnav" aria-label="Browse by category">
-  <nav class="cat-subnav__list">
-    <a href="/games" class="cat-subnav__link">Play</a>
-    <a href="/guides" class="cat-subnav__link">Gear</a>
-    <a href="/pros" class="cat-subnav__link">Pros</a>
-    <a href="/games/daily" class="cat-subnav__link">Daily</a>
-    <a href="/tools/find-my-gear.html" class="cat-subnav__link">Find My Gear</a>
-    <a href="/how-we-choose" class="cat-subnav__link">How we choose</a>
-  </nav>
-</div>
-
-<!-- ─── Hero ────────────────────────────────────────── -->
-<section class="hero" aria-label="Site introduction">
-  <div class="hero__bg">
-    <picture>
-      <source media="(max-width: 768px)" srcset="/images/hero-bg-mobile.jpg" />
-      <img src="/images/hero-bg-v2.jpg" alt="" class="hero__bg-img" width="1920" height="1080" fetchpriority="high" decoding="async" />
-    </picture>
-  </div>
-
-  <div class="hero__content container" id="heroContent">
-    <span class="hero__eyebrow">Play · Gear · Pros</span>
-
-    <h1 class="hero__title">
-      Play. Compete.<br>
-      <em>Discover your setup.</em>
-    </h1>
-
-    <p class="hero__sub">
-      The gaming hub for better games, better gear, and better setups.
-    </p>
-
-    <div class="hero__actions">
-      <a href="/games" class="btn btn--primary hero__door">Play Games</a>
-      <a href="/guides" class="btn btn--primary hero__door">Find Gaming Gear</a>
-      <a href="/pros" class="btn btn--primary hero__door">See What Pros Use</a>
+<main>
+<section class="portal" aria-label="Free browser games">
+  <div class="container">
+    <h1 class="portal__tagline">Free browser games, no downloads</h1>
+    <a class="gotw" id="gotw" href="/games/holiday-rush">
+      <span class="gotw__media" id="gotwMedia">
+        <img id="gotwImg" src="/games/holiday-rush/store_layout_1600.webp" alt="Holiday Rush Mart floor, top-down" width="1600" height="900" fetchpriority="high" decoding="async" />
+      </span>
+      <span class="gotw__copy">
+        <span class="gotw__badge" id="gotwBadge">Game of the Week</span>
+        <span class="gotw__week" id="gotwWeek">Week of Oct 19</span>
+        <h2 class="gotw__title" id="gotwTitle">Holiday Rush</h2>
+        <p class="gotw__blurb" id="gotwBlurb">Schedule the floor and survive three holiday rushes.</p>
+        <span class="gotw__play" id="gotwPlay">Play now</span>
+      </span>
+    </a>
+    <div class="chips" role="group" aria-label="Game categories">
+      <button type="button" class="chip is-on" data-cat="all" aria-pressed="true">All</button>
+      <button type="button" class="chip" data-cat="arcade" aria-pressed="false">Arcade</button>
+      <button type="button" class="chip" data-cat="puzzle" aria-pressed="false">Puzzle</button>
+      <button type="button" class="chip" data-cat="daily" aria-pressed="false">Daily</button>
+      <button type="button" class="chip" data-cat="strategy" aria-pressed="false">Strategy</button>
     </div>
-
-    <!-- Live preview — proves the database is real before the visitor has to trust the promise -->
-    <div class="hero__preview" id="heroPreview" hidden>
-      <div class="hero__preview-label">Live · A few of the 68 pros in the database</div>
-      <div class="hero__preview-row" id="heroPreviewRow"></div>
+    <div class="tile-grid" id="tileGrid">
+      <a class="tile" href="/games/holiday-rush" data-slug="holiday-rush" data-cats="strategy">
+        <img class="tile__img" src="/games/holiday-rush/store_layout_1600.webp" alt="" width="1600" height="900" decoding="async" />
+        <span class="tile__badges"><span class="tile__badge tile__badge--gotw">Game of the Week</span></span>
+        <span class="tile__name">Holiday Rush</span>
+      </a>
+      <a class="tile" href="/games/rift" data-slug="rift" data-cats="daily puzzle">
+        <img class="tile__img" src="/images/game-rift-v2.jpg" alt="" width="1280" height="720" decoding="async" />
+        <span class="tile__badges"><span class="tile__badge tile__badge--popular">Popular</span></span>
+        <span class="tile__name">RIFT</span>
+      </a>
+      <a class="tile" href="/games/gamerdle" data-slug="gamerdle" data-cats="daily puzzle">
+        <img class="tile__img" src="/images/game-gamerdle-v2.jpg" alt="" width="1280" height="720" decoding="async" />
+        <span class="tile__badges"><span class="tile__badge tile__badge--popular">Popular</span></span>
+        <span class="tile__name">Gamerdle</span>
+      </a>
+      <a class="tile" href="/games/brix3d" data-slug="brix3d" data-cats="arcade">
+        <img class="tile__img" src="/images/game-brix3d-v2.jpg" alt="" width="1280" height="720" decoding="async" />
+        <span class="tile__badges"><span class="tile__badge tile__badge--new">New</span></span>
+        <span class="tile__name">BRIX 3D</span>
+      </a>
+      <a class="tile" href="/games/rootweave" data-slug="rootweave" data-cats="strategy">
+        <img class="tile__img" src="/images/game-rootweave-v2.jpg" alt="" width="1408" height="768" decoding="async" />
+        <span class="tile__badges"><span class="tile__badge tile__badge--new">New</span></span>
+        <span class="tile__name">Rootweave</span>
+      </a>
+      <a class="tile" href="/games/pixle" data-slug="pixle" data-cats="daily puzzle">
+        <img class="tile__img" src="/images/game-pixle-v2.jpg" alt="" width="1280" height="720" decoding="async" />
+        <span class="tile__badges"><span class="tile__badge tile__badge--popular">Popular</span></span>
+        <span class="tile__name">Pixle</span>
+      </a>
+      <a class="tile" href="/games/asteroid-dodge" data-slug="asteroid-dodge" data-cats="arcade">
+        <img class="tile__img" src="/images/game-asteroid-dodge-v2.jpg" alt="" width="1280" height="720" loading="lazy" decoding="async" />
+        <span class="tile__badges"></span>
+        <span class="tile__name">Asteroid Dodge</span>
+      </a>
+      <a class="tile" href="/games/aim-trainer" data-slug="aim-trainer" data-cats="arcade">
+        <img class="tile__img" src="/images/game-aim-trainer-v2.jpg" alt="" width="1280" height="720" loading="lazy" decoding="async" />
+        <span class="tile__badges"></span>
+        <span class="tile__name">Aim Trainer</span>
+      </a>
+      <a class="tile" href="/games/crossword" data-slug="crossword" data-cats="puzzle daily">
+        <img class="tile__img" src="/images/game-crossword-v2.jpg" alt="" width="1280" height="720" loading="lazy" decoding="async" />
+        <span class="tile__badges"></span>
+        <span class="tile__name">Crossword</span>
+      </a>
+      <a class="tile" href="/games/link" data-slug="link" data-cats="puzzle daily">
+        <img class="tile__img" src="/images/game-link-v2.jpg" alt="" width="1280" height="720" loading="lazy" decoding="async" />
+        <span class="tile__badges"></span>
+        <span class="tile__name">Link</span>
+      </a>
+      <a class="tile" href="/games/sudoku" data-slug="sudoku" data-cats="puzzle">
+        <img class="tile__img" src="/images/game-sudoku-v2.jpg" alt="" width="1280" height="720" loading="lazy" decoding="async" />
+        <span class="tile__badges"></span>
+        <span class="tile__name">Sudoku</span>
+      </a>
+      <a class="tile" href="/games/minesweeper" data-slug="minesweeper" data-cats="puzzle">
+        <img class="tile__img" src="/images/game-minesweeper-v2.jpg" alt="" width="1280" height="720" loading="lazy" decoding="async" />
+        <span class="tile__badges"></span>
+        <span class="tile__name">Minesweeper</span>
+      </a>
     </div>
-
-    <div class="hero__stats">
-      <div class="hero__stat">
-        <span class="hero__stat-num">60</span>
-        <span class="hero__stat-label">Pros tracked</span>
-      </div>
-      <div class="hero__stat-sep"></div>
-      <div class="hero__stat">
-        <span class="hero__stat-num">4</span>
-        <span class="hero__stat-label">Titles — Valorant, CS2, Apex, Fortnite</span>
-      </div>
-      <div class="hero__stat-sep"></div>
-      <div class="hero__stat">
-        <span class="hero__stat-num">25</span>
-        <span class="hero__stat-label">Free games</span>
-      </div>
-      <div class="hero__stat-sep"></div>
-      <div class="hero__stat">
-        <span class="hero__stat-num">Always</span>
-        <span class="hero__stat-label">Free, no paywalls</span>
-      </div>
-    </div>
+    <p class="tile-empty" id="tileEmpty" hidden>No games in this category.</p>
   </div>
 </section>
 
-<!-- ─── What are you looking for? ──────────────────── -->
-<section class="section start-here" aria-label="What are you looking for?">
+<section class="section section--alt" id="gear" aria-label="Gear guides and pro setups">
   <div class="container">
-    <div class="section__header js-reveal">
-      <span class="section__eyebrow">Start here</span>
-      <h2 class="section__title">What are you looking for?</h2>
+    <div class="section__header">
+      <span class="section__eyebrow">Also on the hub</span>
+      <h2 class="section__title">Gear guides and pro setups</h2>
+      <p class="section__sub">FPS gear guides, pro setups, and component pages. Same URLs as before. Amazon links use our affiliate tag and do not change the pick.</p>
     </div>
-    <div class="start-here__row">
-      <a href="/games/daily" class="start-here__card js-reveal">
-        <div class="start-here__kicker">Play</div>
-        <div class="start-here__title">I want something to play</div>
-        <p class="start-here__sub">Daily games, puzzles, arcade</p>
+    <div class="secondary-grid">
+      <a class="secondary-card" href="/guides">
+        <span class="secondary-card__kicker">Index</span>
+        <span class="secondary-card__title">Gear Guides</span>
+        <p class="secondary-card__pitch">Headsets, mice, keyboards, chairs, monitors.</p>
       </a>
-      <a href="/guides" class="start-here__card js-reveal">
-        <div class="start-here__kicker">Gear</div>
-        <div class="start-here__title">I'm building a gaming setup</div>
-        <p class="start-here__sub">Headsets, mice, keyboards, chairs, monitors</p>
+      <a class="secondary-card" href="/pros">
+        <span class="secondary-card__kicker">Players</span>
+        <span class="secondary-card__title">Pro Setups</span>
+        <p class="secondary-card__pitch">Valorant, CS2, Apex, and Fortnite desks.</p>
       </a>
-      <a href="/pros" class="start-here__card js-reveal">
-        <div class="start-here__kicker">Pros</div>
-        <div class="start-here__title">I want to copy the pros</div>
-        <p class="start-here__sub">60 real setups across four titles</p>
+      <a class="secondary-card" href="/guides/best-gaming-headsets-2026">
+        <span class="secondary-card__kicker">Component</span>
+        <span class="secondary-card__title">Headsets</span>
+        <p class="secondary-card__pitch">Best gaming headsets for 2026.</p>
       </a>
-      <a href="/guides/best-gaming-setup-under-500" class="start-here__card js-reveal">
-        <div class="start-here__kicker">Deal</div>
-        <div class="start-here__title">I want the best deal</div>
-        <p class="start-here__sub">A full desk under $500 — Amazon links on every pick</p>
+      <a class="secondary-card" href="/guides/best-gaming-mice-2026">
+        <span class="secondary-card__kicker">Component</span>
+        <span class="secondary-card__title">Mice</span>
+        <p class="secondary-card__pitch">Best gaming mice for 2026.</p>
       </a>
-    </div>
-    <div class="soft-land" aria-label="Popular guides">
-      <span class="soft-land__label">Start here</span>
-      <a href="/guides/gaming-mouse-buying-guide">Mouse buying guide</a>
-      <span class="soft-land__sep" aria-hidden="true">·</span>
-      <a href="/guides/best-gaming-mouse-for-valorant-2026">Valorant mouse</a>
-      <span class="soft-land__sep" aria-hidden="true">·</span>
-      <a href="/guides/best-gaming-keyboards-2026">Keyboard guide</a>
-      <span class="soft-land__sep" aria-hidden="true">·</span>
-      <a href="/games">Play games</a>
-    </div>
-  </div>
-</section>
-
-<!-- ─── Play ──────────────────────────────────────── -->
-<section class="section section--alt" aria-label="Play">
-  <div class="container">
-    <div class="section__header js-reveal">
-      <span class="section__eyebrow">Free in the browser</span>
-      <h2 class="section__title">Play</h2>
-      <p class="section__sub">Today's flagships — dailies, a puzzle, and arcade. No download, no account.</p>
-    </div>
-
-    <div class="play-grid">
-      <a href="/games/holiday-rush" class="play-card js-reveal" title="Play Holiday Rush: Store Manager">
-        <img src="/games/holiday-rush/store_layout_1600.webp" alt="Holiday Rush Mart floor, top-down" class="play-card__img" loading="lazy" width="1600" height="900" />
-        <span class="play-card__badge play-card__badge--arcade">New</span>
-        <div class="play-card__body">
-          <div class="play-card__name">Holiday Rush</div>
-          <div class="play-card__time">~5 min</div>
-          <div class="play-card__play">PLAY</div>
-        </div>
+      <a class="secondary-card" href="/guides/best-gaming-keyboards-2026">
+        <span class="secondary-card__kicker">Component</span>
+        <span class="secondary-card__title">Keyboards</span>
+        <p class="secondary-card__pitch">Best gaming keyboards for 2026.</p>
       </a>
-      <a href="/games/rift" class="play-card js-reveal" title="Play RIFT">
-        <img src="/images/game-rift-v2.jpg" alt="RIFT — three daily word zones" class="play-card__img" loading="lazy" width="1280" height="720" />
-        <span class="play-card__badge play-card__badge--daily">Daily</span>
-        <div class="play-card__body">
-          <div class="play-card__name">RIFT</div>
-          <div class="play-card__time">~8 min</div>
-          <div class="play-card__play">PLAY</div>
-        </div>
+      <a class="secondary-card" href="/guides/best-gaming-chairs-2026">
+        <span class="secondary-card__kicker">Component</span>
+        <span class="secondary-card__title">Chairs</span>
+        <p class="secondary-card__pitch">Best gaming chairs for 2026.</p>
       </a>
-      <a href="/games/gamerdle" class="play-card js-reveal" title="Play Gamerdle">
-        <img src="/images/game-gamerdle-v2.jpg" alt="Gamerdle — guess the video game" class="play-card__img" loading="lazy" width="1280" height="720" />
-        <span class="play-card__badge play-card__badge--daily">Daily</span>
-        <div class="play-card__body">
-          <div class="play-card__name">Gamerdle</div>
-          <div class="play-card__time">~3 min</div>
-          <div class="play-card__play">PLAY</div>
-        </div>
+      <a class="secondary-card" href="/guides/best-gaming-monitors-2026">
+        <span class="secondary-card__kicker">Component</span>
+        <span class="secondary-card__title">Monitors</span>
+        <p class="secondary-card__pitch">Best gaming monitors for 2026.</p>
       </a>
-      <a href="/games/pixle" class="play-card js-reveal" title="Play Pixle">
-        <img src="/images/game-pixle-v2.jpg" alt="Pixle — daily 5-letter gaming Wordle" class="play-card__img" loading="lazy" width="1280" height="720" />
-        <span class="play-card__badge play-card__badge--daily">Daily</span>
-        <div class="play-card__body">
-          <div class="play-card__name">Pixle</div>
-          <div class="play-card__time">~3 min</div>
-          <div class="play-card__play">PLAY</div>
-        </div>
+      <a class="secondary-card" href="/versus">
+        <span class="secondary-card__kicker">Compare</span>
+        <span class="secondary-card__title">Head-to-heads</span>
+        <p class="secondary-card__pitch">Side-by-side gear comparisons.</p>
       </a>
-      <a href="/games/crossword" class="play-card js-reveal" title="Play Crossword">
-        <img src="/images/game-crossword-v2.jpg" alt="Gaming Crossword — daily 5x5 puzzle" class="play-card__img" loading="lazy" width="1280" height="720" />
-        <span class="play-card__badge play-card__badge--puzzle">Puzzle</span>
-        <div class="play-card__body">
-          <div class="play-card__name">Crossword</div>
-          <div class="play-card__time">~5 min</div>
-          <div class="play-card__play">PLAY</div>
-        </div>
+      <a class="secondary-card" href="/guides/best-gaming-setup-under-500">
+        <span class="secondary-card__kicker">Kit</span>
+        <span class="secondary-card__title">Setup under $500</span>
+        <p class="secondary-card__pitch">A full desk with a price on each piece.</p>
       </a>
-      <a href="/games/aim-trainer" class="play-card js-reveal" title="Play Aim Trainer">
-        <img src="/images/game-aim-trainer-v2.jpg" alt="FPS Aim Trainer" class="play-card__img" loading="lazy" width="1280" height="720" />
-        <span class="play-card__badge play-card__badge--arcade">Arcade</span>
-        <div class="play-card__body">
-          <div class="play-card__name">Aim Trainer</div>
-          <div class="play-card__time">30–90 sec</div>
-          <div class="play-card__play">PLAY</div>
-        </div>
+      <a class="secondary-card" href="/guides/best-gear-for-competitive-fps">
+        <span class="secondary-card__kicker">FPS</span>
+        <span class="secondary-card__title">Competitive FPS gear</span>
+        <p class="secondary-card__pitch">The kit we point competitive players to.</p>
       </a>
-      <a href="/games/asteroid-dodge" class="play-card js-reveal" title="Play Asteroid Dodge">
-        <img src="/images/game-asteroid-dodge-v2.jpg" alt="Asteroid Dodge — arcade ship" class="play-card__img" loading="lazy" width="1280" height="720" />
-        <span class="play-card__badge play-card__badge--arcade">Arcade</span>
-        <div class="play-card__body">
-          <div class="play-card__name">Asteroid Dodge</div>
-          <div class="play-card__time">Anytime</div>
-          <div class="play-card__play">PLAY</div>
-        </div>
+      <a class="secondary-card" href="/guides/valorant-gear">
+        <span class="secondary-card__kicker">Title</span>
+        <span class="secondary-card__title">Valorant gear</span>
+        <p class="secondary-card__pitch">Mice, keyboards, and headsets for Valorant.</p>
+      </a>
+      <a class="secondary-card" href="/guides/cs2-gear">
+        <span class="secondary-card__kicker">Title</span>
+        <span class="secondary-card__title">CS2 gear</span>
+        <p class="secondary-card__pitch">What the CS2 desk usually looks like.</p>
       </a>
     </div>
-    <div class="play-more js-reveal">
-      <a href="/games" class="btn btn--outline">All games →</a>
-    </div>
-  </div>
-</section>
-
-<!-- ─── Categories ───────────────────────────────────── -->
-<section class="section" aria-label="Gear categories">
-  <div class="container">
-    <div class="section__header js-reveal">
-      <span class="section__eyebrow">Gear</span>
-      <h2 class="section__title">Gear</h2>
-      <p class="section__sub">Every guide researched, tested, and updated for 2026.</p>
-    </div>
-
-    <div class="grid grid--5 glow-grid" id="catGrid">
-      <a href="/guides/best-gaming-headsets-2026" class="cat-card cat-card--img js-reveal" title="Best gaming headsets 2026" style="transition-delay:0s">
-        <img src="/images/cat-headset-v2.jpg" alt="Anonymous gaming headset on a stand, rim-lit by a cyan-violet nebula" class="cat-card__img" loading="lazy" width="1280" height="720" />
-        <div class="cat-card__overlay">
-          <div class="cat-card__name">Headsets</div>
-          <div class="cat-card__meta">$50 – $300+</div>
-        </div>
-      </a>
-      <a href="/guides/best-gaming-mice-2026" class="cat-card cat-card--img js-reveal" title="Best gaming mice 2026" style="transition-delay:0.07s">
-        <img src="/images/cat-mouse-v2.jpg" alt="Anonymous lightweight honeycomb gaming mouse on a dark pad" class="cat-card__img" loading="lazy" width="1280" height="720" />
-        <div class="cat-card__overlay">
-          <div class="cat-card__name">Mice</div>
-          <div class="cat-card__meta">$25 – $180+</div>
-        </div>
-      </a>
-      <a href="/guides/best-gaming-keyboards-2026" class="cat-card cat-card--img js-reveal" title="Best gaming keyboards 2026" style="transition-delay:0.14s">
-        <img src="/images/cat-keyboard-v2.jpg" alt="Anonymous compact mechanical keyboard on a dark desk" class="cat-card__img" loading="lazy" width="1280" height="720" />
-        <div class="cat-card__overlay">
-          <div class="cat-card__name">Keyboards</div>
-          <div class="cat-card__meta">$35 – $200+</div>
-        </div>
-      </a>
-      <a href="/guides/best-budget-gaming-chairs" class="cat-card cat-card--img js-reveal" title="Best budget gaming chairs" style="transition-delay:0.21s">
-        <img src="/images/cat-chair-v2.jpg" alt="Empty racing-style gaming chair silhouetted against a nebula window" class="cat-card__img" loading="lazy" width="1280" height="720" />
-        <div class="cat-card__overlay">
-          <div class="cat-card__name">Chairs</div>
-          <div class="cat-card__meta">Under $200</div>
-        </div>
-      </a>
-      <a href="/guides/best-gaming-monitors-2026" class="cat-card cat-card--img js-reveal" title="Best gaming monitors 2026" style="transition-delay:0.28s">
-        <img src="/images/cat-monitor-v2.jpg" alt="Anonymous ultrawide monitor reflecting a cyan-violet nebula" class="cat-card__img" loading="lazy" width="1280" height="720" />
-        <div class="cat-card__overlay">
-          <div class="cat-card__name">Monitors</div>
-          <div class="cat-card__meta">$149 – OLED</div>
-        </div>
-      </a>
-    </div>
-    <div class="buy-today js-reveal">
-      <div class="buy-today__label">If you're buying today</div>
-      <p class="buy-today__sub">Typical street, not a live ticker. Amazon opens the current listing. We may earn a commission; it does not change the pick.</p>
-      <div class="buy-today__row">
-        <article class="buy-today__card">
-          <div class="buy-today__kicker">Full desk</div>
-          <h3 class="buy-today__name">Setup under $500</h3>
-          <p class="buy-today__meta">Headset, mouse, keyboard, chair, monitor · typical ~$330</p>
-          <a href="/guides/best-gaming-setup-under-500" class="btn btn--primary">Open the kit →</a>
-        </article>
-        <article class="buy-today__card">
-          <div class="buy-today__kicker">Mice</div>
-          <h3 class="buy-today__name">Logitech G203</h3>
-          <p class="buy-today__meta">Budget wired · typical ~$30</p>
-          <a href="https://www.amazon.com/dp/B07W4QH2NT?tag=cosmicgameshu-20" class="btn btn--amazon" target="_blank" rel="noopener sponsored">Check price on Amazon</a>
-        </article>
-        <article class="buy-today__card">
-          <div class="buy-today__kicker">Headsets</div>
-          <h3 class="buy-today__name">BlackShark V3 Pro</h3>
-          <p class="buy-today__meta">The one we keep recommending · typical ~$250</p>
-          <a href="https://www.amazon.com/dp/B0F3QDLZKG?tag=cosmicgameshu-20" class="btn btn--amazon" target="_blank" rel="noopener sponsored">Check price on Amazon</a>
-        </article>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ─── Pros ─────────────────────────────────────────── -->
-<section class="section section--alt" aria-label="Pro setups">
-  <div class="container">
-    <div class="section__header js-reveal">
-      <span class="section__eyebrow">Pros</span>
-      <h2 class="section__title">Pros</h2>
-    </div>
-    <div class="pros-strip__inner js-reveal">
-      <p class="pros-strip__copy">68 setups across Valorant, CS2, Apex, Fortnite</p>
-      <div class="pros-strip__actions">
-        <a href="/pros" class="btn btn--primary">See What Pros Use</a>
-        <a href="/tools/find-my-gear.html" class="btn btn--outline">Find My Gear</a>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ─── On the desk today ────────────────────────────── -->
-<section class="section" aria-label="On the desk today">
-  <div class="container">
-    <div class="section__header js-reveal">
-      <span class="section__eyebrow">Trending · Honest</span>
-      <h2 class="section__title">On the desk today</h2>
-      <p class="section__sub">Today's dailies plus one current pick. No fake live player counts.</p>
-    </div>
-    <div class="desk-today">
-      <a href="/games/daily" class="desk-today__card js-reveal">
-        <img src="/images/game-daily-hub-v2.jpg" alt="Today's daily games desk" class="desk-today__img" loading="lazy" width="640" height="360" />
-        <div>
-          <div class="desk-today__kicker">Dailies</div>
-          <h3 class="desk-today__title">Play today's board</h3>
-          <p class="desk-today__sub">RIFT, Gamerdle, Pixle, Crossword — same UTC puzzles for everyone.</p>
-        </div>
-      </a>
-      <a href="/versus/razer-blackshark-v2-pro-vs-razer-blackshark-v3-pro" class="desk-today__card js-reveal">
-        <img src="/images/versus-blackshark-v2-v3.jpg" alt="Razer BlackShark V2 Pro vs V3 Pro" class="desk-today__img" loading="lazy" width="640" height="360" />
-        <div>
-          <div class="desk-today__kicker">Top pick</div>
-          <h3 class="desk-today__title">BlackShark V2 Pro vs V3 Pro</h3>
-          <p class="desk-today__sub">The headset we keep recommending, side by side with the one it replaced.</p>
-        </div>
-      </a>
-    </div>
-  </div>
-</section>
-
-<!-- ─── Featured Gear Guides ──────────────────────────── -->
-<section class="section" aria-label="Featured guides">
-  <div class="container">
-    <div class="section__header js-reveal">
-      <span class="section__eyebrow">Top Picks</span>
-      <h2 class="section__title">Our Most Popular Guides</h2>
-      <p class="section__sub">Curated for performance, value, and longevity — updated regularly.</p>
-    </div>
-
-    <!-- Quick-picks strip -->
-    <div class="quick-picks js-reveal">
-      <span class="quick-picks__label">Quick picks →</span>
-      <a href="/guides/best-gaming-headsets-2026#premium" class="quick-picks__chip"><strong>Best Headset:</strong> BlackShark V3 Pro ~$250</a>
-      <a href="/guides/best-gaming-mice-2026#performance" class="quick-picks__chip"><strong>Best Mouse:</strong> Viper V3 Pro ~$119</a>
-      <a href="/guides/best-gaming-keyboards-2026#premium" class="quick-picks__chip"><strong>Best Keyboard:</strong> Wooting 80HE ~$200</a>
-      <a href="/guides/best-gaming-monitors-2026#sweet-spot" class="quick-picks__chip"><strong>Best LCD:</strong> ASUS XG27ACS ~$200</a>
-      <a href="/guides/best-oled-gaming-monitors-2026" class="quick-picks__chip"><strong>Best OLED:</strong> MAG 272QP X24 ~$350</a>
-      <a href="/guides/best-budget-gaming-chairs#best-overall" class="quick-picks__chip"><strong>Best Budget Chair:</strong> Homall ~$130</a>
-    </div>
-
-    <div class="grid grid--3 glow-grid" id="guidesGrid">
-
-      <!-- Headsets -->
-      <article class="guide-card js-reveal" style="transition-delay:0s">
-        <div class="guide-card__img-wrap">
-          <img src="/images/guide-headsets.jpg" alt="Best gaming headsets 2026 — top picks in neon display" class="guide-card__img" loading="lazy" />
-        </div>
-        <div class="guide-card__body">
-          <h3>Best Gaming Headsets 2026</h3>
-          <div class="guide-meta">
-            <span class="guide-stars">★★★★★</span>
-            <span class="guide-meta__sep">·</span>
-            <span class="guide-meta__item">Updated Aug 2026</span>
-            <span class="guide-meta__sep">·</span>
-            <span class="guide-meta__item">8 min read</span>
-          </div>
-          <p>V3 Pro is the new default. Cloud II still will not die. G Pro X 2 is the CS2 wireless.</p>
-          <div class="tags">
-            <span class="tag">Wireless</span>
-            <span class="tag">7.1 Surround</span>
-            <span class="tag">Noise Cancelling</span>
-          </div>
-          <a href="/guides/best-gaming-headsets-2026" class="btn btn--outline" style="width:100%;justify-content:center;margin-top:0.5rem;">Read Guide →</a>
-        </div>
+    <div class="secondary-buy">
+      <article class="buy-today__card">
+        <div class="buy-today__kicker">Mice</div>
+        <h3 class="buy-today__name">Logitech G203</h3>
+        <p class="buy-today__meta">Budget wired · typical ~$30</p>
+        <a href="https://www.amazon.com/dp/B07W4QH2NT?tag=cosmicgameshu-20" class="btn btn--amazon" target="_blank" rel="noopener sponsored">Check price on Amazon</a>
       </article>
-
-      <!-- Mice -->
-      <article class="guide-card js-reveal" style="transition-delay:0.08s">
-        <div class="guide-card__img-wrap">
-          <img src="/images/guide-mice.jpg" alt="Best gaming mice 2026 — sensor performance lineup" class="guide-card__img" loading="lazy" />
-        </div>
-        <div class="guide-card__body">
-          <h3>Best Gaming Mice 2026</h3>
-          <div class="guide-meta">
-            <span class="guide-stars">★★★★★</span>
-            <span class="guide-meta__sep">·</span>
-            <span class="guide-meta__item">Updated Aug 2026</span>
-            <span class="guide-meta__sep">·</span>
-            <span class="guide-meta__item">7 min read</span>
-          </div>
-          <p>Viper V3 Pro is the competitive pick. G305 X Superlight replaces the old 99g G305. Superlight 2 still owns CS2.</p>
-          <div class="tags">
-            <span class="tag">Optical Sensor</span>
-            <span class="tag">Wireless</span>
-            <span class="tag">FPS Optimized</span>
-          </div>
-          <a href="/guides/best-gaming-mice-2026" class="btn btn--outline" style="width:100%;justify-content:center;margin-top:0.5rem;">Read Guide →</a>
-        </div>
+      <article class="buy-today__card">
+        <div class="buy-today__kicker">Headsets</div>
+        <h3 class="buy-today__name">BlackShark V3 Pro</h3>
+        <p class="buy-today__meta">The one we keep recommending · typical ~$250</p>
+        <a href="https://www.amazon.com/dp/B0F3QDLZKG?tag=cosmicgameshu-20" class="btn btn--amazon" target="_blank" rel="noopener sponsored">Check price on Amazon</a>
       </article>
-
-      <!-- Chairs -->
-      <article class="guide-card js-reveal" style="transition-delay:0.16s">
-        <div class="guide-card__img-wrap">
-          <img src="/images/guide-chairs.jpg" alt="Best budget gaming chairs — ergonomic value picks" class="guide-card__img" loading="lazy" />
-        </div>
-        <div class="guide-card__body">
-          <h3>Best Budget Gaming Chairs</h3>
-          <div class="guide-meta">
-            <span class="guide-stars">★★★★½</span>
-            <span class="guide-meta__sep">·</span>
-            <span class="guide-meta__item">Updated Aug 2026</span>
-            <span class="guide-meta__sep">·</span>
-            <span class="guide-meta__item">6 min read</span>
-          </div>
-          <p>The best chairs under $200. We cut through cheap padding and racing aesthetics to find what's actually worth sitting in all day.</p>
-          <div class="tags">
-            <span class="tag">Under $200</span>
-            <span class="tag">Lumbar Support</span>
-            <span class="tag">Ergonomic</span>
-          </div>
-          <a href="/guides/best-budget-gaming-chairs" class="btn btn--outline" style="width:100%;justify-content:center;margin-top:0.5rem;">Read Guide →</a>
-        </div>
-      </article>
-
-      <!-- Keyboards -->
-      <article class="guide-card js-reveal" style="transition-delay:0.24s">
-        <div class="guide-card__img-wrap">
-          <img src="/images/guide-keyboards.jpg" alt="Best gaming keyboards 2026 — mechanical switch lineup" class="guide-card__img" loading="lazy" />
-        </div>
-        <div class="guide-card__body">
-          <h3>Best Gaming Keyboards 2026</h3>
-          <div class="guide-meta">
-            <span class="guide-stars">★★★★★</span>
-            <span class="guide-meta__sep">·</span>
-            <span class="guide-meta__item">Updated Aug 2026</span>
-            <span class="guide-meta__sep">·</span>
-            <span class="guide-meta__item">7 min read</span>
-          </div>
-          <p>Hall Effect is the standard. Wooting 80HE is the pro default. Anne Pro 2 is gone from this list.</p>
-          <div class="tags">
-            <span class="tag">$35 – $200</span>
-            <span class="tag">Mechanical</span>
-            <span class="tag">TKL & 60%</span>
-          </div>
-          <a href="/guides/best-gaming-keyboards-2026" class="btn btn--outline" style="width:100%;justify-content:center;margin-top:0.5rem;">Read Guide →</a>
-        </div>
-      </article>
-
-      <!-- Monitors -->
-      <article class="guide-card js-reveal" style="transition-delay:0.32s">
-        <div class="guide-card__img-wrap">
-          <img src="/images/guide-monitors.jpg" alt="Best gaming monitors 2026 — resolution and refresh rate comparison" class="guide-card__img" loading="lazy" />
-        </div>
-        <div class="guide-card__body">
-          <h3>Best Gaming Monitors 2026</h3>
-          <div class="guide-meta">
-            <span class="guide-stars">★★★★★</span>
-            <span class="guide-meta__sep">·</span>
-            <span class="guide-meta__item">Updated Aug 2026</span>
-            <span class="guide-meta__sep">·</span>
-            <span class="guide-meta__item">8 min read</span>
-          </div>
-          <p>27GP850 is not the 2026 default. XG27ACS is the LCD. 1440p OLED starts around $350.</p>
-          <div class="tags">
-            <span class="tag">$149 – $550</span>
-            <span class="tag">180Hz IPS</span>
-            <span class="tag">OLED upgrade</span>
-          </div>
-          <a href="/guides/best-gaming-monitors-2026" class="btn btn--outline" style="width:100%;justify-content:center;margin-top:0.5rem;">Read Guide →</a>
-        </div>
-      </article>
-
     </div>
+    <p class="section__sub" style="margin-top:1rem;">More title pages: <a href="/guides/fortnite-gear">Fortnite gear</a> · <a href="/guides/apex-gear">Apex gear</a> · <a href="/guides/best-budget-gaming-chairs">Budget chairs</a> · <a href="/how-we-choose">How we choose</a> · <a href="/pros/compare">Compare pro setups</a></p>
   </div>
 </section>
+</main>
 
-<!-- ─── Head-to-Head Comparisons ──────────────────────── -->
-<section class="section section--alt" aria-label="Head-to-head comparisons">
-  <div class="container">
-    <div class="section__header js-reveal">
-      <span class="section__eyebrow">Side-by-Side · Can't Decide? We Did</span>
-      <h2 class="section__title">Head-to-Head Comparisons</h2>
-      <p class="section__sub">38 head-to-head breakdowns across every category. Two products. One clear winner. No hedging.</p>
-    </div>
-
-    <div class="grid grid--3 glow-grid" id="versusGrid">
-
-      <a href="/versus/logitech-g-pro-x-superlight-2-vs-razer-viper-v3-pro" class="cat-card cat-card--img js-reveal" title="Superlight 2 vs Viper V3 Pro" style="transition-delay:0s">
-        <img src="/images/versus-superlight2-viper-v3-pro.jpg" alt="Logitech G Pro X Superlight 2 vs Razer Viper V3 Pro" class="cat-card__img" loading="lazy" />
-        <div class="cat-card__overlay">
-          <div class="cat-card__name">Superlight 2 vs Viper V3 Pro</div>
-          <div class="cat-card__meta">CS2 default vs Fortnite default · 60g vs 54g</div>
-        </div>
-      </a>
-
-      <a href="/versus/steelseries-arctis-nova-pro-wireless-vs-logitech-g-pro-x-2-lightspeed" class="cat-card cat-card--img js-reveal" title="SteelSeries Arctis Nova Pro Wireless vs Logitech G Pro X 2 LIGHTSPEED" style="transition-delay:0.07s">
-        <img src="/images/versus-headset-wireless.jpg" alt="SteelSeries Arctis Nova Pro Wireless vs Logitech G Pro X 2 LIGHTSPEED premium headset comparison" class="cat-card__img" loading="lazy" />
-        <div class="cat-card__overlay">
-          <div class="cat-card__name">Arctis Nova Pro vs G Pro X 2 LIGHTSPEED</div>
-          <div class="cat-card__meta">Premium Wireless Headsets · Dual DAC vs LIGHTSPEED</div>
-        </div>
-      </a>
-
-      <a href="/versus/wooting-80he-vs-wooting-60he-v2" class="cat-card cat-card--img js-reveal" title="Wooting 80HE vs 60HE v2" style="transition-delay:0.14s">
-        <img src="/images/versus-wooting-80he-60he.jpg" alt="Wooting 80HE vs Wooting 60HE v2" class="cat-card__img" loading="lazy" />
-        <div class="cat-card__overlay">
-          <div class="cat-card__name">Wooting 80HE vs 60HE v2</div>
-          <div class="cat-card__meta">Keyboards · Layout is the whole fight</div>
-        </div>
-      </a>
-
-      <a href="/versus/lg-27gp950-b-vs-samsung-odyssey-g7" class="cat-card cat-card--img js-reveal" title="LG 27GP950-B vs Samsung Odyssey G7" style="transition-delay:0.21s">
-        <img src="/images/versus-monitor-lg27gp950-odysseyg7.jpg" alt="LG 27GP950-B 4K vs Samsung Odyssey G7 1440p monitor comparison" class="cat-card__img" loading="lazy" />
-        <div class="cat-card__overlay">
-          <div class="cat-card__name">LG 27GP950-B vs Odyssey G7</div>
-          <div class="cat-card__meta">Monitors · 4K 144Hz vs 1440p 240Hz</div>
-        </div>
-      </a>
-
-      <a href="/versus/corsair-hs65-wireless-vs-logitech-g435" class="cat-card cat-card--img js-reveal" title="Corsair HS65 Wireless vs Logitech G435" style="transition-delay:0.28s">
-        <img src="/images/versus-headset-kraken-v3-hs65.jpg" alt="Corsair HS65 Wireless vs Logitech G435 budget wireless headset comparison" class="cat-card__img" loading="lazy" style="filter:brightness(0.65)" />
-        <div class="cat-card__overlay">
-          <div class="cat-card__name">HS65 Wireless vs G435</div>
-          <div class="cat-card__meta">Budget Wireless Headsets · ~$80 vs ~$60</div>
-        </div>
-      </a>
-
-      <a href="/versus/corsair-k100-rgb-vs-steelseries-apex-pro-tkl" class="cat-card cat-card--img js-reveal" title="Corsair K100 RGB vs SteelSeries Apex Pro TKL" style="transition-delay:0.35s">
-        <img src="/images/versus-keyboard-mid-premium.jpg" alt="Corsair K100 RGB vs SteelSeries Apex Pro TKL keyboard comparison" class="cat-card__img" loading="lazy" />
-        <div class="cat-card__overlay">
-          <div class="cat-card__name">K100 RGB vs Apex Pro TKL</div>
-          <div class="cat-card__meta">Premium Keyboards · 8000Hz vs Hall Effect</div>
-        </div>
-      </a>
-
-    </div>
-
-    <div style="text-align:center;margin-top:2rem;" class="js-reveal">
-      <a href="/versus" class="btn btn--outline">View All 38 Comparisons →</a>
-    </div>
-
-  </div>
-</section>
-
-<!-- ─── Editor's Top Pick ─────────────────────────────── -->
-<section class="section section--alt" aria-label="Editor's top pick">
-  <div class="container">
-    <div class="section__header js-reveal">
-      <span class="section__eyebrow">Editor's Choice · Updated August 2026</span>
-      <h2 class="section__title">The Headset We Keep Recommending</h2>
-      <p class="section__sub">Public pro-share moved. If you already own V2 Pro, keep it. If you are buying new, this is the default.</p>
-    </div>
-
-    <div class="top-pick js-reveal">
-      <div class="top-pick__img-wrap">
-        <img src="/images/top-pick-headset-v3.jpg" alt="Razer BlackShark V3 Pro wireless gaming headset in dramatic studio lighting" class="top-pick__img" loading="lazy" />
-        <div class="top-pick__badge-wrap">
-          <span class="top-pick__award">🏆 Best Overall 2026</span>
-        </div>
-      </div>
-      <div class="top-pick__content">
-        <div class="top-pick__category">Gaming Headset · Wireless</div>
-        <h3 class="top-pick__name">Razer BlackShark V3 Pro</h3>
-        <div class="top-pick__rating">
-          <span class="top-pick__stars">★★★★★</span>
-          <span class="top-pick__score">Spec + public reviews</span>
-          <span class="top-pick__reviews">· not a fake 12,400-review stamp</span>
-        </div>
-        <div class="top-pick__price-row">
-          <span class="top-pick__price-now">~$250</span>
-          <span class="top-pick__platform">HyperSpeed Gen-2 + BT mix · PC, PS5, Xbox variants</span>
-        </div>
-        <ul class="top-pick__bullets">
-          <li>Took the pro-share lead from V2 Pro after launch</li>
-          <li>Hybrid ANC + simultaneous 2.4 GHz and Bluetooth</li>
-          <li>Gen-2 TriForce drivers and 12mm full-band mic</li>
-          <li>Heavier than V2 (~367g). Independent tests are mixed on treble. If you own V2, stay.</li>
-        </ul>
-        <div class="top-pick__actions">
-          <a href="https://www.amazon.com/dp/B0F3QDLZKG?tag=cosmicgameshu-20" class="btn btn--amazon" target="_blank" rel="noopener sponsored">🛒 Check Price on Amazon</a>
-          <a href="/versus/razer-blackshark-v2-pro-vs-razer-blackshark-v3-pro" class="btn btn--outline">V2 vs V3 →</a>
-        </div>
-        <p class="top-pick__disclosure">Affiliate link — we earn a small commission if you buy, at no extra cost to you. We only spotlight products we'd recommend to a friend.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ─── Tools ─────────────────────────────────────────── -->
-<section class="section section--alt" aria-label="Gaming tools">
-  <div class="container">
-    <div class="section__header js-reveal">
-      <span class="section__eyebrow">Free Gaming Tools</span>
-      <h2 class="section__title">Tools That Actually Help</h2>
-      <p class="section__sub">No signup. No ads. Just useful calculators for gamers.</p>
-    </div>
-
-    <div class="grid grid--2 glow-grid">
-
-      <article class="card js-reveal" style="display:flex;gap:1.25rem;align-items:flex-start;transition-delay:0s">
-        <div class="trust-icon-wrap" style="margin:0;flex-shrink:0;">
-          <svg class="trust-icon" viewBox="0 0 40 40" fill="none" aria-hidden="true">
-            <path d="M22 6L11 23H20L18 34L29 17H20L22 6Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>
-          </svg>
-        </div>
-        <div>
-          <h3 style="margin-bottom:0.5rem;">FPS Calculator</h3>
-          <p style="font-size:0.88rem;color:var(--text-mid);margin-bottom:1rem;">
-            Enter your GPU tier, CPU, resolution, and settings to get an estimated FPS range. Instantly see if your rig can hit 60, 144, or 240 FPS.
-          </p>
-          <a href="/tools/gaming-fps-calculator" class="btn btn--primary">Launch Calculator →</a>
-        </div>
-      </article>
-
-      <article class="card js-reveal" style="display:flex;gap:1.25rem;align-items:flex-start;transition-delay:0.1s">
-        <div class="trust-icon-wrap" style="margin:0;flex-shrink:0;">
-          <svg class="trust-icon" viewBox="0 0 40 40" fill="none" aria-hidden="true">
-            <rect x="5" y="8" width="30" height="20" rx="3" stroke="currentColor" stroke-width="2.2"/>
-            <path d="M14 34h12M20 28v6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
-            <path d="M12 16h10M12 21h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.55"/>
-          </svg>
-        </div>
-        <div>
-          <h3 style="margin-bottom:0.5rem;">Monitor Hz Calculator</h3>
-          <p style="font-size:0.88rem;color:var(--text-mid);margin-bottom:1rem;">
-            Find the refresh rate your GPU can actually feed. Stop buying 480Hz OLED for a 4060 at 4K.
-          </p>
-          <a href="/tools/monitor-hz-calculator" class="btn btn--outline">Launch Calculator →</a>
-        </div>
-      </article>
-
-    </div>
-  </div>
-</section>
-
-<!-- ─── Why Trust Us ───────────────────────────────────── -->
-<section class="section" aria-label="About CosmicGamesHub">
-  <div class="container">
-    <div class="section__header js-reveal">
-      <span class="section__eyebrow">Why CosmicGamesHub</span>
-      <h2 class="section__title">Gear Advice You Can Actually Trust</h2>
-    </div>
-
-    <div class="grid grid--3 glow-grid">
-      <div class="card js-reveal" style="text-align:center;transition-delay:0s">
-        <div class="trust-icon-wrap">
-          <svg class="trust-icon" viewBox="0 0 40 40" fill="none" aria-hidden="true">
-            <circle cx="17" cy="17" r="10" stroke="currentColor" stroke-width="2.2"/>
-            <path d="M14 17h6M17 14v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            <path d="M24.5 24.5L33 33" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-          </svg>
-        </div>
-        <h3 style="font-size:1rem;margin-bottom:0.5rem;">Research-Backed</h3>
-        <p style="font-size:0.85rem;">Every pick is backed by spec analysis, user reviews, and real-world benchmarks — not sponsored opinions.</p>
-      </div>
-      <div class="card js-reveal" style="text-align:center;transition-delay:0.08s">
-        <div class="trust-icon-wrap">
-          <svg class="trust-icon" viewBox="0 0 40 40" fill="none" aria-hidden="true">
-            <path d="M20 6L32 14L28 34H12L8 14Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>
-            <path d="M14 14L20 6L26 14L20 34L14 14Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" opacity="0.45"/>
-          </svg>
-        </div>
-        <h3 style="font-size:1rem;margin-bottom:0.5rem;">Every Budget Covered</h3>
-        <p style="font-size:0.85rem;">$25 to $350+. Whether you're building your first setup or upgrading, we have a pick for you.</p>
-      </div>
-      <div class="card js-reveal" style="text-align:center;transition-delay:0.16s">
-        <div class="trust-icon-wrap">
-          <svg class="trust-icon" viewBox="0 0 40 40" fill="none" aria-hidden="true">
-            <path d="M32 20a12 12 0 1 1-9-11.6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
-            <path d="M23 6v7h7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
-        <h3 style="font-size:1rem;margin-bottom:0.5rem;">Updated Regularly</h3>
-        <p style="font-size:0.85rem;">Guides are refreshed when new products launch or prices shift. No year-old picks presented as current.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ─── Email Capture ──────────────────────────────────── -->
 <section class="section email-band" aria-label="Newsletter">
   <div class="container">
     <div class="email-band__inner">
       <div class="email-band__left">
         <div class="email-band__eyebrow">Free · Unsubscribe anytime</div>
         <h2 class="email-band__title">Daily puzzles, plus the occasional deal</h2>
-        <p class="email-band__sub">Reminders for RIFT, Gamerdle, and Pixle, and occasional FPS gear deals. Buttondown will email you a confirmation — we will not pretend you joined before that.</p>
-        <p class="email-band__note" style="margin-top:0;">See <a href="/privacy" style="color:var(--accent);">Privacy</a>. We do not sell emails.</p>
+        <p class="email-band__sub">Reminders for RIFT, Gamerdle, and Pixle, and occasional FPS gear deals. Buttondown will email you a confirmation.</p>
       </div>
       <div>
         <form
@@ -763,60 +318,13 @@
             <button type="submit" class="btn btn--primary email-band__btn">Get updates</button>
           </div>
           <input type="hidden" name="embed" value="1" />
-          <p class="email-band__note">Hosted by <a href="https://buttondown.com/cosmicgameshub" style="color:var(--accent);">Buttondown</a>. Confirm the email they send, then you are on the list.</p>
+          <p class="email-band__note">Hosted by <a href="https://buttondown.com/cosmicgameshub">Buttondown</a>. See <a href="/privacy">Privacy</a>.</p>
         </form>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ─── Explore: AI Gaming ────────────────────────────── -->
-<section class="section" aria-label="Explore AI game development">
-  <div class="container">
-    <div class="ai-gaming-banner js-reveal" style="
-      background: linear-gradient(135deg, rgba(124,58,237,0.08), rgba(0,212,255,0.05));
-      border: 1px solid rgba(124,58,237,0.2);
-      border-radius: 20px;
-      padding: 2.5rem;
-      display: flex; gap: 2.5rem; align-items: center; flex-wrap: wrap;
-    ">
-      <div style="flex-shrink:0; font-size:3.5rem; line-height:1;">⚡</div>
-      <div style="flex:1; min-width:240px;">
-        <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.15em; color:#a78bfa; margin-bottom:0.5rem;">Explore</div>
-        <h2 style="font-size:clamp(1.3rem,3vw,1.9rem); font-weight:800; color:var(--text-hi); margin:0 0 0.6rem; line-height:1.2;">Build Games with AI — Anyone Can Ship</h2>
-        <p style="font-size:0.93rem; color:var(--text-mid); line-height:1.7; margin:0 0 1.4rem; max-width:560px;">The complete toolkit for building browser games with AI in 2026 — code assistants, image generators, audio tools, and real workflows. See how the games on this site were actually built.</p>
-        <div style="display:flex; gap:0.8rem; flex-wrap:wrap;">
-          <a href="/ai-gaming" style="
-            display:inline-flex; align-items:center; gap:0.4rem;
-            background:linear-gradient(135deg,#7c3aed,#4f46e5);
-            color:#fff; padding:0.7rem 1.4rem;
-            border-radius:10px; font-weight:700; font-size:0.9rem;
-            text-decoration:none; min-height:44px;
-          ">⚡ See the Toolkit</a>
-          <a href="/ai-gaming#prompts" style="
-            display:inline-flex; align-items:center; gap:0.4rem;
-            background:rgba(255,255,255,0.04); border:1px solid var(--border);
-            color:var(--text-mid); padding:0.7rem 1.4rem;
-            border-radius:10px; font-weight:600; font-size:0.9rem;
-            text-decoration:none; min-height:44px;
-          ">📋 Starter Prompts</a>
-        </div>
-      </div>
-      <div style="flex-shrink:0; display:flex; flex-direction:column; gap:0.7rem; min-width:160px;">
-        <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:10px; padding:0.8rem 1rem; text-align:center;">
-          <div style="font-size:1.6rem; font-weight:800; color:var(--text-hi); line-height:1;">1–3 <span style="color:var(--accent);">days</span></div>
-          <div style="font-size:0.72rem; color:var(--text-lo); text-transform:uppercase; letter-spacing:0.08em; margin-top:0.25rem;">To ship a game</div>
-        </div>
-        <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:10px; padding:0.8rem 1rem; text-align:center;">
-          <div style="font-size:1.6rem; font-weight:800; color:var(--text-hi); line-height:1;"><span style="color:#a78bfa;">$0</span></div>
-          <div style="font-size:0.72rem; color:var(--text-lo); text-transform:uppercase; letter-spacing:0.08em; margin-top:0.25rem;">To get started</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ─── Footer ─────────────────────────────────────────── -->
 <footer class="footer" role="contentinfo">
   <div class="container">
     <div class="footer__grid">
@@ -825,40 +333,40 @@
           <span class="nav__logo-icon" aria-hidden="true">🎮</span>
           <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
         </a>
-        <p>Expert gaming gear guides, original free games, and tools for every type of gamer.</p>
+        <p>Free browser games, no downloads.</p>
       </div>
       <div class="footer__col">
-        <h4>Guides</h4>
-        <ul>
-          <li><a href="/guides/best-gaming-headsets-2026">Best Gaming Headsets</a></li>
-          <li><a href="/guides/best-gaming-mice-2026">Best Gaming Mice</a></li>
-          <li><a href="/guides/best-gaming-keyboards-2026">Best Gaming Keyboards</a></li>
-          <li><a href="/guides/best-budget-gaming-chairs">Best Budget Chairs</a></li>
-          <li><a href="/guides/best-gaming-monitors-2026">Best Gaming Monitors</a></li>
-        </ul>
-      </div>
-      <div class="footer__col">
-        <h4>Compare</h4>
-        <ul>
-          <li><a href="/versus/razer-kraken-v3-vs-corsair-hs65-wireless">Kraken V3 vs HS65 Wireless</a></li>
-          <li><a href="/versus/razer-basilisk-v3-pro-vs-logitech-g502-x-plus">Basilisk V3 Pro vs G502 X Plus</a></li>
-          <li><a href="/versus/corsair-k100-rgb-vs-steelseries-apex-pro-tkl">K100 RGB vs Apex Pro TKL</a></li>
-          <li><a href="/versus/lg-27gp950-b-vs-samsung-odyssey-g7">27GP950-B vs Odyssey G7</a></li>
-          <li><a href="/versus/razer-deathadder-v3-vs-logitech-g-pro-x-superlight-2">DeathAdder V3 vs Superlight 2</a></li>
-          <li><a href="/versus">All 38 Comparisons →</a></li>
-        </ul>
-      </div>
-      <div class="footer__col">
-        <h4>Play Free</h4>
+        <h4>Games</h4>
         <ul>
           <li><a href="/games/holiday-rush">Holiday Rush</a></li>
           <li><a href="/games/rift">RIFT</a></li>
           <li><a href="/games/gamerdle">Gamerdle</a></li>
+          <li><a href="/games/brix3d">BRIX 3D</a></li>
+          <li><a href="/games/rootweave">Rootweave</a></li>
           <li><a href="/games/pixle">Pixle</a></li>
-          <li><a href="/games/crossword">Daily Crossword</a></li>
-          <li><a href="/games/aim-trainer">FPS Aim Trainer</a></li>
-          <li><a href="/games/price-guesser">Price Guesser</a></li>
-          <li><a href="/games">All 25 Games →</a></li>
+          <li><a href="/games">All games</a></li>
+        </ul>
+      </div>
+      <div class="footer__col">
+        <h4>Gear Guides</h4>
+        <ul>
+          <li><a href="/guides">All gear guides</a></li>
+          <li><a href="/guides/best-gaming-headsets-2026">Best Gaming Headsets</a></li>
+          <li><a href="/guides/best-gaming-mice-2026">Best Gaming Mice</a></li>
+          <li><a href="/guides/best-gaming-keyboards-2026">Best Gaming Keyboards</a></li>
+          <li><a href="/guides/best-gaming-monitors-2026">Best Gaming Monitors</a></li>
+          <li><a href="/versus">Comparisons</a></li>
+        </ul>
+      </div>
+      <div class="footer__col">
+        <h4>Pro Setups</h4>
+        <ul>
+          <li><a href="/pros">All pro setups</a></li>
+          <li><a href="/pros/compare">Compare setups</a></li>
+          <li><a href="/pros/by-gear">Setups by gear</a></li>
+          <li><a href="/guides/valorant-gear">Valorant gear</a></li>
+          <li><a href="/guides/cs2-gear">CS2 gear</a></li>
+          <li><a href="/tools/find-my-gear.html">Find My Gear</a></li>
         </ul>
       </div>
     </div>
@@ -866,149 +374,20 @@
       <p class="footer__disclosure">
         <strong>Affiliate Disclosure:</strong> As an Amazon Associate I earn from qualifying purchases. When you click links on this site and make a purchase, we may receive a small commission at no extra cost to you. This helps keep our guides free. We only recommend products we believe are genuinely good picks.
       </p>
-      <p class="footer__legal">© 2026 CosmicGamesHub. All rights reserved. · <a href="/about" style="color:var(--text-mid);">About</a> · <a href="/privacy" style="color:var(--text-mid);">Privacy</a></p>
+      <p class="footer__legal">© 2026 CosmicGamesHub. All rights reserved. · <a href="/about" style="color:var(--text-mid);">About</a> · <a href="/privacy" style="color:var(--text-mid);">Privacy</a> · <a href="/ai-gaming" style="color:var(--text-mid);">AI Gaming</a></p>
     </div>
   </div>
 </footer>
 
-<!-- ─── Scripts ─────────────────────────────────────────── -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
 <script>
-// Nav hamburger is owned by /global.js (defer).
-
-// ── Nav: transparent on hero, glass on scroll ──
-const mainNav = document.getElementById('mainNav');
-const onScroll = () => {
-  mainNav.classList.toggle('nav--scrolled', window.scrollY > 55);
-};
-window.addEventListener('scroll', onScroll, { passive: true });
-
-// ── Flashlight card hover effect ───────────
-document.querySelectorAll('.glow-grid').forEach(grid => {
-  grid.addEventListener('mousemove', e => {
-    grid.querySelectorAll('.card, .cat-card, .img-card, .guide-card').forEach(card => {
-      const r = card.getBoundingClientRect();
-      card.style.setProperty('--cx', (e.clientX - r.left) + 'px');
-      card.style.setProperty('--cy', (e.clientY - r.top)  + 'px');
-    });
-  });
-});
-
-// ── 3D card tilt ────────────────────────────
-document.querySelectorAll('.card, .cat-card, .img-card, .guide-card').forEach(el => {
-  el.addEventListener('mousemove', e => {
-    const r  = el.getBoundingClientRect();
-    const rx = ((e.clientY - r.top  - r.height * 0.5) / (r.height * 0.5)) * -5;
-    const ry = ((e.clientX - r.left - r.width  * 0.5) / (r.width  * 0.5)) *  5;
-    el.style.transition = 'box-shadow 0.15s, border-color 0.15s, background 0.15s';
-    el.style.transform  = `perspective(900px) rotateX(${rx}deg) rotateY(${ry}deg) translateZ(10px)`;
-  });
-  el.addEventListener('mouseleave', () => {
-    el.style.transition = 'transform 0.65s cubic-bezier(0.23,1,0.32,1), box-shadow 0.35s, border-color 0.35s, background 0.35s';
-    el.style.transform  = '';
-  });
-});
-
-// ── Magnetic CTA buttons ────────────────────
-document.querySelectorAll('.btn--primary').forEach(btn => {
-  btn.addEventListener('mouseenter', () => {
-    btn.style.transition = 'box-shadow 0.2s, background 0.2s';
-  });
-  btn.addEventListener('mousemove', e => {
-    const r  = btn.getBoundingClientRect();
-    const dx = (e.clientX - (r.left + r.width  * 0.5)) * 0.28;
-    const dy = (e.clientY - (r.top  + r.height * 0.5)) * 0.32;
-    btn.style.transform = `translate(${dx}px, ${dy}px) translateY(-2px)`;
-  });
-  btn.addEventListener('mouseleave', () => {
-    btn.style.transition = 'transform 0.5s cubic-bezier(0.23,1,0.32,1), box-shadow 0.3s, background 0.3s';
-    btn.style.transform  = '';
-    setTimeout(() => { btn.style.transition = ''; }, 500);
-  });
-});
-
-// ── GSAP enhanced animations (desktop only; skip phone + reduced-motion) ─
-window.addEventListener('load', () => {
-  if (typeof gsap === 'undefined') return;
-  if (window.matchMedia('(max-width: 768px), (prefers-reduced-motion: reduce)').matches) return;
-  gsap.registerPlugin(ScrollTrigger);
-
-  // Stagger card grids on scroll
-  document.querySelectorAll('.glow-grid').forEach(grid => {
-    const children = [...grid.children].filter(c =>
-      c.classList.contains('js-reveal') ||
-      c.classList.contains('card') ||
-      c.classList.contains('cat-card') ||
-      c.classList.contains('img-card') ||
-      c.classList.contains('guide-card')
-    );
-    if (!children.length) return;
-    gsap.fromTo(children,
-      { y: 24, opacity: 0 },
-      {
-        y: 0, opacity: 1, duration: 0.65, ease: 'power2.out', stagger: 0.09,
-        scrollTrigger: { trigger: grid, start: 'top 82%', toggleActions: 'play none none none' }
-      }
-    );
-  });
-
-  // Section headers with wipe-up
-  document.querySelectorAll('.section__header').forEach(el => {
-    gsap.from(el, {
-      y: 36, opacity: 0, duration: 0.85, ease: 'power3.out',
-      scrollTrigger: { trigger: el, start: 'top 85%' }
-    });
-  });
-
-  // Games banner parallax
-  const banner = document.querySelector('.games-banner');
-  if (banner) {
-    gsap.to(banner, {
-      backgroundPositionY: '60%',
-      ease: 'none',
-      scrollTrigger: { trigger: banner, start: 'top bottom', end: 'bottom top', scrub: true }
-    });
+  var mainNav = document.getElementById('mainNav');
+  if (mainNav) {
+    var onScroll = function () {
+      mainNav.classList.toggle('nav--scrolled', window.scrollY > 55);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
   }
-});
-</script>
-<script>
-  // Hero "live preview" — populate from /data/pros.json so visitors see the
-  // database is real before they have to trust the promise.
-  (function () {
-    function flag(iso) {
-      if (!iso || iso.length !== 2) return '🌐';
-      const A = 0x1F1E6, base = 'A'.charCodeAt(0);
-      return String.fromCodePoint(A + (iso.toUpperCase().charCodeAt(0) - base), A + (iso.toUpperCase().charCodeAt(1) - base));
-    }
-    function pickRandom(arr, n) {
-      const copy = arr.slice();
-      for (let i = copy.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [copy[i], copy[j]] = [copy[j], copy[i]];
-      }
-      return copy.slice(0, n);
-    }
-    fetch('/data/pros.json').then(r => r.json()).then(pros => {
-      if (!pros || !pros.length) return;
-      const preview = document.getElementById('heroPreview');
-      const row = document.getElementById('heroPreviewRow');
-      if (!preview || !row) return;
-      preview.hidden = false;
-      // Show 5 random pros with their mouse — most-visible piece of gear
-      const picks = pickRandom(pros.filter(p => p.mouse), 5);
-      const chips = picks.map(p => `
-        <a class="hero__pro-chip" href="/pros/${p.id}" aria-label="${p.name} setup">
-          <span class="hero__pro-flag">${flag(p.country)}</span>
-          <span>
-            <span class="hero__pro-name">${p.name}</span>
-            <span class="hero__pro-gear"> · ${p.mouse}</span>
-          </span>
-        </a>
-      `).join('');
-      row.innerHTML = chips + `<a class="hero__pro-more" href="/pros">+${pros.length - picks.length} more →</a>`;
-    }).catch(()=>{});
-  })();
 </script>
 <script src="/global.js" defer></script>
 </body>

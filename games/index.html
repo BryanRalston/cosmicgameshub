@@ -11,11 +11,11 @@
   </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Free Browser Games 2026 — 25 Games, No Download | CosmicGamesHub</title>
-  <meta name="description" content="25 free browser games — 12 daily puzzles, Holiday Rush store sim, arcade, skill trainers, and a 3D brick builder. No download, no login." />
+  <title>Original Free Browser Games — Holiday Rush, RIFT, BRIX 3D | CosmicGamesHub</title>
+  <meta name="description" content="Original free browser games first: Holiday Rush, RIFT, Gamerdle, BRIX 3D, Rootweave, and Pixle. Then 19 more dailies, arcade, and skill games. No download, no login." />
   <meta name="keywords" content="free browser games 2026, online games no download, daily puzzle games, BRIX 3D, Gamerdle, Void Keeper, gaming trivia, type racer, aim trainer" />
-  <meta property="og:title" content="Free Browser Games — 25 Games, No Download | CosmicGamesHub" />
-  <meta property="og:description" content="25 free games. Twelve daily puzzles, Holiday Rush, arcade and skill trainers, BRIX 3D, Rootweave. No install, no login." />
+  <meta property="og:title" content="Original Free Browser Games — Holiday Rush, RIFT, BRIX 3D | CosmicGamesHub" />
+  <meta property="og:description" content="Holiday Rush, RIFT, Gamerdle, BRIX 3D, Rootweave, and Pixle lead the hub. Nineteen more free browser games sit underneath. No install, no login." />
   <meta property="og:image" content="https://www.cosmicgameshub.com/images/game-brix3d-v2.jpg" />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://www.cosmicgameshub.com/games" />
@@ -156,6 +156,18 @@
       grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 0.85rem;
     }
+    .gh-originals { margin-bottom: 2.5rem; }
+    .gh-originals__row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.85rem;
+    }
+    .gh-originals__pitch {
+      margin: 0;
+      color: var(--text-mid);
+      font-size: 0.84rem;
+      line-height: 1.45;
+    }
     .gh-desk-card {
       background: rgba(255,255,255,0.025);
       border: 1px solid var(--border);
@@ -254,6 +266,7 @@
     .gh-card__badge--puzzle { background: rgba(99,102,241,0.9); color: #fff; }
     .gh-card__badge--skill { background: rgba(52,211,153,0.9); color: #062016; }
     .gh-card__badge--3d { background: rgba(0,212,255,0.9); color: #000; }
+    .gh-card__badge--gotw { background: #ffe14a; color: #1a1200; }
     .gh-card__body {
       padding: 1rem 1.1rem 1.15rem;
       flex: 1; display: flex; flex-direction: column;
@@ -319,7 +332,8 @@
       color: var(--text-lo); font-size: 0.9rem;
     }
     @media (max-width: 960px) {
-      .gh-desk__row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .gh-desk__row,
+      .gh-originals__row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
     @media (max-width: 768px) {
       .gh-hero { padding: 1.5rem 1rem 1.25rem; }
@@ -330,7 +344,8 @@
     }
     @media (max-width: 480px) {
       .gh-grid { grid-template-columns: 1fr; gap: 0.85rem; }
-      .gh-desk__row { grid-template-columns: 1fr; }
+      .gh-desk__row,
+      .gh-originals__row { grid-template-columns: 1fr; }
       .gh-card__thumb { height: 180px; }
       .gh-card__body { padding: 0.9rem 1rem 1.1rem; }
       .gh-card__title { font-size: 1.05rem; }
@@ -351,31 +366,31 @@
     "name": "Free Browser Games",
     "numberOfItems": 25,
     "itemListElement": [
-      {"@type":"ListItem","position":1,"url":"https://www.cosmicgameshub.com/games/gamerdle","name":"Gamerdle"},
-      {"@type":"ListItem","position":2,"url":"https://www.cosmicgameshub.com/games/pixle","name":"Pixle"},
-      {"@type":"ListItem","position":3,"url":"https://www.cosmicgameshub.com/games/link","name":"Link"},
-      {"@type":"ListItem","position":4,"url":"https://www.cosmicgameshub.com/games/rift","name":"RIFT"},
-      {"@type":"ListItem","position":5,"url":"https://www.cosmicgameshub.com/games/gaming-trivia","name":"Gaming Trivia"},
-      {"@type":"ListItem","position":6,"url":"https://www.cosmicgameshub.com/games/daily-challenge","name":"Pro Kit Daily"},
-      {"@type":"ListItem","position":7,"url":"https://www.cosmicgameshub.com/games/type-racer","name":"Type Racer"},
-      {"@type":"ListItem","position":8,"url":"https://www.cosmicgameshub.com/games/asteroid-dodge","name":"Asteroid Dodge"},
-      {"@type":"ListItem","position":9,"url":"https://www.cosmicgameshub.com/games/beat-lab","name":"Beat Lab"},
-      {"@type":"ListItem","position":10,"url":"https://www.cosmicgameshub.com/games/void-keeper","name":"Void Keeper"},
-      {"@type":"ListItem","position":11,"url":"https://www.cosmicgameshub.com/games/aim-trainer","name":"FPS Aim Trainer"},
-      {"@type":"ListItem","position":12,"url":"https://www.cosmicgameshub.com/games/reaction-trainer","name":"Reaction Time Trainer"},
-      {"@type":"ListItem","position":13,"url":"https://www.cosmicgameshub.com/games/sudoku","name":"Daily Sudoku"},
-      {"@type":"ListItem","position":14,"url":"https://www.cosmicgameshub.com/games/minesweeper","name":"Cosmic Minesweeper"},
-      {"@type":"ListItem","position":15,"url":"https://www.cosmicgameshub.com/games/crossword","name":"Gaming Crossword"},
-      {"@type":"ListItem","position":16,"url":"https://www.cosmicgameshub.com/games/memory-match","name":"Memory Match"},
-      {"@type":"ListItem","position":17,"url":"https://www.cosmicgameshub.com/games/color-memory","name":"Color Memory"},
-      {"@type":"ListItem","position":18,"url":"https://www.cosmicgameshub.com/games/price-guesser","name":"Gaming Gear Price Guesser"},
-      {"@type":"ListItem","position":19,"url":"https://www.cosmicgameshub.com/games/brix3d","name":"BRIX 3D"},
-      {"@type":"ListItem","position":20,"url":"https://www.cosmicgameshub.com/games/gear-quiz","name":"Gear Knowledge Quiz"},
-      {"@type":"ListItem","position":21,"url":"https://www.cosmicgameshub.com/games/spec-match","name":"Spec Match"},
-      {"@type":"ListItem","position":22,"url":"https://www.cosmicgameshub.com/games/hardware-timeline","name":"Hardware Timeline"},
-      {"@type":"ListItem","position":23,"url":"https://www.cosmicgameshub.com/games/rootweave","name":"Rootweave"},
-      {"@type":"ListItem","position":24,"url":"https://www.cosmicgameshub.com/games/word-scramble","name":"Word Scramble"},
-      {"@type":"ListItem","position":25,"url":"https://www.cosmicgameshub.com/games/holiday-rush","name":"Holiday Rush: Store Manager"}
+      {"@type":"ListItem","position":1,"url":"https://www.cosmicgameshub.com/games/holiday-rush","name":"Holiday Rush: Store Manager"},
+      {"@type":"ListItem","position":2,"url":"https://www.cosmicgameshub.com/games/rift","name":"RIFT"},
+      {"@type":"ListItem","position":3,"url":"https://www.cosmicgameshub.com/games/gamerdle","name":"Gamerdle"},
+      {"@type":"ListItem","position":4,"url":"https://www.cosmicgameshub.com/games/brix3d","name":"BRIX 3D"},
+      {"@type":"ListItem","position":5,"url":"https://www.cosmicgameshub.com/games/rootweave","name":"Rootweave"},
+      {"@type":"ListItem","position":6,"url":"https://www.cosmicgameshub.com/games/pixle","name":"Pixle"},
+      {"@type":"ListItem","position":7,"url":"https://www.cosmicgameshub.com/games/link","name":"Link"},
+      {"@type":"ListItem","position":8,"url":"https://www.cosmicgameshub.com/games/gaming-trivia","name":"Gaming Trivia"},
+      {"@type":"ListItem","position":9,"url":"https://www.cosmicgameshub.com/games/daily-challenge","name":"Pro Kit Daily"},
+      {"@type":"ListItem","position":10,"url":"https://www.cosmicgameshub.com/games/type-racer","name":"Type Racer"},
+      {"@type":"ListItem","position":11,"url":"https://www.cosmicgameshub.com/games/asteroid-dodge","name":"Asteroid Dodge"},
+      {"@type":"ListItem","position":12,"url":"https://www.cosmicgameshub.com/games/beat-lab","name":"Beat Lab"},
+      {"@type":"ListItem","position":13,"url":"https://www.cosmicgameshub.com/games/void-keeper","name":"Void Keeper"},
+      {"@type":"ListItem","position":14,"url":"https://www.cosmicgameshub.com/games/aim-trainer","name":"FPS Aim Trainer"},
+      {"@type":"ListItem","position":15,"url":"https://www.cosmicgameshub.com/games/reaction-trainer","name":"Reaction Time Trainer"},
+      {"@type":"ListItem","position":16,"url":"https://www.cosmicgameshub.com/games/sudoku","name":"Daily Sudoku"},
+      {"@type":"ListItem","position":17,"url":"https://www.cosmicgameshub.com/games/minesweeper","name":"Cosmic Minesweeper"},
+      {"@type":"ListItem","position":18,"url":"https://www.cosmicgameshub.com/games/crossword","name":"Gaming Crossword"},
+      {"@type":"ListItem","position":19,"url":"https://www.cosmicgameshub.com/games/memory-match","name":"Memory Match"},
+      {"@type":"ListItem","position":20,"url":"https://www.cosmicgameshub.com/games/color-memory","name":"Color Memory"},
+      {"@type":"ListItem","position":21,"url":"https://www.cosmicgameshub.com/games/price-guesser","name":"Gaming Gear Price Guesser"},
+      {"@type":"ListItem","position":22,"url":"https://www.cosmicgameshub.com/games/gear-quiz","name":"Gear Knowledge Quiz"},
+      {"@type":"ListItem","position":23,"url":"https://www.cosmicgameshub.com/games/spec-match","name":"Spec Match"},
+      {"@type":"ListItem","position":24,"url":"https://www.cosmicgameshub.com/games/hardware-timeline","name":"Hardware Timeline"},
+      {"@type":"ListItem","position":25,"url":"https://www.cosmicgameshub.com/games/word-scramble","name":"Word Scramble"}
     ]
   },
   "author": {"@type":"Organization","name":"CosmicGamesHub","url":"https://www.cosmicgameshub.com"}
@@ -393,12 +408,8 @@
         <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
       </a>
       <ul class="nav__links" id="navLinks">
-        <li><a href="/pros">Pros</a></li>
-        <li><a href="/games" class="active">Games</a></li>
-        <li><a href="/games/daily">Daily</a></li>
-        <li><a href="/guides">Guides</a></li>
-        <li><a href="/versus">Comparisons</a></li>
-        <li><a href="/tools/gaming-fps-calculator" class="nav__cta btn">Tools</a></li>
+        <li><a href="/games" class="nav__primary active">Games</a></li>
+        <li><a href="/guides" class="nav__secondary">Guides</a></li>
       </ul>
       <button class="nav__hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
         <span></span><span></span><span></span>
@@ -410,10 +421,10 @@
 <!-- ─── Hero ─────────────────────────────────── -->
 <div class="gh-hero">
   <div class="gh-hero__eyebrow">
-    <span class="live-dot"></span> Daily desk · 25 games · this device
+    <span class="live-dot"></span> Originals first · 25 games · this device
   </div>
   <h1 class="gh-hero__title">Free Browser Games</h1>
-  <p class="gh-hero__sub">Today’s desk first — RIFT, Gamerdle, Pixle, Mini Crossword, Link. Twelve dailies share one UTC board. Arcade, skill, and 3D anytime. Streaks stay on this device.</p>
+  <p class="gh-hero__sub">Originals first — Holiday Rush, RIFT, Gamerdle, BRIX 3D, Rootweave, and Pixle. Then today’s daily desk and the rest of the catalog. No download, no login. Streaks stay on this device.</p>
   <input type="search" id="ghSearch" class="gh-search" placeholder="Search games…" autocomplete="off" aria-label="Search games">
   <div class="gh-toolbar">
     <div class="gh-filters" id="ghFilters" role="tablist" aria-label="Filter games by category">
@@ -456,6 +467,79 @@
 
 <!-- ─── Main ──────────────────────────────────── -->
 <main class="gh-main" id="ghMain">
+
+  <section class="gh-originals" id="ghOriginals" aria-label="Original games">
+    <div class="gh-section-label"><span class="sl-accent">◆</span> Originals we build</div>
+    <p class="gh-desk__lead">These six come first. The daily desk and the rest of the catalog are below.</p>
+    <div class="gh-originals__row">
+      <article class="gh-desk-card">
+        <a class="gh-desk-card__imgwrap" href="/games/holiday-rush">
+          <img src="/games/holiday-rush/store_layout_1600.webp" alt="Holiday Rush Mart floor, top-down" width="1600" height="900" />
+          <span class="gh-card__badge gh-card__badge--new">Original</span>
+        </a>
+        <div class="gh-desk-card__body">
+          <div class="gh-desk-card__title">Holiday Rush</div>
+          <p class="gh-originals__pitch">Schedule the floor and survive three holiday rushes.</p>
+          <a class="gh-card__play" href="/games/holiday-rush">PLAY NOW</a>
+        </div>
+      </article>
+      <article class="gh-desk-card">
+        <a class="gh-desk-card__imgwrap" href="/games/rift">
+          <img src="/images/game-rift-v2.jpg" alt="RIFT word game" width="1280" height="720" />
+          <span class="gh-card__badge gh-card__badge--daily">Original</span>
+        </a>
+        <div class="gh-desk-card__body">
+          <div class="gh-desk-card__title">RIFT</div>
+          <p class="gh-originals__pitch">Three daily word zones — chain, grow, and decode.</p>
+          <a class="gh-card__play" href="/games/rift">PLAY NOW</a>
+        </div>
+      </article>
+      <article class="gh-desk-card">
+        <a class="gh-desk-card__imgwrap" href="/games/gamerdle">
+          <img src="/images/game-gamerdle-v2.jpg" alt="Gamerdle — guess the video game" width="1280" height="720" />
+          <span class="gh-card__badge gh-card__badge--daily">Original</span>
+        </a>
+        <div class="gh-desk-card__body">
+          <div class="gh-desk-card__title">Gamerdle</div>
+          <p class="gh-originals__pitch">Guess the mystery video game in six tries.</p>
+          <a class="gh-card__play" href="/games/gamerdle">PLAY NOW</a>
+        </div>
+      </article>
+      <article class="gh-desk-card">
+        <a class="gh-desk-card__imgwrap" href="/games/brix3d">
+          <img src="/images/game-brix3d-v2.jpg" alt="BRIX 3D brick builder" width="1280" height="720" loading="lazy" />
+          <span class="gh-card__badge gh-card__badge--new">Original</span>
+        </a>
+        <div class="gh-desk-card__body">
+          <div class="gh-desk-card__title">BRIX 3D</div>
+          <p class="gh-originals__pitch">Build 3D brick creations in the browser.</p>
+          <a class="gh-card__play" href="/games/brix3d">PLAY NOW</a>
+        </div>
+      </article>
+      <article class="gh-desk-card">
+        <a class="gh-desk-card__imgwrap" href="/games/rootweave">
+          <img src="/images/game-rootweave-v2.jpg" alt="Rootweave valley farm" width="1408" height="768" loading="lazy" />
+          <span class="gh-card__badge gh-card__badge--new">Original</span>
+        </a>
+        <div class="gh-desk-card__body">
+          <div class="gh-desk-card__title">Rootweave</div>
+          <p class="gh-originals__pitch">Heal a dying valley in a regenerative farm sim.</p>
+          <a class="gh-card__play" href="/games/rootweave">PLAY NOW</a>
+        </div>
+      </article>
+      <article class="gh-desk-card">
+        <a class="gh-desk-card__imgwrap" href="/games/pixle">
+          <img src="/images/game-pixle-v2.jpg" alt="Pixle — daily 5-letter gaming Wordle" width="1280" height="720" loading="lazy" />
+          <span class="gh-card__badge gh-card__badge--daily">Original</span>
+        </a>
+        <div class="gh-desk-card__body">
+          <div class="gh-desk-card__title">Pixle</div>
+          <p class="gh-originals__pitch">Five-letter gaming words, six tries, one a day.</p>
+          <a class="gh-card__play" href="/games/pixle">PLAY NOW</a>
+        </div>
+      </article>
+    </div>
+  </section>
 
   <section class="gh-desk" id="ghDesk">
     <div class="gh-section-label"><span class="sl-accent">◆</span> Today’s desk</div>
@@ -1052,6 +1136,8 @@
     });
     var desk = document.getElementById('ghDesk');
     if (desk) desk.hidden = !(deskFilters[active] && !q);
+    var originals = document.getElementById('ghOriginals');
+    if (originals) originals.hidden = !(active === 'all' && !q);
     var empty = document.getElementById('ghEmpty');
     if (empty) empty.hidden = shown > 0;
     updateLabels();

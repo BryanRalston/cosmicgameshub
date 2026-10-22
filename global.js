@@ -9,16 +9,81 @@
     }
   }
 
+  var MORE_GAMES = [
+    { href: '/games/holiday-rush', name: 'Holiday Rush' },
+    { href: '/games/rift', name: 'RIFT' },
+    { href: '/games/gamerdle', name: 'Gamerdle' },
+    { href: '/games/brix3d', name: 'BRIX 3D' },
+    { href: '/games/rootweave', name: 'Rootweave' },
+    { href: '/games/pixle', name: 'Pixle' },
+    { href: '/games', name: 'All games' }
+  ];
+
   function injectGlobalNav() {
     var navLinks = document.querySelector('.nav__links');
     if (!navLinks) return;
     navLinks.innerHTML =
-      '<li><a href="/games">Play</a></li>' +
-      '<li><a href="/guides">Gear</a></li>' +
-      '<li><a href="/pros">Pros</a></li>' +
-      '<li><a href="/games/daily">Daily</a></li>' +
-      '<li><a href="/versus">Compare</a></li>' +
+      '<li><a href="/games" class="nav__primary">Games</a></li>' +
+      '<li><a href="/guides" class="nav__secondary">Guides</a></li>' +
       '<li><button type="button" class="nav__search-btn" id="navSearchBtn" aria-label="Open search" aria-haspopup="dialog" aria-controls="siteSearch">Search</button></li>';
+  }
+
+  function pagePath() {
+    return window.location.pathname.replace(/\/index\.html$/, '').replace(/\.html$/, '').replace(/\/$/, '') || '/';
+  }
+
+  function moreGamesMarkup(path) {
+    var html = '';
+    MORE_GAMES.forEach(function (game) {
+      var current = path === game.href ? ' aria-current="page"' : '';
+      html += '<li><a href="' + game.href + '"' + current + '>' + game.name + '</a></li>';
+    });
+    return html;
+  }
+
+  function pageOverflowLocked() {
+    var body = getComputedStyle(document.body);
+    var root = getComputedStyle(document.documentElement);
+    return body.overflow === 'hidden' || body.overflowY === 'hidden' || root.overflow === 'hidden' || root.overflowY === 'hidden';
+  }
+
+  var DOCK_CSS = '.more-games--dock{position:fixed;z-index:220;top:calc(8px + env(safe-area-inset-top,0px));right:8px;left:auto;margin:0;max-width:min(420px,calc(100vw - 16px));padding:.35rem;border:1px solid rgba(255,255,255,.14);border-radius:14px;background:rgba(9,9,15,.94);font-family:system-ui,sans-serif}.more-games--dock .more-games__toggle{display:inline-flex;align-items:center;min-height:44px;padding:0 .9rem;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:#fff;font:inherit;font-weight:800;font-size:.85rem;cursor:pointer}.more-games--dock .more-games__list{display:none;flex-wrap:wrap;gap:.4rem;list-style:none;margin:.4rem 0 0;padding:0}.more-games--dock.is-open .more-games__list{display:flex}.more-games--dock .more-games__list a{display:inline-flex;align-items:center;min-height:44px;padding:.35rem .8rem;border-radius:999px;border:1px solid rgba(255,255,255,.14);color:#fff;font-weight:700;font-size:.85rem;text-decoration:none}.gotw-tag--float{position:fixed;z-index:230;left:8px;bottom:calc(8px + env(safe-area-inset-bottom,0px));margin:0;padding:.2rem .55rem;border-radius:999px;background:#ffe14a;color:#1a1200;font:800 .72rem/1.2 system-ui,sans-serif;letter-spacing:.04em;text-transform:uppercase}';
+
+  function ensureDockCss() {
+    if (document.getElementById('more-games-dock-css')) return;
+    if (document.querySelector('link[href*="styles.css"]')) return;
+    var style = document.createElement('style');
+    style.id = 'more-games-dock-css';
+    style.textContent = DOCK_CSS;
+    document.head.appendChild(style);
+  }
+
+  function injectMoreGames() {
+    if (document.querySelector('[data-more-games]')) return;
+    var path = pagePath();
+    if (path.indexOf('/games/') !== 0) return;
+    var dock = pageOverflowLocked() || !!document.getElementById('lab-nav');
+    var nav = document.createElement('nav');
+    nav.className = dock ? 'more-games more-games--dock' : 'more-games';
+    nav.setAttribute('data-more-games', '1');
+    nav.setAttribute('aria-label', 'More games');
+    var toggle = dock
+      ? '<button type="button" class="more-games__toggle" aria-expanded="false">More games</button>'
+      : '<span class="more-games__label">More games</span>';
+    nav.innerHTML = toggle + '<ul class="more-games__list">' + moreGamesMarkup(path) + '</ul>';
+    if (dock) {
+      var button = nav.querySelector('.more-games__toggle');
+      button.addEventListener('click', function () {
+        var open = nav.classList.toggle('is-open');
+        button.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
+      ensureDockCss();
+      document.body.appendChild(nav);
+      return;
+    }
+    var main = document.querySelector('main');
+    if (main) main.appendChild(nav);
+    else document.body.appendChild(nav);
   }
 
   function injectSearchOverlay() {
@@ -253,11 +318,302 @@
     });
   }
 
+  var FEATURED_ART = {
+    'holiday-rush': { name: 'Holiday Rush', img: '/games/holiday-rush/store_layout_1600.webp', w: 1600, h: 900, alt: 'Holiday Rush Mart floor, top-down' },
+    rift: { name: 'RIFT', img: '/images/game-rift-v2.jpg', w: 1280, h: 720, alt: 'RIFT word game' },
+    gamerdle: { name: 'Gamerdle', img: '/images/game-gamerdle-v2.jpg', w: 1280, h: 720, alt: 'Gamerdle guess the video game' },
+    brix3d: { name: 'BRIX 3D', img: '/images/game-brix3d-v2.jpg', w: 1280, h: 720, alt: 'BRIX 3D brick builder' },
+    rootweave: { name: 'Rootweave', img: '/images/game-rootweave-v2.jpg', w: 1408, h: 768, alt: 'Rootweave valley farm' },
+    pixle: { name: 'Pixle', img: '/images/game-pixle-v2.jpg', w: 1280, h: 720, alt: 'Pixle five-letter gaming word' },
+    'asteroid-dodge': { name: 'Asteroid Dodge', img: '/images/game-asteroid-dodge-v2.jpg', w: 1280, h: 720, alt: 'Asteroid Dodge' },
+    'aim-trainer': { name: 'Aim Trainer', img: '/images/game-aim-trainer-v2.jpg', w: 1280, h: 720, alt: 'Aim Trainer' },
+    crossword: { name: 'Crossword', img: '/images/game-crossword-v2.jpg', w: 1280, h: 720, alt: 'Crossword' },
+    link: { name: 'Link', img: '/images/game-link-v2.jpg', w: 1280, h: 720, alt: 'Link' },
+    sudoku: { name: 'Sudoku', img: '/images/game-sudoku-v2.jpg', w: 1280, h: 720, alt: 'Sudoku' },
+    minesweeper: { name: 'Minesweeper', img: '/images/game-minesweeper-v2.jpg', w: 1280, h: 720, alt: 'Minesweeper' }
+  };
+
+  var WEEK_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  function weekLabel(iso) {
+    var match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
+    if (!match) return '';
+    var month = WEEK_MONTHS[Number(match[2]) - 1];
+    if (!month) return '';
+    return 'Week of ' + month + ' ' + Number(match[3]);
+  }
+
+  function titleFromSlug(slug) {
+    return slug.split('-').map(function (word) {
+      if (!word) return word;
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    }).join(' ');
+  }
+
+  function paintFeatured(data) {
+    if (!data || typeof data.slug !== 'string' || !/^[a-z0-9-]+$/.test(data.slug)) return;
+    var slug = data.slug;
+    var art = FEATURED_ART[slug];
+    var name = art ? art.name : titleFromSlug(slug);
+    var blurb = typeof data.blurb === 'string' ? data.blurb : '';
+    var card = document.getElementById('gotw');
+    if (card) {
+      card.setAttribute('href', '/games/' + slug);
+      var title = document.getElementById('gotwTitle');
+      var blurbEl = document.getElementById('gotwBlurb');
+      var week = document.getElementById('gotwWeek');
+      var img = document.getElementById('gotwImg');
+      var media = document.getElementById('gotwMedia');
+      if (title) title.textContent = name;
+      if (blurbEl) blurbEl.textContent = blurb;
+      if (week) week.textContent = weekLabel(data.weekStart);
+      if (img && media) {
+        if (art) {
+          img.hidden = false;
+          if (img.getAttribute('src') !== art.img) {
+            img.src = art.img;
+            img.width = art.w;
+            img.height = art.h;
+          }
+          img.alt = art.alt;
+          media.classList.remove('is-plain');
+        } else {
+          img.hidden = true;
+          img.alt = '';
+          media.classList.add('is-plain');
+        }
+      }
+    }
+    var existing = document.querySelector('.tile__badge--gotw');
+    var currentSlug = existing && existing.closest('.tile') ? existing.closest('.tile').getAttribute('data-slug') : '';
+    if (currentSlug !== slug) {
+      if (existing) existing.remove();
+      var badges = document.querySelector('.tile[data-slug="' + slug + '"] .tile__badges');
+      if (badges) {
+        var tileBadge = document.createElement('span');
+        tileBadge.className = 'tile__badge tile__badge--gotw';
+        tileBadge.textContent = 'Game of the Week';
+        badges.insertBefore(tileBadge, badges.firstChild);
+      }
+    }
+    document.querySelectorAll('.gh-card__thumb, .gh-desk-card__imgwrap').forEach(function (link) {
+      var dest = (link.getAttribute('href') || '').replace(/\/$/, '');
+      if (dest !== '/games/' + slug) return;
+      var badge = link.querySelector('.gh-card__badge');
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'gh-card__badge';
+        link.appendChild(badge);
+      }
+      badge.className = 'gh-card__badge gh-card__badge--gotw';
+      badge.textContent = 'Game of the Week';
+    });
+    var gameMatch = pagePath().match(/^\/games\/([a-z0-9-]+)$/);
+    if (!gameMatch || gameMatch[1] !== slug || slug === 'daily' || slug === 'embed-template') return;
+    if (document.querySelector('.gotw-tag')) return;
+    var tag = document.createElement('p');
+    tag.className = 'gotw-tag';
+    tag.textContent = 'Game of the Week';
+    var heading = document.querySelector('h1');
+    if (heading && heading.parentNode) {
+      heading.parentNode.insertBefore(tag, heading);
+      return;
+    }
+    tag.classList.add('gotw-tag--float');
+    ensureDockCss();
+    document.body.appendChild(tag);
+  }
+
+  function applyFeatured() {
+    fetch('/data/featured.json', { credentials: 'same-origin' })
+      .then(function (response) {
+        if (!response.ok) throw new Error('featured');
+        return response.json();
+      })
+      .then(paintFeatured)
+      .catch(function () {});
+  }
+
+  function playBreakMarkup() {
+    return '<aside class="play-break" data-play-break="1" aria-label="Take a break: play our free games">' +
+      '<p class="play-break__title">Take a break: play our free games</p>' +
+      '<ul>' +
+        '<li><a href="/games/holiday-rush">Holiday Rush</a><span> — schedule the floor</span></li>' +
+        '<li><a href="/games/rift">RIFT</a><span> — three daily word zones</span></li>' +
+        '<li><a href="/games/gamerdle">Gamerdle</a><span> — guess the mystery game</span></li>' +
+      '</ul>' +
+    '</aside>';
+  }
+
+  function injectPlayBreaks() {
+    if (!/^\/guides\/[a-z0-9-]+$/.test(pagePath())) return;
+    var root = document.querySelector('main') || document.querySelector('.guide-main');
+    if (!root || root.querySelector('[data-play-break]')) return;
+    var headings = root.querySelectorAll('h2');
+    var midHost = null;
+    for (var i = 0; i < headings.length; i++) {
+      var top = headings[i].getBoundingClientRect().top + window.scrollY;
+      if (top >= window.innerHeight) {
+        midHost = headings[i];
+        break;
+      }
+    }
+    if (midHost && midHost.parentNode) {
+      var mid = document.createElement('div');
+      mid.innerHTML = playBreakMarkup();
+      midHost.parentNode.insertBefore(mid.firstChild, midHost);
+    }
+    root.insertAdjacentHTML('beforeend', playBreakMarkup());
+  }
+
+  function eventElement(event) {
+    var node = event.target;
+    if (!node) return null;
+    return node.nodeType === 1 ? node : node.parentElement;
+  }
+
+  function trackEvent(name, params) {
+    if (typeof window.gtag !== 'function') return;
+    window.gtag('event', name, params);
+  }
+
+  function gameSlugFromHref(href) {
+    try {
+      var url = new URL(href, window.location.origin);
+      if (url.origin !== window.location.origin) return '';
+      var match = url.pathname.replace(/\/$/, '').match(/^\/games\/([a-z0-9-]+)$/);
+      if (!match || match[1] === 'daily' || match[1] === 'embed-template') return '';
+      return match[1];
+    } catch (err) {
+      return '';
+    }
+  }
+
+  function clickPlacement(el) {
+    if (el.closest('.play-break')) return 'play_break';
+    if (el.closest('#gotw, .gotw')) return 'feature';
+    if (el.closest('.tile, .tile-grid')) return 'tile';
+    if (el.closest('.more-games, .brix-more')) return 'more_games';
+    if (el.closest('.nav')) return 'nav';
+    return 'link';
+  }
+
+  function sameHostReferrer() {
+    try {
+      if (!document.referrer) return 'direct';
+      var url = new URL(document.referrer);
+      if (url.origin !== window.location.origin) return 'direct';
+      return url.pathname || '/';
+    } catch (err) {
+      return 'direct';
+    }
+  }
+
+  function ignoredGameTarget(el) {
+    return !!(el && el.closest && el.closest('nav, footer, .more-games, .brix-more, .play-break, #siteSearch, .site-search'));
+  }
+
+  function watchComplete(id, className, onComplete) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    function check() {
+      if (el.classList.contains(className)) onComplete();
+    }
+    check();
+    var observer = new MutationObserver(check);
+    observer.observe(el, { attributes: true, attributeFilter: ['class'] });
+  }
+
+  function initAnalytics() {
+    document.addEventListener('click', function (event) {
+      var origin = eventElement(event);
+      var link = origin && origin.closest('a[href]');
+      if (!link) return;
+      var slug = gameSlugFromHref(link.getAttribute('href'));
+      if (!slug) return;
+      trackEvent('game_card_click', {
+        game: slug,
+        source_page: window.location.pathname,
+        placement: clickPlacement(link)
+      });
+    }, true);
+
+    var match = pagePath().match(/^\/games\/([a-z0-9-]+)$/);
+    if (!match || match[1] === 'daily' || match[1] === 'embed-template') return;
+    var slug = match[1];
+    var started = false;
+    function start(event) {
+      if (started) return;
+      if (event.type === 'keydown' && (event.key === '/' || event.key === 'Escape' || event.metaKey || event.ctrlKey || event.altKey)) return;
+      if (ignoredGameTarget(eventElement(event))) return;
+      started = true;
+      trackEvent('game_start', { game: slug, source_page: sameHostReferrer() });
+    }
+    document.addEventListener('pointerdown', start, true);
+    document.addEventListener('keydown', start, true);
+
+    var finished = false;
+    function complete() {
+      if (finished) return;
+      finished = true;
+      trackEvent('game_complete', { game: slug, source_page: sameHostReferrer() });
+    }
+    if (slug === 'holiday-rush') {
+      var finalEl = document.getElementById('hr-final');
+      if (finalEl) {
+        var seeFinal = function () {
+          if (!finalEl.hasAttribute('hidden')) complete();
+        };
+        seeFinal();
+        var finalObserver = new MutationObserver(seeFinal);
+        finalObserver.observe(finalEl, { attributes: true, attributeFilter: ['hidden'] });
+      }
+    } else if (slug === 'rift') {
+      watchComplete('resultScreen', 'show', complete);
+    } else if (slug === 'gamerdle') {
+      watchComplete('resultPanel', 'show', complete);
+    } else if (slug === 'pixle') {
+      watchComplete('result-modal', 'open', complete);
+    }
+  }
+
+  function initPortalFilters() {
+    var grid = document.getElementById('tileGrid');
+    if (!grid) return;
+    var chips = document.querySelectorAll('.chip[data-cat]');
+    var tiles = grid.querySelectorAll('.tile');
+    var empty = document.getElementById('tileEmpty');
+    chips.forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        var cat = chip.getAttribute('data-cat');
+        chips.forEach(function (other) {
+          var on = other === chip;
+          other.classList.toggle('is-on', on);
+          other.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+        var shown = 0;
+        tiles.forEach(function (tile) {
+          var cats = (tile.getAttribute('data-cats') || '').split(/\s+/);
+          var match = cat === 'all' || cats.indexOf(cat) !== -1;
+          tile.hidden = !match;
+          if (match) shown += 1;
+        });
+        if (empty) empty.hidden = shown !== 0;
+      });
+    });
+  }
+
   function initSiteChrome() {
     injectGlobalNav();
+    injectMoreGames();
     injectSearchOverlay();
     initHamburger();
     initSearch();
+    applyFeatured();
+    initPortalFilters();
+    initAnalytics();
+    if (document.readyState === 'complete') injectPlayBreaks();
+    else window.addEventListener('load', injectPlayBreaks);
 
     /* ── Scroll reveal: first-paint visible, animate only off-screen ── */
     (function () {

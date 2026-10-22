@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /games/embed-template
 
 Sitemap: https://www.cosmicgameshub.com/sitemap.xml
