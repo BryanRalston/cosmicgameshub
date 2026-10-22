@@ -4637,7 +4637,7 @@
         '<div class="hr-sales"><div class="hr-sales__top"><span>Sales</span><strong id="hr-sales-text"></strong></div><div class="hr-bar"><i id="hr-sales-bar"></i></div></div>' +
         '<div class="hr-stat hr-stat--stars hr-hud__extra"><span>Stars</span><strong id="hr-star-text" class="hr-stars"></strong></div>' +
         '<div class="hr-combo is-idle" id="hr-combo" aria-hidden="true">×1</div>' +
-        '<div class="hr-rush" id="hr-rush" hidden>RUSH</div>' +
+        '<div class="hr-rush" id="hr-rush" aria-hidden="true">RUSH</div>' +
         (ops ? '<div class="hr-stat hr-hud__extra"><span>Payroll</span><strong id="hr-pay-text"></strong></div><div class="hr-stat hr-hud__extra"><span>Morale</span><strong id="hr-mor-text"></strong></div>' : '') +
         (storeName ? '<div class="hr-stat hr-hud__extra"><span>Store</span><strong id="hr-store-name">' + esc(storeName) + '</strong></div>' : '') +
         (sim.tenant ? '<div class="hr-stat"><span>Floor</span><strong id="hr-tenant-name">' + esc(sim.tenant.name) + (sim.tenant.mechanic ? ' · ' + esc(mechanicLabel(sim.tenant.mechanic)) : '') + '</strong></div>' : '') +
@@ -4735,7 +4735,11 @@
         }
       }
       var rushEl = document.getElementById('hr-rush');
-      if (rushEl) rushEl.hidden = !rushing;
+      if (rushEl) {
+        rushEl.hidden = false;
+        rushEl.classList.toggle('is-on', rushing);
+        rushEl.setAttribute('aria-hidden', rushing ? 'false' : 'true');
+      }
       if (els.stage) {
         els.stage.dataset.rush = rushing ? '1' : '0';
         els.stage.dataset.combo = String(sim.combo || 0);
@@ -7869,6 +7873,7 @@
           if (!HR.economy.has(books, id)) HR.economy.expand(books, id);
         });
         if (books.locations.kiosk && books.locations.kiosk.open) HR.economy.switchLocation(books, 'kiosk');
+        if (books.locations.mart && books.active !== 'mart') HR.economy.assignManager(books, 'mart', 'staff_mgr');
         if (HR.save) HR.save.save(writeJSON, books);
         try {
           localStorage.setItem('hr_tut_done', '1');
@@ -7885,7 +7890,7 @@
         run.phase = 'map';
         syncFloor(true);
         renderMap();
-        toast('Plaza Kiosk is unlocked. Pick a shift to play that floor.');
+        toast('Plaza Kiosk is unlocked. Pick a shift to play that floor.', true);
         if (els.stage) els.stage.dataset.seed = 'kiosk';
       } else if (resumable) {
         run = saved;

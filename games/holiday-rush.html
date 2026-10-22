@@ -138,8 +138,14 @@
     .hr-combo, .hr-rush { min-width: 52px; min-height: 44px; display: grid; place-items: center; padding: 0 10px; border-radius: 12px; font-weight: 800; letter-spacing: 0.04em; box-sizing: border-box; }
     .hr-combo { width: 4.75rem; min-width: 4.75rem; background: #e0a322; color: #1a120c; font-size: 1.25rem; }
     .hr-combo.is-idle { background: rgba(224, 163, 34, 0.35); color: #24180f; }
-    .hr-rush { background: #d64545; color: #fff; font-size: 0.82rem; }
-    .hr-rush[hidden] { display: none !important; }
+    .hr-rush { width: 4.4rem; min-width: 4.4rem; background: #d64545; color: #fff; font-size: 0.82rem; }
+    @media (min-width: 721px) {
+      #hr-rush:not(.is-on) { display: none !important; }
+    }
+    @media (max-width: 720px) {
+      #hr-rush { visibility: hidden; }
+      #hr-rush.is-on { visibility: visible; }
+    }
     .hr-mute { min-width: 4.5rem; min-height: 44px; border-radius: 999px; border: 1px solid rgba(224,163,34,0.45); background: #2a2118; color: #f6f0e4; font: inherit; font-weight: 800; font-size: 0.82rem; cursor: pointer; touch-action: manipulation; padding: 0 12px; white-space: nowrap; flex: 0 0 auto; }
     .hr-clock.rush { box-shadow: 0 0 0 3px #d64545; }
     .hr-actions button:disabled { opacity: 0.4; cursor: not-allowed; }
