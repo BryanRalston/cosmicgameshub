@@ -4481,6 +4481,7 @@
       show('sim');
       els.modal.hidden = true;
       els.event.hidden = true;
+      if (!opts.resume) applyMallRetune(sim);
       var ops = run.day >= 1;
       var hud =
         '<div class="hr-clock" id="hr-clock" style="--p:0"><span id="hr-clock-label">8:00 AM</span></div>' +
@@ -4506,7 +4507,6 @@
       els.sim.querySelector('.hr-actions').innerHTML = actions;
       sim.live = true;
       sim.floorOn = true;
-      if (!opts.resume) applyMallRetune(sim);
       if (run._awayNote && run._awayNote.length) {
         toast(run._awayNote.map(firstName).join(', ') + ' is off this floor.');
         run._awayNote = [];
