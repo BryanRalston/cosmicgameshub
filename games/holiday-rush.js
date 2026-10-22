@@ -1221,12 +1221,13 @@
     }
     var target = SPOTS.stock;
     if (isTill(st) && SPOTS[st]) target = SPOTS[st];
-    else if (st === 'floor') target = SHELVES[a.shelfI % SHELVES.length];
+    else if (st === 'floor' && SHELVES.length) target = SHELVES[(a.shelfI || 0) % SHELVES.length];
     else if (st === 'freight') {
-      var loop = [SPOTS.truck, SHELVES[0], SHELVES[1], SHELVES[3]];
-      if (sim.truck) loop = [SPOTS.truck];
-      target = loop[a.shelfI % loop.length];
+      var loop = [SPOTS.truck, SHELVES[0], SHELVES[1], SHELVES[3]].filter(function (spot) { return spot && spot.x != null; });
+      if (sim.truck || !loop.length) loop = [SPOTS.truck];
+      target = loop[(a.shelfI || 0) % loop.length];
     }
+    if (!target) target = SPOTS.stock;
     var speed = CONFIG.staffSpeed * (a.rush > 1 ? a.rush : 1);
     if (!a.arrived) {
       if (moveToward(a, target.x, target.y, dt, speed)) {
@@ -3132,6 +3133,9 @@
   function campaignPut(c) { writeJSON('hr_campaign_v1', c); }
 
   function bankCopy(snap) {
+    if (snap && snap.tenant) {
+      return 'You ran ' + snap.tenant + '. Their drawer did ' + money(snap.sales) + '. Your cut is ' + money(snap.cut || 0) + '. The flagship tape is untouched.';
+    }
     if (snap && snap.tape) {
       var tape = snap.tape;
       var loanBit = tape.loanPay ? ' − loan ' + money(tape.loanPay) : '';
@@ -6603,6 +6607,7 @@
         frame._ghostKey = key;
       }
       ctx.drawImage(frame._ghost, Math.round(-dw / 2), Math.round(-foot));
+      if (isQA() && els.stage) els.stage.dataset.pose = '1';
       return true;
     }
 
