@@ -476,9 +476,13 @@
     var cap = negotiate(econ.blankBooks(), 'a', 'repair', 1400);
     if (cap.status !== 'accept' || !cap.reason || cap.reason.indexOf('cap') < 0) reasons.push('cap');
     var toysGoal = tenantLayout('toys_pop');
-    if (!toysGoal || toysGoal.goalMul < 1.2) reasons.push('toys goal');
+    if (!toysGoal || Math.abs(toysGoal.goalMul - 1.59) > 0.02) reasons.push('toys goal');
     var repairGoal = tenantLayout('repair');
-    if (!repairGoal || repairGoal.goalMul < 0.9) reasons.push('repair goal');
+    if (!repairGoal || Math.abs(repairGoal.goalMul - 1.12) > 0.02) reasons.push('repair goal');
+    var cafeGoal = tenantLayout('cafe_chain');
+    if (!cafeGoal || Math.abs(cafeGoal.goalMul - 1) > 0.02) reasons.push('cafe goal');
+    var seasonGoal = tenantLayout('seasonal');
+    if (!seasonGoal || Math.abs(seasonGoal.goalMul - 1.12) > 0.02) reasons.push('season goal');
     var ev0 = calendarEvent(0);
     if (!ev0 || ev0.id !== 'lighting') reasons.push('cal');
     var goal = dailyGoal('2026-10-22');

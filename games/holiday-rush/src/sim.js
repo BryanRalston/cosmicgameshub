@@ -9,9 +9,9 @@
     return cust;
   }
 
-  function checkout(books, cust, rng) {
+  function checkout(books, cust, rng, stockBag) {
     prepare(cust);
-    return economy().quote(books, cust, rng);
+    return economy().quote(books, cust, rng, stockBag);
   }
 
   function demandMul(books) {

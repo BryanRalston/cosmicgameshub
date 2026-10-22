@@ -163,11 +163,12 @@
     return 'regular';
   }
 
-  function quote(books, cust, rng) {
+  function quote(books, cust, rng, stockBag) {
     var loc = activeLoc(books);
+    var source = stockBag || (loc && loc.stock) || {};
     var stock = {};
     var key;
-    for (key in loc.stock) stock[key] = loc.stock[key] || 0;
+    for (key in source) stock[key] = source[key] || 0;
     var items = availableItems(books);
     var profile = defs().customers.byId[profileId(cust)] || defs().customers.byId.regular;
     var units = Math.max(1, Math.round((2.4 + rng() * 1.8) * (cust.basketMul || 1) * (profile.units || 1)));
@@ -229,19 +230,32 @@
     return name + ' ×' + n;
   }
 
-  function consume(books, quoted) {
+  function consume(books, quoted, stockBag) {
     if (!quoted || !quoted.ok) return;
-    var stock = activeLoc(books).stock;
+    var stock = stockBag || activeLoc(books).stock;
     var id;
     for (id in quoted.taken) stock[id] = Math.max(0, (stock[id] || 0) - quoted.taken[id]);
   }
 
-  function unitsLeft(books) {
-    var stock = activeLoc(books).stock;
+  function stockUnits(stock) {
     var n = 0;
     var id;
-    for (id in stock) n += stock[id] || 0;
+    if (!stock) return 0;
+    for (id in stock) n += +stock[id] || 0;
     return n;
+  }
+
+  function unitsLeft(books, stockBag) {
+    var loc = activeLoc(books);
+    return stockUnits(stockBag || (loc && loc.stock) || {});
+  }
+
+  function ensureTenantStock(lease) {
+    if (!lease) return { stock: {}, units: 0, filled: false };
+    var units = stockUnits(lease.stock);
+    if (units >= 1) return { stock: lease.stock, units: units, filled: false };
+    lease.stock = starterStock(1);
+    return { stock: lease.stock, units: stockUnits(lease.stock), filled: true };
   }
 
   function shiftUse(books, id) {
@@ -826,6 +840,17 @@
     if (movedBooks.cash !== cashBefore) fail('transfer cash');
     if (movedBooks.locations.mart.stock.cocoa !== cocoaBefore - 40) fail('transfer mart');
     if (movedBooks.locations.kiosk.stock.cocoa !== 40) fail('transfer kiosk');
+    var bagBooks = blankBooks();
+    var bagCocoa = bagBooks.locations.mart.stock.cocoa;
+    var bag = starterStock(1);
+    var bagQuote = quote(bagBooks, { profile: 'regular', basketMul: 1 }, rng, bag);
+    if (!bagQuote.ok) fail('tenant bag quote');
+    consume(bagBooks, bagQuote, bag);
+    if (bagBooks.locations.mart.stock.cocoa !== bagCocoa) fail('tenant bag drained mart');
+    if (stockUnits(bag) >= stockUnits(starterStock(1))) fail('tenant bag unused');
+    var emptyLease = {};
+    var seeded = ensureTenantStock(emptyLease);
+    if (!seeded.filled || seeded.units < 40) fail('tenant seed');
     var mug = data.get().items.byId.mug;
     if (itemUnlocked(blankBooks(), mug)) fail('mug early');
     var cafeBooks = blankBooks();
@@ -846,6 +871,9 @@
     quote: quote,
     consume: consume,
     unitsLeft: unitsLeft,
+    stockUnits: stockUnits,
+    ensureTenantStock: ensureTenantStock,
+    starterStock: starterStock,
     shiftUse: shiftUse,
     caseCost: caseCost,
     priceOf: priceOf,

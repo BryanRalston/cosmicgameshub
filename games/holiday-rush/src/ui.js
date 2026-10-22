@@ -358,6 +358,31 @@
     return UI + (CHIP[name] || CHIP.vacant);
   }
 
+  function kioskStatus(books) {
+    var econ = economy();
+    var open = !!(books.locations.kiosk && books.locations.kiosk.open);
+    if (open) {
+      var here = books.active === 'kiosk';
+      return {
+        open: true,
+        here: here,
+        short: here ? 'You are playing the Plaza Kiosk.' : 'Plaza Kiosk is open. Tap it to play that floor next.',
+        path: 'Plaza Kiosk is on this map and open. Tap the card to play that floor. The mart keeps running on its lead.'
+      };
+    }
+    var rep = Math.round((books.reputation || 0) * 10) / 10;
+    var next = 'Next: buy Plaza Kiosk from Next build in the office.';
+    if (!econ.has(books, 'knock')) next = 'Next: knock through the east wall ($1,600).';
+    else if (!econ.has(books, 'lane')) next = 'Next: the third register ($3,200).';
+    else if (!econ.has(books, 'departments')) next = 'Next: the seasonal bay and cafe ($5,200).';
+    else if (!econ.has(books, 'flagship')) next = 'Next: the flagship wing ($7,800, reviews 3.6).';
+    else if (rep < 3.7) next = 'Next: reviews 3.7. They are ' + rep.toFixed(1) + ' now.';
+    else if (econ.managerSkill(books) < 2) next = 'Next: a manager at skill 2.';
+    else if ((books.cash || 0) < 9800) next = 'Next: $9,800 in the register. It has ' + money(books.cash || 0) + '.';
+    var path = 'Plaza Kiosk is on this map. Unlock it in order: east wall ($1,600), third register ($3,200), seasonal bay ($5,200), flagship wing ($7,800 and reviews 3.6), then reviews 3.7 and $9,800 from Next build in the office. Maren starts at skill 2, so the lead is already qualified. ' + next;
+    return { open: false, here: false, short: next, path: path };
+  }
+
   function mountMall(el, ctx) {
     var books = ctx.books;
     var world = root.HRParts.world;
@@ -383,6 +408,9 @@
       return '<button type="button" class="' + cls + '" data-slot="' + esc(row.id) + '" style="background-image:url(' + chipUrl(face) + ')">' +
         '<b>' + esc(title) + '</b><small>' + esc(sub) + '</small></button>';
     }).join('');
+    var kiosk = kioskStatus(books);
+    fronts += '<button type="button" class="hr-front is-kiosk' + (kiosk.open ? '' : ' is-locked') + (kiosk.here ? ' is-on' : '') + '" data-kiosk="1" id="hr-kiosk-card">' +
+      '<b>Plaza Kiosk</b><small>' + esc(kiosk.open ? (kiosk.here ? 'This floor' : 'Open · tap to play') : 'Locked') + '</small></button>';
     var commons = data.mall.commons.map(function (id) {
       var on = (mall.commons[id] || 0) >= 1;
       var cost = world.commonCost(id);
@@ -399,6 +427,13 @@
         '<p class="hr-fine">Rent ' + money(leaseRow.rent) + ' · they pay ' + money(leaseRow.rentPaid || 0) + ' this close.' +
         (leaseRow.openComplaint ? ' “' + esc(leaseRow.openComplaint) + '”' : ' The common they wanted is open.') + '</p>' +
         '<p class="hr-fine" id="hr-cut">Play their floor and you keep 15% of that drawer. The other 85% stays on their tape. This close does not replace the flagship profit.</p>' +
+        (function () {
+          var units = economy().stockUnits ? economy().stockUnits(leaseRow.stock) : 0;
+          if (units > 0) {
+            return '<p class="hr-fine" id="hr-tenant-stock">Their back room holds ' + units + ' units. That stock is theirs. Playing this floor does not empty the mart.</p>';
+          }
+          return '<p class="hr-fine" id="hr-tenant-stock">Their back room is empty, so the floor would earn $0. Play their floor and a starter delivery lands before the first sale. It does not take the mart\'s cases.</p>';
+        })() +
         '<button type="button" class="btn btn--primary" data-play="' + esc(slot.id) + '">Play their floor</button>' +
         '<button type="button" class="btn" data-end="' + esc(slot.id) + '">End the lease</button>';
     } else {
@@ -458,6 +493,7 @@
       '<p class="hr-bank">Register ' + money(books.cash) + ' · door ' + door + '%</p>' +
       '<p class="hr-lead">You still run the flagship. A leased unit posts rent at close. If the common they asked for is shut, the next shift opens with their complaint.</p>' +
       '<div class="hr-rowfront">' + fronts + '</div>' +
+      '<p class="hr-fine" id="hr-kiosk-path">' + esc(kiosk.path) + '</p>' +
       '<section class="hr-office__block"><h3>' + esc(slot.name) + '</h3>' + panel + '</section>' +
       '<section class="hr-office__block"><h3>Commons</h3><div class="hr-commons">' + commons + '</div></section>' +
       cal +
@@ -471,6 +507,12 @@
     el.onclick = function (ev) {
       var btn = ev.target.closest('button');
       if (!btn || btn.disabled) return;
+      if (btn.hasAttribute('data-kiosk')) {
+        var kioskNow = kioskStatus(books);
+        ctx.onToast(kioskNow.short);
+        if (ctx.onKiosk) ctx.onKiosk(kioskNow.open ? 'play' : 'locked');
+        return;
+      }
       if (btn.hasAttribute('data-slot')) {
         ctx.slot = btn.getAttribute('data-slot');
         mountMall(el, ctx);

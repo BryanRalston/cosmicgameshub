@@ -96,8 +96,35 @@
 }
 
 .hr-step strong {
-  min-width: 64px;
+  min-width: 72px;
   text-align: center;
+  font-size: 1.05rem;
+}
+
+.hr-step button {
+  flex: 0 0 auto;
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  min-height: 52px;
+  padding: 0;
+  border-radius: 14px;
+  border: 2px solid #2a1c18;
+  background: #f6f0e4;
+  color: #14240c;
+  font: 800 28px/1 Outfit, Inter, sans-serif;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+@media (max-width: 720px) {
+  .hr-step button {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 24px;
+  }
 }
 
 .hr-board {
@@ -173,9 +200,23 @@
   color: #24180f;
 }
 
+.hr-hud .hr-stat,
+.hr-hud .hr-combo,
+.hr-hud .hr-rush,
+.hr-hud .hr-mute {
+  flex: 0 0 auto;
+}
+
 .hr-hud .hr-sales {
-  flex: 1 1 220px;
-  min-width: 200px;
+  flex: 1 1 140px;
+  min-width: 132px;
+}
+
+.hr-hud .hr-stat strong,
+.hr-hud .hr-sales__top strong,
+.hr-hud .hr-sales__top span,
+.hr-hud .hr-stat span {
+  white-space: nowrap;
 }
 
 .hr-hud .hr-bar {
@@ -212,6 +253,17 @@
 
 .hr-actions button {
   color: #24180f;
+}
+
+#hr-shop .btn {
+  width: fit-content;
+  max-width: 100%;
+  justify-self: start;
+  align-self: flex-start;
+  justify-content: center;
+  text-align: center;
+  padding: 0.7rem 1.15rem;
+  min-height: 44px;
 }
 
 #hr-shop .btn:disabled,

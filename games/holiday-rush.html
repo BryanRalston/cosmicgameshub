@@ -110,10 +110,10 @@
     .role-floor { box-shadow: inset 3px 0 0 #2f9e57; }
     .role-manager { box-shadow: inset 3px 0 0 #e0a322; }
     .hr-ghost { position: fixed; z-index: 80; pointer-events: none; transform: translate(-30%, -40%); }
-    .hr-hud { display: flex; gap: 0.7rem; align-items: center; flex-wrap: wrap; padding: 0.45rem 0; }
+    .hr-hud { display: flex; gap: 0.45rem; align-items: center; flex-wrap: nowrap; overflow-x: auto; padding: 0.45rem 0; }
     .hr-clock { width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; background: conic-gradient(#e0a322 calc(var(--p, 0) * 1turn), rgba(255,255,255,0.12) 0); flex: 0 0 auto; }
     .hr-clock span { width: 46px; height: 46px; border-radius: 50%; background: #141018; display: grid; place-items: center; font-size: 0.62rem; font-weight: 800; color: #fff; text-align: center; line-height: 1.1; }
-    .hr-sales { flex: 1 1 180px; min-width: 140px; }
+    .hr-sales { flex: 1 1 140px; min-width: 132px; }
     .hr-sales__top { display: flex; justify-content: space-between; gap: 0.4rem; }
     .hr-sales__top strong, .hr-stat strong { color: var(--text-hi); font-size: 0.92rem; }
     .hr-stage { position: relative; width: 100%; height: clamp(300px, 58vh, 680px); background: #1a1412; border-radius: 14px; overflow: hidden; touch-action: none; border: 1px solid rgba(224,163,34,0.25); }
@@ -206,6 +206,7 @@
       body:has(#hr-sim:not([hidden])) .nav { display: none; }
       body:has(#hr-sim:not([hidden])) .hr-hero h1 { font-size: 1.05rem; }
       body:has(#hr-sim:not([hidden])) .hr-hud { padding: 0.15rem 0; gap: 0.45rem; }
+      .hr-stage { touch-action: pan-y; }
       body:has(#hr-sim:not([hidden])) .hr-stage { height: min(64vh, 560px); }
       body:has(#hr-sim:not([hidden])) .hr-wrap { padding-bottom: 0.6rem; }
     }
