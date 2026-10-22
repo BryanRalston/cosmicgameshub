@@ -185,6 +185,7 @@
     if (actor.arch === 'haggle' || actor.haggling) return 'haggle';
     if (actor.arch === 'family') return 'family';
     if (actor.arch === 'lift') return 'lift';
+    if (actor.giftSprite) return actor.giftSprite;
     return 'regular';
   }
 
@@ -1368,7 +1369,7 @@
       if (dayN >= 7) bag.push('cust_karen');
       if (dayN >= 12) bag.push('cust_teen', 'cust_teen');
     }
-    if (sim.crowd === 'gift') bag = ['cust_mom', 'cust_kid', 'cust_grandpa', 'cust_mom', 'cust_kid', 'cust_grandpa'];
+    if (sim.crowd === 'gift') bag = ['cust_kid', 'cust_kid', 'cust_mom', 'cust_kid', 'cust_grandpa', 'cust_mom'];
     var id = spec ? spec.who : bag[Math.floor(sim.rng() * bag.length)];
     var shelf = SHELVES[Math.floor(sim.rng() * SHELVES.length)];
     if (sim.live && shelf && shelf.id && trafficBlocked(shelf.id)) {
@@ -1384,6 +1385,7 @@
     if (hasPerk(run, 'cocoa')) patience *= 1.14;
     var c = makeActor(id, SPOTS.door.x + (sim.rng() * 50 - 25), SPOTS.door.y, sim.pool ? sim.pool.acquire() : null);
     c.kind = 'cust';
+    if (sim.crowd === 'gift' && id === 'cust_mom') c.giftSprite = 'family';
     c.state = 'enter';
     c.shelf = shelf;
     c.patience = patience;
@@ -2631,14 +2633,18 @@
     sim.live = true;
     var reg = 'reg1';
     if (stationPower(sim, run, 'reg1') < 0.2 && stationPower(sim, run, 'reg2') > 0.2) reg = 'reg2';
-    var ids = ['cust_grandpa', 'cust_mom', 'cust_kid', 'cust_mom'];
+    var ids = sim.crowd === 'gift'
+      ? ['cust_kid', 'cust_mom', 'cust_kid', 'cust_grandpa']
+      : ['cust_grandpa', 'cust_mom', 'cust_kid', 'cust_mom'];
     for (var i = 0; i < 4; i++) {
       var c = makeActor(ids[i], QUEUE[reg].x, QUEUE[reg].y + i * QUEUE[reg].dy);
       c.kind = 'cust';
+      if (sim.crowd === 'gift' && ids[i] === 'cust_mom') c.giftSprite = 'family';
       c.state = i === 0 ? 'checkout' : 'queue';
       c.reg = reg;
       c.patience = 0.96;
       c.maxPatience = 1;
+      applyKioskTune(sim, c);
       c.seq = sim.seq++;
       c.qIndex = i;
       c.checkT = i === 0 ? 0.32 : null;
@@ -4928,7 +4934,7 @@
           var dirBits = [];
           for (var di = 0; di < sim.customers.length && dirBits.length < 6; di++) {
             var dc = sim.customers[di];
-            dirBits.push(dc.charId.replace('cust_', '') + (dc.arch ? '/' + dc.arch : '') + ':' + dc.dir);
+            dirBits.push(dc.charId.replace('cust_', '') + '=' + spriteTypeFor(dc) + (dc.arch ? '/' + dc.arch : '') + ':' + dc.dir);
           }
           els.stage.dataset.dirs = dirBits.join(' ');
           els.stage.dataset.paused = sim.paused ? '1' : '0';
