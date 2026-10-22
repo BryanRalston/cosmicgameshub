@@ -3242,26 +3242,28 @@
   }
 
   function loadGameArt() {
-    var iconImg = loadImage(ART + 'icons_ui.png8.png');
-    var iconJson = loadJSON(ART + 'icons_ui_atlas.json');
-    if (!HR.sprites) return loadPhotoArt(iconImg, iconJson, { ready: false, reason: 'empty', bytes: 0 });
+    if (!HR.sprites) return loadPhotoArt(loadImage(ART + 'icons_ui.png8.png'), loadJSON(ART + 'icons_ui_atlas.json'), { ready: false, reason: 'empty', bytes: 0 });
     var types = HR.sprites.typesForDay(0, null);
     spriteSession = HR.sprites.createSession(ART, function () {});
-    if (!HR.room) return loadPhotoArt(iconImg, iconJson, { ready: false, reason: 'empty', bytes: 0 });
+    if (!HR.room) return loadPhotoArt(loadImage(ART + 'icons_ui.png8.png'), loadJSON(ART + 'icons_ui_atlas.json'), { ready: false, reason: 'empty', bytes: 0 });
     return spriteSession.loadManifest().then(function () {
       var shell = previewHas('kiosk') ? 'kiosk' : 'flagship';
       loadGoal = 12;
-      spriteSession.ensure(types).then(function (pack) {
-        deliverArt('sprites', pack);
-      }).catch(function () {});
-      HR.room.load(ART, function () {}, { rest: true, shell: shell }).then(function (more) {
-        if (more) deliverArt('objects', more);
-      }).catch(function () {});
       return HR.room.load(ART, function () {
         if (typeof onAsset === 'function') onAsset();
       }, { critical: true, shell: shell, onList: function (n) { loadGoal = Math.max(1, n); } });
     }).then(function (objects) {
-      return Promise.all([iconImg, iconJson]).then(function (icons) {
+      return Promise.all([
+        loadImage(ART + 'icons_ui.png8.png'),
+        loadJSON(ART + 'icons_ui_atlas.json')
+      ]).then(function (icons) {
+        var shell = previewHas('kiosk') ? 'kiosk' : 'flagship';
+        spriteSession.ensure(types).then(function (pack) {
+          deliverArt('sprites', pack);
+        }).catch(function () {});
+        HR.room.load(ART, function () {}, { rest: true, shell: shell }).then(function (more) {
+          if (more) deliverArt('objects', more);
+        }).catch(function () {});
         var pack = spriteSession.pack();
         var ready = !!(pack && pack.types && Object.keys(pack.types).length);
         return {
@@ -7788,7 +7790,7 @@
       var next = HR.render ? HR.render.clampZoom(cssW, before * mult, cssH) : before * mult;
       if (Math.abs(next - before) < 0.005) {
         if (mult < 1 && cssW < 720) {
-          toast('The floor fills this screen.');
+          toast('The floor fills this screen.', true);
           return;
         }
         toast(mult < 1 ? 'That is as far as the camera pulls back.' : 'That is as close as the camera goes.');
