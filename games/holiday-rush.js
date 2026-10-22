@@ -5111,8 +5111,12 @@
           goalPct: snap.goalPct
         });
         if (!firstClose) books.cash = Math.round(books.cash - prevPost);
-        else         if (HR.world) {
+        else if (HR.world) {
           snap.background = HR.world.closeBackground(books);
+          if (snap.background) books.lastBackground = snap.background;
+        }
+        if (!firstClose && books.active && books.active !== 'mart' && books.lastBackground) {
+          snap.background = books.lastBackground;
         }
         if (books.active && books.active !== 'mart') {
           snap.storeName = activeStoreName();
