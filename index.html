@@ -116,17 +116,21 @@
 <main>
 <section class="portal" aria-label="Free browser games">
   <div class="container">
-    <h1 class="portal__tagline">Free browser games, no downloads</h1>
-    <a class="gotw" id="gotw" href="/games/holiday-rush">
+    <p class="portal__kicker">Free browser games, no downloads</p>
+    <h1 class="portal__tagline">Play something good.</h1>
+    <a class="gotw js-reveal" id="gotw" href="/games/holiday-rush">
       <span class="gotw__media" id="gotwMedia">
-        <img id="gotwImg" src="/games/holiday-rush/store_layout_1600.webp" alt="Holiday Rush Mart floor, top-down" width="1600" height="900" fetchpriority="high" decoding="async" />
+        <picture>
+          <source id="gotwAvif" type="image/avif" srcset="/images/thumbs/holiday-rush-hero.avif" />
+          <img id="gotwImg" src="/images/thumbs/holiday-rush-hero.webp" alt="Holiday Rush Mart floor, top-down" width="1600" height="900" fetchpriority="high" decoding="async" />
+        </picture>
       </span>
       <span class="gotw__copy">
-        <span class="gotw__badge" id="gotwBadge">Game of the Week</span>
         <span class="gotw__week" id="gotwWeek">Week of Oct 19</span>
+        <span class="gotw__badge" id="gotwBadge">Game of the Week</span>
         <h2 class="gotw__title" id="gotwTitle">Holiday Rush</h2>
         <p class="gotw__blurb" id="gotwBlurb">Run the store through the holiday rush: check out shoppers, restock shelves, chain combos.</p>
-        <span class="gotw__play" id="gotwPlay">Play now</span>
+        <span class="gotw__play" id="gotwPlay">Play</span>
       </span>
     </a>
     <div class="chips" role="group" aria-label="Game categories">
@@ -136,67 +140,86 @@
       <button type="button" class="chip" data-cat="daily" aria-pressed="false">Daily</button>
       <button type="button" class="chip" data-cat="strategy" aria-pressed="false">Strategy</button>
     </div>
-    <div class="tile-grid" id="tileGrid">
-      <a class="tile" href="/games/holiday-rush" data-slug="holiday-rush" data-cats="strategy">
-        <img class="tile__img" src="/games/holiday-rush/store_layout_1600.webp" alt="" width="1600" height="900" decoding="async" />
-        <span class="tile__badges"><span class="tile__badge tile__badge--gotw">Game of the Week</span></span>
-        <span class="tile__name">Holiday Rush</span>
-      </a>
-      <a class="tile" href="/games/rift" data-slug="rift" data-cats="daily puzzle">
-        <img class="tile__img" src="/images/game-rift-v2.jpg" alt="" width="1280" height="720" decoding="async" />
-        <span class="tile__badges"><span class="tile__badge tile__badge--popular">Popular</span></span>
-        <span class="tile__name">RIFT</span>
-      </a>
-      <a class="tile" href="/games/gamerdle" data-slug="gamerdle" data-cats="daily puzzle">
-        <img class="tile__img" src="/images/game-gamerdle-v2.jpg" alt="" width="1280" height="720" decoding="async" />
-        <span class="tile__badges"><span class="tile__badge tile__badge--popular">Popular</span></span>
-        <span class="tile__name">Gamerdle</span>
-      </a>
-      <a class="tile" href="/games/brix3d" data-slug="brix3d" data-cats="arcade">
-        <img class="tile__img" src="/images/game-brix3d-v2.jpg" alt="" width="1280" height="720" decoding="async" />
-        <span class="tile__badges"><span class="tile__badge tile__badge--new">New</span></span>
-        <span class="tile__name">BRIX 3D</span>
-      </a>
-      <a class="tile" href="/games/rootweave" data-slug="rootweave" data-cats="strategy">
-        <img class="tile__img" src="/images/game-rootweave-v2.jpg" alt="" width="1408" height="768" decoding="async" />
-        <span class="tile__badges"><span class="tile__badge tile__badge--new">New</span></span>
-        <span class="tile__name">Rootweave</span>
-      </a>
-      <a class="tile" href="/games/pixle" data-slug="pixle" data-cats="daily puzzle">
-        <img class="tile__img" src="/images/game-pixle-v2.jpg" alt="" width="1280" height="720" decoding="async" />
-        <span class="tile__badges"><span class="tile__badge tile__badge--popular">Popular</span></span>
-        <span class="tile__name">Pixle</span>
-      </a>
-      <a class="tile" href="/games/asteroid-dodge" data-slug="asteroid-dodge" data-cats="arcade">
-        <img class="tile__img" src="/images/game-asteroid-dodge-v2.jpg" alt="" width="1280" height="720" loading="lazy" decoding="async" />
-        <span class="tile__badges"></span>
-        <span class="tile__name">Asteroid Dodge</span>
-      </a>
-      <a class="tile" href="/games/aim-trainer" data-slug="aim-trainer" data-cats="arcade">
-        <img class="tile__img" src="/images/game-aim-trainer-v2.jpg" alt="" width="1280" height="720" loading="lazy" decoding="async" />
-        <span class="tile__badges"></span>
-        <span class="tile__name">Aim Trainer</span>
-      </a>
-      <a class="tile" href="/games/crossword" data-slug="crossword" data-cats="puzzle daily">
-        <img class="tile__img" src="/images/game-crossword-v2.jpg" alt="" width="1280" height="720" loading="lazy" decoding="async" />
-        <span class="tile__badges"></span>
-        <span class="tile__name">Crossword</span>
-      </a>
-      <a class="tile" href="/games/link" data-slug="link" data-cats="puzzle daily">
-        <img class="tile__img" src="/images/game-link-v2.jpg" alt="" width="1280" height="720" loading="lazy" decoding="async" />
-        <span class="tile__badges"></span>
-        <span class="tile__name">Link</span>
-      </a>
-      <a class="tile" href="/games/sudoku" data-slug="sudoku" data-cats="puzzle">
-        <img class="tile__img" src="/images/game-sudoku-v2.jpg" alt="" width="1280" height="720" loading="lazy" decoding="async" />
-        <span class="tile__badges"></span>
-        <span class="tile__name">Sudoku</span>
-      </a>
-      <a class="tile" href="/games/minesweeper" data-slug="minesweeper" data-cats="puzzle">
-        <img class="tile__img" src="/images/game-minesweeper-v2.jpg" alt="" width="1280" height="720" loading="lazy" decoding="async" />
-        <span class="tile__badges"></span>
-        <span class="tile__name">Minesweeper</span>
-      </a>
+    <div id="tileGrid">
+      <section class="shelf js-reveal" aria-label="Originals">
+        <div class="shelf__head"><h2 class="shelf__title">Originals</h2></div>
+        <div class="shelf__row">
+          <a class="tile" href="/games/holiday-rush" data-slug="holiday-rush" data-cats="strategy">
+            <span class="tile__art"><img class="tile__img" src="/images/thumbs/holiday-rush.webp" alt="" width="640" height="640" decoding="async" /></span>
+            <span class="tile__meta"><span class="tile__name">Holiday Rush</span><span class="tile__badges"><span class="tile__badge tile__badge--gotw">Game of the Week</span></span></span>
+          </a>
+          <a class="tile" href="/games/rift" data-slug="rift" data-cats="daily puzzle">
+            <span class="tile__art"><img class="tile__img" src="/images/thumbs/rift.webp" alt="" width="640" height="640" decoding="async" /></span>
+            <span class="tile__meta"><span class="tile__name">RIFT</span><span class="tile__badges"></span></span>
+          </a>
+          <a class="tile" href="/games/gamerdle" data-slug="gamerdle" data-cats="daily puzzle">
+            <span class="tile__art"><img class="tile__img" src="/images/thumbs/gamerdle.webp" alt="" width="640" height="640" decoding="async" /></span>
+            <span class="tile__meta"><span class="tile__name">Gamerdle</span><span class="tile__badges"></span></span>
+          </a>
+          <a class="tile" href="/games/brix3d" data-slug="brix3d" data-cats="arcade">
+            <span class="tile__art"><img class="tile__img" src="/images/thumbs/brix3d.webp" alt="" width="640" height="640" decoding="async" /></span>
+            <span class="tile__meta"><span class="tile__name">BRIX 3D</span><span class="tile__badges"></span></span>
+          </a>
+          <a class="tile" href="/games/rootweave" data-slug="rootweave" data-cats="strategy">
+            <span class="tile__art"><img class="tile__img" src="/images/thumbs/rootweave.webp" alt="" width="640" height="640" decoding="async" /></span>
+            <span class="tile__meta"><span class="tile__name">Rootweave</span><span class="tile__badges"></span></span>
+          </a>
+          <a class="tile" href="/games/pixle" data-slug="pixle" data-cats="daily puzzle">
+            <span class="tile__art"><img class="tile__img" src="/images/thumbs/pixle.webp" alt="" width="640" height="640" decoding="async" /></span>
+            <span class="tile__meta"><span class="tile__name">Pixle</span><span class="tile__badges"></span></span>
+          </a>
+        </div>
+      </section>
+      <section class="shelf js-reveal" aria-label="Daily">
+        <div class="shelf__head"><h2 class="shelf__title">Daily</h2></div>
+        <div class="shelf__row">
+          <a class="tile" href="/games/crossword" data-slug="crossword" data-cats="puzzle daily">
+            <span class="tile__art"><img class="tile__img" src="/images/thumbs/crossword.webp" alt="" width="640" height="640" loading="lazy" decoding="async" /></span>
+            <span class="tile__meta"><span class="tile__name">Crossword</span><span class="tile__badges"></span></span>
+          </a>
+          <a class="tile" href="/games/link" data-slug="link" data-cats="puzzle daily">
+            <span class="tile__art"><img class="tile__img" src="/images/thumbs/link.webp" alt="" width="640" height="640" loading="lazy" decoding="async" /></span>
+            <span class="tile__meta"><span class="tile__name">Link</span><span class="tile__badges"></span></span>
+          </a>
+          <a class="tile" href="/games/rift" data-slug="rift" data-cats="daily puzzle">
+            <span class="tile__art"><img class="tile__img" src="/images/thumbs/rift.webp" alt="" width="640" height="640" loading="lazy" decoding="async" /></span>
+            <span class="tile__meta"><span class="tile__name">RIFT</span><span class="tile__badges"></span></span>
+          </a>
+          <a class="tile" href="/games/gamerdle" data-slug="gamerdle" data-cats="daily puzzle">
+            <span class="tile__art"><img class="tile__img" src="/images/thumbs/gamerdle.webp" alt="" width="640" height="640" loading="lazy" decoding="async" /></span>
+            <span class="tile__meta"><span class="tile__name">Gamerdle</span><span class="tile__badges"></span></span>
+          </a>
+          <a class="tile" href="/games/pixle" data-slug="pixle" data-cats="daily puzzle">
+            <span class="tile__art"><img class="tile__img" src="/images/thumbs/pixle.webp" alt="" width="640" height="640" loading="lazy" decoding="async" /></span>
+            <span class="tile__meta"><span class="tile__name">Pixle</span><span class="tile__badges"></span></span>
+          </a>
+        </div>
+      </section>
+      <section class="shelf js-reveal" aria-label="Arcade and puzzles">
+        <div class="shelf__head"><h2 class="shelf__title">Arcade &amp; puzzles</h2></div>
+        <div class="shelf__row">
+          <a class="tile" href="/games/asteroid-dodge" data-slug="asteroid-dodge" data-cats="arcade">
+            <span class="tile__art"><img class="tile__img" src="/images/thumbs/asteroid-dodge.webp" alt="" width="640" height="640" loading="lazy" decoding="async" /></span>
+            <span class="tile__meta"><span class="tile__name">Asteroid Dodge</span><span class="tile__badges"></span></span>
+          </a>
+          <a class="tile" href="/games/aim-trainer" data-slug="aim-trainer" data-cats="arcade">
+            <span class="tile__art"><img class="tile__img" src="/images/thumbs/aim-trainer.webp" alt="" width="640" height="640" loading="lazy" decoding="async" /></span>
+            <span class="tile__meta"><span class="tile__name">Aim Trainer</span><span class="tile__badges"></span></span>
+          </a>
+          <a class="tile" href="/games/brix3d" data-slug="brix3d" data-cats="arcade">
+            <span class="tile__art"><img class="tile__img" src="/images/thumbs/brix3d.webp" alt="" width="640" height="640" loading="lazy" decoding="async" /></span>
+            <span class="tile__meta"><span class="tile__name">BRIX 3D</span><span class="tile__badges"></span></span>
+          </a>
+          <a class="tile" href="/games/sudoku" data-slug="sudoku" data-cats="puzzle">
+            <span class="tile__art"><img class="tile__img" src="/images/thumbs/sudoku.webp" alt="" width="640" height="640" loading="lazy" decoding="async" /></span>
+            <span class="tile__meta"><span class="tile__name">Sudoku</span><span class="tile__badges"></span></span>
+          </a>
+          <a class="tile" href="/games/minesweeper" data-slug="minesweeper" data-cats="puzzle">
+            <span class="tile__art"><img class="tile__img" src="/images/thumbs/minesweeper.webp" alt="" width="640" height="640" loading="lazy" decoding="async" /></span>
+            <span class="tile__meta"><span class="tile__name">Minesweeper</span><span class="tile__badges"></span></span>
+          </a>
+        </div>
+      </section>
     </div>
     <p class="tile-empty" id="tileEmpty" hidden>No games in this category.</p>
   </div>
