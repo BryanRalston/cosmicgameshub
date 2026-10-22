@@ -4676,7 +4676,7 @@
       var salesText = document.getElementById('hr-sales-text');
       if (!label || !salesText) return;
       label.textContent = clockLabel(sim.t, sim.duration);
-      var rushing = !!(sim._heat && sim._heat.rush && !sim.coachHold);
+      var rushing = !!(sim._qaRush || (sim._heat && sim._heat.rush && !sim.coachHold));
       if (clock) {
         clock.style.setProperty('--p', String(clamp(sim.t / sim.duration, 0, 1)));
         clock.classList.toggle('rush', rushing);
@@ -4728,6 +4728,7 @@
           els.stage.dataset.mechanic = (sim.tenant && sim.tenant.mechanic) || '';
           els.stage.dataset.calendar = sim.calendarName || '';
         els.stage.dataset.clock = label.textContent;
+        fitHud();
         if (isQA()) {
           var arches = [];
           for (var ai = 0; ai < sim.customers.length; ai++) if (sim.customers[ai].arch) arches.push(sim.customers[ai].arch);
@@ -5784,6 +5785,46 @@
       els.canvas._cssH = h;
       els.canvas._dpr = dpr;
       placeChrome();
+      fitHud();
+    }
+
+    function fitHud() {
+      var hud = els.sim && els.sim.querySelector('.hr-hud');
+      if (!hud || els.sim.hidden) return;
+      if (document.fonts && !hud._fontHook) {
+        hud._fontHook = 1;
+        document.fonts.ready.then(function () {
+          hud._fitKey = '';
+          fitHud();
+        });
+      }
+      var salesLab = hud.querySelector('.hr-sales__top span');
+      var salesText = document.getElementById('hr-sales-text');
+      var key = [
+        hud.clientWidth,
+        salesLab ? salesLab.textContent : '',
+        salesText ? salesText.textContent : '',
+        hud.querySelectorAll('.hr-combo:not([hidden]), .hr-rush:not([hidden]), #hr-tenant-name').length
+      ].join('|');
+      if (hud._fitKey === key) return;
+      var extras = hud.querySelectorAll('.hr-hud__extra');
+      var i;
+      for (i = 0; i < extras.length; i++) extras[i].classList.remove('is-hud-off');
+      function overflows() {
+        return hud.scrollWidth > hud.clientWidth + 1;
+      }
+      for (i = extras.length - 1; i >= 0 && overflows(); i--) extras[i].classList.add('is-hud-off');
+      hud._fitKey = key;
+      if (isQA() && els.stage) {
+        var weekClip = !!(salesLab && salesLab.scrollWidth > salesLab.clientWidth + 1);
+        var moneyClip = !!(salesText && salesText.scrollWidth > salesText.clientWidth + 1);
+        els.stage.dataset.hudOverflow = overflows() ? '1' : '0';
+        els.stage.dataset.weekClip = weekClip ? '1' : '0';
+        els.stage.dataset.moneyClip = moneyClip ? '1' : '0';
+        els.stage.dataset.weekText = salesLab ? salesLab.textContent : '';
+        els.stage.dataset.moneyText = salesText ? salesText.textContent : '';
+        els.stage.dataset.hudHidden = String(hud.querySelectorAll('.hr-hud__extra.is-hud-off').length);
+      }
     }
 
     function placeChrome() {
@@ -6336,10 +6377,6 @@
         drawList.sort(function (a, b) { return a.y - b.y; });
         var heavy = sim.customers.length > 40;
         var drawn = 0;
-        var fullBudget = sim._fullSprites != null ? sim._fullSprites : (sim._shed ? 16 : 999);
-        var cx = cam.x + view.viewW * 0.5;
-        var cy = cam.y + view.viewH * 0.5;
-        var blobR = Math.min(view.viewW, view.viewH) * 0.28;
         for (var d = 0; d < drawList.length; d++) {
           var actor = drawList[d];
           actor._drew = '';
@@ -6350,16 +6387,6 @@
             if (!sim._shed) drawPalletJack(actor);
             continue;
           }
-          var dx = actor.x - cx;
-          var dy = actor.y - cy;
-          var inLine = actor.kind === 'cust' && (actor.state === 'queue' || actor.state === 'checkout' || actor.state === 'toQueue');
-          var far = !inLine && (fullBudget <= 0 || ((sim._tier != null && sim._tier <= 1) && (dx * dx + dy * dy > blobR * blobR)));
-          if (far) {
-            actor._drew = 'blob';
-            drawLodBlob(actor);
-            continue;
-          }
-          if (!inLine) fullBudget--;
           drawActor(actor);
         }
         if (isQA() && els.stage) {
@@ -6375,10 +6402,39 @@
             else if (queued._drew === 'blob') qBlob++;
             else if (queued._drew === 'sil') qSil++;
           }
+          var pN = 0;
+          var pSprite = 0;
+          var pBlob = 0;
+          var pSil = 0;
+          var pFig = 0;
+          var browseBlob = 0;
+          var staffBlob = 0;
+          function tallyPerson(person) {
+            if (!person || !person._drew) return;
+            if (person.kind !== 'cust' && person.kind !== 'staff' && person.kind !== 'you') return;
+            pN++;
+            if (person._drew === 'sprite') pSprite++;
+            else if (person._drew === 'blob') {
+              pBlob++;
+              if (person.kind === 'staff') staffBlob++;
+              else if (person.state !== 'queue' && person.state !== 'checkout' && person.state !== 'toQueue') browseBlob++;
+            } else if (person._drew === 'sil') pSil++;
+            else if (person._drew === 'figure') pFig++;
+          }
+          for (var pi = 0; pi < sim.customers.length; pi++) tallyPerson(sim.customers[pi]);
+          for (var ps = 0; ps < sim.staff.length; ps++) tallyPerson(sim.staff[ps]);
+          tallyPerson(sim.you);
           els.stage.dataset.queueN = String(qN);
           els.stage.dataset.queueSprites = String(qSprite);
           els.stage.dataset.queueBlobs = String(qBlob);
           els.stage.dataset.queueSils = String(qSil);
+          els.stage.dataset.peopleN = String(pN);
+          els.stage.dataset.peopleSprites = String(pSprite);
+          els.stage.dataset.peopleBlobs = String(pBlob);
+          els.stage.dataset.peopleSils = String(pSil);
+          els.stage.dataset.peopleFigures = String(pFig);
+          els.stage.dataset.browseBlobs = String(browseBlob);
+          els.stage.dataset.staffBlobs = String(staffBlob);
           els.stage.dataset.drawCount = String(drawn);
           els.stage.dataset.simCount = String(sim.customers.length + sim.staff.length);
           els.stage.dataset.shed = sim._shed ? '1' : '0';
@@ -6961,17 +7017,6 @@
       }
       if (a) a._sil = 1;
       if (isQA() && els.stage) els.stage.dataset.sils = String((+els.stage.dataset.sils || 0) + 1);
-    }
-
-    function drawLodBlob(a) {
-      ctx.save();
-      ctx.translate(a.x, a.y);
-      ctx.fillStyle = a.kind === 'staff' ? '#2f6b45' : '#6b3a28';
-      ctx.beginPath();
-      ctx.ellipse(0, -36, 10, 12, 0, 0, Math.PI * 2);
-      ctx.ellipse(0, -10, 14, 18, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
     }
 
     function paintPerson(a) {
@@ -7825,6 +7870,23 @@
         sim.combo = n == null ? 4 : n;
         paintHud();
       },
+      rush: function (on) {
+        if (!isQA() || !sim) return;
+        sim._qaRush = on !== false;
+        sim.coachHold = false;
+        paintHud();
+      },
+      setSales: function (sales, goal) {
+        if (!isQA() || !sim) return;
+        if (sales != null) sim.sales = sales;
+        if (goal != null) sim.goal = goal;
+        sim._paintSales = sim.sales;
+        paintHud();
+      },
+      hold: function (on) {
+        if (!isQA() || !sim) return;
+        sim.paused = on !== false;
+      },
       forceTier: function (n) {
         if (!isQA() || !sim) return null;
         sim._tier = n;
@@ -7839,7 +7901,12 @@
           queueN: els.stage ? els.stage.dataset.queueN : '',
           queueSprites: els.stage ? els.stage.dataset.queueSprites : '',
           queueBlobs: els.stage ? els.stage.dataset.queueBlobs : '',
-          queueSils: els.stage ? els.stage.dataset.queueSils : ''
+          queueSils: els.stage ? els.stage.dataset.queueSils : '',
+          peopleN: els.stage ? els.stage.dataset.peopleN : '',
+          peopleSprites: els.stage ? els.stage.dataset.peopleSprites : '',
+          peopleBlobs: els.stage ? els.stage.dataset.peopleBlobs : '',
+          browseBlobs: els.stage ? els.stage.dataset.browseBlobs : '',
+          staffBlobs: els.stage ? els.stage.dataset.staffBlobs : ''
         };
       },
       grant: function (n) {

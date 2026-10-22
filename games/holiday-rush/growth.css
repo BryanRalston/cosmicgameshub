@@ -70,8 +70,26 @@
 .hr-office__block {
   margin: 16px 0;
   padding: 12px;
-  background: rgba(255, 244, 220, 0.55);
+  background: #fff6e4;
+  color: #3c2a30;
+  border: 1px solid rgba(42, 28, 24, 0.14);
   border-radius: 14px;
+  opacity: 1;
+  animation: none;
+  filter: none;
+}
+
+.hr-office__block h2,
+.hr-office__block h3,
+.hr-office__block h4,
+.hr-office__block strong {
+  color: #24180f;
+}
+
+.hr-office__block p,
+.hr-office__block li,
+.hr-office__block .hr-fine {
+  color: #3c2a30;
 }
 
 .hr-sku,
@@ -208,8 +226,17 @@
 }
 
 .hr-hud .hr-sales {
-  flex: 1 1 88px;
-  min-width: 0;
+  flex: 0 1 auto;
+  min-width: min(100%, max-content);
+  max-width: 100%;
+}
+
+.hr-hud .hr-sales__top span,
+.hr-hud .hr-sales__top strong {
+  flex: 0 0 auto;
+  min-width: max-content;
+  overflow: visible;
+  text-overflow: clip;
 }
 
 .hr-hud .hr-stat strong,

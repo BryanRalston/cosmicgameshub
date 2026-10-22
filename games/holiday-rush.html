@@ -110,14 +110,16 @@
     .role-floor { box-shadow: inset 3px 0 0 #2f9e57; }
     .role-manager { box-shadow: inset 3px 0 0 #e0a322; }
     .hr-ghost { position: fixed; z-index: 80; pointer-events: none; transform: translate(-30%, -40%); }
-    .hr-hud { display: flex; gap: 0.35rem; align-items: center; flex-wrap: nowrap; overflow: hidden; min-width: 0; padding: 0.45rem 0; }
-    .hr-hud__stats { display: flex; flex: 1 1 auto; min-width: 0; gap: 0.35rem; align-items: center; overflow: hidden; }
-    .hr-hud__tools { display: flex; flex: 0 0 auto; gap: 0.35rem; align-items: center; }
-    #hr-tenant-name { display: inline-block; max-width: 11rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+    .hr-hud { display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap; overflow: visible; min-width: 0; padding: 0.45rem 0; }
+    .hr-hud__stats { display: flex; flex: 1 1 auto; min-width: 0; gap: 0.35rem; align-items: center; flex-wrap: wrap; overflow: visible; }
+    .hr-hud__tools { display: flex; flex: 0 0 auto; gap: 0.35rem; align-items: center; margin-left: auto; }
+    .is-hud-off { display: none !important; }
+    #hr-tenant-name { display: inline; max-width: none; overflow: visible; text-overflow: clip; white-space: nowrap; vertical-align: bottom; }
     .hr-clock { width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; background: conic-gradient(#e0a322 calc(var(--p, 0) * 1turn), rgba(255,255,255,0.12) 0); flex: 0 0 auto; }
     .hr-clock span { width: 46px; height: 46px; border-radius: 50%; background: #141018; display: grid; place-items: center; font-size: 0.62rem; font-weight: 800; color: #fff; text-align: center; line-height: 1.1; }
-    .hr-sales { flex: 1 1 88px; min-width: 0; }
-    .hr-sales__top { display: flex; justify-content: space-between; gap: 0.4rem; }
+    .hr-sales { flex: 0 1 auto; min-width: min(100%, max-content); max-width: 100%; }
+    .hr-sales__top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0.15rem 0.75rem; }
+    .hr-sales__top span, .hr-sales__top strong { flex: 0 0 auto; min-width: max-content; }
     .hr-sales__top strong, .hr-stat strong { color: var(--text-hi); font-size: 0.92rem; }
     .hr-stage { position: relative; width: 100%; height: clamp(300px, 58vh, 680px); background: #1a1412; border-radius: 14px; overflow: hidden; touch-action: none; border: 1px solid rgba(224,163,34,0.25); }
     #hr-skip { position: absolute; z-index: 9; top: 8px; right: 176px; min-width: 72px; min-height: 44px; border: 0; border-radius: 999px; background: #f6f0e4; color: #2b1d2e; font: inherit; font-weight: 800; padding: 0 14px; cursor: pointer; touch-action: manipulation; }
@@ -210,7 +212,7 @@
       body:has(#hr-sim:not([hidden])) .hr-hero h1 { font-size: 1.05rem; }
       body:has(#hr-sim:not([hidden])) .hr-hud { padding: 0.15rem 0; gap: 0.35rem; }
       .hr-hud__extra { display: none !important; }
-      #hr-tenant-name { max-width: 6.5rem; }
+      #hr-tenant-name { max-width: none; }
       #hr-coach { top: 58px; right: 8px; left: 8px; }
       html, body, #hr-app, .hr-stage, #hr-canvas { touch-action: pan-y; }
       body:has(#hr-sim:not([hidden])) .hr-stage { height: min(64vh, 560px); }
