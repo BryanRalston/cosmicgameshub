@@ -4039,8 +4039,14 @@
         return;
       }
       var rect = actions.getBoundingClientRect();
-      var gap = 12;
-      var fromBottom = Math.max(16, window.innerHeight - rect.top + gap);
+      var gap = 18;
+      var zoom = 1;
+      try {
+        var raw = parseFloat(getComputedStyle(document.documentElement).zoom);
+        if (raw > 0) zoom = raw;
+      } catch (eZoom) {}
+      var fromBottom = (window.innerHeight - rect.top + gap) / zoom;
+      if (fromBottom < 16) fromBottom = 16;
       els.toast.style.bottom = fromBottom + 'px';
     }
 
@@ -4935,6 +4941,7 @@
       }
       sim._paintSales = sim.sales;
       salesText.textContent = money(sim.sales) + ' / ' + money(sim.goal);
+      if (els.toast && els.toast.classList.contains('show')) placeToast();
       var bar = document.getElementById('hr-sales-bar');
       if (bar) {
         bar.style.width = Math.min(100, sim.goal ? (sim.sales / sim.goal) * 100 : 0) + '%';
@@ -6394,8 +6401,8 @@
       }
       var best = null;
       var bestD = 1e9;
-      var custScreen = phoneHit ? 64 : 120;
-      var custWorld = phoneHit ? 108 : 150;
+      var custScreen = phoneHit ? 72 : 120;
+      var custWorld = phoneHit ? 150 : 160;
       for (var i = 0; i < sim.customers.length; i++) {
         var c = sim.customers[i];
         if (c.dead || c.state === 'leave') continue;
@@ -6535,7 +6542,7 @@
       function consider(a) {
         if (!a || a.dead || a.hidden || a.state === 'leave' || a.kind === 'jack') return;
         var d = phoneHit ? worldDist(a.x, a.y - 28, ev) : screenDist(a.x, a.y - 28, ev);
-        var limit = phoneHit ? 108 : 120;
+        var limit = phoneHit ? 150 : 120;
         if (d < limit && d < bestD) { bestD = d; best = a; }
       }
       var i;
@@ -7425,7 +7432,7 @@
 
     function personDrawH() {
       var cssW = els.canvas && els.canvas._cssW || 800;
-      if (cssW < 720) return Math.round(SPRITE_PACK.displayH * 1.55);
+      if (cssW < 720) return Math.round(SPRITE_PACK.displayH * 1.85);
       return SPRITE_PACK.displayH;
     }
 
