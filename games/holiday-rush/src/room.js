@@ -375,29 +375,29 @@
     return { w: image.width * s, h: image.height * s };
   }
 
-  // Kiosk pieces share the main store's contain boxes.
-  // table_4 into 200×230 is 200×165, so a kiosk table uses 200×165.
-  // register_counter into 176×150 is 176×122, so the kiosk till uses 176×122.
-  // wrap_station into 200×230 is 153×230, so the booth uses that height cap.
+  // Shoppers draw at 78px. Kiosk fixtures stay inside 1.3–1.5× that height.
+  // The flagship store keeps its own contain boxes.
   function fixtureBox(kind, label, kiosk, image) {
     var maxW = 150;
     var maxH = 230;
     if (kind === 'register') {
       maxW = 176;
       maxH = kiosk ? 122 : 150;
+    } else if (!kiosk && label === 'BOOTH') {
+      maxW = 360;
+      maxH = 400;
     } else if (kiosk && label === 'TABLE') {
-      maxW = 200;
-      maxH = 165;
+      maxW = 100;
+      maxH = 109;
     } else if (kiosk && label === 'WRAP') {
-      // Shoppers draw at 78px. 110px is 1.4×, inside the 1.2–1.5× band.
       maxW = 80;
       maxH = 110;
     } else if (kiosk && label === 'BOOTH') {
-      maxW = 153;
-      maxH = 230;
-    } else if (label === 'BOOTH') {
-      maxW = 360;
-      maxH = 400;
+      maxW = 96;
+      maxH = 117;
+    } else if (kiosk) {
+      maxW = 130;
+      maxH = 117;
     } else if (kind === 'cafe') {
       maxW = 200;
       maxH = 230;
@@ -643,10 +643,14 @@
     if (!band || band.h !== 14 || band.drop !== 6) reasons.push('end band');
     var kioskTable = fixtureBox('cafe', 'TABLE', true, { width: 260, height: 300 });
     var mainTable = fixtureBox('cafe', 'TABLE', false, { width: 298, height: 246 });
-    if (Math.round(kioskTable.h) !== 165 || Math.round(kioskTable.w) !== 143) reasons.push('kiosk table');
-    if (Math.abs(kioskTable.h - mainTable.h) > 1) reasons.push('table scale');
+    if (Math.round(kioskTable.h) !== 109 || Math.round(kioskTable.w) !== 94) reasons.push('kiosk table ' + Math.round(kioskTable.w) + 'x' + Math.round(kioskTable.h));
+    if (mainTable.h < 160) reasons.push('flag table');
     var kioskBooth = fixtureBox('cafe', 'BOOTH', true, { width: 398, height: 500 });
-    if (Math.round(kioskBooth.w) !== 153 || Math.round(kioskBooth.h) !== 192) reasons.push('kiosk booth');
+    if (Math.round(kioskBooth.w) !== 93 || Math.round(kioskBooth.h) !== 117) reasons.push('kiosk booth ' + Math.round(kioskBooth.w) + 'x' + Math.round(kioskBooth.h));
+    var kioskCocoa = fixtureBox('cafe', 'COCOA', true, { width: 292, height: 248 });
+    var kioskMenu = fixtureBox('cafe', 'MENU', true, { width: 169, height: 218 });
+    var kioskWin = fixtureBox('shelf', 'WINDOW', true, { width: 244, height: 371 });
+    if (kioskCocoa.h > 117.5 || kioskMenu.h > 117.5 || kioskWin.h > 117.5) reasons.push('kiosk prop');
     var kioskWrap = fixtureBox('shelf', 'WRAP', true, { width: 236, height: 356 });
     var mainWrap = fixtureBox('shelf', 'WRAP', false, { width: 236, height: 356 });
     if (Math.round(kioskWrap.h) !== 110 || Math.round(kioskWrap.w) !== 73) reasons.push('kiosk wrap ' + Math.round(kioskWrap.w) + 'x' + Math.round(kioskWrap.h));

@@ -2000,7 +2000,7 @@
       card.title = 'Something in a pocket';
       card.body = 'You are not sure. A shopper by the endcap keeps looking at the cameras.';
       card.choices = [
-        choice('Let them go', 0, function () {
+        choice('Let them go (−$70)', 0, function () {
           sim.sales = Math.max(0, sim.sales - 70);
           sim.stock = Math.max(0, sim.stock - 0.02);
           floater(sim, 900, 400, '-$70', '#ffb4b4');
@@ -2553,7 +2553,7 @@
   }
 
   function wrapLift(spot) {
-    return spot && spot.label === 'BOOTH' ? 170 : 36;
+    return spot && spot.label === 'BOOTH' ? 96 : 28;
   }
 
   function offerWrap(sim) {
@@ -3922,7 +3922,7 @@
       seed: document.getElementById('hr-seed')
     };
     var ctx = els.canvas.getContext('2d', { alpha: false });
-    if (els.stage && els.event && els.event.parentNode !== els.stage) els.stage.appendChild(els.event);
+    placeEventCard();
     if (!document.getElementById('hr-feel-css')) {
       var feelCss = document.createElement('style');
       feelCss.id = 'hr-feel-css';
@@ -3938,15 +3938,16 @@
         '#hr-event.hr-inline .hr-choice-cost{flex:0 0 auto;white-space:nowrap;}',
         '#hr-event.hr-inline .hr-card__art .hr-portrait,#hr-event.hr-inline .hr-card__art .hr-icon{width:36px !important;height:36px !important;border-radius:8px;}',
         '@media (max-width:720px){',
-        '#hr-event.hr-inline{top:100px;left:6px;right:6px;bottom:auto;height:auto;max-height:38%;padding:0;background:transparent;}',
-        '#hr-event.hr-inline .hr-card{padding:0.28rem 0.4rem 0.32rem;max-height:100%;}',
-        '#hr-event.hr-inline .hr-card h2{font-size:0.95rem;line-height:1.15;margin:0 0 0.08rem;}',
-        '#hr-event.hr-inline .hr-card p{font-size:0.78rem;line-height:1.25;margin:0 0 0.28rem;-webkit-line-clamp:2;}',
+        '#hr-sim > #hr-event.hr-inline{position:relative;inset:auto;left:auto;right:auto;top:auto;bottom:auto;height:auto;max-height:none;margin:6px 0 0;padding:0;background:transparent;z-index:6;}',
+        '#hr-event.hr-inline .hr-card{padding:0.28rem 0.45rem 0.32rem;max-height:172px;}',
+        '#hr-event.hr-inline .hr-card h2{font-size:0.92rem;line-height:1.15;margin:0 0 0.06rem;}',
+        '#hr-event.hr-inline .hr-card p{font-size:0.76rem;line-height:1.2;margin:0 0 0.2rem;-webkit-line-clamp:1;}',
         '#hr-event.hr-inline .hr-card__art{display:none;}',
-        '#hr-event.hr-inline .hr-choices{flex-direction:column;flex-wrap:nowrap;gap:6px;}',
-        '#hr-event.hr-inline .hr-choices button{width:100%;flex:0 0 auto;min-height:44px;height:auto;font-size:0.9rem;padding:0.35rem 0.65rem;white-space:nowrap;line-height:1.25;justify-content:flex-start;}',
+        '#hr-event.hr-inline .hr-choices{flex-direction:column;flex-wrap:nowrap;gap:4px;}',
+        '#hr-event.hr-inline .hr-choices button{width:100%;flex:0 0 auto;min-height:36px;height:auto;font-size:0.82rem;padding:0.2rem 0.55rem;white-space:nowrap;line-height:1.2;justify-content:flex-start;}',
         '#hr-event.hr-inline .hr-choice-cost{font-size:0.68rem;padding:0.12rem 0.4rem;flex:0 0 auto;white-space:nowrap;}',
         '}',
+        '.hr-combo.is-idle{background:#3a2a18;color:#ffe7a3;box-shadow:inset 0 0 0 2px #e0a322;}',
         '.hr-card__timer{height:4px;border-radius:99px;background:rgba(43,29,46,0.15);overflow:hidden;margin:0 0 0.35rem;}',
         '.hr-card__timer i{display:block;height:100%;width:100%;background:#e0a322;}',
         '.hr-actions button{transition:transform 0.05s linear;}',
@@ -3970,6 +3971,7 @@
     var raf = 0;
     var lastTs = 0;
     var cam = { x: 0, y: 0, follow: true };
+    var labelSlots = [];
     var frameView = { w: 1600, h: 900 };
     var drag = null;
     var moved = false;
@@ -4019,9 +4021,33 @@
         playToast(ms);
       }
     }
+    function placeEventCard() {
+      if (!els.event || !els.stage || !els.sim) return;
+      var phone = false;
+      try { phone = window.matchMedia('(max-width: 720px)').matches; } catch (eCard) {}
+      var actions = els.sim.querySelector('.hr-actions');
+      if (phone && actions) {
+        if (els.event.parentNode !== els.sim || els.event.nextElementSibling !== actions) els.sim.insertBefore(els.event, actions);
+      } else if (els.event.parentNode !== els.stage) els.stage.appendChild(els.event);
+    }
+
+    function placeToast() {
+      if (!els.toast) return;
+      var actions = els.sim && !els.sim.hidden ? els.sim.querySelector('.hr-actions') : null;
+      if (!actions) {
+        els.toast.style.bottom = '';
+        return;
+      }
+      var rect = actions.getBoundingClientRect();
+      var gap = 12;
+      var fromBottom = Math.max(16, window.innerHeight - rect.top + gap);
+      els.toast.style.bottom = fromBottom + 'px';
+    }
+
     function playToast(ms) {
       if (!els.toast || !toastQueue.length) { toastOn = false; return; }
       toastOn = true;
+      placeToast();
       els.toast.textContent = toastQueue.shift();
       els.toast.classList.add('show');
       clearTimeout(toastTimer);
@@ -6052,6 +6078,8 @@
       els.canvas._cssW = w;
       els.canvas._cssH = h;
       els.canvas._dpr = dpr;
+      placeEventCard();
+      placeToast();
       placeChrome();
       fitHud();
     }
@@ -6083,6 +6111,7 @@
       var aisle = [];
       var other = [];
       for (i = 0; i < extras.length; i++) {
+        if (extras[i].classList.contains('hr-stat--stars')) continue;
         if (extras[i].classList.contains('hr-aisle') || extras[i].querySelector('#hr-aisle-text')) aisle.push(extras[i]);
         else other.push(extras[i]);
       }
@@ -6157,8 +6186,7 @@
       var cssW = els.canvas._cssW || 0;
       if (!(cssW > 0) || cam.zoom > 0 || !HR.render) return;
       var cssH = els.canvas._cssH || 540;
-      var fit = HR.render.frameZoom(cssW, cssH, WORLD_W, WORLD_H, CONFIG.sprite);
-      cam.zoom = HR.render.clampZoom(cssW, fit, cssH);
+      cam.zoom = HR.render.zoomMin(cssW, cssH);
     }
 
     function focusCam(x, y) {
@@ -6343,6 +6371,13 @@
       return Math.sqrt(dx * dx + dy * dy);
     }
 
+    function worldDist(wx, wy, ev) {
+      var w = eventWorld(ev);
+      var dx = w.x - wx;
+      var dy = w.y - wy;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+
     function pickHit(ev) {
       var phoneHit = (els.canvas._cssW || window.innerWidth) < 720;
       if (sim.pings) {
@@ -6358,12 +6393,17 @@
         if (pingHit) return { ping: pingHit };
       }
       var best = null;
-      var bestD = phoneHit ? 110 : 64;
+      var bestD = 1e9;
+      var custScreen = phoneHit ? 64 : 120;
+      var custWorld = phoneHit ? 108 : 150;
       for (var i = 0; i < sim.customers.length; i++) {
         var c = sim.customers[i];
         if (c.dead || c.state === 'leave') continue;
-        var d = screenDist(c.x, c.y - 36, ev);
-        if (d < bestD) { bestD = d; best = { cust: c }; }
+        var d = screenDist(c.x, c.y - 28, ev);
+        var wd = worldDist(c.x, c.y - 28, ev);
+        var near = phoneHit ? wd < custWorld : (d < custScreen || wd < custWorld);
+        var rank = phoneHit ? wd : d;
+        if (near && rank < bestD) { bestD = rank; best = { cust: c }; }
       }
       if (best) return best;
       var zones = [
@@ -6388,6 +6428,7 @@
       markInput();
       if (isQA() && els.stage && ev) els.stage.dataset.pointer = ev.pointerType || '';
       var w = eventWorld(ev);
+      focusLabel(ev);
       var hit = pickHit(ev);
       if (hit && hit.ping) {
         tapFx(sim, hit.ping.x, hit.ping.y);
@@ -6423,39 +6464,97 @@
       playerAct(act.name, act);
     }
 
+    function tagPx() {
+      var view = viewSize();
+      var scale = view.cssW / Math.max(1, view.viewW);
+      var px = Math.round(15 / Math.max(0.22, scale));
+      if (px < 16) px = 16;
+      if (px > 46) px = 46;
+      return px;
+    }
+
     function drawTag(text, x, y) {
-      ctx.font = '800 16px Outfit, Inter, sans-serif';
+      var px = tagPx();
+      var h = Math.round(px * 1.15);
+      ctx.font = '800 ' + px + 'px Outfit, Inter, sans-serif';
       ctx.textAlign = 'center';
-      var w = ctx.measureText(text).width + 12;
+      var w = ctx.measureText(text).width + Math.round(px * 0.8);
       ctx.fillStyle = 'rgba(20,12,16,0.88)';
-      ctx.fillRect(x - w / 2, y - 14, w, 18);
+      ctx.fillRect(x - w / 2, y - h + 4, w, h);
       ctx.fillStyle = '#f6f0e4';
       ctx.fillText(text, x, y);
     }
 
-    function staffTagPoint(a) {
-      var x = a.x;
-      var y = a.y - CONFIG.sprite - 28;
-      var regs = registers();
-      var near = null;
-      var best = 160 * 160;
-      var i;
-      for (i = 0; i < regs.length; i++) {
-        var spot = SPOTS[regs[i]];
-        if (!spot) continue;
-        var dx = a.x - spot.x;
-        var dy = a.y - spot.y;
-        var dist = dx * dx + dy * dy;
-        if (dist < best) { best = dist; near = spot; }
+    function stackTag(x, y) {
+      var gap = tagPx() + 6;
+      var guard = 0;
+      while (guard < 8) {
+        var hit = false;
+        for (var i = 0; i < labelSlots.length; i++) {
+          var slot = labelSlots[i];
+          if (Math.abs(slot.x - x) < gap * 3.4 && Math.abs(slot.y - y) < gap * 0.92) {
+            y = slot.y - gap;
+            hit = true;
+          }
+        }
+        if (!hit) break;
+        guard++;
       }
-      if (!near) return { x: x, y: y };
-      var side = a.x < near.x - 8 ? -1 : 1;
-      x = near.x + side * 130;
-      if (x < 48) x = 48;
-      if (x > WORLD_W - 48) x = WORLD_W - 48;
-      var top = Math.min(near.y + 52, WORLD_H - 77) - 118;
-      if (y > top - 20) y = top - 22;
+      if (y < 18) y = 18;
+      labelSlots.push({ x: x, y: y });
       return { x: x, y: y };
+    }
+
+    function actorKey(a) {
+      if (!a) return '';
+      return (a.kind || 'a') + ':' + (a.id || a.seq || '');
+    }
+
+    function actorNeedsTag(a) {
+      if (!a || a.dead || a.state === 'leave') return false;
+      if (a.bubble || a.haggling || a.angry || a.rush > 1) return true;
+      if (a.arch === 'rusher' || a.arch === 'lift' || a.arch === 'family') return true;
+      if (a.maxPatience && a.patience < a.maxPatience * 0.4) return true;
+      if (a.kind === 'you') return true;
+      return false;
+    }
+
+    function nameVisible(a) {
+      if (!a || !sim) return false;
+      var key = actorKey(a);
+      if (key && sim._hoverKey === key) return true;
+      if (key && sim._labelKey === key && sim.t < (sim._labelUntil || 0)) return true;
+      return actorNeedsTag(a);
+    }
+
+    function nearestLabeled(ev) {
+      if (!sim) return null;
+      var phoneHit = (els.canvas._cssW || window.innerWidth) < 720;
+      var best = null;
+      var bestD = 1e9;
+      function consider(a) {
+        if (!a || a.dead || a.hidden || a.state === 'leave' || a.kind === 'jack') return;
+        var d = phoneHit ? worldDist(a.x, a.y - 28, ev) : screenDist(a.x, a.y - 28, ev);
+        var limit = phoneHit ? 108 : 120;
+        if (d < limit && d < bestD) { bestD = d; best = a; }
+      }
+      var i;
+      for (i = 0; i < sim.customers.length; i++) consider(sim.customers[i]);
+      for (i = 0; i < sim.staff.length; i++) consider(sim.staff[i]);
+      if (sim.you) consider(sim.you);
+      return best;
+    }
+
+    function focusLabel(ev) {
+      if (!sim || !ev) return;
+      var who = nearestLabeled(ev);
+      if (!who) return;
+      sim._labelKey = actorKey(who);
+      sim._labelUntil = sim.t + 6;
+    }
+
+    function staffTagPoint(a) {
+      return stackTag(a.x, a.y - personDrawH() - 22);
     }
 
     function drawPatience(x, y, p) {
@@ -6595,7 +6694,7 @@
         els.stage.dataset.framed = cam.overview ? '1' : '0';
         els.stage.dataset.minimap = cam.overview ? '1' : '0';
         var doorY = SPOTS.door ? SPOTS.door.y : 855;
-        var holdsDoor = !!cam.overview || (cam.y <= 80 && cam.y + view.viewH >= doorY);
+        var holdsDoor = !!cam.overview || (cam.y <= doorY && cam.y + view.viewH >= doorY - 4);
         els.stage.dataset.span = holdsDoor ? '1' : '0';
       }
       if (!HR.render) return;
@@ -6615,7 +6714,12 @@
       var view = viewSize();
       var scale = view.cssW / view.viewW;
       var focus = sim && coach ? coachFocus() : null;
-      if (focus) {
+      var fitsFloor = view.viewW >= WORLD_W - 16 && view.viewH >= WORLD_H - 16;
+      if (els.stage) els.stage.dataset.fit = fitsFloor ? '1' : '0';
+      if (fitsFloor) {
+        cam.x = 0;
+        cam.y = 0;
+      } else if (focus) {
         cam.x = focus.x - view.viewW * 0.5;
         cam.y = focus.y - view.viewH * 0.62;
       } else if (sim && sim._wrapCamUntil && sim.t < sim._wrapCamUntil && !cam.fit) {
@@ -6752,6 +6856,7 @@
         if (sim.you) drawList.push(sim.you);
         drawList.push(jackPose());
         drawList.sort(function (a, b) { return a.y - b.y; });
+        labelSlots = [];
         var heavy = sim.customers.length > 40;
         var drawn = 0;
         for (var d = 0; d < drawList.length; d++) {
@@ -6767,6 +6872,8 @@
           drawActor(actor);
         }
         if (isQA() && els.stage) {
+          els.stage.dataset.tags = String(labelSlots.length);
+          els.stage.dataset.drawH = String(personDrawH());
           var qSprite = 0;
           var qBlob = 0;
           var qSil = 0;
@@ -7316,6 +7423,12 @@
       ctx.restore();
     }
 
+    function personDrawH() {
+      var cssW = els.canvas && els.canvas._cssW || 800;
+      if (cssW < 720) return Math.round(SPRITE_PACK.displayH * 1.55);
+      return SPRITE_PACK.displayH;
+    }
+
     function drawSpritePerson(a) {
       var pack = assets && assets.spritePack;
       if (!pack || !pack.ready) return false;
@@ -7328,7 +7441,7 @@
       var index = (a.frame || 0) % list.length;
       var frame = list[index];
       if (!frame || !frame.img) return false;
-      var dh = SPRITE_PACK.displayH;
+      var dh = personDrawH();
       var dw = dh * (frame.w / frame.h);
       var foot = (SPRITE_PACK.footY / frame.h) * dh;
       ctx.drawImage(frame.img, Math.round(-dw / 2), Math.round(-foot), Math.round(dw), Math.round(dh));
@@ -7347,7 +7460,7 @@
       if (!list) return false;
       var frame = list[(a.frame || 0) % list.length];
       if (!frame || !frame.img) return false;
-      var dh = SPRITE_PACK.displayH;
+      var dh = personDrawH();
       var dw = dh * (frame.w / frame.h);
       var foot = (SPRITE_PACK.footY / frame.h) * dh;
       var gw = Math.max(1, Math.round(dw));
@@ -7632,7 +7745,7 @@
     function drawActor(a) {
       var dir = a.face < 0 ? 'side' : a.dir;
       if (a.face < 0) dir = 'side';
-      var size = CONFIG.sprite;
+      var size = personDrawH();
       var reactX = 0;
       if ((a.bubble === 'angry' || a.angry) && !reduceMotion) reactX = Math.sin(Date.now() / 70) * 1.8;
       ctx.save();
@@ -7704,16 +7817,25 @@
           ctx.drawImage(assets.img.icons, ir[0], ir[1], ir[2], ir[3], a.x - iconPx / 2, a.y - size - 18 - iconPx, iconPx, iconPx);
         }
       }
-      if (a.arch === 'rusher') drawTag('Rush', a.x, a.y - size - 36);
-      else if (a.arch === 'family') drawTag('Family', a.x, a.y - size - 36);
-      else if (a.arch === 'lift') drawTag(a.state === 'flee' ? 'Catch' : 'Watch', a.x, a.y - size - 28);
-      else if (a.haggling) drawTag('Coupon', a.x, a.y - size - 36);
-      if (a.kind === 'staff' && a.id) {
+      if (a.arch === 'rusher') {
+        var rushAt = stackTag(a.x, a.y - size - 36);
+        drawTag('Rush', rushAt.x, rushAt.y);
+      } else if (a.arch === 'family') {
+        var famAt = stackTag(a.x, a.y - size - 36);
+        drawTag('Family', famAt.x, famAt.y);
+      } else if (a.arch === 'lift') {
+        var liftAt = stackTag(a.x, a.y - size - 28);
+        drawTag(a.state === 'flee' ? 'Catch' : 'Watch', liftAt.x, liftAt.y);
+      } else if (a.haggling) {
+        var coupAt = stackTag(a.x, a.y - size - 36);
+        drawTag('Coupon', coupAt.x, coupAt.y);
+      }
+      if (a.kind === 'staff' && a.id && nameVisible(a)) {
         var tag = firstName(a.id);
         if (a.rush > 1) tag += ' →';
         var tagAt = staffTagPoint(a);
         drawTag(tag, tagAt.x, tagAt.y);
-      } else if (a.kind === 'you') {
+      } else if (a.kind === 'you' && nameVisible(a)) {
         var youAt = staffTagPoint(a);
         drawTag('YOU', youAt.x, youAt.y);
       }
@@ -7937,6 +8059,11 @@
       }
     }, { passive: true });
     els.stage.addEventListener('pointermove', function (ev) {
+      if (sim && !((els.canvas._cssW || 800) < 720) && !(cam.drag && cam.drag.moved)) {
+        var hovered = nearestLabeled(ev);
+        var hoverKey = hovered ? actorKey(hovered) : '';
+        if (sim._hoverKey !== hoverKey) sim._hoverKey = hoverKey;
+      }
       if (pointers[ev.pointerId]) pointers[ev.pointerId] = { x: ev.clientX, y: ev.clientY };
       var ids = Object.keys(pointers);
       if (ids.length >= 2 && HR.render) {

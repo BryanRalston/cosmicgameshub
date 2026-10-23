@@ -130,6 +130,8 @@
     .hr-stars { color: rgba(255,255,255,0.28); letter-spacing: 0.14em; font-size: 1.15rem; font-weight: 800; }
     .hr-stars i { font-style: normal; }
     .hr-stars i.on { color: #e0a322; }
+    .hr-hud .hr-stat--stars .hr-stars { color: rgba(36, 24, 15, 0.45); }
+    .hr-hud .hr-stat--stars .hr-stars i.on { color: #8a5a12; }
     .hr-stars--big { font-size: 1.8rem; margin: 0.2rem 0; }
     .hr-actline { margin: 0.35rem 0 0; color: var(--text-mid); font-size: 0.82rem; font-weight: 700; }
     .hr-choice-cost { flex: 0 0 auto; font-size: 0.68rem; letter-spacing: 0.04em; text-transform: uppercase; background: #2b1d2e; color: #f6f0e4; border-radius: 999px; padding: 0.2rem 0.45rem; }
@@ -140,7 +142,7 @@
     .hr-combo, .hr-rush { min-width: 52px; min-height: 44px; display: grid; place-items: center; padding: 0 10px; border-radius: 12px; font-weight: 800; letter-spacing: 0.04em; box-sizing: border-box; }
     #hr-combo { width: 5rem; min-width: 5rem; max-width: 5rem; flex: 0 0 5rem; overflow: hidden; }
     .hr-combo { width: 5rem; min-width: 5rem; max-width: 5rem; background: #e0a322; color: #1a120c; font-size: 1.25rem; }
-    .hr-combo.is-idle { background: rgba(224, 163, 34, 0.35); color: #24180f; }
+    .hr-combo.is-idle { background: #3a2a18; color: #ffe7a3; box-shadow: inset 0 0 0 2px #e0a322; }
     .hr-rush { width: 4.4rem; min-width: 4.4rem; background: #d64545; color: #fff; font-size: 0.82rem; }
     @media (min-width: 721px) {
       #hr-rush:not(.is-on) { display: none !important; }
@@ -206,7 +208,7 @@
     .hr-perk p { color: #3c2a30; font-size: 0.85rem; margin: 0 0 0.6rem; }
     .share-box { background: var(--bg-void); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; color: var(--text-mid); white-space: pre-wrap; font-size: 0.82rem; }
     .hr-more { display: flex; gap: 0.8rem; flex-wrap: wrap; margin-top: 0.8rem; font-weight: 700; }
-    #hr-toast { position: fixed; left: 50%; bottom: 1rem; transform: translateX(-50%) translateY(12px); background: #2b1d2e; color: #f6f0e4; border-radius: 999px; padding: 0.55rem 0.9rem; font-size: 0.85rem; font-weight: 700; opacity: 0; pointer-events: none; transition: 0.2s ease; z-index: 70; max-width: min(92vw, 420px); text-align: center; }
+    #hr-toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 7.75rem); transform: translateX(-50%) translateY(12px); background: #2b1d2e; color: #f6f0e4; border-radius: 999px; padding: 0.55rem 0.9rem; font-size: 0.85rem; font-weight: 700; opacity: 0; pointer-events: none; transition: 0.2s ease; z-index: 80; max-width: min(92vw, 420px); text-align: center; }
     #hr-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     @media (max-height: 860px) {
       body:has(#hr-sim:not([hidden])) .nav { display: none; }
@@ -252,7 +254,10 @@
       #hr-clock small { font-size: 0.62rem; }
       #hr-sim .hr-sales { grid-column: 2 / -1; grid-row: 1; min-width: 0; max-width: 100%; width: auto; flex: none; }
       #hr-combo { grid-column: 1; grid-row: 2; }
-      #hr-rush { grid-column: 2; grid-row: 2; justify-self: start; }
+      #hr-sim .hr-stat--stars.hr-hud__extra { display: flex !important; grid-column: 2; grid-row: 2; justify-self: start; align-self: center; align-items: center; gap: 4px; min-height: 0; max-width: 100%; padding: 2px 8px; overflow: hidden; }
+      #hr-sim .hr-stat--stars.hr-hud__extra > span { font-size: 0.68rem; }
+      #hr-sim .hr-stat--stars .hr-stars { font-size: 0.95rem; letter-spacing: 0.06em; }
+      #hr-rush { grid-column: 2; grid-row: 2; justify-self: end; }
       #hr-sim .hr-hud__tools { grid-column: 3; grid-row: 2; margin-left: 0; }
       #hr-sim .hr-sales__top { flex-direction: column; align-items: flex-start; flex-wrap: nowrap; gap: 0; }
       #hr-sim .hr-sales__top span { min-width: 0; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -261,8 +266,16 @@
       #hr-tenant-name { max-width: none; }
       #hr-coach { top: 58px; right: 8px; left: 8px; }
       html, body, #hr-app, .hr-stage, #hr-canvas { touch-action: pan-y; }
-      body:has(#hr-sim:not([hidden])) .hr-stage { height: min(64vh, 560px); }
-      body:has(#hr-sim:not([hidden])) .hr-wrap { padding-bottom: 0.6rem; }
+      body:has(#hr-sim:not([hidden])) .hr-stage {
+        height: auto;
+        aspect-ratio: 1280 / 900;
+        max-height: 42vh;
+        width: min(100%, calc(42vh * 1280 / 900));
+        margin-inline: auto;
+      }
+      body:has(#hr-sim:not([hidden])) .hr-wrap { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.85rem); }
+      body:has(#hr-sim:not([hidden])) .hr-actions { margin-bottom: env(safe-area-inset-bottom, 0px); }
+      #hr-toast { bottom: calc(env(safe-area-inset-bottom, 0px) + 9.5rem); }
     }
     @media (max-width: 640px) {
       .hr-wrap { padding: 0.25rem 0.7rem 2.5rem; }
