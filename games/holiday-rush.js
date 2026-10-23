@@ -4815,7 +4815,7 @@
       var ops = run.day >= 1;
       var hud =
         '<div class="hr-hud__stats">' +
-        '<div class="hr-clock" id="hr-clock" style="--p:0"><span id="hr-clock-label">8:00 AM</span></div>' +
+        '<div class="hr-clock" id="hr-clock" style="--p:0"><span id="hr-clock-label"><b>8:00</b><small>AM</small></span></div>' +
         '<div class="hr-sales"><div class="hr-sales__top"><span>Sales</span><strong id="hr-sales-text"></strong></div><div class="hr-bar"><i id="hr-sales-bar"></i></div></div>' +
         '<div class="hr-stat hr-stat--stars hr-hud__extra"><span>Stars</span><strong id="hr-star-text" class="hr-stars"></strong></div>' +
         '<div class="hr-combo is-idle" id="hr-combo" aria-hidden="true">×1</div>' +
@@ -4851,7 +4851,7 @@
       primeShift(sim, run);
       if (tutDone()) sim.coachHold = false;
       resize();
-      fitPhoneCamera();
+      fitOpenCamera();
       requestAnimationFrame(function () { resize(); if (sim && !els.sim.hidden) draw(); });
       focusCam(SPOTS.reg1.x, QUEUE.reg1.y);
       if (sim.tenant) sim.coachHold = false;
@@ -4885,7 +4885,14 @@
       if (!label || !salesText) return;
       if (sim._clockT == null || sim.t > sim._clockT) sim._clockT = sim.t;
       else if (sim.t < sim._clockT) sim._clockBack = (sim._clockBack || 0) + 1;
-      label.textContent = clockLabel(sim._clockT, sim.duration);
+      var face = clockLabel(sim._clockT, sim.duration);
+      var faceBits = face.split(' ');
+      var faceTime = label.querySelector('b');
+      var faceAmpm = label.querySelector('small');
+      if (faceTime && faceAmpm) {
+        faceTime.textContent = faceBits[0];
+        faceAmpm.textContent = faceBits[1] || '';
+      } else label.textContent = face;
       var rushing = !!(sim._qaRush || (sim._heat && sim._heat.rush && !sim.coachHold));
       if (clock) {
         clock.style.setProperty('--p', String(clamp(sim._clockT / sim.duration, 0, 1)));
@@ -4953,7 +4960,7 @@
           els.stage.dataset.goal = String(Math.round(sim.goal || 0));
           if (sim.wraps) els.stage.dataset.wraps = String(sim.wraps);
           els.stage.dataset.calendar = sim.calendarName || '';
-        els.stage.dataset.clock = label.textContent;
+        els.stage.dataset.clock = face;
         if (isQA()) els.stage.dataset.clockBack = String(sim._clockBack || 0);
         fitHud();
         paintWrapCoach();
@@ -6146,10 +6153,12 @@
       if (!root.__hrInputAt && root.performance) root.__hrInputAt = root.performance.now();
     }
 
-    function fitPhoneCamera() {
+    function fitOpenCamera() {
       var cssW = els.canvas._cssW || 0;
-      if (!(cssW > 0 && cssW < 720) || cam.zoom > 0 || !HR.render) return;
-      cam.zoom = HR.render.frameZoom(cssW, els.canvas._cssH || 540, WORLD_W, WORLD_H, CONFIG.sprite);
+      if (!(cssW > 0) || cam.zoom > 0 || !HR.render) return;
+      var cssH = els.canvas._cssH || 540;
+      var fit = HR.render.frameZoom(cssW, cssH, WORLD_W, WORLD_H, CONFIG.sprite);
+      cam.zoom = HR.render.clampZoom(cssW, fit, cssH);
     }
 
     function focusCam(x, y) {
@@ -6422,6 +6431,31 @@
       ctx.fillRect(x - w / 2, y - 14, w, 18);
       ctx.fillStyle = '#f6f0e4';
       ctx.fillText(text, x, y);
+    }
+
+    function staffTagPoint(a) {
+      var x = a.x;
+      var y = a.y - CONFIG.sprite - 28;
+      var regs = registers();
+      var near = null;
+      var best = 160 * 160;
+      var i;
+      for (i = 0; i < regs.length; i++) {
+        var spot = SPOTS[regs[i]];
+        if (!spot) continue;
+        var dx = a.x - spot.x;
+        var dy = a.y - spot.y;
+        var dist = dx * dx + dy * dy;
+        if (dist < best) { best = dist; near = spot; }
+      }
+      if (!near) return { x: x, y: y };
+      var side = a.x < near.x - 8 ? -1 : 1;
+      x = near.x + side * 130;
+      if (x < 48) x = 48;
+      if (x > WORLD_W - 48) x = WORLD_W - 48;
+      var top = Math.min(near.y + 52, WORLD_H - 77) - 118;
+      if (y > top - 20) y = top - 22;
+      return { x: x, y: y };
     }
 
     function drawPatience(x, y, p) {
@@ -7671,9 +7705,11 @@
       if (a.kind === 'staff' && a.id) {
         var tag = firstName(a.id);
         if (a.rush > 1) tag += ' →';
-        drawTag(tag, a.x, a.y - size - 16);
+        var tagAt = staffTagPoint(a);
+        drawTag(tag, tagAt.x, tagAt.y);
       } else if (a.kind === 'you') {
-        drawTag('YOU', a.x, a.y - size - 16);
+        var youAt = staffTagPoint(a);
+        drawTag('YOU', youAt.x, youAt.y);
       }
       if (a.heart > 0) drawTag('♥', a.x, a.y - size - 40);
     }

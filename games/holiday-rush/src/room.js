@@ -388,6 +388,10 @@
     } else if (kiosk && label === 'TABLE') {
       maxW = 200;
       maxH = 165;
+    } else if (kiosk && label === 'WRAP') {
+      // Shoppers draw at 78px. 110px is 1.4×, inside the 1.2–1.5× band.
+      maxW = 80;
+      maxH = 110;
     } else if (kiosk && label === 'BOOTH') {
       maxW = 153;
       maxH = 230;
@@ -643,6 +647,10 @@
     if (Math.abs(kioskTable.h - mainTable.h) > 1) reasons.push('table scale');
     var kioskBooth = fixtureBox('cafe', 'BOOTH', true, { width: 398, height: 500 });
     if (Math.round(kioskBooth.w) !== 153 || Math.round(kioskBooth.h) !== 192) reasons.push('kiosk booth');
+    var kioskWrap = fixtureBox('shelf', 'WRAP', true, { width: 236, height: 356 });
+    var mainWrap = fixtureBox('shelf', 'WRAP', false, { width: 236, height: 356 });
+    if (Math.round(kioskWrap.h) !== 110 || Math.round(kioskWrap.w) !== 73) reasons.push('kiosk wrap ' + Math.round(kioskWrap.w) + 'x' + Math.round(kioskWrap.h));
+    if (Math.round(mainWrap.h) < 200) reasons.push('flag wrap');
     var kioskReg = fixtureBox('register', '', true, { width: 480, height: 322 });
     var mainReg = fixtureBox('register', '', false, { width: 458, height: 317 });
     if (Math.round(kioskReg.w) !== 176 || Math.round(kioskReg.h) !== 118) reasons.push('kiosk reg');

@@ -115,8 +115,10 @@
     .hr-hud__tools { display: flex; flex: 0 0 auto; gap: 0.35rem; align-items: center; margin-left: auto; }
     .is-hud-off { display: none !important; }
     #hr-tenant-name { display: inline; max-width: none; overflow: visible; text-overflow: clip; white-space: nowrap; vertical-align: bottom; }
-    .hr-clock { width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; background: conic-gradient(#e0a322 calc(var(--p, 0) * 1turn), rgba(255,255,255,0.12) 0); flex: 0 0 auto; }
-    .hr-clock span { width: 46px; height: 46px; border-radius: 50%; background: #141018; display: grid; place-items: center; font-size: 0.62rem; font-weight: 800; color: #fff; text-align: center; line-height: 1.1; }
+    .hr-clock { width: 86px; height: 86px; border-radius: 50%; display: grid; place-items: center; background: conic-gradient(#e0a322 calc(var(--p, 0) * 1turn), rgba(255,255,255,0.12) 0); flex: 0 0 auto; }
+    .hr-clock span { width: 72px; height: 72px; border-radius: 50%; background: #141018; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-size: 1.05rem; font-weight: 800; color: #fff; text-align: center; line-height: 1; }
+    .hr-clock b { font-size: 1.15rem; font-weight: 800; line-height: 1; letter-spacing: -0.03em; }
+    .hr-clock small { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; line-height: 1; }
     .hr-sales { flex: 0 1 auto; min-width: min(100%, max-content); max-width: 100%; }
     .hr-sales__top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0.15rem 0.75rem; }
     .hr-sales__top span, .hr-sales__top strong { flex: 0 0 auto; min-width: max-content; }
@@ -244,7 +246,10 @@
         overflow: hidden;
       }
       #hr-sim .hr-hud__stats { display: contents; }
-      #hr-clock { grid-column: 1; grid-row: 1; }
+      #hr-clock { grid-column: 1; grid-row: 1; width: 68px; height: 68px; }
+      #hr-clock span { width: 56px; height: 56px; }
+      #hr-clock b { font-size: 0.98rem; }
+      #hr-clock small { font-size: 0.62rem; }
       #hr-sim .hr-sales { grid-column: 2 / -1; grid-row: 1; min-width: 0; max-width: 100%; width: auto; flex: none; }
       #hr-combo { grid-column: 1; grid-row: 2; }
       #hr-rush { grid-column: 2; grid-row: 2; justify-self: start; }
@@ -274,8 +279,10 @@
       body:has(#hr-sim:not([hidden])) .hr-actline { display: none; }
       body:has(#hr-sim:not([hidden])) .hr-wrap { padding: 4px 8px 6px; }
       body:has(#hr-sim:not([hidden])) .hr-hud { padding: 2px 0; gap: 6px; }
-      body:has(#hr-sim:not([hidden])) .hr-clock { width: 44px; height: 44px; }
-      body:has(#hr-sim:not([hidden])) .hr-clock span { width: 34px; height: 34px; font-size: 0.55rem; }
+      body:has(#hr-sim:not([hidden])) .hr-clock { width: 52px; height: 52px; }
+      body:has(#hr-sim:not([hidden])) .hr-clock span { width: 42px; height: 42px; }
+      body:has(#hr-sim:not([hidden])) .hr-clock b { font-size: 0.72rem; }
+      body:has(#hr-sim:not([hidden])) .hr-clock small { font-size: 0.55rem; }
       body:has(#hr-sim:not([hidden])) .hr-stage { height: 188px; }
       body:has(#hr-sim:not([hidden])) .hr-actions { margin-top: 4px; gap: 6px; }
       body:has(#hr-sim:not([hidden])) .hr-actions button { min-height: 44px; }

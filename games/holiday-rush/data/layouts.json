@@ -68,7 +68,7 @@
       {"id": "k_window", "type": "gondola", "dept": "toys", "x": 260, "y": 340, "label": "WINDOW"},
       {"id": "k_wrap", "type": "gondola", "dept": "seasonal", "x": 980, "y": 340, "label": "WRAP"},
       {"id": "k_booth", "type": "cafe", "dept": "cafe", "x": 640, "y": 390, "label": "BOOTH"},
-      {"id": "k_counter", "type": "cafe", "dept": "cafe", "x": 640, "y": 520, "label": "COCOA"},
+      {"id": "k_counter", "type": "cafe", "dept": "cafe", "x": 1120, "y": 560, "label": "COCOA"},
       {"id": "k_menu", "type": "cafe", "dept": "cafe", "x": 200, "y": 500, "label": "MENU"},
       {"id": "k_cart", "type": "cafe", "dept": "cafe", "x": 900, "y": 540, "label": "CART"},
       {"id": "k_table", "type": "cafe", "dept": "cafe", "x": 430, "y": 600, "label": "TABLE"},
