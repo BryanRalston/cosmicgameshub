@@ -6621,8 +6621,14 @@
       } else if (sim && sim._wrapCamUntil && sim.t < sim._wrapCamUntil && !cam.fit) {
         var wrapAt = wrapSpot();
         var wrapY = wrapAt.y - wrapLift(wrapAt);
-        cam.x += ((wrapAt.x - view.viewW * 0.5) - cam.x) * 0.12;
-        cam.y += ((wrapY - view.viewH * 0.48) - cam.y) * 0.12;
+        var pullX = wrapAt.x - view.viewW * 0.5;
+        var pullY = wrapY - view.viewH * 0.48;
+        var doorY = SPOTS.door ? SPOTS.door.y : WORLD_H - 48;
+        var doorKeep = doorY - view.viewH + 24;
+        if (doorKeep < 0) doorKeep = 0;
+        if (pullY < doorKeep) pullY = doorKeep;
+        cam.x += (pullX - cam.x) * 0.12;
+        cam.y += (pullY - cam.y) * 0.12;
       } else if (sim && cam.follow && !cam.fit) {
         var fx = 0;
         var fy = 0;
