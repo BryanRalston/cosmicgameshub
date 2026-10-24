@@ -1565,7 +1565,7 @@
     }
     var colP = index % 2;
     var rowP = Math.min(3, Math.floor(index / 2));
-    return { x: base.x + (colP ? 104 : -28), y: base.y + rowP * 124 };
+    return { x: base.x + (colP ? 120 : -40), y: base.y - rowP * 132 };
   }
 
   function updateCustomers(sim, run, dt) {
@@ -2286,7 +2286,7 @@
     if (sim.actions < maxA) {
       sim.actionFrac = (sim.actionFrac || 0) + used;
       var regenNeed = CONFIG.actionRegen / (1 + 0.28 * upgradeLevel(run, 'hustle'));
-      if (sim._mondayEase) regenNeed *= 0.55;
+      if (sim._mondayEase) regenNeed *= 0.45;
       if (sim.actionFrac >= regenNeed) {
         var gain = Math.floor(sim.actionFrac / regenNeed);
         sim.actionFrac -= gain * regenNeed;
@@ -4480,7 +4480,7 @@
     function applyMondayEase(sim) {
       if (!sim || !sim.floorOn || !run || sim.tenant || run.day !== 0 || sim._mondayEase) return;
       sim._mondayEase = 1;
-      sim.goal = Math.max(900, Math.round((sim.goal || 0) * 0.7));
+      sim.goal = Math.max(900, Math.round((sim.goal || 0) * 0.34));
       sim.spawnMul = (sim.spawnMul || 1) * 0.7;
       var cap = sim.actionMax || (CONFIG.baseActions + 1);
       sim.actions = cap;
@@ -5093,7 +5093,7 @@
         } else {
           var maxA = sim.actionMax || CONFIG.baseActions;
           var regenSec = CONFIG.actionRegen / (1 + 0.28 * upgradeLevel(run, 'hustle'));
-          if (sim._mondayEase) regenSec *= 0.55;
+          if (sim._mondayEase) regenSec *= 0.45;
           var fill = sim.actions >= maxA ? 1 : clamp((sim.actionFrac || 0) / regenSec, 0, 1);
           act.textContent = sim.actions + ' / ' + maxA + ' actions · refills every ' + (Math.round(regenSec * 10) / 10) + 's' + (sim.actions < maxA ? ' · ' + Math.round(fill * 100) + '% to the next' : '');
         }
@@ -6915,6 +6915,17 @@
       if (isQA() && els.stage && sim) {
         els.stage.dataset.cam = Math.round(cam.x) + ',' + Math.round(cam.y);
         els.stage.dataset.follow = cam.follow ? '1' : '0';
+        els.stage.dataset.held = holdWrap ? '1' : '0';
+        els.stage.dataset.phone = sim._phone ? '1' : '0';
+        els.stage.dataset.ease = sim._ease ? '1' : '0';
+        els.stage.dataset.playerAct = sim._playerAct ? '1' : '0';
+        var wrapPing = null;
+        if (sim.pings) {
+          for (var wi = 0; wi < sim.pings.length; wi++) {
+            if (sim.pings[wi].kind === 'wrap' && !sim.pings[wi].dead) wrapPing = sim.pings[wi];
+          }
+        }
+        els.stage.dataset.wrapAt = wrapPing ? (Math.round(wrapPing.x) + ',' + Math.round(wrapPing.y)) : '';
         els.stage.dataset.view = Math.round(view.viewW) + ',' + Math.round(view.viewH);
         els.stage.dataset.paused = sim.paused ? '1' : '0';
         var cast = [];
