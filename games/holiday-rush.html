@@ -349,6 +349,54 @@
     @media (prefers-reduced-motion: reduce) {
       .hr-drop.stamped, .hr-drop.shake, .cg-pop, .cg-shake, .cg-flash { animation: none !important; }
     }
+    @media (min-width: 721px) {
+      body:has(#hr-sim:not([hidden])) {
+        overflow: hidden;
+        height: 100dvh;
+      }
+      body:has(#hr-sim:not([hidden])) .nav { display: none; }
+      body:has(#hr-sim:not([hidden])) .hr-hero { padding: 0; }
+      body:has(#hr-sim:not([hidden])) .hr-hero p,
+      body:has(#hr-sim:not([hidden])) .section__eyebrow { display: none; }
+      body:has(#hr-sim:not([hidden])) .hr-hero h1 { font-size: 1.15rem; margin: 0; line-height: 1.15; }
+      body:has(#hr-sim:not([hidden])) .hr-pills { margin: 0.15rem 0 0; }
+      body:has(#hr-sim:not([hidden])) .hr-wrap {
+        height: 100dvh;
+        max-height: 100dvh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+        padding: 4px 12px 6px;
+      }
+      body:has(#hr-sim:not([hidden])) #hr-sim {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      body:has(#hr-sim:not([hidden])) .hr-hud { flex: 0 0 auto; padding: 0.15rem 0; }
+      body:has(#hr-sim:not([hidden])) .hr-clock { width: 64px; height: 64px; }
+      body:has(#hr-sim:not([hidden])) .hr-clock span { width: 52px; height: 52px; }
+      body:has(#hr-sim:not([hidden])) .hr-clock b { font-size: 0.95rem; }
+      body:has(#hr-sim:not([hidden])) .hr-clock small { font-size: 0.62rem; }
+      body:has(#hr-sim:not([hidden])) .hr-stage {
+        flex: 1 1 auto;
+        height: auto !important;
+        min-height: 0;
+        max-height: none;
+      }
+      body:has(#hr-sim:not([hidden])) .hr-toast-dock {
+        flex: 0 0 auto;
+        height: 28px;
+        min-height: 28px;
+        max-height: 28px;
+      }
+      body:has(#hr-sim:not([hidden])) .hr-hint { flex: 0 0 auto; margin: 0.15rem 0 0; }
+      body:has(#hr-sim:not([hidden])) .hr-actions { flex: 0 0 auto; margin-top: 6px; }
+      body:has(#hr-sim:not([hidden])) .hr-actline { flex: 0 0 auto; margin: 0.15rem 0 0; }
+    }
   </style>
 </head>
 <body>

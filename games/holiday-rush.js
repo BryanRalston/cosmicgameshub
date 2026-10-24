@@ -1464,7 +1464,7 @@
   }
 
   function maybeTypeIntro(sim, run) {
-    if (!sim.floorOn || sim.coachHold || sim.paused || sim.done || sim.typeCard || sim._introDone || cardCooling(sim)) return;
+    if (!sim.floorOn || sim.coachHold || sim.tutorial || sim.paused || sim.done || sim.typeCard || sim._introDone || cardCooling(sim)) return;
     var id = dueIntro(run);
     if (!id || sim.t < 5.5) return;
     var born = spawnCustomer(sim, run, id);
@@ -1622,8 +1622,8 @@
   }
 
   function spriteFootBox(sim) {
-    var h = sim && sim._phone ? Math.round(SPRITE_PACK.displayH * 2.1) : SPRITE_PACK.displayH;
-    return { h: h, w: Math.round(h * 0.56), pad: sim && sim._phone ? 18 : 14 };
+    var phone = !!(sim && sim._phone);
+    return { h: phone ? 120 : 70, w: phone ? 78 : 50, pad: 8 };
   }
 
   function pushOutOf(mover, anchor, box) {
@@ -1654,7 +1654,8 @@
       if (c.state === 'queue' || c.state === 'checkout' || c.state === 'leave' || c.state === 'flee') continue;
       list.push(c);
     }
-    var gap = Math.round(liveQueueGap(sim) * 0.72);
+    var crowded = list.length >= 8;
+    var gap = crowded ? (sim._phone ? 44 : 36) : Math.round(liveQueueGap(sim) * 0.72);
     for (i = 0; i < list.length; i++) {
       for (var j = i + 1; j < list.length; j++) {
         var a = list[i];
@@ -1668,7 +1669,8 @@
           b.y += (j % 2 ? 10 : -10);
           continue;
         }
-        var push = (gap - dist) * 0.5;
+        var push = (gap - dist) * (crowded ? 0.18 : 0.5);
+        if (crowded && push > 5) push = 5;
         var nx = dx / dist;
         var ny = dy / dist;
         if ((b.seq || 0) >= (a.seq || 0)) {
@@ -1680,10 +1682,10 @@
         }
       }
     }
-    var minX = 48;
-    var maxX = (WORLD_W || 1280) - 48;
+    var minX = crowded ? 120 : 48;
+    var maxX = (WORLD_W || 1280) - (crowded ? 120 : 48);
     var minY = 150;
-    var maxY = (WORLD_H || 900) - 48;
+    var maxY = (WORLD_H || 900) - (crowded ? 80 : 48);
     for (i = 0; i < list.length; i++) {
       if (list[i].x < minX) list[i].x = minX;
       if (list[i].x > maxX) list[i].x = maxX;
@@ -1704,40 +1706,85 @@
       if (!actor || actor.kind === 'jack' || actor.hidden || actor.dead) continue;
       if (seen.indexOf(actor) >= 0) continue;
       seen.push(actor);
-      nodes.push({ actor: actor, x: actor.x, y: actor.y });
+      var locked = actor.state === 'queue' || actor.state === 'checkout';
+      nodes.push({ actor: actor, x: actor.x, y: actor.y, lock: locked });
     }
     function relax() {
       for (i = 0; i < nodes.length; i++) {
         for (k = i + 1; k < nodes.length; k++) {
           var a = nodes[i];
           var b = nodes[k];
+          if (a.lock && b.lock) continue;
           var beforeX = b.x;
           var beforeY = b.y;
           if (!pushOutOf(b, a, box)) continue;
           var dx = b.x - beforeX;
           var dy = b.y - beforeY;
-          b.x = beforeX + dx * 0.5;
-          b.y = beforeY + dy * 0.5;
-          a.x -= dx * 0.5;
-          a.y -= dy * 0.5;
+          if (b.lock) {
+            b.x = beforeX;
+            b.y = beforeY;
+            if (!a.lock) {
+              a.x -= dx;
+              a.y -= dy;
+            }
+          } else if (a.lock) {
+            b.x = beforeX + dx;
+            b.y = beforeY + dy;
+          } else {
+            b.x = beforeX + dx * 0.5;
+            b.y = beforeY + dy * 0.5;
+            a.x -= dx * 0.5;
+            a.y -= dy * 0.5;
+          }
         }
       }
     }
-    for (pass = 0; pass < 14; pass++) relax();
-    var minX = 36;
-    var maxX = (WORLD_W || 1280) - 36;
-    var minY = 120;
-    var maxY = (WORLD_H || 900) - 24;
-    for (i = 0; i < nodes.length; i++) {
-      if (nodes[i].x < minX) nodes[i].x = minX;
-      if (nodes[i].x > maxX) nodes[i].x = maxX;
-      if (nodes[i].y < minY) nodes[i].y = minY;
-      if (nodes[i].y > maxY) nodes[i].y = maxY;
+    function park(node) {
+      if (node.lock) {
+        node.x = node.actor.x;
+        node.y = node.actor.y;
+        return;
+      }
+      var minX = 96;
+      var maxX = (WORLD_W || 1280) - 96;
+      var minY = 140;
+      var maxY = (WORLD_H || 900) - 48;
+      if (node.x < minX) node.x = minX;
+      if (node.x > maxX) node.x = maxX;
+      if (node.y < minY) node.y = minY;
+      if (node.y > maxY) node.y = maxY;
     }
-    for (pass = 0; pass < 8; pass++) relax();
+    for (pass = 0; pass < 10; pass++) relax();
+    for (i = 0; i < nodes.length; i++) park(nodes[i]);
+    for (pass = 0; pass < 6; pass++) {
+      relax();
+      for (i = 0; i < nodes.length; i++) park(nodes[i]);
+    }
+    for (pass = 0; pass < 4; pass++) {
+      for (i = 0; i < nodes.length; i++) {
+        for (k = i + 1; k < nodes.length; k++) {
+          if (nodes[i].lock && nodes[k].lock) continue;
+          var pileDx = nodes[k].x - nodes[i].x;
+          var pileDy = nodes[k].y - nodes[i].y;
+          if (Math.abs(pileDx) > 10 || Math.abs(pileDy) > 10) continue;
+          var mover = nodes[k].lock ? nodes[i] : nodes[k];
+          if (mover.lock) continue;
+          mover.x += 28;
+          mover.y += pass % 2 ? 18 : -18;
+          park(mover);
+        }
+      }
+    }
     for (i = 0; i < nodes.length; i++) {
-      nodes[i].actor._drawX = nodes[i].x;
-      nodes[i].actor._drawY = nodes[i].y;
+      var drawX = nodes[i].x;
+      var drawY = nodes[i].y;
+      if (nodes[i].lock && sim && sim._phone) {
+        var lane = nodes[i].actor.reg === 'reg2' ? 40 : -40;
+        drawX += lane;
+        drawY += 28;
+      }
+      nodes[i].actor._drawX = drawX;
+      nodes[i].actor._drawY = drawY;
     }
   }
 
@@ -2331,7 +2378,7 @@
   }
 
   function maybeMallCard(sim) {
-    if (!sim.live || !sim.books || sim._mallShown || sim.coachHold || sim.pending || sim.paused) return;
+    if (!sim.live || !sim.books || sim._mallShown || sim.coachHold || sim.tutorial || sim.pending || sim.paused) return;
     if (sim.t < 2.2 || sim.typeCard || cardCooling(sim)) return;
     sim._mallShown = true;
     var card = buildMallCard(sim);
@@ -2360,6 +2407,10 @@
 
   function openPending(sim, card, seconds) {
     if (!sim || !card || sim.pending || sim.typeCard) return false;
+    if (sim.coachHold || sim.tutorial) {
+      if (!sim._stashedCard) sim._stashedCard = { card: card, seconds: seconds || 8 };
+      return true;
+    }
     sim.pending = card;
     sim.pendingUntil = sim.t + (seconds || 8);
     armCardPause(sim);
@@ -2380,7 +2431,7 @@
   }
 
   function maybeEvent(sim, run) {
-    if (sim.coachHold) return;
+    if (sim.coachHold || sim.tutorial) return;
     if (sim.paused || sim.pending || sim.typeCard || cardCooling(sim)) return;
     if (sim.eventIndex >= sim.events.length) return;
     var when = sim.eventTimes[sim.eventIndex];
@@ -2748,7 +2799,7 @@
   ];
 
   function maybeLiveBeat(sim, run) {
-    if (!sim.floorOn || sim.coachHold || sim.paused || sim.pending || sim.done || cardCooling(sim)) return;
+    if (!sim.floorOn || sim.coachHold || sim.tutorial || sim.paused || sim.pending || sim.done || cardCooling(sim)) return;
     if (!sim._beats) sim._beats = {};
     if (sim._forceBus == null) sim._forceBus = previewHas('bus');
     if (sim._forceBus && !sim._beats.bus && sim._playerAct && sim.t >= 6) {
@@ -4275,7 +4326,7 @@
       var feelCss = document.createElement('style');
       feelCss.id = 'hr-feel-css';
       feelCss.textContent = [
-        '#hr-event.hr-inline{position:absolute;left:8px;right:8px;top:52px;bottom:auto;height:auto;max-height:30%;z-index:6;margin:0;padding:0;background:transparent;display:flex;justify-content:center;align-items:flex-start;pointer-events:none;overflow:hidden;}',
+        '#hr-event.hr-inline{position:absolute;left:8px;right:8px;top:52px;bottom:auto;height:auto;max-height:46%;z-index:6;margin:0;padding:0;background:transparent;display:flex;justify-content:center;align-items:flex-start;pointer-events:none;overflow:hidden;}',
         '#hr-event.hr-inline[hidden]{display:none !important;}',
         '#hr-event.hr-inline .hr-card{pointer-events:auto;width:min(640px,100%);max-height:100%;overflow:hidden;padding:0.45rem 0.6rem 0.5rem;border-radius:14px;background:rgba(246,240,228,0.96);box-shadow:0 10px 28px rgba(0,0,0,0.35);box-sizing:border-box;display:flex;flex-direction:column;touch-action:pan-y;}',
         '#hr-event.hr-inline .hr-card h2{font-size:1rem;margin:0 0 0.12rem;}',
@@ -4286,10 +4337,10 @@
         '#hr-event.hr-inline .hr-choice-cost{flex:0 0 auto;white-space:nowrap;}',
         '#hr-event.hr-inline .hr-card__art .hr-portrait,#hr-event.hr-inline .hr-card__art .hr-icon{width:36px !important;height:36px !important;border-radius:8px;}',
         '@media (max-width:720px){',
-        '#hr-event.hr-inline{position:absolute;left:8px;right:8px;top:52px;bottom:auto;height:auto;max-height:30%;margin:0;z-index:7;display:flex;align-items:flex-start;justify-content:center;overflow:hidden;}',
+        '#hr-event.hr-inline{position:absolute;left:8px;right:8px;top:52px;bottom:auto;height:auto;max-height:46%;margin:0;z-index:7;display:flex;align-items:flex-start;justify-content:center;overflow:hidden;}',
         '#hr-event.hr-inline .hr-card{width:100%;max-height:100%;overflow:hidden;padding:0.35rem 0.45rem 0.4rem;box-sizing:border-box;display:flex;flex-direction:column;}',
         '#hr-event.hr-inline .hr-card h2{font-size:0.95rem;line-height:1.15;margin:0 0 0.1rem;flex:0 0 auto;}',
-        '#hr-event.hr-inline .hr-card p{font-size:12px;line-height:1.2;margin:0 0 0.2rem;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;flex:0 0 auto;}',
+        '#hr-event.hr-inline .hr-card p{font-size:12px;line-height:1.25;margin:0 0 0.25rem;display:block;overflow:visible;white-space:normal;flex:0 0 auto;}',
         '#hr-event.hr-inline .hr-card__art{display:none;}',
         '#hr-event.hr-inline .hr-choices{flex:0 0 auto;min-height:0;flex-direction:column;flex-wrap:nowrap;gap:4px;overflow:hidden;touch-action:manipulation;padding-bottom:0;}',
         '#hr-event.hr-inline .hr-choices button{width:100%;flex:0 0 auto;min-height:36px;height:auto;font-size:0.82rem;padding:0.2rem 0.5rem;white-space:nowrap;line-height:1.15;justify-content:flex-start;background:#fff;background-image:none;color:#2b1d2e;border:2px solid #2b1d2e;}',
@@ -4379,66 +4430,81 @@
       if (!els.event || !els.stage || els.event.hidden) return;
       var h = els.stage.clientHeight || 0;
       if (!(h > 0)) return;
-      var cap = Math.floor(h * 0.30);
+      var phoneCard = (els.canvas && els.canvas._cssW || 800) < 720;
+      var cap = Math.floor(h * (phoneCard ? 0.34 : 0.30));
+      var capMax = Math.floor(h * (phoneCard ? 0.52 : 0.38));
       if (cap < 1) cap = 1;
-      els.event.style.top = '52px';
-      els.event.style.bottom = 'auto';
-      els.event.style.left = '8px';
-      els.event.style.right = '8px';
-      els.event.style.maxHeight = cap + 'px';
-      els.event.style.overflow = 'hidden';
-      var card = els.event.querySelector('.hr-card');
-      if (card) {
+      if (capMax < cap) capMax = cap;
+      function applyCap(next) {
+        cap = next;
+        els.event.style.top = '52px';
+        els.event.style.bottom = 'auto';
+        els.event.style.left = '8px';
+        els.event.style.right = '8px';
+        els.event.style.maxHeight = cap + 'px';
+        els.event.style.overflow = 'hidden';
+        var card = els.event.querySelector('.hr-card');
+        if (!card) return;
         card.style.maxHeight = cap + 'px';
         card.style.overflow = 'hidden';
         card.style.boxSizing = 'border-box';
         var choices = card.querySelector('.hr-choices');
-        if (choices) {
-          var phoneCard = (els.canvas && els.canvas._cssW || 800) < 720;
-          var title = card.querySelector('h2');
-          var body = card.querySelector('p');
-          if (phoneCard && body) body.style.display = '';
-          function choiceRoom() {
-            var used = 8;
-            if (title) used += title.offsetHeight + 4;
-            if (body && body.style.display !== 'none') used += body.offsetHeight + 4;
-            var room = cap - used;
-            if (room < 72) room = 72;
-            if (room > cap - 8) room = cap - 8;
-            return room;
+        if (!choices) return;
+        var title = card.querySelector('h2');
+        var body = card.querySelector('p');
+        if (body) {
+          body.style.display = 'block';
+          body.style.overflow = 'visible';
+          body.style.webkitLineClamp = 'unset';
+          body.style.whiteSpace = 'normal';
+        }
+        var used = 8;
+        if (title) used += title.offsetHeight + 4;
+        if (body) used += body.offsetHeight + 4;
+        var room = cap - used;
+        if (room < 72) room = 72;
+        if (room > cap - 8) room = cap - 8;
+        choices.style.maxHeight = room + 'px';
+        choices.style.overflowY = phoneCard ? 'hidden' : 'auto';
+        choices.style.overflowX = 'hidden';
+        choices.style.touchAction = phoneCard ? 'manipulation' : 'pan-y';
+        var btns = choices.querySelectorAll('button');
+        if (btns.length) {
+          var gaps = Math.max(0, btns.length - 1) * 4;
+          var fitH = Math.floor((room - gaps) / btns.length);
+          if (phoneCard) {
+            if (fitH > 44) fitH = 44;
+            if (fitH < 32) fitH = 32;
+          } else {
+            if (fitH > 48) fitH = 48;
+            if (fitH < 36) fitH = 36;
           }
-          var room = choiceRoom();
-          if (phoneCard && body) {
-            var probeBtns = choices.querySelectorAll('button');
-            var probeGaps = Math.max(0, probeBtns.length - 1) * 4;
-            if (probeBtns.length && Math.floor((room - probeGaps) / probeBtns.length) < 32) {
-              body.style.display = 'none';
-              room = choiceRoom();
-            }
-          }
-          choices.style.maxHeight = room + 'px';
-          choices.style.overflowY = phoneCard ? 'hidden' : 'auto';
-          choices.style.overflowX = 'hidden';
-          choices.style.touchAction = phoneCard ? 'manipulation' : 'pan-y';
-          var btns = choices.querySelectorAll('button');
-          if (btns.length) {
-            var gaps = Math.max(0, btns.length - 1) * 4;
-            var fitH = Math.floor((room - gaps) / btns.length);
-            if (phoneCard) {
-              if (fitH > 44) fitH = 44;
-              if (fitH < 30) fitH = 30;
-            } else {
-              if (fitH > 48) fitH = 48;
-              if (fitH < 36) fitH = 36;
-            }
-            for (var bi = 0; bi < btns.length; bi++) {
-              btns[bi].style.boxSizing = 'border-box';
-              btns[bi].style.height = fitH + 'px';
-              btns[bi].style.minHeight = fitH + 'px';
-              btns[bi].style.maxHeight = fitH + 'px';
-            }
+          for (var bi = 0; bi < btns.length; bi++) {
+            btns[bi].style.boxSizing = 'border-box';
+            btns[bi].style.height = fitH + 'px';
+            btns[bi].style.minHeight = fitH + 'px';
+            btns[bi].style.maxHeight = fitH + 'px';
           }
         }
+      }
+      applyCap(cap);
+      var grow = 0;
+      while (phoneCard && grow < 6 && cap < capMax) {
+        var cardNow = els.event.querySelector('.hr-card');
+        var bodyNow = cardNow && cardNow.querySelector('p');
+        var choiceNow = cardNow && cardNow.querySelector('.hr-choices');
+        var lastBtn = choiceNow ? choiceNow.querySelector('button:last-child') : null;
+        var textCut = bodyNow && bodyNow.scrollHeight > bodyNow.clientHeight + 1;
+        var cardCut = cardNow && cardNow.scrollHeight > cardNow.clientHeight + 1;
+        var btnCut = false;
+        if (lastBtn && cardNow) {
+          var btnBox = lastBtn.getBoundingClientRect();
+          var cardBox = cardNow.getBoundingClientRect();
+          btnCut = btnBox.bottom > cardBox.bottom + 1;
+        }
+        if (!textCut && !cardCut && !btnCut) break;
+        grow++;
+        applyCap(Math.min(capMax, cap + 28));
       }
       if (isQA() && els.stage) els.stage.dataset.cardCap = String(cap);
     }
@@ -5610,9 +5676,15 @@
         var prevPost = books.posted[postKey] || 0;
         var postCogs = sim.cogs || 0;
         var postWages = snap.payroll;
-        if (sim.floorOn && !sim.tenant && run.day === 0 && books.active === 'kiosk') {
+        var kioskMonday = sim.floorOn && !sim.tenant && run.day === 0 && books.active === 'kiosk';
+        if (kioskMonday) {
           var rentNow = HR.economy.rentOf(books);
-          var tunedCosts = kioskOneStarCosts(snap.sales, postCogs, postWages, rentNow, snap.goalPct);
+          var loanNow = 0;
+          if (books.loan && books.loan.left > 0) loanNow = Math.min(books.loan.payment || 0, books.loan.remaining || 0);
+          var leaseNow = HR.world && HR.world.income ? HR.world.income(books) : 0;
+          var gatePct = snap.goalPct || 0;
+          if (Math.round(gatePct * 100) >= 70 && !(gatePct >= 0.70)) gatePct = 0.70;
+          var tunedCosts = kioskOneStarCosts(snap.sales, postCogs, postWages, rentNow + loanNow - leaseNow, gatePct);
           postCogs = tunedCosts.cogs;
           postWages = tunedCosts.wages;
         }
@@ -5625,6 +5697,26 @@
           stockouts: sim.stockouts || 0,
           goalPct: snap.goalPct
         });
+        if (kioskMonday && Math.round((snap.goalPct || 0) * 100) >= 70 && tape.profit < LIVE_PROFIT_FLOOR) {
+          var liftGap = LIVE_PROFIT_FLOOR - tape.profit;
+          var cogsCut = Math.min(tape.cogs || 0, liftGap);
+          tape.cogs = (tape.cogs || 0) - cogsCut;
+          liftGap -= cogsCut;
+          if (liftGap > 0) {
+            var wageCut = Math.min(tape.wages || 0, liftGap);
+            tape.wages = (tape.wages || 0) - wageCut;
+            liftGap -= wageCut;
+          }
+          var nextProfit = tape.sales - tape.cogs - tape.wages - tape.rent - (tape.loanPay || 0) + (tape.leaseIn || 0);
+          var profitDelta = nextProfit - tape.profit;
+          if (profitDelta) {
+            books.cash = Math.round((books.cash || 0) + profitDelta);
+            books.lifetimeProfit = Math.round((books.lifetimeProfit || 0) + profitDelta);
+            if (books.reviews && books.reviews[0]) books.reviews[0].profit = nextProfit;
+          }
+          tape.profit = nextProfit;
+          tape.cash = books.cash;
+        }
         if (!firstClose) books.cash = Math.round(books.cash - prevPost);
         else if (HR.world) {
           snap.background = HR.world.closeBackground(books, { day: run.day, ymd: run.ymd });
@@ -6926,6 +7018,40 @@
       paintWrapCoach();
     }
 
+    function stashOpenCard() {
+      if (!sim) return;
+      if (sim.pending && !sim._stashedCard) {
+        sim._stashedCard = { card: sim.pending, seconds: Math.max(4, (sim.pendingUntil || sim.t) - sim.t) };
+      }
+      sim.pending = null;
+      sim.pendingUntil = 0;
+      if (sim.typeCard) {
+        sim._stashedType = sim.typeCard;
+        sim.typeCard = '';
+      }
+      if (sim._hold === 'card') {
+        sim._hold = '';
+        sim.paused = false;
+      }
+      shownEvent = null;
+      shownType = null;
+      if (els.event) els.event.hidden = true;
+    }
+
+    function releaseStashedCard() {
+      if (!sim) return;
+      var held = sim._stashedCard;
+      var heldType = sim._stashedType;
+      sim._stashedCard = null;
+      sim._stashedType = '';
+      if (held && held.card) openPending(sim, held.card, held.seconds || 8);
+      else if (heldType) {
+        sim.typeCard = heldType;
+        sim.typeUntil = sim.t + 5.5;
+        armCardPause(sim);
+      }
+    }
+
     function beginCoach() {
       if (!sim || tutDone() || run.day !== 0) {
         coach = null;
@@ -6934,6 +7060,8 @@
       }
       coach = { step: 0 };
       sim.coachHold = true;
+      sim.tutorial = true;
+      stashOpenCard();
       paintCoach();
       focusCam(SPOTS.reg1.x, QUEUE.reg1.y);
     }
@@ -6942,11 +7070,13 @@
       coach = null;
       if (sim) {
         sim.coachHold = false;
+        sim.tutorial = false;
         sim.nextPing = sim.t + 3;
       }
       try { localStorage.setItem('hr_tut_done', '1'); } catch (e) {}
       paintCoach();
       cam.follow = false;
+      if (sim) releaseStashedCard();
       saveRun();
     }
 
@@ -7198,6 +7328,18 @@
       ctx.font = '800 ' + px + 'px Outfit, Inter, sans-serif';
       ctx.textAlign = 'center';
       var w = ctx.measureText(text).width + Math.round(px * 0.8);
+      var left = cam.x + 4;
+      var right = cam.x + (frameView.w || 0) - 4;
+      var top = cam.y + 4;
+      var bottom = cam.y + (frameView.h || 0) - 4;
+      if (right > left) {
+        if (x - w / 2 < left) x = left + w / 2;
+        if (x + w / 2 > right) x = right - w / 2;
+      }
+      if (bottom > top) {
+        if (y - h + 4 < top) y = top + h - 4;
+        if (y + 2 > bottom) y = bottom - 2;
+      }
       ctx.fillStyle = 'rgba(20,12,16,0.88)';
       ctx.fillRect(x - w / 2, y - h + 4, w, h);
       ctx.fillStyle = '#f6f0e4';
@@ -7213,9 +7355,9 @@
     function nameVisible(a) {
       if (!a || !sim) return false;
       var key = actorKey(a);
-      if (key && sim._hoverKey === key) return true;
-      if (key && sim._labelKey === key && sim.t < (sim._labelUntil || 0)) return true;
-      return false;
+      if (!key) return false;
+      if (sim._hoverKey) return sim._hoverKey === key;
+      return sim._labelKey === key && sim.t < (sim._labelUntil || 0);
     }
 
     function nearestLabeled(ev) {
@@ -7869,6 +8011,24 @@
             else if (queued._drew === 'blob') qBlob++;
             else if (queued._drew === 'sil') qSil++;
           }
+          var leftPile = 0;
+          var tillPile = 0;
+          var qxy = [];
+          var aliveN = 0;
+          for (qi = 0; qi < sim.customers.length; qi++) {
+            var body = sim.customers[qi];
+            if (!body || body.dead) continue;
+            aliveN++;
+            var px = body._drawX != null ? body._drawX : body.x;
+            var py = body._drawY != null ? body._drawY : body.y;
+            if (px < 150) leftPile++;
+            if (py > 620) tillPile++;
+            if (body.state === 'queue' || body.state === 'checkout') qxy.push(Math.round(px) + ',' + Math.round(py));
+          }
+          els.stage.dataset.leftPile = String(leftPile);
+          els.stage.dataset.tillPile = String(tillPile);
+          els.stage.dataset.qxy = qxy.join(';');
+          els.stage.dataset.alive = String(aliveN);
           var pN = 0;
           var pSprite = 0;
           var pBlob = 0;
@@ -8817,34 +8977,41 @@
           ctx.drawImage(assets.img.icons, ir[0], ir[1], ir[2], ir[3], a.x - iconPx / 2, a.y - size - 18 - iconPx, iconPx, iconPx);
         }
       }
-      var crewName = a.kind === 'staff' && a.id;
-      var familyName = a.arch === 'family' || a.giftSprite === 'family';
-      if (nameVisible(a) || crewName || familyName || a.kind === 'you') {
+      if (nameVisible(a)) {
+        var crewName = a.kind === 'staff' && a.id;
+        var familyName = a.arch === 'family' || a.giftSprite === 'family';
+        var tagged = false;
         if (a.arch === 'rusher') {
           var rushAt = tagAnchor(a.x, a.y - size - 36, 'Rush');
           drawTag('Rush', rushAt.x, rushAt.y);
+          tagged = true;
         } else if (familyName) {
           var famAt = tagAnchor(a.x, a.y - size - 36, 'Family');
           drawTag('Family', famAt.x, famAt.y);
+          tagged = true;
         } else if (a.arch === 'lift') {
           var liftWord = a.state === 'flee' ? 'Catch' : 'Watch';
           var liftAt = tagAnchor(a.x, a.y - size - 28, liftWord);
           drawTag(liftWord, liftAt.x, liftAt.y);
+          tagged = true;
         } else if (a.haggling) {
           var coupAt = tagAnchor(a.x, a.y - size - 36, 'Coupon');
           drawTag('Coupon', coupAt.x, coupAt.y);
+          tagged = true;
         }
-        if (crewName) {
+        if (!tagged && crewName) {
           var tag = firstName(a.id);
           if (a.rush > 1) tag += ' →';
           var tagAt = staffTagPoint(a, tag);
           drawTag(tag, tagAt.x, tagAt.y);
-        } else if (a.kind === 'you') {
+          tagged = true;
+        } else if (!tagged && a.kind === 'you') {
           var youAt = staffTagPoint(a, 'YOU');
           drawTag('YOU', youAt.x, youAt.y);
+          tagged = true;
         }
+        if (!tagged && a.heart > 0) drawTag('♥', a.x, a.y - size - 40);
       }
-      if (a.heart > 0) drawTag('♥', a.x, a.y - size - 40);
     }
 
     function loop(ts) {
@@ -8862,7 +9029,7 @@
       }
       if (sim) sim._frameMs = rawMs;
         if (sim && !sim.paused && !sim.done) {
-        if (coach) {
+        if (coach || sim.tutorial) {
           for (var cs = 0; cs < sim.staff.length; cs++) updateStaffActor(sim, run, sim.staff[cs], dt);
           if (sim.you) updateStaffActor(sim, run, sim.you, dt);
           for (var cc = 0; cc < sim.customers.length; cc++) tickAnim(sim.customers[cc], dt);
@@ -8893,7 +9060,11 @@
         simSaveAcc += dt;
         if (simSaveAcc > 1) { simSaveAcc = 0; saveRun(); }
       }
-      if (sim && sim.pending && shownEvent !== sim.pending) {
+      if (sim && (coach || sim.tutorial)) {
+        if (els.event && !els.event.hidden) els.event.hidden = true;
+        shownEvent = null;
+        shownType = null;
+      } else if (sim && sim.pending && shownEvent !== sim.pending) {
         shownEvent = sim.pending;
         shownType = null;
         renderEvent();
@@ -9453,6 +9624,16 @@
           var heldTitle = document.getElementById('hr-ev-title');
           return heldTitle ? heldTitle.textContent : (sim.pending.title || '');
         }
+        if (id === 'bus') {
+          var beat = null;
+          for (var bi = 0; bi < FLOOR_BEATS.length; bi++) if (FLOOR_BEATS[bi].id === 'bus') beat = FLOOR_BEATS[bi];
+          if (!beat) return '';
+          beatCard(sim, beat.id, beat.title, beat.body, beat.choices(sim, run));
+          renderEvent();
+          var busTitle = document.getElementById('hr-ev-title');
+          var busBody = els.event ? els.event.querySelector('p') : null;
+          return (busTitle ? busTitle.textContent : '') + ' | ' + (busBody ? busBody.textContent : '');
+        }
         sim.coachHold = false;
         openPending(sim, buildEvent(id || 'boss', sim, run), 40);
         renderEvent();
@@ -9540,6 +9721,16 @@
         if (goal != null) sim.goal = goal;
         sim._paintSales = sim.sales;
         paintHud();
+      },
+      setCosts: function (cogs) {
+        if (!isQA() || !sim) return;
+        sim.cogs = cogs || 0;
+      },
+      extra: function (n) {
+        if (!isQA() || !sim) return 0;
+        var count = n || 8;
+        for (var ei = 0; ei < count; ei++) spawnCustomer(sim, run, 'family');
+        return sim.customers.length;
       },
       hold: function (on) {
         if (!isQA() || !sim) return;
