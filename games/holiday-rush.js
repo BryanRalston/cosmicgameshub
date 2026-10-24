@@ -1400,6 +1400,10 @@
     tuneArch(c, arch);
     applyTenantTune(sim, c);
     applyKioskTune(sim, c);
+    if (sim._phone && sim.floorOn) {
+      c.patience *= 1.2;
+      c.maxPatience = c.patience;
+    }
     if (forcedArch) {
       c.x = SPOTS.floor.x + 36;
       c.y = SPOTS.floor.y + 16;
@@ -1568,6 +1572,7 @@
     var speed = CONFIG.walkSpeed * (sim.t < sim.spillUntil ? 0.6 : 1);
     var cocoa = hasPerk(run, 'cocoa') ? 0.82 : 1;
     var drainMul = (sim._heat && sim._heat.drain) ? sim._heat.drain : 1;
+    if (sim._phone && sim.floorOn) drainMul *= 0.75;
     if (sim.flickerUntil && sim.t < sim.flickerUntil) drainMul *= 1.85;
     for (var n = 0; n < sim.customers.length; n++) {
       var cust = sim.customers[n];
@@ -2511,7 +2516,7 @@
     if (!sim.floorOn || sim.coachHold || sim.paused || sim.pending || sim.done || cardCooling(sim)) return;
     if (!sim._beats) sim._beats = {};
     if (sim._forceBus == null) sim._forceBus = previewHas('bus');
-    if (sim._forceBus && !sim._beats.bus && sim.t >= 6) {
+    if (sim._forceBus && !sim._beats.bus && sim._playerAct && sim.t >= 6) {
       var busBeat = null;
       for (var bi = 0; bi < FLOOR_BEATS.length; bi++) if (FLOOR_BEATS[bi].id === 'bus') busBeat = FLOOR_BEATS[bi];
       if (busBeat && beatCard(sim, busBeat.id, busBeat.title, busBeat.body, busBeat.choices(sim, run))) {
@@ -2580,7 +2585,7 @@
     }
     if (open >= 1) return;
     offerWrap(sim);
-    if (sim._wrapCamUntil == null) sim._wrapCamUntil = sim.t + 8;
+    if (sim._wrapCamUntil == null) sim._wrapCamUntil = sim.t + 14;
   }
 
   function maybePing(sim) {
@@ -2605,6 +2610,7 @@
     if (!ping || ping.dead) return;
     ping.dead = true;
     ping.pop = 1;
+    sim._playerAct = 1;
     flashAt(sim, ping.x, ping.y);
     if (ping.kind === 'wrap') {
       var fee = ping.fee || 24;
@@ -3931,21 +3937,21 @@
         '#hr-event.hr-inline[hidden]{display:none !important;}',
         '#hr-event.hr-inline .hr-card{pointer-events:auto;width:min(640px,100%);max-height:100%;overflow:auto;padding:0.45rem 0.6rem 0.5rem;border-radius:14px;background:rgba(246,240,228,0.96);box-shadow:0 10px 28px rgba(0,0,0,0.35);}',
         '#hr-event.hr-inline .hr-card h2{font-size:1rem;margin:0 0 0.12rem;}',
-        '#hr-event.hr-inline .hr-card p{font-size:0.82rem;margin:0 0 0.35rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}',
+        '#hr-event.hr-inline .hr-card p{font-size:0.82rem;margin:0 0 0.35rem;display:block;overflow:visible;}',
         '#hr-event.hr-inline .hr-choices{flex-direction:row;flex-wrap:wrap;gap:6px;align-items:stretch;}',
         '#hr-event.hr-inline .hr-choices button{width:auto;flex:0 0 auto;max-width:100%;height:auto;min-height:44px;font-size:0.85rem;padding:0.4rem 0.6rem;white-space:nowrap;line-height:1.25;align-items:center;}',
         '#hr-event.hr-inline .hr-choices button span{flex:0 0 auto;white-space:nowrap;line-height:1.25;}',
         '#hr-event.hr-inline .hr-choice-cost{flex:0 0 auto;white-space:nowrap;}',
         '#hr-event.hr-inline .hr-card__art .hr-portrait,#hr-event.hr-inline .hr-card__art .hr-icon{width:36px !important;height:36px !important;border-radius:8px;}',
         '@media (max-width:720px){',
-        '#hr-sim > #hr-event.hr-inline{position:relative;inset:auto;left:auto;right:auto;top:auto;bottom:auto;height:auto;max-height:none;margin:6px 0 0;padding:0;background:transparent;z-index:6;}',
-        '#hr-event.hr-inline .hr-card{padding:0.28rem 0.45rem 0.32rem;max-height:172px;}',
-        '#hr-event.hr-inline .hr-card h2{font-size:0.92rem;line-height:1.15;margin:0 0 0.06rem;}',
-        '#hr-event.hr-inline .hr-card p{font-size:0.76rem;line-height:1.2;margin:0 0 0.2rem;-webkit-line-clamp:1;}',
+        '#hr-event.hr-inline{position:absolute;left:8px;right:8px;top:auto;bottom:8px;height:auto;max-height:42%;margin:0;z-index:7;display:flex;align-items:flex-end;justify-content:center;}',
+        '#hr-event.hr-inline .hr-card{width:100%;max-height:100%;overflow:auto;padding:0.4rem 0.5rem 0.45rem;}',
+        '#hr-event.hr-inline .hr-card h2{font-size:1rem;line-height:1.2;margin:0 0 0.15rem;}',
+        '#hr-event.hr-inline .hr-card p{font-size:12px;line-height:1.3;margin:0 0 0.3rem;display:block;overflow:visible;}',
         '#hr-event.hr-inline .hr-card__art{display:none;}',
         '#hr-event.hr-inline .hr-choices{flex-direction:column;flex-wrap:nowrap;gap:4px;}',
-        '#hr-event.hr-inline .hr-choices button{width:100%;flex:0 0 auto;min-height:36px;height:auto;font-size:0.82rem;padding:0.2rem 0.55rem;white-space:nowrap;line-height:1.2;justify-content:flex-start;}',
-        '#hr-event.hr-inline .hr-choice-cost{font-size:0.68rem;padding:0.12rem 0.4rem;flex:0 0 auto;white-space:nowrap;}',
+        '#hr-event.hr-inline .hr-choices button{width:100%;flex:0 0 auto;min-height:44px;height:auto;font-size:0.85rem;padding:0.3rem 0.55rem;white-space:nowrap;line-height:1.2;justify-content:flex-start;}',
+        '#hr-event.hr-inline .hr-choice-cost{font-size:12px;padding:0.12rem 0.4rem;flex:0 0 auto;white-space:nowrap;}',
         '}',
         '.hr-combo.is-idle{background:#3a2a18;color:#ffe7a3;box-shadow:inset 0 0 0 2px #e0a322;}',
         '.hr-card__timer{height:4px;border-radius:99px;background:rgba(43,29,46,0.15);overflow:hidden;margin:0 0 0.35rem;}',
@@ -3970,7 +3976,7 @@
     var shownEvent = null;
     var raf = 0;
     var lastTs = 0;
-    var cam = { x: 0, y: 0, follow: true };
+    var cam = { x: 0, y: 0, follow: false, userPan: false };
     var labelSlots = [];
     var frameView = { w: 1600, h: 900 };
     var drag = null;
@@ -4022,32 +4028,25 @@
       }
     }
     function placeEventCard() {
-      if (!els.event || !els.stage || !els.sim) return;
-      var phone = false;
-      try { phone = window.matchMedia('(max-width: 720px)').matches; } catch (eCard) {}
-      var actions = els.sim.querySelector('.hr-actions');
-      if (phone && actions) {
-        if (els.event.parentNode !== els.sim || els.event.nextElementSibling !== actions) els.sim.insertBefore(els.event, actions);
-      } else if (els.event.parentNode !== els.stage) els.stage.appendChild(els.event);
+      if (!els.event || !els.stage) return;
+      if (els.event.parentNode !== els.stage) els.stage.appendChild(els.event);
     }
 
     function placeToast() {
       if (!els.toast) return;
-      var actions = els.sim && !els.sim.hidden ? els.sim.querySelector('.hr-actions') : null;
-      if (!actions) {
+      var dock = document.getElementById('hr-toast-dock');
+      var playing = els.sim && !els.sim.hidden && dock;
+      if (playing) {
+        if (els.toast.parentNode !== dock) dock.appendChild(els.toast);
         els.toast.style.bottom = '';
-        return;
+        els.toast.style.left = '';
+        els.toast.style.transform = '';
+      } else if (els.toast.parentNode !== document.body) {
+        document.body.appendChild(els.toast);
+        els.toast.style.bottom = '';
+        els.toast.style.left = '';
+        els.toast.style.transform = '';
       }
-      var rect = actions.getBoundingClientRect();
-      var gap = 18;
-      var zoom = 1;
-      try {
-        var raw = parseFloat(getComputedStyle(document.documentElement).zoom);
-        if (raw > 0) zoom = raw;
-      } catch (eZoom) {}
-      var fromBottom = (window.innerHeight - rect.top + gap) / zoom;
-      if (fromBottom < 16) fromBottom = 16;
-      els.toast.style.bottom = fromBottom + 'px';
     }
 
     function playToast(ms) {
@@ -6085,6 +6084,8 @@
       els.canvas._cssW = w;
       els.canvas._cssH = h;
       els.canvas._dpr = dpr;
+      if (sim) sim._phone = w < 720;
+      if (els.stage) els.stage.dataset.hit = w < 720 ? '56' : '120';
       placeEventCard();
       placeToast();
       placeChrome();
@@ -6191,6 +6192,7 @@
 
     function fitOpenCamera() {
       var cssW = els.canvas._cssW || 0;
+      cam.follow = false;
       if (!(cssW > 0) || cam.zoom > 0 || !HR.render) return;
       var cssH = els.canvas._cssH || 540;
       cam.zoom = HR.render.zoomMin(cssW, cssH);
@@ -6278,7 +6280,7 @@
       }
       try { localStorage.setItem('hr_tut_done', '1'); } catch (e) {}
       paintCoach();
-      cam.follow = true;
+      cam.follow = false;
       saveRun();
     }
 
@@ -6343,6 +6345,7 @@
         point: point
       });
       if (res.ok) {
+        sim._playerAct = 1;
         if (res.msg) toast(res.msg);
         sfx('place');
         buzz(12);
@@ -6385,34 +6388,34 @@
       return Math.sqrt(dx * dx + dy * dy);
     }
 
+    function bodyPoint(a) {
+      return { x: a.x, y: a.y - Math.round(personDrawH() * 0.42) };
+    }
+
     function pickHit(ev) {
       var phoneHit = (els.canvas._cssW || window.innerWidth) < 720;
+      var best = null;
+      var bestD = phoneHit ? 56 : 120;
+      for (var i = 0; i < sim.customers.length; i++) {
+        var c = sim.customers[i];
+        if (c.dead || c.state === 'leave') continue;
+        var at = bodyPoint(c);
+        var d = screenDist(at.x, at.y, ev);
+        if (d < bestD) { bestD = d; best = { cust: c }; }
+      }
+      if (best) return best;
       if (sim.pings) {
         var pingHit = null;
-        var pingD = 1e9;
+        var pingD = phoneHit ? 48 : 1e9;
         for (var p = 0; p < sim.pings.length; p++) {
           var ping = sim.pings[p];
           if (ping.dead) continue;
-          var reach = phoneHit ? 100 : (ping.kind === 'wrap' ? 72 : 56);
+          var reach = phoneHit ? 48 : (ping.kind === 'wrap' ? 72 : 56);
           var pd = screenDist(ping.x, ping.y, ev);
           if (pd < reach && pd < pingD) { pingD = pd; pingHit = ping; }
         }
         if (pingHit) return { ping: pingHit };
       }
-      var best = null;
-      var bestD = 1e9;
-      var custScreen = phoneHit ? 72 : 120;
-      var custWorld = phoneHit ? 150 : 160;
-      for (var i = 0; i < sim.customers.length; i++) {
-        var c = sim.customers[i];
-        if (c.dead || c.state === 'leave') continue;
-        var d = screenDist(c.x, c.y - 28, ev);
-        var wd = worldDist(c.x, c.y - 28, ev);
-        var near = phoneHit ? wd < custWorld : (d < custScreen || wd < custWorld);
-        var rank = phoneHit ? wd : d;
-        if (near && rank < bestD) { bestD = rank; best = { cust: c }; }
-      }
-      if (best) return best;
       var zones = [
         { station: 'freight', x: SPOTS.truck.x, y: SPOTS.truck.y + 20 },
         { station: 'floor', x: SPOTS.floor.x, y: SPOTS.floor.y }
@@ -6421,7 +6424,7 @@
         zones.unshift({ station: reg, x: SPOTS[reg].x, y: (SPOTS[reg].y + QUEUE[reg].y) * 0.5 });
       });
       var zone = null;
-      var zoneD = phoneHit ? 96 : 72;
+      var zoneD = phoneHit ? 36 : 72;
       for (var z = 0; z < zones.length; z++) {
         var dist = screenDist(zones[z].x, zones[z].y, ev);
         if (dist < zoneD) { zoneD = dist; zone = zones[z]; }
@@ -6492,38 +6495,9 @@
       ctx.fillText(text, x, y);
     }
 
-    function stackTag(x, y) {
-      var gap = tagPx() + 6;
-      var guard = 0;
-      while (guard < 8) {
-        var hit = false;
-        for (var i = 0; i < labelSlots.length; i++) {
-          var slot = labelSlots[i];
-          if (Math.abs(slot.x - x) < gap * 3.4 && Math.abs(slot.y - y) < gap * 0.92) {
-            y = slot.y - gap;
-            hit = true;
-          }
-        }
-        if (!hit) break;
-        guard++;
-      }
-      if (y < 18) y = 18;
-      labelSlots.push({ x: x, y: y });
-      return { x: x, y: y };
-    }
-
     function actorKey(a) {
       if (!a) return '';
       return (a.kind || 'a') + ':' + (a.id || a.seq || '');
-    }
-
-    function actorNeedsTag(a) {
-      if (!a || a.dead || a.state === 'leave') return false;
-      if (a.bubble || a.haggling || a.angry || a.rush > 1) return true;
-      if (a.arch === 'rusher' || a.arch === 'lift' || a.arch === 'family') return true;
-      if (a.maxPatience && a.patience < a.maxPatience * 0.4) return true;
-      if (a.kind === 'you') return true;
-      return false;
     }
 
     function nameVisible(a) {
@@ -6531,19 +6505,19 @@
       var key = actorKey(a);
       if (key && sim._hoverKey === key) return true;
       if (key && sim._labelKey === key && sim.t < (sim._labelUntil || 0)) return true;
-      return actorNeedsTag(a);
+      return false;
     }
 
     function nearestLabeled(ev) {
       if (!sim) return null;
       var phoneHit = (els.canvas._cssW || window.innerWidth) < 720;
       var best = null;
-      var bestD = 1e9;
+      var bestD = phoneHit ? 56 : 120;
       function consider(a) {
         if (!a || a.dead || a.hidden || a.state === 'leave' || a.kind === 'jack') return;
-        var d = phoneHit ? worldDist(a.x, a.y - 28, ev) : screenDist(a.x, a.y - 28, ev);
-        var limit = phoneHit ? 150 : 120;
-        if (d < limit && d < bestD) { bestD = d; best = a; }
+        var at = bodyPoint(a);
+        var d = screenDist(at.x, at.y, ev);
+        if (d < bestD) { bestD = d; best = a; }
       }
       var i;
       for (i = 0; i < sim.customers.length; i++) consider(sim.customers[i]);
@@ -6552,22 +6526,68 @@
       return best;
     }
 
+    function worldKeyAt(ev) {
+      if (!sim || !ev) return '';
+      var best = '';
+      var bestD = 56;
+      var i;
+      if (sim.pings) {
+        for (i = 0; i < sim.pings.length; i++) {
+          var ping = sim.pings[i];
+          if (ping.dead) continue;
+          var d = screenDist(ping.x, ping.y, ev);
+          if (d < bestD) { bestD = d; best = 'ping:' + i; }
+        }
+      }
+      var regs = registers();
+      for (i = 0; i < regs.length; i++) {
+        if (queueOf(sim, regs[i]).length < 3) continue;
+        var dLine = screenDist(SPOTS[regs[i]].x, SPOTS[regs[i]].y - 112, ev);
+        if (dLine < bestD) { bestD = dLine; best = 'line:' + regs[i]; }
+      }
+      if (sim.truck) {
+        var dTruck = screenDist(SPOTS.truck.x, SPOTS.truck.y - 24, ev);
+        if (dTruck < bestD) { bestD = dTruck; best = 'truck'; }
+      }
+      if (sim.stock < 0.34 && SHELVES[0]) {
+        var dStock = screenDist(SHELVES[0].x, SHELVES[0].y - 78, ev);
+        if (dStock < bestD) best = 'stock';
+      }
+      return best;
+    }
+
+    function labelOn(key) {
+      if (!sim || !key) return false;
+      if (sim._hoverKey === key) return true;
+      return sim._labelKey === key && sim.t < (sim._labelUntil || 0);
+    }
+
     function focusLabel(ev) {
       if (!sim || !ev) return;
       var who = nearestLabeled(ev);
-      if (!who) return;
-      sim._labelKey = actorKey(who);
+      var key = who ? actorKey(who) : worldKeyAt(ev);
+      if (!key) return;
+      sim._labelKey = key;
       sim._labelUntil = sim.t + 6;
     }
 
+    function tagAnchor(x, y) {
+      labelSlots.push({ x: x, y: y });
+      return { x: x, y: y };
+    }
+
     function staffTagPoint(a) {
-      return stackTag(a.x, a.y - personDrawH() - 22);
+      return tagAnchor(a.x, a.y - personDrawH() - 22);
     }
 
     function drawPatience(x, y, p) {
-      var r = 20;
-      ctx.lineWidth = 5;
-      ctx.strokeStyle = 'rgba(246,240,228,0.28)';
+      var view = viewSize();
+      var scale = view.cssW / Math.max(1, view.viewW);
+      var r = Math.round(16 / Math.max(0.2, scale));
+      if (r < 18) r = 18;
+      if (r > 40) r = 40;
+      ctx.lineWidth = Math.max(5, Math.round(r * 0.28));
+      ctx.strokeStyle = 'rgba(246,240,228,0.35)';
       ctx.beginPath();
       ctx.arc(x, y, r, 0, Math.PI * 2);
       ctx.stroke();
@@ -6592,9 +6612,19 @@
         var icon = ping.kind === 'wrap' ? 'return' : ping.kind === 'basket' ? 'price' : ping.kind === 'box' ? 'truck' : 'line';
         var label = ping.kind === 'wrap' ? 'Wrap' : ping.kind === 'basket' ? '+$' : ping.kind === 'box' ? 'Box' : 'Help';
         if (ping.kind === 'wrap') {
-          var pulse = reduceMotion ? 1 : 1 + Math.sin(Date.now() / 180) * 0.18;
-          drawIconAt(icon, ping.x, ping.y + bob, 72 * pulse);
-          drawTag(label, ping.x, ping.y + bob - 52);
+          var pulse = reduceMotion ? 1.2 : 1.05 + Math.sin(Date.now() / 160) * 0.42;
+          ctx.save();
+          ctx.strokeStyle = 'rgba(224,163,34,0.95)';
+          ctx.lineWidth = 8;
+          ctx.beginPath();
+          ctx.arc(ping.x, ping.y + bob, 58 * pulse, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+          drawIconAt(icon, ping.x, ping.y + bob, 88 * pulse);
+          if (labelOn('ping:' + i)) {
+            var wrapAt = tagAnchor(ping.x, ping.y + bob - 78);
+            drawTag(label, wrapAt.x, wrapAt.y);
+          }
           continue;
         }
         ctx.strokeStyle = 'rgba(224,163,34,0.85)';
@@ -6603,7 +6633,10 @@
         ctx.arc(ping.x, ping.y + bob, 26, 0, Math.PI * 2);
         ctx.stroke();
         drawIconAt(icon, ping.x, ping.y + bob, 36);
-        drawTag(label, ping.x, ping.y + bob - 28);
+        if (labelOn('ping:' + i)) {
+          var pingAt = tagAnchor(ping.x, ping.y + bob - 36);
+          drawTag(label, pingAt.x, pingAt.y);
+        }
       }
     }
 
@@ -6613,7 +6646,10 @@
         var n = queueOf(sim, regs[i]).length;
         if (n >= 3) {
           drawIconAt('line', SPOTS[regs[i]].x, SPOTS[regs[i]].y - 112, 44);
-          drawTag('Line ' + n, SPOTS[regs[i]].x, SPOTS[regs[i]].y - 142);
+          if (labelOn('line:' + regs[i])) {
+            var lineAt = tagAnchor(SPOTS[regs[i]].x, SPOTS[regs[i]].y - 142);
+            drawTag('Line ' + n, lineAt.x, lineAt.y);
+          }
         }
       }
       if (sim.truck) {
@@ -6631,11 +6667,17 @@
         ctx.beginPath();
         ctx.arc(SPOTS.truck.x, SPOTS.truck.y - 24, 30, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * done);
         ctx.stroke();
-        drawTag(fp > 0.35 ? left.toFixed(1) + 's' : 'Unload', SPOTS.truck.x, SPOTS.truck.y - 68);
+        if (labelOn('truck')) {
+          var truckAt = tagAnchor(SPOTS.truck.x, SPOTS.truck.y - 68);
+          drawTag(fp > 0.35 ? left.toFixed(1) + 's' : 'Unload', truckAt.x, truckAt.y);
+        }
       }
       if (sim.stock < 0.34) {
         drawIconAt('outstock', SHELVES[0].x, SHELVES[0].y - 78, 40);
-        drawTag('Low stock', SHELVES[0].x, SHELVES[0].y - 108);
+        if (labelOn('stock')) {
+          var stockAt = tagAnchor(SHELVES[0].x, SHELVES[0].y - 108);
+          drawTag('Low stock', stockAt.x, stockAt.y);
+        }
       }
     }
 
@@ -6729,18 +6771,14 @@
       } else if (focus) {
         cam.x = focus.x - view.viewW * 0.5;
         cam.y = focus.y - view.viewH * 0.62;
-      } else if (sim && sim._wrapCamUntil && sim.t < sim._wrapCamUntil && !cam.fit) {
+      } else if (sim && sim._wrapCamUntil && sim.t < sim._wrapCamUntil && !cam.fit && !cam.userPan && sim.mechanic === 'wrap' && !(sim.wraps > 0)) {
         var wrapAt = wrapSpot();
         var wrapY = wrapAt.y - wrapLift(wrapAt);
         var pullX = wrapAt.x - view.viewW * 0.5;
-        var pullY = wrapY - view.viewH * 0.48;
-        var doorY = SPOTS.door ? SPOTS.door.y : WORLD_H - 48;
-        var doorKeep = doorY - view.viewH + 24;
-        if (doorKeep < 0) doorKeep = 0;
-        if (pullY < doorKeep) pullY = doorKeep;
-        cam.x += (pullX - cam.x) * 0.12;
-        cam.y += (pullY - cam.y) * 0.12;
-      } else if (sim && cam.follow && !cam.fit) {
+        var pullY = wrapY - view.viewH * 0.42;
+        cam.x += (pullX - cam.x) * 0.34;
+        cam.y += (pullY - cam.y) * 0.34;
+      } else if (sim && cam.follow && !cam.fit && !cam.userPan) {
         var fx = 0;
         var fy = 0;
         var nCust = 0;
@@ -6760,6 +6798,7 @@
       paintEdges(view);
       if (isQA() && els.stage && sim) {
         els.stage.dataset.cam = Math.round(cam.x) + ',' + Math.round(cam.y);
+        els.stage.dataset.follow = cam.follow ? '1' : '0';
         els.stage.dataset.view = Math.round(view.viewW) + ',' + Math.round(view.viewH);
         els.stage.dataset.paused = sim.paused ? '1' : '0';
         var cast = [];
@@ -7432,7 +7471,7 @@
 
     function personDrawH() {
       var cssW = els.canvas && els.canvas._cssW || 800;
-      if (cssW < 720) return Math.round(SPRITE_PACK.displayH * 1.85);
+      if (cssW < 720) return Math.round(SPRITE_PACK.displayH * 2.1);
       return SPRITE_PACK.displayH;
     }
 
@@ -7801,7 +7840,8 @@
         ctx.restore();
       }
       if (a.kind === 'cust' && a.arch !== 'lift' && a.state !== 'leave' && a.maxPatience) {
-        drawPatience(a.x, a.y - size - 8, clamp(a.patience / a.maxPatience, 0, 1));
+        var ring = clamp(a.patience / a.maxPatience, 0, 1);
+        drawPatience(a.x, a.y - size - 28, ring);
       }
       if (a.bubble === 'angry' && !reduceMotion) {
         var puff = (Date.now() / 280 + (a.seq || 0)) % 1;
@@ -7824,27 +7864,29 @@
           ctx.drawImage(assets.img.icons, ir[0], ir[1], ir[2], ir[3], a.x - iconPx / 2, a.y - size - 18 - iconPx, iconPx, iconPx);
         }
       }
-      if (a.arch === 'rusher') {
-        var rushAt = stackTag(a.x, a.y - size - 36);
-        drawTag('Rush', rushAt.x, rushAt.y);
-      } else if (a.arch === 'family') {
-        var famAt = stackTag(a.x, a.y - size - 36);
-        drawTag('Family', famAt.x, famAt.y);
-      } else if (a.arch === 'lift') {
-        var liftAt = stackTag(a.x, a.y - size - 28);
-        drawTag(a.state === 'flee' ? 'Catch' : 'Watch', liftAt.x, liftAt.y);
-      } else if (a.haggling) {
-        var coupAt = stackTag(a.x, a.y - size - 36);
-        drawTag('Coupon', coupAt.x, coupAt.y);
-      }
-      if (a.kind === 'staff' && a.id && nameVisible(a)) {
-        var tag = firstName(a.id);
-        if (a.rush > 1) tag += ' →';
-        var tagAt = staffTagPoint(a);
-        drawTag(tag, tagAt.x, tagAt.y);
-      } else if (a.kind === 'you' && nameVisible(a)) {
-        var youAt = staffTagPoint(a);
-        drawTag('YOU', youAt.x, youAt.y);
+      if (nameVisible(a)) {
+        if (a.arch === 'rusher') {
+          var rushAt = tagAnchor(a.x, a.y - size - 36);
+          drawTag('Rush', rushAt.x, rushAt.y);
+        } else if (a.arch === 'family') {
+          var famAt = tagAnchor(a.x, a.y - size - 36);
+          drawTag('Family', famAt.x, famAt.y);
+        } else if (a.arch === 'lift') {
+          var liftAt = tagAnchor(a.x, a.y - size - 28);
+          drawTag(a.state === 'flee' ? 'Catch' : 'Watch', liftAt.x, liftAt.y);
+        } else if (a.haggling) {
+          var coupAt = tagAnchor(a.x, a.y - size - 36);
+          drawTag('Coupon', coupAt.x, coupAt.y);
+        }
+        if (a.kind === 'staff' && a.id) {
+          var tag = firstName(a.id);
+          if (a.rush > 1) tag += ' →';
+          var tagAt = staffTagPoint(a);
+          drawTag(tag, tagAt.x, tagAt.y);
+        } else if (a.kind === 'you') {
+          var youAt = staffTagPoint(a);
+          drawTag('YOU', youAt.x, youAt.y);
+        }
       }
       if (a.heart > 0) drawTag('♥', a.x, a.y - size - 40);
     }
@@ -7979,7 +8021,7 @@
       cam.fit = false;
       var frameBtn = document.getElementById('hr-frame');
       if (frameBtn) frameBtn.setAttribute('aria-pressed', cam.overview ? 'true' : 'false');
-      cam.follow = !cam.overview;
+      cam.follow = false;
       draw();
     }
     var zoomIn = document.getElementById('hr-zoom-in');
@@ -8010,7 +8052,7 @@
       if (frameNow) frameNow.setAttribute('aria-pressed', 'false');
       cam.x = Math.max(0, WORLD_W - view.viewW);
       cam.follow = false;
-      setTimeout(function () { if (!coach) cam.follow = true; }, 2600);
+      cam.userPan = true;
       draw();
     });
     ['left', 'right', 'up', 'down'].forEach(function (dir) {
@@ -8028,7 +8070,7 @@
         cam.x = clamp(cam.x, 0, Math.max(0, WORLD_W - view.viewW));
         cam.y = clamp(cam.y, 0, Math.max(0, WORLD_H - view.viewH));
         cam.follow = false;
-        setTimeout(function () { if (!coach) cam.follow = true; }, 2600);
+        cam.userPan = true;
         draw();
       });
     });
@@ -8066,9 +8108,9 @@
       }
     }, { passive: true });
     els.stage.addEventListener('pointermove', function (ev) {
-      if (sim && !((els.canvas._cssW || 800) < 720) && !(cam.drag && cam.drag.moved)) {
+      if (sim && !(cam.drag && cam.drag.moved)) {
         var hovered = nearestLabeled(ev);
-        var hoverKey = hovered ? actorKey(hovered) : '';
+        var hoverKey = hovered ? actorKey(hovered) : worldKeyAt(ev);
         if (sim._hoverKey !== hoverKey) sim._hoverKey = hoverKey;
       }
       if (pointers[ev.pointerId]) pointers[ev.pointerId] = { x: ev.clientX, y: ev.clientY };
@@ -8116,9 +8158,8 @@
       if (ev && ev.pointerId != null) delete pointers[ev.pointerId];
       if (Object.keys(pointers).length < 2) cam.pinch = 0;
       var wasTap = cam.drag && !cam.drag.moved;
-      if (cam.drag && cam.drag.moved) {
-        setTimeout(function () { if (!coach) cam.follow = true; }, 2600);
-      } else if (!coach) cam.follow = true;
+      if (cam.drag && cam.drag.moved) cam.userPan = true;
+      cam.follow = false;
       cam.drag = null;
       if (wasTap && ev && !(ev.target && ev.target.closest && ev.target.closest('button'))) onStageTap(ev);
     }
@@ -8363,7 +8404,12 @@
       var saved = readJSON('hr_run_v1');
       var campBoot = campaignGet();
       var resumable = saved && saved.v === 3 && saved.ymd === ymd && saved.phase && saved.phase !== 'intro' && saved.days && saved.days.length === SHIFT_COUNT;
-      if ((previewHas('kiosk') || previewHas('bus')) && books && HR.economy) {
+      var seedPreview = (previewHas('kiosk') || previewHas('bus')) && books && HR.economy;
+      var seedGranted = false;
+      if (seedPreview) {
+        try { seedGranted = localStorage.getItem('hr_seed_grant') === '1'; } catch (eGrant) { seedGranted = false; }
+      }
+      if (seedPreview && !seedGranted) {
         if (previewHas('kiosk')) {
           books.cash = Math.max(books.cash || 0, 20000);
           ['knock', 'lane', 'kiosk'].forEach(function (id) {
@@ -8378,6 +8424,7 @@
           localStorage.setItem('hr_tut_done', '1');
           localStorage.setItem('hr_coach_price', '1');
           localStorage.setItem('hr_coach_mall', '1');
+          localStorage.setItem('hr_seed_grant', '1');
           localStorage.removeItem('hr_run_v1');
         } catch (eSeed) {}
         var seedCamp = campaignGet();
@@ -8401,7 +8448,7 @@
         if (!run.suggested) run.suggested = [];
         track('holiday_rush_resume', { seed: ymd });
         enterPhase();
-      } else if (!campBoot.seen) {
+      } else if (!campBoot.seen && !seedPreview) {
         beginShift(0);
       } else {
         run = newRun(ymd);
@@ -8715,7 +8762,7 @@
     if (wrapSim.pings.length !== 1) bad = true;
     wrapSim.pings[0].dead = true;
     keepWrap(wrapSim);
-    if (wrapSim.pings.length !== 2 || wrapSim._wrapCamUntil !== 9) bad = true;
+    if (wrapSim.pings.length !== 2 || wrapSim._wrapCamUntil !== 15) bad = true;
     var tuned = { speedMul: 1, patience: 2, maxPatience: 2, saleMul: 1 };
     applyKioskTune({ crowd: 'gift' }, tuned);
     if (Math.abs(tuned.speedMul - 0.72) > 0.001 || Math.abs(tuned.patience - 3.1) > 0.001 || Math.abs(tuned.saleMul - 0.62) > 0.001) bad = true;

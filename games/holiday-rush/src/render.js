@@ -30,9 +30,9 @@
     var fit = frameZoom(cssW, cssH || 540, 1280, 900, 78);
     if (!(fit > 0)) fit = 0.4;
     if (cssW < 720) {
-      var wide = widthZoom(cssW, 1280, 78);
-      var z = Math.min(fit, wide);
+      var z = fit;
       if (z < 0.16) z = 0.16;
+      if (z > 0.72) z = 0.72;
       return Math.round(z * 100) / 100;
     }
     if (fit < 0.4) fit = 0.4;
@@ -198,9 +198,13 @@
     if (!(wide.spritePx > fitted.spritePx)) reasons.push('desk zoom');
     var grown = view(390, 480, 2880, 900, 1, 78);
     if (Math.round(grown.spritePx) !== Math.round(phone.spritePx)) reasons.push('growth shrink');
-    var phoneMin = view(390, 480, 1600, 900, 0.2, 78);
-    if (Math.abs(phoneMin.zoom - 0.2) > 0.02) reasons.push('phone zoom ' + phoneMin.zoom);
+    var phoneFloor = zoomMin(390, 480);
+    var phoneMin = view(390, 480, 1600, 900, 0.05, 78);
+    if (Math.abs(phoneMin.zoom - phoneFloor) > 0.02) reasons.push('phone zoom ' + phoneMin.zoom);
+    if (phoneFloor < 0.3) reasons.push('phone floor ' + phoneFloor);
     if (phoneMin.spritePx < 40) reasons.push('phone far ' + Math.round(phoneMin.spritePx));
+    var phoneTall = zoomMin(390, 520);
+    if (!(phoneTall > widthZoom(390, 1280, 78) + 0.05)) reasons.push('phone tight ' + phoneTall);
     var phoneWideH = Math.round(390 * 900 / 1280);
     var phoneWide = view(390, phoneWideH, 1280, 900, 0.05, 78);
     if (phoneWide.viewW < 1270) reasons.push('phone width ' + Math.round(phoneWide.viewW));
