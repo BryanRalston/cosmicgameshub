@@ -133,7 +133,7 @@
     .hr-hud .hr-stat--stars .hr-stars { color: rgba(36, 24, 15, 0.45); }
     .hr-hud .hr-stat--stars .hr-stars i.on { color: #8a5a12; }
     .hr-stars--big { font-size: 1.8rem; margin: 0.2rem 0; }
-    .hr-actline { margin: 0.35rem 0 0; color: var(--text-mid); font-size: 0.82rem; font-weight: 700; }
+    .hr-actline { margin: 0.35rem 0 0; color: var(--text-mid); font-size: 14px; font-weight: 700; }
     .hr-choice-cost { flex: 0 0 auto; font-size: 0.68rem; letter-spacing: 0.04em; text-transform: uppercase; background: #2b1d2e; color: #f6f0e4; border-radius: 999px; padding: 0.2rem 0.45rem; }
     .hr-choice-cost--free { background: #2f9e57; }
     #hr-canvas { display: block; position: relative; z-index: 1; width: 100%; height: 100%; }
@@ -297,7 +297,8 @@
       }
       body:has(#hr-sim:not([hidden])) .hr-wrap { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.85rem); }
       body:has(#hr-sim:not([hidden])) .hr-actions { margin-bottom: env(safe-area-inset-bottom, 0px); }
-      #hr-actline, #hr-sim .hr-sales__top span { font-size: 12px; }
+      #hr-actline { font-size: 14px; }
+      #hr-sim .hr-sales__top span { font-size: 12px; }
     }
     @media (max-width: 640px) {
       .hr-wrap { padding: 0.25rem 0.7rem 2.5rem; }
