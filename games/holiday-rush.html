@@ -125,7 +125,7 @@
     .hr-sales__top strong, .hr-stat strong { color: var(--text-hi); font-size: 0.92rem; }
     .hr-stage { position: relative; width: 100%; height: clamp(300px, 58vh, 680px); background: #1a1412; border-radius: 14px; overflow: hidden; touch-action: none; border: 1px solid rgba(224,163,34,0.25); }
     #hr-skip { position: absolute; z-index: 9; top: 8px; right: 176px; min-width: 72px; min-height: 44px; border: 0; border-radius: 999px; background: #f6f0e4; color: #2b1d2e; font: inherit; font-weight: 800; padding: 0 14px; cursor: pointer; touch-action: manipulation; }
-    #hr-coach { position: absolute; z-index: 4; top: 8px; left: 8px; right: 268px; margin: 0; pointer-events: none; background: rgba(43,29,46,0.9); color: #f6f0e4; border-radius: 12px; min-height: 44px; display: flex; align-items: center; padding: 0.4rem 0.75rem; font-weight: 800; font-size: 0.95rem; }
+    #hr-coach { position: absolute; z-index: 4; top: 8px; left: 8px; right: 268px; margin: 0; pointer-events: none; background: rgba(43,29,46,0.9); color: #f6f0e4; border-radius: 12px; min-height: 44px; display: flex; align-items: center; padding: 0.4rem 0.75rem; font-weight: 800; font-size: 15.56px; }
     #hr-coach[hidden], #hr-skip[hidden] { display: none !important; }
     .hr-stars { color: rgba(255,255,255,0.28); letter-spacing: 0.14em; font-size: 1.15rem; font-weight: 800; }
     .hr-stars i { font-style: normal; }
@@ -154,7 +154,7 @@
     .hr-mute { min-width: 4.5rem; min-height: 44px; border-radius: 999px; border: 1px solid rgba(224,163,34,0.45); background: #2a2118; color: #f6f0e4; font: inherit; font-weight: 800; font-size: 0.82rem; cursor: pointer; touch-action: manipulation; padding: 0 12px; white-space: nowrap; flex: 0 0 auto; }
     .hr-clock.rush { box-shadow: 0 0 0 3px #d64545; }
     .hr-actions button:disabled { opacity: 0.4; cursor: not-allowed; }
-    .hr-hint { color: #f6ead8; font-size: 12px; margin: 0.4rem 0 0; line-height: 1.3; font-weight: 700; }
+    .hr-hint { color: #f6ead8; font-size: 15.56px; margin: 0.4rem 0 0; line-height: 1.3; font-weight: 700; }
     .hr-toast-dock { height: 40px; min-height: 40px; max-height: 40px; display: flex; align-items: center; justify-content: center; overflow: hidden; pointer-events: none; }
     #hr-sim #hr-toast { position: static; left: auto; right: auto; bottom: auto; transform: none; max-width: 100%; margin: 0; }
     #hr-sim #hr-toast.show { opacity: 1; transform: none; }
@@ -221,7 +221,7 @@
       body:has(#hr-sim:not([hidden])) .hr-hint { color: #f6ead8; }
       body:has(#hr-sim:not([hidden])) .hr-hero h1 { font-size: 1.25rem; margin: 0; }
       body:has(#hr-sim:not([hidden])) .hr-pills { margin: 0.25rem 0 0; }
-      body:has(#hr-sim:not([hidden])) .hr-stage { height: min(62vh, 540px); }
+      body:has(#hr-sim:not([hidden])) .hr-stage { height: min(56vh, 460px); }
     }
     @media (min-width: 721px) {
       .hr-hud, .hr-hud__stats { flex-wrap: nowrap; }
@@ -326,7 +326,7 @@
     }
     @media (max-width: 720px) {
       body:has(#hr-sim:not([hidden])) { overflow: hidden; height: 100dvh; }
-      body:has(#hr-sim:not([hidden])) .hr-hint { display: block; font-size: 12px; color: #f6ead8; font-weight: 700; }
+      body:has(#hr-sim:not([hidden])) .hr-hint { display: block; font-size: 15.56px; color: #f6ead8; font-weight: 700; }
       body:has(#hr-sim:not([hidden])) .hr-wrap {
         height: 100dvh;
         max-height: 100dvh;
