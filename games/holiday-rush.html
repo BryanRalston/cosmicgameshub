@@ -270,7 +270,10 @@
       #hr-coach { top: 58px; right: 8px; left: 8px; }
       html, body, #hr-app, .hr-stage, #hr-canvas { touch-action: pan-y; }
       body:has(#hr-sim:not([hidden])) .hr-wrap {
-        min-height: 100dvh;
+        height: 100dvh;
+        max-height: 100dvh;
+        min-height: 0;
+        overflow: hidden;
         display: flex;
         flex-direction: column;
       }
@@ -279,11 +282,12 @@
         display: flex;
         flex-direction: column;
         min-height: 0;
+        overflow: hidden;
       }
       body:has(#hr-sim:not([hidden])) .hr-stage {
-        flex: 1 1 auto;
+        flex: 1 1 0;
         height: auto;
-        min-height: 240px;
+        min-height: 0;
         width: 100%;
         max-height: none;
         aspect-ratio: auto;
@@ -317,13 +321,20 @@
       body:has(#hr-sim:not([hidden])) .hr-actions button { min-height: 44px; }
     }
     @media (max-width: 720px) {
+      body:has(#hr-sim:not([hidden])) { overflow: hidden; height: 100dvh; }
       body:has(#hr-sim:not([hidden])) .hr-hint { display: block; font-size: 12px; }
-      body:has(#hr-sim:not([hidden])) .hr-wrap { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.45rem); }
+      body:has(#hr-sim:not([hidden])) .hr-wrap {
+        height: 100dvh;
+        max-height: 100dvh;
+        min-height: 0;
+        overflow: hidden;
+        padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.35rem);
+      }
       #hr-sim #hr-clock small { font-size: 12px; }
       body:has(#hr-sim:not([hidden])) .hr-stage {
-        flex: 1 1 auto;
+        flex: 1 1 0;
         height: auto !important;
-        min-height: 240px;
+        min-height: 0;
         max-height: none;
         aspect-ratio: auto;
         width: 100%;

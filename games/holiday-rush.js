@@ -6776,6 +6776,10 @@
         var wrapY = wrapAt.y - wrapLift(wrapAt);
         var pullX = wrapAt.x - view.viewW * 0.5;
         var pullY = wrapY - view.viewH * 0.42;
+        var doorY = SPOTS.door ? SPOTS.door.y : WORLD_H - 48;
+        var doorKeep = doorY - view.viewH + 36;
+        if (doorKeep < 0) doorKeep = 0;
+        if (pullY < doorKeep) pullY = doorKeep;
         cam.x += (pullX - cam.x) * 0.34;
         cam.y += (pullY - cam.y) * 0.34;
       } else if (sim && cam.follow && !cam.fit && !cam.userPan) {
