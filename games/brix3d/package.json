@@ -1,0 +1,12 @@
+{
+  "name": "brix3d",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "esbuild": "0.24.2",
+    "three": "0.160.0"
+  }
+}
