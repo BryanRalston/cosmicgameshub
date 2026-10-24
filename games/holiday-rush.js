@@ -1555,6 +1555,19 @@
     return any ? best : regs[0];
   }
 
+  function queueSlot(sim, reg, index) {
+    var base = QUEUE[reg] || { x: 496, y: 800, dy: 32 };
+    var phoneQ = !!(sim && sim._phone && sim.floorOn);
+    if (!phoneQ) {
+      var row = Math.min(index, 3);
+      var col = index > 3 ? (index - 3) : 0;
+      return { x: base.x + col * 30, y: base.y + row * base.dy };
+    }
+    var colP = index % 2;
+    var rowP = Math.min(3, Math.floor(index / 2));
+    return { x: base.x + (colP ? 104 : -28), y: base.y + rowP * 124 };
+  }
+
   function updateCustomers(sim, run, dt) {
     var regs = registers();
     for (var r = 0; r < regs.length; r++) {
@@ -1562,17 +1575,16 @@
       for (var i = 0; i < list.length; i++) {
         var c = list[i];
         c.qIndex = i;
-        var base = QUEUE[regs[r]];
-        var row = Math.min(i, 3);
-        var col = i > 3 ? (i - 3) : 0;
-        c.qx = base.x + col * 30;
-        c.qy = base.y + row * base.dy;
+        var slotAt = queueSlot(sim, regs[r], i);
+        c.qx = slotAt.x;
+        c.qy = slotAt.y;
       }
     }
     var speed = CONFIG.walkSpeed * (sim.t < sim.spillUntil ? 0.6 : 1);
     var cocoa = hasPerk(run, 'cocoa') ? 0.82 : 1;
     var drainMul = (sim._heat && sim._heat.drain) ? sim._heat.drain : 1;
     if (sim._phone && sim.floorOn) drainMul *= 0.75;
+    if (sim._mondayEase && sim.floorOn) drainMul *= 0.7;
     if (sim.flickerUntil && sim.t < sim.flickerUntil) drainMul *= 1.85;
     for (var n = 0; n < sim.customers.length; n++) {
       var cust = sim.customers[n];
@@ -1647,8 +1659,8 @@
         }
       } else if (cust.state === 'toQueue') {
         var slot = queueOf(sim, cust.reg).length;
-        var pos = QUEUE[cust.reg];
-        var dest = { x: pos.x, y: pos.y + Math.min(slot, 3) * pos.dy };
+        var lined = queueSlot(sim, cust.reg, Math.min(slot, 6));
+        var dest = { x: lined.x, y: lined.y };
         if (moveToward(cust, dest.x, dest.y, dt, custSpeed)) {
           var lineCap = cust.arch === 'rusher' ? 3 : 6;
           if (slot >= lineCap) walkout(sim, cust);
@@ -1687,6 +1699,7 @@
             cust.state = 'checkout';
             cust.anim = 'idle';
             var rate = power > 0.35 ? (0.55 + power * 0.85) : 0.2;
+            if (sim._mondayEase && sim.floorOn) rate *= 1.22;
             if (cust.arch === 'rusher') rate *= 1.65;
             if (cust.arch === 'family') rate *= 0.7;
             var checkStart = cust.arch === 'family' ? 3.3 : 2.15;
@@ -2273,6 +2286,7 @@
     if (sim.actions < maxA) {
       sim.actionFrac = (sim.actionFrac || 0) + used;
       var regenNeed = CONFIG.actionRegen / (1 + 0.28 * upgradeLevel(run, 'hustle'));
+      if (sim._mondayEase) regenNeed *= 0.55;
       if (sim.actionFrac >= regenNeed) {
         var gain = Math.floor(sim.actionFrac / regenNeed);
         sim.actionFrac -= gain * regenNeed;
@@ -2752,6 +2766,12 @@
       plazaMul: sim.plazaMul == null ? 1 : sim.plazaMul,
       mallRetune: sim.mallRetune || '',
       tenant: sim.tenant || null,
+      spawnMul: sim.spawnMul || 0,
+      _mondayEase: sim._mondayEase ? 1 : 0,
+      mechanic: sim.mechanic || '',
+      crowd: sim.crowd || '',
+      wraps: sim.wraps || 0,
+      _playerAct: sim._playerAct ? 1 : 0,
       rngState: sim.rng && sim.rng.state ? sim.rng.state() : 0,
       pendingMeta: pendingMeta
     }));
@@ -3933,7 +3953,7 @@
       var feelCss = document.createElement('style');
       feelCss.id = 'hr-feel-css';
       feelCss.textContent = [
-        '#hr-event.hr-inline{position:absolute;left:8px;right:8px;top:64px;bottom:auto;height:auto;max-height:42%;z-index:6;margin:0;padding:0;background:transparent;display:flex;justify-content:center;align-items:flex-start;pointer-events:none;overflow:visible;}',
+        '#hr-event.hr-inline{position:absolute;left:8px;right:8px;top:auto;bottom:8px;height:auto;max-height:30%;z-index:6;margin:0;padding:0;background:transparent;display:flex;justify-content:center;align-items:flex-end;pointer-events:none;overflow:auto;}',
         '#hr-event.hr-inline[hidden]{display:none !important;}',
         '#hr-event.hr-inline .hr-card{pointer-events:auto;width:min(640px,100%);max-height:100%;overflow:auto;padding:0.45rem 0.6rem 0.5rem;border-radius:14px;background:rgba(246,240,228,0.96);box-shadow:0 10px 28px rgba(0,0,0,0.35);}',
         '#hr-event.hr-inline .hr-card h2{font-size:1rem;margin:0 0 0.12rem;}',
@@ -3944,7 +3964,7 @@
         '#hr-event.hr-inline .hr-choice-cost{flex:0 0 auto;white-space:nowrap;}',
         '#hr-event.hr-inline .hr-card__art .hr-portrait,#hr-event.hr-inline .hr-card__art .hr-icon{width:36px !important;height:36px !important;border-radius:8px;}',
         '@media (max-width:720px){',
-        '#hr-event.hr-inline{position:absolute;left:8px;right:8px;top:auto;bottom:8px;height:auto;max-height:42%;margin:0;z-index:7;display:flex;align-items:flex-end;justify-content:center;}',
+        '#hr-event.hr-inline{position:absolute;left:8px;right:8px;top:auto;bottom:8px;height:auto;max-height:30%;margin:0;z-index:7;display:flex;align-items:flex-end;justify-content:center;overflow:auto;}',
         '#hr-event.hr-inline .hr-card{width:100%;max-height:100%;overflow:auto;padding:0.4rem 0.5rem 0.45rem;}',
         '#hr-event.hr-inline .hr-card h2{font-size:1rem;line-height:1.2;margin:0 0 0.15rem;}',
         '#hr-event.hr-inline .hr-card p{font-size:12px;line-height:1.3;margin:0 0 0.3rem;display:block;overflow:visible;}',
@@ -4457,6 +4477,15 @@
       if (loc && books.active === 'kiosk' && !loc.leadId) loc.leadId = 'staff_reg1';
     }
 
+    function applyMondayEase(sim) {
+      if (!sim || !sim.floorOn || !run || sim.tenant || run.day !== 0 || sim._mondayEase) return;
+      sim._mondayEase = 1;
+      sim.goal = Math.max(900, Math.round((sim.goal || 0) * 0.7));
+      sim.spawnMul = (sim.spawnMul || 1) * 0.7;
+      var cap = sim.actionMax || (CONFIG.baseActions + 1);
+      sim.actions = cap;
+    }
+
     function activeStoreName() {
       var loc = books && books.locations && books.locations[books.active];
       return (loc && loc.name) || 'Holiday Rush Mart';
@@ -4874,6 +4903,11 @@
       els.sim.querySelector('.hr-actions').innerHTML = actions;
       sim.live = true;
       sim.floorOn = true;
+      if (!sim.mechanic && !sim.tenant && books && HR.data && HR.data.get()) {
+        var packNow = HR.data.get().layouts[books.active];
+        if (packNow && packNow.mechanic) sim.mechanic = packNow.mechanic;
+      }
+      applyMondayEase(sim);
       if ((sim.pending || sim.typeCard) && sim._hold !== 'crew') armCardPause(sim);
       if (run._awayNote && run._awayNote.length) {
         toast(run._awayNote.map(firstName).join(', ') + ' is off this floor.');
@@ -4884,7 +4918,7 @@
       resize();
       fitOpenCamera();
       requestAnimationFrame(function () { resize(); if (sim && !els.sim.hidden) draw(); });
-      focusCam(SPOTS.reg1.x, QUEUE.reg1.y);
+      if (!(sim.mechanic === 'wrap' && !(sim.wraps > 0) && !sim._playerAct)) focusCam(SPOTS.reg1.x, QUEUE.reg1.y);
       if (sim.tenant) sim.coachHold = false;
       if (!sim.tenant && !opts.resume && run.day === 0 && !tutDone()) beginCoach();
       else if (!sim.tenant && opts.resume && run.day === 0 && !tutDone()) beginCoach();
@@ -5059,6 +5093,7 @@
         } else {
           var maxA = sim.actionMax || CONFIG.baseActions;
           var regenSec = CONFIG.actionRegen / (1 + 0.28 * upgradeLevel(run, 'hustle'));
+          if (sim._mondayEase) regenSec *= 0.55;
           var fill = sim.actions >= maxA ? 1 : clamp((sim.actionFrac || 0) / regenSec, 0, 1);
           act.textContent = sim.actions + ' / ' + maxA + ' actions · refills every ' + (Math.round(regenSec * 10) / 10) + 's' + (sim.actions < maxA ? ' · ' + Math.round(fill * 100) + '% to the next' : '');
         }
@@ -6085,7 +6120,7 @@
       els.canvas._cssH = h;
       els.canvas._dpr = dpr;
       if (sim) sim._phone = w < 720;
-      if (els.stage) els.stage.dataset.hit = w < 720 ? '56' : '120';
+      if (els.stage) els.stage.dataset.hit = w < 720 ? '64' : '120';
       placeEventCard();
       placeToast();
       placeChrome();
@@ -6202,6 +6237,48 @@
       var view = viewSize();
       cam.x = clamp(x - view.viewW * 0.5, 0, Math.max(0, WORLD_W - view.viewW));
       cam.y = clamp(y - view.viewH * 0.62, 0, Math.max(0, WORLD_H - view.viewH));
+    }
+
+    function camClamp(x, y, view) {
+      return {
+        x: Math.round(clamp(x, 0, Math.max(0, WORLD_W - view.viewW))),
+        y: Math.round(clamp(y, 0, Math.max(0, WORLD_H - view.viewH)))
+      };
+    }
+
+    function wrapCamTarget(view) {
+      var wrapAt = wrapSpot();
+      var wrapY = wrapAt.y - wrapLift(wrapAt);
+      return camClamp(wrapAt.x - view.viewW * 0.5, wrapY - view.viewH * 0.38, view);
+    }
+
+    function playCamTarget(view) {
+      var x = SPOTS.reg1.x - view.viewW * 0.5;
+      var y = QUEUE.reg1.y - view.viewH * 0.62;
+      var doorY = SPOTS.door ? SPOTS.door.y : WORLD_H - 48;
+      var doorKeep = doorY - view.viewH + 36;
+      if (doorKeep < 0) doorKeep = 0;
+      if (y < doorKeep) y = doorKeep;
+      return camClamp(x, y, view);
+    }
+
+    function stepEase(view) {
+      if (!sim || !sim._ease) return false;
+      var dur = 0.9;
+      var u = dur > 0 ? ((sim.t || 0) - sim._ease.t0) / dur : 1;
+      if (u < 0) u = 0;
+      if (u > 1) u = 1;
+      var e = u * u * (3 - 2 * u);
+      cam.x = Math.round(sim._ease.x0 + (sim._ease.x1 - sim._ease.x0) * e);
+      cam.y = Math.round(sim._ease.y0 + (sim._ease.y1 - sim._ease.y0) * e);
+      if (u >= 1) {
+        var done = camClamp(sim._ease.x1, sim._ease.y1, view);
+        cam.x = done.x;
+        cam.y = done.y;
+        sim._camLock = done;
+        sim._ease = null;
+      }
+      return true;
     }
 
     function coachFocus() {
@@ -6392,15 +6469,24 @@
       return { x: a.x, y: a.y - Math.round(personDrawH() * 0.42) };
     }
 
+    function ringPoint(a) {
+      return { x: a.x, y: a.y - personDrawH() - 28 };
+    }
+
     function pickHit(ev) {
       var phoneHit = (els.canvas._cssW || window.innerWidth) < 720;
       var best = null;
-      var bestD = phoneHit ? 56 : 120;
+      var bestD = phoneHit ? 64 : 120;
       for (var i = 0; i < sim.customers.length; i++) {
         var c = sim.customers[i];
         if (c.dead || c.state === 'leave') continue;
         var at = bodyPoint(c);
         var d = screenDist(at.x, at.y, ev);
+        if (phoneHit) {
+          var ringAt = ringPoint(c);
+          var rd = screenDist(ringAt.x, ringAt.y, ev);
+          if (rd < d) d = rd;
+        }
         if (d < bestD) { bestD = d; best = { cust: c }; }
       }
       if (best) return best;
@@ -6512,11 +6598,16 @@
       if (!sim) return null;
       var phoneHit = (els.canvas._cssW || window.innerWidth) < 720;
       var best = null;
-      var bestD = phoneHit ? 56 : 120;
+      var bestD = phoneHit ? 64 : 120;
       function consider(a) {
         if (!a || a.dead || a.hidden || a.state === 'leave' || a.kind === 'jack') return;
         var at = bodyPoint(a);
         var d = screenDist(at.x, at.y, ev);
+        if (phoneHit) {
+          var ringAt = ringPoint(a);
+          var rd = screenDist(ringAt.x, ringAt.y, ev);
+          if (rd < d) d = rd;
+        }
         if (d < bestD) { bestD = d; best = a; }
       }
       var i;
@@ -6765,23 +6856,42 @@
       var focus = sim && coach ? coachFocus() : null;
       var fitsFloor = view.viewW >= WORLD_W - 16 && view.viewH >= WORLD_H - 16;
       if (els.stage) els.stage.dataset.fit = fitsFloor ? '1' : '0';
+      var holdWrap = !!(sim && !fitsFloor && !cam.fit && !cam.userPan && sim.mechanic === 'wrap' && !sim._playerAct && !(sim.wraps > 0));
       if (fitsFloor) {
         cam.x = 0;
         cam.y = 0;
+      } else if (holdWrap) {
+        var held = wrapCamTarget(view);
+        cam.x = held.x;
+        cam.y = held.y;
+        sim._heldWrap = 1;
+        sim._ease = null;
+      } else if (sim && sim._ease && !cam.userPan) {
+        stepEase(view);
+      } else if (sim && sim._heldWrap && !cam.userPan) {
+        var toPlay = playCamTarget(view);
+        sim._ease = {
+          x0: Math.round(cam.x),
+          y0: Math.round(cam.y),
+          x1: toPlay.x,
+          y1: toPlay.y,
+          t0: sim.t || 0
+        };
+        sim._heldWrap = 0;
+        cam.x = sim._ease.x0;
+        cam.y = sim._ease.y0;
+      } else if (sim && sim._camLock && !cam.fit && !cam.userPan && !cam.follow) {
+        var sized = !sim._lockCss || Math.abs(sim._lockCss.w - view.cssW) > 12 || Math.abs(sim._lockCss.h - view.cssH) > 12;
+        if (sized && sim.mechanic === 'wrap') {
+          sim._camLock = playCamTarget(view);
+          sim._lockCss = { w: view.cssW, h: view.cssH };
+        }
+        cam.x = sim._camLock.x;
+        cam.y = sim._camLock.y;
       } else if (focus) {
-        cam.x = focus.x - view.viewW * 0.5;
-        cam.y = focus.y - view.viewH * 0.62;
-      } else if (sim && sim._wrapCamUntil && sim.t < sim._wrapCamUntil && !cam.fit && !cam.userPan && sim.mechanic === 'wrap' && !(sim.wraps > 0)) {
-        var wrapAt = wrapSpot();
-        var wrapY = wrapAt.y - wrapLift(wrapAt);
-        var pullX = wrapAt.x - view.viewW * 0.5;
-        var pullY = wrapY - view.viewH * 0.42;
-        var doorY = SPOTS.door ? SPOTS.door.y : WORLD_H - 48;
-        var doorKeep = doorY - view.viewH + 36;
-        if (doorKeep < 0) doorKeep = 0;
-        if (pullY < doorKeep) pullY = doorKeep;
-        cam.x += (pullX - cam.x) * 0.34;
-        cam.y += (pullY - cam.y) * 0.34;
+        var focused = camClamp(focus.x - view.viewW * 0.5, focus.y - view.viewH * 0.62, view);
+        cam.x = focused.x;
+        cam.y = focused.y;
       } else if (sim && cam.follow && !cam.fit && !cam.userPan) {
         var fx = 0;
         var fy = 0;
@@ -6797,8 +6907,10 @@
         cam.x += ((fx - view.viewW * 0.5) - cam.x) * 0.08;
         cam.y += ((fy - view.viewH * 0.58) - cam.y) * 0.08;
       }
-      cam.x = clamp(cam.x, 0, Math.max(0, WORLD_W - view.viewW));
-      cam.y = clamp(cam.y, 0, Math.max(0, WORLD_H - view.viewH));
+      var snapped = camClamp(cam.x, cam.y, view);
+      cam.x = snapped.x;
+      cam.y = snapped.y;
+      if (sim && sim._camLock && !sim._lockCss) sim._lockCss = { w: view.cssW, h: view.cssH };
       paintEdges(view);
       if (isQA() && els.stage && sim) {
         els.stage.dataset.cam = Math.round(cam.x) + ',' + Math.round(cam.y);
@@ -6820,10 +6932,11 @@
       ctx.fillRect(0, 0, els.canvas.width, els.canvas.height);
       var shakeX = 0;
       var shakeY = 0;
-      if (sim && sim.shake > 0 && !reduceMotion) {
+      if (sim && sim.shake > 0 && sim.shake < 1) sim.shake = 0;
+      if (sim && sim.shake > 0 && !reduceMotion && !holdWrap && !(sim._ease)) {
         var buzz = Date.now() / 16;
-        shakeX = Math.sin(buzz) * sim.shake;
-        shakeY = Math.cos(buzz * 1.3) * sim.shake * 0.65;
+        shakeX = Math.round(Math.sin(buzz) * sim.shake);
+        shakeY = Math.round(Math.cos(buzz * 1.3) * sim.shake * 0.65);
       }
       ctx.setTransform(dpr * scale, 0, 0, dpr * scale, (-cam.x + shakeX) * dpr * scale, (-cam.y + shakeY) * dpr * scale);
       ctx.lineJoin = 'round';
@@ -7076,9 +7189,14 @@
           ctx.textAlign = 'center';
           ctx.fillStyle = 'rgba(20,12,16,0.72)';
           var rushW = 92;
-          ctx.fillRect(view.cssW / 2 - rushW / 2, 8, rushW, 28);
+          var rushReserve = view.cssW < 720 ? 200 : 210;
+          var rushLeft = view.cssW / 2 - rushW / 2;
+          var rushLimit = view.cssW - rushReserve - rushW;
+          if (rushLeft > rushLimit) rushLeft = Math.max(8, rushLimit);
+          rushLeft = Math.round(rushLeft);
+          ctx.fillRect(rushLeft, 8, rushW, 28);
           ctx.fillStyle = '#ffb4b4';
-          ctx.fillText('RUSH', view.cssW / 2, 28);
+          ctx.fillText('RUSH', rushLeft + rushW / 2, 28);
         }
       }
       if (cam.overview) drawMinimap(view);
@@ -8162,7 +8280,11 @@
       if (ev && ev.pointerId != null) delete pointers[ev.pointerId];
       if (Object.keys(pointers).length < 2) cam.pinch = 0;
       var wasTap = cam.drag && !cam.drag.moved;
-      if (cam.drag && cam.drag.moved) cam.userPan = true;
+      if (cam.drag && cam.drag.moved) {
+        var travel = ev ? Math.abs(ev.clientX - cam.drag.x) + Math.abs(ev.clientY - cam.drag.y) : 99;
+        var wrapHold = sim && sim.mechanic === 'wrap' && !sim._playerAct && !(sim.wraps > 0);
+        if (!wrapHold || travel > 24) cam.userPan = true;
+      }
       cam.follow = false;
       cam.drag = null;
       if (wasTap && ev && !(ev.target && ev.target.closest && ev.target.closest('button'))) onStageTap(ev);
