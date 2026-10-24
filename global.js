@@ -10,7 +10,6 @@
   }
 
   var MORE_GAMES = [
-    { href: '/games/holiday-rush', name: 'Holiday Rush' },
     { href: '/games/rift', name: 'RIFT' },
     { href: '/games/gamerdle', name: 'Gamerdle' },
     { href: '/games/brix3d', name: 'BRIX 3D' },
@@ -333,7 +332,7 @@
     'holiday-rush': featuredArt('holiday-rush', 'Holiday Rush', 'Holiday Rush Mart floor, top-down'),
     rift: featuredArt('rift', 'RIFT', 'RIFT word game'),
     gamerdle: featuredArt('gamerdle', 'Gamerdle', 'Gamerdle guess the video game'),
-    brix3d: featuredArt('brix3d', 'BRIX 3D', 'BRIX 3D brick builder'),
+    brix3d: featuredArt('brix3d', 'BRIX 3D', 'BRIX 3D brick cottage on the build plate'),
     rootweave: featuredArt('rootweave', 'Rootweave', 'Rootweave valley farm'),
     pixle: featuredArt('pixle', 'Pixle', 'Pixle five-letter gaming word'),
     'asteroid-dodge': featuredArt('asteroid-dodge', 'Asteroid Dodge', 'Asteroid Dodge'),
@@ -451,7 +450,7 @@
     return '<aside class="play-break" data-play-break="1" aria-label="Take a break: play our free games">' +
       '<p class="play-break__title">Take a break: play our free games</p>' +
       '<ul>' +
-        '<li><a href="/games/holiday-rush">Holiday Rush</a><span> — check out shoppers, chain combos</span></li>' +
+        '<li><a href="/games/brix3d">BRIX 3D</a><span> — build with bricks in the browser</span></li>' +
         '<li><a href="/games/rift">RIFT</a><span> — three daily word zones</span></li>' +
         '<li><a href="/games/gamerdle">Gamerdle</a><span> — guess the mystery game</span></li>' +
       '</ul>' +
@@ -571,17 +570,7 @@
       finished = true;
       trackEvent('game_complete', { game: slug, source_page: sameHostReferrer() });
     }
-    if (slug === 'holiday-rush') {
-      var finalEl = document.getElementById('hr-final');
-      if (finalEl) {
-        var seeFinal = function () {
-          if (!finalEl.hasAttribute('hidden')) complete();
-        };
-        seeFinal();
-        var finalObserver = new MutationObserver(seeFinal);
-        finalObserver.observe(finalEl, { attributes: true, attributeFilter: ['hidden'] });
-      }
-    } else if (slug === 'rift') {
+    if (slug === 'rift') {
       watchComplete('resultScreen', 'show', complete);
     } else if (slug === 'gamerdle') {
       watchComplete('resultPanel', 'show', complete);

@@ -1,6 +1,23 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
+  "redirects": [
+    {
+      "source": "/games/holiday-rush",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/games/holiday-rush/",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/games/holiday-rush.html",
+      "destination": "/",
+      "permanent": false
+    }
+  ],
   "headers": [
     {
       "source": "/games/rift-words.json",
