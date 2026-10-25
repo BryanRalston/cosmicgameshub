@@ -10144,15 +10144,14 @@
           var heldTitle = document.getElementById('hr-ev-title');
           return heldTitle ? heldTitle.textContent : (sim.pending.title || '');
         }
-        if (id === 'bus') {
-          var beat = null;
-          for (var bi = 0; bi < FLOOR_BEATS.length; bi++) if (FLOOR_BEATS[bi].id === 'bus') beat = FLOOR_BEATS[bi];
-          if (!beat) return '';
+        var beat = null;
+        for (var bi = 0; bi < FLOOR_BEATS.length; bi++) if (FLOOR_BEATS[bi].id === id) beat = FLOOR_BEATS[bi];
+        if (beat) {
           beatCard(sim, beat.id, beat.title, beat.body, beat.choices(sim, run));
           renderEvent();
-          var busTitle = document.getElementById('hr-ev-title');
-          var busBody = els.event ? els.event.querySelector('p') : null;
-          return (busTitle ? busTitle.textContent : '') + ' | ' + (busBody ? busBody.textContent : '');
+          var beatTitle = document.getElementById('hr-ev-title');
+          var beatBody = els.event ? els.event.querySelector('p') : null;
+          return (beatTitle ? beatTitle.textContent : '') + ' | ' + (beatBody ? beatBody.textContent : '');
         }
         sim.coachHold = false;
         openPending(sim, buildEvent(id || 'boss', sim, run), 40);
