@@ -84,7 +84,7 @@
   var LIVE_PROFIT_FLOOR = 48;
   var LIVE_RING_RATE = 0.95;
   var LIVE_BASKET = 0.46;
-  var LIVE_STAFFED = 1.58;
+  var LIVE_STAFFED = 1.46;
 
   function liveQueueGap(sim) {
     return sim && sim._phone ? 210 : 140;
@@ -1514,7 +1514,7 @@
   }
 
   function liveLineDrain(sim, drain) {
-    if (sim && sim.floorOn && sim.live && !sim.tenant && liveTillStaffed(sim)) return drain * 0.45;
+    if (sim && sim.floorOn && sim.live && !sim.tenant && liveTillStaffed(sim)) return drain * 0.08;
     return drain;
   }
 
@@ -2013,14 +2013,18 @@
         var browseRate = stationPower(sim, run, 'floor') > 0.5 ? 1.25 : 1;
         if (sim.floorOn && !tillsBusy) browseRate += 1.4;
         cust.browseT -= dt * browseRate;
-        cust.patience -= dt * 0.012 * cocoa * drainMul * (cust.arch === 'rusher' ? 1.8 : 1);
+        cust.patience -= liveLineDrain(sim, dt * 0.012 * cocoa * drainMul * (cust.arch === 'rusher' ? 1.8 : 1));
         if (cust.patience <= 0) walkout(sim, cust);
         else if (cust.browseT <= 0) {
           if (sim.stock <= 0.04) walkout(sim, cust);
           else {
             cust.reg = pickRegister(sim, run);
-            if (trafficBlocked(cust.reg)) walkout(sim, cust);
-            else if (!priceTurn(sim, cust)) {
+            if (trafficBlocked(cust.reg)) {
+              if (sim.floorOn && sim.live && !sim.tenant && liveTillStaffed(sim)) {
+                cust.state = 'wait';
+                cust.waitSpot = waitPocket(cust);
+              } else walkout(sim, cust);
+            } else if (!priceTurn(sim, cust)) {
               if (liveLine(sim) && laneLoad(sim, cust.reg) >= liveLineCap(sim)) {
                 cust.state = 'wait';
                 cust.waitSpot = waitPocket(cust);
@@ -2134,6 +2138,7 @@
             if (cust.arch === 'rusher') rate *= 1.65;
             if (cust.arch === 'family') rate *= 0.7;
             if (sim.floorOn && rate < LIVE_RING_RATE) rate = LIVE_RING_RATE;
+            if (sim.floorOn && sim.live && !sim.tenant && !sim._phone && liveTillStaffed(sim)) rate *= 1.35;
             var checkStart = cust.arch === 'family' ? (sim.floorOn ? 0.95 : 3.3) : (sim.floorOn ? 0.7 : 2.15);
             cust.checkT = (cust.checkT == null ? checkStart : cust.checkT) - dt * rate;
             if (cust.checkT <= 0) completeSale(sim, run, cust);
