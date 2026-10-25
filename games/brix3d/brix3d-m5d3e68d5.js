@@ -1,0 +1,1 @@
+import{__brixScope as o}from"./brix3d-m3cf279b3.js";o.createClassroomTheme=function(e,f){o.scene.background=new globalThis.__BRIX_THREE.Color(16119280),o.scene.fog=new globalThis.__BRIX_THREE.Fog(16119280,200,600),o.updateGroundColor(9139029),o.createClassroomEnvironment(e,f),o.updateLighting(16777215,1,15790335,.7)};

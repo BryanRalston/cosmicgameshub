@@ -325,6 +325,8 @@
     
     // Time of day / weather state
     let timeOfDay = 0.5; // noon. Brighter default than the old morning preset.
+    // One home ray. (22, 40, 42) from the plate center points the same way as camera (60, 40, 80).
+    const HOME_OX = 22, HOME_OY = 40, HOME_OZ = 42;
     let weatherType = 'clear'; // 'clear', 'rain', 'snow', 'fog'
     let rainParticles = null;
     let snowParticles = null;
@@ -483,6 +485,7 @@
     };
     let qualityPreset = 'balanced';
     let qualitySettings = QUALITY_PRESETS.balanced;
+    let instancedReady = false;
     let lastHudFps = 0;
     let lowFpsStreak = 0;
     let autoQualitySteps = 0;
@@ -626,6 +629,7 @@
       }
       updateShadowFrustum();
       setupPostProcessing();
+      refreshInstancedMaterials();
       needsRender = true;
       if (!opts.silent) toast(`Quality: ${name.charAt(0).toUpperCase() + name.slice(1)}`);
     }
@@ -805,8 +809,9 @@
       // map when the build changes, and reuse it while the camera orbits.
       renderer.shadowMap.autoUpdate = false;
       renderer.shadowMap.needsUpdate = true;
-      renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = isMobileGfx() ? 1.0 : 1.15;
+      // Linear keeps a lit face on the swatch. AgX mixes blue into yellow and red, so they read olive and maroon.
+      renderer.toneMapping = THREE.LinearToneMapping;
+      renderer.toneMappingExposure = isMobileGfx() ? 2.6 : 2.4;
       renderer.info.autoReset = false;
       document.getElementById('container').appendChild(renderer.domElement);
       renderer.setClearColor(0x87CEEB, 1);
@@ -877,7 +882,7 @@
       window.sunLight = sun;
       scene.add(sun.target);
       
-      const hemi = new THREE.HemisphereLight(0xd7ecff, 0x6d9460, 0.8);
+      const hemi = new THREE.HemisphereLight(0xfff6ee, 0xe4e0d8, 0.55);
       hemi.name = 'hemi';
       scene.add(hemi);
       await yieldTick();
@@ -1033,7 +1038,7 @@
     }
 
     function buildComposer() {
-      const { EffectComposer, RenderPass, UnrealBloomPass, ShaderPass, SSAOPass } = postMods;
+      const { EffectComposer, RenderPass, UnrealBloomPass, ShaderPass, SSAOPass, OutputPass } = postMods;
       const size = new THREE.Vector2();
       renderer.getSize(size);
       const pr = renderer.getPixelRatio();
@@ -1075,7 +1080,7 @@
           'tDiffuse': { value: null },
           'darkness': { value: 0.06 },
           'offset': { value: 1.15 },
-          'saturation': { value: 1.18 }
+          'saturation': { value: 1 }
         },
         vertexShader: `
           varying vec2 vUv;
@@ -1098,15 +1103,14 @@
             texel.rgb *= mix(1.0 - darkness, 1.0, vign);
             float gray = dot(texel.rgb, vec3(0.299, 0.587, 0.114));
             texel.rgb = mix(vec3(gray), texel.rgb, saturation);
-            // The composer target is linear and this pass is the last one.
-            // A display gamma keeps the plate mid green without a second ACES pass.
-            texel.rgb = pow(max(texel.rgb, vec3(0.0)), vec3(0.4545));
+            // Stay linear. OutputPass applies the same AgX grade as the phone renderer.
             gl_FragColor = texel;
           }
         `
       };
       vignettePass = new ShaderPass(vignetteShader);
       composer.addPass(vignettePass);
+      if (OutputPass) composer.addPass(new OutputPass());
       composer.setSize(innerWidth, innerHeight);
       window.__brixPostOn = true;
       needsRender = true;
@@ -1228,9 +1232,13 @@
       
       // Sun position (arc across the sky)
       const sunRadius = 100;
-      const sunX = Math.cos(timeOfDay * Math.PI * 2) * sunRadius;
+      // Noon sun shares the home camera's horizontal direction, so the face
+      // you see is the lit face. The old noon sun sat on the opposite side.
+      const camAz = Math.atan2(HOME_OZ, HOME_OX);
+      const sunAng = (timeOfDay - 0.5) * Math.PI * 2 + camAz;
+      const sunX = Math.cos(sunAng) * sunRadius;
       const sunY = sunHeight * 80 + 10;
-      const sunZ = Math.sin(timeOfDay * Math.PI * 2) * sunRadius * 0.5;
+      const sunZ = Math.sin(sunAng) * sunRadius;
       
       // Update sun position relative to camera target
       const target = controls ? controls.target : new THREE.Vector3(0, 0, 0);
@@ -1261,15 +1269,16 @@
         ambientIntensity = 0.55 + t * 0.28;
         renderer.toneMappingExposure = isMobileGfx() ? (0.88 + t * 0.12) : (1.1 + t * 0.12);
       } else {
-        // Daytime. Phone skips the composer. Noon stays under 1.2 so the plate
-        // does not wash out, and above the old 1.04 so a red brick still reads.
+        // Daytime. Linear exposure is set so a lit albedo lands on the swatch.
         const noonFactor = 1 - Math.abs(timeOfDay - 0.5) * 4; // Peak at noon
         _todCache.skyColor.copy(_todCache.daySky).lerp(_todCache.noonSky, noonFactor);
         _todCache.fogColor.copy(_todCache.skyColor);
         _todCache.sunColor.copy(_todCache.whiteSun).lerp(_noonWhite, noonFactor);
-        sunIntensity = 1.45 + noonFactor * 0.25;
-        ambientIntensity = 0.62 + noonFactor * 0.12;
-        renderer.toneMappingExposure = isMobileGfx() ? (1.08 + noonFactor * 0.10) : (1.22 + noonFactor * 0.10);
+        // Lower key than the old 1.7 sun. The visible face is lit now, and a
+        // hotter sun clips that face off the swatch.
+        sunIntensity = 1.05 + noonFactor * 0.1;
+        ambientIntensity = 0.7 + noonFactor * 0.1;
+        renderer.toneMappingExposure = isMobileGfx() ? 1.75 : 1.6;
       }
       if (isMobileGfx()) {
         sunIntensity *= 0.92;
@@ -1281,11 +1290,20 @@
       scene.fog.color.copy(_todCache.fogColor);
       sun.color.copy(_todCache.sunColor);
       sun.intensity = sunIntensity;
-      if (ambient) ambient.intensity = ambientIntensity;
+      if (ambient) {
+        // Theme setup used to leave this sky blue, which mixes into yellow and red.
+        ambient.color.setHex(0xffffff);
+        ambient.intensity = ambientIntensity;
+      }
       if (hemi) {
-        hemi.color.copy(_todCache.skyColor);
-        hemi.groundColor.setHex(0x2f6a34);
-        hemi.intensity = isMobileGfx() ? Math.min(0.58, Math.max(0.48, ambientIntensity)) : Math.min(0.62, Math.max(0.45, ambientIntensity));
+        // Sky blue and grass green in the fill light shift yellow toward olive and red toward maroon.
+        // The background stays blue. The brick light stays neutral so the swatch color survives.
+        const night = timeOfDay < 0.2 || timeOfDay > 0.8;
+        hemi.color.setHex(night ? 0xb7c4d6 : 0xfff6ee);
+        hemi.groundColor.setHex(night ? 0x3a3a40 : 0xe4e0d8);
+        hemi.intensity = night
+          ? (isMobileGfx() ? 0.28 : 0.32)
+          : (isMobileGfx() ? 0.42 : 0.48);
       }
       
       // Bloom stays at the composer default. Night used to jump to 0.5.
@@ -1612,7 +1630,8 @@
         for (let x = 0; x < N; x++) {
           const i = (y * N + x) * 4;
           const h = heights[y * N + x];
-          const shade = h > 0.85 ? 210 : (h > 0.15 ? 168 : 118);
+          // Flat disk. A shade ramp inside the stud read as a crescent up close.
+          const shade = h > 0.15 ? 248 : 168;
           img.data[i] = shade;
           img.data[i + 1] = shade;
           img.data[i + 2] = shade;
@@ -1700,6 +1719,61 @@
       gridHelper.material.transparent = true;
       scene.add(gridHelper);
       window.gridHelper = gridHelper;
+      if (controls && !controls.__plateStudLod) {
+        controls.__plateStudLod = true;
+        controls.addEventListener('change', () => updateNearPlateStuds(false));
+      }
+      updateNearPlateStuds(true);
+    }
+
+    let nearPlateStuds = null;
+    let nearPlateStudKey = '';
+    // 7×7 real cylinders under the camera. The rest of the plate stays the
+    // decal. A 11×11 patch of 20-side studs held the phone 520-brick floor
+    // under 165 FPS, and those studs are what you see up close.
+    const PLATE_STUD_RADIUS = 3;
+    const PLATE_STUD_SEGMENTS = 16;
+    function updateNearPlateStuds(force) {
+      if (!scene || !camera || !instancedSystem) return;
+      const cap = (PLATE_STUD_RADIUS * 2 + 1) * (PLATE_STUD_RADIUS * 2 + 1);
+      if (!nearPlateStuds) {
+        const geo = makeStudGeometry(PLATE_STUD_SEGMENTS);
+        const mat = new THREE.MeshLambertMaterial({ color: 0x3eb24e });
+        nearPlateStuds = new THREE.InstancedMesh(geo, mat, cap);
+        nearPlateStuds.name = 'nearPlateStuds';
+        nearPlateStuds.count = 0;
+        nearPlateStuds.castShadow = false;
+        // The plate already receives the shadow. A second lookup on each
+        // cylinder was the crescent and a full-screen fragment cost.
+        nearPlateStuds.receiveShadow = false;
+        nearPlateStuds.frustumCulled = false;
+        nearPlateStuds.matrixAutoUpdate = false;
+        scene.add(nearPlateStuds);
+      }
+      const focus = controls && controls.target ? controls.target : camera.position;
+      const cx = Math.max(0, Math.min(95, Math.floor(focus.x / STUD)));
+      const cz = Math.max(0, Math.min(95, Math.floor(focus.z / STUD)));
+      const key = cx + ',' + cz;
+      if (!force && key === nearPlateStudKey) return;
+      nearPlateStudKey = key;
+      const dummy = instancedSystem.dummy;
+      const y = 0.012 + STUD_H * 0.5;
+      let n = 0;
+      for (let iz = cz - PLATE_STUD_RADIUS; iz <= cz + PLATE_STUD_RADIUS; iz++) {
+        if (iz < 0 || iz > 95) continue;
+        for (let ix = cx - PLATE_STUD_RADIUS; ix <= cx + PLATE_STUD_RADIUS; ix++) {
+          if (ix < 0 || ix > 95) continue;
+          dummy.position.set((ix + 0.5) * STUD, y, (iz + 0.5) * STUD);
+          dummy.rotation.set(0, 0, 0);
+          dummy.scale.set(1, 1, 1);
+          dummy.updateMatrix();
+          nearPlateStuds.setMatrixAt(n, dummy.matrix);
+          n++;
+        }
+      }
+      nearPlateStuds.count = n;
+      nearPlateStuds.instanceMatrix.needsUpdate = true;
+      needsRender = true;
     }
     
     function createDistantScenery(baseplateSize) {
@@ -2068,8 +2142,9 @@
       // Ambient particles - floating pollen/dust
       queueScenery(() => createAmbientParticles(center, 'dust', 500, 0xffffee, 0.3));
       
-      // Update lighting
-      updateLighting(0xfff8dc, 1.0, 0x87CEEB, 0.4);
+      // Neutral brick light. Sky-blue ambient turned yellow olive and dark red maroon.
+      const phoneLight = isMobileGfx();
+      updateLighting(0xfff6ee, phoneLight ? 1.06 : 1.15, 0xffffff, phoneLight ? 0.72 : 0.8);
     }
     
     // ==================== DESERT THEME ====================
@@ -4143,6 +4218,7 @@
       // Dummy object for matrix calculations
       dummy: new THREE.Object3D()
     };
+    instancedReady = true;
     
     // Top cap only. The underside sits inside the brick and never shows.
     function makeStudGeometry(segments) {
@@ -4165,12 +4241,10 @@
       return (dx * dx + dy * dy + dz * dz) <= STUD_NEAR_DIST * STUD_NEAR_DIST ? STUD_SEG_NEAR : STUD_SEG_FAR;
     }
 
-    // ACES plus the green ground light turns #ffe600 olive. A redder albedo
-    // lands on a clean yellow after that grade. The swatch stays #ffe600.
+    // Swatch hex is sRGB. Three stores instance colors in linear from that hex.
+    // Do not rewrite yellow in linear RGB; that was the mustard cast.
     function brickDisplayColor(color) {
-      const c = new THREE.Color(color);
-      if (c.r > 0.82 && c.g > 0.62 && c.b < 0.22 && c.g > c.r * 0.55) c.setRGB(1, 0.74, 0);
-      return c;
+      return new THREE.Color(color);
     }
 
     // Create merged geometry for a brick type (body + studs combined)
@@ -4377,7 +4451,17 @@
       return instancedSystem.geometryCache.get(key);
     }
     
+    function usePerfLambert(transparent, isLight) {
+      // Phone boots on performance. Lambert skips the standard BRDF that kept
+      // a full plate of bricks under 165 FPS. Balanced and high stay standard
+      // so the desktop swatch match does not move.
+      return qualityPreset === 'performance' && !transparent && !isLight;
+    }
+
     function makeAbsMaterial(color, transparent, isLight) {
+      if (usePerfLambert(transparent, isLight)) {
+        return new THREE.MeshLambertMaterial({ color: color });
+      }
       // Standard, not Physical+clearcoat. The clearcoat shader was the fill-rate
       // cost that pulled 520 bricks under the desktop and phone FPS bars.
       return new THREE.MeshStandardMaterial({
@@ -4385,7 +4469,7 @@
         roughness: transparent ? 0.12 : 0.28,
         metalness: 0.0,
         envMap: envMap,
-        envMapIntensity: transparent ? 0.55 : 0.28,
+        envMapIntensity: transparent ? 0.35 : 0.04,
         transparent: !!transparent,
         opacity: transparent ? 0.5 : 1,
         side: transparent ? THREE.DoubleSide : THREE.FrontSide,
@@ -4396,12 +4480,36 @@
     
     // Get or create material for a color/transparency combo
     function getInstancedMaterial(color, transparent, isLight = false) {
-      const key = `${color}_${transparent}_${isLight ? 'L' : 'P'}`;
+      const key = `${color}_${transparent}_${isLight ? 'L' : 'P'}_${usePerfLambert(transparent, isLight) ? 'lb' : 'st'}`;
       
       if (!instancedSystem.materialCache.has(key)) {
         instancedSystem.materialCache.set(key, makeAbsMaterial(color, transparent, isLight));
       }
       return instancedSystem.materialCache.get(key);
+    }
+
+    function refreshInstancedMaterials() {
+      if (!instancedReady) return;
+      const old = new Set();
+      instancedSystem.meshes.forEach((data) => {
+        if (data.mesh && data.mesh.material) old.add(data.mesh.material);
+      });
+      instancedSystem.materialCache.clear();
+      instancedSystem.meshes.forEach((data) => {
+        if (data.mesh) data.mesh.receiveShadow = qualityPreset !== 'performance';
+        const args = data.mesh && data.mesh.userData && data.mesh.userData.matArgs;
+        if (!args) return;
+        data.mesh.material = args.tex
+          ? getTexturedInstancedMaterial(args.tex)
+          : getInstancedMaterial(args.color, args.transparent, args.isLight);
+      });
+      old.forEach((mat) => {
+        let used = false;
+        instancedSystem.meshes.forEach((data) => {
+          if (data.mesh && data.mesh.material === mat) used = true;
+        });
+        if (!used && mat.dispose) mat.dispose();
+      });
     }
     
     const ghostMatCache = new Map();
@@ -4474,8 +4582,17 @@
         
         const mesh = new THREE.InstancedMesh(geo, mat, instancedSystem.maxInstances);
         mesh.count = 0;
+        mesh.userData.matArgs = {
+          color: isLight ? color : 0xffffff,
+          transparent: !!transparent,
+          isLight: isLight,
+          tex: tex
+        };
         mesh.castShadow = true;
-        mesh.receiveShadow = true;
+        // Performance skips the per-pixel shadow lookup on the brick itself.
+        // The brick still casts onto the plate. That lookup was the gap
+        // between a 166 FPS single brick and a 161 FPS full plate.
+        mesh.receiveShadow = qualityPreset !== 'performance';
         mesh.frustumCulled = false; // Important for large scenes
         scene.add(mesh);
         
@@ -5592,6 +5709,14 @@
     // ==================== GHOST PREVIEW ====================
 
     let wallModeGhost = null; // Single brick ghost for wall mode before dragging
+    let orbitHidingGhost = false;
+    let cameraCoasting = false;
+
+    function pointerOnPlate(point) {
+      if (!point) return false;
+      const size = (typeof window.baseplateSize === 'number' && window.baseplateSize > 0) ? window.baseplateSize : 96 * STUD;
+      return point.x >= -0.05 && point.z >= -0.05 && point.x <= size + 0.05 && point.z <= size + 0.05;
+    }
     
     function updateGhost(opts) {
       const hudDel = document.getElementById('hudDeleteBtn');
@@ -5603,7 +5728,7 @@
         removeWallModeGhost();
         return;
       }
-      if (!forPlace && document.body.classList.contains('phone-tray-open')) {
+      if (!forPlace && (orbitHidingGhost || cameraCoasting || document.body.classList.contains('phone-tray-open'))) {
         removeGhost();
         removeWallModeGhost();
         needsRender = true;
@@ -5633,6 +5758,8 @@
       const hitNormal = picked ? picked.normal : null;
 
       if (!hit) return;
+      // Ground hits used to cover the whole grass plane. The ghost stays on the plate.
+      if (!hitBrick && !pointerOnPlate(hit.point)) return;
       
       // If prefab mode is active, show prefab ghost preview
       if (selectedPrefab && prefabs[selectedPrefab]) {
@@ -6274,8 +6401,10 @@
     
     function updateWallModeGhost() {
       removeWallModeGhost();
+      if (orbitHidingGhost || cameraCoasting) return;
       const hit = pickPoint();
       if (!hit) return;
+      if (!hit.brick && !pointerOnPlate(hit.point)) return;
       const worldPos = hit.point;
       const gPos = worldToGrid(worldPos.x, worldPos.z);
       
@@ -8651,9 +8780,10 @@
       }
     }
     
-    function newProject() {
-      if (bricks.length > 0 && !confirm('Start new project? Current work will be lost unless saved.')) {
-        return;
+    async function newProject() {
+      if (bricks.length > 0) {
+        const ok = await confirmLoad('Start new project? Current work will be lost unless saved.');
+        if (!ok) return;
       }
       bricks.forEach(b => { 
         if (!b.isInstancedBrick) {
@@ -8726,7 +8856,6 @@
         if (!ok) return;
         loadProjectData(data);
         document.getElementById('projectName').value = name;
-        document.getElementById('savedProjectsList').style.display = 'none';
         hasUnsavedChanges = false;
         toast('📂 Project "' + name + '" loaded!', 'success');
       } catch (e) {
@@ -8757,16 +8886,13 @@
     
     function toggleProjectList() {
       const list = document.getElementById('savedProjectsList');
-      if (list.style.display === 'none') {
-        refreshProjectList();
-        list.style.display = 'block';
-      } else {
-        list.style.display = 'none';
-      }
+      refreshProjectList();
+      if (list) list.style.display = 'block';
     }
     
     function refreshProjectList() {
       const list = document.getElementById('savedProjectsList');
+      if (!list) return;
       list.innerHTML = '';
       mergeSavedBuilds();
       
@@ -8787,8 +8913,9 @@
         }
       }
       
+      list.style.display = 'block';
       if (projects.length === 0) {
-        list.innerHTML = '<div style="padding:8px;color:rgba(255,255,255,0.5);font-size:11px;">No saved projects</div>';
+        list.innerHTML = '<div style="padding:8px;color:rgba(255,255,255,0.5);font-size:13px;">No saved projects</div>';
         return;
       }
       
@@ -8823,9 +8950,8 @@
       }, 'image/png');
     }
     
-    // One home ray. The old offset (22, 40, 42) from plate center (38, 0, 38)
-    // points the same way as camera (60, 40, 80). Distance changes; the ray does not.
-    const HOME_OX = 22, HOME_OY = 40, HOME_OZ = 42;
+    // HOME_OX / HOME_OY / HOME_OZ live with the other camera constants.
+    // Distance changes; the ray does not.
 
     function homeDistance() {
       // Empty plate uses the same fit as a 2×2. Do not lengthen this to buy frames.
@@ -8848,66 +8974,226 @@
       return Math.min(maxD, Math.max(minD, raw));
     }
 
-    function projectedFill(box, dist, aspect) {
-      const len = Math.hypot(HOME_OX, HOME_OY, HOME_OZ) || 1;
-      const dx = HOME_OX / len;
-      const dy = HOME_OY / len;
-      const dz = HOME_OZ / len;
-      const eyeX = box.aimX + dx * dist;
-      const eyeY = box.aimY + dy * dist;
-      const eyeZ = box.aimZ + dz * dist;
-      let fx = box.aimX - eyeX;
-      let fy = box.aimY - eyeY;
-      let fz = box.aimZ - eyeZ;
+    // right = forward × up. forward (0,0,-1) → right (1,0,0).
+    function captureViewBasis(fx, fy, fz) {
       const fl = Math.hypot(fx, fy, fz) || 1;
       fx /= fl; fy /= fl; fz /= fl;
       let rx = -fz;
-      let ry = 0;
       let rz = fx;
-      const rl = Math.hypot(rx, ry, rz);
-      if (rl < 1e-6) { rx = 1; ry = 0; rz = 0; }
-      else { rx /= rl; ry /= rl; rz /= rl; }
-      const ux = ry * fz - rz * fy;
+      const rl = Math.hypot(rx, rz) || 1;
+      rx /= rl; rz /= rl;
+      const ux = -rz * fy;
       const uy = rz * fx - rx * fz;
-      const uz = rx * fy - ry * fx;
-      const halfY = Math.tan((camera.fov * Math.PI / 180) / 2);
-      const halfX = halfY * Math.max(aspect, 0.3);
-      const hx = box.spanX * 0.5;
-      const hy = box.spanY * 0.5;
-      const hz = box.spanZ * 0.5;
-      let minNX = Infinity, maxNX = -Infinity, minNY = Infinity, maxNY = -Infinity;
-      for (let xi = -1; xi <= 1; xi += 2) {
-        for (let yi = -1; yi <= 1; yi += 2) {
-          for (let zi = -1; zi <= 1; zi += 2) {
-            const vx = box.aimX + xi * hx - eyeX;
-            const vy = box.aimY + yi * hy - eyeY;
-            const vz = box.aimZ + zi * hz - eyeZ;
-            const z = vx * fx + vy * fy + vz * fz;
-            if (z < 0.05) return 4;
-            const nx = (vx * rx + vy * ry + vz * rz) / (z * halfX);
-            const ny = (vx * ux + vy * uy + vz * uz) / (z * halfY);
-            if (nx < minNX) minNX = nx;
-            if (nx > maxNX) maxNX = nx;
-            if (ny < minNY) minNY = ny;
-            if (ny > maxNY) maxNY = ny;
+      const uz = rx * fy;
+      return { fx, fy, fz, rx, ry: 0, rz, ux, uy, uz };
+    }
+
+    function projectedFillDistance(box, dirX, dirY, dirZ, aspect) {
+      const halfY = (camera.fov * Math.PI / 180) / 2;
+      const halfX = Math.atan(Math.tan(halfY) * Math.max(aspect, 0.3));
+      const xs = [box.aimX - box.spanX * 0.5, box.aimX + box.spanX * 0.5];
+      const ys = [box.aimY - box.spanY * 0.5, box.aimY + box.spanY * 0.5];
+      const zs = [box.aimZ - box.spanZ * 0.5, box.aimZ + box.spanZ * 0.5];
+      let lo = 0.6;
+      let hi = 90;
+      let eye = null;
+      for (let n = 0; n < 16; n++) {
+        const dist = (lo + hi) * 0.5;
+        let ex = box.aimX + dirX * dist;
+        let ey = box.aimY + dirY * dist;
+        let ez = box.aimZ + dirZ * dist;
+        if (ey < 0.5) ey = 0.5;
+        const basis = captureViewBasis(box.aimX - ex, box.aimY - ey, box.aimZ - ez);
+        let maxN = 0;
+        let behind = false;
+        for (let ix = 0; ix < 2 && !behind; ix++) {
+          for (let iy = 0; iy < 2 && !behind; iy++) {
+            for (let iz = 0; iz < 2; iz++) {
+              const vx = xs[ix] - ex;
+              const vy = ys[iy] - ey;
+              const vz = zs[iz] - ez;
+              const viewZ = vx * basis.fx + vy * basis.fy + vz * basis.fz;
+              if (viewZ < 0.15) { behind = true; break; }
+              const viewX = vx * basis.rx + vy * basis.ry + vz * basis.rz;
+              const viewY = vx * basis.ux + vy * basis.uy + vz * basis.uz;
+              maxN = Math.max(maxN, Math.abs(viewX / (viewZ * Math.tan(halfX))), Math.abs(viewY / (viewZ * Math.tan(halfY))));
+            }
+          }
+        }
+        if (behind || maxN > 0.8) lo = dist;
+        else { hi = dist; eye = { ex, ey, ez, dist }; }
+      }
+      return eye || { ex: box.aimX + dirX * hi, ey: Math.max(0.5, box.aimY + dirY * hi), ez: box.aimZ + dirZ * hi, dist: hi };
+    }
+
+    function brickCaptureBoxes() {
+      const list = [];
+      for (let i = 0; i < bricks.length; i++) {
+        const b = bricks[i];
+        const p = b.position;
+        if (!p) continue;
+        const g = b.userData && b.userData.grid;
+        const hx = g ? (g.w * STUD) * 0.5 : 0.4;
+        const hz = g ? (g.d * STUD) * 0.5 : 0.4;
+        const hy = (g && g.hp >= 3 ? BRICK_H : PLATE_H) + STUD_H;
+        list.push({
+          minX: p.x - hx, maxX: p.x + hx,
+          minY: p.y, maxY: p.y + hy,
+          minZ: p.z - hz, maxZ: p.z + hz,
+          cx: p.x, cy: p.y + hy * 0.5, cz: p.z
+        });
+      }
+      return list;
+    }
+
+    function rayHitsAabb(ox, oy, oz, dx, dy, dz, box, maxT) {
+      let tmin = 0;
+      let tmax = maxT;
+      const o = [ox, oy, oz];
+      const d = [dx, dy, dz];
+      const mins = [box.minX, box.minY, box.minZ];
+      const maxs = [box.maxX, box.maxY, box.maxZ];
+      for (let a = 0; a < 3; a++) {
+        if (Math.abs(d[a]) < 1e-8) {
+          if (o[a] < mins[a] || o[a] > maxs[a]) return false;
+          continue;
+        }
+        let t1 = (mins[a] - o[a]) / d[a];
+        let t2 = (maxs[a] - o[a]) / d[a];
+        if (t1 > t2) { const swap = t1; t1 = t2; t2 = swap; }
+        if (t1 > tmin) tmin = t1;
+        if (t2 < tmax) tmax = t2;
+        if (tmin > tmax) return false;
+      }
+      return tmax > 0 && tmin < maxT;
+    }
+
+    function countOccluded(eyeX, eyeY, eyeZ, list) {
+      let hidden = 0;
+      for (let i = 0; i < list.length; i++) {
+        const a = list[i];
+        const dx = a.cx - eyeX;
+        const dy = a.cy - eyeY;
+        const dz = a.cz - eyeZ;
+        const dist = Math.hypot(dx, dy, dz) || 1;
+        const ix = dx / dist;
+        const iy = dy / dist;
+        const iz = dz / dist;
+        for (let j = 0; j < list.length; j++) {
+          if (i === j) continue;
+          if (rayHitsAabb(eyeX, eyeY, eyeZ, ix, iy, iz, list[j], dist - 0.08)) {
+            hidden++;
+            break;
           }
         }
       }
-      return Math.max(maxNX - minNX, maxNY - minNY) * 0.5;
+      return hidden;
     }
 
-    function captureFitDistance(spanX, spanY, spanZ, box) {
-      const aspect = Math.max(camera.aspect || 1, 0.3);
-      const probe = box || { aimX: 38, aimY: 0.5, aimZ: 38, spanX: spanX, spanY: spanY, spanZ: spanZ };
-      const target = 0.72;
-      let lo = 0.35;
-      let hi = 80;
-      for (let i = 0; i < 16; i++) {
-        const mid = (lo + hi) * 0.5;
-        if (projectedFill(probe, mid, aspect) > target) lo = mid;
-        else hi = mid;
+    function captureNdc(ex, ey, ez, x, y, z, aimX, aimY, aimZ, aspect) {
+      const basis = captureViewBasis(aimX - ex, aimY - ey, aimZ - ez);
+      const vx = x - ex;
+      const vy = y - ey;
+      const vz = z - ez;
+      const viewZ = vx * basis.fx + vy * basis.fy + vz * basis.fz;
+      if (viewZ < 0.15) return null;
+      const halfY = (camera.fov * Math.PI / 180) / 2;
+      const halfX = Math.atan(Math.tan(halfY) * Math.max(aspect, 0.3));
+      const viewX = vx * basis.rx + vz * basis.rz;
+      const viewY = vx * basis.ux + vy * basis.uy + vz * basis.uz;
+      return [viewX / (viewZ * Math.tan(halfX)), viewY / (viewZ * Math.tan(halfY))];
+    }
+
+    // How much of the frame the build's longest axis covers. 0.8 means that
+    // axis runs about 80% of the picture, which is the 10% padding target.
+    function longAxisFill(box, ex, ey, ez, aspect) {
+      let x0 = box.aimX;
+      let y0 = box.aimY;
+      let z0 = box.aimZ;
+      let x1 = x0;
+      let y1 = y0;
+      let z1 = z0;
+      if (box.spanY >= box.spanX && box.spanY >= box.spanZ) {
+        y0 -= box.spanY * 0.5;
+        y1 += box.spanY * 0.5;
+      } else if (box.spanX >= box.spanZ) {
+        x0 -= box.spanX * 0.5;
+        x1 += box.spanX * 0.5;
+      } else {
+        z0 -= box.spanZ * 0.5;
+        z1 += box.spanZ * 0.5;
       }
-      return Math.min(48, Math.max(0.8, (lo + hi) * 0.5));
+      const a = captureNdc(ex, ey, ez, x0, y0, z0, box.aimX, box.aimY, box.aimZ, aspect);
+      const b = captureNdc(ex, ey, ez, x1, y1, z1, box.aimX, box.aimY, box.aimZ, aspect);
+      if (!a || !b) return 0;
+      return Math.hypot(a[0] - b[0], a[1] - b[1]) * 0.5;
+    }
+
+    function cameraCornerNdc(box) {
+      camera.updateMatrixWorld(true);
+      const xs = [box.aimX - box.spanX * 0.5, box.aimX + box.spanX * 0.5];
+      const ys = [box.aimY - box.spanY * 0.5, box.aimY + box.spanY * 0.5];
+      const zs = [box.aimZ - box.spanZ * 0.5, box.aimZ + box.spanZ * 0.5];
+      const v = new THREE.Vector3();
+      let maxN = 0;
+      for (let ix = 0; ix < 2; ix++) {
+        for (let iy = 0; iy < 2; iy++) {
+          for (let iz = 0; iz < 2; iz++) {
+            v.set(xs[ix], ys[iy], zs[iz]).project(camera);
+            if (v.z < -1 || v.z > 1) return 4;
+            maxN = Math.max(maxN, Math.abs(v.x), Math.abs(v.y));
+          }
+        }
+      }
+      return maxN;
+    }
+
+    function placeCaptureCamera(box) {
+      const aspect = Math.max(camera.aspect || 1, 0.3);
+      const list = brickCaptureBoxes();
+      const radius = 0.5 * Math.hypot(box.spanX, box.spanY, box.spanZ);
+      const prefer = radius < 2.2 ? 1.0 : 0.7;
+      const elevs = [0.55, 0.72, 0.95];
+      let best = null;
+      for (let ei = 0; ei < elevs.length; ei++) {
+        const elev = elevs[ei];
+        for (let k = 0; k < 12; k++) {
+          const yaw = k * (Math.PI / 6);
+          const dirX = Math.cos(elev) * Math.sin(yaw);
+          const dirY = Math.sin(elev);
+          const dirZ = Math.cos(elev) * Math.cos(yaw);
+          const eye = projectedFillDistance(box, dirX, dirY, dirZ, aspect);
+          const hidden = countOccluded(eye.ex, eye.ey, eye.ez, list);
+          const across = longAxisFill(box, eye.ex, eye.ey, eye.ez, aspect);
+          // A wide row should run across the frame. A 45° view spends the
+          // fit on empty corners and leaves the build small.
+          const acrossShort = 0.8 - Math.min(0.8, across);
+          const threeQuarter = 1 - Math.abs(Math.sin(2 * yaw));
+          const score = hidden * 200 + acrossShort * 80 + threeQuarter * (radius < 3 ? 6 : 1.2) + Math.abs(elev - prefer) * 2;
+          if (!best || score < best.score) best = { score, eyeX: eye.ex, eyeY: eye.ey, eyeZ: eye.ez, dist: eye.dist };
+        }
+      }
+      const placed = Math.hypot(best.eyeX - box.aimX, best.eyeY - box.aimY, best.eyeZ - box.aimZ);
+      controls.minDistance = Math.min(controls.minDistance, Math.max(0.6, placed * 0.5));
+      controls.maxDistance = Math.max(controls.maxDistance, placed + 4);
+      controls.target.set(box.aimX, box.aimY, box.aimZ);
+      camera.position.set(best.eyeX, best.eyeY, best.eyeZ);
+      controls.update();
+      // OrbitControls can clamp the pitch. Dolly on the real camera until the
+      // bounds sit at 0.80 NDC, which is 10% padding on the tight axis.
+      const offset = new THREE.Vector3();
+      for (let n = 0; n < 10; n++) {
+        const maxN = cameraCornerNdc(box);
+        if (maxN > 0.78 && maxN < 0.84) break;
+        offset.copy(camera.position).sub(controls.target);
+        const dist = offset.length() || 1;
+        const scale = maxN > 0.02 ? (maxN / 0.8) : 1.35;
+        offset.setLength(Math.max(0.6, Math.min(88, dist * scale)));
+        camera.position.copy(controls.target).add(offset);
+        if (camera.position.y < 0.5) camera.position.y = 0.5;
+        controls.update();
+      }
+      needsRender = true;
     }
 
     function placeCameraOnHomeRay(aimX, aimY, aimZ, dist) {
@@ -9108,6 +9394,27 @@
       let pointerDownX = 0;
       let pointerDownY = 0;
       let pointerDownSeen = false;
+      let orbitPointerX = 0;
+      let orbitPointerY = 0;
+      let orbitPointerDown = false;
+      renderer.domElement.addEventListener('pointerdown', (e) => {
+        orbitPointerX = e.clientX;
+        orbitPointerY = e.clientY;
+        orbitPointerDown = true;
+      });
+      renderer.domElement.addEventListener('pointermove', (e) => {
+        if (!orbitPointerDown) return;
+        if (Math.hypot(e.clientX - orbitPointerX, e.clientY - orbitPointerY) > 6) {
+          orbitHidingGhost = true;
+          hideHoverGhost();
+        }
+      });
+      const endOrbitPointer = () => {
+        orbitPointerDown = false;
+        orbitHidingGhost = false;
+      };
+      renderer.domElement.addEventListener('pointerup', endOrbitPointer);
+      renderer.domElement.addEventListener('pointercancel', endOrbitPointer);
       renderer.domElement.addEventListener('pointerdown', (e) => {
         if (e.pointerType === 'mouse' && e.button !== 0) return;
         pointerDownX = e.clientX;
@@ -9584,9 +9891,57 @@
         return false;
       }
 
+      function clearToolMode(id, className) {
+        const el = document.getElementById(id);
+        if (el && className) el.classList.remove(className);
+      }
+
+      function returnToPlaceMode() {
+        if (fpRadialMenuOpen) {
+          fpRadialMenuOpen = false;
+          const menu = document.getElementById('fpsRadialMenu');
+          if (menu) menu.classList.remove('visible');
+        }
+        if (firstPersonMode) exitFirstPersonMode();
+        deleteMode = false;
+        dropperMode = false;
+        paintMode = false;
+        facePaintMode = false;
+        floorMode = false;
+        wallMode = false;
+        clearToolMode('deleteBtn', 'delete-active');
+        clearToolMode('hudDeleteBtn', 'delete-active');
+        clearToolMode('dropperBtn', 'dropper-active');
+        clearToolMode('paintBtn', 'paint-active');
+        clearToolMode('facePaintBtn', 'facepaint-active');
+        clearToolMode('floorBtn', 'floor-active');
+        clearToolMode('wallBtn', 'wall-active');
+        document.body.classList.remove('delete-mode', 'dropper-mode', 'paint-mode', 'facepaint-mode');
+        if (floorDragStart) cancelFloorDrag();
+        if (wallDragStart) cancelWallDrag();
+        removeGhost();
+        removeWallModeGhost();
+        needsRender = true;
+      }
+
       // Keyboard
       document.addEventListener('keydown', e => {
         if (typingInField(e)) return;
+
+        if (e.key === 'Escape') {
+          const loadConfirm = document.getElementById('loadConfirm');
+          const namePrompt = document.getElementById('namePrompt');
+          const tutorial = document.getElementById('tutorialModal');
+          const keybind = document.getElementById('keybindModal');
+          const phoneTut = document.getElementById('phoneTutorial');
+          const modalUp = (loadConfirm && loadConfirm.style.display === 'flex')
+            || (namePrompt && namePrompt.style.display === 'flex')
+            || (tutorial && tutorial.classList.contains('visible'))
+            || (keybind && keybind.classList.contains('visible'))
+            || (phoneTut && !phoneTut.hidden);
+          if (!modalUp) returnToPlaceMode();
+          return;
+        }
         
         // F11 for fullscreen (check before toLowerCase)
         if (e.key === 'F11') {
@@ -10995,6 +11350,7 @@
       
       // Project management buttons
       document.getElementById('newProjectBtn').addEventListener('click', newProject);
+      refreshProjectList();
       document.getElementById('saveProjectBtn').addEventListener('click', saveProject);
       document.getElementById('loadProjectBtn').addEventListener('click', toggleProjectList);
       document.getElementById('tutorialBtn').addEventListener('click', () => {
@@ -11318,14 +11674,11 @@
       removeGhost();
       removeWallModeGhost();
       const box = buildBounds();
-      const forCapture = !!(opts && opts.forCapture);
-      const dist = forCapture
-        ? captureFitDistance(box.spanX, box.spanY, box.spanZ, box)
-        : liveFitDistance(box.spanX, box.spanY, box.spanZ);
-      if (forCapture) {
-        controls.minDistance = Math.min(controls.minDistance, dist);
-        controls.maxDistance = Math.max(controls.maxDistance, dist + 1);
+      if (opts && opts.forCapture) {
+        placeCaptureCamera(box);
+        return;
       }
+      const dist = liveFitDistance(box.spanX, box.spanY, box.spanZ);
       placeCameraOnHomeRay(box.aimX, box.aimY, box.aimZ, dist);
     }
 
@@ -12681,52 +13034,27 @@
     const MIN_TARGET_HEIGHT = 0;
     
     let presentStep = 0;
-    let sceneryReveal = null;
+    let presentPending = false;
     function renderFrame() {
       if (renderer.info && typeof renderer.info.reset === 'function') renderer.info.reset();
-      // First frames upload the plate, then one scenery mesh at a time, then
-      // the shadow map. One combined render was a 30ms+ main-thread task.
-      if (presentStep === 0 && !(composer && qualitySettings.post)) {
-        const so = window.sceneryObjects;
-        const nodes = [window.baseplateRef, window.groundStudsRef, window.grassPlane, window.gridHelper];
-        if (so) {
-          nodes.push.apply(nodes, so.trees || []);
-          nodes.push.apply(nodes, so.mountains || []);
-          nodes.push.apply(nodes, so.clouds || []);
-          nodes.push.apply(nodes, so.extras || []);
-        }
-        sceneryReveal = [];
-        for (let i = 0; i < nodes.length; i++) {
-          const node = nodes[i];
-          if (node && node.visible !== false) {
-            node.visible = false;
-            sceneryReveal.push(node);
-          }
-        }
-        presentStep = 1;
-        window.sceneryShown = sceneryReveal.length === 0;
-        needsRender = true;
-        return;
-      }
-      if (sceneryReveal && sceneryReveal.length && !(composer && qualitySettings.post)) {
-        const node = sceneryReveal.pop();
-        if (node) node.visible = true;
+      const direct = !(composer && qualitySettings.post);
+      // The plate stays in the first phone frame. Hiding it, then clearing
+      // needsRender, left a fresh load as sky until several bricks were placed.
+      if (direct && presentStep === 0) {
         const shadows = renderer.shadowMap.enabled;
         renderer.shadowMap.enabled = false;
         renderer.render(scene, camera);
         renderer.shadowMap.enabled = shadows;
         hudDrawCalls = renderer.info.render.calls;
-        window.sceneryShown = sceneryReveal.length === 0;
-        needsRender = true;
-        if (sceneryReveal.length) return;
-        sceneryReveal = null;
-        presentStep = 2;
+        presentStep = 1;
+        presentPending = true;
+        window.brixPlateShown = !!(window.baseplateRef && window.baseplateRef.visible !== false);
         return;
       }
-      if ((presentStep === 2 || presentStep === 3) && !(composer && qualitySettings.post)) {
+      if (direct && (presentStep === 1 || presentStep === 2)) {
         const sun = window.sunLight;
         if (sun && sun.shadow) {
-          const size = presentStep === 2 ? 64 : qualityShadowSize();
+          const size = presentStep === 1 ? 64 : qualityShadowSize();
           if (sun.shadow.mapSize.width !== size) {
             sun.shadow.mapSize.set(size, size);
             if (sun.shadow.map) {
@@ -12741,24 +13069,21 @@
         renderer.render(scene, camera);
         hudDrawCalls = renderer.info.render.calls;
         presentStep++;
-        needsRender = true;
+        presentPending = presentStep < 3;
+        if (presentStep >= 3) window.sceneryShown = true;
         return;
       }
       if (composer && qualitySettings.post) {
-        // The direct-renderer warmup may have hidden scenery. The composer
-        // skips that path, so put every hidden node back before the pass.
-        if (sceneryReveal && sceneryReveal.length) {
-          for (let i = 0; i < sceneryReveal.length; i++) {
-            if (sceneryReveal[i]) sceneryReveal[i].visible = true;
-          }
-          sceneryReveal = null;
-        }
         window.sceneryShown = true;
+        window.brixPlateShown = !!(window.baseplateRef && window.baseplateRef.visible !== false);
         composer.render();
       } else {
+        if (!window.sceneryShown) window.sceneryShown = true;
+        window.brixPlateShown = !!(window.baseplateRef && window.baseplateRef.visible !== false);
         renderer.render(scene, camera);
       }
       hudDrawCalls = renderer.info.render.calls;
+      presentPending = false;
     }
     
     function animate() {
@@ -12786,10 +13111,19 @@
         updateFirstPersonCamera(delta);
         needsRender = true;
       } else if (controls) {
-        if (controls.update()) needsRender = true;
+        const moved = controls.update();
+        if (moved) {
+          needsRender = true;
+          cameraCoasting = true;
+          if (ghost || wallModeGhost) hideHoverGhost();
+        } else if (cameraCoasting) {
+          cameraCoasting = false;
+          scheduleHover();
+        }
         if (camera.position.y < MIN_CAMERA_HEIGHT) camera.position.y = MIN_CAMERA_HEIGHT;
         if (controls.target.y < MIN_TARGET_HEIGHT) controls.target.y = MIN_TARGET_HEIGHT;
       }
+      if (presentPending) needsRender = true;
       
       if (weatherOn) {
         if (now - lastWeatherTick >= 33) {
@@ -13129,10 +13463,11 @@
     // ==================== EXPOSE GLOBALS FOR TESTING ====================
     // Make key variables/functions accessible to E2E test suite
     window.THREE = THREE;
-    window.scene = scene;
-    window.camera = camera;
-    window.renderer = renderer;
-    window.controls = controls;
+    // Getters: init() yields before these exist, so a one-time assignment stays empty.
+    Object.defineProperty(window, 'scene', { get: () => scene });
+    Object.defineProperty(window, 'camera', { get: () => camera });
+    Object.defineProperty(window, 'renderer', { get: () => renderer });
+    Object.defineProperty(window, 'controls', { get: () => controls });
     Object.defineProperty(window, 'bricks', { get: () => bricks });
     window.grid = grid;
     window.raycaster = raycaster;

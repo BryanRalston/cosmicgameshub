@@ -1,0 +1,1053 @@
+  <!-- Tutorial Modal -->
+  <div id="tutorialModal">
+    <div class="tutorial-container">
+      <div class="tutorial-header">
+        <h2>🧱 Welcome to BRIX 3D!</h2>
+        <div class="page-indicator">Page <span id="tutorialCurrentPage">1</span> of <span id="tutorialTotalPages">3</span></div>
+      </div>
+      
+      <div class="tutorial-page active" data-page="1">
+        <h3><span class="icon">🎮</span> Look, then place</h3>
+        <p>Drag to orbit, scroll to zoom, and right-drag to pan. The first brick is a 2×2.</p>
+        <ul>
+          <li><strong>Place:</strong> Pick a brick, then click the plate or another brick</li>
+          <li><strong>Rotate:</strong> Press <kbd>R</kbd> before you click</li>
+          <li><strong>Color:</strong> Choose a swatch. Bricks snap to the stud grid</li>
+        </ul>
+        <div class="tutorial-tip">Tap a starter to drop a build, or close this and place a brick.</div>
+        <div class="starter-inline">
+          <button type="button" data-starter="cottage">Cottage</button>
+          <button type="button" data-starter="tower">Tower</button>
+          <button type="button" data-starter="buggy">Buggy</button>
+        </div>
+      </div>
+
+      <div class="tutorial-page" data-page="2">
+        <h3><span class="icon">🛠️</span> Change the build</h3>
+        <ul>
+          <li><strong>Delete (<kbd>X</kbd>)</strong> and <strong>Undo (<kbd>Ctrl+Z</kbd>)</strong></li>
+          <li><strong>Paint (<kbd>P</kbd>)</strong>, <strong>Face paint (<kbd>Shift+P</kbd>)</strong>, <strong>Dropper (<kbd>I</kbd>)</strong></li>
+          <li><strong>Wall</strong> and <strong>Floor</strong> drag out a run of bricks</li>
+          <li><strong>Mirror (<kbd>M</kbd>)</strong> and <strong>Transparent (<kbd>T</kbd>)</strong></li>
+        </ul>
+      </div>
+
+      <div class="tutorial-page" data-page="3">
+        <h3><span class="icon">📦</span> Walk, save, share</h3>
+        <ul>
+          <li><strong>Walk (<kbd>V</kbd>):</strong> <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>, mouse to look, <kbd>Space</kbd> to jump</li>
+          <li><strong>Save:</strong> Project save, or Gallery, keeps the build in this browser</li>
+          <li><strong>Slots 1–5</strong> and <kbd>?</kbd> for the rest of the keys</li>
+        </ul>
+        <div class="tutorial-tip">Have fun building. There is no wrong way to stack.</div>
+      </div>
+      
+      <div class="tutorial-footer">
+        <label class="tutorial-checkbox">
+          <input type="checkbox" id="tutorialDontShow">
+          Don't show again
+        </label>
+        <div class="tutorial-buttons">
+          <button class="tutorial-btn skip" id="tutorialSkip">Skip</button>
+          <button class="tutorial-btn prev" id="tutorialPrev" disabled>← Back</button>
+          <button class="tutorial-btn next" id="tutorialNext">Next →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="phoneTutorial" class="phone-tutorial" hidden>
+    <div class="phone-tutorial-card">
+      <h2>BRIX 3D</h2>
+      <p>Drag to look around. Pinch, or use the zoom buttons.</p>
+      <p>Tap the plate to place a brick. Open Bricks &amp; tools for colors and starters.</p>
+      <label class="phone-tutorial-dismiss">
+        <input type="checkbox" id="phoneTutorialDontShow">
+        Don't show again
+      </label>
+      <button type="button" id="phoneTutorialOk">Got it</button>
+    </div>
+  </div>
+  
+  <!-- Keybind Customization Modal -->
+  <div id="keybindModal">
+    <div class="tutorial-container" style="max-width:500px;">
+      <div class="tutorial-header">
+        <h2>⌨️ Customize Quick Slots</h2>
+        <div class="page-indicator">Click a slot, then press a key to rebind</div>
+      </div>
+      
+      <div id="keybindList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
+        <!-- Slots will be populated by JS -->
+      </div>
+      
+      <div style="text-align:center;margin-bottom:15px;">
+        <button class="tutorial-btn prev" id="keybindReset" style="margin-right:10px;">Reset to Defaults</button>
+      </div>
+      
+      <div class="tutorial-footer" style="justify-content:flex-end;">
+        <button class="tutorial-btn next" id="keybindClose">Done ✓</button>
+      </div>
+    </div>
+  </div>
+  
+  <div id="loadConfirm" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="loadConfirmTitle">
+    <div class="load-confirm">
+      <h2 id="loadConfirmTitle">Load this build?</h2>
+      <p id="loadConfirmBody"></p>
+      <div class="load-confirm-actions">
+        <button type="button" id="loadConfirmCancel">Cancel</button>
+        <button type="button" id="loadConfirmOk">Load</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="namePrompt" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="namePromptTitle">
+    <div class="load-confirm">
+      <h2 id="namePromptTitle">Name your build</h2>
+      <p id="namePromptBody">Save this build to the gallery.</p>
+      <input id="namePromptInput" class="name-prompt-input" type="text" maxlength="30" autocomplete="off" enterkeyhint="done">
+      <div class="load-confirm-actions">
+        <button type="button" id="namePromptCancel">Cancel</button>
+        <button type="button" id="namePromptOk">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gallery Modal -->
+  <div id="galleryModal" class="modal-overlay" style="display:none;">
+    <div class="gallery-container">
+      <div class="gallery-header">
+        <h2>🖼️ Build Gallery</h2>
+        <button id="galleryClose" class="gallery-close">✕</button>
+      </div>
+      <div class="gallery-tabs">
+        <button class="gallery-tab active" data-tab="saved">💾 Saved Builds</button>
+        <button class="gallery-tab" data-tab="share">🔗 Share</button>
+        <button class="gallery-tab" data-tab="screenshot">📸 Screenshot</button>
+      </div>
+      <div class="gallery-content">
+        <div class="gallery-panel active" data-panel="saved">
+          <div class="gallery-grid" id="galleryGrid">
+            <div class="gallery-empty">No saved builds yet. Save your first creation!</div>
+          </div>
+          <div class="gallery-actions">
+            <button id="gallerySaveNew" class="gallery-btn primary">📷 Save Current Build</button>
+          </div>
+        </div>
+        <div class="gallery-panel" data-panel="share">
+          <div class="share-preview">
+            <canvas id="sharePreviewCanvas" width="400" height="300"></canvas>
+          </div>
+          <div class="share-options">
+            <button id="shareDownloadImage" class="gallery-btn">📥 Download Image</button>
+            <button id="shareCopyLink" class="gallery-btn">Copy build code</button>
+            <button id="shareCopyUrl" class="gallery-btn">Copy share link</button>
+            <button id="shareDownloadFile" class="gallery-btn">💾 Download .brick File</button>
+          </div>
+          <div class="share-code-section">
+            <label for="shareBuildCode">Share link</label>
+            <textarea id="shareBuildCode" readonly placeholder="Copy the share link, or paste one here to load"></textarea>
+            <button id="shareLoadCode" class="gallery-btn">📋 Load from Code</button>
+          </div>
+        </div>
+        <div class="gallery-panel" data-panel="screenshot">
+          <div class="screenshot-preview">
+            <canvas id="screenshotCanvas" width="800" height="600"></canvas>
+          </div>
+          <div class="screenshot-options">
+            <label>Resolution:</label>
+            <select id="screenshotRes">
+              <option value="1">Standard (800×600)</option>
+              <option value="2">HD (1600×1200)</option>
+              <option value="4">4K (3200×2400)</option>
+            </select>
+            <label><input type="checkbox" id="screenshotTransparent"> Transparent Background</label>
+          </div>
+          <div class="screenshot-actions">
+            <button id="screenshotCapture" class="gallery-btn primary">📸 Capture Screenshot</button>
+            <button id="screenshotDownload" class="gallery-btn">📥 Download</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <a href="/games" class="brix-back" id="brixBack">← Games</a>
+  <div id="container"></div>
+  
+  <!-- Quick access bar at top -->
+  <div id="quickBar">
+  <button id="walkModeToggle" class="quick-btn" title="Walk Mode (V)"><span class="quick-icon">Walk</span></button>
+  <button id="fullscreenToggle" class="quick-btn" title="Fullscreen (F11)"><span class="quick-icon">Full</span></button>
+  <button id="soundToggle" class="quick-btn" title="Sound Effects"><span class="quick-icon">Sound</span></button>
+  <button id="musicToggle" class="quick-btn" title="Music"><span class="quick-icon">Music</span></button>
+  <button id="galleryBtn" class="quick-btn" title="Gallery"><span class="quick-icon">Gallery</span></button>
+</div>
+
+<div id="starterBar" aria-label="Starter builds">
+  <span>Start</span>
+  <button type="button" data-starter="cottage">Cottage</button>
+  <button type="button" data-starter="tower">Tower</button>
+  <button type="button" data-starter="buggy">Buggy</button>
+</div>
+<div id="dailyPrompt" hidden>
+  <span data-daily-text>Today: build something small.</span>
+  <button type="button" data-daily-dismiss aria-label="Dismiss daily prompt">✕</button>
+</div>
+
+<!-- Bottom Build HUD -->
+<div id="buildHud">
+  <!-- Undo / Redo -->
+  <button class="hud-btn" id="hudUndoBtn" title="Undo (Ctrl+Z)">
+    <span class="hud-label">Undo</span>
+  </button>
+  <button class="hud-btn" id="hudRedoBtn" title="Redo (Ctrl+Y)">
+    <span class="hud-label">Redo</span>
+  </button>
+
+  <div class="hud-sep"></div>
+
+  <!-- Rotate -->
+  <button class="hud-btn" id="hudRotBtn" title="Rotate 90° (R)">
+    <span class="hud-label" id="hudRotLabel">0°</span>
+  </button>
+
+  <!-- Delete mode -->
+  <button class="hud-btn" id="hudDeleteBtn" title="Delete Mode (Del)">
+    <span class="hud-label">Delete</span>
+  </button>
+
+  <div class="hud-sep"></div>
+
+  <!-- Color swatch (click to focus color section in sidebar) -->
+  <button class="hud-btn" id="hudColorBtn" title="Color Picker">
+    <div id="hudColorSwatch" style="background:#e74c3c;"></div>
+    <span class="hud-label">Color</span>
+  </button>
+
+  <div class="hud-sep"></div>
+
+  <!-- Current brick type -->
+  <div class="hud-btn" style="cursor:default;pointer-events:none;">
+    <span class="hud-label" id="hudBrickType">2×2</span>
+  </div>
+
+  <div class="hud-sep"></div>
+
+  <!-- Stats -->
+  <div id="hudStats">
+    <span id="hudBrickCount">0</span> bricks
+  </div>
+</div>
+  
+  <!-- Fullscreen mode hint -->
+  <div id="fullscreenHint">
+    <span>Press <kbd>ESC</kbd> or <kbd>F11</kbd> to exit fullscreen</span>
+  </div>
+  
+  <!-- First-person mode UI -->
+  <div id="fpsModeUI">
+    <div class="fps-crosshair" id="fpsCrosshair">+</div>
+    <div class="fps-target-info" id="fpsTargetInfo" style="display:none;"></div>
+    <div class="fps-controls-hint">
+      <div class="fps-hint-title">👤 Walk Mode</div>
+      <div class="fps-hint-keys">
+        <span>WASD</span> Move
+        <span>Arrows</span> XZ
+        <span>PgUp/Dn</span> Y
+        <span>R/Scroll</span> Rot
+        <span>Tab</span> Menu
+      </div>
+      <div class="fps-brick-info" id="fpsBrickInfo">2×2 Brick • 0°</div>
+      <div class="fps-buttons">
+        <button id="jumpBtn" class="fps-btn">⬆️ Jump</button>
+        <button id="crouchBtn" class="fps-btn">🦵 Crouch</button>
+        <button id="exitFpsBtn" class="fps-btn fps-exit">✕ Exit</button>
+      </div>
+    </div>
+    
+    <!-- Quick slot hotbar -->
+    <div class="fps-hotbar" id="fpsHotbar">
+      <div class="fps-slot selected" data-slot="0"><span class="slot-key">1</span><span class="slot-name">2×2</span></div>
+      <div class="fps-slot" data-slot="1"><span class="slot-key">2</span><span class="slot-name">2×4</span></div>
+      <div class="fps-slot" data-slot="2"><span class="slot-key">3</span><span class="slot-name">1×2</span></div>
+      <div class="fps-slot" data-slot="3"><span class="slot-key">4</span><span class="slot-name">Plate</span></div>
+      <div class="fps-slot" data-slot="4"><span class="slot-key">5</span><span class="slot-name">Slope</span></div>
+      <div class="fps-slot" data-slot="5"><span class="slot-key">6</span><span class="slot-name">Stairs</span></div>
+      <div class="fps-slot" data-slot="6"><span class="slot-key">7</span><span class="slot-name">Pillar</span></div>
+      <div class="fps-slot" data-slot="7"><span class="slot-key">8</span><span class="slot-name">Door</span></div>
+      <div class="fps-slot" data-slot="8"><span class="slot-key">9</span><span class="slot-name">Window</span></div>
+    </div>
+    
+    <!-- Radial menu for brick selection -->
+    <div class="fps-radial-menu" id="fpsRadialMenu">
+      <div class="fps-radial-center">Select</div>
+      <div class="fps-radial-ring" id="fpsRadialRing"></div>
+    </div>
+  </div>
+  
+  <div id="stats">
+    <div class="stat"><div class="stat-val" id="brickCount">0</div><div class="stat-lbl">Bricks</div></div>
+    <div class="stat"><div class="stat-val" id="heightStat">0</div><div class="stat-lbl">Height</div></div>
+    <div class="stat"><div class="stat-val" id="colorCount">0</div><div class="stat-lbl">Colors</div></div>
+  </div>
+  
+  <div class="zoom-controls">
+    <button class="zoom-btn" id="zoomInBtn">+</button>
+    <button class="zoom-btn" id="zoomOutBtn">−</button>
+  </div>
+  
+  <div class="pan-hint">
+    Pan Camera
+    <div class="keys">
+      <span class="key-btn empty"></span>
+      <span class="key-btn">W</span>
+      <span class="key-btn empty"></span>
+      <span class="key-btn">A</span>
+      <span class="key-btn">S</span>
+      <span class="key-btn">D</span>
+    </div>
+  </div>
+  
+  <!-- Sidebar toggle button -->
+  <button id="sidebarToggle" title="Toggle Menu (Tab)">☰</button>
+  
+  <nav class="brix-more" data-more-games="1" aria-label="More games">
+    <button type="button" class="brix-more__toggle" aria-expanded="false">More games</button>
+    <span class="brix-more__label">More games</span>
+    <ul class="brix-more__list">
+      <li><a href="/games/rift">RIFT</a></li>
+      <li><a href="/games/gamerdle">Gamerdle</a></li>
+      <li><a href="/games/brix3d" aria-current="page">BRIX 3D</a></li>
+      <li><a href="/games/rootweave">Rootweave</a></li>
+      <li><a href="/games/pixle">Pixle</a></li>
+      <li><a href="/games">All games</a></li>
+    </ul>
+  </nav>
+  <div id="controls">
+    <div class="panel-toggle" id="panelToggle">▲ Bricks &amp; tools</div>
+    <div class="tray-scroll">
+    <div class="drawer-starters" aria-label="Starter builds">
+      <button type="button" data-starter="cottage">Cottage</button>
+      <button type="button" data-starter="tower">Tower</button>
+      <button type="button" data-starter="buggy">Buggy</button>
+    </div>
+    
+    <div class="preview">
+      <div class="preview-name" id="previewName">2×2 Brick</div>
+      <div class="preview-rot" id="previewRot">0° rotation</div>
+    </div>
+    
+    <!-- Project Management -->
+    <div class="section" id="projectSection">
+      <div class="section-title">Project</div>
+      <div class="section-content">
+        <div class="project-controls">
+          <input type="text" id="projectName" placeholder="My Project" maxlength="30" class="project-name-input">
+          <div class="project-buttons">
+            <button class="project-btn" id="newProjectBtn">📄 New</button>
+            <button class="project-btn" id="saveProjectBtn">💾 Save</button>
+            <button class="project-btn" id="loadProjectBtn">📂 Load</button>
+          </div>
+          <div class="project-buttons" style="margin-top:5px;">
+            <button class="project-btn" id="tutorialBtn" title="Show Tutorial">📖 Tutorial</button>
+            <button class="project-btn" id="keybindBtn" title="Customize Keys">⌨️ Keys</button>
+          </div>
+        </div>
+        <div class="saved-projects-list" id="savedProjectsList"></div>
+      </div>
+    </div>
+    
+    <div class="section" id="brickSection">
+      <div class="section-title">Bricks</div>
+      <div class="section-content">
+        <!-- Standard Bricks -->
+        <div class="subsection">
+          <div class="subsection-title">Standard</div>
+          <div class="subsection-content">
+            <div class="brick-grid">
+              <div class="brick-btn" data-brick="1x1">1×1</div>
+              <div class="brick-btn" data-brick="1x2">1×2</div>
+              <div class="brick-btn" data-brick="1x3">1×3</div>
+              <div class="brick-btn" data-brick="1x4">1×4</div>
+              <div class="brick-btn" data-brick="1x6">1×6</div>
+              <div class="brick-btn selected" data-brick="2x2">2×2</div>
+              <div class="brick-btn" data-brick="2x3">2×3</div>
+              <div class="brick-btn" data-brick="2x4">2×4</div>
+              <div class="brick-btn" data-brick="2x6">2×6</div>
+              <div class="brick-btn" data-brick="2x8">2×8</div>
+              <div class="brick-btn" data-brick="4x4">4×4</div>
+              <div class="brick-btn" data-brick="4x6">4×6</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Plates -->
+        <div class="subsection collapsed">
+          <div class="subsection-title">Plates</div>
+          <div class="subsection-content">
+            <div class="brick-grid">
+              <div class="brick-btn" data-brick="1x1p">1×1</div>
+              <div class="brick-btn" data-brick="1x2p">1×2</div>
+              <div class="brick-btn" data-brick="1x4p">1×4</div>
+              <div class="brick-btn" data-brick="2x2p">2×2</div>
+              <div class="brick-btn" data-brick="2x4p">2×4</div>
+              <div class="brick-btn" data-brick="4x4p">4×4</div>
+              <div class="brick-btn" data-brick="6x6p">6×6</div>
+              <div class="brick-btn" data-brick="8x8p">8×8</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Tiles -->
+        <div class="subsection collapsed">
+          <div class="subsection-title">Tiles (smooth)</div>
+          <div class="subsection-content">
+            <div class="brick-grid">
+              <div class="brick-btn" data-brick="1x1t">1×1</div>
+              <div class="brick-btn" data-brick="1x2t">1×2</div>
+              <div class="brick-btn" data-brick="1x4t">1×4</div>
+              <div class="brick-btn" data-brick="2x2t">2×2</div>
+              <div class="brick-btn" data-brick="2x4t">2×4</div>
+              <div class="brick-btn" data-brick="4x4t">4×4</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Round -->
+        <div class="subsection collapsed">
+          <div class="subsection-title">Round</div>
+          <div class="subsection-content">
+            <div class="brick-grid">
+              <div class="brick-btn" data-brick="r1x1">●1×1</div>
+              <div class="brick-btn" data-brick="r2x2">●2×2</div>
+              <div class="brick-btn" data-brick="r1x1p">●1×1p</div>
+              <div class="brick-btn" data-brick="r2x2p">●2×2p</div>
+              <div class="brick-btn" data-brick="r4x4p">●4×4p</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Slopes -->
+        <div class="subsection collapsed">
+          <div class="subsection-title">Slopes</div>
+          <div class="subsection-content">
+            <div class="brick-grid">
+              <div class="brick-btn" data-brick="slope2">2×2</div>
+              <div class="brick-btn" data-brick="slope4">2×4</div>
+              <div class="brick-btn" data-brick="slope1x2">1×2</div>
+              <div class="brick-btn" data-brick="slope1x3">1×3</div>
+              <div class="brick-btn" data-brick="slope1x4">1×4</div>
+            </div>
+            <div style="font-size:9px;color:rgba(255,255,255,0.5);margin-top:6px;margin-bottom:4px;">Corner Slopes (Roofing)</div>
+            <div class="brick-grid">
+              <div class="brick-btn" data-brick="cslope2">⌐ 2×2</div>
+              <div class="brick-btn" data-brick="cslope3">⌐ 3×3</div>
+              <div class="brick-btn" data-brick="icslope2">⌙ 2×2</div>
+              <div class="brick-btn" data-brick="icslope3">⌙ 3×3</div>
+            </div>
+            <div style="font-size:9px;color:rgba(255,255,255,0.4);margin-top:4px;">⌐ Outside corner | ⌙ Inside corner</div>
+          </div>
+        </div>
+        
+        <!-- SNOT -->
+        <div class="subsection collapsed">
+          <div class="subsection-title">SNOT (Side Studs)</div>
+          <div class="subsection-content">
+            <div class="brick-grid">
+              <div class="brick-btn" data-brick="snot1x2">1×2</div>
+              <div class="brick-btn" data-brick="snot2x2">2×2</div>
+              <div class="brick-btn" data-brick="snot2x4">2×4</div>
+              <div class="brick-btn" data-brick="snot2x4x4">2×4 2-side</div>
+            </div>
+            <div style="font-size:9px;color:rgba(255,255,255,0.4);margin-top:6px;">Studs on sides for sideways tiles</div>
+          </div>
+        </div>
+        
+        <!-- Light Bricks -->
+        <div class="subsection collapsed">
+          <div class="subsection-title">Light Bricks</div>
+          <div class="subsection-content">
+            <div class="brick-grid">
+              <div class="brick-btn" data-brick="light1x1">1×1</div>
+              <div class="brick-btn" data-brick="light2x2">2×2</div>
+              <div class="brick-btn" data-brick="light1x1p">1×1 Plate</div>
+            </div>
+            <div style="font-size:9px;color:rgba(255,255,255,0.4);margin-top:6px;">Uses selected color</div>
+            <div style="margin-top:8px;font-size:10px;color:rgba(255,255,255,0.6);">🔆 Bright Lamps (Yellow)</div>
+            <div class="brick-grid" style="margin-top:4px;">
+              <div class="brick-btn" data-brick="lamp1x1">1×1 Lamp</div>
+              <div class="brick-btn" data-brick="lamp2x2">2×2 Lamp</div>
+            </div>
+            <div style="font-size:9px;color:rgba(255,255,255,0.4);margin-top:6px;">Extra bright for streetlights!</div>
+            <div style="margin-top:10px;font-size:10px;color:rgba(255,255,255,0.6);">🎨 Light Color</div>
+            <div class="light-color-grid" style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-top:6px;">
+              <div class="light-color-btn selected" data-light-color="0xffdd44" style="width:24px;height:24px;background:#ffdd44;border-radius:4px;cursor:pointer;border:2px solid #fff;" title="Warm White"></div>
+              <div class="light-color-btn" data-light-color="0xffffff" style="width:24px;height:24px;background:#ffffff;border-radius:4px;cursor:pointer;border:2px solid transparent;" title="Pure White"></div>
+              <div class="light-color-btn" data-light-color="0xaaddff" style="width:24px;height:24px;background:#aaddff;border-radius:4px;cursor:pointer;border:2px solid transparent;" title="Cool White"></div>
+              <div class="light-color-btn" data-light-color="0xff4444" style="width:24px;height:24px;background:#ff4444;border-radius:4px;cursor:pointer;border:2px solid transparent;" title="Red"></div>
+              <div class="light-color-btn" data-light-color="0xff8800" style="width:24px;height:24px;background:#ff8800;border-radius:4px;cursor:pointer;border:2px solid transparent;" title="Orange"></div>
+              <div class="light-color-btn" data-light-color="0xffff00" style="width:24px;height:24px;background:#ffff00;border-radius:4px;cursor:pointer;border:2px solid transparent;" title="Yellow"></div>
+              <div class="light-color-btn" data-light-color="0x44ff44" style="width:24px;height:24px;background:#44ff44;border-radius:4px;cursor:pointer;border:2px solid transparent;" title="Green"></div>
+              <div class="light-color-btn" data-light-color="0x00ffff" style="width:24px;height:24px;background:#00ffff;border-radius:4px;cursor:pointer;border:2px solid transparent;" title="Cyan"></div>
+              <div class="light-color-btn" data-light-color="0x4488ff" style="width:24px;height:24px;background:#4488ff;border-radius:4px;cursor:pointer;border:2px solid transparent;" title="Blue"></div>
+              <div class="light-color-btn" data-light-color="0xaa44ff" style="width:24px;height:24px;background:#aa44ff;border-radius:4px;cursor:pointer;border:2px solid transparent;" title="Purple"></div>
+              <div class="light-color-btn" data-light-color="0xff44aa" style="width:24px;height:24px;background:#ff44aa;border-radius:4px;cursor:pointer;border:2px solid transparent;" title="Pink"></div>
+              <div class="light-color-btn" data-light-color="0xff6600" style="width:24px;height:24px;background:#ff6600;border-radius:4px;cursor:pointer;border:2px solid transparent;" title="Fire"></div>
+            </div>
+            <div style="font-size:9px;color:rgba(255,255,255,0.4);margin-top:4px;">Click to set light color</div>
+          </div>
+        </div>
+        
+        <!-- Custom Block -->
+        <div class="subsection collapsed">
+          <div class="subsection-title">Custom Block</div>
+          <div class="subsection-content">
+            <div class="custom-block-creator">
+              <div class="custom-row">
+                <label>Width:</label>
+                <input type="number" id="customW" min="1" max="16" value="2">
+                <label>Depth:</label>
+                <input type="number" id="customD" min="1" max="16" value="4">
+              </div>
+              <div class="custom-row">
+                <label>Type:</label>
+                <select id="customType">
+                  <option value="brick">Brick</option>
+                  <option value="plate">Plate</option>
+                  <option value="tile">Tile (smooth)</option>
+                  <option value="round">Round</option>
+                </select>
+              </div>
+              <button class="custom-create-btn" id="createCustomBtn">Create & Select</button>
+              <div class="custom-hint">Max size: 16×16 (256 studs)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="section collapsed">
+      <div class="section-title">Color</div>
+      <div class="section-content">
+        <input type="color" id="colorPicker" value="#ff2200">
+        <div class="color-presets">
+          <div class="color-preset selected" style="background:#ff2200" data-color="#ff2200"></div>
+          <div class="color-preset" style="background:#1e88e5" data-color="#1e88e5"></div>
+          <div class="color-preset" style="background:#ffe600" data-color="#ffe600"></div>
+          <div class="color-preset" style="background:#00c853" data-color="#00c853"></div>
+          <div class="color-preset" style="background:#ff9800" data-color="#ff9800"></div>
+          <div class="color-preset" style="background:#d500f9" data-color="#d500f9"></div>
+          <div class="color-preset" style="background:#00bcd4" data-color="#00bcd4"></div>
+          <div class="color-preset" style="background:#e91e63" data-color="#e91e63"></div>
+          <div class="color-preset" style="background:#ffffff" data-color="#ffffff"></div>
+          <div class="color-preset" style="background:#212121" data-color="#212121"></div>
+          <div class="color-preset" style="background:#9e9e9e" data-color="#9e9e9e"></div>
+          <div class="color-preset" style="background:#607d8b" data-color="#607d8b"></div>
+          <div class="color-preset" style="background:#795548" data-color="#795548"></div>
+          <div class="color-preset" style="background:#d4a574" data-color="#d4a574"></div>
+          <div class="color-preset" style="background:#76ff03" data-color="#76ff03"></div>
+          <div class="color-preset" style="background:#ff5722" data-color="#ff5722"></div>
+        </div>
+        <div class="trans-section">
+          <div class="trans-label">🔮 Transparent</div>
+          <div class="color-presets trans-colors">
+            <div class="color-preset trans clear-glass" style="background:linear-gradient(135deg,rgba(255,255,255,0.3),rgba(200,230,255,0.15))" data-color="#e0f7fa" data-trans="true" title="Clear Glass"></div>
+            <div class="color-preset trans" style="background:linear-gradient(135deg,rgba(255,34,0,0.5),rgba(255,34,0,0.3))" data-color="#ff2200" data-trans="true"></div>
+            <div class="color-preset trans" style="background:linear-gradient(135deg,rgba(30,136,229,0.5),rgba(30,136,229,0.3))" data-color="#1e88e5" data-trans="true"></div>
+            <div class="color-preset trans" style="background:linear-gradient(135deg,rgba(255,230,0,0.55),rgba(255,230,0,0.32))" data-color="#ffe600" data-trans="true"></div>
+            <div class="color-preset trans" style="background:linear-gradient(135deg,rgba(0,200,83,0.55),rgba(0,200,83,0.32))" data-color="#00c853" data-trans="true"></div>
+            <div class="color-preset trans" style="background:linear-gradient(135deg,rgba(0,188,212,0.5),rgba(0,188,212,0.3))" data-color="#00bcd4" data-trans="true"></div>
+            <div class="color-preset trans" style="background:linear-gradient(135deg,rgba(213,0,249,0.55),rgba(213,0,249,0.32))" data-color="#d500f9" data-trans="true"></div>
+            <div class="color-preset trans" style="background:linear-gradient(135deg,rgba(255,255,255,0.5),rgba(255,255,255,0.3))" data-color="#ffffff" data-trans="true"></div>
+            <div class="color-preset trans" style="background:linear-gradient(135deg,rgba(33,33,33,0.5),rgba(33,33,33,0.3))" data-color="#212121" data-trans="true"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="section collapsed">
+      <div class="section-title">Photo Tiles</div>
+      <div class="section-content">
+        <div class="photo-tile-section">
+          <div class="photo-upload-row">
+            <button class="photo-upload-btn" id="uploadPhotoBtn">📷 Upload Image</button>
+            <input type="file" id="photoInput" accept="image/*" style="display:none">
+          </div>
+          <div class="uploaded-photos" id="uploadedPhotos">
+            <div class="no-photos-hint">No photos uploaded yet</div>
+          </div>
+          <div class="photo-hint">Select a tile brick, then a photo to apply</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="section collapsed">
+      <div class="section-title">Prefabs</div>
+      <div class="section-content">
+        <input type="text" class="prefab-search" id="prefabSearch" placeholder="🔍 Search prefabs...">
+        
+        <!-- Building Structures -->
+        <div class="subsection collapsed">
+          <div class="subsection-title">Building</div>
+          <div class="subsection-content">
+            <div class="prefab-grid" id="prefabGrid">
+              <button class="prefab-btn" data-prefab="wall4">🧱 Wall 4</button>
+              <button class="prefab-btn" data-prefab="wall8">🧱 Wall 8</button>
+              <button class="prefab-btn" data-prefab="corner">📐 Corner</button>
+              <button class="prefab-btn" data-prefab="pillar">🏛️ Pillar</button>
+              <button class="prefab-btn" data-prefab="stairs">🪜 Stairs</button>
+              <button class="prefab-btn" data-prefab="arch">🌉 Arch</button>
+              <button class="prefab-btn" data-prefab="window">🪟 Window</button>
+              <button class="prefab-btn" data-prefab="door">🚪 Door</button>
+              <button class="prefab-btn" data-prefab="fence">🚧 Fence</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Trees -->
+        <div class="subsection collapsed">
+          <div class="subsection-title">Trees</div>
+          <div class="subsection-content">
+            <div class="prefab-grid">
+              <button class="prefab-btn" data-prefab="tree">🌳 Oak Small</button>
+              <button class="prefab-btn" data-prefab="oak">🌳 Oak Large</button>
+              <button class="prefab-btn" data-prefab="pine">🌲 Pine</button>
+              <button class="prefab-btn" data-prefab="palm">🌴 Palm</button>
+              <button class="prefab-btn" data-prefab="willow">🌿 Willow</button>
+              <button class="prefab-btn" data-prefab="cherry">🌸 Cherry</button>
+              <button class="prefab-btn" data-prefab="deadTree">🥀 Dead Tree</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Plants & Flowers -->
+        <div class="subsection collapsed">
+          <div class="subsection-title">Plants & Flowers</div>
+          <div class="subsection-content">
+            <div class="prefab-grid">
+              <button class="prefab-btn" data-prefab="bush">🌿 Bush</button>
+              <button class="prefab-btn" data-prefab="bushBerry">🫐 Berry Bush</button>
+              <button class="prefab-btn" data-prefab="flowerRed">🌹 Rose</button>
+              <button class="prefab-btn" data-prefab="flowerYellow">🌻 Sunflower</button>
+              <button class="prefab-btn" data-prefab="flowerPink">🌸 Peony</button>
+              <button class="prefab-btn" data-prefab="flowerBlue">💠 Hydrangea</button>
+              <button class="prefab-btn" data-prefab="flowerWhite">🤍 Lily</button>
+              <button class="prefab-btn" data-prefab="tulips">🌷 Tulips</button>
+              <button class="prefab-btn" data-prefab="tallGrass">🌾 Tall Grass</button>
+              <button class="prefab-btn" data-prefab="fern">🌿 Fern</button>
+              <button class="prefab-btn" data-prefab="cactus">🌵 Saguaro</button>
+              <button class="prefab-btn" data-prefab="cactusSmall">🪴 Barrel Cactus</button>
+              <button class="prefab-btn" data-prefab="mushroom">🍄 Red Mushroom</button>
+              <button class="prefab-btn" data-prefab="mushroomBrown">🍄 Porcini</button>
+              <button class="prefab-btn" data-prefab="mushroomCluster">🍄 Cluster</button>
+              <button class="prefab-btn" data-prefab="lilyPad">🪷 Water Lily</button>
+              <button class="prefab-btn" data-prefab="reeds">🌿 Cattails</button>
+              <button class="prefab-btn" data-prefab="vine">🍃 Vine</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Rocks & Terrain -->
+        <div class="subsection collapsed">
+          <div class="subsection-title">Rocks & Terrain</div>
+          <div class="subsection-content">
+            <div class="prefab-grid">
+              <button class="prefab-btn" data-prefab="rock">🪨 Rock</button>
+              <button class="prefab-btn" data-prefab="boulder">⛰️ Boulder</button>
+              <button class="prefab-btn" data-prefab="stump">🪵 Stump</button>
+              <button class="prefab-btn" data-prefab="log">🪵 Log</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Furniture -->
+        <div class="subsection collapsed">
+          <div class="subsection-title">Furniture</div>
+          <div class="subsection-content">
+            <div class="prefab-grid">
+              <button class="prefab-btn" data-prefab="chair">🪑 Chair</button>
+              <button class="prefab-btn" data-prefab="table">🪵 Table</button>
+              <button class="prefab-btn" data-prefab="coffeeTable">☕ Coffee Tbl</button>
+              <button class="prefab-btn" data-prefab="sofa">🛋️ Sofa</button>
+              <button class="prefab-btn" data-prefab="bed">🛏️ Bed</button>
+              <button class="prefab-btn" data-prefab="desk">📝 Desk</button>
+              <button class="prefab-btn" data-prefab="bookshelf">📚 Bookshelf</button>
+              <button class="prefab-btn" data-prefab="lamp">💡 Lamp</button>
+              <button class="prefab-btn" data-prefab="floorLamp">🏮 Floor Lamp</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Decor -->
+        <div class="subsection collapsed">
+          <div class="subsection-title">Decor & Rugs</div>
+          <div class="subsection-content">
+            <div class="prefab-grid">
+              <button class="prefab-btn" data-prefab="rugSmall">🟥 Rug Small</button>
+              <button class="prefab-btn" data-prefab="rugLarge">🟦 Rug Large</button>
+              <button class="prefab-btn" data-prefab="rugRound">⭕ Rug Round</button>
+              <button class="prefab-btn" data-prefab="vase">🏺 Vase</button>
+              <button class="prefab-btn" data-prefab="painting">🖼️ Painting</button>
+              <button class="prefab-btn" data-prefab="clock">🕐 Clock</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Kitchen & Bath -->
+        <div class="subsection collapsed">
+          <div class="subsection-title">Kitchen & Bath</div>
+          <div class="subsection-content">
+            <div class="prefab-grid">
+              <button class="prefab-btn" data-prefab="fridge">🧊 Fridge</button>
+              <button class="prefab-btn" data-prefab="stove">🍳 Stove</button>
+              <button class="prefab-btn" data-prefab="sink">🚰 Sink</button>
+              <button class="prefab-btn" data-prefab="counter">📦 Counter</button>
+              <button class="prefab-btn" data-prefab="toilet">🚽 Toilet</button>
+              <button class="prefab-btn" data-prefab="bathtub">🛁 Bathtub</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Vehicles -->
+        <div class="subsection collapsed">
+          <div class="subsection-title">Vehicles</div>
+          <div class="subsection-content">
+            <div class="prefab-grid">
+              <button class="prefab-btn" data-prefab="car">🚗 Car</button>
+              <button class="prefab-btn" data-prefab="truck">🚚 Truck</button>
+              <button class="prefab-btn" data-prefab="boat">⛵ Boat</button>
+              <button class="prefab-btn" data-prefab="airplane">✈️ Plane</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Play Structures -->
+        <div class="subsection collapsed">
+          <div class="subsection-title">Play Structures</div>
+          <div class="subsection-content">
+            <div class="prefab-grid">
+              <button class="prefab-btn" data-prefab="rocket">🚀 Rocket</button>
+              <button class="prefab-btn" data-prefab="castleTower">🏰 Tower</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Custom Prefab Creator -->
+        <div class="subsection collapsed">
+          <div class="subsection-title">Custom Prefab</div>
+          <div class="subsection-content">
+            <div class="custom-prefab-section">
+              <div class="custom-prefab-controls">
+                <button class="prefab-mode-btn" id="startPrefabBtn">🔨 Create Prefab</button>
+                <button class="prefab-mode-btn recording" id="stopPrefabBtn" style="display:none">💾 Save Selection</button>
+                <button class="prefab-mode-btn cancel" id="cancelPrefabBtn" style="display:none">✖️ Cancel</button>
+              </div>
+              <div class="prefab-recording-info" id="prefabRecordingInfo" style="display:none">
+                <div class="recording-indicator">🔵 Click bricks to select</div>
+                <div class="recording-count">Selected: <span id="prefabBrickCount">0</span></div>
+              </div>
+              <div class="prefab-name-input" id="prefabNameInput" style="display:none">
+                <input type="text" id="customPrefabName" placeholder="Enter prefab name..." maxlength="20">
+                <button class="prefab-save-btn" id="savePrefabBtn">💾 Save</button>
+              </div>
+              <div class="custom-prefabs-list" id="customPrefabsList"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="section collapsed">
+      <div class="section-title">Tools</div>
+      <div class="section-content">
+        <div class="tool-grid">
+          <button class="tool-btn" id="rotateBtn">
+            <span class="tool-icon">🔄</span>
+            <span class="tool-label">Rotate Y (R)</span>
+          </button>
+          <button class="tool-btn" id="rotatePitchBtn">
+            <span class="tool-icon">↕️</span>
+            <span class="tool-label">Pitch (T)</span>
+          </button>
+          <button class="tool-btn" id="rotateRollBtn">
+            <span class="tool-icon">↔️</span>
+            <span class="tool-label">Roll (Y)</span>
+          </button>
+          <button class="tool-btn" id="deleteBtn" title="Click bricks to delete them (X)">
+            <span class="tool-icon">🗑️</span>
+            <span class="tool-label">Delete (X)</span>
+          </button>
+          <button class="tool-btn" id="dropperBtn" title="Pick a color from an existing brick (C)">
+            <span class="tool-icon">💧</span>
+            <span class="tool-label">Dropper (C)</span>
+          </button>
+          <button class="tool-btn" id="paintBtn" title="Click bricks to change their color (P)">
+            <span class="tool-icon">🎨</span>
+            <span class="tool-label">Paint (P)</span>
+          </button>
+          <button class="tool-btn" id="facePaintBtn" title="Paint individual sides of bricks (Shift+P)">
+            <span class="tool-icon">🖌️</span>
+            <span class="tool-label">Face (⇧P)</span>
+          </button>
+          <button class="tool-btn" id="floorBtn" title="Drag to fill an area with plates (F)">
+            <span class="tool-icon">⬜</span>
+            <span class="tool-label">Floor (F)</span>
+          </button>
+          <button class="tool-btn" id="wallBtn" title="Drag to build walls (B)">
+            <span class="tool-icon">🧱</span>
+            <span class="tool-label">Wall (B)</span>
+          </button>
+          <button class="tool-btn" id="gravityBtn" title="Make floating bricks fall down (G)">
+            <span class="tool-icon">🌍</span>
+            <span class="tool-label">Gravity (G)</span>
+          </button>
+          <button class="tool-btn" id="mirrorBtn" title="Place bricks symmetrically (M)">
+            <span class="tool-icon">🔀</span>
+            <span class="tool-label">Mirror (M)</span>
+          </button>
+          <button class="tool-btn" id="moveBtn" title="Select and move groups of bricks (N)">
+            <span class="tool-icon">✋</span>
+            <span class="tool-label">Move (N)</span>
+          </button>
+          <button class="tool-btn" id="clearBtn" title="Delete all bricks">
+            <span class="tool-icon">🧹</span>
+            <span class="tool-label">Clear All</span>
+          </button>
+        </div>
+        
+        <!-- Mirror Settings Panel -->
+        <div class="mirror-settings" id="mirrorSettings">
+          <div class="mirror-setting-row">
+            <span class="mirror-label">Mirror:</span>
+            <div class="mirror-axis-btns">
+              <button class="mirror-axis-btn active" data-axis="x" title="Mirror left/right">↔️ L/R</button>
+              <button class="mirror-axis-btn" data-axis="z" title="Mirror front/back">↕️ F/B</button>
+              <button class="mirror-axis-btn" data-axis="both" title="Mirror both directions">✚ Both</button>
+            </div>
+          </div>
+          <div class="mirror-setting-row">
+            <span class="mirror-label">Center:</span>
+            <div class="mirror-offset-control">
+              <button class="mirror-offset-btn" id="mirrorOffsetDown">−</button>
+              <span class="mirror-offset-value" id="mirrorOffsetValue">0</span>
+              <button class="mirror-offset-btn" id="mirrorOffsetUp">+</button>
+            </div>
+          </div>
+          <div class="mirror-preview-text" id="mirrorPreviewText">Mirror left ↔ right at X=0</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="section collapsed">
+      <div class="section-title">Actions</div>
+      <div class="section-content">
+        <div class="tool-grid">
+          <button class="tool-btn" id="undoBtn">
+            <span class="tool-icon">↶</span>
+            <span class="tool-label">Undo</span>
+          </button>
+          <button class="tool-btn" id="redoBtn">
+            <span class="tool-icon">↷</span>
+            <span class="tool-label">Redo</span>
+          </button>
+          <button class="tool-btn" id="saveBtn">
+            <span class="tool-icon">💾</span>
+            <span class="tool-label">Save</span>
+          </button>
+          <button class="tool-btn" id="loadBtn">
+            <span class="tool-icon">📁</span>
+            <span class="tool-label">Load</span>
+          </button>
+          <button class="tool-btn" id="photoBtn">
+            <span class="tool-icon">📸</span>
+            <span class="tool-label">Photo</span>
+          </button>
+          <button class="tool-btn" id="firstPersonBtn">
+            <span class="tool-icon">👤</span>
+            <span class="tool-label">Walk Mode</span>
+          </button>
+          <button class="tool-btn" id="resetBtn">
+            <span class="tool-icon">🎯</span>
+            <span class="tool-label">Reset View</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="section collapsed">
+      <div class="section-title">Environment</div>
+      <div class="section-content">
+        <div class="env-controls">
+          <div class="env-row">
+            <span class="env-label">Time:</span>
+            <span class="time-display" id="timeLabel">08:24</span>
+          </div>
+          <input type="range" id="timeSlider" class="time-slider" min="0" max="100" value="35">
+          <div class="time-presets">
+            <button class="time-preset" data-time="0.27">🌅 Dawn</button>
+            <button class="time-preset" data-time="0.5">☀️ Noon</button>
+            <button class="time-preset" data-time="0.73">🌇 Dusk</button>
+            <button class="time-preset" data-time="0.0">🌙 Night</button>
+          </div>
+          <div class="env-row" style="margin-top: 8px;">
+            <span class="env-label">Quality:</span>
+          </div>
+          <div class="weather-btns" id="qualityBtns">
+            <button class="weather-btn" data-quality="high">High</button>
+            <button class="weather-btn active" data-quality="balanced">Balanced</button>
+            <button class="weather-btn" data-quality="performance">Performance</button>
+          </div>
+          <div class="env-row" style="margin-top: 8px;">
+            <span class="env-label">Weather:</span>
+          </div>
+          <div class="weather-btns">
+            <button class="weather-btn active" data-weather="clear">☀️ Clear</button>
+            <button class="weather-btn" data-weather="rain">🌧️ Rain</button>
+            <button class="weather-btn" data-weather="snow">❄️ Snow</button>
+            <button class="weather-btn" data-weather="fog">🌫️ Fog</button>
+          </div>
+          <div class="env-row" style="margin-top: 8px;">
+            <span class="env-label">Environment:</span>
+          </div>
+          <div class="weather-btns environment-grid">
+            <button class="weather-btn active" data-background="forest">🌲 Forest</button>
+            <button class="weather-btn" data-background="mountains">⛰️ Alpine</button>
+            <button class="weather-btn" data-background="desert">🏜️ Desert</button>
+            <button class="weather-btn" data-background="winter">❄️ Arctic</button>
+            <button class="weather-btn" data-background="space">🚀 Space</button>
+            <button class="weather-btn" data-background="classroom">🏫 Classroom</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>
+  </div>
+  
+  <div class="rotation-ind">
+    <span class="rot-arrow" id="rotArrow">&gt;</span>
+    <span>Rotation</span>
+    <span class="rot-deg" id="rotDeg">0°</span>
+  </div>
+  
+  <div id="info" class="collapsed">
+    <h3>⌨️ Shortcuts</h3>
+    <div class="shortcut"><span class="key">Click</span> Place brick</div>
+    <div class="shortcut"><span class="key">Right-click</span> Delete</div>
+    <div class="shortcut"><span class="key">WASD</span> Pan camera</div>
+    <div class="shortcut"><span class="key">Q/E</span> Zoom in/out</div>
+    <div class="shortcut"><span class="key">R</span> Rotate Y (yaw)</div>
+    <div class="shortcut"><span class="key">T</span> Rotate X (pitch)</div>
+    <div class="shortcut"><span class="key">Y</span> Rotate Z (roll)</div>
+    <div class="shortcut"><span class="key">X</span> Delete mode</div>
+    <div class="shortcut"><span class="key">P</span> Paint mode</div>
+    <div class="shortcut"><span class="key">Shift+P</span> Face paint</div>
+    <div class="shortcut"><span class="key">F</span> Floor tool</div>
+    <div class="shortcut"><span class="key">B</span> Wall tool</div>
+    <div class="shortcut"><span class="key">V</span> Walk mode</div>
+    <div class="shortcut"><span class="key">M</span> Mirror</div>
+    <div class="shortcut"><span class="key">N</span> Move</div>
+    <div class="shortcut"><span class="key">C</span> Color picker</div>
+    <div class="shortcut"><span class="key">G</span> Gravity</div>
+    <div class="shortcut"><span class="key">Ctrl+Z</span> Undo</div>
+    <div class="shortcut"><span class="key">Ctrl+Y</span> Redo</div>
+    <div class="shortcut"><span class="key">Ctrl+S</span> Save project</div>
+  </div>
+  
+  <div class="fps" id="fps">-- FPS</div>
+  <div id="qualityBar">
+    <button data-quality="high">High</button>
+    <button data-quality="balanced" class="active">Balanced</button>
+    <button data-quality="performance">Perf</button>
+  </div>
+  <div class="toast" id="toast"></div>
+  <div class="touch-indicator" id="touchIndicator"></div>
+  <div class="floor-preview-info" id="floorPreviewInfo">Drag to select area: 0×0</div>
+  <div class="wall-preview-info" id="wallPreviewInfo">Wall: 0 studs × 0 bricks</div>
+  <div class="rapid-place-indicator" id="rapidPlaceIndicator">⚡ RAPID PLACE (Shift)</div>
+  <div class="move-mode-indicator" id="moveModeIndicator">✋ MOVE MODE - Click brick to select group</div>
+  
+  <!-- Floating Mirror Control Popup -->
+  <div class="mirror-popup" id="mirrorPopup">
+    <div class="mirror-popup-header">
+      <span class="mirror-popup-title">🔀 Mirror Mode</span>
+      <button class="mirror-popup-close" id="mirrorPopupClose">✕</button>
+    </div>
+    <div class="mirror-popup-content">
+      <div class="mirror-popup-row">
+        <span class="mirror-popup-label">Direction:</span>
+        <div class="mirror-popup-btns">
+          <button class="mirror-popup-btn active" data-axis="x" title="Mirror left/right">↔️ L/R</button>
+          <button class="mirror-popup-btn" data-axis="z" title="Mirror front/back">↕️ F/B</button>
+          <button class="mirror-popup-btn" data-axis="both" title="Mirror all 4 ways">✚ Both</button>
+        </div>
+      </div>
+      <div class="mirror-popup-row">
+        <span class="mirror-popup-label">Center:</span>
+        <div class="mirror-popup-offset">
+          <button class="mirror-popup-offset-btn" id="mirrorPopupOffsetDown">−</button>
+          <span class="mirror-popup-offset-value" id="mirrorPopupOffsetValue">0</span>
+          <button class="mirror-popup-offset-btn" id="mirrorPopupOffsetUp">+</button>
+        </div>
+      </div>
+      <div class="mirror-popup-info" id="mirrorPopupInfo">Mirror left ↔ right at X=0</div>
+    </div>
+  </div>
+  
+  <!-- Floating Build Tool Popup (Floor/Wall) -->
+  <div class="build-tool-popup" id="buildToolPopup">
+    <div class="build-tool-popup-header">
+      <span class="build-tool-popup-title" id="buildToolTitle">🧱 Wall Tool</span>
+      <button class="build-tool-popup-close" id="buildToolPopupClose">✕</button>
+    </div>
+    <div class="build-tool-popup-content">
+      <div class="build-tool-popup-row">
+        <span class="build-tool-popup-label">Mode:</span>
+        <div class="build-tool-popup-mode-btns">
+          <button class="build-tool-mode-btn" data-mode="floor" id="buildModeFloor">🟫 Floor</button>
+          <button class="build-tool-mode-btn active" data-mode="wall" id="buildModeWall">🧱 Wall</button>
+        </div>
+      </div>
+      <div class="build-tool-popup-row" id="buildShapeRow">
+        <span class="build-tool-popup-label">Shape:</span>
+        <div class="build-tool-popup-mode-btns">
+          <button class="build-tool-mode-btn active" data-shape="line" id="buildShapeLine">📏 Line</button>
+          <button class="build-tool-mode-btn" data-shape="box" id="buildShapeBox">⬜ Box</button>
+        </div>
+      </div>
+      <div class="build-tool-popup-row" id="buildTypeRow">
+        <span class="build-tool-popup-label">Type:</span>
+        <div class="build-tool-popup-mode-btns">
+          <button class="build-tool-mode-btn active" data-floor-type="plate" id="buildTypePlate">Plate</button>
+          <button class="build-tool-mode-btn" data-floor-type="tile" id="buildTypeTile">Tile</button>
+          <button class="build-tool-mode-btn" data-floor-type="brick" id="buildTypeBrick">Brick</button>
+        </div>
+      </div>
+      <div class="build-tool-popup-row" id="buildHeightRow">
+        <span class="build-tool-popup-label">Height:</span>
+        <div class="build-tool-popup-control">
+          <button class="build-tool-popup-btn" id="buildHeightDown">−</button>
+          <span class="build-tool-popup-value" id="buildHeightValue">3</span>
+          <button class="build-tool-popup-btn" id="buildHeightUp">+</button>
+        </div>
+        <span class="build-tool-popup-label">bricks</span>
+      </div>
+      <div class="build-tool-popup-row" id="buildDepthRow">
+        <span class="build-tool-popup-label">Depth:</span>
+        <div class="build-tool-popup-control">
+          <button class="build-tool-popup-btn" id="buildDepthDown">−</button>
+          <span class="build-tool-popup-value" id="buildDepthValue">2</span>
+          <button class="build-tool-popup-btn" id="buildDepthUp">+</button>
+        </div>
+        <span class="build-tool-popup-label">studs</span>
+      </div>
+      <div class="build-tool-popup-info" id="buildToolInfo">Click & drag to draw</div>
+    </div>
+  </div>
+  
+  <input type="file" id="fileInput" accept=".json" style="display:none">
+  
+  <!-- brix-preloads -->
+  <!-- /brix-preloads -->
+  
