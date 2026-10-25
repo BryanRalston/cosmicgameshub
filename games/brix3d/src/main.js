@@ -1,5 +1,15 @@
     import * as THREE from 'three';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    function escHtml(value) {
+      return String(value == null ? '' : value).replace(/[&<>"']/g, (ch) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[ch]));
+    }
     
     // ==================== CONSTANTS ====================
     const STUD = 0.8;
@@ -1071,17 +1081,17 @@
     const QUALITY_PRESETS = {
       high: {
         dprDesktop: 1.5, dprMobile: 1,
-        shadowDesktop: 2048, shadowMobile: 1024,
+        shadowDesktop: 1024, shadowMobile: 512,
         bloom: true, ssao: true, post: true
       },
       balanced: {
         dprDesktop: 1.5, dprMobile: 1,
-        shadowDesktop: 2048, shadowMobile: 1024,
+        shadowDesktop: 1024, shadowMobile: 512,
         bloom: true, ssao: false, post: true
       },
       performance: {
         dprDesktop: 1, dprMobile: 1,
-        shadowDesktop: 1024, shadowMobile: 512,
+        shadowDesktop: 512, shadowMobile: 512,
         bloom: false, ssao: false, post: false
       }
     };
@@ -1365,7 +1375,7 @@
       renderer.setSize(innerWidth, innerHeight);
       renderer.setPixelRatio(qualityDpr());
       renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = isMobileGfx() ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
+      renderer.shadowMap.type = THREE.PCFShadowMap;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.5;
       renderer.info.autoReset = false;
@@ -1444,8 +1454,7 @@
       groundPlane.position.y = BASE_Y;
       scene.add(groundPlane);
       
-      // Create weather particle systems
-      createWeatherSystems();
+      // Rain and snow buffers wait until a weather button asks for them.
       
       createInfiniteGround();
       setupEvents();
@@ -1552,7 +1561,7 @@
       const vignetteShader = {
         uniforms: {
           'tDiffuse': { value: null },
-          'darkness': { value: 0.28 },
+          'darkness': { value: 0.06 },
           'offset': { value: 1.15 },
           'saturation': { value: 1.06 },
           'contrast': { value: 1.03 }
@@ -1974,6 +1983,7 @@
     
     function setWeather(type) {
       weatherType = type;
+      if (type !== 'clear' && !rainParticles) createWeatherSystems();
       needsRender = true;
       
       // Hide all weather
@@ -2185,6 +2195,24 @@
     }
     
     let currentBackgroundTheme = 'forest';
+
+    const sceneryJobs = [];
+    let sceneryPumping = false;
+    function queueScenery(fn) {
+      sceneryJobs.push(fn);
+      if (sceneryPumping) return;
+      sceneryPumping = true;
+      setTimeout(pumpScenery, 0);
+    }
+    function pumpScenery() {
+      const start = performance.now();
+      while (sceneryJobs.length && performance.now() - start < 8) {
+        const job = sceneryJobs.shift();
+        try { job(); } catch (err) { console.error(err); }
+      }
+      if (sceneryJobs.length) setTimeout(pumpScenery, 0);
+      else sceneryPumping = false;
+    }
     
     // ==================== PREMIUM BACKGROUND SYSTEM ====================
     function setBackgroundTheme(theme) {
@@ -2207,7 +2235,7 @@
       
       const createTheme = themes[theme] || themes.forest;
       createTheme(center, baseplateSize);
-      setTimeout(mergeSceneryMeshes, 0);
+      queueScenery(() => mergeSceneryMeshes());
       
       // Update button states
       document.querySelectorAll('[data-background]').forEach(btn => {
@@ -2333,40 +2361,37 @@
       return { positions, normals, count };
     }
 
-    function mergeSceneryMeshes() {
-      const so = window.sceneryObjects;
-      if (!so) return 0;
-      const roots = so.trees.concat(so.mountains, so.clouds, so.extras);
+    const SCENERY_SECTOR = 120;
+
+    function mergeScenerySector(roots, key) {
+      const parts = key.split(',');
+      const sx = Number(parts[0]);
+      const sz = Number(parts[1]);
+      const originX = (sx + 0.5) * SCENERY_SECTOR;
+      const originZ = (sz + 0.5) * SCENERY_SECTOR;
       const buckets = new Map();
       const taken = [];
-      const kept = [];
       for (let r = 0; r < roots.length; r++) {
         const root = roots[r];
         if (!root) continue;
-        if (!sceneryRootMergeable(root)) {
-          kept.push(root);
-          continue;
-        }
         root.updateWorldMatrix(true, true);
         let baked = 0;
         root.traverse(obj => {
           if (!obj.isMesh || obj.isInstancedMesh) return;
           const part = bakeSceneryPart(obj);
           if (!part) return;
-          const key = sceneryMaterialKey(obj.material);
-          let bucket = buckets.get(key);
+          const matKey = sceneryMaterialKey(obj.material);
+          let bucket = buckets.get(matKey);
           if (!bucket) {
             bucket = { material: makeSceneryMaterial(obj.material), chunks: [] };
-            buckets.set(key, bucket);
+            buckets.set(matKey, bucket);
           }
           bucket.chunks.push(part);
           baked++;
         });
         if (baked > 0) taken.push(root);
-        else kept.push(root);
       }
-      if (!taken.length) return 0;
-      const merged = [];
+      const so = window.sceneryObjects;
       buckets.forEach(bucket => {
         let total = 0;
         for (let i = 0; i < bucket.chunks.length; i++) total += bucket.chunks[i].count;
@@ -2379,31 +2404,71 @@
         let offset = 0;
         for (let i = 0; i < bucket.chunks.length; i++) {
           const chunk = bucket.chunks[i];
-          positions.set(chunk.positions, offset);
-          normals.set(chunk.normals, offset);
+          for (let v = 0; v < chunk.count; v++) {
+            positions[offset + v * 3] = chunk.positions[v * 3] - originX;
+            positions[offset + v * 3 + 1] = chunk.positions[v * 3 + 1];
+            positions[offset + v * 3 + 2] = chunk.positions[v * 3 + 2] - originZ;
+            normals[offset + v * 3] = chunk.normals[v * 3];
+            normals[offset + v * 3 + 1] = chunk.normals[v * 3 + 1];
+            normals[offset + v * 3 + 2] = chunk.normals[v * 3 + 2];
+          }
           offset += chunk.count * 3;
         }
         const geo = new THREE.BufferGeometry();
         geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
         geo.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+        geo.computeBoundingSphere();
         const mesh = new THREE.Mesh(geo, bucket.material);
+        mesh.position.set(originX, 0, originZ);
         mesh.castShadow = false;
         mesh.receiveShadow = false;
+        mesh.frustumCulled = true;
         mesh.userData.sceneryMerge = true;
+        mesh.userData.scenerySector = key;
         scene.add(mesh);
-        merged.push(mesh);
+        if (so) so.trees.push(mesh);
+        window.sceneryMergedDraws = (window.sceneryMergedDraws || 0) + 1;
       });
       for (let i = 0; i < taken.length; i++) {
         scene.remove(taken[i]);
         disposeSceneryObject(taken[i]);
       }
-      so.trees = merged;
+      needsRender = true;
+    }
+
+    function mergeSceneryMeshes() {
+      const so = window.sceneryObjects;
+      if (!so) return 0;
+      const roots = so.trees.concat(so.mountains, so.clouds, so.extras);
+      const sectors = new Map();
+      const kept = [];
+      for (let r = 0; r < roots.length; r++) {
+        const root = roots[r];
+        if (!root) continue;
+        if (!sceneryRootMergeable(root)) {
+          kept.push(root);
+          continue;
+        }
+        root.updateWorldMatrix(true, true);
+        const sx = Math.floor(root.position.x / SCENERY_SECTOR);
+        const sz = Math.floor(root.position.z / SCENERY_SECTOR);
+        const key = sx + ',' + sz;
+        let list = sectors.get(key);
+        if (!list) {
+          list = [];
+          sectors.set(key, list);
+        }
+        list.push(root);
+      }
+      so.trees = [];
       so.mountains = [];
       so.clouds = [];
       so.extras = kept;
-      window.sceneryMergedDraws = merged.length;
-      needsRender = true;
-      return merged.length;
+      window.sceneryMergedDraws = 0;
+      sectors.forEach((list, key) => {
+        queueScenery(() => mergeScenerySector(list, key));
+      });
+      return sectors.size;
     }
     
     // ==================== FOREST THEME ====================
@@ -2414,8 +2479,8 @@
       scene.background = createSkyGradient(0x87CEEB, 0xc9e8f5, 0xffffff, true);
       scene.fog = new THREE.Fog(0x87CEEB, 200, 800);
       
-      // Update ground - forest green
-      updateGroundColor(0x3d6b35);
+      // Update ground - bright baseplate green, not the old near-black forest tone
+      updateGroundColor(0x3d9a40);
       
       // Sun
       createSun(center, 300, 200, 0xfffacd, 1.2);
@@ -2438,7 +2503,7 @@
       createClouds(center, 12, 150, 250, 0xffffff, 0.8);
       
       // Ground details - rocks and bushes
-      createGroundDetails(center, 'forest');
+      queueScenery(() => createGroundDetails(center, 'forest'));
       
       // Ambient particles - floating pollen/dust
       createAmbientParticles(center, 'dust', 500, 0xffffee, 0.3);
@@ -3367,25 +3432,28 @@
     
     function updateGroundColor(color) {
       const baseColor = new THREE.Color(color);
+      const hsl = { h: 0, s: 0, l: 0 };
+      baseColor.getHSL(hsl);
+      // Themes used to hand the plate a near-black green. Keep it readable.
+      const plate = new THREE.Color().setHSL(hsl.h, Math.min(0.62, Math.max(0.35, hsl.s)), Math.max(0.46, hsl.l));
       
       // Stud color is slightly lighter
-      const studColor = baseColor.clone();
-      studColor.offsetHSL(0, 0, 0.08);
+      const studColor = plate.clone();
+      studColor.offsetHSL(0, 0, 0.06);
       
       // Grid color is darker
-      const gridColor = baseColor.clone();
-      gridColor.offsetHSL(0, 0, -0.15);
+      const gridColor = plate.clone();
+      gridColor.offsetHSL(0, 0, -0.12);
       
       // Update grass plane (extends to horizon)
       if (window.grassPlane && window.grassPlane.material) {
-        window.grassPlane.material.color.setHex(color);
+        window.grassPlane.material.color.copy(plate);
       }
       
       // Update baseplate
       if (window.baseplateRef && window.baseplateRef.material) {
-        window.baseplateRef.material.color.setHex(color);
+        window.baseplateRef.material.color.copy(plate);
       }
-      
       // Update ground studs
       if (window.groundStudsRef && window.groundStudsRef.material) {
         window.groundStudsRef.material.color.copy(studColor);
@@ -3584,18 +3652,21 @@
     function createMountainRange(center, layers) {
       layers.forEach(layer => {
         for (let i = 0; i < layer.count; i++) {
-          const angle = (i / layer.count) * Math.PI + Math.PI * 0.5 + (Math.random() - 0.5) * 0.3;
-          const dist = layer.distance + (Math.random() - 0.5) * 50;
+          const layerRef = layer;
+          const index = i;
+          queueScenery(() => {
+          const angle = (index / layerRef.count) * Math.PI + Math.PI * 0.5 + (Math.random() - 0.5) * 0.3;
+          const dist = layerRef.distance + (Math.random() - 0.5) * 50;
           
           let mountain;
-          if (layer.style === 'mesa') {
-            mountain = createMesa(layer.height * (0.7 + Math.random() * 0.6), layer.color);
-          } else if (layer.style === 'island') {
-            mountain = createIsland(layer.height * (0.8 + Math.random() * 0.4), layer.color);
-          } else if (layer.style === 'crater') {
-            mountain = createCrater(layer.height * (0.8 + Math.random() * 0.4), layer.color);
+          if (layerRef.style === 'mesa') {
+            mountain = createMesa(layerRef.height * (0.7 + Math.random() * 0.6), layerRef.color);
+          } else if (layerRef.style === 'island') {
+            mountain = createIsland(layerRef.height * (0.8 + Math.random() * 0.4), layerRef.color);
+          } else if (layerRef.style === 'crater') {
+            mountain = createCrater(layerRef.height * (0.8 + Math.random() * 0.4), layerRef.color);
           } else {
-            mountain = createMountain(layer.height * (0.7 + Math.random() * 0.6), layer.color, layer.snow);
+            mountain = createMountain(layerRef.height * (0.7 + Math.random() * 0.6), layerRef.color, layerRef.snow);
           }
           
           mountain.position.set(
@@ -3604,17 +3675,18 @@
             center + Math.sin(angle) * dist - 200
           );
           
-          if (layer.opacity < 1) {
+          if (layerRef.opacity < 1) {
             mountain.traverse(obj => {
               if (obj.isMesh) {
                 obj.material.transparent = true;
-                obj.material.opacity = layer.opacity;
+                obj.material.opacity = layerRef.opacity;
               }
             });
           }
           
           scene.add(mountain);
           window.sceneryObjects.mountains.push(mountain);
+          });
         }
       });
     }
@@ -3737,29 +3809,27 @@
     function createForest(center, configs) {
       configs.forEach(config => {
         for (let i = 0; i < config.count; i++) {
-          let angle, dist;
-          
-          if (config.beachSide) {
-            // Trees only on land side (away from water)
-            angle = Math.random() * Math.PI - Math.PI / 2;
-            dist = config.minDist + Math.random() * (config.maxDist - config.minDist);
-          } else {
-            angle = Math.random() * Math.PI * 2;
-            dist = config.minDist + Math.random() * (config.maxDist - config.minDist);
-          }
-          
-          const scale = config.minScale + Math.random() * (config.maxScale - config.minScale);
-          const tree = createTree(config.type, scale);
-          
-          tree.position.set(
-            center + Math.cos(angle) * dist,
-            0,
-            center + Math.sin(angle) * dist
-          );
-          tree.rotation.y = Math.random() * Math.PI * 2;
-          
-          scene.add(tree);
-          window.sceneryObjects.trees.push(tree);
+          const spec = config;
+          queueScenery(() => {
+            let angle, dist;
+            if (spec.beachSide) {
+              angle = Math.random() * Math.PI - Math.PI / 2;
+              dist = spec.minDist + Math.random() * (spec.maxDist - spec.minDist);
+            } else {
+              angle = Math.random() * Math.PI * 2;
+              dist = spec.minDist + Math.random() * (spec.maxDist - spec.minDist);
+            }
+            const scale = spec.minScale + Math.random() * (spec.maxScale - spec.minScale);
+            const tree = createTree(spec.type, scale);
+            tree.position.set(
+              center + Math.cos(angle) * dist,
+              0,
+              center + Math.sin(angle) * dist
+            );
+            tree.rotation.y = Math.random() * Math.PI * 2;
+            scene.add(tree);
+            window.sceneryObjects.trees.push(tree);
+          });
         }
       });
     }
@@ -4195,14 +4265,14 @@
     }
     
     function createClouds(center, count, minHeight, maxHeight, color, opacity) {
-      const cloudMat = new THREE.MeshStandardMaterial({
-        color: color,
-        transparent: true,
-        opacity: opacity,
-        roughness: 1
-      });
-      
       for (let i = 0; i < count; i++) {
+        queueScenery(() => {
+        const cloudMat = new THREE.MeshStandardMaterial({
+          color: color,
+          transparent: true,
+          opacity: opacity,
+          roughness: 1
+        });
         const cloudGroup = new THREE.Group();
         const numPuffs = 3 + Math.floor(Math.random() * 4);
         
@@ -4222,6 +4292,7 @@
         
         scene.add(cloudGroup);
         window.sceneryObjects.clouds.push(cloudGroup);
+        });
       }
     }
     
@@ -4755,18 +4826,39 @@
       return ghostMatCache.get(key);
     }
     
+    function getTexturedInstancedMaterial(tex) {
+      const key = 'texmat_' + tex.uuid;
+      if (!instancedSystem.materialCache.has(key)) {
+        instancedSystem.materialCache.set(key, new THREE.MeshStandardMaterial({
+          map: tex,
+          color: 0xffffff,
+          roughness: 0.45,
+          metalness: 0,
+          envMap: envMap,
+          envMapIntensity: 0.25
+        }));
+      }
+      return instancedSystem.materialCache.get(key);
+    }
+
     // Get or create InstancedMesh for a specific combination
-    function getInstancedMesh(type, rot, color, transparent) {
+    function getInstancedMesh(type, rot, color, transparent, extra = {}) {
       const normRot = ((rot % 360) + 360) % 360;
       const isLight = !!(types[type] && types[type].light);
+      const tex = extra.texture || null;
       // Solid bricks share one mesh per geometry. Color is per instance, so a large build stays one draw.
-      const key = isLight
-        ? `${type}_${normRot}_${color}_${transparent}_L`
-        : `${type}_${normRot}_${transparent ? 1 : 0}_batch`;
+      // One extra batch per photo texture. Tilt lives in the instance matrix.
+      const key = tex
+        ? `${type}_${normRot}_tex_${tex.uuid}`
+        : (isLight
+          ? `${type}_${normRot}_${color}_${transparent}_L`
+          : `${type}_${normRot}_${transparent ? 1 : 0}_batch`);
       
       if (!instancedSystem.meshes.has(key)) {
         const geo = getInstancedGeometry(type, rot);
-        const mat = getInstancedMaterial(isLight ? color : 0xffffff, transparent, isLight);
+        const mat = tex
+          ? getTexturedInstancedMaterial(tex)
+          : getInstancedMaterial(isLight ? color : 0xffffff, transparent, isLight);
         
         if (!geo || !mat) return null;
         
@@ -4787,9 +4879,32 @@
       return instancedSystem.meshes.get(key);
     }
     
+    const _axisY = new THREE.Vector3(0, 1, 0);
+    const _qYaw = new THREE.Quaternion();
+    const _qPivot = new THREE.Quaternion();
+    const _brickEuler = new THREE.Euler();
+
+    function writeBrickInstance(dummy, lookup, lift, scaleY) {
+      const normRot = ((lookup.rot % 360) + 360) % 360;
+      const geoRot = instancedGeoRot(lookup.type, lookup.rot);
+      const instanceRot = (normRot - geoRot) * Math.PI / 180;
+      dummy.position.set(lookup.pos.x, lookup.pos.y + (lift || 0), lookup.pos.z);
+      dummy.scale.set(1, scaleY == null ? 1 : scaleY, 1);
+      _qYaw.setFromAxisAngle(_axisY, instanceRot);
+      _brickEuler.set(
+        THREE.MathUtils.degToRad(lookup.pitch || 0),
+        0,
+        THREE.MathUtils.degToRad(lookup.roll || 0),
+        'XYZ'
+      );
+      _qPivot.setFromEuler(_brickEuler);
+      dummy.quaternion.copy(_qPivot).multiply(_qYaw);
+      dummy.updateMatrix();
+    }
+
     // Add a brick using instanced rendering
-    function addInstancedBrick(type, color, pos, rot, transparent, gridData) {
-      const data = getInstancedMesh(type, rot, color, transparent);
+    function addInstancedBrick(type, color, pos, rot, transparent, gridData, extra = {}) {
+      const data = getInstancedMesh(type, rot, color, transparent, extra);
       if (!data) return null;
       
       const brickId = instancedSystem.nextId++;
@@ -4800,21 +4915,24 @@
         growInstancedMesh(data);
       }
       
-      // Geometry already has dimensions swapped (and full rot baked for slopes/SNOT)
-      const normRot = ((rot % 360) + 360) % 360;
-      const geoRot = instancedGeoRot(type, rot);
-      const instanceRot = normRot - geoRot;
-      
-      // Set the transform matrix
+      const lookup = {
+        key: data.key,
+        gridData: gridData,
+        type,
+        color,
+        rot,
+        transparent,
+        pos: pos.clone(),
+        pitch: extra.pitch || 0,
+        roll: extra.roll || 0
+      };
       const dummy = instancedSystem.dummy;
-      dummy.position.copy(pos);
-      dummy.rotation.set(0, instanceRot * Math.PI / 180, 0);
-      dummy.scale.set(1, 1, 1);
-      dummy.updateMatrix();
+      writeBrickInstance(dummy, lookup, 0, 1);
       data.mesh.setMatrixAt(index, dummy.matrix);
       data.mesh.instanceMatrix.needsUpdate = true;
+      const tint = extra.texture ? 0xffffff : color;
       if (!(types[type] && types[type].light)) {
-        data.mesh.setColorAt(index, new THREE.Color(color));
+        data.mesh.setColorAt(index, new THREE.Color(tint));
         data.mesh.instanceColor.needsUpdate = true;
       }
       data.mesh.count++;
@@ -4823,7 +4941,7 @@
       // Store mappings
       data.instances.set(brickId, index);
       data.reverseMap.set(index, brickId);
-      instancedSystem.brickLookup.set(brickId, { key: data.key, gridData: gridData, type, color, rot, transparent, pos: pos.clone() });
+      instancedSystem.brickLookup.set(brickId, lookup);
       
       const tdef = types[type];
       if (tdef && tdef.light) {
@@ -4876,11 +4994,151 @@
       data.mesh.count--;
       data.mesh.instanceMatrix.needsUpdate = true;
       unregisterLampBrick(brickId);
+      removePanelsForBrick(brickId);
       needsRender = true;
 
       freeFootprint(lookup.gridData);
       
       return true;
+    }
+
+    const panelBatch = {
+      mesh: null,
+      byId: new Map(),
+      next: 1
+    };
+    const _panelEuler = new THREE.Euler();
+    const _qFace = new THREE.Quaternion();
+    const _qBrick = new THREE.Quaternion();
+    const _panelDummy = new THREE.Object3D();
+    const _panelLocal = new THREE.Vector3();
+
+    function ensurePanelMesh() {
+      if (panelBatch.mesh) return panelBatch.mesh;
+      const mesh = new THREE.InstancedMesh(
+        new THREE.PlaneGeometry(1, 1),
+        new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.7, metalness: 0.1, side: THREE.DoubleSide }),
+        2048
+      );
+      mesh.count = 0;
+      mesh.castShadow = false;
+      mesh.receiveShadow = true;
+      mesh.frustumCulled = false;
+      mesh.userData.isPanelBatch = true;
+      scene.add(mesh);
+      panelBatch.mesh = mesh;
+      return mesh;
+    }
+
+    function panelFaceFrame(face, width, depth, height) {
+      const o = 0.02;
+      if (face === 'right') return { p: [width / 2 + o, height / 2, 0], e: [0, Math.PI / 2, 0], s: [depth - 0.04, height - 0.04] };
+      if (face === 'left') return { p: [-width / 2 - o, height / 2, 0], e: [0, -Math.PI / 2, 0], s: [depth - 0.04, height - 0.04] };
+      if (face === 'front') return { p: [0, height / 2, depth / 2 + o], e: [0, 0, 0], s: [width - 0.04, height - 0.04] };
+      if (face === 'back') return { p: [0, height / 2, -depth / 2 - o], e: [0, Math.PI, 0], s: [width - 0.04, height - 0.04] };
+      return null;
+    }
+
+    function brickQuaternion(lookup) {
+      const normRot = ((lookup.rot % 360) + 360) % 360;
+      const geoRot = instancedGeoRot(lookup.type, lookup.rot);
+      _qYaw.setFromAxisAngle(_axisY, (normRot - geoRot) * Math.PI / 180);
+      _brickEuler.set(THREE.MathUtils.degToRad(lookup.pitch || 0), 0, THREE.MathUtils.degToRad(lookup.roll || 0), 'XYZ');
+      _qPivot.setFromEuler(_brickEuler);
+      _qBrick.copy(_qPivot).multiply(_qYaw);
+      return _qBrick;
+    }
+
+    function writePanelInstance(id) {
+      const rec = panelBatch.byId.get(id);
+      if (!rec || !panelBatch.mesh) return;
+      const lookup = instancedSystem.brickLookup.get(rec.brickId);
+      const g = lookup && lookup.gridData;
+      const frame = g && panelFaceFrame(rec.face, g.w * STUD, g.d * STUD, g.hp * PLATE_H);
+      if (!lookup || !frame) return;
+      const q = brickQuaternion(lookup);
+      _panelLocal.set(frame.p[0], frame.p[1], frame.p[2]).applyQuaternion(q);
+      _panelEuler.set(frame.e[0], frame.e[1], frame.e[2], 'XYZ');
+      _qFace.setFromEuler(_panelEuler);
+      _panelDummy.position.copy(lookup.pos).add(_panelLocal);
+      _panelDummy.quaternion.copy(q).multiply(_qFace);
+      _panelDummy.scale.set(frame.s[0], frame.s[1], 1);
+      _panelDummy.updateMatrix();
+      panelBatch.mesh.setMatrixAt(rec.index, _panelDummy.matrix);
+      panelBatch.mesh.setColorAt(rec.index, new THREE.Color(rec.color));
+      panelBatch.mesh.instanceMatrix.needsUpdate = true;
+      if (panelBatch.mesh.instanceColor) panelBatch.mesh.instanceColor.needsUpdate = true;
+    }
+
+    function addPanelInstance(brick, face, color) {
+      const lookup = instancedSystem.brickLookup.get(brick.instanceId);
+      if (!lookup) return null;
+      const mesh = ensurePanelMesh();
+      const id = panelBatch.next++;
+      const index = mesh.count;
+      if (index >= mesh.instanceMatrix.count) return null;
+      const rec = { id, index, brickId: brick.instanceId, face, color };
+      panelBatch.byId.set(id, rec);
+      mesh.count++;
+      writePanelInstance(id);
+      if (!brick.userData.facePanels) brick.userData.facePanels = {};
+      brick.userData.facePanels[face] = { color, face, panelId: id };
+      needsRender = true;
+      return id;
+    }
+
+    function removePanelInstance(id) {
+      const rec = panelBatch.byId.get(id);
+      const mesh = panelBatch.mesh;
+      if (!rec || !mesh) return;
+      const index = rec.index;
+      const last = mesh.count - 1;
+      if (index !== last) {
+        const matrix = new THREE.Matrix4();
+        mesh.getMatrixAt(last, matrix);
+        mesh.setMatrixAt(index, matrix);
+        if (mesh.instanceColor) {
+          const c = new THREE.Color();
+          mesh.getColorAt(last, c);
+          mesh.setColorAt(index, c);
+          mesh.instanceColor.needsUpdate = true;
+        }
+        for (const other of panelBatch.byId.values()) {
+          if (other.index === last) other.index = index;
+        }
+      }
+      panelBatch.byId.delete(id);
+      mesh.count--;
+      mesh.instanceMatrix.needsUpdate = true;
+      needsRender = true;
+    }
+
+    function removePanelsForBrick(brickId) {
+      const ids = [];
+      panelBatch.byId.forEach((rec, id) => { if (rec.brickId === brickId) ids.push(id); });
+      ids.forEach(removePanelInstance);
+      for (let i = 0; i < bricks.length; i++) {
+        const b = bricks[i];
+        if (b.isInstancedBrick && b.instanceId === brickId) b.userData.facePanels = {};
+      }
+    }
+
+    function attachInstancedPanels(brick, facePanels) {
+      if (!brick || !brick.isInstancedBrick || !facePanels) return;
+      Object.keys(facePanels).forEach((face) => {
+        const color = facePanels[face] && facePanels[face].color != null ? facePanels[face].color : facePanels[face];
+        if (color == null) return;
+        addPanelInstance(brick, face, color);
+      });
+    }
+
+    function disposePanelBatch() {
+      if (!panelBatch.mesh) return;
+      scene.remove(panelBatch.mesh);
+      panelBatch.mesh.geometry.dispose();
+      panelBatch.mesh.material.dispose();
+      panelBatch.mesh = null;
+      panelBatch.byId.clear();
     }
     
     // Grow an instanced mesh when it's full
@@ -4925,19 +5183,15 @@
       instancedSystem.meshes.clear();
       instancedSystem.brickLookup.clear();
       instancedSystem.nextId = 1;
+      disposePanelBatch();
       lightSources.clear();
       updateBrickLights(true);
       updateShadowFrustum();
     }
     
-    // Placed bricks go through InstancedMesh. Groups only for ghost/preview, textures, tilt, face panels.
-    function shouldUseInstancing(type, options = {}) {
-      const t = types[type];
-      if (!t) return false;
-      if (options.texture) return false;
-      if (options.pitch || options.roll) return false;
-      if (options.facePanels) return false;
-      return true;
+    // Placed bricks go through InstancedMesh, including tilt, photo tiles, and face panels.
+    function shouldUseInstancing(type) {
+      return !!types[type];
     }
     
     function stampFootprint(g, brick) {
@@ -5003,12 +5257,16 @@
     
     function commitPlacedBrick(type, color, pos, rot, options = {}, gridData) {
       const transparent = options.transparent || false;
-      if (shouldUseInstancing(type, options) && !options.facePanels) {
-        const brickId = addInstancedBrick(type, color, pos, rot, transparent, gridData);
+      if (shouldUseInstancing(type)) {
+        const brickId = addInstancedBrick(type, color, pos, rot, transparent, gridData, options);
         if (!brickId) return null;
         const virtual = makeVirtualBrick(brickId, type, color, pos, rot, transparent, gridData, options);
+        if (options.texture) virtual.userData.textureIndex = options.textureIndex;
         bricks.push(virtual);
         fillGridFromData(gridData, virtual);
+        if (options.facePanels && typeof options.facePanels === 'object') {
+          attachInstancedPanels(virtual, options.facePanels);
+        }
         needsRender = true;
         return virtual;
       }
@@ -6441,6 +6699,7 @@
     function hideStarterBar() {
       const bar = document.getElementById('starterBar');
       if (bar) bar.classList.add('hidden');
+      document.querySelectorAll('.drawer-starters').forEach((el) => el.classList.add('hidden'));
     }
 
     function bouncePlaced(brick) {
@@ -6457,12 +6716,7 @@
         if (!data) return;
         const index = data.instances.get(brick.instanceId);
         if (index === undefined) return;
-        const normRot = ((lookup.rot % 360) + 360) % 360;
-        const geoRot = instancedGeoRot(lookup.type, lookup.rot);
-        _bounceDummy.position.set(lookup.pos.x, lookup.pos.y + lift, lookup.pos.z);
-        _bounceDummy.rotation.set(0, (normRot - geoRot) * Math.PI / 180, 0);
-        _bounceDummy.scale.set(1, scaleY, 1);
-        _bounceDummy.updateMatrix();
+        writeBrickInstance(_bounceDummy, lookup, lift, scaleY);
         data.mesh.setMatrixAt(index, _bounceDummy.matrix);
         data.mesh.instanceMatrix.needsUpdate = true;
       } else if (brick.position && brick.scale) {
@@ -7049,8 +7303,78 @@
     }
 
     // Face paint - paint individual sides of bricks    // Face paint - paint individual sides of bricks
+    function faceFromHit(brick, hit) {
+      const lookup = instancedSystem.brickLookup.get(brick.instanceId);
+      const g = brick.userData.grid;
+      if (!lookup || !g) return null;
+      const q = brickQuaternion(lookup).clone();
+      const center = lookup.pos.clone();
+      center.y += (g.hp * PLATE_H) / 2;
+      const local = hit.point.clone().sub(center).applyQuaternion(q.invert());
+      const ax = Math.abs(local.x);
+      const ay = Math.abs(local.y);
+      const az = Math.abs(local.z);
+      if (ay >= ax && ay >= az) return null;
+      if (ax >= az) return local.x >= 0 ? 'right' : 'left';
+      return local.z >= 0 ? 'front' : 'back';
+    }
+
+    function tryPaintInstancedFace() {
+      const meshes = [];
+      instancedSystem.meshes.forEach((data) => { if (data.mesh.count > 0) meshes.push(data.mesh); });
+      if (panelBatch.mesh && panelBatch.mesh.count > 0) meshes.push(panelBatch.mesh);
+      if (!meshes.length) return false;
+      const hits = raycaster.intersectObjects(meshes, false);
+      if (!hits.length) return false;
+      const hit = hits[0];
+      if (panelBatch.mesh && hit.object === panelBatch.mesh) {
+        let rec = null;
+        panelBatch.byId.forEach((item) => { if (item.index === hit.instanceId) rec = item; });
+        if (!rec) return false;
+        const brick = bricks.find((b) => b.isInstancedBrick && b.instanceId === rec.brickId);
+        if (rec.color === selectedColor) {
+          removePanelInstance(rec.id);
+          if (brick && brick.userData.facePanels) delete brick.userData.facePanels[rec.face];
+          toast('Panel removed');
+        } else {
+          rec.color = selectedColor;
+          if (brick && brick.userData.facePanels && brick.userData.facePanels[rec.face]) {
+            brick.userData.facePanels[rec.face].color = selectedColor;
+          }
+          writePanelInstance(rec.id);
+          toast(rec.face + ' face repainted!', 'success');
+        }
+        return true;
+      }
+      let brickId = null;
+      instancedSystem.meshes.forEach((data) => {
+        if (data.mesh === hit.object) brickId = data.reverseMap.get(hit.instanceId);
+      });
+      const brick = bricks.find((b) => b.isInstancedBrick && b.instanceId === brickId);
+      if (!brick) return false;
+      const face = faceFromHit(brick, hit);
+      if (!face) {
+        toast('Cannot paint top/bottom faces');
+        return true;
+      }
+      if (!brick.userData.facePanels) brick.userData.facePanels = {};
+      const existing = brick.userData.facePanels[face];
+      if (existing && existing.color === selectedColor) {
+        removePanelInstance(existing.panelId);
+        delete brick.userData.facePanels[face];
+        toast('Panel removed');
+        return true;
+      }
+      if (existing) removePanelInstance(existing.panelId);
+      saveUndo();
+      addPanelInstance(brick, face, selectedColor);
+      toast(face + ' face painted!', 'success');
+      return true;
+    }
+
     function facePaintBrick() {
       raycaster.setFromCamera(mouse, camera);
+      if (tryPaintInstancedFace()) return;
       
       // First, check if we clicked on an existing face panel
       // Face painting only works on regular bricks (not instanced)
@@ -10878,6 +11202,7 @@
         if (!mobileControlsPanel) return;
         if (!isPhoneChrome()) {
           mobileControlsPanel.classList.remove('collapsed-mobile', 'tray-open');
+          document.body.classList.remove('phone-tray-open');
           mobileTrayUserExpanded = false;
           return;
         }
@@ -10889,6 +11214,7 @@
           mobileControlsPanel.classList.remove('tray-open');
           mobileControlsPanel.classList.toggle('collapsed-mobile', !mobileTrayUserExpanded);
         }
+        document.body.classList.toggle('phone-tray-open', window.innerWidth <= 430 && mobileTrayUserExpanded);
         if (panelToggle) panelToggle.textContent = mobileTrayUserExpanded ? '▼ Hide tools' : '▲ Bricks & tools';
       }
       applyMobileTray();
@@ -11037,10 +11363,10 @@
       
       // Serialize bricks
       const brickData = bricks.map(b => ({
-        type: b.userData.brickType,
+        type: b.userData.brickType || b.userData.type,
         color: b.userData.color,
         grid: b.userData.grid,
-        rot: b.userData.rotation || 0,
+        rot: b.userData.rot || 0,
         pitch: b.userData.pitch || 0,
         roll: b.userData.roll || 0,
         transparent: b.userData.transparent || false,
@@ -12594,6 +12920,8 @@
     window.PLATE_HEIGHT = PLATE_H;
     window.commitPlacedBrick = commitPlacedBrick;
     window.placeStarter = placeStarter;
+    window.loadGalleryBuild = loadGalleryBuild;
+    window.deleteGalleryBuild = deleteGalleryBuild;
     window.applyCodeBricks = applyCodeBricks;
     window.buildShareRecords = buildShareRecords;
     window.encodeShareToken = encodeShareToken;

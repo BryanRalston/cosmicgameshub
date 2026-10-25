@@ -1,7 +1,7 @@
 import * as esbuild from 'esbuild';
 import { createHash } from 'node:crypto';
-import { readFileSync, writeFileSync, readdirSync, unlinkSync, rmSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { readFileSync, writeFileSync, readdirSync, unlinkSync, rmSync, copyFileSync, mkdirSync } from 'node:fs';
+import { dirname, join, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = dirname(fileURLToPath(import.meta.url));
@@ -35,30 +35,45 @@ const postName = `brix3d-post.${createHash('sha256').update(postCode).digest('he
 writeFileSync(join(root, postName), postCode);
 unlinkSync(postTmp);
 
-const mainTmp = join(root, '.brix-main.js');
-await esbuild.build({
+const outdir = join(root, '.brix-out');
+rmSync(outdir, { recursive: true, force: true });
+mkdirSync(outdir, { recursive: true });
+const built = await esbuild.build({
   absWorkingDir: root,
-  entryPoints: [join(root, 'src/main.js')],
+  entryPoints: [join(root, 'src/boot.js')],
   bundle: true,
+  splitting: true,
   minify: true,
   format: 'esm',
   target: 'es2020',
-  outfile: mainTmp,
+  outdir,
+  entryNames: 'brix3d.[hash]',
+  chunkNames: 'brix3d-[hash]',
+  metafile: true,
   legalComments: 'none',
   loader: { '.png': 'dataurl', '.jpg': 'dataurl' },
   define: { __BRIX_POST__: JSON.stringify(`/games/brix3d/${postName}`) },
   plugins: [addonPlugin()]
 });
-const mainCode = readFileSync(mainTmp);
-const mainName = `brix3d.${createHash('sha256').update(mainCode).digest('hex').slice(0, 10)}.js`;
-writeFileSync(join(root, mainName), mainCode);
-unlinkSync(mainTmp);
+let mainName = '';
+const written = [];
+for (const [outfile, meta] of Object.entries(built.metafile.outputs)) {
+  if (!outfile.endsWith('.js')) continue;
+  const name = basename(outfile);
+  copyFileSync(join(root, outfile), join(root, name));
+  written.push(name);
+  const entry = (meta.entryPoint || '').replace(/\\/g, '/');
+  if (entry.endsWith('src/boot.js')) mainName = name;
+}
+if (!mainName) throw new Error('boot entry missing from esbuild metafile');
+rmSync(outdir, { recursive: true, force: true });
 
-const keep = new Set([postName, mainName]);
+const keep = new Set([postName, ...written]);
 for (const file of readdirSync(root)) {
   if (!/^brix3d[-.][A-Za-z0-9]+\.js$/.test(file)) continue;
   if (!keep.has(file)) unlinkSync(join(root, file));
 }
+const mainCode = Buffer.concat(written.map((name) => readFileSync(join(root, name))));
 
 let html = readFileSync(htmlPath, 'utf8');
 html = html.replace(/\/games\/brix3d\/brix3d[-.][A-Za-z0-9]+\.js/g, `/games/brix3d/${mainName}`);
@@ -73,7 +88,7 @@ if (cssName !== cssFiles[0]) {
 }
 writeFileSync(htmlPath, html);
 rmSync(join(root, '.brix-out'), { recursive: true, force: true });
-console.log('main', mainName, mainCode.length);
+console.log('main', mainName, written.map((name) => name + ' ' + readFileSync(join(root, name)).length).join(', '));
 console.log('post', postName, postCode.length);
 console.log('css', cssName, cssBuf.length);
 if (mainCode.includes('SMAAPass')) throw new Error('SMAA still in main bundle');
