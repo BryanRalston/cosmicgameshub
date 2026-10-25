@@ -2,6 +2,17 @@ function later(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// A zero timer is clamped to about 4ms, and those gaps were the slow place
+// loads. A channel message is still its own task, so a slice stays under the
+// long-task line without waiting out the clamp.
+function soon() {
+  const channel = soon.channel || (soon.channel = new MessageChannel());
+  return new Promise((resolve) => {
+    channel.port1.onmessage = () => resolve();
+    channel.port2.postMessage(0);
+  });
+}
+
 function afterPaint() {
   return new Promise((resolve) => {
     requestAnimationFrame(() => requestAnimationFrame(resolve));
@@ -17,7 +28,7 @@ async function runParts(urls) {
   let slice = performance.now();
   for (let i = 0; i < urls.length; i++) {
     if (performance.now() - slice >= 6) {
-      await later(0);
+      await soon();
       slice = performance.now();
     }
     const t0 = performance.now();
@@ -25,7 +36,7 @@ async function runParts(urls) {
     const dt = performance.now() - t0;
     times.push(Math.round(dt * 10) / 10);
     if (dt >= 6 || performance.now() - slice >= 9) {
-      await later(0);
+      await soon();
       slice = performance.now();
     }
   }
@@ -49,7 +60,7 @@ async function warm(urls) {
     // fetch() spends time in the browser after the JS clock moves.
     // Yield on a short clock and a hard count so one slice stays under 10ms.
     if ((i + 1) % 30 === 0 || performance.now() - slice >= 5) {
-      await later(0);
+      await soon();
       slice = performance.now();
     }
   }

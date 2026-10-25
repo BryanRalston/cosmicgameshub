@@ -14,6 +14,7 @@ export {
   ConeGeometry,
   CubeCamera,
   CylinderGeometry,
+  DataTexture,
   DirectionalLight,
   DodecahedronGeometry,
   DoubleSide,

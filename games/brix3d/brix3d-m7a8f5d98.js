@@ -1,1 +1,0 @@
-import{__brixScope as o}from"./brix3d-mba2742b1.js";o.studSegmentsAt=function(r){if(!o.camera||!r)return o.STUD_SEG_NEAR;const t=o.camera.position.x-r.x,i=o.camera.position.y-r.y,n=o.camera.position.z-r.z;return t*t+i*i+n*n<=o.STUD_NEAR_DIST*o.STUD_NEAR_DIST?o.STUD_SEG_NEAR:o.STUD_SEG_FAR},o.brickDisplayColor=function(r){return new globalThis.__BRIX_THREE.Color(r)};

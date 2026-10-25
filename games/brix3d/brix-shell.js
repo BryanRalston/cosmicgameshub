@@ -3,6 +3,17 @@
     // Park it in a hidden holder (no layout), start the module, then thaw
     // one section per turn so no layout task stays on the main thread.
     (function () {
+      // Show the real phone tutorial on its own turn. Doing it inside the
+      // parser task fused the card's layout into a 20ms+ main-thread task.
+      setTimeout(function () {
+        var card = document.getElementById('phoneTutorial');
+        if (!card) return;
+        var share = /(?:^#|[?&#])b=/.test(location.hash + location.search);
+        var dismissed = false;
+        try { dismissed = localStorage.getItem('brickBuilderTutorialDismissed') === 'true'; } catch (e) {}
+        var narrow = window.matchMedia('(max-width: 768px)').matches;
+        if (narrow && !share && !dismissed) card.hidden = false;
+      }, 0);
       // Parser only. The mount half is a second script so compile stays short.
       function nextTop(text, pos) {
         var n = text.length;
@@ -76,6 +87,11 @@
         tpl.innerHTML = html;
         while (tpl.content.firstChild) parent.appendChild(tpl.content.firstChild);
       }
+      function soon(fn) {
+        var channel = soon.channel || (soon.channel = new MessageChannel());
+        channel.port1.onmessage = function () { fn(); };
+        channel.port2.postMessage(0);
+      }
       function parseLate(text, hold, done) {
         var jobs = [{ text: text, pos: 0, parent: hold }];
         function step() {
@@ -83,7 +99,7 @@
           var job = jobs[jobs.length - 1];
           var batch = '';
           var parent = job ? job.parent : null;
-          while (job && performance.now() - t0 < 8) {
+          while (job && performance.now() - t0 < 5) {
             var part = nextTop(job.text, job.pos);
             if (!part || part.end <= job.pos) {
               if (batch && parent) { appendHtml(parent, batch); batch = ''; }
@@ -93,7 +109,7 @@
               continue;
             }
             var len = part.end - part.start;
-            if (len > 7000 && part.openEnd && part.name) {
+            if (len > 2200 && part.openEnd && part.name) {
               if (batch && parent) { appendHtml(parent, batch); batch = ''; }
               var shell = job.text.slice(part.start, part.openEnd + 1) + '</' + part.name + '>';
               var shellTpl = document.createElement('template');
@@ -106,16 +122,16 @@
               if (el && inner.trim()) jobs.push({ text: inner, pos: 0, parent: el });
               break;
             }
-            if (batch && batch.length + len > 7000) break;
+            if (batch && batch.length + len > 1800) break;
             batch += job.text.slice(part.start, part.end);
             job.pos = part.end;
-            if (batch.length >= 6000) break;
+            if (batch.length >= 1500) break;
           }
           if (batch && parent) appendHtml(parent, batch);
-          if (jobs.length) setTimeout(step, 0);
+          if (jobs.length) soon(step);
           else done();
         }
-        setTimeout(step, 0);
+        soon(step);
       }
       window.__brixParseLate = parseLate;
     })();

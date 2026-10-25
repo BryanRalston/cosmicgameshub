@@ -278,7 +278,7 @@
     
     // ==================== STATE ====================
     let scene, camera, renderer, controls, raycaster, mouse, groundPlane;
-    let composer, bloomPass, ssaoPass, vignettePass;
+    let composer, bloomPass, ssaoPass, vignettePass, gradeScreenPass;
     let postMods = null;
     let postModsPromise = null;
     let ssaoPromise = null;
@@ -540,7 +540,7 @@
       const full = qualityShadowSize();
       let prev = 0;
       let seen = 0;
-      for (const candidate of [64, 128, 256, full]) {
+      for (const candidate of [16, 64, 128, 256, full]) {
         const size = Math.min(candidate, full);
         if (size <= prev) continue;
         prev = size;
@@ -554,7 +554,7 @@
       const full = qualityShadowSize();
       let prev = 0;
       let seen = 0;
-      for (const candidate of [64, 128, 256, full]) {
+      for (const candidate of [16, 64, 128, 256, full]) {
         const size = Math.min(candidate, full);
         if (size <= prev) continue;
         prev = size;
@@ -1001,7 +1001,8 @@
       needsRender = false;
       animate();
       needsRender = true;
-      setTimeout(() => { if (window.brixStartScenery) window.brixStartScenery(); }, 0);
+      // Scenery starts after the shadow ladder. Tree meshes in those first
+      // shadowed draws were a 15ms frame, which simulated over 50ms.
       setTimeout(() => { ensurePrefabs(); }, 1500);
     }
 
@@ -1062,28 +1063,60 @@
         console.error(err);
       }
       await yieldTick();
+      // Warm the plate program on a few pixels before the full draw. The
+      // full draw was one 13–18ms timer, which simulated over 50ms.
+      renderer.setScissorTest(true);
+      renderer.setViewport(0, 0, 2, 2);
+      renderer.setScissor(0, 0, 2, 2);
+      renderer.render(holder, camera);
+      renderer.setScissorTest(false);
+      const warmBuf = new THREE.Vector2();
+      renderer.getDrawingBufferSize(warmBuf);
+      renderer.setViewport(0, 0, warmBuf.x, warmBuf.y);
+      await yieldTick();
       renderer.render(holder, camera);
       window.brixPlateShown = window.baseplateRef.visible !== false;
       // The proxy scene has no lights, so its program is not the one the
-      // real plate uses. Compile each real material on its own turn.
-      const mats = [];
-      const seenMat = new Set();
-      scene.traverse((obj) => {
-        const mat = obj.material;
-        const geo = obj.geometry;
-        if (!mat || !geo || (Array.isArray(mat)) || seenMat.has(mat.uuid)) return;
-        seenMat.add(mat.uuid);
-        mats.push({ geo: geo, mat: mat });
-      });
-      for (let i = 0; i < mats.length && i < 8; i++) {
-        const bag = new THREE.Scene();
-        bag.fog = scene.fog;
-        const dummy = new THREE.Mesh(mats[i].geo, mats[i].mat);
-        dummy.frustumCulled = false;
-        bag.add(dummy);
-        try { renderer.compile(bag, camera, scene); } catch (err) { console.error(err); }
-        await yieldTick();
+      // real plate uses. Finish the lit screen program on a few pixels.
+      // The first full stud reveal was a 15ms draw; the same draw on the
+      // next frame was about 6ms, so the extra cost is the first pixel.
+      const drawBuf = new THREE.Vector2();
+      renderer.getDrawingBufferSize(drawBuf);
+      const warmLit = (label) => {
+        renderer.setRenderTarget(null);
+        renderer.setScissorTest(true);
+        renderer.setViewport(0, 0, 2, 2);
+        renderer.setScissor(0, 0, 2, 2);
+        renderer.render(scene, camera);
+        renderer.setScissorTest(false);
+        renderer.setViewport(0, 0, drawBuf.x, drawBuf.y);
+      };
+      warmLit('litPlate');
+      await yieldTick();
+      const stud = window.groundStudsRef;
+      const studWas = stud ? stud.visible : false;
+      if (stud) stud.visible = true;
+      warmLit('litStud');
+      if (stud) stud.visible = studWas;
+      await yieldTick();
+      // The first shadowed draw is a GPU stall on the main thread. Compile
+      // that program into a 16px map on a few screen pixels first.
+      const sun = window.sunLight;
+      if (sun && sun.shadow) {
+        sun.shadow.mapSize.set(16, 16);
+        if (sun.shadow.map) {
+          sun.shadow.map.dispose();
+          sun.shadow.map = null;
+        }
+        sun.shadow.needsUpdate = true;
       }
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.needsUpdate = true;
+      if (stud) stud.visible = true;
+      warmLit('sh16');
+      if (stud) stud.visible = studWas;
+      renderer.shadowMap.enabled = false;
+      await yieldTick();
       renderer.shadowMap.enabled = shadows;
       await yieldTick();
     }
@@ -1114,6 +1147,7 @@
       ssaoPass = null;
       bloomPass = null;
       vignettePass = null;
+      gradeScreenPass = null;
       window.__brixPostOn = false;
 
       if (!qualitySettings.post || isMobileGfx()) return;
@@ -1200,6 +1234,7 @@
       vignettePass = new ShaderPass(vignetteShader);
       composer.addPass(vignettePass);
       if (OutputPass) composer.addPass(new OutputPass());
+      gradeScreenPass = null;
       composer.setSize(innerWidth, innerHeight);
       window.__brixPostOn = true;
       needsRender = true;
@@ -1692,63 +1727,18 @@
     const MAX_STUDS = 10000; // For baseplate studs only
     
     function makeBaseplateStudTextures(repeat) {
-      const N = 64;
-      const albedo = document.createElement('canvas');
-      albedo.width = albedo.height = N;
-      const actx = albedo.getContext('2d');
-      const img = actx.createImageData(N, N);
-      const normalC = document.createElement('canvas');
-      normalC.width = normalC.height = N;
-      const nctx = normalC.getContext('2d');
-      const nimg = nctx.createImageData(N, N);
-      // Hard disk at the brick stud radius (STUD_R / STUD of the cell).
-      // A soft dome at this same radius read about twice as wide.
-      const cx = (N - 1) / 2;
-      const cy = (N - 1) / 2;
-      const rad = N * (STUD_R / STUD);
-      const heights = new Float32Array(N * N);
-      for (let y = 0; y < N; y++) {
-        for (let x = 0; x < N; x++) {
-          const dist = Math.hypot(x - cx, y - cy);
-          const edge = rad - dist;
-          heights[y * N + x] = edge >= 1.2 ? 1 : (edge > 0 ? edge / 1.2 : 0);
-        }
-      }
-      const sample = (x, y) => heights[(Math.max(0, Math.min(N - 1, y)) * N) + Math.max(0, Math.min(N - 1, x))];
-      for (let y = 0; y < N; y++) {
-        for (let x = 0; x < N; x++) {
-          const i = (y * N + x) * 4;
-          const h = heights[y * N + x];
-          // Flat disk. A shade ramp inside the stud read as a crescent up close.
-          const shade = h > 0.15 ? 248 : 168;
-          img.data[i] = shade;
-          img.data[i + 1] = shade;
-          img.data[i + 2] = shade;
-          img.data[i + 3] = 255;
-          const hx = sample(x + 1, y) - sample(x - 1, y);
-          const hy = sample(x, y + 1) - sample(x, y - 1);
-          const nx = -hx * 3.2;
-          const ny = hy * 3.2;
-          const nz = 1;
-          const len = Math.hypot(nx, ny, nz) || 1;
-          nimg.data[i] = Math.round(((nx / len) * 0.5 + 0.5) * 255);
-          nimg.data[i + 1] = Math.round(((ny / len) * 0.5 + 0.5) * 255);
-          nimg.data[i + 2] = Math.round(((nz / len) * 0.5 + 0.5) * 255);
-          nimg.data[i + 3] = 255;
-        }
-      }
-      actx.putImageData(img, 0, 0);
-      nctx.putImageData(nimg, 0, 0);
-      const map = new THREE.CanvasTexture(albedo);
-      const normalMap = new THREE.CanvasTexture(normalC);
+      // The map only carries the cell repeat into vMapUv. The disk itself is
+      // drawn in the shader, so boot does not fill a mip pyramid and the
+      // edge stays about one pixel instead of a filtered halo.
+      const map = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1);
       map.colorSpace = THREE.SRGBColorSpace;
-      normalMap.colorSpace = THREE.LinearSRGBColorSpace;
-      for (const tex of [map, normalMap]) {
-        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-        tex.repeat.set(repeat, repeat);
-        tex.anisotropy = 1;
-      }
-      return { map, normalMap };
+      map.wrapS = map.wrapT = THREE.RepeatWrapping;
+      map.repeat.set(repeat, repeat);
+      map.magFilter = THREE.LinearFilter;
+      map.minFilter = THREE.LinearFilter;
+      map.generateMipmaps = false;
+      map.needsUpdate = true;
+      return { map };
     }
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -1774,6 +1764,25 @@
         color: 0x3eb24e,
         map: studTex.map
       });
+      // Same radius as the raised cylinder. The gap is the linear decode of
+      // the old 176 print, so the plate contrast survives sRGB. Derivatives
+      // come from the continuous uv, not fract(), so the cell seam stays quiet.
+      const studGap = 0.4343;
+      studMat.customProgramCacheKey = () => 'plate-stud-disk';
+      studMat.onBeforeCompile = (shader) => {
+        shader.fragmentShader = shader.fragmentShader.replace(
+          '#include <map_fragment>',
+          `
+          {
+            vec2 uvCell = fract(vMapUv);
+            float dist = length(uvCell - 0.5);
+            float rad = ${STUD_R / STUD};
+            float disk = 1.0 - smoothstep(rad - 0.012, rad + 0.012, dist);
+            diffuseColor.rgb *= mix(vec3(${studGap}), vec3(1.0), disk);
+          }
+          `
+        );
+      };
       groundStuds = new THREE.Mesh(new THREE.PlaneGeometry(baseplateWorldSize, baseplateWorldSize), studMat);
       groundStuds.rotation.x = -Math.PI / 2;
       groundStuds.position.set(baseplateWorldSize / 2, 0.012, baseplateWorldSize / 2);
@@ -1817,18 +1826,21 @@
 
     let nearPlateStuds = null;
     let nearPlateStudKey = '';
-    // Real cylinders only inside the close-up band. The home camera and the
-    // share camera both sit farther than NONE, so those views stay one flat
-    // plate. Inside the band the studs shrink to a speck, so there is no
-    // hard ring where the patch meets the decal.
+    // Full-radius cylinders only inside the close-up band. The home camera
+    // and the share camera sit farther than NONE, so those views stay the
+    // printed plate. Footprint stays STUD_R the whole way; only the height
+    // fades, so the printed disk never shows as a halo around a smaller cap.
     const PLATE_STUD_FULL = 3.15;
     const PLATE_STUD_NONE = 4.18;
     const PLATE_STUD_CAP = 180;
-    const PLATE_STUD_SEGMENTS = 12;
+    const PLATE_STUD_SEGMENTS = 24;
+    function makePlateStudGeometry(segments) {
+      return new THREE.CylinderGeometry(STUD_R, STUD_R, STUD_H, segments, 1, false);
+    }
     function updateNearPlateStuds(force) {
       if (!scene || !camera || !instancedSystem) return;
       if (!nearPlateStuds) {
-        const geo = makeStudGeometry(PLATE_STUD_SEGMENTS);
+        const geo = makePlateStudGeometry(PLATE_STUD_SEGMENTS);
         const mat = new THREE.MeshLambertMaterial({ color: 0x3eb24e });
         nearPlateStuds = new THREE.InstancedMesh(geo, mat, PLATE_STUD_CAP);
         nearPlateStuds.name = 'nearPlateStuds';
@@ -1870,12 +1882,12 @@
       const n = Math.min(PLATE_STUD_CAP, picks.length);
       for (let i = 0; i < n; i++) {
         const p = picks[i];
-        const s = p.fade;
-        // Short bumps in the decal color. Height tracks the fade so the rim is a speck, not a cylinder.
-        const yScale = Math.max(0.08, s * 0.28);
-        dummy.position.set(p.x, 0.012 + STUD_H * yScale * 0.5, p.z);
+        const yScale = Math.max(0.12, p.fade);
+        // Bury the base in the plate so the cap edge does not draw a ring.
+        const sink = Math.min(0.02, STUD_H * yScale * 0.45);
+        dummy.position.set(p.x, 0.012 - sink + STUD_H * yScale * 0.5, p.z);
         dummy.rotation.set(0, 0, 0);
-        dummy.scale.set(s, yScale, s);
+        dummy.scale.set(1, yScale, 1);
         dummy.updateMatrix();
         nearPlateStuds.setMatrixAt(i, dummy.matrix);
       }
@@ -1925,7 +1937,9 @@
     }
     function pumpScenery() {
       const start = performance.now();
-      while (sceneryJobs.length && performance.now() - start < 8) {
+      // One job can overshoot the cap. 4ms keeps a slow job under the
+      // simulated 50ms line.
+      while (sceneryJobs.length && performance.now() - start < 4) {
         const job = sceneryJobs.shift();
         try { job(); } catch (err) { console.error(err); }
       }
@@ -2216,9 +2230,11 @@
     function createForestTheme(center, baseplateSize) {
       const minDist = 80; // Minimum distance from center for any object
       
-      // Sky gradient with subtle horizon glow
-      scene.background = createSkyGradient(0x87CEEB, 0xc9e8f5, 0xffffff, true);
-      scene.fog = new THREE.Fog(0x87CEEB, 200, 800);
+      // Solid sky. The old gradient ended in white, and a low camera looked
+      // straight at that band above the horizon.
+      scene.background = new THREE.Color(0x7ec8e8);
+      scene.fog = new THREE.Fog(0x7ec8e8, 200, 800);
+      if (renderer) renderer.setClearColor(0x7ec8e8, 1);
       
       // Mid green. A red 1×1 has to read against the studs, and the plate
       // has to read against the sky. Near-black 0x1a6424 failed that.
@@ -4060,29 +4076,33 @@
       }
       
       if (theme === 'forest') {
-        // Rocks - scattered around the perimeter
+        // One rock or bush per turn. Building all 45 in the pump was a
+        // single task over the simulated 50ms line.
         const rockMat = new THREE.MeshStandardMaterial({ color: 0x666666, roughness: 0.9 });
-        for (let i = 0; i < 25; i++) {
-          const pos = getOutsidePosition(minDistFromCenter, minDistFromCenter + 80);
-          const rockGeo = new THREE.DodecahedronGeometry(1 + Math.random() * 2, 0);
-          const rock = new THREE.Mesh(rockGeo, rockMat);
-          rock.position.set(pos.x, 0.5, pos.z);
-          rock.rotation.set(Math.random(), Math.random(), Math.random());
-          scene.add(rock);
-          details.push(rock);
-        }
-        
-        // Bushes - scattered around the perimeter
         const bushMat = new THREE.MeshStandardMaterial({ color: 0x2d5a27, roughness: 0.8 });
-        for (let i = 0; i < 20; i++) {
-          const pos = getOutsidePosition(minDistFromCenter, minDistFromCenter + 100);
-          const bushGeo = new THREE.SphereGeometry(2 + Math.random() * 2, 8, 8);
-          const bush = new THREE.Mesh(bushGeo, bushMat);
-          bush.position.set(pos.x, 1, pos.z);
-          bush.scale.y = 0.7;
-          scene.add(bush);
-          details.push(bush);
+        for (let i = 0; i < 25; i++) {
+          queueScenery(() => {
+            const pos = getOutsidePosition(minDistFromCenter, minDistFromCenter + 80);
+            const rockGeo = new THREE.DodecahedronGeometry(1 + Math.random() * 2, 0);
+            const rock = new THREE.Mesh(rockGeo, rockMat);
+            rock.position.set(pos.x, 0.5, pos.z);
+            rock.rotation.set(Math.random(), Math.random(), Math.random());
+            scene.add(rock);
+            window.sceneryObjects.extras.push(rock);
+          });
         }
+        for (let i = 0; i < 20; i++) {
+          queueScenery(() => {
+            const pos = getOutsidePosition(minDistFromCenter, minDistFromCenter + 100);
+            const bushGeo = new THREE.SphereGeometry(2 + Math.random() * 2, 8, 8);
+            const bush = new THREE.Mesh(bushGeo, bushMat);
+            bush.position.set(pos.x, 1, pos.z);
+            bush.scale.y = 0.7;
+            scene.add(bush);
+            window.sceneryObjects.extras.push(bush);
+          });
+        }
+        return;
       }
       
       if (theme === 'beach') {
@@ -11764,13 +11784,81 @@
     }
 
     // The live canvas is MSAA and preserveDrawingBuffer is false, so
-    // drawImage of that canvas keeps the previous frame. Share, screenshot,
-    // and gallery thumbs render into an offscreen target and copy those pixels.
+    // drawImage of that canvas keeps the previous frame. A render target also
+    // skips tone mapping and sRGB, which left shares near-black. Draw the
+    // scene linear, then apply the same exposure, vignette, and sRGB curve
+    // the screen uses, and copy those bytes.
+    let gradeQuad = null;
+    let gradeCam = null;
+    let gradeScene = null;
+    let gradeMat = null;
+    let gradeLinear = null;
+    let gradeOut = null;
+    function ensureGrade(w, h) {
+      if (!gradeMat) {
+        gradeMat = new THREE.ShaderMaterial({
+          uniforms: {
+            tDiffuse: { value: null },
+            exposure: { value: 1 },
+            darkness: { value: 0.06 },
+            offset: { value: 1.15 },
+            useVignette: { value: 0 }
+          },
+          depthTest: false,
+          depthWrite: false,
+          toneMapped: false,
+          vertexShader: `
+            varying vec2 vUv;
+            void main() {
+              vUv = uv;
+              gl_Position = vec4(position.xy, 0.0, 1.0);
+            }
+          `,
+          fragmentShader: `
+            uniform sampler2D tDiffuse;
+            uniform float exposure;
+            uniform float darkness;
+            uniform float offset;
+            uniform float useVignette;
+            varying vec2 vUv;
+            void main() {
+              vec4 texel = texture2D(tDiffuse, vUv);
+              vec3 color = texel.rgb;
+              if (useVignette > 0.5) {
+                vec2 uv = (vUv - vec2(0.5)) * vec2(offset);
+                float vign = clamp(1.0 - dot(uv, uv), 0.0, 1.0);
+                color *= mix(1.0 - darkness, 1.0, vign);
+              }
+              color = clamp(color * exposure, 0.0, 1.0);
+              vec3 encoded = mix(
+                pow(color, vec3(0.41666)) * 1.055 - vec3(0.055),
+                color * 12.92,
+                vec3(lessThanEqual(color, vec3(0.0031308)))
+              );
+              gl_FragColor = vec4(encoded, texel.a);
+            }
+          `
+        });
+        gradeQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), gradeMat);
+        gradeQuad.frustumCulled = false;
+        gradeScene = new THREE.Scene();
+        gradeScene.add(gradeQuad);
+        gradeCam = new THREE.PerspectiveCamera(1, 1, 0.1, 2);
+      }
+      if (!gradeLinear || gradeLinear.width !== w || gradeLinear.height !== h) {
+        if (gradeLinear) gradeLinear.dispose();
+        if (gradeOut) gradeOut.dispose();
+        gradeLinear = new THREE.WebGLRenderTarget(w, h, { depthBuffer: true, stencilBuffer: false });
+        gradeOut = new THREE.WebGLRenderTarget(w, h, { depthBuffer: false, stencilBuffer: false });
+        gradeLinear.texture.colorSpace = THREE.LinearSRGBColorSpace;
+        gradeOut.texture.colorSpace = THREE.LinearSRGBColorSpace;
+      }
+    }
     function renderSceneToCanvas(canvas2d) {
       const w = canvas2d.width | 0;
       const h = canvas2d.height | 0;
       if (w < 1 || h < 1) return;
-      const rt = new THREE.WebGLRenderTarget(w, h, { depthBuffer: true, stencilBuffer: false });
+      ensureGrade(w, h);
       const prevTarget = renderer.getRenderTarget();
       // The opening reveal hides new meshes until scenery settles. A share
       // taken in that window has to draw the bricks anyway.
@@ -11784,11 +11872,18 @@
         });
       }
       try {
-        renderer.setRenderTarget(rt);
+        renderer.setRenderTarget(gradeLinear);
         renderer.clear(true, true, true);
         renderer.render(scene, camera);
+        const vignetteOn = !!(composer && qualitySettings.post && vignettePass);
+        gradeMat.uniforms.tDiffuse.value = gradeLinear.texture;
+        gradeMat.uniforms.exposure.value = renderer.toneMappingExposure;
+        gradeMat.uniforms.useVignette.value = vignetteOn ? 1 : 0;
+        renderer.setRenderTarget(gradeOut);
+        renderer.clear(true, true, true);
+        renderer.render(gradeScene, gradeCam);
         const buf = new Uint8Array(w * h * 4);
-        renderer.readRenderTargetPixels(rt, 0, 0, w, h, buf);
+        renderer.readRenderTargetPixels(gradeOut, 0, 0, w, h, buf);
         const img = new ImageData(w, h);
         const row = w * 4;
         for (let y = 0; y < h; y++) {
@@ -11798,7 +11893,6 @@
       } finally {
         for (let i = 0; i < revived.length; i++) revived[i].visible = false;
         renderer.setRenderTarget(prevTarget);
-        rt.dispose();
       }
     }
 
@@ -13124,6 +13218,12 @@
     
     let presentStep = 0;
     let presentPending = false;
+    let sceneryKick = false;
+    function kickScenery() {
+      if (sceneryKick) return;
+      sceneryKick = true;
+      setTimeout(() => { if (window.brixStartScenery) window.brixStartScenery(); }, 0);
+    }
     function finishReveal() {
       revealActive = false;
       if (revealAdd) {
@@ -13240,15 +13340,21 @@
         hudDrawCalls = renderer.info.render.calls;
         presentStep++;
         presentPending = presentStep <= steps;
-        if (presentStep > steps) window.sceneryShown = true;
+        if (presentStep > steps) {
+          window.sceneryShown = true;
+          kickScenery();
+        }
         return;
       }
       if (composer && qualitySettings.post) {
         window.sceneryShown = true;
+        kickScenery();
         window.brixPlateShown = !!(window.baseplateRef && window.baseplateRef.visible !== false);
+        if (gradeScreenPass) gradeScreenPass.uniforms.exposure.value = renderer.toneMappingExposure;
         composer.render();
       } else {
         if (!window.sceneryShown) window.sceneryShown = true;
+        kickScenery();
         window.brixPlateShown = !!(window.baseplateRef && window.baseplateRef.visible !== false);
         renderer.render(scene, camera);
       }
@@ -13697,6 +13803,7 @@
     window.buildShareRecords = buildShareRecords;
     window.encodeShareToken = encodeShareToken;
     window.decodeShareToken = decodeShareToken;
+    window.brixRenderSceneToCanvas = renderSceneToCanvas;
     window.brixDebug = {
       getStats() {
         let groupBricks = 0;

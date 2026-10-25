@@ -1,0 +1,9 @@
+import{__brixScope as e}from"./brix3d-m85d60a29.js";e.createInfiniteGround=function(){const t=96*e.STUD,d=new globalThis.__BRIX_THREE.BoxGeometry(t,e.PLATE_H*.5,t),l=new globalThis.__BRIX_THREE.MeshLambertMaterial({color:3582020}),o=new globalThis.__BRIX_THREE.Mesh(d,l);o.position.set(t/2,-e.PLATE_H*.25,t/2),o.receiveShadow=!0,e.scene.add(o);const i=e.makeBaseplateStudTextures(96),r=new globalThis.__BRIX_THREE.MeshLambertMaterial({color:4108878,map:i.map}),c=.4343;r.customProgramCacheKey=()=>"plate-stud-disk",r.onBeforeCompile=n=>{n.fragmentShader=n.fragmentShader.replace("#include <map_fragment>",`
+          {
+            vec2 uvCell = fract(vMapUv);
+            float dist = length(uvCell - 0.5);
+            float rad = ${e.STUD_R/e.STUD};
+            float disk = 1.0 - smoothstep(rad - 0.012, rad + 0.012, dist);
+            diffuseColor.rgb *= mix(vec3(${c}), vec3(1.0), disk);
+          }
+          `)},e.groundStuds=new globalThis.__BRIX_THREE.Mesh(new globalThis.__BRIX_THREE.PlaneGeometry(t,t),r),e.groundStuds.rotation.x=-Math.PI/2,e.groundStuds.position.set(t/2,.012,t/2),e.groundStuds.castShadow=!1,e.groundStuds.receiveShadow=!0,e.scene.add(e.groundStuds),o.castShadow=!1;const u=new globalThis.__BRIX_THREE.PlaneGeometry(2e3,2e3),_=new globalThis.__BRIX_THREE.MeshLambertMaterial({color:3116860}),a=new globalThis.__BRIX_THREE.Mesh(u,_);a.rotation.x=-Math.PI/2,a.position.set(t/2,-.02,t/2),a.receiveShadow=!1,a.userData.isGround=!0,e.scene.add(a),window.grassPlane=a,window.baseplateRef=o,window.groundStudsRef=e.groundStuds,e.createDistantScenery(t);const E=t,S=96,s=new globalThis.__BRIX_THREE.GridHelper(E,S,2059816,2059816);s.position.set(t/2,.002,t/2),s.material.opacity=.15,s.material.transparent=!0,e.scene.add(s),window.gridHelper=s,e.controls&&!e.controls.__plateStudLod&&(e.controls.__plateStudLod=!0,e.controls.addEventListener("change",()=>e.updateNearPlateStuds(!1))),e.updateNearPlateStuds(!0)};

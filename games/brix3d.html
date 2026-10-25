@@ -105,7 +105,7 @@
       #controls:not(.tray-open) .tray-scroll { display: none !important; }
     }
   </style>
-  <link rel="stylesheet" href="/games/brix3d/brix3d.74d8489d59.css">
+  <link rel="stylesheet" href="/games/brix3d/brix3d.027d21d7bd.css">
   <meta property="og:image" content="https://www.cosmicgameshub.com/images/game-brix3d-og.jpg">
   <meta property="og:image:width" content="1280">
   <meta property="og:image:height" content="720">
@@ -165,7 +165,19 @@
     <div class="loading-subtitle">3D Brick Builder</div>
     <div class="loading-bar"><div class="loading-progress"></div></div>
   </div>
-  
+  <div id="phoneTutorial" class="phone-tutorial" hidden>
+    <div class="phone-tutorial-card">
+      <h2>BRIX 3D</h2>
+      <p>Drag to look around. Pinch, or use the zoom buttons.</p>
+      <p>Tap the plate to place a brick. Open Bricks &amp; tools for colors and starters.</p>
+      <label class="phone-tutorial-dismiss">
+        <input type="checkbox" id="phoneTutorialDontShow">
+        Don't show again
+      </label>
+      <button type="button" id="phoneTutorialOk">Got it</button>
+    </div>
+  </div>
+
   <script src="/games/brix3d/brix-shell.js" defer></script>
   <script src="/games/brix3d/brix-mount.js" defer></script>
   <script>

@@ -72,6 +72,23 @@
         }
         pumpThaw();
       }
+      function soon(fn) {
+        var channel = soon.channel || (soon.channel = new MessageChannel());
+        channel.port1.onmessage = function () { fn(); };
+        channel.port2.postMessage(0);
+      }
+      function parkList(nodes, onEach) {
+        var i = 0;
+        function step() {
+          var t0 = performance.now();
+          while (i < nodes.length && performance.now() - t0 < 5) {
+            onEach(nodes[i]);
+            i++;
+          }
+          if (i < nodes.length) soon(step);
+        }
+        step();
+      }
       function markCold(hold) {
         var phone = window.innerWidth <= 430;
         var top = hold.children;
@@ -88,17 +105,21 @@
               enqueue(el, true, true);
               arm(scroll);
               var deep = scroll.querySelectorAll('.section, .subsection, .brick-btn');
-              for (var d = 0; d < deep.length; d++) arm(deep[d]);
+              var deepList = [];
+              for (var d = 0; d < deep.length; d++) deepList.push(deep[d]);
+              parkList(deepList, arm);
             } else {
               // Every descendant stays display:none. Revealing the shell
               // while labels were still visible was a 30ms text layout.
               el.classList.add('brix-park');
               var inner = el.querySelectorAll('*');
-              for (var j = 0; j < inner.length; j++) {
-                inner[j].classList.add('brix-park');
-                catalogQueue.push(inner[j]);
-              }
+              var innerList = [];
+              for (var j = 0; j < inner.length; j++) innerList.push(inner[j]);
               catalogQueue.unshift(el);
+              parkList(innerList, function (node) {
+                node.classList.add('brix-park');
+                catalogQueue.push(node);
+              });
             }
             continue;
           }
@@ -142,7 +163,7 @@
         }).catch(function (err) { console.error(err); });
         var s = document.createElement('script');
         s.type = 'module';
-        s.src = '/games/brix3d/brix3d.TZLOYTDA.js';
+        s.src = '/games/brix3d/brix3d.7GR4X2WU.js';
         document.body.appendChild(s);
         var hold = document.createElement('div');
         hold.id = 'brixHold';
