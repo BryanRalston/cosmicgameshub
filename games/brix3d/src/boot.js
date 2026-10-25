@@ -86,13 +86,19 @@ async function waitForContentPaint() {
 }
 
 afterPaint().then(async () => {
+  // The boot script is cached. brix-parts.json is not. Reading the lists
+  // before they arrive left threeUrls empty, and the next import then threw
+  // on ACESFilmicToneMapping because the Three namespace was never published.
+  await waitForContentPaint();
   const threeUrls = window.__BRIX_THREE_PARTS__ || [];
   const mainUrls = window.__BRIX_MAIN_PARTS__ || [];
   const extra = window.__BRIX_WARM__ || [];
-  await waitForContentPaint();
+  if (!threeUrls.length) throw new Error('THREE parts missing');
   await warm(threeUrls.concat(mainUrls, extra));
   const threeTimes = await runParts(threeUrls);
+  if (!globalThis.__BRIX_THREE) await runParts(threeUrls);
   await waitForUi();
+  if (!globalThis.__BRIX_THREE) throw new Error('THREE namespace missing');
   const orbitMod = await import('./orbit-entry.js');
   globalThis.__BRIX_ORBIT = orbitMod.OrbitControls;
   await later(0);

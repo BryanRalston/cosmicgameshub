@@ -325,8 +325,13 @@
     
     // Time of day / weather state
     let timeOfDay = 0.5; // noon. Brighter default than the old morning preset.
-    // One home ray. (22, 40, 42) from the plate center points the same way as camera (60, 40, 80).
+    // Desktop home ray. (22, 40, 42) from the plate center points the same way as camera (60, 40, 80).
     const HOME_OX = 22, HOME_OY = 40, HOME_OZ = 42;
+    // Phone ray is shallower. A 60° portrait frame on the desktop ray stays
+    // 10° below the horizon at every distance. (58, 16, 62) puts the horizon
+    // in frame, and distance 22 keeps the nearest stud past the raised band.
+    const PHONE_OX = 58, PHONE_OY = 16, PHONE_OZ = 62;
+    const PHONE_HOME_DIST = 22;
     let weatherType = 'clear'; // 'clear', 'rain', 'snow', 'fog'
     let rainParticles = null;
     let snowParticles = null;
@@ -928,12 +933,12 @@
       await yieldTick();
 
       // Lights: 1 directional sun + hemi + ambient. No extra cheap lights.
-      const ambient = new THREE.AmbientLight(0xffffff, 0.78);
+      const ambient = new THREE.AmbientLight(0xffffff, 0.8);
       ambient.name = 'ambient';
       scene.add(ambient);
       
       const shadowSize = qualityShadowSize();
-      const sun = new THREE.DirectionalLight(0xfff6e8, 1.7);
+      const sun = new THREE.DirectionalLight(0xffffff, 1.0);
       sun.name = 'sun';
       sun.position.set(50, 80, 60);
       sun.castShadow = true;
@@ -952,7 +957,7 @@
       window.sunLight = sun;
       scene.add(sun.target);
       
-      const hemi = new THREE.HemisphereLight(0xfff6ee, 0xe4e0d8, 0.55);
+      const hemi = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.85);
       hemi.name = 'hemi';
       scene.add(hemi);
       renderer.shadowMap.enabled = true;
@@ -1400,8 +1405,9 @@
         _todCache.sunColor.copy(_todCache.whiteSun).lerp(_noonWhite, noonFactor);
         // Lower key than the old 1.7 sun. The visible face is lit now, and a
         // hotter sun clips that face off the swatch.
-        sunIntensity = 1.05 + noonFactor * 0.1;
-        ambientIntensity = 0.7 + noonFactor * 0.1;
+        // Sun comes down a little so the extra neutral fill does not clip the lit face.
+        sunIntensity = 0.94 + noonFactor * 0.08;
+        ambientIntensity = 0.74 + noonFactor * 0.08;
         renderer.toneMappingExposure = isMobileGfx() ? 1.75 : 1.6;
       }
       if (isMobileGfx()) {
@@ -1423,11 +1429,13 @@
         // Sky blue and grass green in the fill light shift yellow toward olive and red toward maroon.
         // The background stays blue. The brick light stays neutral so the swatch color survives.
         const night = timeOfDay < 0.2 || timeOfDay > 0.8;
-        hemi.color.setHex(night ? 0xb7c4d6 : 0xfff6ee);
-        hemi.groundColor.setHex(night ? 0x3a3a40 : 0xe4e0d8);
+        // Day fill is white on both poles. A warm sky/ground mix turned shaded
+        // yellow mustard and left blue and green dark.
+        hemi.color.setHex(night ? 0xb7c4d6 : 0xffffff);
+        hemi.groundColor.setHex(night ? 0x3a3a40 : 0xffffff);
         hemi.intensity = night
           ? (isMobileGfx() ? 0.28 : 0.32)
-          : (isMobileGfx() ? 0.42 : 0.48);
+          : (isMobileGfx() ? 0.78 : 0.9);
       }
       
       // Bloom stays at the composer default. Night used to jump to 0.5.
@@ -1826,12 +1834,10 @@
 
     let nearPlateStuds = null;
     let nearPlateStudKey = '';
-    // Full-radius cylinders only inside the close-up band. The home camera
-    // and the share camera sit farther than NONE, so those views stay the
-    // printed plate. Footprint stays STUD_R the whole way; only the height
-    // fades, so the printed disk never shows as a halo around a smaller cap.
+    // Full-size cylinders only. A height fade left a thin puck on the printed
+    // disk, and that puck read as a ring. The home camera and the share
+    // camera sit past this distance, so those views stay the printed plate.
     const PLATE_STUD_FULL = 3.15;
-    const PLATE_STUD_NONE = 4.18;
     const PLATE_STUD_CAP = 180;
     const PLATE_STUD_SEGMENTS = 24;
     function makePlateStudGeometry(segments) {
@@ -1860,34 +1866,29 @@
       nearPlateStudKey = key;
       const dummy = instancedSystem.dummy;
       const y = 0.012 + STUD_H * 0.5;
-      const reach = PLATE_STUD_NONE;
+      const reach = PLATE_STUD_FULL;
       const minX = Math.max(0, Math.floor((cam.x - reach) / STUD));
       const maxX = Math.min(95, Math.floor((cam.x + reach) / STUD));
       const minZ = Math.max(0, Math.floor((cam.z - reach) / STUD));
       const maxZ = Math.min(95, Math.floor((cam.z + reach) / STUD));
-      const span = PLATE_STUD_NONE - PLATE_STUD_FULL;
       const picks = [];
       for (let iz = minZ; iz <= maxZ; iz++) {
         for (let ix = minX; ix <= maxX; ix++) {
           const x = (ix + 0.5) * STUD;
           const z = (iz + 0.5) * STUD;
           const dist = Math.hypot(cam.x - x, cam.y - y, cam.z - z);
-          if (dist >= PLATE_STUD_NONE) continue;
-          const fade = Math.max(0, Math.min(1, (PLATE_STUD_NONE - dist) / span));
-          if (fade < 0.06) continue;
-          picks.push({ x, z, fade, dist });
+          if (dist >= PLATE_STUD_FULL) continue;
+          picks.push({ x, z, dist });
         }
       }
       picks.sort((a, b) => a.dist - b.dist);
       const n = Math.min(PLATE_STUD_CAP, picks.length);
       for (let i = 0; i < n; i++) {
         const p = picks[i];
-        const yScale = Math.max(0.12, p.fade);
         // Bury the base in the plate so the cap edge does not draw a ring.
-        const sink = Math.min(0.02, STUD_H * yScale * 0.45);
-        dummy.position.set(p.x, 0.012 - sink + STUD_H * yScale * 0.5, p.z);
+        dummy.position.set(p.x, 0.012 - 0.02 + y, p.z);
         dummy.rotation.set(0, 0, 0);
-        dummy.scale.set(1, yScale, 1);
+        dummy.scale.set(1, 1, 1);
         dummy.updateMatrix();
         nearPlateStuds.setMatrixAt(i, dummy.matrix);
       }
@@ -8883,7 +8884,7 @@
     
     async function newProject() {
       if (bricks.length > 0) {
-        const ok = await confirmLoad('Start new project? Current work will be lost unless saved.');
+        const ok = await confirmLoad('Start new project? Current work will be lost unless saved.', { mode: 'new' });
         if (!ok) return;
       }
       bricks.forEach(b => { 
@@ -8911,16 +8912,20 @@
       }
     }
     
-    function confirmLoad(message) {
+    function confirmLoad(message, opts) {
       return new Promise((resolve) => {
         const root = document.getElementById('loadConfirm');
         const body = document.getElementById('loadConfirmBody');
+        const title = document.getElementById('loadConfirmTitle');
         const ok = document.getElementById('loadConfirmOk');
         const cancel = document.getElementById('loadConfirmCancel');
         if (!root || !body || !ok || !cancel) {
           resolve(false);
           return;
         }
+        const fresh = opts && opts.mode === 'new';
+        if (title) title.textContent = fresh ? 'Start a new project?' : 'Load this build?';
+        ok.textContent = fresh ? 'New project' : 'Load';
         body.textContent = message;
         root.style.display = 'flex';
         const finish = (yes) => {
@@ -9055,7 +9060,8 @@
     // Distance changes; the ray does not.
 
     function homeDistance() {
-      // Empty plate uses the same fit as a 2×2. Do not lengthen this to buy frames.
+      // Desktop stays on the 2×2 fit. Phone uses PHONE_HOME_DIST so the
+      // plate edge and the horizon are in the portrait frame.
       const span = 2 * STUD;
       return liveFitDistance(span, BRICK_H, span);
     }
@@ -9070,240 +9076,84 @@
 
     function liveFitDistance(spanX, spanY, spanZ) {
       const raw = fitDistanceForBox(spanX, spanY, spanZ, 0.55);
-      const minD = isMobileGfx() ? 6.6 : 7.4;
-      const maxD = isMobileGfx() ? 28 : 36;
+      const minD = isMobileGfx() ? PHONE_HOME_DIST : 7.4;
+      const maxD = isMobileGfx() ? 64 : 36;
       return Math.min(maxD, Math.max(minD, raw));
     }
 
-    // right = forward × up. forward (0,0,-1) → right (1,0,0).
-    function captureViewBasis(fx, fy, fz) {
-      const fl = Math.hypot(fx, fy, fz) || 1;
-      fx /= fl; fy /= fl; fz /= fl;
-      let rx = -fz;
-      let rz = fx;
-      const rl = Math.hypot(rx, rz) || 1;
-      rx /= rl; rz /= rl;
-      const ux = -rz * fy;
-      const uy = rz * fx - rx * fz;
-      const uz = rx * fy;
-      return { fx, fy, fz, rx, ry: 0, rz, ux, uy, uz };
-    }
-
-    function projectedFillDistance(box, dirX, dirY, dirZ, aspect) {
-      const halfY = (camera.fov * Math.PI / 180) / 2;
-      const halfX = Math.atan(Math.tan(halfY) * Math.max(aspect, 0.3));
-      const xs = [box.aimX - box.spanX * 0.5, box.aimX + box.spanX * 0.5];
-      const ys = [box.aimY - box.spanY * 0.5, box.aimY + box.spanY * 0.5];
-      const zs = [box.aimZ - box.spanZ * 0.5, box.aimZ + box.spanZ * 0.5];
-      let lo = 0.6;
-      let hi = 90;
-      let eye = null;
-      for (let n = 0; n < 16; n++) {
-        const dist = (lo + hi) * 0.5;
-        let ex = box.aimX + dirX * dist;
-        let ey = box.aimY + dirY * dist;
-        let ez = box.aimZ + dirZ * dist;
-        if (ey < 0.5) ey = 0.5;
-        const basis = captureViewBasis(box.aimX - ex, box.aimY - ey, box.aimZ - ez);
-        let maxN = 0;
-        let behind = false;
-        for (let ix = 0; ix < 2 && !behind; ix++) {
-          for (let iy = 0; iy < 2 && !behind; iy++) {
-            for (let iz = 0; iz < 2; iz++) {
-              const vx = xs[ix] - ex;
-              const vy = ys[iy] - ey;
-              const vz = zs[iz] - ez;
-              const viewZ = vx * basis.fx + vy * basis.fy + vz * basis.fz;
-              if (viewZ < 0.15) { behind = true; break; }
-              const viewX = vx * basis.rx + vy * basis.ry + vz * basis.rz;
-              const viewY = vx * basis.ux + vy * basis.uy + vz * basis.uz;
-              maxN = Math.max(maxN, Math.abs(viewX / (viewZ * Math.tan(halfX))), Math.abs(viewY / (viewZ * Math.tan(halfY))));
-            }
-          }
-        }
-        if (behind || maxN > 0.8) lo = dist;
-        else { hi = dist; eye = { ex, ey, ez, dist }; }
-      }
-      return eye || { ex: box.aimX + dirX * hi, ey: Math.max(0.5, box.aimY + dirY * hi), ez: box.aimZ + dirZ * hi, dist: hi };
-    }
-
-    function brickCaptureBoxes() {
-      const list = [];
-      for (let i = 0; i < bricks.length; i++) {
-        const b = bricks[i];
-        const p = b.position;
-        if (!p) continue;
-        const g = b.userData && b.userData.grid;
-        const hx = g ? (g.w * STUD) * 0.5 : 0.4;
-        const hz = g ? (g.d * STUD) * 0.5 : 0.4;
-        const hy = (g && g.hp >= 3 ? BRICK_H : PLATE_H) + STUD_H;
-        list.push({
-          minX: p.x - hx, maxX: p.x + hx,
-          minY: p.y, maxY: p.y + hy,
-          minZ: p.z - hz, maxZ: p.z + hz,
-          cx: p.x, cy: p.y + hy * 0.5, cz: p.z
-        });
-      }
-      return list;
-    }
-
-    function rayHitsAabb(ox, oy, oz, dx, dy, dz, box, maxT) {
-      let tmin = 0;
-      let tmax = maxT;
-      const o = [ox, oy, oz];
-      const d = [dx, dy, dz];
-      const mins = [box.minX, box.minY, box.minZ];
-      const maxs = [box.maxX, box.maxY, box.maxZ];
-      for (let a = 0; a < 3; a++) {
-        if (Math.abs(d[a]) < 1e-8) {
-          if (o[a] < mins[a] || o[a] > maxs[a]) return false;
-          continue;
-        }
-        let t1 = (mins[a] - o[a]) / d[a];
-        let t2 = (maxs[a] - o[a]) / d[a];
-        if (t1 > t2) { const swap = t1; t1 = t2; t2 = swap; }
-        if (t1 > tmin) tmin = t1;
-        if (t2 < tmax) tmax = t2;
-        if (tmin > tmax) return false;
-      }
-      return tmax > 0 && tmin < maxT;
-    }
-
-    function countOccluded(eyeX, eyeY, eyeZ, list) {
-      let hidden = 0;
-      for (let i = 0; i < list.length; i++) {
-        const a = list[i];
-        const dx = a.cx - eyeX;
-        const dy = a.cy - eyeY;
-        const dz = a.cz - eyeZ;
-        const dist = Math.hypot(dx, dy, dz) || 1;
-        const ix = dx / dist;
-        const iy = dy / dist;
-        const iz = dz / dist;
-        for (let j = 0; j < list.length; j++) {
-          if (i === j) continue;
-          if (rayHitsAabb(eyeX, eyeY, eyeZ, ix, iy, iz, list[j], dist - 0.08)) {
-            hidden++;
-            break;
-          }
-        }
-      }
-      return hidden;
-    }
-
-    function captureNdc(ex, ey, ez, x, y, z, aimX, aimY, aimZ, aspect) {
-      const basis = captureViewBasis(aimX - ex, aimY - ey, aimZ - ez);
-      const vx = x - ex;
-      const vy = y - ey;
-      const vz = z - ez;
-      const viewZ = vx * basis.fx + vy * basis.fy + vz * basis.fz;
-      if (viewZ < 0.15) return null;
-      const halfY = (camera.fov * Math.PI / 180) / 2;
-      const halfX = Math.atan(Math.tan(halfY) * Math.max(aspect, 0.3));
-      const viewX = vx * basis.rx + vz * basis.rz;
-      const viewY = vx * basis.ux + vy * basis.uy + vz * basis.uz;
-      return [viewX / (viewZ * Math.tan(halfX)), viewY / (viewZ * Math.tan(halfY))];
-    }
-
-    // How much of the frame the build's longest axis covers. 0.8 means that
-    // axis runs about 80% of the picture, which is the 10% padding target.
-    function longAxisFill(box, ex, ey, ez, aspect) {
-      let x0 = box.aimX;
-      let y0 = box.aimY;
-      let z0 = box.aimZ;
-      let x1 = x0;
-      let y1 = y0;
-      let z1 = z0;
-      if (box.spanY >= box.spanX && box.spanY >= box.spanZ) {
-        y0 -= box.spanY * 0.5;
-        y1 += box.spanY * 0.5;
-      } else if (box.spanX >= box.spanZ) {
-        x0 -= box.spanX * 0.5;
-        x1 += box.spanX * 0.5;
-      } else {
-        z0 -= box.spanZ * 0.5;
-        z1 += box.spanZ * 0.5;
-      }
-      const a = captureNdc(ex, ey, ez, x0, y0, z0, box.aimX, box.aimY, box.aimZ, aspect);
-      const b = captureNdc(ex, ey, ez, x1, y1, z1, box.aimX, box.aimY, box.aimZ, aspect);
-      if (!a || !b) return 0;
-      return Math.hypot(a[0] - b[0], a[1] - b[1]) * 0.5;
-    }
-
-    function cameraCornerNdc(box) {
+    function captureCornerFit(box) {
       camera.updateMatrixWorld(true);
       const xs = [box.aimX - box.spanX * 0.5, box.aimX + box.spanX * 0.5];
       const ys = [box.aimY - box.spanY * 0.5, box.aimY + box.spanY * 0.5];
       const zs = [box.aimZ - box.spanZ * 0.5, box.aimZ + box.spanZ * 0.5];
       const v = new THREE.Vector3();
-      let maxN = 0;
+      let maxX = -2;
+      let minX = 2;
+      let maxY = -2;
+      let minY = 2;
       for (let ix = 0; ix < 2; ix++) {
         for (let iy = 0; iy < 2; iy++) {
           for (let iz = 0; iz < 2; iz++) {
             v.set(xs[ix], ys[iy], zs[iz]).project(camera);
-            if (v.z < -1 || v.z > 1) return 4;
-            maxN = Math.max(maxN, Math.abs(v.x), Math.abs(v.y));
+            if (v.z < -1 || v.z > 1) return { fill: 2, minMargin: 0, behind: true };
+            if (v.x < minX) minX = v.x;
+            if (v.x > maxX) maxX = v.x;
+            if (v.y < minY) minY = v.y;
+            if (v.y > maxY) maxY = v.y;
           }
         }
       }
-      return maxN;
+      const fill = Math.max(maxX - minX, maxY - minY) * 0.5;
+      const minMargin = Math.min(minX + 1, 1 - maxX, minY + 1, 1 - maxY) * 0.5;
+      return { fill, minMargin, behind: false };
     }
 
+    // About 60% of the frame, with at least 10% margin on every side.
+    // A corner behind the camera used to report 4, and the old dolly
+    // multiplied distance by that, which shrank a long build to a speck.
     function placeCaptureCamera(box) {
-      const aspect = Math.max(camera.aspect || 1, 0.3);
-      const list = brickCaptureBoxes();
-      const radius = 0.5 * Math.hypot(box.spanX, box.spanY, box.spanZ);
-      const prefer = radius < 2.2 ? 1.0 : 0.7;
-      const elevs = [0.55, 0.72, 0.95];
-      let best = null;
-      for (let ei = 0; ei < elevs.length; ei++) {
-        const elev = elevs[ei];
-        for (let k = 0; k < 12; k++) {
-          const yaw = k * (Math.PI / 6);
-          const dirX = Math.cos(elev) * Math.sin(yaw);
-          const dirY = Math.sin(elev);
-          const dirZ = Math.cos(elev) * Math.cos(yaw);
-          const eye = projectedFillDistance(box, dirX, dirY, dirZ, aspect);
-          const hidden = countOccluded(eye.ex, eye.ey, eye.ez, list);
-          const across = longAxisFill(box, eye.ex, eye.ey, eye.ez, aspect);
-          // A wide row should run across the frame. A 45° view spends the
-          // fit on empty corners and leaves the build small.
-          const acrossShort = 0.8 - Math.min(0.8, across);
-          const threeQuarter = 1 - Math.abs(Math.sin(2 * yaw));
-          const score = hidden * 200 + acrossShort * 80 + threeQuarter * (radius < 3 ? 6 : 1.2) + Math.abs(elev - prefer) * 2;
-          if (!best || score < best.score) best = { score, eyeX: eye.ex, eyeY: eye.ey, eyeZ: eye.ez, dist: eye.dist };
-        }
-      }
-      const placed = Math.hypot(best.eyeX - box.aimX, best.eyeY - box.aimY, best.eyeZ - box.aimZ);
-      controls.minDistance = Math.min(controls.minDistance, Math.max(0.6, placed * 0.5));
-      controls.maxDistance = Math.max(controls.maxDistance, placed + 4);
-      controls.target.set(box.aimX, box.aimY, box.aimZ);
-      camera.position.set(best.eyeX, best.eyeY, best.eyeZ);
-      controls.update();
-      // OrbitControls can clamp the pitch. Dolly on the real camera until the
-      // bounds sit at 0.80 NDC, which is 10% padding on the tight axis.
-      const offset = new THREE.Vector3();
-      for (let n = 0; n < 10; n++) {
-        const maxN = cameraCornerNdc(box);
-        if (maxN > 0.78 && maxN < 0.84) break;
-        offset.copy(camera.position).sub(controls.target);
-        const dist = offset.length() || 1;
-        const scale = maxN > 0.02 ? (maxN / 0.8) : 1.35;
-        offset.setLength(Math.max(0.6, Math.min(88, dist * scale)));
-        camera.position.copy(controls.target).add(offset);
-        if (camera.position.y < 0.5) camera.position.y = 0.5;
+      const len = Math.hypot(HOME_OX, HOME_OY, HOME_OZ) || 1;
+      const dirX = HOME_OX / len;
+      const dirY = HOME_OY / len;
+      const dirZ = HOME_OZ / len;
+      const savedPolar = controls.maxPolarAngle;
+      controls.maxPolarAngle = Math.PI / 2.02;
+      controls.minDistance = 0.3;
+      controls.maxDistance = 200;
+      const place = (dist) => {
+        controls.target.set(box.aimX, box.aimY, box.aimZ);
+        camera.position.set(
+          box.aimX + dirX * dist,
+          Math.max(0.55, box.aimY + dirY * dist),
+          box.aimZ + dirZ * dist
+        );
         controls.update();
+      };
+      let lo = 0.45;
+      let hi = 96;
+      let chosen = hi;
+      for (let n = 0; n < 16; n++) {
+        const dist = (lo + hi) * 0.5;
+        place(dist);
+        const fit = captureCornerFit(box);
+        if (fit.behind || fit.minMargin < 0.10 || fit.fill > 0.68) lo = dist;
+        else { chosen = dist; hi = dist; }
       }
+      place(chosen);
+      controls.maxPolarAngle = savedPolar;
       needsRender = true;
     }
 
     function placeCameraOnHomeRay(aimX, aimY, aimZ, dist) {
-      const len = Math.hypot(HOME_OX, HOME_OY, HOME_OZ);
+      const ox = isMobileGfx() ? PHONE_OX : HOME_OX;
+      const oy = isMobileGfx() ? PHONE_OY : HOME_OY;
+      const oz = isMobileGfx() ? PHONE_OZ : HOME_OZ;
+      const len = Math.hypot(ox, oy, oz) || 1;
       controls.target.set(aimX, aimY, aimZ);
       camera.position.set(
-        aimX + (HOME_OX / len) * dist,
-        aimY + (HOME_OY / len) * dist,
-        aimZ + (HOME_OZ / len) * dist
+        aimX + (ox / len) * dist,
+        aimY + (oy / len) * dist,
+        aimZ + (oz / len) * dist
       );
       controls.update();
       needsRender = true;
@@ -9316,8 +9166,9 @@
       const spanX = Math.min(plate, Math.max(box.spanX * 2.4, 12 * STUD));
       const spanZ = Math.min(plate, Math.max(box.spanZ * 2.4, 12 * STUD));
       const cap = fitDistanceForBox(spanX, Math.max(box.spanY, BRICK_H), spanZ, 0.7);
-      const home = isMobileGfx() ? 6.6 : 7.4;
-      controls.maxDistance = Math.max(home + 2, cap);
+      const home = isMobileGfx() ? PHONE_HOME_DIST : 7.4;
+      const slack = isMobileGfx() ? 20 : 2;
+      controls.maxDistance = Math.max(home + slack, cap);
     }
 
     function frameHomeCamera() {
@@ -10040,7 +9891,13 @@
             || (tutorial && tutorial.classList.contains('visible'))
             || (keybind && keybind.classList.contains('visible'))
             || (phoneTut && !phoneTut.hidden);
-          if (!modalUp) returnToPlaceMode();
+          if (modalUp) return;
+          const gallery = document.getElementById('galleryModal');
+          if (gallery && gallery.style.display === 'flex') {
+            closeGallery();
+            return;
+          }
+          returnToPlaceMode();
           return;
         }
         
@@ -11610,6 +11467,12 @@
         mobileTrayUserExpanded = !mobileTrayUserExpanded;
         applyMobileTray();
       });
+      const phoneViewBtn = document.getElementById('phoneViewBtn');
+      if (phoneViewBtn) phoneViewBtn.addEventListener('click', () => {
+        const open = document.body.classList.toggle('phone-view-open');
+        phoneViewBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        phoneViewBtn.textContent = open ? 'Close' : 'View';
+      });
     }
     
     // ==================== FULLSCREEN MODE ====================
@@ -11902,6 +11765,7 @@
       const prevMin = controls.minDistance;
       const prevMax = controls.maxDistance;
       const prevAspect = camera.aspect;
+      const prevPolar = controls.maxPolarAngle;
       try {
         camera.aspect = destW / Math.max(1, destH);
         camera.updateProjectionMatrix();
@@ -11910,6 +11774,7 @@
       } finally {
         controls.minDistance = prevMin;
         controls.maxDistance = prevMax;
+        controls.maxPolarAngle = prevPolar;
         camera.position.copy(prevPos);
         controls.target.copy(prevTarget);
         controls.update();
@@ -11927,7 +11792,7 @@
         thumbCanvas.width = 200;
         thumbCanvas.height = 150;
         withFramedBuild(200, 150, () => renderSceneToCanvas(thumbCanvas));
-        url = thumbCanvas.toDataURL('image/jpeg', 0.7);
+        url = thumbCanvas.toDataURL('image/jpeg', 0.92);
       } catch (e) {
         url = '';
       }

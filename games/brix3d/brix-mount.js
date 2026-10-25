@@ -123,7 +123,7 @@
             }
             continue;
           }
-          var showNow = el.id === 'brixBack' || el.id === 'quickBar' || el.id === 'buildHud' || el.id === 'stats' || el.id === 'fps' || el.id === 'qualityBar' || el.id === 'toast' || el.classList.contains('zoom-controls') || el.classList.contains('brix-more') || el.classList.contains('rotation-ind');
+          var showNow = el.id === 'brixBack' || el.id === 'quickBar' || el.id === 'buildHud' || el.id === 'phoneViewBtn' || el.id === 'stats' || el.id === 'fps' || el.id === 'qualityBar' || el.id === 'toast' || el.classList.contains('zoom-controls') || el.classList.contains('brix-more') || el.classList.contains('rotation-ind');
           if (showNow) {
             // Park, then show one per turn at the real absolute position.
             // content-visibility thaw moved these boxes and was the phone CLS.
@@ -163,7 +163,7 @@
         }).catch(function (err) { console.error(err); });
         var s = document.createElement('script');
         s.type = 'module';
-        s.src = '/games/brix3d/brix3d.7GR4X2WU.js';
+        s.src = '/games/brix3d/brix3d.B7TJPEGQ.js';
         document.body.appendChild(s);
         var hold = document.createElement('div');
         hold.id = 'brixHold';
