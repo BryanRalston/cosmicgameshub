@@ -318,19 +318,30 @@
     });
   }
 
+  function featuredArt(slug, name, alt) {
+    return {
+      name: name,
+      img: '/images/thumbs/' + slug + '-hero.webp',
+      avif: '/images/thumbs/' + slug + '-hero.avif',
+      w: 1600,
+      h: 900,
+      alt: alt
+    };
+  }
+
   var FEATURED_ART = {
-    'holiday-rush': { name: 'Holiday Rush', img: '/games/holiday-rush/store_layout_1600.webp', w: 1600, h: 900, alt: 'Holiday Rush Mart floor, top-down' },
-    rift: { name: 'RIFT', img: '/images/game-rift-v2.jpg', w: 1280, h: 720, alt: 'RIFT word game' },
-    gamerdle: { name: 'Gamerdle', img: '/images/game-gamerdle-v2.jpg', w: 1280, h: 720, alt: 'Gamerdle guess the video game' },
-    brix3d: { name: 'BRIX 3D', img: '/images/game-brix3d-v2.jpg', w: 1280, h: 720, alt: 'BRIX 3D brick builder' },
-    rootweave: { name: 'Rootweave', img: '/images/game-rootweave-v2.jpg', w: 1408, h: 768, alt: 'Rootweave valley farm' },
-    pixle: { name: 'Pixle', img: '/images/game-pixle-v2.jpg', w: 1280, h: 720, alt: 'Pixle five-letter gaming word' },
-    'asteroid-dodge': { name: 'Asteroid Dodge', img: '/images/game-asteroid-dodge-v2.jpg', w: 1280, h: 720, alt: 'Asteroid Dodge' },
-    'aim-trainer': { name: 'Aim Trainer', img: '/images/game-aim-trainer-v2.jpg', w: 1280, h: 720, alt: 'Aim Trainer' },
-    crossword: { name: 'Crossword', img: '/images/game-crossword-v2.jpg', w: 1280, h: 720, alt: 'Crossword' },
-    link: { name: 'Link', img: '/images/game-link-v2.jpg', w: 1280, h: 720, alt: 'Link' },
-    sudoku: { name: 'Sudoku', img: '/images/game-sudoku-v2.jpg', w: 1280, h: 720, alt: 'Sudoku' },
-    minesweeper: { name: 'Minesweeper', img: '/images/game-minesweeper-v2.jpg', w: 1280, h: 720, alt: 'Minesweeper' }
+    'holiday-rush': featuredArt('holiday-rush', 'Holiday Rush', 'Holiday Rush Mart floor, top-down'),
+    rift: featuredArt('rift', 'RIFT', 'RIFT word game'),
+    gamerdle: featuredArt('gamerdle', 'Gamerdle', 'Gamerdle guess the video game'),
+    brix3d: featuredArt('brix3d', 'BRIX 3D', 'BRIX 3D brick cottage on the build plate'),
+    rootweave: featuredArt('rootweave', 'Rootweave', 'Rootweave valley farm'),
+    pixle: featuredArt('pixle', 'Pixle', 'Pixle five-letter gaming word'),
+    'asteroid-dodge': featuredArt('asteroid-dodge', 'Asteroid Dodge', 'Asteroid Dodge'),
+    'aim-trainer': featuredArt('aim-trainer', 'Aim Trainer', 'Aim Trainer'),
+    crossword: featuredArt('crossword', 'Crossword', 'Crossword'),
+    link: featuredArt('link', 'Link', 'Link'),
+    sudoku: featuredArt('sudoku', 'Sudoku', 'Sudoku'),
+    minesweeper: featuredArt('minesweeper', 'Minesweeper', 'Minesweeper')
   };
 
   var WEEK_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -375,6 +386,8 @@
             img.width = art.w;
             img.height = art.h;
           }
+          var avif = document.getElementById('gotwAvif');
+          if (avif && art.avif) avif.srcset = art.avif;
           img.alt = art.alt;
           media.classList.remove('is-plain');
         } else {
@@ -439,6 +452,7 @@
       '<p class="play-break__title">Take a break: play our free games</p>' +
       '<ul>' +
         '<li><a href="/games/holiday-rush">Holiday Rush</a><span> — check out shoppers, chain combos</span></li>' +
+        '<li><a href="/games/brix3d">BRIX 3D</a><span> — build with bricks in the browser</span></li>' +
         '<li><a href="/games/rift">RIFT</a><span> — three daily word zones</span></li>' +
         '<li><a href="/games/gamerdle">Gamerdle</a><span> — guess the mystery game</span></li>' +
       '</ul>' +
@@ -600,6 +614,9 @@
           tile.hidden = !match;
           if (match) shown += 1;
         });
+        grid.querySelectorAll('.shelf').forEach(function (shelf) {
+          shelf.hidden = !shelf.querySelector('.tile:not([hidden])');
+        });
         if (empty) empty.hidden = shown !== 0;
       });
     });
@@ -620,7 +637,7 @@
     /* ── Scroll reveal: first-paint visible, animate only off-screen ── */
     (function () {
       var revealEls = document.querySelectorAll(
-        '.js-reveal, .product-card, .guide-card, .game-card, .cat-card, .versus-card, .feature-card, .stat-block, .faq__item, .faq-item, .disclosure'
+        '.js-reveal, .product-card, .guide-card, .game-card, .cat-card, .versus-card, .feature-card, .stat-block, .faq__item, .faq-item, .disclosure, .tile, .shelf, .gotw, .secondary-card, .gh-card, .gh-desk-card'
       );
       var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       revealEls.forEach(function (el) {
