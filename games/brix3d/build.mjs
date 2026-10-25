@@ -129,7 +129,7 @@ rmSync(outdir, { recursive: true, force: true });
 const mainSource = readFileSync(join(root, 'src/main.js'), 'utf8');
 const mainSplit = splitModule(mainSource, {
   scopeName: '__brixScope',
-  budget: 9000,
+  budget: 3500,
   // Top-level main.js assignments run at import time. Keep those groups
   // under one 50ms task on a 4x CPU throttle. Three's consts stay on the
   // larger budget; they are numbers and parse cheaply.
@@ -154,14 +154,16 @@ for (const file of readdirSync(root)) {
 }
 
 let html = readFileSync(htmlPath, 'utf8');
-html = html.replace(/s\.src = '\/games\/brix3d\/[^']+'/, `s.src = '/games/brix3d/${mainName}'`);
-const threeList = JSON.stringify(threeParts.map((file) => `/games/brix3d/${file.name}`));
-const mainList = JSON.stringify(mainParts.map((file) => `/games/brix3d/${file.name}`));
-html = html.replace(/window\.__BRIX_THREE_PARTS__ = [^;]*;/, `window.__BRIX_THREE_PARTS__ = ${threeList};`);
-html = html.replace(/window\.__BRIX_MAIN_PARTS__ = [^;]*;/, `window.__BRIX_MAIN_PARTS__ = ${mainList};`);
-const warmList = JSON.stringify([orbitName, liveName].map((name) => `/games/brix3d/${name}`));
-if (!html.includes('window.__BRIX_WARM__')) throw new Error('missing __BRIX_WARM__ placeholder');
-html = html.replace(/window\.__BRIX_WARM__ = [^;]*;/, `window.__BRIX_WARM__ = ${warmList};`);
+const mountPath = join(root, 'brix-mount.js');
+let mount = readFileSync(mountPath, 'utf8');
+if (!mount.includes("s.src = '/games/brix3d/")) throw new Error('boot src missing');
+mount = mount.replace(/s\.src = '\/games\/brix3d\/[^']+'/, `s.src = '/games/brix3d/${mainName}'`);
+writeFileSync(mountPath, mount);
+writeFileSync(join(root, 'brix-parts.json'), JSON.stringify({
+  three: threeParts.map((file) => `/games/brix3d/${file.name}`),
+  main: mainParts.map((file) => `/games/brix3d/${file.name}`),
+  warm: [orbitName, liveName].map((name) => `/games/brix3d/${name}`)
+}));
 html = html.replace(/<!-- brix-preloads -->[\s\S]*?<!-- \/brix-preloads -->/, '<!-- brix-preloads -->\n  <!-- /brix-preloads -->');
 const cssFiles = readdirSync(root).filter((f) => /^brix3d\.[0-9a-f]{10}\.css$/.test(f));
 if (cssFiles.length !== 1) throw new Error('expected one hashed css, got ' + cssFiles.join(','));

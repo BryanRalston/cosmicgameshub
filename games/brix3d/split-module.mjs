@@ -484,6 +484,13 @@ export function splitModule(source, options) {
   for (const piece of pieces) {
     const hitTail = options.tailTest && options.tailTest(piece);
     if (hitTail) tail = true;
+    // placeStarter's module was a 13ms import on its own. Keep the daily
+    // helpers in the next module so that import stays under the long-task line.
+    if (!tail && current.length && piece.includes('function dailyKey')) {
+      groups.push(current);
+      current = [];
+      size = 0;
+    }
     const limit = isLazyPiece(piece) ? budget : eagerBudget;
     if (!tail && current.length && size + piece.length > limit) {
       groups.push(current);

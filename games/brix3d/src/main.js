@@ -534,6 +534,35 @@
       return size;
     }
 
+    // Grow the shadow map across frames. A single jump to the full map
+    // was a 10ms+ GPU task on the first shadowed draw.
+    function shadowWarmSize(step) {
+      const full = qualityShadowSize();
+      let prev = 0;
+      let seen = 0;
+      for (const candidate of [64, 128, 256, full]) {
+        const size = Math.min(candidate, full);
+        if (size <= prev) continue;
+        prev = size;
+        seen++;
+        if (seen === step) return size;
+      }
+      return full;
+    }
+
+    function shadowWarmSteps() {
+      const full = qualityShadowSize();
+      let prev = 0;
+      let seen = 0;
+      for (const candidate of [64, 128, 256, full]) {
+        const size = Math.min(candidate, full);
+        if (size <= prev) continue;
+        prev = size;
+        seen++;
+      }
+      return Math.max(seen, 1);
+    }
+
     function applyShadowLod() {
       const sun = window.sunLight;
       if (!sun || !sun.shadow || !renderer) return;
@@ -798,12 +827,35 @@
       const glCanvas = document.createElement('canvas');
       glCanvas.width = 1;
       glCanvas.height = 1;
-      renderer = new THREE.WebGLRenderer({ canvas: glCanvas, antialias: useMsaa(), preserveDrawingBuffer: false, powerPreference: 'high-performance' });
-      // Context creation stays on this turn. The full framebuffer is the next one.
+      // Three asks the driver for alpha:true. Open that context on its own
+      // turn, then build the renderer against the same context on the next
+      // one, so neither turn is the whole constructor.
+      const glAttrs = {
+        alpha: true,
+        depth: true,
+        stencil: true,
+        antialias: useMsaa(),
+        premultipliedAlpha: true,
+        preserveDrawingBuffer: false,
+        powerPreference: 'high-performance',
+        failIfMajorPerformanceCaveat: false
+      };
+      const gl = glCanvas.getContext('webgl2', glAttrs);
+      await yieldTick();
+      renderer = new THREE.WebGLRenderer({
+        canvas: glCanvas,
+        context: gl || undefined,
+        antialias: useMsaa(),
+        preserveDrawingBuffer: false,
+        powerPreference: 'high-performance'
+      });
+      // The full framebuffer is the next turn.
       await yieldTick();
       renderer.setPixelRatio(qualityDpr());
       renderer.setSize(innerWidth, innerHeight);
-      renderer.shadowMap.enabled = true;
+      // Shadows stay off until the place stamp. The first setSize then
+      // does not allocate the shadow map.
+      renderer.shadowMap.enabled = false;
       renderer.shadowMap.type = THREE.PCFShadowMap;
       // The sun frustum follows the bricks, not the view. Re-render the shadow
       // map when the build changes, and reuse it while the camera orbits.
@@ -853,10 +905,28 @@
       
       raycaster = new THREE.Raycaster();
       mouse = new THREE.Vector2();
-      // The WebGL context is its own task. Lights and the shadow map compile
-      // on the next turn so they do not join that task.
+
+      // Large invisible ground plane for raycasting (infinite building)
+      const groundGeo = new THREE.PlaneGeometry(2000, 2000);
+      const groundMat = new THREE.MeshBasicMaterial({visible: false});
+      groundPlane = new THREE.Mesh(groundGeo, groundMat);
+      groundPlane.rotation.x = -Math.PI / 2;
+      groundPlane.position.y = BASE_Y;
+      scene.add(groundPlane);
       await yieldTick();
-      
+      performance.mark('brix-before-ground');
+      createInfiniteGround();
+      performance.mark('brix-ground');
+      await yieldTick();
+      setupEvents();
+      performance.mark('brix-events');
+      // Raycasts and the plate are live. Lights, shadows, and the graded
+      // exposure run on the following turns so they are not part of time-to-place.
+      window.brixCanPlace = true;
+      window.brixPlaceableAt = performance.now();
+      setTimeout(() => { if (buildEnvMapNow) buildEnvMapNow(); }, 0);
+      await yieldTick();
+
       // Lights: 1 directional sun + hemi + ambient. No extra cheap lights.
       const ambient = new THREE.AmbientLight(0xffffff, 0.78);
       ambient.name = 'ambient';
@@ -885,40 +955,19 @@
       const hemi = new THREE.HemisphereLight(0xfff6ee, 0xe4e0d8, 0.55);
       hemi.name = 'hemi';
       scene.add(hemi);
+      renderer.shadowMap.enabled = true;
       await yieldTick();
       
       initBrickLightPool();
       setupPostProcessing();
       applyQuality(qualityPreset, { silent: true });
-      
-      // Large invisible ground plane for raycasting (infinite building)
-      const groundGeo = new THREE.PlaneGeometry(2000, 2000);
-      const groundMat = new THREE.MeshBasicMaterial({visible: false});
-      groundPlane = new THREE.Mesh(groundGeo, groundMat);
-      groundPlane.rotation.x = -Math.PI / 2;
-      groundPlane.position.y = BASE_Y;
-      scene.add(groundPlane);
-      
-      // Rain and snow buffers wait until a weather button asks for them.
-      
-      await yieldTick();
-      performance.mark('brix-before-ground');
-      createInfiniteGround();
-      performance.mark('brix-ground');
-      await yieldTick();
-      setupEvents();
-      performance.mark('brix-events');
-      window.brixCanPlace = true;
-      window.brixPlaceableAt = performance.now();
-      setTimeout(() => { if (buildEnvMapNow) buildEnvMapNow(); }, 0);
-      await yieldTick();
-      animate();
-      setTimeout(() => { if (window.brixStartScenery) window.brixStartScenery(); }, 0);
-      setTimeout(() => { ensurePrefabs(); }, 1500);
-      
-      // Apply initial time of day
+      installRevealHook();
       updateTimeOfDay();
-      
+      await presentPlateFirst();
+      // The plate is already on screen. The rest of boot used to share one
+      // turn with the first full render and tripped the long-task line.
+      await yieldTick();
+
       const boot = document.getElementById('loadingScreen');
       if (boot) {
         boot.classList.add('hide');
@@ -942,61 +991,101 @@
       tryLoadShareFromLocation();
       initDailyPrompt();
       if (bricks.length || openingShare) hideStarterBar();
-      
+      await yieldTick();
+
       updateUI();
-      warmShaders();
+      await yieldTick();
+      shadersWarmed = true;
+      // The proxy plate is already on screen. Skip the draw in this turn so
+      // the first full scene render is its own frame.
+      needsRender = false;
+      animate();
+      needsRender = true;
+      setTimeout(() => { if (window.brixStartScenery) window.brixStartScenery(); }, 0);
+      setTimeout(() => { ensurePrefabs(); }, 1500);
     }
 
-    let warmTarget = null;
-    async function warmShaders() {
-      await yieldTick();
-      if (!renderer || typeof renderer.compileAsync !== 'function') {
+    let revealQueue = [];
+    let revealActive = false;
+    let revealAdd = null;
+    let casterWarm = null;
+    const revealSeen = new Set();
+    function considerReveal(obj) {
+      if (!revealActive || !obj || !obj.traverse) return;
+      obj.traverse((child) => {
+        if (!child || revealSeen.has(child.uuid)) return;
+        if (child === window.baseplateRef || child === groundPlane) return;
+        if (!(child.isMesh || child.isLine || child.isInstancedMesh || child.isPoints)) return;
+        revealSeen.add(child.uuid);
+        if (!child.visible) return;
+        child.visible = false;
+        revealQueue.push(child);
+        presentPending = true;
+        needsRender = true;
+      });
+    }
+    function installRevealHook() {
+      if (revealAdd || !scene) return;
+      revealActive = true;
+      revealAdd = scene.add.bind(scene);
+      scene.add = function (...objs) {
+        const ret = revealAdd(...objs);
+        for (let i = 0; i < objs.length; i++) considerReveal(objs[i]);
+        return ret;
+      };
+      const existing = [];
+      scene.traverse((child) => existing.push(child));
+      for (let i = 0; i < existing.length; i++) considerReveal(existing[i]);
+    }
+    async function presentPlateFirst() {
+      if (!renderer || !window.baseplateRef || !camera) {
         shadersWarmed = true;
         needsRender = true;
         return;
       }
-      const seen = new Set();
-      if (!warmTarget) warmTarget = new THREE.WebGLRenderTarget(4, 4);
-      let idle = 0;
-      while (idle < 8) {
-        const meshes = [];
-        scene.traverse((obj) => {
-          if ((obj.isMesh || obj.isLine) && obj.material) meshes.push(obj);
-        });
-        let fresh = false;
-        for (const mesh of meshes) {
-          const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-          for (const mat of mats) {
-            if (!mat || seen.has(mat.uuid)) continue;
-            seen.add(mat.uuid);
-            fresh = true;
-            const holder = new THREE.Scene();
-            const proxy = new THREE.Mesh(mesh.geometry, mat);
-            proxy.castShadow = !!mesh.castShadow;
-            proxy.receiveShadow = !!mesh.receiveShadow;
-            proxy.frustumCulled = false;
-            holder.add(proxy);
-            try {
-              await renderer.compileAsync(holder, camera, scene);
-              renderer.setRenderTarget(warmTarget);
-              renderer.render(holder, camera);
-              renderer.setRenderTarget(null);
-            } catch (err) {
-              console.error(err);
-            }
-            await yieldTick();
-          }
-        }
-        if (fresh) {
-          idle = 0;
-          continue;
-        }
-        if (window.scenerySettled) break;
-        idle++;
+      const shadows = renderer.shadowMap.enabled;
+      renderer.shadowMap.enabled = false;
+      await yieldTick();
+      renderer.setRenderTarget(null);
+      renderer.clear(true, true, true);
+      await yieldTick();
+      const holder = new THREE.Scene();
+      const proxy = new THREE.Mesh(window.baseplateRef.geometry, window.baseplateRef.material);
+      proxy.frustumCulled = false;
+      proxy.position.copy(window.baseplateRef.position);
+      proxy.quaternion.copy(window.baseplateRef.quaternion);
+      proxy.scale.copy(window.baseplateRef.scale);
+      holder.add(proxy);
+      try {
+        if (typeof renderer.compile === 'function') renderer.compile(holder, camera);
+      } catch (err) {
+        console.error(err);
+      }
+      await yieldTick();
+      renderer.render(holder, camera);
+      window.brixPlateShown = window.baseplateRef.visible !== false;
+      // The proxy scene has no lights, so its program is not the one the
+      // real plate uses. Compile each real material on its own turn.
+      const mats = [];
+      const seenMat = new Set();
+      scene.traverse((obj) => {
+        const mat = obj.material;
+        const geo = obj.geometry;
+        if (!mat || !geo || (Array.isArray(mat)) || seenMat.has(mat.uuid)) return;
+        seenMat.add(mat.uuid);
+        mats.push({ geo: geo, mat: mat });
+      });
+      for (let i = 0; i < mats.length && i < 8; i++) {
+        const bag = new THREE.Scene();
+        bag.fog = scene.fog;
+        const dummy = new THREE.Mesh(mats[i].geo, mats[i].mat);
+        dummy.frustumCulled = false;
+        bag.add(dummy);
+        try { renderer.compile(bag, camera, scene); } catch (err) { console.error(err); }
         await yieldTick();
       }
-      shadersWarmed = true;
-      needsRender = true;
+      renderer.shadowMap.enabled = shadows;
+      await yieldTick();
     }
     
     // ==================== POST-PROCESSING ====================
@@ -1728,18 +1817,20 @@
 
     let nearPlateStuds = null;
     let nearPlateStudKey = '';
-    // 7×7 real cylinders under the camera. The rest of the plate stays the
-    // decal. A 11×11 patch of 20-side studs held the phone 520-brick floor
-    // under 165 FPS, and those studs are what you see up close.
-    const PLATE_STUD_RADIUS = 3;
-    const PLATE_STUD_SEGMENTS = 16;
+    // Real cylinders only inside the close-up band. The home camera and the
+    // share camera both sit farther than NONE, so those views stay one flat
+    // plate. Inside the band the studs shrink to a speck, so there is no
+    // hard ring where the patch meets the decal.
+    const PLATE_STUD_FULL = 3.15;
+    const PLATE_STUD_NONE = 4.18;
+    const PLATE_STUD_CAP = 180;
+    const PLATE_STUD_SEGMENTS = 12;
     function updateNearPlateStuds(force) {
       if (!scene || !camera || !instancedSystem) return;
-      const cap = (PLATE_STUD_RADIUS * 2 + 1) * (PLATE_STUD_RADIUS * 2 + 1);
       if (!nearPlateStuds) {
         const geo = makeStudGeometry(PLATE_STUD_SEGMENTS);
         const mat = new THREE.MeshLambertMaterial({ color: 0x3eb24e });
-        nearPlateStuds = new THREE.InstancedMesh(geo, mat, cap);
+        nearPlateStuds = new THREE.InstancedMesh(geo, mat, PLATE_STUD_CAP);
         nearPlateStuds.name = 'nearPlateStuds';
         nearPlateStuds.count = 0;
         nearPlateStuds.castShadow = false;
@@ -1750,26 +1841,43 @@
         nearPlateStuds.matrixAutoUpdate = false;
         scene.add(nearPlateStuds);
       }
-      const focus = controls && controls.target ? controls.target : camera.position;
-      const cx = Math.max(0, Math.min(95, Math.floor(focus.x / STUD)));
-      const cz = Math.max(0, Math.min(95, Math.floor(focus.z / STUD)));
-      const key = cx + ',' + cz;
+      const cam = camera.position;
+      const q = (n) => Math.round(n * 4);
+      const key = q(cam.x) + ',' + q(cam.y) + ',' + q(cam.z);
       if (!force && key === nearPlateStudKey) return;
       nearPlateStudKey = key;
       const dummy = instancedSystem.dummy;
       const y = 0.012 + STUD_H * 0.5;
-      let n = 0;
-      for (let iz = cz - PLATE_STUD_RADIUS; iz <= cz + PLATE_STUD_RADIUS; iz++) {
-        if (iz < 0 || iz > 95) continue;
-        for (let ix = cx - PLATE_STUD_RADIUS; ix <= cx + PLATE_STUD_RADIUS; ix++) {
-          if (ix < 0 || ix > 95) continue;
-          dummy.position.set((ix + 0.5) * STUD, y, (iz + 0.5) * STUD);
-          dummy.rotation.set(0, 0, 0);
-          dummy.scale.set(1, 1, 1);
-          dummy.updateMatrix();
-          nearPlateStuds.setMatrixAt(n, dummy.matrix);
-          n++;
+      const reach = PLATE_STUD_NONE;
+      const minX = Math.max(0, Math.floor((cam.x - reach) / STUD));
+      const maxX = Math.min(95, Math.floor((cam.x + reach) / STUD));
+      const minZ = Math.max(0, Math.floor((cam.z - reach) / STUD));
+      const maxZ = Math.min(95, Math.floor((cam.z + reach) / STUD));
+      const span = PLATE_STUD_NONE - PLATE_STUD_FULL;
+      const picks = [];
+      for (let iz = minZ; iz <= maxZ; iz++) {
+        for (let ix = minX; ix <= maxX; ix++) {
+          const x = (ix + 0.5) * STUD;
+          const z = (iz + 0.5) * STUD;
+          const dist = Math.hypot(cam.x - x, cam.y - y, cam.z - z);
+          if (dist >= PLATE_STUD_NONE) continue;
+          const fade = Math.max(0, Math.min(1, (PLATE_STUD_NONE - dist) / span));
+          if (fade < 0.06) continue;
+          picks.push({ x, z, fade, dist });
         }
+      }
+      picks.sort((a, b) => a.dist - b.dist);
+      const n = Math.min(PLATE_STUD_CAP, picks.length);
+      for (let i = 0; i < n; i++) {
+        const p = picks[i];
+        const s = p.fade;
+        // Short bumps in the decal color. Height tracks the fade so the rim is a speck, not a cylinder.
+        const yScale = Math.max(0.08, s * 0.28);
+        dummy.position.set(p.x, 0.012 + STUD_H * yScale * 0.5, p.z);
+        dummy.rotation.set(0, 0, 0);
+        dummy.scale.set(s, yScale, s);
+        dummy.updateMatrix();
+        nearPlateStuds.setMatrixAt(i, dummy.matrix);
       }
       nearPlateStuds.count = n;
       nearPlateStuds.instanceMatrix.needsUpdate = true;
@@ -6613,36 +6721,9 @@
     }
 
     function placeStarter(kind) {
-      const ox = 40;
-      const oz = 40;
-      const specs = {
-        cottage: [
-          ['4x4p', 0xd4a017, ox, oz, 0],
-          ['1x1', 0xe53935, ox, oz, 1],
-          ['1x1', 0xe53935, ox + 3, oz, 1],
-          ['1x1', 0xe53935, ox, oz + 3, 1],
-          ['1x1', 0xe53935, ox + 3, oz + 3, 1],
-          ['1x2', 0x90caf9, ox + 1, oz + 1, 1],
-          ['4x4p', 0x6d4c41, ox, oz, 4]
-        ],
-        tower: [
-          ['2x2', 0x1565c0, ox + 8, oz, 0],
-          ['2x2', 0x1e88e5, ox + 8, oz, 3],
-          ['2x2', 0x1565c0, ox + 8, oz, 6],
-          ['2x2', 0x1e88e5, ox + 8, oz, 9],
-          ['2x2', 0x1565c0, ox + 8, oz, 12],
-          ['2x2', 0xfdd835, ox + 8, oz, 15]
-        ],
-        buggy: [
-          ['2x6', 0x2e7d32, ox, oz + 8, 0],
-          ['1x2', 0xb3e5fc, ox, oz + 10, 3],
-          ['r1x1', 0x222222, ox - 1, oz + 8, 0],
-          ['r1x1', 0x222222, ox - 1, oz + 12, 0],
-          ['r1x1', 0x222222, ox + 2, oz + 8, 0],
-          ['r1x1', 0x222222, ox + 2, oz + 12, 0]
-        ]
-      };
-      const list = specs[kind];
+      const el = document.getElementById('starterSpecs');
+      const specs = el ? JSON.parse(el.textContent) : null;
+      const list = specs && specs[kind];
       if (!list) return 0;
       saveUndo();
       const placed = [];
@@ -11369,7 +11450,7 @@
       document.getElementById('soundToggle').addEventListener('click', () => {
         const enabled = SoundSystem.toggle();
         document.getElementById('soundToggle').classList.toggle('active', enabled);
-        document.getElementById('soundToggle').querySelector('.quick-icon').textContent = enabled ? '🔊' : '🔇';
+        document.getElementById('soundToggle').classList.toggle('is-muted', !enabled);
         SoundSystem.playClick();
       });
       
@@ -11682,18 +11763,52 @@
       placeCameraOnHomeRay(box.aimX, box.aimY, box.aimZ, dist);
     }
 
+    // The live canvas is MSAA and preserveDrawingBuffer is false, so
+    // drawImage of that canvas keeps the previous frame. Share, screenshot,
+    // and gallery thumbs render into an offscreen target and copy those pixels.
+    function renderSceneToCanvas(canvas2d) {
+      const w = canvas2d.width | 0;
+      const h = canvas2d.height | 0;
+      if (w < 1 || h < 1) return;
+      const rt = new THREE.WebGLRenderTarget(w, h, { depthBuffer: true, stencilBuffer: false });
+      const prevTarget = renderer.getRenderTarget();
+      // The opening reveal hides new meshes until scenery settles. A share
+      // taken in that window has to draw the bricks anyway.
+      const revived = [];
+      if (instancedSystem && instancedSystem.meshes) {
+        instancedSystem.meshes.forEach((data) => {
+          if (data.mesh && data.mesh.visible === false) {
+            revived.push(data.mesh);
+            data.mesh.visible = true;
+          }
+        });
+      }
+      try {
+        renderer.setRenderTarget(rt);
+        renderer.clear(true, true, true);
+        renderer.render(scene, camera);
+        const buf = new Uint8Array(w * h * 4);
+        renderer.readRenderTargetPixels(rt, 0, 0, w, h, buf);
+        const img = new ImageData(w, h);
+        const row = w * 4;
+        for (let y = 0; y < h; y++) {
+          img.data.set(buf.subarray((h - 1 - y) * row, (h - y) * row), y * row);
+        }
+        canvas2d.getContext('2d').putImageData(img, 0, 0);
+      } finally {
+        for (let i = 0; i < revived.length; i++) revived[i].visible = false;
+        renderer.setRenderTarget(prevTarget);
+        rt.dispose();
+      }
+    }
+
     function withFramedBuild(destW, destH, draw) {
       const prevPos = camera.position.clone();
       const prevTarget = controls.target.clone();
       const prevMin = controls.minDistance;
       const prevMax = controls.maxDistance;
       const prevAspect = camera.aspect;
-      const prevPr = renderer.getPixelRatio();
-      const size = new THREE.Vector2();
-      renderer.getSize(size);
       try {
-        renderer.setPixelRatio(1);
-        renderer.setSize(destW, destH, false);
         camera.aspect = destW / Math.max(1, destH);
         camera.updateProjectionMatrix();
         frameCameraOnBuild({ forCapture: true });
@@ -11704,8 +11819,6 @@
         camera.position.copy(prevPos);
         controls.target.copy(prevTarget);
         controls.update();
-        renderer.setPixelRatio(prevPr);
-        renderer.setSize(size.x, size.y, false);
         camera.aspect = prevAspect;
         camera.updateProjectionMatrix();
         needsRender = true;
@@ -11716,16 +11829,11 @@
       if (!camera || !controls) return '';
       let url = '';
       try {
-        withFramedBuild(200, 150, () => {
-          renderer.render(scene, camera);
-          const thumbCanvas = document.createElement('canvas');
-          thumbCanvas.width = 200;
-          thumbCanvas.height = 150;
-          const ctx = thumbCanvas.getContext('2d');
-          const src = renderer.domElement;
-          ctx.drawImage(src, 0, 0, src.width, src.height, 0, 0, 200, 150);
-          url = thumbCanvas.toDataURL('image/jpeg', 0.7);
-        });
+        const thumbCanvas = document.createElement('canvas');
+        thumbCanvas.width = 200;
+        thumbCanvas.height = 150;
+        withFramedBuild(200, 150, () => renderSceneToCanvas(thumbCanvas));
+        url = thumbCanvas.toDataURL('image/jpeg', 0.7);
       } catch (e) {
         url = '';
       }
@@ -11762,52 +11870,33 @@
       if (!canvas || !camera || !controls) return;
       const w = canvas.width || 320;
       const h = canvas.height || 180;
-      withFramedBuild(w, h, () => {
-        renderer.render(scene, camera);
-        const ctx = canvas.getContext('2d');
-        const src = renderer.domElement;
-        ctx.drawImage(src, 0, 0, src.width, src.height, 0, 0, w, h);
-      });
+      canvas.width = w;
+      canvas.height = h;
+      withFramedBuild(w, h, () => renderSceneToCanvas(canvas));
     }
     
     function captureScreenshot() {
       const scale = parseInt(document.getElementById('screenshotRes').value, 10) || 1;
       const transparent = document.getElementById('screenshotTransparent').checked;
+      const canvas = document.getElementById('screenshotCanvas');
+      const w = 800 * scale;
+      const h = 600 * scale;
+      canvas.width = w;
+      canvas.height = h;
       const originalBg = scene.background;
-      const prevPos = camera.position.clone();
-      const prevTarget = controls.target.clone();
-      const prevMin = controls.minDistance;
-      const prevMax = controls.maxDistance;
+      const prevClear = new THREE.Color();
+      renderer.getClearColor(prevClear);
+      const prevAlpha = renderer.getClearAlpha();
       if (transparent) {
         scene.background = null;
         renderer.setClearColor(0x000000, 0);
       }
       try {
-        renderer.setPixelRatio(1);
-        renderer.setSize(800 * scale, 600 * scale, false);
-        camera.aspect = 800 / 600;
-        camera.updateProjectionMatrix();
-        frameCameraOnBuild({ forCapture: true });
-        renderer.render(scene, camera);
-        const canvas = document.getElementById('screenshotCanvas');
-        canvas.width = 800 * scale;
-        canvas.height = 600 * scale;
-        const ctx = canvas.getContext('2d');
-        const src = renderer.domElement;
-        ctx.drawImage(src, 0, 0, src.width, src.height, 0, 0, canvas.width, canvas.height);
+        withFramedBuild(w, h, () => renderSceneToCanvas(canvas));
       } finally {
-        controls.minDistance = prevMin;
-        controls.maxDistance = prevMax;
-        camera.position.copy(prevPos);
-        controls.target.copy(prevTarget);
-        controls.update();
-        renderer.setPixelRatio(qualityDpr());
-        renderer.setSize(innerWidth, innerHeight);
-        camera.aspect = innerWidth / innerHeight;
-        camera.updateProjectionMatrix();
         if (transparent) {
           scene.background = originalBg;
-          renderer.setClearColor(0x000000, 1);
+          renderer.setClearColor(prevClear, prevAlpha);
         }
         needsRender = true;
       }
@@ -13035,8 +13124,88 @@
     
     let presentStep = 0;
     let presentPending = false;
+    function finishReveal() {
+      revealActive = false;
+      if (revealAdd) {
+        scene.add = revealAdd;
+        revealAdd = null;
+      }
+      // Compile one shadow program per frame. Turning every caster on in
+      // the same draw was a single long GPU task.
+      casterWarm = [];
+      const seen = new Set();
+      scene.traverse((obj) => {
+        if (!(obj.isMesh || obj.isInstancedMesh) || !obj.castShadow) return;
+        const mat = Array.isArray(obj.material) ? obj.material[0] : obj.material;
+        const id = mat && mat.uuid;
+        if (!id || seen.has(id)) {
+          obj.userData.__castLater = true;
+          obj.castShadow = false;
+          return;
+        }
+        seen.add(id);
+        obj.userData.__castLater = true;
+        obj.castShadow = false;
+        casterWarm.push(obj);
+      });
+    }
+    function restoreCasters() {
+      scene.traverse((obj) => {
+        if (obj.userData && obj.userData.__castLater) {
+          obj.castShadow = true;
+          obj.userData.__castLater = false;
+        }
+      });
+    }
     function renderFrame() {
       if (renderer.info && typeof renderer.info.reset === 'function') renderer.info.reset();
+      // One new mesh per frame, shadows off, until the plate, studs, and
+      // scenery have each been drawn once. The full shadowed frame was the
+      // 30ms animation task.
+      if (revealActive) {
+        if (revealQueue.length) {
+          let next = null;
+          while (revealQueue.length && !next) {
+            const item = revealQueue.shift();
+            if (item && item.parent) next = item;
+          }
+          if (next) next.visible = true;
+        }
+        const shadows = renderer.shadowMap.enabled;
+        renderer.shadowMap.enabled = false;
+        renderer.render(scene, camera);
+        renderer.shadowMap.enabled = shadows;
+        hudDrawCalls = renderer.info.render.calls;
+        window.brixPlateShown = !!(window.baseplateRef && window.baseplateRef.visible !== false);
+        if (!revealQueue.length && window.scenerySettled) finishReveal();
+        presentPending = true;
+        return;
+      }
+      if (casterWarm && casterWarm.length) {
+        const obj = casterWarm.shift();
+        obj.castShadow = true;
+        obj.userData.__castLater = false;
+        const sun = window.sunLight;
+        if (sun && sun.shadow) {
+          if (sun.shadow.mapSize.width !== 64) {
+            sun.shadow.mapSize.set(64, 64);
+            if (sun.shadow.map) {
+              sun.shadow.map.dispose();
+              sun.shadow.map = null;
+            }
+          }
+          sun.shadow.needsUpdate = true;
+        }
+        const shadows = renderer.shadowMap.enabled;
+        renderer.shadowMap.enabled = true;
+        renderer.render(scene, camera);
+        renderer.shadowMap.enabled = shadows;
+        hudDrawCalls = renderer.info.render.calls;
+        window.brixPlateShown = !!(window.baseplateRef && window.baseplateRef.visible !== false);
+        presentPending = true;
+        if (!casterWarm.length) restoreCasters();
+        return;
+      }
       const direct = !(composer && qualitySettings.post);
       // The plate stays in the first phone frame. Hiding it, then clearing
       // needsRender, left a fresh load as sky until several bricks were placed.
@@ -13051,10 +13220,11 @@
         window.brixPlateShown = !!(window.baseplateRef && window.baseplateRef.visible !== false);
         return;
       }
-      if (direct && (presentStep === 1 || presentStep === 2)) {
+      if (direct && presentStep >= 1 && presentStep <= shadowWarmSteps()) {
         const sun = window.sunLight;
+        const steps = shadowWarmSteps();
         if (sun && sun.shadow) {
-          const size = presentStep === 1 ? 64 : qualityShadowSize();
+          const size = shadowWarmSize(presentStep);
           if (sun.shadow.mapSize.width !== size) {
             sun.shadow.mapSize.set(size, size);
             if (sun.shadow.map) {
@@ -13069,8 +13239,8 @@
         renderer.render(scene, camera);
         hudDrawCalls = renderer.info.render.calls;
         presentStep++;
-        presentPending = presentStep < 3;
-        if (presentStep >= 3) window.sceneryShown = true;
+        presentPending = presentStep <= steps;
+        if (presentStep > steps) window.sceneryShown = true;
         return;
       }
       if (composer && qualitySettings.post) {
