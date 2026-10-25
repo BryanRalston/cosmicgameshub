@@ -1651,7 +1651,7 @@
     for (i = 0; i < sim.customers.length; i++) {
       var c = sim.customers[i];
       if (c.dead) continue;
-      if (c.state === 'queue' || c.state === 'checkout' || c.state === 'leave' || c.state === 'flee') continue;
+      if (c.state === 'queue' || c.state === 'checkout' || c.state === 'leave' || c.state === 'flee' || c.state === 'toQueue') continue;
       list.push(c);
     }
     var crowded = list.length >= 8;
@@ -1855,6 +1855,7 @@
           var browse = 0.85 + sim.rng() * 1.35;
           if (cust.arch === 'rusher') browse = 0.22 + sim.rng() * 0.2;
           if (cust.arch === 'family') browse = 1.8 + sim.rng() * 1.1;
+          if (sim.floorOn && sim.live && !sim.tenant) browse += 1.6 + sim.rng() * 1.2;
           cust.browseT = browse;
           cust.anim = 'idle';
           cust.bubble = null;
@@ -1877,17 +1878,20 @@
                 cust.waitSpot = waitPocket(cust);
               } else {
                 cust.state = 'toQueue';
+                cust.seekT = 0;
                 cust.path = null;
               }
             }
           }
         }
       } else if (cust.state === 'wait') {
-        if (!liveLine(sim)) {
+        if (liveLine(sim) && !(cust.reg && laneLoad(sim, cust.reg) < liveLineCap(sim))) {
+          var altReg = pickRegister(sim, run);
+          if (altReg && laneLoad(sim, altReg) < liveLineCap(sim)) cust.reg = altReg;
+        }
+        if (!liveLine(sim) || (cust.reg && laneLoad(sim, cust.reg) < liveLineCap(sim))) {
           cust.state = 'toQueue';
-          cust.path = null;
-        } else if (cust.reg && laneLoad(sim, cust.reg) < liveLineCap(sim)) {
-          cust.state = 'toQueue';
+          cust.seekT = 0;
           cust.path = null;
         } else {
           var pocket = cust.waitSpot || waitPocket(cust);
@@ -1907,14 +1911,25 @@
           }
           if (reserved >= liveLineCap(sim)) {
             cust.state = 'wait';
+            cust.seekT = 0;
             cust.waitSpot = waitPocket(cust);
           } else {
             var linedP = queueSlot(sim, cust.reg, reserved);
-            if (moveToward(cust, linedP.x, linedP.y, dt, custSpeed)) {
+            cust.seekT = (cust.seekT || 0) + dt;
+            var seekDx = cust.x - linedP.x;
+            var seekDy = cust.y - linedP.y;
+            var seekNear = seekDx * seekDx + seekDy * seekDy < 96 * 96;
+            if (moveToward(cust, linedP.x, linedP.y, dt, custSpeed) || seekNear || cust.seekT > 2.4) {
               if (queueOf(sim, cust.reg).length >= liveLineCap(sim)) {
                 cust.state = 'wait';
+                cust.seekT = 0;
                 cust.waitSpot = waitPocket(cust);
-              } else cust.state = 'queue';
+              } else {
+                cust.state = 'queue';
+                cust.seekT = 0;
+                cust.x = linedP.x;
+                cust.y = linedP.y;
+              }
             }
           }
         } else {
@@ -2540,6 +2555,16 @@
     if (sim.books && HR.sim) rate *= HR.sim.demandMul(sim.books);
     if (sim.books && sim.books.mall && sim.books.mall.door) rate *= sim.books.mall.door;
     if (sim.stock < 0.22) rate *= 0.58;
+    if (sim.floorOn && sim.live && !sim.tenant && sim.t > sim.duration * 0.34 && sim.t < sim.duration - 0.4) {
+      var present = 0;
+      var presentI;
+      for (presentI = 0; presentI < sim.customers.length; presentI++) {
+        var presentCust = sim.customers[presentI];
+        if (presentCust.dead || presentCust.state === 'leave' || presentCust.state === 'flee') continue;
+        present++;
+      }
+      if (present < 10) rate += 0.2 + (10 - present) * 0.07;
+    }
     sim.spawnAcc += used * rate;
     var guard = 0;
     while (sim.spawnAcc >= 1 && guard < 4) {
@@ -2902,6 +2927,7 @@
       var fee = ping.fee || 24;
       sim.sales += fee;
       sim.wraps = (sim.wraps || 0) + 1;
+      sim._wrapCoachDone = true;
       try { localStorage.setItem('hr_wrap_coach', '1'); } catch (eWrap) {}
       burstCoins(sim, ping.x, ping.y);
       floater(sim, ping.x, ping.y - 28, 'Wrapped +$' + fee, '#ffe08a', true);
@@ -4371,6 +4397,7 @@
     var lastTs = 0;
     var cam = { x: 0, y: 0, follow: false, userPan: false };
     var labelSlots = [];
+    var nameBudget = 1;
     var bodySlots = [];
     var frameView = { w: 1600, h: 900 };
     var drag = null;
@@ -6977,7 +7004,8 @@
     }
 
     function wrapCoachOn() {
-      if (!sim || coach || sim.mechanic !== 'wrap' || (sim.wraps || 0) > 0) return false;
+      if (!sim || coach || sim.mechanic !== 'wrap') return false;
+      if (sim._wrapCoachDone || (sim.wraps || 0) > 0) return false;
       try {
         if (localStorage.getItem('hr_wrap_coach') === '1') return false;
       } catch (eWrapCoach) { return false; }
@@ -7156,22 +7184,30 @@
       saveRun();
     }
 
+    function pointerScale(rect) {
+      var view = viewSize();
+      var w = rect && rect.width ? rect.width : view.cssW;
+      var h = rect && rect.height ? rect.height : view.cssH;
+      return {
+        x: w / Math.max(1, view.viewW),
+        y: h / Math.max(1, view.viewH)
+      };
+    }
+
     function eventWorld(ev) {
       var rect = els.canvas.getBoundingClientRect();
-      var view = viewSize();
-      var scale = view.cssW / view.viewW;
+      var scale = pointerScale(rect);
       return {
-        x: (ev.clientX - rect.left) / scale + cam.x,
-        y: (ev.clientY - rect.top) / scale + cam.y
+        x: (ev.clientX - rect.left) / scale.x + cam.x,
+        y: (ev.clientY - rect.top) / scale.y + cam.y
       };
     }
 
     function screenDist(wx, wy, ev) {
       var rect = els.canvas.getBoundingClientRect();
-      var view = viewSize();
-      var scale = view.cssW / view.viewW;
-      var sx = (wx - cam.x) * scale + rect.left;
-      var sy = (wy - cam.y) * scale + rect.top;
+      var scale = pointerScale(rect);
+      var sx = (wx - cam.x) * scale.x + rect.left;
+      var sy = (wy - cam.y) * scale.y + rect.top;
       var dx = ev.clientX - sx;
       var dy = ev.clientY - sy;
       return Math.sqrt(dx * dx + dy * dy);
@@ -7216,11 +7252,15 @@
       }
       if (sim.pings) {
         var wrapHit = null;
-        var wrapD = minTap;
+        var wrapReach = phoneHit ? 120 : 72;
+        if (wrapCoachOn()) wrapReach = phoneHit ? 156 : 96;
+        var wrapD = wrapReach;
         for (var wpi = 0; wpi < sim.pings.length; wpi++) {
           var wrapPing = sim.pings[wpi];
           if (!wrapPing || wrapPing.dead || wrapPing.kind !== 'wrap') continue;
           var wd = screenDist(wrapPing.x, wrapPing.y, ev);
+          var shelfD = screenDist(wrapPing.x, wrapPing.y + 96, ev);
+          if (shelfD < wd) wd = shelfD;
           if (wd <= wrapD) { wrapD = wd; wrapHit = wrapPing; }
         }
         if (wrapHit) return { ping: wrapHit };
@@ -7506,6 +7546,10 @@
     }
 
     function drawPings() {
+      if (isQA() && els.stage) {
+        delete els.stage.dataset.wrapX;
+        delete els.stage.dataset.wrapY;
+      }
       if (!sim.pings) return;
       for (var i = 0; i < sim.pings.length; i++) {
         var ping = sim.pings[i];
@@ -7515,10 +7559,13 @@
         var label = ping.kind === 'wrap' ? 'Wrap' : ping.kind === 'basket' ? '+$' : ping.kind === 'box' ? 'Box' : 'Help';
         if (ping.kind === 'wrap') {
           var pulse = reduceMotion ? 1.2 : 1.05 + Math.sin(Date.now() / 160) * 0.42;
-          var wrapR = Math.max(58, 22 / Math.max(0.05, screenScale()));
+          var phoneWrap = (els.canvas._cssW || 800) < 720;
+          var wrapR = Math.max(58, (phoneWrap ? 72 : 22) / Math.max(0.05, screenScale()));
           if (isQA() && els.stage) {
             els.stage.dataset.wrapR = String(Math.round(wrapR * screenScale()));
-            els.stage.dataset.wrapHit = '44';
+            els.stage.dataset.wrapHit = phoneWrap ? (wrapCoachOn() ? '156' : '120') : (wrapCoachOn() ? '96' : '72');
+            els.stage.dataset.wrapX = String(Math.round(ping.x));
+            els.stage.dataset.wrapY = String(Math.round(ping.y));
           }
           ctx.save();
           ctx.strokeStyle = 'rgba(224,163,34,0.95)';
@@ -7908,6 +7955,7 @@
         placeVisual(drawList, sim);
         labelSlots = [];
         bodySlots = [];
+        nameBudget = 1;
         for (var bi = 0; bi < drawList.length; bi++) {
           var bodyActor = drawList[bi];
           if (!bodyActor || bodyActor.kind === 'jack' || bodyActor.hidden) continue;
@@ -8015,10 +8063,14 @@
           var tillPile = 0;
           var qxy = [];
           var aliveN = 0;
+          var onFloor = 0;
+          var stateBits = {};
           for (qi = 0; qi < sim.customers.length; qi++) {
             var body = sim.customers[qi];
             if (!body || body.dead) continue;
             aliveN++;
+            stateBits[body.state || '?'] = (stateBits[body.state || '?'] || 0) + 1;
+            if (body.state !== 'leave' && body.state !== 'flee') onFloor++;
             var px = body._drawX != null ? body._drawX : body.x;
             var py = body._drawY != null ? body._drawY : body.y;
             if (px < 150) leftPile++;
@@ -8029,6 +8081,8 @@
           els.stage.dataset.tillPile = String(tillPile);
           els.stage.dataset.qxy = qxy.join(';');
           els.stage.dataset.alive = String(aliveN);
+          els.stage.dataset.onFloor = String(onFloor);
+          els.stage.dataset.states = Object.keys(stateBits).map(function (key) { return key + ':' + stateBits[key]; }).join(',');
           var pN = 0;
           var pSprite = 0;
           var pBlob = 0;
@@ -8977,7 +9031,8 @@
           ctx.drawImage(assets.img.icons, ir[0], ir[1], ir[2], ir[3], a.x - iconPx / 2, a.y - size - 18 - iconPx, iconPx, iconPx);
         }
       }
-      if (nameVisible(a)) {
+      if (nameVisible(a) && nameBudget > 0) {
+        nameBudget -= 1;
         var crewName = a.kind === 'staff' && a.id;
         var familyName = a.arch === 'family' || a.giftSprite === 'family';
         var tagged = false;
@@ -9276,7 +9331,8 @@
         try { els.stage.setPointerCapture(ev.pointerId); } catch (eCap) {}
       }
       var view = viewSize();
-      var scale = view.cssW / view.viewW;
+      var dragRect = els.canvas.getBoundingClientRect();
+      var scale = (dragRect.width || view.cssW) / Math.max(1, view.viewW);
       var mx = ev.clientX - cam.drag.x;
       var my = ev.clientY - cam.drag.y;
       if (Math.abs(mx) + Math.abs(my) > 10) cam.drag.moved = true;
@@ -9556,7 +9612,6 @@
         }
         if (HR.save) HR.save.save(writeJSON, books);
         try {
-          localStorage.setItem('hr_tut_done', '1');
           localStorage.setItem('hr_coach_price', '1');
           localStorage.setItem('hr_coach_mall', '1');
           localStorage.setItem('hr_seed_grant', '1');
