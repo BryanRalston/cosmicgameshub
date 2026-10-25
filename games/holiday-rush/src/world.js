@@ -14,7 +14,8 @@
     return locId === books.active ? 'full' : 'aggregate';
   }
 
-  function tickAggregate(books, loc) {
+  function tickAggregate(books, loc, ctx) {
+    ctx = ctx || {};
     var econ = economy();
     var manager = null;
     if (loc.managerId && books.staff[loc.managerId] && books.staff[loc.managerId].employed) {
@@ -28,7 +29,14 @@
     var id;
     for (id in loc.stock) units += loc.stock[id] || 0;
     var stockMul = units < 20 ? 0.25 : units < 80 ? 0.7 : 1;
-    var sales = Math.round(4200 * demand * eff * stockMul * (loc.kind === 'flagship' ? 1 : 0.72));
+    var kindMul = loc.kind === 'flagship' ? 1 : 0.72;
+    var day = ctx.day != null ? ctx.day : 0;
+    var ymd = ctx.ymd || '';
+    var cal = calendarEvent(day);
+    var eventMul = cal && cal.door ? cal.door : 1;
+    var swing = ((ymdHash(String(ymd) + ':' + day + ':' + (loc.id || '')) % 37) - 18) / 100;
+    var sales = Math.round(4200 * demand * eff * stockMul * kindMul * eventMul * (1 + swing));
+    if (sales < 0) sales = 0;
     var cogsRate = 0.5;
     var items = econ.availableItems(books);
     if (items.length) {
@@ -74,14 +82,14 @@
     };
   }
 
-  function closeBackground(books) {
+  function closeBackground(books, ctx) {
     var tapes = [];
     var profit = 0;
     Object.keys(books.locations).forEach(function (id) {
       if (id === books.active) return;
       var loc = books.locations[id];
       if (!loc || !loc.open) return;
-      var tape = tickAggregate(books, loc);
+      var tape = tickAggregate(books, loc, ctx);
       tapes.push(tape);
       profit += tape.profit;
     });
@@ -337,17 +345,23 @@
     return list[ymdHash(ymd) % list.length];
   }
 
+  function comboPay(n) {
+    if (n <= 1) return 1;
+    var m = 1 + (n - 1) * 0.35;
+    return m > 4 ? 4 : m;
+  }
+
   function dailyMet(goal, report) {
     if (!goal || !report) return false;
     if (goal.walkoutsMax != null) return (report.walkouts || 0) <= goal.walkoutsMax;
     if (goal.goalMin != null) return (report.goalPct || 0) >= goal.goalMin;
-    if (goal.comboMin != null) return (report.bestCombo || 0) >= goal.comboMin;
+    if (goal.comboMin != null) return comboPay(report.bestCombo || 0) >= goal.comboMin;
     return false;
   }
 
   function claimDaily(books, ymd, report) {
     if (!books) return { claimed: false, bonus: 0 };
-    if (books.dailyClaimed === ymd) return { claimed: false, bonus: 0, reason: 'already' };
+    if (books.dailyClaimed === ymd) return { claimed: false, bonus: 0, reason: 'already', goal: dailyGoal(ymd) };
     var goal = dailyGoal(ymd);
     if (!goal) return { claimed: false, bonus: 0 };
     if (!dailyMet(goal, report)) return { claimed: false, bonus: 0, goal: goal, reason: 'miss' };
@@ -459,6 +473,26 @@
       managerId: 'staff_mgr'
     });
     if (flagTape.rent !== 220) reasons.push('flag rent ' + flagTape.rent);
+    var martLoc = function () {
+      return {
+        id: 'mart',
+        name: 'Holiday Rush Mart',
+        open: true,
+        kind: 'flagship',
+        stock: { cocoa: 90, paper: 80, candy: 70 },
+        managerId: 'staff_mgr'
+      };
+    };
+    var dayA = tickAggregate(econ.blankBooks(), martLoc(), { day: 0, ymd: '2026-10-22' });
+    var dayB = tickAggregate(econ.blankBooks(), martLoc(), { day: 6, ymd: '2026-10-22' });
+    if (!(dayA.profit > 0 && dayB.profit > 0) || dayA.profit === dayB.profit) reasons.push('flat day ' + dayA.profit + ' ' + dayB.profit);
+    var skilledBooks = econ.blankBooks();
+    skilledBooks.staff.staff_mgr.skill = 5;
+    var trained = tickAggregate(skilledBooks, martLoc(), { day: 1, ymd: '2026-10-22' });
+    var greenBooks = econ.blankBooks();
+    greenBooks.staff.staff_mgr.skill = 1;
+    var green = tickAggregate(greenBooks, martLoc(), { day: 1, ymd: '2026-10-22' });
+    if (!(trained.sales > green.sales)) reasons.push('staff ' + trained.sales + ' ' + green.sales);
     var walked = negotiate(econ.blankBooks(), 'a', 'repair', 500);
     if (walked.status !== 'walk') reasons.push('walk ' + walked.status);
     var countered = negotiate(econ.blankBooks(), 'a', 'repair', 1000);
@@ -484,7 +518,7 @@
     var seasonGoal = tenantLayout('seasonal');
     if (!seasonGoal || Math.abs(seasonGoal.goalMul - 1.12) > 0.02) reasons.push('season goal');
     var kioskLayout = data.get().layouts.kiosk;
-    if (!kioskLayout || !(kioskLayout.goalMul > 0.5 && kioskLayout.goalMul < 0.8)) reasons.push('kiosk goal');
+    if (!kioskLayout || Math.abs(kioskLayout.goalMul - 0.54) > 0.02) reasons.push('kiosk goal');
     if (!kioskLayout || kioskLayout.mechanic !== 'wrap') reasons.push('kiosk mechanic');
     if (!kioskLayout || kioskLayout.crowd !== 'gift') reasons.push('kiosk crowd');
     var ev0 = calendarEvent(0);
@@ -492,13 +526,17 @@
     var goal = dailyGoal('2026-10-22');
     var goalAgain = dailyGoal('2026-10-22');
     if (!goal || goal.id !== goalAgain.id) reasons.push('daily');
+    var shyBooks = econ.blankBooks();
+    shyBooks.cash = 80;
+    var shy = claimDaily(shyBooks, '2026-10-22', { walkouts: 0, goalPct: 1, bestCombo: 4 });
+    if (shy.claimed || shyBooks.cash !== 80) reasons.push('hot till');
     var payer = econ.blankBooks();
     payer.cash = 100;
-    var met = { walkouts: 0, goalPct: 1, bestCombo: 5 };
+    var met = { walkouts: 0, goalPct: 1, bestCombo: 7 };
     var first = claimDaily(payer, '2026-10-22', met);
     if (!first.claimed || first.bonus !== goal.bonus || payer.cash !== 100 + goal.bonus) reasons.push('claim ' + payer.cash);
     var second = claimDaily(payer, '2026-10-22', met);
-    if (second.claimed || payer.cash !== 100 + goal.bonus) reasons.push('twice');
+    if (second.claimed || second.reason !== 'already' || payer.cash !== 100 + goal.bonus) reasons.push('twice');
     var missBooks = econ.blankBooks();
     missBooks.cash = 50;
     var miss = claimDaily(missBooks, '2026-10-23', { walkouts: 99, goalPct: 0, bestCombo: 0 });

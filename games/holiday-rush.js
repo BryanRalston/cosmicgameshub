@@ -80,6 +80,37 @@
     star3: 1.2,
     earnRate: 0.1
   };
+  var MONDAY_GOAL_MUL = 0.55;
+  var LIVE_PROFIT_FLOOR = 48;
+  var LIVE_RING_RATE = 0.95;
+  var LIVE_BASKET = 0.53;
+  var LIVE_STAFFED = 1.27;
+
+  function liveQueueGap(sim) {
+    return sim && sim._phone ? 210 : 140;
+  }
+
+  function liveLineCap() {
+    return 2;
+  }
+
+  function kioskOneStarCosts(sales, cogs, wages, rent, goalPct) {
+    sales = Math.round(sales || 0);
+    cogs = Math.round(cogs || 0);
+    wages = Math.round(wages || 0);
+    rent = Math.round(rent || 0);
+    if (!(goalPct >= 0.70)) return { cogs: cogs, wages: wages };
+    var profit = sales - cogs - wages - rent;
+    if (profit >= LIVE_PROFIT_FLOOR) return { cogs: cogs, wages: wages };
+    var nextCogs = cogs - (LIVE_PROFIT_FLOOR - profit);
+    var nextWages = wages;
+    if (nextCogs < 0) {
+      nextWages = wages + nextCogs;
+      nextCogs = 0;
+      if (nextWages < 0) nextWages = 0;
+    }
+    return { cogs: Math.round(nextCogs), wages: Math.round(nextWages) };
+  }
 
   var SHIFT_COUNT = 15;
   var WEEK_LABELS = ['Week 1', 'Week 2', 'Week 3'];
@@ -1400,9 +1431,14 @@
     tuneArch(c, arch);
     applyTenantTune(sim, c);
     applyKioskTune(sim, c);
+    if (sim._phone && sim.floorOn) {
+      c.patience *= 1.2;
+      c.maxPatience = c.patience;
+    }
     if (forcedArch) {
-      c.x = SPOTS.floor.x + 36;
-      c.y = SPOTS.floor.y + 16;
+      var doorIn = SPOTS.door || SPOTS.floor || { x: 640, y: 820 };
+      c.x = doorIn.x + (sim.rng() * 48 - 24);
+      c.y = doorIn.y - 6;
       c.intro = true;
       if (c.arch !== 'lift') {
         c.state = 'enter';
@@ -1419,6 +1455,7 @@
     var metId = sim.typeCard;
     sim.typeCard = '';
     sim.typeUntil = 0;
+    releaseCardPause(sim);
     if (run) {
       if (!run.met) run.met = {};
       run.met[metId] = 1;
@@ -1431,7 +1468,7 @@
   }
 
   function maybeTypeIntro(sim, run) {
-    if (!sim.floorOn || sim.coachHold || sim.paused || sim.done || sim.typeCard || sim._introDone) return;
+    if (!sim.floorOn || sim.coachHold || sim.tutorial || sim.paused || sim.done || sim.typeCard || sim._introDone || cardCooling(sim)) return;
     var id = dueIntro(run);
     if (!id || sim.t < 5.5) return;
     var born = spawnCustomer(sim, run, id);
@@ -1439,6 +1476,7 @@
     sim._introDone = true;
     sim.typeCard = id;
     sim.typeUntil = sim.t + 5.5;
+    armCardPause(sim);
     hooks.alert();
   }
 
@@ -1464,15 +1502,123 @@
     c.pop = 1;
   }
 
+  function liveTillStaffed(sim) {
+    if (!sim) return false;
+    if (sim.you && sim.t < (sim.you.until || 0) && isTill(sim.you.station)) return true;
+    if (!sim.override) return false;
+    var id;
+    for (id in sim.override) {
+      if (isTill(sim.override[id])) return true;
+    }
+    return false;
+  }
+
+  function liveLineDrain(sim, drain) {
+    if (sim && sim.floorOn && sim.live && !sim.tenant && liveTillStaffed(sim)) return drain * 0.08;
+    return drain;
+  }
+
+  function backLeft(sim) {
+    if (!sim || !sim.books || !HR.economy || !HR.economy.unitsLeft) return 0;
+    return HR.economy.unitsLeft(sim.books, sim.tenant && sim.tenant.stock);
+  }
+
+  function clearRestockPing(sim) {
+    if (!sim || !sim.pings) return;
+    for (var i = 0; i < sim.pings.length; i++) {
+      if (sim.pings[i].kind === 'restock') sim.pings[i].dead = true;
+    }
+  }
+
+  function stockBag(sim) {
+    if (!sim) return null;
+    if (sim.tenant && sim.tenant.stock) return sim.tenant.stock;
+    if (!sim.books || !sim.books.locations) return null;
+    var loc = sim.books.locations[sim.books.active];
+    return loc && loc.stock ? loc.stock : null;
+  }
+
+  function addBackStock(sim, scale) {
+    if (!sim || !HR.economy || !HR.economy.starterStock) return 0;
+    var bag = stockBag(sim);
+    if (!bag) return 0;
+    var add = HR.economy.starterStock(scale);
+    var n = 0;
+    var id;
+    for (id in add) {
+      if (!add[id]) continue;
+      bag[id] = (bag[id] || 0) + add[id];
+      n += add[id];
+    }
+    if (!n) return 0;
+    sim.stock = Math.max(sim.stock || 0, 0.74);
+    sim.truck = 0;
+    clearRestockPing(sim);
+    return n;
+  }
+
+  function deliverEveningTruck(sim) {
+    if (!sim || sim._eveningTruck) return 0;
+    var n = addBackStock(sim, 0.1);
+    if (!n) return 0;
+    sim._eveningTruck = 1;
+    return n;
+  }
+
+  function ensureOpeningStock(sim) {
+    if (!sim || sim.tenant || !sim.books) return;
+    if (!HR.economy || !HR.economy.starterStock || !HR.economy.unitsLeft) return;
+    var full = 0;
+    var base = HR.economy.starterStock(1);
+    var id;
+    for (id in base) full += base[id] || 0;
+    if (HR.economy.unitsLeft(sim.books) >= Math.round(full * 0.45)) return;
+    var bag = stockBag(sim);
+    if (!bag) return;
+    var floorBag = HR.economy.starterStock(0.55);
+    for (id in floorBag) {
+      if (!floorBag[id]) continue;
+      if ((bag[id] || 0) < floorBag[id]) bag[id] = floorBag[id];
+    }
+    sim.stock = Math.max(sim.stock || 0, 0.78);
+    sim._eveningTruck = 0;
+  }
+
+  function keepRestockPing(sim) {
+    if (!sim || sim.done) return;
+    if (!sim.pings) sim.pings = [];
+    for (var i = 0; i < sim.pings.length; i++) {
+      if (sim.pings[i].kind === 'restock' && !sim.pings[i].dead) {
+        sim.pings[i].life = 8;
+        return;
+      }
+    }
+    var door = SPOTS.door || { x: 640, y: 855 };
+    sim.pings.push({
+      kind: 'restock',
+      x: door.x - 110,
+      y: door.y - 150,
+      life: 8,
+      pop: 1,
+      dead: false
+    });
+  }
+
   function completeSale(sim, run, c) {
     if (c.sold) return;
     if (sim.stock <= 0.025) {
-      if (sim.books) {
-        sim.stockouts = (sim.stockouts || 0) + 1;
-        floater(sim, c.x, c.y - 96, 'Empty shelf', '#ffb4b4', true);
+      var shelfBag = sim.tenant && sim.tenant.stock;
+      var shelfLeft = sim.books && HR.economy ? HR.economy.unitsLeft(sim.books, shelfBag) : 0;
+      if (sim.floorOn && shelfLeft > 0) {
+        sim.stock = 0.42;
+      } else {
+        if (sim.books) {
+          sim.stockouts = (sim.stockouts || 0) + 1;
+          floater(sim, c.x, c.y - 96, 'Empty shelf', '#ffb4b4', true);
+        }
+        walkout(sim, c);
+        return;
       }
-      walkout(sim, c);
-      return;
     }
     var basket;
     if (sim.books && HR.sim && HR.economy) {
@@ -1504,14 +1650,25 @@
     }
     c.sold = true;
     var gap = sim.t - (sim.lastSaleAt == null ? -999 : sim.lastSaleAt);
+    var comboCap = CONFIG.comboMax;
+    if (sim.floorOn && sim.live && !sim.tenant) comboCap = 2;
     if (gap <= CONFIG.comboWindow && (sim.combo || 0) >= 1) {
-      if (sim.combo < CONFIG.comboMax) sim.combo += 1;
+      if (sim.combo < comboCap) sim.combo += 1;
     } else sim.combo = 1;
     sim.lastSaleAt = sim.t;
     if (sim.combo > (sim.bestCombo || 0)) sim.bestCombo = sim.combo;
     var mult = comboMult(sim.combo);
+    if (sim.floorOn && sim.live && !sim.tenant) {
+      basket *= LIVE_BASKET;
+      if (liveTillStaffed(sim)) basket *= LIVE_STAFFED;
+    }
     basket = Math.round(basket * mult);
-    if (sim.floorOn && sim.doubleUntil && sim.t < sim.doubleUntil) basket *= 2;
+    if (sim.floorOn && sim.live && !sim.tenant) {
+      if ((sim._doubleLeft || 0) > 0) {
+        basket *= 2;
+        sim._doubleLeft -= 1;
+      }
+    } else if (sim.doubleUntil && sim.t < sim.doubleUntil) basket *= 2;
     sim.sales += basket;
     sim.checkouts++;
     if (sim.mechanic === 'wrap' && sim.floorOn && sim.live && sim.rng() < 0.8) offerWrap(sim);
@@ -1549,6 +1706,220 @@
     return any ? best : regs[0];
   }
 
+  function liveLine(sim) {
+    return !!(sim && sim.floorOn);
+  }
+
+  function queueSlot(sim, reg, index) {
+    var base = QUEUE[reg] || { x: 496, y: 800, dy: 32 };
+    if (!liveLine(sim)) {
+      var row = Math.min(index, 3);
+      var col = index > 3 ? (index - 3) : 0;
+      return { x: base.x + col * 30, y: base.y + row * base.dy };
+    }
+    var idx = index < 0 ? 0 : index;
+    var cap = liveLineCap(sim);
+    if (idx > cap - 1) idx = cap - 1;
+    var anchor = (typeof SPOTS !== 'undefined' && SPOTS[reg]) ? SPOTS[reg] : base;
+    var gap = liveQueueGap(sim);
+    var side = reg === 'reg2' ? 86 : -86;
+    return { x: anchor.x + side, y: anchor.y - idx * gap };
+  }
+
+  function laneLoad(sim, reg) {
+    var n = queueOf(sim, reg).length;
+    if (!liveLine(sim)) return n;
+    for (var i = 0; i < sim.customers.length; i++) {
+      var c = sim.customers[i];
+      if (c.dead || c.reg !== reg || c.state !== 'toQueue') continue;
+      n++;
+    }
+    return n;
+  }
+
+  function waitPocket(cust) {
+    var i = (cust && cust.seq ? cust.seq : 1) % 8;
+    var col = i % 4;
+    var row = (i / 4) | 0;
+    return { x: 180 + col * 220, y: 170 + row * 170 };
+  }
+
+  function spriteFootBox(sim) {
+    var phone = !!(sim && sim._phone);
+    return { h: phone ? 120 : 70, w: phone ? 78 : 50, pad: 8 };
+  }
+
+  function pushOutOf(mover, anchor, box) {
+    var hw = box.w + box.pad;
+    var hh = box.h + box.pad;
+    var dx = mover.x - anchor.x;
+    var dy = (mover.y - box.h * 0.5) - (anchor.y - box.h * 0.5);
+    var xOverlap = hw - Math.abs(dx);
+    var yOverlap = hh - Math.abs(dy);
+    if (!(xOverlap > 0 && yOverlap > 0)) return false;
+    if (Math.abs(dx) < 1 && Math.abs(dy) < 1) {
+      mover.x += 14;
+      mover.y -= box.pad;
+      return true;
+    }
+    if (xOverlap < yOverlap) mover.x += dx >= 0 ? xOverlap : -xOverlap;
+    else mover.y += dy >= 0 ? yOverlap : -yOverlap;
+    return true;
+  }
+
+  function separateWalkers(sim) {
+    if (!liveLine(sim)) return;
+    var list = [];
+    var i;
+    for (i = 0; i < sim.customers.length; i++) {
+      var c = sim.customers[i];
+      if (c.dead) continue;
+      if (c.state === 'queue' || c.state === 'checkout' || c.state === 'leave' || c.state === 'flee' || c.state === 'toQueue' || c.state === 'enter') continue;
+      list.push(c);
+    }
+    var crowded = list.length >= 8;
+    var gap = sim._phone ? 58 : 42;
+    for (i = 0; i < list.length; i++) {
+      for (var j = i + 1; j < list.length; j++) {
+        var a = list[i];
+        var b = list[j];
+        var dx = b.x - a.x;
+        var dy = b.y - a.y;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        if (!(dist < gap)) continue;
+        if (dist < 1) {
+          b.x += 12;
+          b.y += (j % 2 ? 10 : -10);
+          continue;
+        }
+        var push = (gap - dist) * (crowded ? 0.18 : 0.35);
+        if (push > 2.5) push = 2.5;
+        var nx = dx / dist;
+        var ny = dy / dist;
+        if ((b.seq || 0) >= (a.seq || 0)) {
+          b.x += nx * push;
+          b.y += ny * push;
+        } else {
+          a.x -= nx * push;
+          a.y -= ny * push;
+        }
+      }
+    }
+    var minX = crowded ? 120 : 48;
+    var maxX = (WORLD_W || 1280) - (crowded ? 120 : (sim._phone ? 80 : 150));
+    var minY = 150;
+    var maxY = (WORLD_H || 900) - (crowded ? 80 : 48);
+    for (i = 0; i < list.length; i++) {
+      if (list[i].x < minX) list[i].x = minX;
+      if (list[i].x > maxX) list[i].x = maxX;
+      if (list[i].y < minY) list[i].y = minY;
+      if (list[i].y > maxY) list[i].y = maxY;
+    }
+  }
+
+  function placeVisual(drawList, sim) {
+    var box = spriteFootBox(sim);
+    var nodes = [];
+    var seen = [];
+    var i;
+    var pass;
+    var k;
+    for (i = 0; i < drawList.length; i++) {
+      var actor = drawList[i];
+      if (!actor || actor.kind === 'jack' || actor.hidden || actor.dead) continue;
+      if (seen.indexOf(actor) >= 0) continue;
+      seen.push(actor);
+      var locked = actor.state === 'queue' || actor.state === 'checkout';
+      nodes.push({ actor: actor, x: actor.x, y: actor.y, lock: locked });
+    }
+    function relax() {
+      for (i = 0; i < nodes.length; i++) {
+        for (k = i + 1; k < nodes.length; k++) {
+          var a = nodes[i];
+          var b = nodes[k];
+          if (a.lock && b.lock) continue;
+          var beforeX = b.x;
+          var beforeY = b.y;
+          if (!pushOutOf(b, a, box)) continue;
+          var dx = b.x - beforeX;
+          var dy = b.y - beforeY;
+          if (b.lock) {
+            b.x = beforeX;
+            b.y = beforeY;
+            if (!a.lock) {
+              a.x -= dx;
+              a.y -= dy;
+            }
+          } else if (a.lock) {
+            b.x = beforeX + dx;
+            b.y = beforeY + dy;
+          } else {
+            b.x = beforeX + dx * 0.5;
+            b.y = beforeY + dy * 0.5;
+            a.x -= dx * 0.5;
+            a.y -= dy * 0.5;
+          }
+        }
+      }
+    }
+    function park(node) {
+      if (node.lock) {
+        node.x = node.actor.x;
+        node.y = node.actor.y;
+        return;
+      }
+      var minX = 96;
+      var maxX = (WORLD_W || 1280) - 96;
+      var minY = 140;
+      var maxY = (WORLD_H || 900) - 48;
+      if (node.x < minX) node.x = minX;
+      if (node.x > maxX) node.x = maxX;
+      if (node.y < minY) node.y = minY;
+      if (node.y > maxY) node.y = maxY;
+    }
+    for (pass = 0; pass < 10; pass++) relax();
+    for (i = 0; i < nodes.length; i++) park(nodes[i]);
+    for (pass = 0; pass < 6; pass++) {
+      relax();
+      for (i = 0; i < nodes.length; i++) park(nodes[i]);
+    }
+    for (pass = 0; pass < 4; pass++) {
+      for (i = 0; i < nodes.length; i++) {
+        for (k = i + 1; k < nodes.length; k++) {
+          if (nodes[i].lock && nodes[k].lock) continue;
+          var pileDx = nodes[k].x - nodes[i].x;
+          var pileDy = nodes[k].y - nodes[i].y;
+          if (Math.abs(pileDx) > 10 || Math.abs(pileDy) > 10) continue;
+          var mover = nodes[k].lock ? nodes[i] : nodes[k];
+          if (mover.lock) continue;
+          mover.x += 28;
+          mover.y += pass % 2 ? 18 : -18;
+          park(mover);
+        }
+      }
+    }
+    for (i = 0; i < nodes.length; i++) {
+      var drawX = nodes[i].x;
+      var drawY = nodes[i].y;
+      if (nodes[i].lock && nodes[i].actor.reg) {
+        var tillSide = nodes[i].actor.reg === 'reg2' ? 1 : -1;
+        drawX += tillSide * (sim && sim._phone ? 48 : 34);
+      }
+      var edge = sim && sim._frame;
+      if (edge) {
+        var half = spriteFootBox(sim).w * 0.95;
+        var leftLimit = edge.x0 + half;
+        var rightLimit = edge.x1 - half;
+        if (rightLimit > leftLimit) {
+          if (drawX < leftLimit) drawX = leftLimit;
+          if (drawX > rightLimit) drawX = rightLimit;
+        }
+      }
+      nodes[i].actor._drawX = drawX;
+      nodes[i].actor._drawY = drawY;
+    }
+  }
+
   function updateCustomers(sim, run, dt) {
     var regs = registers();
     for (var r = 0; r < regs.length; r++) {
@@ -1556,16 +1927,52 @@
       for (var i = 0; i < list.length; i++) {
         var c = list[i];
         c.qIndex = i;
-        var base = QUEUE[regs[r]];
-        var row = Math.min(i, 3);
-        var col = i > 3 ? (i - 3) : 0;
-        c.qx = base.x + col * 30;
-        c.qy = base.y + row * base.dy;
+        var slotAt = queueSlot(sim, regs[r], i);
+        c.qx = slotAt.x;
+        c.qy = slotAt.y;
+      }
+    }
+    var tillsBusy = false;
+    if (sim.floorOn) {
+      for (var tb = 0; tb < sim.customers.length; tb++) {
+        var busy = sim.customers[tb];
+        if (busy.dead) continue;
+        if (busy.state === 'queue' || busy.state === 'checkout') tillsBusy = true;
+      }
+      if (!sim.coachHold && !sim.tutorial && sim.t < (sim.duration || 62) * 0.4) {
+        if (!tillsBusy) sim._tillIdle = (sim._tillIdle || 0) + dt;
+        else sim._tillIdle = 0;
+        if (!tillsBusy && sim._tillIdle > 1.15) {
+          var nextUp = null;
+          for (var ni = 0; ni < sim.customers.length; ni++) {
+            var cand = sim.customers[ni];
+            if (cand.dead) continue;
+            if (cand.state !== 'browse' && cand.state !== 'wait' && cand.state !== 'enter' && cand.state !== 'toQueue') continue;
+            if (!nextUp || (cand.seq || 0) < (nextUp.seq || 0)) nextUp = cand;
+          }
+          if (nextUp) {
+            nextUp.reg = nextUp.reg || pickRegister(sim, run);
+            if (nextUp.reg && laneLoad(sim, nextUp.reg) < liveLineCap(sim)) {
+              var linedNow = queueSlot(sim, nextUp.reg, queueOf(sim, nextUp.reg).length);
+              nextUp.state = 'queue';
+              nextUp.x = linedNow.x;
+              nextUp.y = linedNow.y;
+              nextUp.qx = linedNow.x;
+              nextUp.qy = linedNow.y;
+              nextUp.checkT = null;
+              nextUp.path = null;
+              sim._tillIdle = 0;
+              tillsBusy = true;
+            }
+          }
+        }
       }
     }
     var speed = CONFIG.walkSpeed * (sim.t < sim.spillUntil ? 0.6 : 1);
     var cocoa = hasPerk(run, 'cocoa') ? 0.82 : 1;
     var drainMul = (sim._heat && sim._heat.drain) ? sim._heat.drain : 1;
+    if (sim._phone && sim.floorOn) drainMul *= 0.62;
+    if (sim._mondayEase && sim.floorOn) drainMul *= 0.7;
     if (sim.flickerUntil && sim.t < sim.flickerUntil) drainMul *= 1.85;
     for (var n = 0; n < sim.customers.length; n++) {
       var cust = sim.customers[n];
@@ -1611,11 +2018,20 @@
         continue;
       }
       if (cust.state === 'enter') {
-        if (follow(cust, dt, custSpeed)) {
+        cust.enterT = (cust.enterT || 0) + dt;
+        var entered = follow(cust, dt, custSpeed);
+        if (!entered && sim.floorOn && cust.enterT > 1.15 && cust.shelf) {
+          cust.x = cust.shelf.x;
+          cust.y = cust.shelf.y;
+          cust.path = null;
+          entered = true;
+        }
+        if (entered) {
           cust.state = 'browse';
           var browse = 0.85 + sim.rng() * 1.35;
           if (cust.arch === 'rusher') browse = 0.22 + sim.rng() * 0.2;
           if (cust.arch === 'family') browse = 1.8 + sim.rng() * 1.1;
+          if (sim.floorOn && sim.live && !sim.tenant) browse += 0.35 + sim.rng() * 0.4;
           cust.browseT = browse;
           cust.anim = 'idle';
           cust.bubble = null;
@@ -1624,31 +2040,97 @@
         cust.anim = 'idle';
         cust.dir = 'up';
         cust.face = 1;
-        cust.browseT -= dt * (stationPower(sim, run, 'floor') > 0.5 ? 1.25 : 1);
-        cust.patience -= dt * 0.012 * cocoa * drainMul * (cust.arch === 'rusher' ? 1.8 : 1);
+        var browseRate = stationPower(sim, run, 'floor') > 0.5 ? 1.25 : 1;
+        if (sim.floorOn && !tillsBusy) browseRate += 1.4;
+        cust.browseT -= dt * browseRate;
+        cust.patience -= liveLineDrain(sim, dt * 0.012 * cocoa * drainMul * (cust.arch === 'rusher' ? 1.8 : 1));
         if (cust.patience <= 0) walkout(sim, cust);
         else if (cust.browseT <= 0) {
           if (sim.stock <= 0.04) walkout(sim, cust);
           else {
             cust.reg = pickRegister(sim, run);
-            if (trafficBlocked(cust.reg)) walkout(sim, cust);
-            else if (!priceTurn(sim, cust)) {
-              cust.state = 'toQueue';
-              cust.path = null;
+            if (trafficBlocked(cust.reg)) {
+              if (sim.floorOn && sim.live && !sim.tenant && liveTillStaffed(sim)) {
+                cust.state = 'wait';
+                cust.waitSpot = waitPocket(cust);
+              } else walkout(sim, cust);
+            } else if (!priceTurn(sim, cust)) {
+              if (liveLine(sim) && laneLoad(sim, cust.reg) >= liveLineCap(sim)) {
+                cust.state = 'wait';
+                cust.waitSpot = waitPocket(cust);
+              } else {
+                cust.state = 'toQueue';
+                cust.seekT = 0;
+                cust.path = null;
+              }
             }
           }
         }
+      } else if (cust.state === 'wait') {
+        if (liveLine(sim) && !(cust.reg && laneLoad(sim, cust.reg) < liveLineCap(sim))) {
+          var altReg = pickRegister(sim, run);
+          if (altReg && laneLoad(sim, altReg) < liveLineCap(sim)) cust.reg = altReg;
+        }
+        if (!liveLine(sim) || (cust.reg && laneLoad(sim, cust.reg) < liveLineCap(sim))) {
+          cust.state = 'toQueue';
+          cust.seekT = 0;
+          cust.path = null;
+        } else {
+          var pocket = cust.waitSpot || waitPocket(cust);
+          cust.waitSpot = pocket;
+          if (moveToward(cust, pocket.x, pocket.y, dt, custSpeed * 0.8)) cust.anim = 'idle';
+          cust.patience -= liveLineDrain(sim, dt * 0.008 * cocoa * drainMul);
+          if (cust.patience <= 0) walkout(sim, cust);
+        }
       } else if (cust.state === 'toQueue') {
         var slot = queueOf(sim, cust.reg).length;
-        var pos = QUEUE[cust.reg];
-        var dest = { x: pos.x, y: pos.y + Math.min(slot, 3) * pos.dy };
-        if (moveToward(cust, dest.x, dest.y, dt, custSpeed)) {
-          var lineCap = cust.arch === 'rusher' ? 3 : 6;
-          if (slot >= lineCap) walkout(sim, cust);
-          else cust.state = 'queue';
+        var reserved = slot;
+        if (liveLine(sim)) {
+          for (var wi = 0; wi < sim.customers.length; wi++) {
+            var ahead = sim.customers[wi];
+            if (ahead.dead || ahead === cust || ahead.reg !== cust.reg || ahead.state !== 'toQueue') continue;
+            if ((ahead.seq || 0) < (cust.seq || 0)) reserved++;
+          }
+          if (reserved >= liveLineCap(sim)) {
+            cust.state = 'wait';
+            cust.seekT = 0;
+            cust.waitSpot = waitPocket(cust);
+          } else {
+            var linedP = queueSlot(sim, cust.reg, reserved);
+            cust.seekT = (cust.seekT || 0) + dt;
+            var seekDx = cust.x - linedP.x;
+            var seekDy = cust.y - linedP.y;
+            var seekNear = seekDx * seekDx + seekDy * seekDy < 96 * 96;
+            if (moveToward(cust, linedP.x, linedP.y, dt, custSpeed) || seekNear || cust.seekT > (sim.floorOn ? 1.1 : 2.4)) {
+              if (queueOf(sim, cust.reg).length >= liveLineCap(sim)) {
+                cust.state = 'wait';
+                cust.seekT = 0;
+                cust.waitSpot = waitPocket(cust);
+              } else {
+                cust.state = 'queue';
+                cust.seekT = 0;
+                cust.x = linedP.x;
+                cust.y = linedP.y;
+              }
+            }
+          }
+        } else {
+          var lined = queueSlot(sim, cust.reg, Math.min(slot, 6));
+          if (moveToward(cust, lined.x, lined.y, dt, custSpeed)) {
+            var lineCap = cust.arch === 'rusher' ? 3 : 6;
+            if (slot >= lineCap) walkout(sim, cust);
+            else cust.state = 'queue';
+          }
         }
       } else if (cust.state === 'queue' || cust.state === 'checkout') {
-        var at = moveToward(cust, cust.qx || cust.x, cust.qy || cust.y, dt, custSpeed);
+        var at = false;
+        if (liveLine(sim)) {
+          cust.x = cust.qx || cust.x;
+          cust.y = cust.qy || cust.y;
+          at = true;
+        } else {
+          at = moveToward(cust, cust.qx || cust.x, cust.qy || cust.y, dt, custSpeed);
+        }
         var power = stationPower(sim, run, cust.reg);
         var drain = (power > 0.45 ? 0.042 : 0.105) * cocoa;
         if (cust.qIndex > 0) drain += 0.01 * cust.qIndex;
@@ -1658,7 +2140,7 @@
           cust.anim = 'idle';
           if (!cust.haggling) {
             cust.haggling = true;
-            cust.haggleT = 3.6;
+            cust.haggleT = sim.floorOn ? 0.7 : 3.6;
             cust.bubble = 'price';
             cust.pop = 1;
           }
@@ -1674,20 +2156,25 @@
             completeSale(sim, run, cust);
           }
         } else {
-          cust.patience -= dt * drain * drainMul;
+          cust.patience -= liveLineDrain(sim, dt * drain * drainMul);
           if (cust.patience <= 0) walkout(sim, cust);
           else if (cust.qIndex === 0 && at && !cust.haggling) {
             cust.state = 'checkout';
             cust.anim = 'idle';
             var rate = power > 0.35 ? (0.55 + power * 0.85) : 0.2;
+            if (sim._mondayEase && sim.floorOn) rate *= 1.22;
+            if (sim._phone && sim.floorOn) rate *= 1.12;
+            else if (sim.floorOn && sim.live && !sim.tenant && liveTillStaffed(sim)) rate *= 1.12;
             if (cust.arch === 'rusher') rate *= 1.65;
             if (cust.arch === 'family') rate *= 0.7;
-            var checkStart = cust.arch === 'family' ? 3.3 : 2.15;
+            if (sim.floorOn && rate < LIVE_RING_RATE) rate = LIVE_RING_RATE;
+            if (sim.floorOn && sim.live && !sim.tenant && !sim._phone && liveTillStaffed(sim)) rate *= 1.35;
+            var checkStart = cust.arch === 'family' ? (sim.floorOn ? 0.95 : 3.3) : (sim.floorOn ? 0.7 : 2.15);
             cust.checkT = (cust.checkT == null ? checkStart : cust.checkT) - dt * rate;
             if (cust.checkT <= 0) completeSale(sim, run, cust);
           } else {
             cust.anim = at ? 'idle' : 'walk';
-            if (cust.checkT == null && cust.qIndex === 0 && cust.arch !== 'haggle') cust.checkT = cust.arch === 'family' ? 3.3 : 2.15;
+            if (cust.checkT == null && cust.qIndex === 0 && cust.arch !== 'haggle') cust.checkT = cust.arch === 'family' ? (sim.floorOn ? 0.95 : 3.3) : (sim.floorOn ? 0.7 : 2.15);
           }
           if (!cust.haggling) cust.bubble = cust.patience < cust.maxPatience * 0.38 ? 'angry' : null;
         }
@@ -1697,6 +2184,7 @@
       }
       tickAnim(cust, dt);
     }
+    separateWalkers(sim);
     if (sim.pool) sim.pool.compact(sim.customers);
     else sim.customers = sim.customers.filter(function (c) { return !c.dead; });
     if (sim.spatial) {
@@ -1900,15 +2388,20 @@
       card.choices = [
         choice('Raincheck them', 0, function () { sim.stars = clamp(sim.stars - 0.12, 1, 5); sim.morale = clamp(sim.morale - 1, 0, 100); }),
         choice('Rush whoever is on freight', 0, function () {
-          if (stationPower(sim, run, 'freight') > 0.4) {
+          var powered = stationPower(sim, run, 'freight') > 0.4;
+          if (powered) {
             sim.stock = clamp(sim.stock + 0.16, 0, 1);
             note(sim, 'Freight filled the hole.');
           } else {
             sim.stock = clamp(sim.stock + 0.04, 0, 1);
             note(sim, 'Nobody really on freight.');
           }
+          if (sim.floorOn && sim.live && !sim.tenant) addBackStock(sim, powered ? 0.12 : 0.06);
         }),
-        choice('Fill it yourself', 1, function () { sim.stock = clamp(sim.stock + 0.22, 0, 1); })
+        choice('Fill it yourself', 1, function () {
+          sim.stock = clamp(sim.stock + 0.22, 0, 1);
+          if (sim.floorOn && sim.live && !sim.tenant) addBackStock(sim, 0.16);
+        })
       ];
       return card;
     }
@@ -1998,7 +2491,7 @@
       card.title = 'Something in a pocket';
       card.body = 'You are not sure. A shopper by the endcap keeps looking at the cameras.';
       card.choices = [
-        choice('Let them go', 0, function () {
+        choice('Let them go (−$70)', 0, function () {
           sim.sales = Math.max(0, sim.sales - 70);
           sim.stock = Math.max(0, sim.stock - 0.02);
           floater(sim, 900, 400, '-$70', '#ffb4b4');
@@ -2090,13 +2583,43 @@
   }
 
   function maybeMallCard(sim) {
-    if (!sim.live || !sim.books || sim._mallShown || sim.coachHold || sim.pending || sim.paused) return;
-    if (sim.t < 2.2) return;
+    if (!sim.live || !sim.books || sim._mallShown || sim.coachHold || sim.tutorial || sim.pending || sim.paused) return;
+    if (sim.t < 2.2 || sim.typeCard || cardCooling(sim)) return;
     sim._mallShown = true;
     var card = buildMallCard(sim);
     if (!card) return;
+    openPending(sim, card, 9);
+  }
+
+  function armCardPause(sim) {
+    if (!sim || !sim.floorOn || sim._hold === 'crew') return;
+    sim._hold = 'card';
+    sim.paused = true;
+  }
+
+  function releaseCardPause(sim) {
+    if (!sim || sim._hold !== 'card') return;
+    if (sim.pending || sim.typeCard) return;
+    sim._hold = '';
+    sim.paused = false;
+    sim._clockArm = 1;
+    if (sim.floorOn) sim._nextCardAt = sim.t + (sim.duration || 62) / 12;
+  }
+
+  function cardCooling(sim) {
+    return !!(sim && sim.floorOn && sim._nextCardAt && sim.t + 1e-4 < sim._nextCardAt);
+  }
+
+  function openPending(sim, card, seconds) {
+    if (!sim || !card || sim.pending || sim.typeCard) return false;
+    if (sim.coachHold || sim.tutorial) {
+      if (!sim._stashedCard) sim._stashedCard = { card: card, seconds: seconds || 8 };
+      return true;
+    }
     sim.pending = card;
-    sim.pendingUntil = sim.t + 9;
+    sim.pendingUntil = sim.t + (seconds || 8);
+    armCardPause(sim);
+    return true;
   }
 
   function resolvePending(sim, run, index) {
@@ -2108,29 +2631,29 @@
     ch.apply();
     sim.pending = null;
     sim.pendingUntil = 0;
-    sim.paused = false;
+    releaseCardPause(sim);
     return { ok: true, msg: '' };
   }
 
   function maybeEvent(sim, run) {
-    if (sim.coachHold) return;
-    if (sim.paused || sim.pending) return;
+    if (sim.coachHold || sim.tutorial) return;
+    if (sim.paused || sim.pending || sim.typeCard || cardCooling(sim)) return;
     if (sim.eventIndex >= sim.events.length) return;
     var when = sim.eventTimes[sim.eventIndex];
     if (sim.t + 1e-4 < when) return;
     var id = sim.events[sim.eventIndex];
     sim.eventIndex++;
-    sim.pending = buildEvent(id, sim, run);
-    sim.pendingUntil = sim.t + 7;
+    openPending(sim, buildEvent(id, sim, run), 7);
   }
 
   function step(sim, run, dt) {
     if (!sim || sim.done || sim.paused) return sim;
-    if (sim.pending && sim.pendingUntil && sim.t >= sim.pendingUntil - 1e-4) {
+    var cardHolds = sim.floorOn && sim._hold === 'card';
+    if (!cardHolds && sim.pending && sim.pendingUntil && sim.t >= sim.pendingUntil - 1e-4) {
       resolvePending(sim, run, autoChoice(sim.pending, sim));
       if (sim.live) note(sim, 'The aisle moved on.');
     }
-    if (sim.typeCard && sim.typeUntil && sim.t >= sim.typeUntil - 1e-4) {
+    if (!cardHolds && sim.typeCard && sim.typeUntil && sim.t >= sim.typeUntil - 1e-4) {
       var metName = dismissTypeCard(sim, run);
       if (sim.live && metName) note(sim, 'New shopper is on the floor.');
     }
@@ -2143,7 +2666,7 @@
       if (dt <= 1e-4) return sim;
     }
     var limit = sim.duration;
-    if (sim.eventIndex < sim.events.length) {
+    if (!cardCooling(sim) && sim.eventIndex < sim.events.length) {
       var when = sim.eventTimes[sim.eventIndex];
       if (when > sim.t && when < limit) limit = when;
     }
@@ -2187,10 +2710,23 @@
     var warehouseBag = sim.tenant && sim.tenant.stock;
     var warehouseOpen = !(sim.books && HR.economy && HR.economy.unitsLeft(sim.books, warehouseBag) <= 0);
     var frozen = sim.stockFreeze && sim.t < sim.stockFreeze;
+    if (sim.floorOn && sim.live && !sim.tenant) {
+      var leftNow = backLeft(sim);
+      if (!sim._eveningTruck && leftNow <= 28) {
+        if (deliverEveningTruck(sim)) note(sim, 'A late truck restocked the back room.');
+        leftNow = backLeft(sim);
+      } else if (leftNow <= 0) {
+        sim.stock = 0;
+      }
+      if (leftNow <= 40) keepRestockPing(sim);
+      else clearRestockPing(sim);
+    }
     if (frozen) {
       /* count holds the shelf still */
     } else if (warehouseOpen && sim.truck) {
-      sim.stock = Math.max(0, sim.stock - used * 0.01);
+      var drained = sim.stock - used * 0.01;
+      if (sim.floorOn && fp <= 0.35 && drained < 0.36) drained = 0.36;
+      sim.stock = Math.max(0, drained);
       if (fp > 0.35) sim.truckWork += used * fp;
       if (sim.truckWork > 5.5 / (1 + 0.25 * stockLv)) {
         sim.truck = 0;
@@ -2219,9 +2755,20 @@
     if (sim.tenant && sim.tenant.mechanic === 'cups') rate *= 1.25;
     if (sim.tenant && sim.tenant.mechanic === 'window') rate *= (sim.calendarDoor > 1 ? 1.25 : 0.78);
     rate *= 0.74 + Math.min(stationPower(sim, run, 'floor'), 1.6) * 0.2;
+    if (sim.floorOn && sim.live && !sim.tenant && sim.t < (sim.duration || 62) * 0.36) rate *= 1.45;
     if (sim.books && HR.sim) rate *= HR.sim.demandMul(sim.books);
     if (sim.books && sim.books.mall && sim.books.mall.door) rate *= sim.books.mall.door;
     if (sim.stock < 0.22) rate *= 0.58;
+    if (sim.floorOn && sim.live && !sim.tenant && sim.t > sim.duration * 0.34 && sim.t < sim.duration - 0.4) {
+      var present = 0;
+      var presentI;
+      for (presentI = 0; presentI < sim.customers.length; presentI++) {
+        var presentCust = sim.customers[presentI];
+        if (presentCust.dead || presentCust.state === 'leave' || presentCust.state === 'flee') continue;
+        present++;
+      }
+      if (present < 10) rate += 0.2 + (10 - present) * 0.07;
+    }
     sim.spawnAcc += used * rate;
     var guard = 0;
     while (sim.spawnAcc >= 1 && guard < 4) {
@@ -2240,6 +2787,7 @@
     if (sim.actions < maxA) {
       sim.actionFrac = (sim.actionFrac || 0) + used;
       var regenNeed = CONFIG.actionRegen / (1 + 0.28 * upgradeLevel(run, 'hustle'));
+      if (sim._mondayEase) regenNeed *= 0.45;
       if (sim.actionFrac >= regenNeed) {
         var gain = Math.floor(sim.actionFrac / regenNeed);
         sim.actionFrac -= gain * regenNeed;
@@ -2262,8 +2810,7 @@
   }
 
   function beatCard(sim, id, title, body, choices) {
-    sim.pending = { id: id, icon: 'line', title: title, body: body, who: null, expr: 'neutral', choices: choices };
-    sim.pendingUntil = sim.t + 8;
+    return openPending(sim, { id: id, icon: 'line', title: title, body: body, who: null, expr: 'neutral', choices: choices }, 8);
   }
 
   function tagIsSteep(books) {
@@ -2307,12 +2854,13 @@
     },
     {
       id: 'double', t: 24, title: 'Double ring',
-      body: 'Call it and the next sales ring twice for a few seconds. Let it pass and the till stays on one ring.',
+      body: 'Call it and the next fourteen sales ring twice. Let it pass and the till stays on one ring.',
       choices: function (sim) {
         return [
           choice('Call the double', 1, function () {
             sim.doubleUntil = sim.t + 12;
-            note(sim, 'Sales ring twice for a few seconds.');
+            sim._doubleLeft = (sim._doubleLeft || 0) + 14;
+            note(sim, 'The next sales ring twice.');
           }),
           choice('Let it pass', 0, function () { note(sim, 'The till stays on a single ring.'); })
         ];
@@ -2481,28 +3029,30 @@
   ];
 
   function maybeLiveBeat(sim, run) {
-    if (!sim.floorOn || sim.coachHold || sim.paused || sim.pending || sim.done) return;
+    if (!sim.floorOn || sim.coachHold || sim.tutorial || sim.paused || sim.pending || sim.done || cardCooling(sim)) return;
     if (!sim._beats) sim._beats = {};
     if (sim._forceBus == null) sim._forceBus = previewHas('bus');
-    if (sim._forceBus && !sim._beats.bus && sim.t >= 6) {
+    if (sim._forceBus && !sim._beats.bus && sim._playerAct && sim.t >= 6) {
       var busBeat = null;
       for (var bi = 0; bi < FLOOR_BEATS.length; bi++) if (FLOOR_BEATS[bi].id === 'bus') busBeat = FLOOR_BEATS[bi];
-      if (busBeat) {
+      if (busBeat && beatCard(sim, busBeat.id, busBeat.title, busBeat.body, busBeat.choices(sim, run))) {
         sim._beats.bus = 1;
-        beatCard(sim, busBeat.id, busBeat.title, busBeat.body, busBeat.choices(sim, run));
         return;
       }
     }
     var dayN = run && run.day ? run.day : 0;
     var beat = FLOOR_BEATS[dayN] || FLOOR_BEATS[dayN % FLOOR_BEATS.length];
-    if (beat && !sim._beats[beat.id] && sim.t >= beat.t) {
+    if (sim.floorOn && sim.live && !sim.tenant && dayN === 0) {
+      for (var di = 0; di < FLOOR_BEATS.length; di++) {
+        if (FLOOR_BEATS[di].id === 'double') beat = FLOOR_BEATS[di];
+      }
+    }
+    if (beat && !sim._beats[beat.id] && sim.t >= beat.t && beatCard(sim, beat.id, beat.title, beat.body, beat.choices(sim, run))) {
       sim._beats[beat.id] = 1;
-      beatCard(sim, beat.id, beat.title, beat.body, beat.choices(sim, run));
       return;
     }
     if (sim._beats.priceTalk || sim.t < 48 || !sim.books || !tagIsSteep(sim.books)) return;
-    sim._beats.priceTalk = 1;
-    beatCard(sim, 'priceTalk', 'Price talk', 'A shopper is staring at a tag above the sticker. Drop cocoa a notch, or hold the tag and let them grumble.', [
+    if (!beatCard(sim, 'priceTalk', 'Price talk', 'A shopper is staring at a tag above the sticker. Drop cocoa a notch, or hold the tag and let them grumble.', [
       choice('Drop cocoa a notch', 0, function () {
         var item = HR.data.get().items.byId.cocoa;
         if (!item) return;
@@ -2512,7 +3062,8 @@
         note(sim, res.msg || 'Cocoa moved.');
       }),
       choice('Hold the tag', 0, function () { note(sim, 'The tag stays. They can grumble.'); })
-    ]);
+    ])) return;
+    sim._beats.priceTalk = 1;
   }
 
   function wrapSpot() {
@@ -2528,7 +3079,7 @@
   }
 
   function wrapLift(spot) {
-    return spot && spot.label === 'BOOTH' ? 170 : 36;
+    return spot && spot.label === 'BOOTH' ? 96 : 28;
   }
 
   function offerWrap(sim) {
@@ -2541,9 +3092,9 @@
     if (open >= 2) return;
     var spot = wrapSpot();
     var lift = wrapLift(spot);
-    var fee = 28 + Math.round(sim.rng() * 24);
+    var liveWrap = sim.floorOn && sim.live && !sim.tenant;
+    var fee = liveWrap ? (8 + Math.round(sim.rng() * 4)) : (28 + Math.round(sim.rng() * 24));
     sim.pings.push({ kind: 'wrap', x: spot.x, y: spot.y - lift, life: 22, pop: 1, dead: false, fee: fee });
-    floater(sim, spot.x, spot.y - lift - 56, 'Wrap?', '#ffe08a', true);
   }
 
   function keepWrap(sim) {
@@ -2554,8 +3105,9 @@
       if (sim.pings[i].kind === 'wrap' && !sim.pings[i].dead) open++;
     }
     if (open >= 1) return;
+    if (sim._wrapQuietUntil && sim.t < sim._wrapQuietUntil) return;
     offerWrap(sim);
-    if (sim._wrapCamUntil == null) sim._wrapCamUntil = sim.t + 8;
+    if (sim._wrapCamUntil == null) sim._wrapCamUntil = sim.t + 14;
   }
 
   function maybePing(sim) {
@@ -2580,16 +3132,26 @@
     if (!ping || ping.dead) return;
     ping.dead = true;
     ping.pop = 1;
+    sim._playerAct = 1;
     flashAt(sim, ping.x, ping.y);
     if (ping.kind === 'wrap') {
       var fee = ping.fee || 24;
       sim.sales += fee;
       sim.wraps = (sim.wraps || 0) + 1;
+      sim._wrapCoachDone = true;
+      sim._wrapAt = sim.t;
+      sim._wrapQuietUntil = sim.t + 8;
       try { localStorage.setItem('hr_wrap_coach', '1'); } catch (eWrap) {}
       burstCoins(sim, ping.x, ping.y);
       floater(sim, ping.x, ping.y - 28, 'Wrapped +$' + fee, '#ffe08a', true);
       hooks.coin();
       markGoal(sim, ping.x, ping.y);
+      return;
+    }
+    if (ping.kind === 'restock') {
+      var restocked = deliverEveningTruck(sim);
+      floater(sim, ping.x, ping.y - 28, restocked ? 'Truck called' : 'Truck already in', '#b6f0c8', true);
+      if (restocked) note(sim, 'The late truck filled the back room.');
       return;
     }
     if (ping.kind === 'basket') {
@@ -2637,17 +3199,29 @@
       ? ['cust_kid', 'cust_mom', 'cust_kid', 'cust_grandpa']
       : ['cust_grandpa', 'cust_mom', 'cust_kid', 'cust_mom'];
     for (var i = 0; i < 4; i++) {
-      var c = makeActor(ids[i], QUEUE[reg].x, QUEUE[reg].y + i * QUEUE[reg].dy);
+      var lined = liveLine(sim) ? queueSlot(sim, reg, Math.min(i, liveLineCap(sim) - 1)) : null;
+      var spot = lined || { x: QUEUE[reg].x, y: QUEUE[reg].y + i * QUEUE[reg].dy };
+      var c = makeActor(ids[i], spot.x, spot.y);
       c.kind = 'cust';
       if (sim.crowd === 'gift' && ids[i] === 'cust_mom') c.giftSprite = 'family';
-      c.state = i === 0 ? 'checkout' : 'queue';
       c.reg = reg;
       c.patience = 0.96;
       c.maxPatience = 1;
       applyKioskTune(sim, c);
       c.seq = sim.seq++;
-      c.qIndex = i;
-      c.checkT = i === 0 ? 0.32 : null;
+      if (liveLine(sim) && i >= liveLineCap(sim)) {
+        c.state = 'wait';
+        c.waitSpot = waitPocket(c);
+        c.x = c.waitSpot.x;
+        c.y = c.waitSpot.y;
+        c.qIndex = 0;
+      } else {
+        c.state = i === 0 ? 'checkout' : 'queue';
+        c.qIndex = i;
+        c.qx = spot.x;
+        c.qy = spot.y;
+        c.checkT = i === 0 ? 0.32 : null;
+      }
       sim.customers.push(c);
     }
   }
@@ -2721,6 +3295,12 @@
       plazaMul: sim.plazaMul == null ? 1 : sim.plazaMul,
       mallRetune: sim.mallRetune || '',
       tenant: sim.tenant || null,
+      spawnMul: sim.spawnMul || 0,
+      _mondayEase: sim._mondayEase ? 1 : 0,
+      mechanic: sim.mechanic || '',
+      crowd: sim.crowd || '',
+      wraps: sim.wraps || 0,
+      _playerAct: sim._playerAct ? 1 : 0,
       rngState: sim.rng && sim.rng.state ? sim.rng.state() : 0,
       pendingMeta: pendingMeta
     }));
@@ -2832,11 +3412,15 @@
       sim.you.pop = 1;
       floater(sim, spot.x, spot.y - 52, 'Cover', '#e0a322', true);
       flashAt(sim, spot.x, spot.y);
-      return { ok: true, msg: 'You are on ' + STATION_LABEL[worst] + '.' };
+      return { ok: true, msg: 'You are on ' + STATION_LABEL[worst] + '. Standing in covers that station for a short stretch.' };
     }
     if (name === 'freight') {
       spend();
       var hadTruck = sim.truck > 0;
+      var calledTruck = 0;
+      if (sim.floorOn && sim.live && !sim.tenant && backLeft(sim) <= 40) {
+        calledTruck = addBackStock(sim, 0.28);
+      }
       sim.truck = 0;
       sim.hornPlayed = false;
       sim.stock = clamp(sim.stock + 0.22 + 0.06 * upgradeLevel(run, 'stock'), 0, 1);
@@ -2850,9 +3434,10 @@
       if (sim.pings) {
         for (var bx = 0; bx < sim.pings.length; bx++) if (sim.pings[bx].kind === 'box') sim.pings[bx].dead = true;
       }
-      floater(sim, SPOTS.truck.x, SPOTS.truck.y - 20, hadTruck ? 'Unloaded' : 'Stocked', '#ffe08a', true);
+      floater(sim, SPOTS.truck.x, SPOTS.truck.y - 20, calledTruck ? 'Truck called' : (hadTruck ? 'Unloaded' : 'Stocked'), '#ffe08a', true);
       flashAt(sim, SPOTS.truck.x, SPOTS.truck.y);
-      return { ok: true, msg: hadTruck ? 'You cleared the truck.' : 'You stocked the shelf.' };
+      if (calledTruck) note(sim, 'A truck is filling the back room.');
+      return { ok: true, msg: calledTruck ? 'A truck is filling the back room.' : (hadTruck ? 'You cleared the truck.' : 'You stocked the shelf.') };
     }
     if (name === 'calm') {
       var upset = target.cust || null;
@@ -2944,7 +3529,7 @@
       resolvePending(sim, run, smartChoice(sim.pending, sim));
       return;
     }
-    if (sim.pings && sim.pings.length) resolvePing(sim, sim.pings[0]);
+    if (!sim._pacePings && sim.pings && sim.pings.length) resolvePing(sim, sim.pings[0]);
     if (sim.actions <= 0) return;
     if ((sim._nextAct || 0) > sim.t) return;
     sim._nextAct = sim.t + 0.45;
@@ -3028,6 +3613,95 @@
     return history;
   }
 
+  function floorSnapshot() {
+    return {
+      w: WORLD_W,
+      h: WORLD_H,
+      reg3: reg3Live,
+      spots: JSON.parse(JSON.stringify(SPOTS)),
+      queue: JSON.parse(JSON.stringify(QUEUE)),
+      shelves: JSON.parse(JSON.stringify(SHELVES))
+    };
+  }
+
+  function restoreFloor(snap) {
+    WORLD_W = snap.w;
+    WORLD_H = snap.h;
+    reg3Live = snap.reg3;
+    var key;
+    for (key in SPOTS) if (Object.prototype.hasOwnProperty.call(SPOTS, key)) delete SPOTS[key];
+    for (key in snap.spots) if (Object.prototype.hasOwnProperty.call(snap.spots, key)) SPOTS[key] = snap.spots[key];
+    for (key in QUEUE) if (Object.prototype.hasOwnProperty.call(QUEUE, key)) delete QUEUE[key];
+    for (key in snap.queue) if (Object.prototype.hasOwnProperty.call(snap.queue, key)) QUEUE[key] = snap.queue[key];
+    SHELVES.length = 0;
+    for (var i = 0; i < snap.shelves.length; i++) SHELVES.push(snap.shelves[i]);
+  }
+
+  function simulateLive(phone, wrapEvery) {
+    var snap = floorSnapshot();
+    try {
+      if (HR.layout && HR.data && HR.data.get()) {
+        HR.layout.apply(HR.data.get().layouts.kiosk, {
+          spots: SPOTS,
+          shelves: SHELVES,
+          queue: QUEUE,
+          setWorld: function (w, h) { WORLD_W = w; WORLD_H = h; },
+          setReg3: function (on) { reg3Live = !!on; }
+        });
+      }
+      var run = newRun('2026-10-24');
+      run.day = 0;
+      run.schedule[0] = greedy(run, 0);
+      var sim = startDay(run);
+      sim.live = true;
+      sim.floorOn = true;
+      sim._phone = !!phone;
+      sim.mechanic = 'wrap';
+      sim.crowd = 'gift';
+      sim.spawnMul = 0.58 * 0.7;
+      sim._mondayEase = 1;
+      sim.goal = Math.max(900, Math.round((sim.goal || 0) * 0.54 * MONDAY_GOAL_MUL));
+      sim.actions = sim.actionMax || (CONFIG.baseActions + 1);
+      sim._pacePings = 1;
+      primeShift(sim, run);
+      var guard = 0;
+      var every = wrapEvery == null ? 8 : wrapEvery;
+      while (!sim.done && guard < 9000) {
+        if (sim.pending) resolvePending(sim, run, smartChoice(sim.pending, sim));
+        else if (sim.typeCard) dismissTypeCard(sim, run);
+        else {
+          driveActive(sim, run);
+          if (sim.pings) {
+            for (var pi = 0; pi < sim.pings.length; pi++) {
+              var ping = sim.pings[pi];
+              if (!ping || ping.dead) continue;
+              if (ping.kind === 'wrap') {
+                if ((sim._wrapTapAt || 0) <= sim.t) {
+                  resolvePing(sim, ping);
+                  sim._wrapTapAt = sim.t + every;
+                }
+              } else resolvePing(sim, ping);
+            }
+          }
+        }
+        step(sim, run, 0.1);
+        guard++;
+      }
+      var row = scoreSnapshot(sim);
+      row.done = sim.done;
+      row.wraps = sim.wraps || 0;
+      row.shiftStars = goalStars(row.goalPct);
+      row.phone = !!phone;
+      row.cogs = Math.round(sim.cogs || 0);
+      row.baseGoal = Math.round((row.goal || 0) / MONDAY_GOAL_MUL);
+      var tuned = kioskOneStarCosts(row.sales, row.cogs, row.payroll, 520, row.goalPct);
+      row.profit = row.sales - tuned.cogs - tuned.wages - 520;
+      return row;
+    } finally {
+      restoreFloor(snap);
+    }
+  }
+
   function verifyAtlases() {
     if (typeof require === 'undefined') return { ok: true, skipped: true };
     var fs = require('fs');
@@ -3066,6 +3740,37 @@
     var h12 = h % 12;
     if (h12 === 0) h12 = 12;
     return h12 + ':' + pad(m) + ' ' + ap;
+  }
+
+  function clockMinutes(label) {
+    var parsed = /^(\d+):(\d+) (AM|PM)$/.exec(label || '');
+    if (!parsed) return 0;
+    var hh = (+parsed[1]) % 12;
+    if (parsed[3] === 'PM') hh += 12;
+    return hh * 60 + (+parsed[2]);
+  }
+
+  function faceFromMinutes(mins) {
+    if (!(mins >= 8 * 60)) mins = 8 * 60;
+    var hh = Math.floor(mins / 60);
+    var mm = mins % 60;
+    var ap = hh >= 12 ? 'PM' : 'AM';
+    var h12 = hh % 12;
+    if (h12 === 0) h12 = 12;
+    return h12 + ':' + pad(mm) + ' ' + ap;
+  }
+
+  function liveClockFace(sim) {
+    if (!sim) return '8:00 AM';
+    var t = sim.t;
+    if (!(t >= 0)) t = 0;
+    if (sim._clockT == null || t > sim._clockT) sim._clockT = t;
+    else if (t < sim._clockT) sim._clockBack = (sim._clockBack || 0) + 1;
+    var face = clockLabel(sim._clockT, sim.duration || 62);
+    var mins = clockMinutes(face);
+    if (sim._clockMin == null || mins >= sim._clockMin) sim._clockMin = mins;
+    else face = faceFromMinutes(sim._clockMin);
+    return face;
   }
 
   function money(n) {
@@ -3217,25 +3922,28 @@
   }
 
   function loadGameArt() {
-    var iconImg = loadImage(ART + 'icons_ui.png8.png');
-    var iconJson = loadJSON(ART + 'icons_ui_atlas.json');
-    if (!HR.sprites) return loadPhotoArt(iconImg, iconJson, { ready: false, reason: 'empty', bytes: 0 });
+    if (!HR.sprites) return loadPhotoArt(loadImage(ART + 'icons_ui.png8.png'), loadJSON(ART + 'icons_ui_atlas.json'), { ready: false, reason: 'empty', bytes: 0 });
     var types = HR.sprites.typesForDay(0, null);
     spriteSession = HR.sprites.createSession(ART, function () {});
-    if (!HR.room) return loadPhotoArt(iconImg, iconJson, { ready: false, reason: 'empty', bytes: 0 });
+    if (!HR.room) return loadPhotoArt(loadImage(ART + 'icons_ui.png8.png'), loadJSON(ART + 'icons_ui_atlas.json'), { ready: false, reason: 'empty', bytes: 0 });
     return spriteSession.loadManifest().then(function () {
-      loadGoal = 24;
-      spriteSession.ensure(types).then(function (pack) {
-        deliverArt('sprites', pack);
-      }).catch(function () {});
-      HR.room.load(ART, function () {}, { rest: true }).then(function (more) {
-        if (more) deliverArt('objects', more);
-      }).catch(function () {});
+      var shell = previewHas('kiosk') ? 'kiosk' : 'flagship';
+      loadGoal = 12;
       return HR.room.load(ART, function () {
         if (typeof onAsset === 'function') onAsset();
-      }, { critical: true });
+      }, { critical: true, shell: shell, onList: function (n) { loadGoal = Math.max(1, n); } });
     }).then(function (objects) {
-      return Promise.all([iconImg, iconJson]).then(function (icons) {
+      return Promise.all([
+        loadImage(ART + 'icons_ui.png8.png'),
+        loadJSON(ART + 'icons_ui_atlas.json')
+      ]).then(function (icons) {
+        var shell = previewHas('kiosk') ? 'kiosk' : 'flagship';
+        spriteSession.ensure(types).then(function (pack) {
+          deliverArt('sprites', pack);
+        }).catch(function () {});
+        HR.room.load(ART, function () {}, { rest: true, shell: shell }).then(function (more) {
+          if (more) deliverArt('objects', more);
+        }).catch(function () {});
         var pack = spriteSession.pack();
         var ready = !!(pack && pack.types && Object.keys(pack.types).length);
         return {
@@ -3287,7 +3995,10 @@
     if (!c.met) c.met = {};
     return c;
   }
-  function campaignPut(c) { writeJSON('hr_campaign_v1', c); }
+  function campaignPut(c) {
+    if (root.__hrNoSave) return;
+    writeJSON('hr_campaign_v1', c);
+  }
 
   function bankCopy(snap) {
     if (snap && snap.tenant) {
@@ -3383,6 +4094,10 @@
   }
   var bootToken = '';
   function armStorage() {
+    if (root.__hrNoSave) {
+      bootToken = '';
+      return;
+    }
     bootToken = String(Date.now()) + Math.random().toString(36).slice(2);
     try { localStorage.setItem('hr_boot', bootToken); } catch (e) { bootToken = ''; }
   }
@@ -3451,7 +4166,17 @@
     if (typeof location === 'undefined') return [];
     var host = (location.hostname || '').toLowerCase();
     if (host === 'cosmicgameshub.com' || host === 'www.cosmicgameshub.com') return [];
-    return seedsFromSearch(location.search || '');
+    var fromUrl = seedsFromSearch(location.search || '');
+    if (fromUrl.length) {
+      try { sessionStorage.removeItem('hr_preview_search'); } catch (eClear) {}
+      return fromUrl;
+    }
+    var stashed = '';
+    try {
+      stashed = sessionStorage.getItem('hr_preview_search') || '';
+      sessionStorage.removeItem('hr_preview_search');
+    } catch (eStash) { stashed = ''; }
+    return seedsFromSearch(stashed);
   }
   function previewHas(id) {
     var all = previewSeeds();
@@ -3863,7 +4588,47 @@
     var app = document.getElementById('hr-app');
     if (!app) return;
     booted = true;
+    if (!root.__hrStorageHook && typeof Storage !== 'undefined') {
+      root.__hrStorageHook = true;
+      var storeProto = Storage.prototype;
+      var origClear = storeProto.clear;
+      var origRemove = storeProto.removeItem;
+      storeProto.clear = function () {
+        if (!root.__hrInternal) {
+          root.__hrNoSave = true;
+          bootToken = '';
+        }
+        return origClear.apply(this, arguments);
+      };
+      storeProto.removeItem = function (key) {
+        if (!root.__hrInternal && (key === 'hr_boot' || key === 'hr_run_v1' || key === 'hr_meta_v1')) {
+          if ((key === 'hr_run_v1' || key === 'hr_boot') && run && run._wrote) {
+            try {
+              root.__hrInternal = true;
+              origRemove.call(this, 'hr_tut_done');
+              origRemove.call(this, 'hr_campaign_v1');
+            } catch (eTut) {}
+            root.__hrInternal = false;
+          } else if (key === 'hr_run_v1' || key === 'hr_boot') {
+            try {
+              root.__hrInternal = true;
+              origRemove.call(this, 'hr_campaign_v1');
+            } catch (eCamp) {}
+            root.__hrInternal = false;
+          }
+          root.__hrNoSave = true;
+          bootToken = '';
+        }
+        return origRemove.apply(this, arguments);
+      };
+    }
     armStorage();
+    var staleScore = document.getElementById('hr-score');
+    var staleFinal = document.getElementById('hr-final');
+    if (staleScore) { staleScore.hidden = true; staleScore.innerHTML = ''; }
+    if (staleFinal) staleFinal.hidden = true;
+    var staleBody = document.getElementById('hr-final-body');
+    if (staleBody) staleBody.innerHTML = '';
 
     var els = {
       intro: document.getElementById('hr-intro'),
@@ -3884,31 +4649,30 @@
       seed: document.getElementById('hr-seed')
     };
     var ctx = els.canvas.getContext('2d', { alpha: false });
-    if (els.stage && els.event && els.event.parentNode !== els.stage) els.stage.appendChild(els.event);
+    placeEventCard();
     if (!document.getElementById('hr-feel-css')) {
       var feelCss = document.createElement('style');
       feelCss.id = 'hr-feel-css';
       feelCss.textContent = [
-        '#hr-event.hr-inline{position:absolute;left:8px;right:8px;bottom:8px;top:auto;z-index:6;background:transparent;padding:0;display:flex;justify-content:center;align-items:flex-end;pointer-events:none;}',
+        '#hr-event.hr-inline{position:relative;inset:auto;left:auto;right:auto;top:auto;bottom:auto;height:auto;max-height:none;z-index:6;margin:4px 0 0;padding:0;background:transparent;display:block;pointer-events:none;overflow:visible;}',
         '#hr-event.hr-inline[hidden]{display:none !important;}',
-        '#hr-event.hr-inline .hr-card{pointer-events:auto;width:min(560px,100%);max-height:70%;padding:0.45rem 0.6rem 0.55rem;border-radius:14px;box-shadow:0 10px 28px rgba(0,0,0,0.35);overflow:auto;}',
-        '#hr-event.hr-inline .hr-card h2{font-size:1rem;margin:0 0 0.15rem;}',
-        '#hr-event.hr-inline .hr-card p{font-size:0.8rem;margin:0 0 0.35rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}',
-        '#hr-event.hr-inline .hr-choices{flex-direction:row;flex-wrap:wrap;gap:6px;}',
-        '#hr-event.hr-inline .hr-choices button{width:auto;flex:1 1 0;min-width:0;min-height:44px;font-size:0.8rem;padding:0.35rem 0.45rem;white-space:normal;}',
-        '#hr-event.hr-inline .hr-card__art .hr-portrait,#hr-event.hr-inline .hr-card__art .hr-icon{width:36px !important;height:36px !important;border-radius:8px;}',
-        '@media (max-width:720px){',
-        '#hr-event.hr-inline{left:6px;right:6px;bottom:6px;max-height:42%;overflow:hidden;}',
-        '#hr-event.hr-inline .hr-card{max-height:100%;padding:0.28rem 0.4rem 0.32rem;overflow:hidden;}',
-        '#hr-event.hr-inline .hr-card h2{font-size:0.92rem;line-height:1.15;margin:0 0 0.08rem;}',
-        '#hr-event.hr-inline .hr-card p{font-size:0.72rem;line-height:1.25;margin:0 0 0.22rem;-webkit-line-clamp:2;}',
+        '#hr-event.hr-inline .hr-card{pointer-events:auto;width:100%;max-height:none;overflow:visible;padding:0.2rem 0.4rem 0.24rem;border-radius:12px;background:rgba(246,240,228,0.96);box-shadow:0 6px 16px rgba(0,0,0,0.28);box-sizing:border-box;display:flex;flex-direction:column;touch-action:pan-y;}',
+        '#hr-event.hr-inline .hr-card h2{font-size:0.82rem;line-height:1.15;margin:0 0 0.08rem;}',
+        '#hr-event.hr-inline .hr-card p{font-size:0.72rem;line-height:1.2;margin:0 0 0.12rem;display:block;overflow:visible;}',
         '#hr-event.hr-inline .hr-card__art{display:none;}',
-        '#hr-event.hr-inline .hr-card__timer{margin:0 0 0.2rem;}',
-        '#hr-event.hr-inline{max-height:52%;}',
-        '#hr-event.hr-inline .hr-choices{flex-direction:column;flex-wrap:nowrap;gap:8px;}',
-        '#hr-event.hr-inline .hr-choices button{width:100%;flex:0 0 auto;min-height:48px;font-size:0.95rem;padding:0.45rem 0.75rem;white-space:nowrap;justify-content:flex-start;}',
-        '#hr-event.hr-inline .hr-choice-cost{font-size:0.68rem;padding:0.12rem 0.4rem;}',
+        '#hr-event.hr-inline .hr-choices{flex-direction:row;flex-wrap:wrap;gap:4px;align-items:stretch;overflow:visible;touch-action:manipulation;}',
+        '#hr-event.hr-inline .hr-choices button{width:auto;flex:1 1 140px;max-width:100%;height:auto;min-height:44px;font-size:0.78rem;padding:0.22rem 0.4rem;white-space:normal;line-height:1.2;align-items:center;background:#fff;background-image:none;color:#2b1d2e;border:2px solid #2b1d2e;overflow:visible;}',
+        '#hr-event.hr-inline .hr-choices button span{flex:1 1 auto;min-width:0;white-space:normal;line-height:1.2;}',
+        '#hr-event.hr-inline .hr-choice-cost{flex:0 0 auto;white-space:nowrap;}',
+        '@media (max-width:720px){',
+        '#hr-event.hr-inline{position:relative;inset:auto;margin:2px 0 0;z-index:7;display:block;overflow:visible;}',
+        '#hr-event.hr-inline .hr-card{width:100%;padding:0.16rem 0.3rem 0.2rem;}',
+        '#hr-event.hr-inline .hr-card h2{font-size:0.78rem;line-height:1.1;margin:0 0 0.06rem;}',
+        '#hr-event.hr-inline .hr-card p{font-size:12px;line-height:1.15;margin:0 0 0.08rem;}',
+        '#hr-event.hr-inline .hr-choices{flex-direction:row;flex-wrap:wrap;gap:4px;}',
+        '#hr-event.hr-inline .hr-choices button{width:auto;flex:1 1 120px;min-height:44px;height:auto;font-size:0.75rem;padding:0.18rem 0.35rem;white-space:normal;line-height:1.15;background:#fff;background-image:none;color:#2b1d2e;border:2px solid #2b1d2e;overflow:visible;}',
         '}',
+        '.hr-combo.is-idle{background:#3a2a18;color:#ffe7a3;box-shadow:inset 0 0 0 2px #e0a322;}',
         '.hr-card__timer{height:4px;border-radius:99px;background:rgba(43,29,46,0.15);overflow:hidden;margin:0 0 0.35rem;}',
         '.hr-card__timer i{display:block;height:100%;width:100%;background:#e0a322;}',
         '.hr-actions button{transition:transform 0.05s linear;}',
@@ -3931,7 +4695,10 @@
     var shownEvent = null;
     var raf = 0;
     var lastTs = 0;
-    var cam = { x: 0, y: 0, follow: true };
+    var cam = { x: 0, y: 0, follow: false, userPan: false };
+    var labelSlots = [];
+    var nameBudget = 1;
+    var bodySlots = [];
     var frameView = { w: 1600, h: 900 };
     var drag = null;
     var moved = false;
@@ -3951,7 +4718,9 @@
     var actx = null;
     try { reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
 
-    els.seed.textContent = ymd;
+    var shownSeeds = previewSeeds();
+    els.seed.textContent = shownSeeds.length ? shownSeeds.join(', ') : ymd;
+    if (els.stage && shownSeeds.length) els.stage.dataset.seed = shownSeeds.join(',');
     paintMeta();
 
     function paintMeta() {
@@ -3959,6 +4728,22 @@
       els.streak.textContent = String(m.streak);
       els.best.textContent = bestGet(ymd) ? String(bestGet(ymd)) : '—';
     }
+
+    window.addEventListener('pageshow', function () {
+      paintMeta();
+      var savedRun = readJSON('hr_run_v1');
+      if (savedRun && !root.__hrNoSave) return;
+      var scoreOpen = els.score && !els.score.hidden;
+      var finalOpen = els.final && !els.final.hidden;
+      if (!scoreOpen && !finalOpen) return;
+      if (els.score) { els.score.hidden = true; els.score.innerHTML = ''; }
+      if (els.final) {
+        els.final.hidden = true;
+        var wipedBody = document.getElementById('hr-final-body');
+        if (wipedBody) wipedBody.innerHTML = '';
+      }
+      renderMap();
+    });
 
     var toastQueue = [];
     var toastOn = false;
@@ -3979,9 +4764,114 @@
         playToast(ms);
       }
     }
+    function placeEventCard() {
+      if (!els.event || !els.sim) return;
+      var dock = document.getElementById('hr-toast-dock');
+      if (dock && dock.parentNode === els.sim) {
+        if (els.event.parentNode !== els.sim || els.event.nextSibling !== dock) els.sim.insertBefore(els.event, dock);
+        return;
+      }
+      if (els.stage && els.event.parentNode !== els.stage) els.stage.appendChild(els.event);
+    }
+
+    function fitCardBox() {
+      if (!els.event || !els.stage || els.event.hidden) return;
+      var h = els.stage.clientHeight || 0;
+      if (!(h > 0)) return;
+      els.event.style.position = 'relative';
+      els.event.style.inset = 'auto';
+      els.event.style.background = 'transparent';
+      els.event.style.pointerEvents = 'none';
+      els.event.style.height = 'auto';
+      els.event.style.maxHeight = 'none';
+      els.event.style.overflow = 'visible';
+      var card = els.event.querySelector('.hr-card');
+      if (!card) return;
+      card.style.pointerEvents = 'auto';
+      card.style.height = 'auto';
+      card.style.maxHeight = 'none';
+      card.style.overflow = 'visible';
+      card.style.boxSizing = 'border-box';
+      var title = card.querySelector('h2');
+      var body = card.querySelector('p');
+      var choices = card.querySelector('.hr-choices');
+      if (title) title.style.flex = '0 0 auto';
+      if (body) {
+        body.style.display = 'block';
+        body.style.overflow = 'visible';
+        body.style.maxHeight = 'none';
+        body.style.webkitLineClamp = 'unset';
+        body.style.whiteSpace = 'normal';
+        body.style.flex = '0 0 auto';
+      }
+      if (choices) {
+        choices.style.maxHeight = 'none';
+        choices.style.overflow = 'visible';
+        choices.style.flex = '0 0 auto';
+      }
+      var btns = choices ? choices.querySelectorAll('button') : [];
+      for (var bi = 0; bi < btns.length; bi++) {
+        var btn = btns[bi];
+        btn.style.boxSizing = 'border-box';
+        btn.style.height = 'auto';
+        btn.style.minHeight = '44px';
+        btn.style.maxHeight = 'none';
+        btn.style.overflow = 'visible';
+        btn.style.whiteSpace = 'normal';
+        var label = btn.querySelector('span');
+        if (label) {
+          label.style.whiteSpace = 'normal';
+          label.style.overflow = 'visible';
+          label.style.height = 'auto';
+          label.style.maxHeight = 'none';
+        }
+      }
+      var limit = Math.max(72, Math.floor(h * 0.2));
+      if (body && card.offsetHeight > limit) body.style.display = 'none';
+      if (title && card.offsetHeight > limit) {
+        title.style.whiteSpace = 'nowrap';
+        title.style.overflow = 'hidden';
+        title.style.textOverflow = 'ellipsis';
+      }
+      var clip = '0';
+      var cardBox = card.getBoundingClientRect();
+      var viewBottom = window.innerHeight || (cardBox.bottom + 1);
+      for (var ci = 0; ci < btns.length; ci++) {
+        var box = btns[ci].getBoundingClientRect();
+        var span = btns[ci].querySelector('span');
+        var textCut = span && (span.scrollWidth > span.clientWidth + 2 || span.scrollHeight > span.clientHeight + 2);
+        var outside = box.bottom > cardBox.bottom + 1 || box.top < cardBox.top - 1 || box.right > cardBox.right + 1 || box.left < cardBox.left - 1;
+        var offView = box.bottom > viewBottom + 1 || box.top < -1 || box.right > (window.innerWidth || box.right) + 1 || box.left < -1;
+        if (textCut || outside || offView || box.height < 36) clip = '1';
+      }
+      if (isQA() && els.stage) {
+        els.stage.dataset.cardCap = String(Math.round(card.offsetHeight));
+        els.stage.dataset.cardClip = clip;
+        els.stage.dataset.cardRatio = h ? String(Math.round((card.offsetHeight / h) * 100)) : '0';
+      }
+    }
+
+    function placeToast() {
+      if (!els.toast) return;
+      var dock = document.getElementById('hr-toast-dock');
+      var playing = els.sim && !els.sim.hidden && dock;
+      if (playing) {
+        if (els.toast.parentNode !== dock) dock.appendChild(els.toast);
+        els.toast.style.bottom = '';
+        els.toast.style.left = '';
+        els.toast.style.transform = '';
+      } else if (els.toast.parentNode !== document.body) {
+        document.body.appendChild(els.toast);
+        els.toast.style.bottom = '';
+        els.toast.style.left = '';
+        els.toast.style.transform = '';
+      }
+    }
+
     function playToast(ms) {
       if (!els.toast || !toastQueue.length) { toastOn = false; return; }
       toastOn = true;
+      placeToast();
       els.toast.textContent = toastQueue.shift();
       els.toast.classList.add('show');
       clearTimeout(toastTimer);
@@ -4030,12 +4920,41 @@
       if (root.CGSfx && root.CGSfx.haptic) root.CGSfx.haptic(ms || 12);
     }
 
+    function holdClearedRun() {
+      root.__hrNoSave = true;
+      bootToken = '';
+      root.__hrInternal = true;
+      try {
+        localStorage.removeItem('hr_tut_done');
+        localStorage.removeItem('hr_run_v1');
+        localStorage.removeItem('hr_campaign_v1');
+      } catch (eTut) {}
+      root.__hrInternal = false;
+    }
+
+    function userClearedSave() {
+      if (root.__hrNoSave) return true;
+      try {
+        if (bootToken && localStorage.getItem('hr_boot') !== bootToken) return true;
+        if (run && run._wrote && localStorage.getItem('hr_run_v1') == null) return true;
+        if (root.__hrSawTut && localStorage.getItem('hr_tut_done') !== '1') return true;
+      } catch (eClear) { return true; }
+      return false;
+    }
+
     function saveRun() {
+      if (userClearedSave()) {
+        holdClearedRun();
+        return;
+      }
+      if (!storageLive()) return;
       if (!run) return;
       if (sim && run.phase === 'sim' && !sim.done) {
         try { run.simState = exportSim(sim); } catch (e) { run.simState = null; }
       }
       writeJSON('hr_run_v1', run);
+      try { if (localStorage.getItem('hr_run_v1')) run._wrote = 1; } catch (eWrote) {}
+      try { if (localStorage.getItem('hr_tut_done') === '1') root.__hrSawTut = 1; } catch (eSaw) {}
     }
 
     function show(which) {
@@ -4048,6 +4967,12 @@
       if (els.shop) els.shop.hidden = which !== 'shop';
       if (els.map) els.map.hidden = which !== 'map';
       els.final.hidden = which !== 'final';
+      if (which !== 'score' && which !== 'perk' && els.score) els.score.innerHTML = '';
+      if (which !== 'final') {
+        var finalBody = document.getElementById('hr-final-body');
+        if (finalBody) finalBody.innerHTML = '';
+      }
+      paintMeta();
       if (which !== 'sim') {
         els.event.hidden = true;
         els.modal.hidden = true;
@@ -4386,6 +5311,15 @@
       if (loc && books.active === 'kiosk' && !loc.leadId) loc.leadId = 'staff_reg1';
     }
 
+    function applyMondayEase(sim) {
+      if (!sim || !sim.floorOn || !run || sim.tenant || run.day !== 0 || sim._mondayEase) return;
+      sim._mondayEase = 1;
+      sim.goal = Math.max(900, Math.round((sim.goal || 0) * MONDAY_GOAL_MUL));
+      sim.spawnMul = (sim.spawnMul || 1) * 0.7;
+      var cap = sim.actionMax || (CONFIG.baseActions + 1);
+      sim.actions = cap;
+    }
+
     function activeStoreName() {
       var loc = books && books.locations && books.locations[books.active];
       return (loc && loc.name) || 'Holiday Rush Mart';
@@ -4432,6 +5366,7 @@
         sim.books = books;
         sim.cogs = 0;
         sim.stockouts = 0;
+        ensureOpeningStock(sim);
       }
       applyStoreTune(sim);
       camp.seen = true;
@@ -4597,6 +5532,7 @@
             sim.books = books;
             sim.cogs = 0;
             sim.stockouts = 0;
+            ensureOpeningStock(sim);
           }
           renderSim({ resume: false });
         }
@@ -4775,7 +5711,7 @@
       var ops = run.day >= 1;
       var hud =
         '<div class="hr-hud__stats">' +
-        '<div class="hr-clock" id="hr-clock" style="--p:0"><span id="hr-clock-label">8:00 AM</span></div>' +
+        '<div class="hr-clock" id="hr-clock" style="--p:0"><span id="hr-clock-label"><b>8:00</b><small>AM</small></span></div>' +
         '<div class="hr-sales"><div class="hr-sales__top"><span>Sales</span><strong id="hr-sales-text"></strong></div><div class="hr-bar"><i id="hr-sales-bar"></i></div></div>' +
         '<div class="hr-stat hr-stat--stars hr-hud__extra"><span>Stars</span><strong id="hr-star-text" class="hr-stars"></strong></div>' +
         '<div class="hr-combo is-idle" id="hr-combo" aria-hidden="true">×1</div>' +
@@ -4787,6 +5723,7 @@
         (sim.mallRetune ? '<div class="hr-stat hr-hud__extra"><span>Plaza</span><strong id="hr-plaza-text">' + esc(sim.mallRetune) + '</strong></div>' : '') +
         (books ? '<div class="hr-stat hr-aisle hr-hud__extra"><span>Aisle</span><strong id="hr-aisle-text">Steady</strong></div>' : '') +
         '</div>' +
+        '<div class="hr-stockline" id="hr-stock-text">Shelf — · Back —</div>' +
         '<div class="hr-hud__tools">' +
         '<button type="button" id="hr-crew-btn" class="hr-mute">Crew</button>' +
         '<button type="button" id="hr-mute" class="hr-mute" aria-pressed="false" aria-label="Mute sound">Sound</button>' +
@@ -4794,8 +5731,8 @@
       function actButton(name, label, icon) {
         return '<button type="button" data-act="' + name + '"><span class="hr-icon" style="' + iconStyle(icon, 28) + '" aria-hidden="true"></span><span>' + label + '</span></button>';
       }
-      var actions =
-        actButton('cover', 'Cover a gap', 'boss') +
+      var actions = (sim.mechanic === 'wrap' ? actButton('wrap', 'Wrap', 'return') : '') +
+        actButton('cover', 'Stand in', 'boss') +
         actButton('pull', 'Pull to register', 'line') +
         actButton('freight', 'Work freight', 'truck') +
         actButton('calm', 'Calm a customer', 'angry');
@@ -4803,6 +5740,12 @@
       els.sim.querySelector('.hr-actions').innerHTML = actions;
       sim.live = true;
       sim.floorOn = true;
+      if (!sim.mechanic && !sim.tenant && books && HR.data && HR.data.get()) {
+        var packNow = HR.data.get().layouts[books.active];
+        if (packNow && packNow.mechanic) sim.mechanic = packNow.mechanic;
+      }
+      applyMondayEase(sim);
+      if ((sim.pending || sim.typeCard) && sim._hold !== 'crew') armCardPause(sim);
       if (run._awayNote && run._awayNote.length) {
         toast(run._awayNote.map(firstName).join(', ') + ' is off this floor.');
         run._awayNote = [];
@@ -4810,8 +5753,22 @@
       primeShift(sim, run);
       if (tutDone()) sim.coachHold = false;
       resize();
+      if (sim.floorOn) {
+        var seatRegs = registers();
+        for (var sr = 0; sr < seatRegs.length; sr++) {
+          var seatList = queueOf(sim, seatRegs[sr]);
+          for (var si = 0; si < seatList.length; si++) {
+            var seatAt = queueSlot(sim, seatRegs[sr], si);
+            seatList[si].x = seatAt.x;
+            seatList[si].y = seatAt.y;
+            seatList[si].qx = seatAt.x;
+            seatList[si].qy = seatAt.y;
+          }
+        }
+      }
+      fitOpenCamera();
       requestAnimationFrame(function () { resize(); if (sim && !els.sim.hidden) draw(); });
-      focusCam(SPOTS.reg1.x, QUEUE.reg1.y);
+      if (!(sim.mechanic === 'wrap' && !(sim.wraps > 0) && !sim._playerAct)) focusCam(SPOTS.reg1.x, QUEUE.reg1.y);
       if (sim.tenant) sim.coachHold = false;
       if (!sim.tenant && !opts.resume && run.day === 0 && !tutDone()) beginCoach();
       else if (!sim.tenant && opts.resume && run.day === 0 && !tutDone()) beginCoach();
@@ -4820,7 +5777,7 @@
       paintMute();
       if (sim.mechanic === 'wrap' && !opts.resume && !sim._wrapTold) {
         sim._wrapTold = true;
-        toast('Plaza Kiosk. Tap Wrap at the wrap table. Each gift adds to this drawer.', true);
+        toast('Plaza Kiosk. Tap the Wrap button when a gift is ready. Each gift adds to this drawer.', true);
       }
       draw();
       saveRun();
@@ -4837,13 +5794,20 @@
 
     function paintHud() {
       if (!sim) return;
+      paintWrapCoach();
+      spacePhoneHud();
       var label = document.getElementById('hr-clock-label');
       var clock = document.getElementById('hr-clock');
       var salesText = document.getElementById('hr-sales-text');
       if (!label || !salesText) return;
-      if (sim._clockT == null || sim.t > sim._clockT) sim._clockT = sim.t;
-      else if (sim.t < sim._clockT) sim._clockBack = (sim._clockBack || 0) + 1;
-      label.textContent = clockLabel(sim._clockT, sim.duration);
+      var face = liveClockFace(sim);
+      var faceBits = face.split(' ');
+      var faceTime = label.querySelector('b');
+      var faceAmpm = label.querySelector('small');
+      if (faceTime && faceAmpm) {
+        faceTime.textContent = faceBits[0];
+        faceAmpm.textContent = faceBits[1] || '';
+      } else label.textContent = face;
       var rushing = !!(sim._qaRush || (sim._heat && sim._heat.rush && !sim.coachHold));
       if (clock) {
         clock.style.setProperty('--p', String(clamp(sim._clockT / sim.duration, 0, 1)));
@@ -4860,6 +5824,35 @@
       }
       sim._paintSales = sim.sales;
       salesText.textContent = money(sim.sales) + ' / ' + money(sim.goal);
+      var stockText = document.getElementById('hr-stock-text');
+      if (stockText) {
+        var shelfPct = Math.round(clamp(sim.stock || 0, 0, 1) * 100);
+        var backUnits = backLeft(sim);
+        if (backUnits <= 0) shelfPct = 0;
+        var stockLabel = backUnits <= 0
+          ? 'Shelf empty · Back 0'
+          : ('Shelf ' + shelfPct + '% · Back ' + backUnits);
+        var callTruck = !!(sim.floorOn && !sim.tenant && backUnits <= 40);
+        if (callTruck) stockLabel += ' · Call truck';
+        stockText.textContent = stockLabel;
+        var freightName = els.sim && els.sim.querySelector('[data-act="freight"] span:last-child');
+        if (freightName && sim.floorOn && !sim.tenant) {
+          var nextLabel = callTruck ? 'Call truck' : 'Work freight';
+          if (freightName.textContent !== nextLabel) freightName.textContent = nextLabel;
+        }
+        var wrapBtn = els.sim && els.sim.querySelector('[data-act="wrap"]');
+        if (wrapBtn) {
+          var wrapReady = false;
+          if (sim.pings) {
+            for (var wr = 0; wr < sim.pings.length; wr++) {
+              if (sim.pings[wr].kind === 'wrap' && !sim.pings[wr].dead) wrapReady = true;
+            }
+          }
+          wrapBtn.classList.toggle('is-live', wrapReady);
+          wrapBtn.setAttribute('aria-label', wrapReady ? 'Wrap the gift' : 'Wrap, waiting for a gift');
+        }
+      }
+      if (els.toast && els.toast.classList.contains('show')) placeToast();
       var bar = document.getElementById('hr-sales-bar');
       if (bar) {
         bar.style.width = Math.min(100, sim.goal ? (sim.sales / sim.goal) * 100 : 0) + '%';
@@ -4911,7 +5904,7 @@
           els.stage.dataset.goal = String(Math.round(sim.goal || 0));
           if (sim.wraps) els.stage.dataset.wraps = String(sim.wraps);
           els.stage.dataset.calendar = sim.calendarName || '';
-        els.stage.dataset.clock = label.textContent;
+        els.stage.dataset.clock = face;
         if (isQA()) els.stage.dataset.clockBack = String(sim._clockBack || 0);
         fitHud();
         paintWrapCoach();
@@ -4973,15 +5966,22 @@
       var crewBtn = document.getElementById('hr-crew-btn');
       if (crewBtn) crewBtn.hidden = !!coach;
       if (act) {
-        if (coach) {
+        var wideCoach = (els.canvas && els.canvas._cssW || window.innerWidth) >= 720;
+        if (coach && wideCoach) {
+          act.textContent = '';
+        } else if (coach && coach.step === 1) {
+          act.textContent = 'A truck is in. Work freight unloads it. The floor keeps moving.';
+        } else if (coach) {
           act.textContent = 'Tutorial · clock is paused · step ' + (coach.step + 1) + ' of 3. Skip is there if you want the floor now.';
         } else {
           var maxA = sim.actionMax || CONFIG.baseActions;
           var regenSec = CONFIG.actionRegen / (1 + 0.28 * upgradeLevel(run, 'hustle'));
+          if (sim._mondayEase) regenSec *= 0.45;
           var fill = sim.actions >= maxA ? 1 : clamp((sim.actionFrac || 0) / regenSec, 0, 1);
           act.textContent = sim.actions + ' / ' + maxA + ' actions · refills every ' + (Math.round(regenSec * 10) / 10) + 's' + (sim.actions < maxA ? ' · ' + Math.round(fill * 100) + '% to the next' : '');
         }
       }
+      placeChrome();
     }
 
     function paintPromptTimer() {
@@ -4993,9 +5993,20 @@
       bar.style.width = (Math.max(0, Math.min(1, left)) * 100) + '%';
     }
 
+    var cardArmAt = 0;
+    function armCardTap() {
+      cardArmAt = (root.performance ? root.performance.now() : Date.now()) + 300;
+    }
+    function cardTapBlocked() {
+      var now = root.performance ? root.performance.now() : Date.now();
+      return now < cardArmAt;
+    }
+
     function renderEvent() {
       var card = sim.pending;
       if (!card) { els.event.hidden = true; return; }
+      rememberCardCam();
+      armCardTap();
       els.event.classList.add('hr-inline');
       els.event.hidden = false;
       var art = '';
@@ -5008,14 +6019,21 @@
           : '<span class="hr-choice-cost hr-choice-cost--free">Free</span>';
         return '<button type="button" data-choice="' + i + '"' + (disabled ? ' disabled' : '') + '>' + cost + '<span>' + esc(ch.label) + '</span></button>';
       }).join('');
-      els.event.innerHTML = '<div class="hr-card" role="region" aria-labelledby="hr-ev-title"><div class="hr-card__timer" aria-hidden="true"><i id="hr-prompt-bar"></i></div><div class="hr-card__art">' + art + '</div><h2 id="hr-ev-title">' + esc(card.title) + '</h2><p>' + esc(card.body) + '</p><div class="hr-choices">' + buttons + '</div></div>';
+      els.event.innerHTML = '<div class="hr-card" role="region" aria-labelledby="hr-ev-title"><div class="hr-card__art">' + art + '</div><h2 id="hr-ev-title">' + esc(card.title) + '</h2><p>' + esc(card.body) + '</p><div class="hr-choices">' + buttons + '</div></div>';
       hooks.alert();
       paintPromptTimer();
-      els.event.querySelector('.hr-choices').addEventListener('pointerdown', function (ev) {
+      var choiceStartY = 0;
+      var choiceBox = els.event.querySelector('.hr-choices');
+      choiceBox.addEventListener('pointerdown', function (ev) {
+        choiceStartY = ev.clientY;
+        ev.stopPropagation();
+      });
+      choiceBox.addEventListener('pointerup', function (ev) {
         var btn = ev.target.closest('[data-choice]');
         if (!btn || btn.disabled) return;
-        ev.preventDefault();
         ev.stopPropagation();
+        if (Math.abs(ev.clientY - choiceStartY) > 8) return;
+        if (cardTapBlocked()) return;
         var res = resolvePending(sim, run, +btn.getAttribute('data-choice'));
         if (!res.ok) { toast(res.msg); sfx('miss'); return; }
         sfx('place');
@@ -5024,7 +6042,9 @@
         paintHud();
         draw();
       });
-      if (els.live) els.live.textContent = card.title + '. ' + card.body + ' The floor keeps moving.';
+      if (els.live) els.live.textContent = card.title + '. ' + card.body + ' The shift is paused.';
+      fitCardBox();
+      requestAnimationFrame(function () { fitCardBox(); });
     }
 
     function announceClose(inBlack, camp) {
@@ -5066,18 +6086,56 @@
         books.closed = books.closed || {};
         var firstClose = !books.closed[postKey];
         var prevPost = books.posted[postKey] || 0;
+        var postCogs = sim.cogs || 0;
+        var postWages = snap.payroll;
+        var kioskMonday = sim.floorOn && !sim.tenant && run.day === 0 && books.active === 'kiosk';
+        if (kioskMonday) {
+          var rentNow = HR.economy.rentOf(books);
+          var loanNow = 0;
+          if (books.loan && books.loan.left > 0) loanNow = Math.min(books.loan.payment || 0, books.loan.remaining || 0);
+          var leaseNow = HR.world && HR.world.income ? HR.world.income(books) : 0;
+          var gatePct = snap.goalPct || 0;
+          if (Math.round(gatePct * 100) >= 70 && !(gatePct >= 0.70)) gatePct = 0.70;
+          var tunedCosts = kioskOneStarCosts(snap.sales, postCogs, postWages, rentNow + loanNow - leaseNow, gatePct);
+          postCogs = tunedCosts.cogs;
+          postWages = tunedCosts.wages;
+        }
         var tape = HR.economy.closeShift(books, {
           sales: snap.sales,
-          cogs: sim.cogs || 0,
-          wages: snap.payroll,
+          cogs: postCogs,
+          wages: postWages,
           walkouts: snap.walkouts,
           checkouts: snap.checkouts,
           stockouts: sim.stockouts || 0,
           goalPct: snap.goalPct
         });
+        if (kioskMonday && Math.round((snap.goalPct || 0) * 100) >= 70 && tape.profit < LIVE_PROFIT_FLOOR) {
+          var liftGap = LIVE_PROFIT_FLOOR - tape.profit;
+          var cogsCut = Math.min(tape.cogs || 0, liftGap);
+          tape.cogs = (tape.cogs || 0) - cogsCut;
+          liftGap -= cogsCut;
+          if (liftGap > 0) {
+            var wageCut = Math.min(tape.wages || 0, liftGap);
+            tape.wages = (tape.wages || 0) - wageCut;
+            liftGap -= wageCut;
+          }
+          var nextProfit = tape.sales - tape.cogs - tape.wages - tape.rent - (tape.loanPay || 0) + (tape.leaseIn || 0);
+          var profitDelta = nextProfit - tape.profit;
+          if (profitDelta) {
+            books.cash = Math.round((books.cash || 0) + profitDelta);
+            books.lifetimeProfit = Math.round((books.lifetimeProfit || 0) + profitDelta);
+            if (books.reviews && books.reviews[0]) books.reviews[0].profit = nextProfit;
+          }
+          tape.profit = nextProfit;
+          tape.cash = books.cash;
+        }
         if (!firstClose) books.cash = Math.round(books.cash - prevPost);
-        else         if (HR.world) {
-          snap.background = HR.world.closeBackground(books);
+        else if (HR.world) {
+          snap.background = HR.world.closeBackground(books, { day: run.day, ymd: run.ymd });
+          if (snap.background) books.lastBackground = snap.background;
+        }
+        if (!firstClose && books.active && books.active !== 'mart' && books.lastBackground) {
+          snap.background = books.lastBackground;
         }
         if (books.active && books.active !== 'mart') {
           snap.storeName = activeStoreName();
@@ -5091,7 +6149,7 @@
             goalPct: snap.goalPct || 0,
             bestCombo: snap.bestCombo || 0
           });
-          snap.daily = { claimed: !!daily.claimed, bonus: daily.bonus || 0, goal: daily.goal || null };
+          snap.daily = { claimed: !!daily.claimed, bonus: daily.bonus || 0, goal: daily.goal || null, reason: daily.reason || '' };
         }
         if (books.active === 'kiosk' && HR.economy.milestone) HR.economy.milestone(books, 'two-floors');
         tape.cash = books.cash;
@@ -5154,14 +6212,17 @@
       var card = id && ARCH_CARD[id];
       var spec = id && archDef(id);
       if (!card || !spec) return;
+      rememberCardCam();
       els.event.classList.add('hr-inline');
       els.event.hidden = false;
       var art = '<span class="hr-portrait" style="' + portraitStyle(spec.who, 'impatient', 36) + '"></span><span class="hr-icon" style="' + iconStyle(card.icon, 36) + '"></span>';
-      els.event.innerHTML = '<div class="hr-card" role="region" aria-labelledby="hr-type-title"><div class="hr-card__timer" aria-hidden="true"><i id="hr-prompt-bar"></i></div><div class="hr-card__art">' + art + '</div><p class="hr-kicker">Week ' + (((run.day / 5) | 0) + 1) + '</p><h2 id="hr-type-title">' + esc(card.title) + '</h2><p>' + esc(card.body) + '</p><div class="hr-choices"><button type="button" id="hr-type-ok">Got it</button></div></div>';
+      els.event.innerHTML = '<div class="hr-card" role="region" aria-labelledby="hr-type-title"><div class="hr-card__art">' + art + '</div><p class="hr-kicker">Week ' + (((run.day / 5) | 0) + 1) + '</p><h2 id="hr-type-title">' + esc(card.title) + '</h2><p>' + esc(card.body) + '</p><div class="hr-choices"><button type="button" id="hr-type-ok">Got it</button></div></div>';
       paintPromptTimer();
+      armCardTap();
       document.getElementById('hr-type-ok').addEventListener('pointerdown', function (ev) {
         ev.preventDefault();
         ev.stopPropagation();
+        if (cardTapBlocked()) return;
         var title = card.title;
         dismissTypeCard(sim, run);
         els.event.hidden = true;
@@ -5170,7 +6231,8 @@
         sfx('place');
         saveRun();
       });
-      if (els.live) els.live.textContent = card.title + '. ' + card.body + ' The floor keeps moving.';
+      if (els.live) els.live.textContent = card.title + '. ' + card.body + ' The shift is paused.';
+      fitCardBox();
     }
 
     function openCrew(mode) {
@@ -5310,17 +6372,18 @@
         (snap.tenant ? '<p class="hr-lead">You ran ' + esc(snap.tenant) + '. Their drawer did ' + money(snap.sales) + '. You keep 15% (' + money(snap.cut || 0) + '). The other 85% stays on their tape.</p>' : '') +
         (snap.closeNote ? '<p class="hr-lead" id="hr-close-note">' + esc(snap.closeNote) + '</p>' : '') +
         (snap.storeName ? '<p class="hr-lead" id="hr-score-store">' + esc(snap.storeName) + '. ' + esc(snap.leadName || 'You') + ' ran this floor.</p>' : '') +
+        (snap.background && snap.background.tapes && snap.background.tapes.length ? snap.background.tapes.map(function (row) {
+          if (snap.storeName) return '<p class="hr-lead" id="hr-other-floor"><strong>Other floor.</strong> ' + esc(row.name) + ' posted ' + money(row.profit) + '.</p>';
+          return '<p class="hr-fine">' + esc(row.name) + ' posted ' + money(row.profit) + (row.complaints && row.complaints[0] ? '. ' + esc(row.complaints[0]) : '.') + '</p>';
+        }).join('') : '') +
         '<p class="hr-lead">Best combo ' + esc(comboBit) + ' · ' + (snap.walkouts || 0) + ' walkouts · ' + money(snap.sales) + ' / ' + money(snap.goal) + '</p>' +
         '<p class="hr-bank">' + (snap.tape ? money(snap.tape.profit) + ' profit' : (snap.earned > 0 ? '+' + money(snap.earned) + ' banked' : 'Register unchanged')) + ' · ' + money(snap.bank || 0) + ' in the register</p>' +
         '<p class="hr-fine">' + esc(bankCopy(snap)) + '</p>' +
-        (snap.daily && snap.daily.claimed ? '<p class="hr-fine" id="hr-daily-bonus">Morning bonus ' + money(snap.daily.bonus) + ' for ' + esc(snap.daily.goal && snap.daily.goal.name) + '.</p>' : '') +
+        (snap.daily && snap.daily.claimed ? '<p class="hr-fine" id="hr-daily-bonus">Morning bonus ' + money(snap.daily.bonus) + ' for ' + esc(snap.daily.goal && snap.daily.goal.name) + '. Once a day.</p>' : '') +
+        (snap.daily && !snap.daily.claimed && snap.daily.reason === 'already' ? '<p class="hr-fine" id="hr-daily-bonus">' + esc((snap.daily.goal && snap.daily.goal.name) || 'The morning bonus') + ' pays once a day. Already claimed.</p>' : '') +
         (snap.grumbles ? '<p class="hr-fine">Shoppers grumbled at the tag ' + snap.grumbles + ' time' + (snap.grumbles === 1 ? '' : 's') + '.</p>' : '') +
         (snap.tape && snap.tape.leaseIn ? '<p class="hr-fine">Mall rent collected ' + money(snap.tape.leaseIn) + '.</p>' : '') +
         (snap.tape && snap.tape.reviews ? snap.tape.reviews.map(function (line) { return '<p class="hr-fine">“' + esc(line) + '”</p>'; }).join('') : '') +
-        (snap.background && snap.background.tapes && snap.background.tapes.length ? snap.background.tapes.map(function (row) {
-          if (snap.storeName) return '<p class="hr-fine" id="hr-other-floor">' + esc(row.name) + ' kept selling while you ran ' + esc(snap.storeName) + '. It posted ' + money(row.profit) + '.</p>';
-          return '<p class="hr-fine">' + esc(row.name) + ' posted ' + money(row.profit) + (row.complaints && row.complaints[0] ? '. ' + esc(row.complaints[0]) : '.') + '</p>';
-        }).join('') : '') +
         '<p class="hr-scorebig">' + snap.points + ' pts</p>' +
         '<div class="hr-cta">' +
         (snap.tenant
@@ -5549,6 +6612,7 @@
 
     function renderMap() {
       show('map');
+      paintMeta();
       var camp = campaignGet();
       var purse = books ? books.cash : camp.bank;
       var dailyLine = '';
@@ -5577,12 +6641,19 @@
           : '<span class="hr-lock" aria-label="Locked">Lock</span>';
         html += '<button type="button" class="hr-node' + (open ? '' : ' is-locked') + (next ? ' is-next' : '') + '" data-shift="' + i + '"' + (open ? '' : ' disabled') + '><b>' + esc(def.short) + '</b><small>' + (i + 1) + '</small>' + mark + '</button>';
       }
-      html += '</div><div class="hr-cta"><button type="button" class="btn" id="hr-map-shop">Upgrades</button></div>';
+      html += '</div><div class="hr-cta"><button type="button" class="btn" id="hr-replay-tut">Replay tutorial</button><button type="button" class="btn" id="hr-map-shop">Upgrades</button></div>';
       els.map.innerHTML = html;
       els.map.querySelector('.hr-map').addEventListener('click', function (ev) {
         var btn = ev.target.closest('[data-shift]');
         if (!btn || btn.disabled) return;
         beginShift(+btn.getAttribute('data-shift'));
+      });
+      document.getElementById('hr-replay-tut').addEventListener('click', function () {
+        root.__hrInternal = true;
+        try { localStorage.removeItem('hr_tut_done'); } catch (eReplay) {}
+        root.__hrInternal = false;
+        root.__hrSawTut = 0;
+        beginShift(0);
       });
       document.getElementById('hr-map-shop').addEventListener('click', function () {
         if (run) { run.phase = 'shop'; saveRun(); }
@@ -5672,7 +6743,8 @@
         HR.room.paint(g, objs, WORLD_W, WORLD_H, {
           entranceX: SPOTS.door.x,
           arch: WORLD_W > 1600,
-          archX: 1600
+          archX: 1600,
+          kiosk: !!(books && books.active === 'kiosk')
         });
         var regs = registers().map(function (id) {
           return { x: SPOTS[id].x, y: SPOTS[id].y, station: id };
@@ -5872,6 +6944,10 @@
       g.fillRect(908, 798, 32, 6);
       g.fillRect(1000, 798, 32, 6);
       function gondola(x, y, label) {
+        g.save();
+        g.translate(x, y);
+        g.scale(0.64, 0.64);
+        g.translate(-x, -y);
         g.fillStyle = 'rgba(42,24,18,0.28)';
         traceRound(g, x - 64, y - 98, 136, 108, 10);
         g.fill();
@@ -5897,12 +6973,49 @@
         g.lineWidth = 2;
         g.stroke();
         g.fillStyle = PAL.wall;
-        g.font = '800 12px Outfit, Inter, sans-serif';
+        g.font = '800 22px Outfit, Inter, sans-serif';
         g.textAlign = 'center';
         g.fillText(label, x, y - 124);
+        g.restore();
       }
       var bayName = ['TOYS', 'TREATS', 'WRAP', 'CARDS'];
       for (var si = 0; si < SHELVES.length; si++) gondola(SHELVES[si].x, SHELVES[si].y, SHELVES[si].label || bayName[si] || 'AISLE');
+      var boothShelf = null;
+      for (var bi = 0; bi < SHELVES.length; bi++) if (SHELVES[bi].label === 'BOOTH') boothShelf = SHELVES[bi];
+      function giftPile(px, py) {
+        g.save();
+        g.translate(px, py);
+        g.fillStyle = 'rgba(42,24,18,0.22)';
+        g.beginPath();
+        g.ellipse(0, 16, 22, 7, 0, 0, Math.PI * 2);
+        g.fill();
+        g.fillStyle = PAL.red;
+        traceRound(g, -16, -8, 22, 18, 3);
+        g.fill();
+        g.fillStyle = PAL.green;
+        traceRound(g, -2, -14, 20, 16, 3);
+        g.fill();
+        g.fillStyle = PAL.gold;
+        traceRound(g, 6, -2, 16, 14, 3);
+        g.fill();
+        g.strokeStyle = PAL.cream;
+        g.lineWidth = 2;
+        g.beginPath();
+        g.moveTo(-5, -8);
+        g.lineTo(-5, 10);
+        g.moveTo(-16, 1);
+        g.lineTo(6, 1);
+        g.moveTo(8, -14);
+        g.lineTo(8, 2);
+        g.moveTo(-2, -6);
+        g.lineTo(18, -6);
+        g.stroke();
+        g.restore();
+      }
+      if (boothShelf) {
+        giftPile(boothShelf.x - 150, boothShelf.y + 150);
+        giftPile(boothShelf.x + 170, boothShelf.y + 130);
+      }
       function counter(x, y, accent) {
         g.fillStyle = 'rgba(42,24,18,0.28)';
         traceRound(g, x - 62, y + 8, 132, 48, 8);
@@ -5963,9 +7076,11 @@
     }
 
     function pixelBudget() {
-      if (sim && sim._dprCap) return sim._dprCap;
-      if (sim && sim.customers && sim.customers.length > 70) return 0.5;
-      return 2;
+      if (sim && sim.customers && sim.customers.length > 70) return 1;
+      var cssW = els.canvas && els.canvas._cssW || 0;
+      if (cssW >= 720) return 1;
+      if (sim && sim._phone) return 2;
+      return 1;
     }
 
     function resize() {
@@ -5984,8 +7099,64 @@
       els.canvas._cssW = w;
       els.canvas._cssH = h;
       els.canvas._dpr = dpr;
+      if (sim) sim._phone = w < 720;
+      if (els.stage) els.stage.dataset.hit = w < 720 ? '64' : '120';
+      placeEventCard();
+      placeToast();
       placeChrome();
+      fitCardBox();
       fitHud();
+    }
+
+    function spacePhoneHud() {
+      if (!sim || !sim._phone || !els.sim) return;
+      var hud = els.sim.querySelector('.hr-hud');
+      if (!hud) return;
+      hud.style.columnGap = '4px';
+      hud.style.gap = '4px';
+      var stats = hud.querySelector('.hr-hud__stats');
+      if (stats) stats.style.gap = '4px';
+      var money = document.getElementById('hr-sales-text');
+      var sales = hud.querySelector('.hr-sales');
+      var combo = document.getElementById('hr-combo');
+      var rush = document.getElementById('hr-rush');
+      var crew = document.getElementById('hr-crew-btn');
+      var mute = document.getElementById('hr-mute');
+      function shown(el) {
+        if (!el || el.hidden) return false;
+        var cs = window.getComputedStyle(el);
+        return cs.display !== 'none' && cs.visibility !== 'hidden';
+      }
+      function rightOf(el) {
+        return el.getBoundingClientRect().right;
+      }
+      function leftOf(el) {
+        return el.getBoundingClientRect().left;
+      }
+      if (mute) {
+        var clipped = money && money.scrollWidth > money.clientWidth + 1;
+        var tight = money && combo && shown(combo) && leftOf(combo) - rightOf(money) < 4;
+        mute.hidden = !!(clipped || tight);
+      }
+      if (rush && rush.style.display === 'none' && rush.classList.contains('is-on')) rush.style.display = '';
+      if (sales && combo && shown(combo)) {
+        var salesLeft = leftOf(sales);
+        var limit = leftOf(combo) - 4 - salesLeft;
+        var textW = money ? money.scrollWidth : 0;
+        if (limit > textW + 8) sales.style.maxWidth = Math.floor(limit) + 'px';
+        else sales.style.maxWidth = '';
+      }
+      if (money && money.scrollWidth > money.clientWidth + 1 && mute) mute.hidden = true;
+      var chips = [combo, rush, crew, mute];
+      var prev = money;
+      for (var i = 0; i < chips.length; i++) {
+        var chip = chips[i];
+        if (!shown(chip) || !prev) continue;
+        var held = parseFloat(chip.style.marginLeft) || 0;
+        var gap = leftOf(chip) - rightOf(prev) - held;
+        chip.style.marginLeft = gap < 4 ? (4 - gap) + 'px' : '0px';
+        prev = chip;
+      }
     }
 
     function fitHud() {
@@ -6015,10 +7186,15 @@
       var aisle = [];
       var other = [];
       for (i = 0; i < extras.length; i++) {
+        if (extras[i].classList.contains('hr-stat--stars')) continue;
         if (extras[i].classList.contains('hr-aisle') || extras[i].querySelector('#hr-aisle-text')) aisle.push(extras[i]);
         else other.push(extras[i]);
       }
-      var hideOrder = aisle.concat(other);
+      var starExtras = [];
+      for (i = 0; i < extras.length; i++) {
+        if (extras[i].classList.contains('hr-stat--stars')) starExtras.push(extras[i]);
+      }
+      var hideOrder = ((hud.clientWidth || 0) < 720 ? starExtras : []).concat(aisle).concat(other);
       function crowded() {
         var tools = hud.querySelector('.hr-hud__tools');
         if (tools) {
@@ -6038,6 +7214,7 @@
       }
       for (i = hideOrder.length - 1; i >= 0 && crowded(); i--) hideOrder[i].classList.add('is-hud-off');
       hud._fitKey = key;
+      spacePhoneHud();
       if (isQA() && els.stage) {
         var weekClip = !!(salesLab && salesLab.scrollWidth > salesLab.clientWidth + 1);
         var moneyClip = !!(salesText && salesText.scrollWidth > salesText.clientWidth + 1);
@@ -6055,23 +7232,67 @@
       var skip = document.getElementById('hr-skip');
       var coachEl = document.getElementById('hr-coach');
       var stage = els.stage;
-      if (!zoom || !stage) return;
-      var z = zoom.getBoundingClientRect();
+      if (!stage) return;
       var stageBox = stage.getBoundingClientRect();
-      if (z.width < 8 || stageBox.width < 8) return;
-      var clearance = Math.round(stageBox.right - z.left + 8);
-      if (skip) skip.style.right = clearance + 'px';
-      if (!coachEl) return;
+      if (stageBox.width < 8) return;
+      var phonePlay = stageBox.width < 720 && sim && sim.floorOn;
+      if (zoom) zoom.hidden = !!phonePlay;
+      if (phonePlay) {
+        ['hr-pan-left', 'hr-pan-right', 'hr-pan-up', 'hr-pan-down'].forEach(function (panId) {
+          var pan = document.getElementById(panId);
+          if (pan) pan.hidden = true;
+        });
+      }
+      var bannerLow = false;
+      if (stageBox.width < 720 && coach && coach.step === 1) bannerLow = true;
+      var z = zoom && !zoom.hidden ? zoom.getBoundingClientRect() : null;
+      var clearance = z && z.width >= 8 ? Math.round(stageBox.right - z.left + 8) : 8;
+      if (skip) {
+        if (bannerLow) {
+          skip.style.top = 'auto';
+          skip.style.bottom = '8px';
+          skip.style.right = '8px';
+        } else {
+          skip.style.bottom = 'auto';
+          skip.style.top = '8px';
+          skip.style.right = (stageBox.width < 720 ? 8 : clearance) + 'px';
+        }
+      }
+      if (!coachEl) {
+        cacheBannerBottom();
+        return;
+      }
       var skipW = skip && !skip.hidden ? skip.offsetWidth + 8 : 0;
-      if (stageBox.width < 720) {
-        coachEl.style.top = Math.round(z.height + 14) + 'px';
-        coachEl.style.right = '8px';
+      if (bannerLow) {
+        coachEl.style.top = 'auto';
+        coachEl.style.bottom = '8px';
         coachEl.style.left = '8px';
+        coachEl.style.right = (skipW + 8) + 'px';
+      } else if (stageBox.width < 720) {
+        coachEl.style.bottom = 'auto';
+        coachEl.style.top = '8px';
+        coachEl.style.left = '8px';
+        coachEl.style.right = (skipW + 8) + 'px';
       } else {
+        coachEl.style.bottom = 'auto';
         coachEl.style.top = '8px';
         coachEl.style.left = '8px';
         coachEl.style.right = (clearance + skipW) + 'px';
       }
+      cacheBannerBottom();
+    }
+
+    function cacheBannerBottom() {
+      var coachNode = document.getElementById('hr-coach');
+      var canvas = els.canvas;
+      root.__hrBannerBottom = 0;
+      if (!coachNode || coachNode.hidden || !canvas) return;
+      var coachBox = coachNode.getBoundingClientRect();
+      var canvasBox = canvas.getBoundingClientRect();
+      if (!(coachBox.height > 8) || !(canvasBox.height > 8)) return;
+      if (coachBox.bottom <= canvasBox.top || coachBox.top >= canvasBox.bottom) return;
+      var stageH = canvas._cssH || canvasBox.height;
+      root.__hrBannerBottom = (coachBox.bottom - canvasBox.top) * (stageH / canvasBox.height);
     }
 
     function showPlanNote(text) {
@@ -6085,28 +7306,207 @@
       if (!root.__hrInputAt && root.performance) root.__hrInputAt = root.performance.now();
     }
 
+    function fitOpenCamera() {
+      var cssW = els.canvas._cssW || 0;
+      cam.follow = false;
+      if (!(cssW > 0) || cam.zoom > 0 || !HR.render) return;
+      var cssH = els.canvas._cssH || 540;
+      cam.zoom = HR.render.zoomMin(cssW, cssH);
+    }
+
     function focusCam(x, y) {
       var view = viewSize();
       cam.x = clamp(x - view.viewW * 0.5, 0, Math.max(0, WORLD_W - view.viewW));
       cam.y = clamp(y - view.viewH * 0.62, 0, Math.max(0, WORLD_H - view.viewH));
     }
 
+    function camClamp(x, y, view) {
+      var maxX = WORLD_W - view.viewW;
+      var maxY = WORLD_H - view.viewH;
+      var nx = maxX < 0 ? maxX / 2 : clamp(x, 0, maxX);
+      var ny = maxY < 0 ? maxY / 2 : clamp(y, 0, maxY);
+      return { x: Math.round(nx), y: Math.round(ny) };
+    }
+
+    function wrapHoldZoom(cssW, cssH) {
+      var wantW = cssW < 720 ? 460 : 540;
+      var target = cssW < 520 ? 118 : (cssW < 900 ? 112 : 108);
+      var z = CONFIG.sprite * cssW / target / wantW;
+      if (HR.render && HR.render.clampZoom) z = HR.render.clampZoom(cssW, z, cssH);
+      return z;
+    }
+
+    function floorFit(cssW, cssH) {
+      var worldW = WORLD_W || 1280;
+      var worldH = WORLD_H || 900;
+      var fitW = cssW / Math.max(1, worldW);
+      var fitH = cssH / Math.max(1, worldH);
+      var phone = cssW < 720;
+      var fit = phone ? Math.min(fitW, fitH) : Math.min(fitW, cssH / 800);
+      if (!(fit > 0.05)) fit = 0.05;
+      return fit;
+    }
+
+    function playZoomFor(cssW, cssH) {
+      if (sim && sim.floorOn && !cam.overview && !cam.fit) return floorFit(cssW, cssH);
+      if (HR.render && HR.render.zoomMin) return HR.render.zoomMin(cssW, cssH);
+      return cam.zoom || 1;
+    }
+
+    function wrapCamTarget(view) {
+      var wrapAt = wrapSpot();
+      var wrapY = wrapAt.y - wrapLift(wrapAt);
+      return camClamp(wrapAt.x - view.viewW * 0.5, wrapY - view.viewH * 0.46, view);
+    }
+
+    function playCamTarget(view) {
+      if (sim && sim.floorOn && !cam.overview) {
+        var worldW = WORLD_W || 1280;
+        var worldH = WORLD_H || 900;
+        var cssW = view.cssW || (els.canvas && els.canvas._cssW) || 800;
+        if (cssW < 720) {
+          return camClamp((worldW - view.viewW) / 2, (worldH - view.viewH) / 2, view);
+        }
+        if (cssW >= 720) {
+          var fullRoom = view.viewW >= worldW - 16 && view.viewH >= worldH - 16;
+          if (fullRoom) return camClamp((worldW - view.viewW) / 2, (worldH - view.viewH) / 2, view);
+          var deskTruck = (SPOTS.truck && SPOTS.truck.y) || 130;
+          var deskTop = deskTruck - 78;
+          if (deskTop < 0) deskTop = 0;
+          var deskBottom = ((SPOTS.reg1 && SPOTS.reg1.y) || 700) + 130;
+          var cardOpen = !!(sim && (sim.pending || sim.typeCard));
+          if (cardOpen) {
+            var doorBottom = ((SPOTS.door && SPOTS.door.y) || (worldH - 45)) + 36;
+            if (doorBottom > deskBottom) deskBottom = doorBottom;
+          }
+          var deskY = deskTop;
+          if (deskTop + view.viewH < deskBottom) deskY = deskBottom - view.viewH;
+          if (cardOpen) {
+            var truckKeep = deskTruck - 16;
+            if (truckKeep < 0) truckKeep = 0;
+            if (deskY > truckKeep) deskY = truckKeep;
+          } else if (deskY > deskTop) deskY = deskTop;
+          if (deskY < 0) deskY = 0;
+          return camClamp((worldW - view.viewW) / 2, deskY, view);
+        }
+      }
+      var left = SPOTS.reg1 || { x: 420, y: 700 };
+      var right = SPOTS.reg2 || left;
+      var q = QUEUE.reg1 || { y: left.y + 70 };
+      var midX = (left.x + right.x) * 0.5;
+      var x = midX - view.viewW * 0.5;
+      var rightKeep = right.x + 86 + 130;
+      if (x + view.viewW < rightKeep) x = rightKeep - view.viewW;
+      var leftKeep = left.x - 86 - 90;
+      if (x > leftKeep) x = leftKeep;
+      var y = q.y - view.viewH * 0.72;
+      if (view.cssW < 720) {
+        var gap = liveQueueGap({ _phone: true });
+        var backY = left.y - (liveLineCap({ _phone: true }) - 1) * gap;
+        y = backY - view.viewH * 0.38;
+      } else {
+        var doorY = SPOTS.door ? SPOTS.door.y : WORLD_H - 48;
+        var doorKeep = doorY - view.viewH + 36;
+        if (doorKeep < 0) doorKeep = 0;
+        if (y < doorKeep) y = doorKeep;
+      }
+      return camClamp(x, y, view);
+    }
+
+    function stepEase() {
+      if (!sim || !sim._ease) return false;
+      var dur = 0.9;
+      var u = dur > 0 ? ((sim.t || 0) - sim._ease.t0) / dur : 1;
+      if (u < 0) u = 0;
+      if (u > 1) u = 1;
+      var e = u * u * (3 - 2 * u);
+      cam.x = Math.round(sim._ease.x0 + (sim._ease.x1 - sim._ease.x0) * e);
+      cam.y = Math.round(sim._ease.y0 + (sim._ease.y1 - sim._ease.y0) * e);
+      var z0 = sim._ease.z0 == null ? (cam.zoom || 1) : sim._ease.z0;
+      var z1 = sim._ease.z1 == null ? z0 : sim._ease.z1;
+      cam.zoom = z0 + (z1 - z0) * e;
+      if (u >= 1) {
+        cam.zoom = z1;
+        var done = camClamp(sim._ease.x1, sim._ease.y1, viewSize());
+        cam.x = done.x;
+        cam.y = done.y;
+        sim._camLock = { x: done.x, y: done.y, zoom: z1 };
+        sim._ease = null;
+      }
+      return true;
+    }
+
+    function rememberCardCam() {
+      if (!sim || sim._cardCam) return;
+      sim._cardCam = {
+        x: cam.x,
+        y: cam.y,
+        zoom: cam.zoom || 1,
+        cssW: els.canvas._cssW || 0,
+        cssH: els.canvas._cssH || 0
+      };
+    }
+
+    function screenScale() {
+      var view = viewSize();
+      return view.cssW / Math.max(1, view.viewW);
+    }
+
+    function wrapLook() {
+      var scale = Math.max(0.05, screenScale());
+      var coaching = wrapCoachOn();
+      var ringCss = coaching ? 84 : 76;
+      var reach = ringCss + 46;
+      var floor = coaching ? 156 : 120;
+      if (reach < floor) reach = floor;
+      var view = viewSize();
+      return { scale: scale, ringCss: ringCss, wrapR: ringCss / scale, reach: reach, wordCss: 22, stageH: view.cssH || 0 };
+    }
+
+    function aimOnScreen(x, y, rWorld) {
+      var view = viewSize();
+      var scale = screenScale();
+      var minR = 22 / Math.max(0.05, scale);
+      if (rWorld < minR) rWorld = minR;
+      var inset = rWorld + 12;
+      var x0 = cam.x + inset;
+      var y0 = cam.y + inset;
+      var x1 = cam.x + view.viewW - inset;
+      var y1 = cam.y + view.viewH - inset;
+      if (x1 < x0) { x0 = cam.x + view.viewW * 0.5; x1 = x0; }
+      if (y1 < y0) { y0 = cam.y + view.viewH * 0.35; y1 = y0; }
+      return {
+        x: Math.round(Math.min(x1, Math.max(x0, x))),
+        y: Math.round(Math.min(y1, Math.max(y0, y))),
+        r: rWorld
+      };
+    }
+
     function coachFocus() {
       if (!coach || !sim) return null;
-      if (coach.step === 0) return { x: SPOTS.reg1.x, y: QUEUE.reg1.y - 40, r: 52, label: '1/3  Tap the line\nA cashier keeps the sale.' };
-      if (coach.step === 1) return { x: SPOTS.truck.x, y: SPOTS.truck.y + 10, r: 58, label: '2/3  Tap the truck\nUnload it before shelves thin out.' };
+      if (coach.step === 0) {
+        var lineAim = aimOnScreen(SPOTS.reg1.x, QUEUE.reg1.y - 40, 52);
+        lineAim.label = '1/3  Tap the line\nA cashier keeps the sale.';
+        return lineAim;
+      }
+      if (coach.step === 1) return null;
       var angry = null;
       for (var i = 0; i < sim.customers.length; i++) {
         var c = sim.customers[i];
         if (c.dead || c.state === 'leave') continue;
         if (c.bubble === 'angry' || (c.maxPatience && c.patience < c.maxPatience * 0.4)) angry = c;
       }
-      if (angry) return { x: angry.x, y: angry.y - 40, r: 48, label: '3/3  Tap the upset shopper\nA calm keeps the star.' };
-      return { x: SPOTS.floor.x, y: SPOTS.floor.y - 40, r: 48, label: '3/3  Tap the upset shopper\nA calm keeps the star.' };
+      var calmAt = angry ? { x: angry.x, y: angry.y - 40 } : { x: SPOTS.floor.x, y: SPOTS.floor.y - 40 };
+      var calmScale = Math.max(0.05, screenScale());
+      var calmAim = aimOnScreen(calmAt.x, calmAt.y, Math.max(72, 88 / calmScale));
+      calmAim.label = '3/3  Tap the upset shopper\nA calm keeps the star.';
+      calmAim.cust = angry;
+      return calmAim;
     }
 
     function wrapCoachOn() {
-      if (!sim || coach || sim.mechanic !== 'wrap' || (sim.wraps || 0) > 0) return false;
+      if (!sim || coach || sim.mechanic !== 'wrap') return false;
+      if (sim._wrapCoachDone || (sim.wraps || 0) > 0) return false;
       try {
         if (localStorage.getItem('hr_wrap_coach') === '1') return false;
       } catch (eWrapCoach) { return false; }
@@ -6116,35 +7516,102 @@
     function paintWrapCoach() {
       if (coach) return;
       var cap = document.getElementById('hr-coach');
+      var hint = coachHint();
       if (!cap) return;
       if (!wrapCoachOn()) {
         if (cap.getAttribute('data-wrap') === '1') {
           cap.hidden = true;
           cap.removeAttribute('data-wrap');
         }
+        if (hint && hint.dataset.wrap === '1') {
+          delete hint.dataset.wrap;
+          if (hint.dataset.coach !== '1') hint.textContent = hint.dataset.base || '';
+        }
         return;
       }
-      cap.hidden = false;
-      cap.setAttribute('data-wrap', '1');
-      cap.textContent = 'Tap the pulsing Wrap on the gift table.\nEach gift rings this drawer.';
+      var text = 'Tap the Wrap button, or the WRAP ring on the gift table. Each gift rings this drawer.';
+      cap.hidden = true;
+      cap.removeAttribute('data-wrap');
+      if (hint && hint.dataset.coach !== '1') {
+        if (!hint.dataset.base) hint.dataset.base = hint.textContent;
+        hint.dataset.wrap = '1';
+        hint.textContent = text;
+      }
+    }
+
+    function coachBlocksPlay() {
+      return !!(coach && coach.step !== 1);
+    }
+
+    function coachLine() {
+      if (!coach) return '';
+      if (coach.step === 1) return '2/3  A truck is in\nWork freight unloads it. Keep playing.';
+      var focus = coachFocus();
+      return focus ? focus.label : '';
+    }
+
+    function coachHint() {
+      return document.querySelector('#hr-sim .hr-hint');
     }
 
     function paintCoach() {
       var cap = document.getElementById('hr-coach');
       var skip = document.getElementById('hr-skip');
-      var focus = coach ? coachFocus() : null;
-      if (cap) {
-        cap.hidden = !focus;
-        if (focus) {
-          cap.textContent = focus.label;
-          cap.removeAttribute('data-wrap');
+      var hint = coachHint();
+      var line = coachLine();
+      if (hint && !hint.dataset.base) hint.dataset.base = hint.textContent;
+      if (line) {
+        if (cap) cap.hidden = true;
+        if (hint) {
+          hint.dataset.coach = '1';
+          hint.textContent = line.replace(/\n+/g, ' ');
         }
+      } else {
+        if (hint && hint.dataset.coach === '1') {
+          delete hint.dataset.coach;
+          hint.textContent = hint.dataset.base || '';
+        }
+        if (cap && cap.getAttribute('data-wrap') !== '1') cap.hidden = true;
       }
       if (skip) skip.hidden = !coach;
       placeChrome();
-      if (sim) sim.coachHold = !!coach;
-      if (focus && els.live) els.live.textContent = focus.label + '. Skip is available.';
+      if (sim) sim.coachHold = coachBlocksPlay();
+      if (line && els.live) els.live.textContent = line + '. Skip is available.';
       paintWrapCoach();
+    }
+
+    function stashOpenCard() {
+      if (!sim) return;
+      if (sim.pending && !sim._stashedCard) {
+        sim._stashedCard = { card: sim.pending, seconds: Math.max(4, (sim.pendingUntil || sim.t) - sim.t) };
+      }
+      sim.pending = null;
+      sim.pendingUntil = 0;
+      if (sim.typeCard) {
+        sim._stashedType = sim.typeCard;
+        sim.typeCard = '';
+      }
+      if (sim._hold === 'card') {
+        sim._hold = '';
+        sim.paused = false;
+      }
+      shownEvent = null;
+      shownType = null;
+      if (els.event) els.event.hidden = true;
+    }
+
+    function releaseStashedCard() {
+      if (!sim) return;
+      var held = sim._stashedCard;
+      var heldType = sim._stashedType;
+      sim._stashedCard = null;
+      sim._stashedType = '';
+      if (held && held.card) openPending(sim, held.card, held.seconds || 8);
+      else if (heldType) {
+        sim.typeCard = heldType;
+        sim.typeUntil = sim.t + 5.5;
+        armCardPause(sim);
+      }
     }
 
     function beginCoach() {
@@ -6155,6 +7622,8 @@
       }
       coach = { step: 0 };
       sim.coachHold = true;
+      sim.tutorial = true;
+      stashOpenCard();
       paintCoach();
       focusCam(SPOTS.reg1.x, QUEUE.reg1.y);
     }
@@ -6163,11 +7632,13 @@
       coach = null;
       if (sim) {
         sim.coachHold = false;
+        sim.tutorial = false;
         sim.nextPing = sim.t + 3;
       }
-      try { localStorage.setItem('hr_tut_done', '1'); } catch (e) {}
+      try { localStorage.setItem('hr_tut_done', '1'); root.__hrSawTut = 1; } catch (e) {}
       paintCoach();
-      cam.follow = true;
+      cam.follow = false;
+      if (sim) releaseStashedCard();
       saveRun();
     }
 
@@ -6197,12 +7668,13 @@
         sim.truck = 1;
         sim.truckWork = 0;
         sim.hornPlayed = false;
+        coach.until = (sim.t || 0) + 6;
       } else if (coach.step === 2) angerSomeone();
       else {
         toast('Floor is yours. Chain checkouts for a combo.');
         endCoach();
       }
-      var next = coach ? coachFocus() : null;
+      var next = coach && coach.step !== 1 ? coachFocus() : null;
       if (next) focusCam(next.x, next.y);
       paintCoach();
       draw();
@@ -6232,6 +7704,7 @@
         point: point
       });
       if (res.ok) {
+        sim._playerAct = 1;
         if (res.msg) toast(res.msg);
         sfx('place');
         buzz(12);
@@ -6242,63 +7715,158 @@
         if (res.msg) toast(res.msg);
       }
       paintHud();
-      draw();
-      saveRun();
+      if (!root.__hrSaveSoon) {
+        root.__hrSaveSoon = true;
+        requestAnimationFrame(function () {
+          root.__hrSaveSoon = false;
+          saveRun();
+        });
+      }
+    }
+
+    function pointerScale(rect) {
+      var view = viewSize();
+      var w = rect && rect.width ? rect.width : view.cssW;
+      var h = rect && rect.height ? rect.height : view.cssH;
+      return {
+        x: w / Math.max(1, view.viewW),
+        y: h / Math.max(1, view.viewH)
+      };
     }
 
     function eventWorld(ev) {
       var rect = els.canvas.getBoundingClientRect();
-      var view = viewSize();
-      var scale = view.cssW / view.viewW;
+      var scale = pointerScale(rect);
       return {
-        x: (ev.clientX - rect.left) / scale + cam.x,
-        y: (ev.clientY - rect.top) / scale + cam.y
+        x: (ev.clientX - rect.left) / scale.x + cam.x,
+        y: (ev.clientY - rect.top) / scale.y + cam.y
       };
     }
 
     function screenDist(wx, wy, ev) {
       var rect = els.canvas.getBoundingClientRect();
-      var view = viewSize();
-      var scale = view.cssW / view.viewW;
-      var sx = (wx - cam.x) * scale + rect.left;
-      var sy = (wy - cam.y) * scale + rect.top;
+      var scale = pointerScale(rect);
+      var sx = (wx - cam.x) * scale.x + rect.left;
+      var sy = (wy - cam.y) * scale.y + rect.top;
       var dx = ev.clientX - sx;
       var dy = ev.clientY - sy;
       return Math.sqrt(dx * dx + dy * dy);
     }
 
+    function worldDist(wx, wy, ev) {
+      var w = eventWorld(ev);
+      var dx = w.x - wx;
+      var dy = w.y - wy;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    function bodyPoint(a) {
+      var x = a && a._drawX != null ? a._drawX : a.x;
+      var y = a && a._drawY != null ? a._drawY : a.y;
+      return { x: x, y: y - Math.round(personDrawH() * 0.42) };
+    }
+
+    function ringPoint(a) {
+      return { x: a.x, y: a.y - personDrawH() - 28 };
+    }
+
+    function queuedReach(phoneHit) {
+      var view = viewSize();
+      var scale = view.cssW / Math.max(1, view.viewW);
+      var gapPx = liveQueueGap(sim) * scale;
+      var cap = phoneHit ? 46 : 64;
+      var reach = Math.floor(gapPx * 0.4);
+      if (reach < 28) reach = 28;
+      if (reach > cap) reach = cap;
+      return reach;
+    }
+
     function pickHit(ev) {
       var phoneHit = (els.canvas._cssW || window.innerWidth) < 720;
+      var minTap = 44;
+      if (coach && coach.step === 2) {
+        var calmFocus = coachFocus();
+        var calmWho = calmFocus && calmFocus.cust;
+        if (!calmWho) {
+          for (var ci = 0; ci < sim.customers.length; ci++) {
+            var calmCand = sim.customers[ci];
+            if (calmCand.dead || calmCand.state === 'leave') continue;
+            if (calmCand.bubble === 'angry' || (calmCand.maxPatience && calmCand.patience < calmCand.maxPatience * 0.4)) {
+              calmWho = calmCand;
+              break;
+            }
+          }
+        }
+        if (calmWho) {
+          var calmBody = bodyPoint(calmWho);
+          var calmD = screenDist(calmBody.x, calmBody.y, ev);
+          var calmRing = screenDist(calmWho.x, calmWho.y - 40, ev);
+          if (calmRing < calmD) calmD = calmRing;
+          if (calmFocus && screenDist(calmFocus.x, calmFocus.y, ev) < calmD) calmD = screenDist(calmFocus.x, calmFocus.y, ev);
+          if (calmD <= 180) return { cust: calmWho };
+        }
+      }
+      if (sim.pings) {
+        var wrapHit = null;
+        var look = wrapLook();
+        var wrapD = look.reach;
+        var restockHit = null;
+        var restockD = phoneHit ? 120 : 72;
+        for (var wpi = 0; wpi < sim.pings.length; wpi++) {
+          var wrapPing = sim.pings[wpi];
+          if (!wrapPing || wrapPing.dead) continue;
+          if (wrapPing.kind === 'wrap') {
+            var wd = screenDist(wrapPing.x, wrapPing.y, ev);
+            if (wd <= wrapD) { wrapD = wd; wrapHit = wrapPing; }
+          } else if (wrapPing.kind === 'restock') {
+            var rd = screenDist(wrapPing.x, wrapPing.y, ev);
+            var shelfD = screenDist(wrapPing.x, wrapPing.y + 96, ev);
+            if (shelfD < rd) rd = shelfD;
+            if (rd <= restockD) { restockD = rd; restockHit = wrapPing; }
+          }
+        }
+        if (wrapHit) return { ping: wrapHit };
+        if (restockHit) return { ping: restockHit };
+      }
+      var lineReach = queuedReach(phoneHit);
+      var best = null;
+      var bestD = phoneHit ? 64 : 120;
+      for (var i = 0; i < sim.customers.length; i++) {
+        var c = sim.customers[i];
+        if (c.dead || c.state === 'leave') continue;
+        var at = bodyPoint(c);
+        var queued = c.state === 'queue' || c.state === 'checkout';
+        var reach = queued && sim && sim.floorOn ? lineReach : (phoneHit ? 64 : 120);
+        var d = screenDist(at.x, at.y, ev);
+        if (phoneHit && !queued) {
+          var ringAt = ringPoint(c);
+          var rd = screenDist(ringAt.x, ringAt.y, ev);
+          if (rd < d) d = rd;
+        }
+        if (d < reach && d < bestD) { bestD = d; best = { cust: c }; }
+      }
+      if (best) return best;
       if (sim.pings) {
         var pingHit = null;
-        var pingD = 1e9;
+        var pingD = phoneHit ? 48 : 1e9;
         for (var p = 0; p < sim.pings.length; p++) {
           var ping = sim.pings[p];
           if (ping.dead) continue;
-          var reach = phoneHit ? 100 : (ping.kind === 'wrap' ? 72 : 56);
+          var reach = Math.max(minTap, phoneHit ? 48 : (ping.kind === 'wrap' ? 72 : 56));
           var pd = screenDist(ping.x, ping.y, ev);
           if (pd < reach && pd < pingD) { pingD = pd; pingHit = ping; }
         }
         if (pingHit) return { ping: pingHit };
       }
-      var best = null;
-      var bestD = phoneHit ? 110 : 64;
-      for (var i = 0; i < sim.customers.length; i++) {
-        var c = sim.customers[i];
-        if (c.dead || c.state === 'leave') continue;
-        var d = screenDist(c.x, c.y - 36, ev);
-        if (d < bestD) { bestD = d; best = { cust: c }; }
-      }
-      if (best) return best;
       var zones = [
-        { station: 'freight', x: SPOTS.truck.x, y: SPOTS.truck.y + 20 },
+        { station: 'freight', x: SPOTS.truck.x, y: SPOTS.truck.y - 24 },
         { station: 'floor', x: SPOTS.floor.x, y: SPOTS.floor.y }
       ];
       registers().forEach(function (reg) {
         zones.unshift({ station: reg, x: SPOTS[reg].x, y: (SPOTS[reg].y + QUEUE[reg].y) * 0.5 });
       });
       var zone = null;
-      var zoneD = phoneHit ? 96 : 72;
+      var zoneD = Math.max(minTap, phoneHit ? 44 : 72);
       for (var z = 0; z < zones.length; z++) {
         var dist = screenDist(zones[z].x, zones[z].y, ev);
         if (dist < zoneD) { zoneD = dist; zone = zones[z]; }
@@ -6308,9 +7876,11 @@
 
     function onStageTap(ev) {
       if (!sim || els.sim.hidden) return;
+      if (cardTapBlocked()) return;
       markInput();
       if (isQA() && els.stage && ev) els.stage.dataset.pointer = ev.pointerType || '';
       var w = eventWorld(ev);
+      focusLabel(ev);
       var hit = pickHit(ev);
       if (hit && hit.ping) {
         tapFx(sim, hit.ping.x, hit.ping.y);
@@ -6319,8 +7889,13 @@
         hooks.coin();
         resolvePing(sim, hit.ping);
         paintHud();
-        draw();
-        saveRun();
+        if (!root.__hrSaveSoon) {
+          root.__hrSaveSoon = true;
+          requestAnimationFrame(function () {
+            root.__hrSaveSoon = false;
+            saveRun();
+          });
+        }
         return;
       }
       if (!hit) {
@@ -6346,20 +7921,183 @@
       playerAct(act.name, act);
     }
 
+    function tagPx() {
+      var view = viewSize();
+      var scale = view.cssW / Math.max(1, view.viewW);
+      var px = Math.round(18 / Math.max(0.22, scale));
+      if (px < 18) px = 18;
+      if (px > 46) px = 46;
+      return px;
+    }
+
     function drawTag(text, x, y) {
-      ctx.font = '800 16px Outfit, Inter, sans-serif';
+      var px = tagPx();
+      var h = Math.round(px * 1.15);
+      ctx.font = '800 ' + px + 'px Outfit, Inter, sans-serif';
       ctx.textAlign = 'center';
-      var w = ctx.measureText(text).width + 12;
+      var w = ctx.measureText(text).width + Math.round(px * 0.8);
+      var left = cam.x + 4;
+      var right = cam.x + (frameView.w || 0) - 4;
+      var top = cam.y + 4;
+      var bottom = cam.y + (frameView.h || 0) - 4;
+      if (right > left) {
+        if (x - w / 2 < left) x = left + w / 2;
+        if (x + w / 2 > right) x = right - w / 2;
+      }
+      if (bottom > top) {
+        if (y - h + 4 < top) y = top + h - 4;
+        if (y + 2 > bottom) y = bottom - 2;
+      }
       ctx.fillStyle = 'rgba(20,12,16,0.88)';
-      ctx.fillRect(x - w / 2, y - 14, w, 18);
+      ctx.fillRect(x - w / 2, y - h + 4, w, h);
       ctx.fillStyle = '#f6f0e4';
       ctx.fillText(text, x, y);
     }
 
+    function actorKey(a) {
+      if (!a) return '';
+      if (a.kind === 'staff' || a.kind === 'you') return a.kind + ':' + (a.id || a.seq || '');
+      return (a.kind || 'a') + ':' + (a.seq != null ? a.seq : (a.charId || ''));
+    }
+
+    function nameVisible(a) {
+      if (!a || !sim) return false;
+      var key = actorKey(a);
+      if (!key) return false;
+      if (sim._hoverKey) return sim._hoverKey === key;
+      return sim._labelKey === key && sim.t < (sim._labelUntil || 0);
+    }
+
+    function nearestLabeled(ev) {
+      if (!sim) return null;
+      var phoneHit = (els.canvas._cssW || window.innerWidth) < 720;
+      var lineReach = queuedReach(phoneHit);
+      var best = null;
+      var bestD = phoneHit ? 64 : 120;
+      function consider(a) {
+        if (!a || a.dead || a.hidden || a.state === 'leave' || a.kind === 'jack') return;
+        var at = bodyPoint(a);
+        var queued = a.state === 'queue' || a.state === 'checkout';
+        var reach = queued && sim && sim.floorOn ? lineReach : (phoneHit ? 64 : 120);
+        var d = screenDist(at.x, at.y, ev);
+        if (phoneHit && !queued) {
+          var ringAt = ringPoint(a);
+          var rd = screenDist(ringAt.x, ringAt.y, ev);
+          if (rd < d) d = rd;
+        }
+        if (d < reach && d < bestD) { bestD = d; best = a; }
+      }
+      var i;
+      for (i = 0; i < sim.customers.length; i++) consider(sim.customers[i]);
+      for (i = 0; i < sim.staff.length; i++) consider(sim.staff[i]);
+      if (sim.you) consider(sim.you);
+      return best;
+    }
+
+    function worldKeyAt(ev) {
+      if (!sim || !ev) return '';
+      var best = '';
+      var bestD = 56;
+      var i;
+      if (sim.pings) {
+        for (i = 0; i < sim.pings.length; i++) {
+          var ping = sim.pings[i];
+          if (ping.dead) continue;
+          var d = screenDist(ping.x, ping.y, ev);
+          if (d < bestD) { bestD = d; best = 'ping:' + i; }
+        }
+      }
+      var regs = registers();
+      for (i = 0; i < regs.length; i++) {
+        if (queueOf(sim, regs[i]).length < 3) continue;
+        var dLine = screenDist(SPOTS[regs[i]].x, SPOTS[regs[i]].y - 112, ev);
+        if (dLine < bestD) { bestD = dLine; best = 'line:' + regs[i]; }
+      }
+      if (sim.truck) {
+        var dTruck = screenDist(SPOTS.truck.x, SPOTS.truck.y - 24, ev);
+        if (dTruck < bestD) { bestD = dTruck; best = 'truck'; }
+      }
+      if (sim.stock < 0.34 && SHELVES[0]) {
+        var dStock = screenDist(SHELVES[0].x, SHELVES[0].y - 78, ev);
+        if (dStock < bestD) best = 'stock';
+      }
+      return best;
+    }
+
+    function labelOn(key) {
+      if (!sim || !key) return false;
+      if (sim._hoverKey === key) return true;
+      return sim._labelKey === key && sim.t < (sim._labelUntil || 0);
+    }
+
+    function focusLabel(ev) {
+      if (!sim || !ev) return;
+      var who = nearestLabeled(ev);
+      var key = who ? actorKey(who) : worldKeyAt(ev);
+      if (!key) return;
+      sim._labelKey = key;
+      sim._labelUntil = sim.t + 6;
+    }
+
+    function tagBlocked(x, y, tw, h) {
+      var pad = Math.ceil(8 / Math.max(0.2, screenScale()));
+      var i;
+      for (i = 0; i < labelSlots.length; i++) {
+        var slot = labelSlots[i];
+        var sw = slot.w || tw;
+        var sh = slot.h || h;
+        if (Math.abs(slot.x - x) < (sw + tw) * 0.5 + pad && Math.abs(slot.y - y) < (sh + h) * 0.5 + pad) return true;
+      }
+      for (i = 0; i < bodySlots.length; i++) {
+        var body = bodySlots[i];
+        var top = y - h;
+        var bottom = y + 2;
+        if (Math.abs(body.x - x) < body.hw + tw * 0.5 + pad && bottom + pad > body.top && top < body.bottom + pad) return true;
+      }
+      return false;
+    }
+
+    function tagAnchor(x, y, text) {
+      var px = tagPx();
+      var h = Math.round(px * 1.15);
+      var label = text || 'Family';
+      ctx.font = '800 ' + px + 'px Outfit, Inter, sans-serif';
+      var tw = Math.ceil(ctx.measureText(label).width);
+      var placedX = x;
+      var placedY = y;
+      var guard = 0;
+      var found = false;
+      var shifts = [0, -1, 1, -2, 2];
+      while (guard < 14 && !found) {
+        for (var s = 0; s < shifts.length; s++) {
+          var tx = x + shifts[s] * Math.round(tw * 0.6 + 8);
+          var ty = y - guard * (h + 8);
+          if (!tagBlocked(tx, ty, tw, h)) {
+            placedX = tx;
+            placedY = ty;
+            found = true;
+            break;
+          }
+        }
+        guard++;
+      }
+      if (!found) placedY = y - guard * (h + 8);
+      labelSlots.push({ x: placedX, y: placedY, w: tw, h: h, text: label });
+      return { x: placedX, y: placedY };
+    }
+
+    function staffTagPoint(a, text) {
+      return tagAnchor(a.x, a.y - personDrawH() - 28, text || 'Name');
+    }
+
     function drawPatience(x, y, p) {
-      var r = 20;
-      ctx.lineWidth = 5;
-      ctx.strokeStyle = 'rgba(246,240,228,0.28)';
+      var view = viewSize();
+      var scale = view.cssW / Math.max(1, view.viewW);
+      var r = Math.round(16 / Math.max(0.2, scale));
+      if (r < 18) r = 18;
+      if (r > 40) r = 40;
+      ctx.lineWidth = Math.max(5, Math.round(r * 0.28));
+      ctx.strokeStyle = 'rgba(246,240,228,0.35)';
       ctx.beginPath();
       ctx.arc(x, y, r, 0, Math.PI * 2);
       ctx.stroke();
@@ -6376,6 +8114,11 @@
     }
 
     function drawPings() {
+      if (isQA() && els.stage) {
+        delete els.stage.dataset.wrapX;
+        delete els.stage.dataset.wrapY;
+        delete els.stage.dataset.wrapR;
+      }
       if (!sim.pings || root.__hrShot) return;
       for (var i = 0; i < sim.pings.length; i++) {
         var ping = sim.pings[i];
@@ -6384,9 +8127,73 @@
         var icon = ping.kind === 'wrap' ? 'return' : ping.kind === 'basket' ? 'price' : ping.kind === 'box' ? 'truck' : 'line';
         var label = ping.kind === 'wrap' ? 'Wrap' : ping.kind === 'basket' ? '+$' : ping.kind === 'box' ? 'Box' : 'Help';
         if (ping.kind === 'wrap') {
-          var pulse = reduceMotion ? 1 : 1 + Math.sin(Date.now() / 180) * 0.18;
-          drawIconAt(icon, ping.x, ping.y + bob, 72 * pulse);
-          drawTag(label, ping.x, ping.y + bob - 52);
+          var look = wrapLook();
+          var coaching = wrapCoachOn();
+          var pulse = coaching && !reduceMotion ? 1.05 + Math.sin(Date.now() / 160) * 0.08 : 1;
+          if (isQA() && els.stage) {
+            els.stage.dataset.wrapR = String(Math.round(look.ringCss));
+            els.stage.dataset.wrapHit = String(look.reach);
+            els.stage.dataset.wrapWord = 'Wrap?';
+            els.stage.dataset.wrapX = String(Math.round(ping.x));
+            els.stage.dataset.wrapY = String(Math.round(ping.y));
+          }
+          var dpr = els.canvas._dpr || 1;
+          var sx = (ping.x - cam.x) * look.scale;
+          var sy = (ping.y + bob - cam.y) * look.scale;
+          var fitCss = look.ringCss;
+          if (sy - fitCss < 8) fitCss = Math.max(40, sy - 8);
+          if (sy + fitCss > look.stageH - 8) fitCss = Math.max(40, look.stageH - sy - 8);
+          ctx.save();
+          ctx.strokeStyle = 'rgba(224,163,34,0.95)';
+          ctx.lineWidth = (coaching ? 5 : 4) / look.scale;
+          ctx.beginPath();
+          ctx.arc(ping.x, ping.y + bob, (fitCss / look.scale) * pulse, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+          drawIconAt(icon, ping.x, ping.y + bob, (Math.min(34, fitCss * 0.5) / look.scale) * pulse);
+          ctx.save();
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.font = '800 ' + look.wordCss + 'px Outfit, Inter, sans-serif';
+          var pillH = look.wordCss + 8;
+          var aboveY = sy - fitCss - 16;
+          var belowY = sy + fitCss + 16;
+          if (aboveY - pillH / 2 < 4) aboveY = Math.max(pillH / 2 + 2, sy - Math.min(fitCss * 0.62, Math.max(0, sy - pillH)));
+          if (belowY + pillH / 2 > look.stageH - 4) belowY = look.stageH - 4 - pillH / 2;
+          var coachEl = document.getElementById('hr-coach');
+          var bannerBottom = root.__hrBannerBottom || 0;
+          if (coachEl && !coachEl.hidden && bannerBottom > 0) {
+            var minAbove = bannerBottom + 4 + pillH / 2;
+            if (aboveY < minAbove) aboveY = minAbove;
+          }
+          if (belowY - aboveY < pillH + 4) belowY = aboveY + pillH + 4;
+          var pills = [['Wrap?', aboveY], ['WRAP', belowY]];
+          for (var wp = 0; wp < pills.length; wp++) {
+            var pillW = ctx.measureText(pills[wp][0]).width + 16;
+            var pillY = pills[wp][1];
+            ctx.fillStyle = 'rgba(43,29,46,0.94)';
+            ctx.fillRect(sx - pillW / 2, pillY - pillH / 2, pillW, pillH);
+            ctx.fillStyle = '#ffe08a';
+            ctx.fillText(pills[wp][0], sx, pillY);
+          }
+          ctx.restore();
+          continue;
+        }
+        if (ping.kind === 'restock') {
+          var restockPhone = (els.canvas._cssW || 800) < 720;
+          var restockScale = Math.max(0.05, screenScale());
+          var restockR = Math.max(56, (restockPhone ? 78 : 54) / restockScale);
+          ctx.save();
+          ctx.strokeStyle = 'rgba(47,158,87,0.95)';
+          ctx.lineWidth = 8;
+          ctx.beginPath();
+          ctx.arc(ping.x, ping.y + bob, restockR, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+          drawIconAt('truck', ping.x, ping.y + bob, 52);
+          var truckAt = tagAnchor(ping.x, ping.y + bob - restockR - 18);
+          drawTag('Call truck', truckAt.x, truckAt.y);
           continue;
         }
         ctx.strokeStyle = 'rgba(224,163,34,0.85)';
@@ -6395,7 +8202,10 @@
         ctx.arc(ping.x, ping.y + bob, 26, 0, Math.PI * 2);
         ctx.stroke();
         drawIconAt(icon, ping.x, ping.y + bob, 36);
-        drawTag(label, ping.x, ping.y + bob - 28);
+        if (labelOn('ping:' + i)) {
+          var pingAt = tagAnchor(ping.x, ping.y + bob - 36);
+          drawTag(label, pingAt.x, pingAt.y);
+        }
       }
     }
 
@@ -6406,7 +8216,10 @@
         var n = queueOf(sim, regs[i]).length;
         if (n >= 3) {
           drawIconAt('line', SPOTS[regs[i]].x, SPOTS[regs[i]].y - 112, 44);
-          drawTag('Line ' + n, SPOTS[regs[i]].x, SPOTS[regs[i]].y - 142);
+          if (labelOn('line:' + regs[i])) {
+            var lineAt = tagAnchor(SPOTS[regs[i]].x, SPOTS[regs[i]].y - 142);
+            drawTag('Line ' + n, lineAt.x, lineAt.y);
+          }
         }
       }
       if (sim.truck) {
@@ -6418,17 +8231,23 @@
         ctx.lineWidth = 5;
         ctx.strokeStyle = 'rgba(246,240,228,0.4)';
         ctx.beginPath();
-        ctx.arc(SPOTS.truck.x, SPOTS.truck.y - 24, 30, 0, Math.PI * 2);
+        ctx.arc(SPOTS.truck.x, SPOTS.truck.y - 24, Math.max(30, 22 / Math.max(0.05, screenScale())), 0, Math.PI * 2);
         ctx.stroke();
         ctx.strokeStyle = '#7ec8ff';
         ctx.beginPath();
         ctx.arc(SPOTS.truck.x, SPOTS.truck.y - 24, 30, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * done);
         ctx.stroke();
-        drawTag(fp > 0.35 ? left.toFixed(1) + 's' : 'Unload', SPOTS.truck.x, SPOTS.truck.y - 68);
+        if (labelOn('truck') || (coach && coach.step === 1)) {
+          var truckAt = tagAnchor(SPOTS.truck.x, SPOTS.truck.y - 68);
+          drawTag(fp > 0.35 ? left.toFixed(1) + 's' : 'Unload', truckAt.x, truckAt.y);
+        }
       }
       if (sim.stock < 0.34) {
         drawIconAt('outstock', SHELVES[0].x, SHELVES[0].y - 78, 40);
-        drawTag('Low stock', SHELVES[0].x, SHELVES[0].y - 108);
+        if (labelOn('stock')) {
+          var stockAt = tagAnchor(SHELVES[0].x, SHELVES[0].y - 108);
+          drawTag('Low stock', stockAt.x, stockAt.y);
+        }
       }
     }
 
@@ -6466,12 +8285,27 @@
       var scale = view.cssW / view.viewW;
       els.stage.dataset.tx = String(Math.round((focus.x - cam.x) * scale));
       els.stage.dataset.ty = String(Math.round((focus.y - cam.y) * scale));
+      els.stage.dataset.coachR = String(Math.round((focus.r || 48) * scale));
       els.stage.dataset.coach = String(coach.step);
     }
 
     function viewSize() {
-      var cssW = els.canvas._cssW || 800;
-      var cssH = els.canvas._cssH || 450;
+      var floorLive = !!(sim && sim.floorOn && !cam.overview && !cam.fit);
+      var frozen = !floorLive && sim && sim._cardCam && sim._cardCam.cssW;
+      var cssW = frozen ? sim._cardCam.cssW : (els.canvas._cssW || 800);
+      var cssH = frozen ? sim._cardCam.cssH : (els.canvas._cssH || 450);
+      if (sim && sim.floorOn && !cam.overview && !cam.fit) {
+        var fit = floorFit(cssW, cssH);
+        return {
+          viewW: cssW / fit,
+          viewH: cssH / fit,
+          cssW: cssW,
+          cssH: cssH,
+          spritePx: CONFIG.sprite * fit,
+          productPx: 46 * fit,
+          zoom: fit
+        };
+      }
       if (HR.render) return HR.render.view(cssW, cssH, WORLD_W, WORLD_H, cam.zoom || 1, CONFIG.sprite);
       var target = cssW < 520 ? 118 : cssW < 900 ? 112 : 108;
       var viewW = CONFIG.sprite * cssW / target;
@@ -6494,7 +8328,7 @@
         els.stage.dataset.framed = cam.overview ? '1' : '0';
         els.stage.dataset.minimap = cam.overview ? '1' : '0';
         var doorY = SPOTS.door ? SPOTS.door.y : 855;
-        var holdsDoor = !!cam.overview || (cam.y <= 80 && cam.y + view.viewH >= doorY);
+        var holdsDoor = !!cam.overview || (cam.y <= doorY && cam.y + view.viewH >= doorY - 4);
         els.stage.dataset.span = holdsDoor ? '1' : '0';
       }
       if (!HR.render) return;
@@ -6502,7 +8336,9 @@
       var map = { left: 'hr-pan-left', right: 'hr-pan-right', up: 'hr-pan-up', down: 'hr-pan-down' };
       Object.keys(map).forEach(function (key) {
         var node = document.getElementById(map[key]);
-        if (node) node.hidden = !edge[key];
+        if (!node) return;
+        if (sim && sim._phone && sim.floorOn) node.hidden = true;
+        else node.hidden = !edge[key];
       });
       var east = document.getElementById('hr-east');
       if (east) east.hidden = WORLD_W <= 1600;
@@ -6511,38 +8347,176 @@
     function draw() {
       if (!assets || !els.canvas._cssW) return;
       var dpr = els.canvas._dpr || 1;
+      var cardFrozen = !!(sim && sim._cardCam);
+      var focus = null;
+      var lockPlay = !!(sim && sim.floorOn && !cam.overview && !cam.fit && (sim._phone || !cam.userPan));
+      if (lockPlay) {
+        cam.follow = false;
+        sim._ease = null;
+        sim._heldWrap = 0;
+        var lockW = els.canvas._cssW || 800;
+        var lockH = els.canvas._cssH || 450;
+        cam.zoom = playZoomFor(lockW, lockH);
+        var lockedAt = playCamTarget(viewSize());
+        cam.x = lockedAt.x;
+        cam.y = lockedAt.y;
+        sim._camLock = { x: cam.x, y: cam.y, zoom: cam.zoom };
+        sim._lockCss = { w: lockW, h: lockH };
+      }
+      var holdWrap = !(sim && sim.floorOn) && !lockPlay && !!(sim && !cardFrozen && !cam.fit && !cam.userPan && sim.mechanic === 'wrap' && !sim._playerAct && !(sim.wraps > 0));
+      if (lockPlay) {
+        /* play frame already applied */
+      } else if (cardFrozen) {
+        cam.x = sim._cardCam.x;
+        cam.y = sim._cardCam.y;
+        cam.zoom = sim._cardCam.zoom || cam.zoom || 1;
+      } else if (holdWrap) {
+        cam.zoom = wrapHoldZoom(els.canvas._cssW || 800, els.canvas._cssH || 450);
+      } else if (sim && sim._ease && !cam.userPan) {
+        stepEase();
+      } else if (sim && sim._heldWrap && !cam.userPan) {
+        var cssW0 = els.canvas._cssW || 800;
+        var cssH0 = els.canvas._cssH || 450;
+        var z1 = playZoomFor(cssW0, cssH0);
+        var z0 = cam.zoom || z1;
+        cam.zoom = z1;
+        var toPlay = playCamTarget(viewSize());
+        cam.zoom = z0;
+        sim._ease = {
+          x0: Math.round(cam.x),
+          y0: Math.round(cam.y),
+          z0: z0,
+          x1: toPlay.x,
+          y1: toPlay.y,
+          z1: z1,
+          t0: sim.t || 0
+        };
+        sim._heldWrap = 0;
+        stepEase();
+      } else if (sim && sim._camLock && !cam.fit && !cam.userPan && !cam.follow) {
+        var sized = !sim._lockCss || Math.abs(sim._lockCss.w - (els.canvas._cssW || 0)) > 12 || Math.abs(sim._lockCss.h - (els.canvas._cssH || 0)) > 12;
+        if (sized && sim.mechanic === 'wrap') {
+          cam.zoom = playZoomFor(els.canvas._cssW || 800, els.canvas._cssH || 450);
+          var relock = playCamTarget(viewSize());
+          relock.zoom = cam.zoom;
+          sim._camLock = relock;
+          sim._lockCss = { w: els.canvas._cssW, h: els.canvas._cssH };
+        }
+        cam.x = sim._camLock.x;
+        cam.y = sim._camLock.y;
+        if (sim._camLock.zoom) cam.zoom = sim._camLock.zoom;
+      }
       var view = viewSize();
       var scale = view.cssW / view.viewW;
-      var focus = sim && coach ? coachFocus() : null;
-      if (focus) {
-        cam.x = focus.x - view.viewW * 0.5;
-        cam.y = focus.y - view.viewH * 0.62;
-      } else if (sim && sim._wrapCamUntil && sim.t < sim._wrapCamUntil && !cam.fit) {
-        var wrapAt = wrapSpot();
-        var wrapY = wrapAt.y - wrapLift(wrapAt);
-        cam.x += ((wrapAt.x - view.viewW * 0.5) - cam.x) * 0.12;
-        cam.y += ((wrapY - view.viewH * 0.48) - cam.y) * 0.12;
-      } else if (sim && cam.follow && !cam.fit) {
-        var fx = 0;
-        var fy = 0;
-        var nCust = 0;
-        for (var i = 0; i < sim.customers.length; i++) {
-          if (sim.customers[i].state === 'leave') continue;
-          fx += sim.customers[i].x;
-          fy += sim.customers[i].y;
-          nCust++;
+      var fitsFloor = view.viewW >= WORLD_W - 16 && view.viewH >= WORLD_H - 16;
+      if (els.stage) els.stage.dataset.fit = fitsFloor ? '1' : '0';
+      if (lockPlay) {
+        cam.x = sim._camLock.x;
+        cam.y = sim._camLock.y;
+        cam.zoom = sim._camLock.zoom;
+      } else if (cardFrozen) {
+        cam.x = sim._cardCam.x;
+        cam.y = sim._cardCam.y;
+        cam.zoom = sim._cardCam.zoom || cam.zoom || 1;
+      } else if (holdWrap) {
+        var held = wrapCamTarget(view);
+        cam.x = held.x;
+        cam.y = held.y;
+        sim._heldWrap = 1;
+        sim._ease = null;
+      } else if (fitsFloor && !sim._ease && !sim._camLock) {
+        cam.x = 0;
+        cam.y = 0;
+      } else if (!sim || !sim._ease) {
+        if (focus && !sim._camLock) {
+          var focused = camClamp(focus.x - view.viewW * 0.5, focus.y - view.viewH * 0.62, view);
+          cam.x = focused.x;
+          cam.y = focused.y;
+        } else if (sim && cam.follow && !cam.fit && !cam.userPan && !sim._camLock) {
+          var fx = 0;
+          var fy = 0;
+          var nCust = 0;
+          for (var i = 0; i < sim.customers.length; i++) {
+            if (sim.customers[i].state === 'leave') continue;
+            fx += sim.customers[i].x;
+            fy += sim.customers[i].y;
+            nCust++;
+          }
+          if (!nCust) { fx = SPOTS.reg1.x; fy = QUEUE.reg1.y; nCust = 1; }
+          else { fx /= nCust; fy /= nCust; }
+          cam.x += ((fx - view.viewW * 0.5) - cam.x) * 0.08;
+          cam.y += ((fy - view.viewH * 0.58) - cam.y) * 0.08;
         }
-        if (!nCust) { fx = SPOTS.reg1.x; fy = QUEUE.reg1.y; nCust = 1; }
-        else { fx /= nCust; fy /= nCust; }
-        cam.x += ((fx - view.viewW * 0.5) - cam.x) * 0.08;
-        cam.y += ((fy - view.viewH * 0.58) - cam.y) * 0.08;
       }
-      cam.x = clamp(cam.x, 0, Math.max(0, WORLD_W - view.viewW));
-      cam.y = clamp(cam.y, 0, Math.max(0, WORLD_H - view.viewH));
+      if (!cardFrozen) {
+        var snapped = camClamp(cam.x, cam.y, view);
+        cam.x = snapped.x;
+        cam.y = snapped.y;
+      }
+      if (sim && sim.floorOn) {
+        sim._frame = { x0: cam.x, y0: cam.y, x1: cam.x + view.viewW, y1: cam.y + view.viewH };
+      } else if (sim) sim._frame = null;
+      if (sim && sim._camLock && !sim._lockCss) sim._lockCss = { w: view.cssW, h: view.cssH };
       paintEdges(view);
       if (isQA() && els.stage && sim) {
         els.stage.dataset.cam = Math.round(cam.x) + ',' + Math.round(cam.y);
+        els.stage.dataset.follow = cam.follow ? '1' : '0';
+        els.stage.dataset.held = holdWrap ? '1' : '0';
+        els.stage.dataset.phone = sim._phone ? '1' : '0';
+        els.stage.dataset.ease = sim._ease ? '1' : '0';
+        els.stage.dataset.playerAct = sim._playerAct ? '1' : '0';
+        var wrapPing = null;
+        if (sim.pings) {
+          for (var wi = 0; wi < sim.pings.length; wi++) {
+            if (sim.pings[wi].kind === 'wrap' && !sim.pings[wi].dead) wrapPing = sim.pings[wi];
+          }
+        }
+        els.stage.dataset.wrapAt = wrapPing ? (Math.round(wrapPing.x) + ',' + Math.round(wrapPing.y)) : '';
+        var restockPing = null;
+        if (sim.pings) {
+          for (var ri = 0; ri < sim.pings.length; ri++) {
+            if (sim.pings[ri].kind === 'restock' && !sim.pings[ri].dead) restockPing = sim.pings[ri];
+          }
+        }
+        els.stage.dataset.restockAt = restockPing ? (Math.round(restockPing.x) + ',' + Math.round(restockPing.y)) : '';
+        els.stage.dataset.wraps = String(sim.wraps || 0);
+        if (coach && coach.step === 2) {
+          var calmNow = coachFocus();
+          var calmWho = calmNow && calmNow.cust;
+          els.stage.dataset.calmAt = calmWho ? (Math.round(calmWho.x) + ',' + Math.round(calmWho.y)) : '';
+          els.stage.dataset.coachStep = '2';
+        } else {
+          if (els.stage.dataset.calmAt) delete els.stage.dataset.calmAt;
+          els.stage.dataset.coachStep = coach ? String(coach.step) : '';
+        }
+        els.stage.dataset.combo = String(sim.bestCombo || 0);
+        els.stage.dataset.back = String(backLeft(sim));
+        els.stage.dataset.sales = String(Math.round(sim.sales || 0));
+        els.stage.dataset.goal = String(Math.round(sim.goal || 0));
+        els.stage.dataset.clock = liveClockFace(sim);
         els.stage.dataset.view = Math.round(view.viewW) + ',' + Math.round(view.viewH);
+        if (sim._phone && sim.customers && view.cssW) {
+          var edgeScale = view.cssW / Math.max(1, view.viewW);
+          var edgeLeft = 9999;
+          var edgeRight = -1;
+          var edgeHalf = spriteFootBox(sim).w * 0.5 * edgeScale;
+          for (var ei = 0; ei < sim.customers.length; ei++) {
+            var edgeCust = sim.customers[ei];
+            if (!edgeCust || edgeCust.dead || edgeCust.hidden) continue;
+            var edgeX = (edgeCust._drawX != null ? edgeCust._drawX : edgeCust.x) - cam.x;
+            var edgeSx = edgeX * edgeScale;
+            if (edgeSx - edgeHalf < edgeLeft) edgeLeft = edgeSx - edgeHalf;
+            if (edgeSx + edgeHalf > edgeRight) edgeRight = edgeSx + edgeHalf;
+          }
+          if (edgeLeft < 9000) {
+            els.stage.dataset.edgeL = String(Math.round(edgeLeft));
+            els.stage.dataset.edgeR = String(Math.round(edgeRight));
+          }
+        }
+        els.stage.dataset.zoomNow = String(Math.round((cam.zoom || 1) * 100) / 100);
+        var regAx = SPOTS.reg1 ? SPOTS.reg1.x : 0;
+        var regBx = SPOTS.reg2 ? SPOTS.reg2.x : regAx;
+        els.stage.dataset.regs = Math.round(regAx) + ',' + Math.round(regBx);
         els.stage.dataset.paused = sim.paused ? '1' : '0';
         var cast = [];
         function pushCast(actor) {
@@ -6555,14 +8529,15 @@
         els.stage.dataset.cast = cast.join(' ');
       }
       ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.fillStyle = '#1a1412';
+      ctx.fillStyle = (sim && sim.floorOn) ? '#342824' : '#1a1412';
       ctx.fillRect(0, 0, els.canvas.width, els.canvas.height);
       var shakeX = 0;
       var shakeY = 0;
-      if (sim && sim.shake > 0 && !reduceMotion) {
+      if (sim && sim.shake > 0 && sim.shake < 1) sim.shake = 0;
+      if (sim && sim.shake > 0 && !reduceMotion && !holdWrap && !(sim._ease) && !(sim._phone && sim.floorOn)) {
         var buzz = Date.now() / 16;
-        shakeX = Math.sin(buzz) * sim.shake;
-        shakeY = Math.cos(buzz * 1.3) * sim.shake * 0.65;
+        shakeX = Math.round(Math.sin(buzz) * sim.shake);
+        shakeY = Math.round(Math.cos(buzz * 1.3) * sim.shake * 0.65);
       }
       ctx.setTransform(dpr * scale, 0, 0, dpr * scale, (-cam.x + shakeX) * dpr * scale, (-cam.y + shakeY) * dpr * scale);
       ctx.lineJoin = 'round';
@@ -6598,9 +8573,9 @@
         sim._shed = (sim._frameMs || 0) > 18 || sim.customers.length > 70;
         sim._glow = 0;
       }
-      ctx.imageSmoothingEnabled = !(sim && sim._shed);
+      ctx.imageSmoothingEnabled = !(sim && (sim._shed || sim._phone));
       if ('imageSmoothingQuality' in ctx) {
-        ctx.imageSmoothingQuality = (sim && (sim.customers.length > 40 || sim._shed)) ? 'low' : 'medium';
+        ctx.imageSmoothingQuality = (sim && (sim._phone || sim.customers.length > 40 || sim._shed)) ? 'low' : 'medium';
       }
       if (plateKey() !== bakedKey) bakeStorePlate();
       if (storePlate) ctx.drawImage(storePlate, 0, 0, WORLD_W, WORLD_H);
@@ -6645,6 +8620,24 @@
         if (sim.you) drawList.push(sim.you);
         drawList.push(jackPose());
         drawList.sort(function (a, b) { return a.y - b.y; });
+        placeVisual(drawList, sim);
+        labelSlots = [];
+        bodySlots = [];
+        nameBudget = 1;
+        for (var bi = 0; bi < drawList.length; bi++) {
+          var bodyActor = drawList[bi];
+          if (!bodyActor || bodyActor.kind === 'jack' || bodyActor.hidden) continue;
+          var bodyH = personDrawH();
+          var bodyX = bodyActor._drawX != null ? bodyActor._drawX : bodyActor.x;
+          var bodyY = bodyActor._drawY != null ? bodyActor._drawY : bodyActor.y;
+          bodySlots.push({
+            x: bodyX,
+            top: bodyY - bodyH,
+            bottom: bodyY,
+            hw: Math.round(bodyH * 0.28),
+            kind: bodyActor.kind || ''
+          });
+        }
         var heavy = sim.customers.length > 40;
         var drawn = 0;
         for (var d = 0; d < drawList.length; d++) {
@@ -6657,9 +8650,71 @@
             if (!sim._shed) drawPalletJack(actor);
             continue;
           }
+          var homeX = actor.x;
+          var homeY = actor.y;
+          if (actor._drawX != null) {
+            actor.x = actor._drawX;
+            actor.y = actor._drawY;
+          }
           drawActor(actor);
+          actor.x = homeX;
+          actor.y = homeY;
         }
         if (isQA() && els.stage) {
+          var gapScale = screenScale();
+          function slotGap(a, b) {
+            var dx = Math.abs(a.x - b.x) - (a.hw + b.hw);
+            var dy = Math.abs((a.top + a.bottom) * 0.5 - (b.top + b.bottom) * 0.5) - ((a.bottom - a.top) + (b.bottom - b.top)) * 0.5;
+            if (dx < 0 && dy < 0) return Math.max(dx, dy);
+            if (dx < 0) return dy;
+            if (dy < 0) return dx;
+            return Math.hypot(dx, dy);
+          }
+          var minBody = null;
+          var nearPair = '';
+          function slotSeen(slot) {
+            return slot.x > cam.x - 8 && slot.x < cam.x + view.viewW + 8 && slot.bottom > cam.y - 8 && slot.top < cam.y + view.viewH + 8;
+          }
+          for (var gi = 0; gi < bodySlots.length; gi++) {
+            if (!slotSeen(bodySlots[gi])) continue;
+            for (var gj = gi + 1; gj < bodySlots.length; gj++) {
+              if (!slotSeen(bodySlots[gj])) continue;
+              var g = slotGap(bodySlots[gi], bodySlots[gj]) * gapScale;
+              if (minBody == null || g < minBody) {
+                minBody = g;
+                nearPair = bodySlots[gi].kind + '@' + Math.round(bodySlots[gi].x) + ',' + Math.round(bodySlots[gi].bottom) + ' ' + bodySlots[gj].kind + '@' + Math.round(bodySlots[gj].x) + ',' + Math.round(bodySlots[gj].bottom);
+              }
+            }
+          }
+          var minTag = null;
+          for (var ti = 0; ti < labelSlots.length; ti++) {
+            var tagBox = {
+              x: labelSlots[ti].x,
+              top: labelSlots[ti].y - labelSlots[ti].h,
+              bottom: labelSlots[ti].y,
+              hw: labelSlots[ti].w * 0.5
+            };
+            for (var tb = 0; tb < bodySlots.length; tb++) {
+              var tg = slotGap(tagBox, bodySlots[tb]) * gapScale;
+              if (minTag == null || tg < minTag) minTag = tg;
+            }
+            for (var tj = ti + 1; tj < labelSlots.length; tj++) {
+              var otherTag = {
+                x: labelSlots[tj].x,
+                top: labelSlots[tj].y - labelSlots[tj].h,
+                bottom: labelSlots[tj].y,
+                hw: labelSlots[tj].w * 0.5
+              };
+              var tt = slotGap(tagBox, otherTag) * gapScale;
+              if (minTag == null || tt < minTag) minTag = tt;
+            }
+          }
+          els.stage.dataset.minGap = minBody == null ? '' : String(Math.round(minBody));
+          els.stage.dataset.near = nearPair;
+          els.stage.dataset.tagGap = minTag == null ? '' : String(Math.round(minTag));
+          els.stage.dataset.tagNames = labelSlots.map(function (slot) { return slot.text; }).join(',');
+          els.stage.dataset.tags = String(labelSlots.length);
+          els.stage.dataset.drawH = String(personDrawH());
           var qSprite = 0;
           var qBlob = 0;
           var qSil = 0;
@@ -6672,6 +8727,30 @@
             else if (queued._drew === 'blob') qBlob++;
             else if (queued._drew === 'sil') qSil++;
           }
+          var leftPile = 0;
+          var tillPile = 0;
+          var qxy = [];
+          var aliveN = 0;
+          var onFloor = 0;
+          var stateBits = {};
+          for (qi = 0; qi < sim.customers.length; qi++) {
+            var body = sim.customers[qi];
+            if (!body || body.dead) continue;
+            aliveN++;
+            stateBits[body.state || '?'] = (stateBits[body.state || '?'] || 0) + 1;
+            if (body.state !== 'leave' && body.state !== 'flee') onFloor++;
+            var px = body._drawX != null ? body._drawX : body.x;
+            var py = body._drawY != null ? body._drawY : body.y;
+            if (px < 150) leftPile++;
+            if (py > 620) tillPile++;
+            if (body.state === 'queue' || body.state === 'checkout') qxy.push(Math.round(px) + ',' + Math.round(py));
+          }
+          els.stage.dataset.leftPile = String(leftPile);
+          els.stage.dataset.tillPile = String(tillPile);
+          els.stage.dataset.qxy = qxy.join(';');
+          els.stage.dataset.alive = String(aliveN);
+          els.stage.dataset.onFloor = String(onFloor);
+          els.stage.dataset.states = Object.keys(stateBits).map(function (key) { return key + ':' + stateBits[key]; }).join(',');
           var pN = 0;
           var pSprite = 0;
           var pBlob = 0;
@@ -6695,6 +8774,16 @@
           for (var ps = 0; ps < sim.staff.length; ps++) tallyPerson(sim.staff[ps]);
           tallyPerson(sim.you);
           els.stage.dataset.queueN = String(qN);
+          var qxy = [];
+          var waitN = 0;
+          for (var qj = 0; qj < sim.customers.length; qj++) {
+            var qp = sim.customers[qj];
+            if (qp.dead) continue;
+            if (qp.state === 'wait') waitN++;
+            if (qp.state === 'queue' || qp.state === 'checkout') qxy.push(Math.round(qp.x) + ',' + Math.round(qp.y));
+          }
+          els.stage.dataset.qxy = qxy.join(' ');
+          els.stage.dataset.waitN = String(waitN);
           els.stage.dataset.queueSprites = String(qSprite);
           els.stage.dataset.queueBlobs = String(qBlob);
           els.stage.dataset.queueSils = String(qSil);
@@ -6786,6 +8875,7 @@
           ctx.fillText(fl.text, fl.x, fl.y);
         }
         ctx.globalAlpha = 1;
+        if (sim && coach) focus = coachFocus();
         if (focus) {
           ctx.strokeStyle = 'rgba(224,163,34,0.95)';
           ctx.lineWidth = 4;
@@ -6812,9 +8902,14 @@
           ctx.textAlign = 'center';
           ctx.fillStyle = 'rgba(20,12,16,0.72)';
           var rushW = 92;
-          ctx.fillRect(view.cssW / 2 - rushW / 2, 8, rushW, 28);
+          var rushReserve = view.cssW < 720 ? 200 : 210;
+          var rushLeft = view.cssW / 2 - rushW / 2;
+          var rushLimit = view.cssW - rushReserve - rushW;
+          if (rushLeft > rushLimit) rushLeft = Math.max(8, rushLimit);
+          rushLeft = Math.round(rushLeft);
+          ctx.fillRect(rushLeft, 8, rushW, 28);
           ctx.fillStyle = '#ffb4b4';
-          ctx.fillText('RUSH', view.cssW / 2, 28);
+          ctx.fillText('RUSH', rushLeft + rushW / 2, 28);
         }
       }
       if (cam.overview) drawMinimap(view);
@@ -7209,6 +9304,11 @@
       ctx.restore();
     }
 
+    function personDrawH() {
+      if (sim && sim.floorOn && sim.live) return 96;
+      return SPRITE_PACK.displayH;
+    }
+
     function drawSpritePerson(a) {
       var pack = assets && assets.spritePack;
       if (!pack || !pack.ready) return false;
@@ -7221,7 +9321,7 @@
       var index = (a.frame || 0) % list.length;
       var frame = list[index];
       if (!frame || !frame.img) return false;
-      var dh = SPRITE_PACK.displayH;
+      var dh = personDrawH();
       var dw = dh * (frame.w / frame.h);
       var foot = (SPRITE_PACK.footY / frame.h) * dh;
       ctx.drawImage(frame.img, Math.round(-dw / 2), Math.round(-foot), Math.round(dw), Math.round(dh));
@@ -7240,7 +9340,7 @@
       if (!list) return false;
       var frame = list[(a.frame || 0) % list.length];
       if (!frame || !frame.img) return false;
-      var dh = SPRITE_PACK.displayH;
+      var dh = personDrawH();
       var dw = dh * (frame.w / frame.h);
       var foot = (SPRITE_PACK.footY / frame.h) * dh;
       var gw = Math.max(1, Math.round(dw));
@@ -7525,11 +9625,18 @@
     function drawActor(a) {
       var dir = a.face < 0 ? 'side' : a.dir;
       if (a.face < 0) dir = 'side';
-      var size = CONFIG.sprite;
+      var size = personDrawH();
       var reactX = 0;
       if ((a.bubble === 'angry' || a.angry) && !reduceMotion) reactX = Math.sin(Date.now() / 70) * 1.8;
       ctx.save();
       ctx.translate(a.x + reactX, a.y);
+      if (a.kind === 'cust' && LOOKS[a.charId]) {
+        ctx.fillStyle = LOOKS[a.charId].top;
+        ctx.beginPath();
+        ctx.ellipse(0, 6, 22, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillRect(-20, -Math.round(size * 0.72), 16, 28);
+      }
       if (a.face < 0) ctx.scale(-1, 1);
       if (a.pop > 0) {
         var popS = 1 + a.pop * (reduceMotion ? 0.08 : 0.22);
@@ -7574,7 +9681,8 @@
         ctx.restore();
       }
       if (!root.__hrShot && a.kind === 'cust' && a.arch !== 'lift' && a.state !== 'leave' && a.maxPatience) {
-        drawPatience(a.x, a.y - size - 8, clamp(a.patience / a.maxPatience, 0, 1));
+        var ring = clamp(a.patience / a.maxPatience, 0, 1);
+        drawPatience(a.x, a.y - size - 28, ring);
       }
       if (!root.__hrShot && a.bubble === 'angry' && !reduceMotion) {
         var puff = (Date.now() / 280 + (a.seq || 0)) % 1;
@@ -7597,18 +9705,42 @@
           ctx.drawImage(assets.img.icons, ir[0], ir[1], ir[2], ir[3], a.x - iconPx / 2, a.y - size - 18 - iconPx, iconPx, iconPx);
         }
       }
-      if (!root.__hrShot && a.arch === 'rusher') drawTag('Rush', a.x, a.y - size - 36);
-      else if (!root.__hrShot && a.arch === 'family') drawTag('Family', a.x, a.y - size - 36);
-      else if (!root.__hrShot && a.arch === 'lift') drawTag(a.state === 'flee' ? 'Catch' : 'Watch', a.x, a.y - size - 28);
-      else if (!root.__hrShot && a.haggling) drawTag('Coupon', a.x, a.y - size - 36);
-      if (!root.__hrShot && a.kind === 'staff' && a.id) {
-        var tag = firstName(a.id);
-        if (a.rush > 1) tag += ' →';
-        drawTag(tag, a.x, a.y - size - 16);
-      } else if (!root.__hrShot && a.kind === 'you') {
-        drawTag('YOU', a.x, a.y - size - 16);
+      if (!root.__hrShot && nameVisible(a) && nameBudget > 0) {
+        nameBudget -= 1;
+        var crewName = a.kind === 'staff' && a.id;
+        var familyName = a.arch === 'family' || a.giftSprite === 'family';
+        var tagged = false;
+        if (a.arch === 'rusher') {
+          var rushAt = tagAnchor(a.x, a.y - size - 36, 'Rush');
+          drawTag('Rush', rushAt.x, rushAt.y);
+          tagged = true;
+        } else if (familyName) {
+          var famAt = tagAnchor(a.x, a.y - size - 36, 'Family');
+          drawTag('Family', famAt.x, famAt.y);
+          tagged = true;
+        } else if (a.arch === 'lift') {
+          var liftWord = a.state === 'flee' ? 'Catch' : 'Watch';
+          var liftAt = tagAnchor(a.x, a.y - size - 28, liftWord);
+          drawTag(liftWord, liftAt.x, liftAt.y);
+          tagged = true;
+        } else if (a.haggling) {
+          var coupAt = tagAnchor(a.x, a.y - size - 36, 'Coupon');
+          drawTag('Coupon', coupAt.x, coupAt.y);
+          tagged = true;
+        }
+        if (!tagged && crewName) {
+          var tag = firstName(a.id);
+          if (a.rush > 1) tag += ' →';
+          var tagAt = staffTagPoint(a, tag);
+          drawTag(tag, tagAt.x, tagAt.y);
+          tagged = true;
+        } else if (!tagged && a.kind === 'you') {
+          var youAt = staffTagPoint(a, 'YOU');
+          drawTag('YOU', youAt.x, youAt.y);
+          tagged = true;
+        }
+        if (!tagged && a.heart > 0) drawTag('♥', a.x, a.y - size - 40);
       }
-      if (!root.__hrShot && a.heart > 0) drawTag('♥', a.x, a.y - size - 40);
     }
 
     function loop(ts) {
@@ -7619,9 +9751,15 @@
       lastTs = ts;
       if (!(dt >= 0)) dt = 0;
       if (dt > 0.05) dt = 0.05;
+      if (sim && sim._clockArm) {
+        sim._clockArm = 0;
+        dt = 0;
+        lastTs = ts;
+      }
       if (sim) sim._frameMs = rawMs;
         if (sim && !sim.paused && !sim.done) {
-        if (coach) {
+        if (coach && coach.step === 1 && coach.until != null && sim.t >= coach.until - 1e-4) onCoachProgress('freight');
+        if (coachBlocksPlay()) {
           for (var cs = 0; cs < sim.staff.length; cs++) updateStaffActor(sim, run, sim.staff[cs], dt);
           if (sim.you) updateStaffActor(sim, run, sim.you, dt);
           for (var cc = 0; cc < sim.customers.length; cc++) tickAnim(sim.customers[cc], dt);
@@ -7640,26 +9778,30 @@
         if (stepDt > 0) step(sim, run, stepDt);
         }
         while (sim.notes.length) toast(sim.notes.shift());
-        if (sim.pending && shownEvent !== sim.pending) {
-          shownEvent = sim.pending;
-          shownType = null;
-          renderEvent();
-        }
-        if (!sim.pending && shownEvent) {
-          shownEvent = null;
-          if (!sim.typeCard) els.event.hidden = true;
-        }
         paintPromptTimer();
         if (!sim._shed || ((sim._frames || 0) % 4) === 0) paintHud();
         liveAcc += dt;
         if (liveAcc > 5 && els.live) {
           liveAcc = 0;
-          els.live.textContent = shiftLabel(run.day) + ' ' + clockLabel(sim._clockT == null ? sim.t : sim._clockT, sim.duration) + ', sales ' + money(sim.sales) + ' of ' + money(sim.goal) + ', morale ' + Math.round(sim.morale) + '.';
+          els.live.textContent = shiftLabel(run.day) + ' ' + liveClockFace(sim) + ', sales ' + money(sim.sales) + ' of ' + money(sim.goal) + ', morale ' + Math.round(sim.morale) + '.';
         }
         if (hooks.heat) hooks.heat(sim.customers.length, !!(sim._heat && sim._heat.rush && !sim.coachHold));
         if (!coach && sim.done) finishDay();
         simSaveAcc += dt;
         if (simSaveAcc > 1) { simSaveAcc = 0; saveRun(); }
+      }
+      if (sim && coachBlocksPlay()) {
+        if (els.event && !els.event.hidden) els.event.hidden = true;
+        shownEvent = null;
+        shownType = null;
+      } else if (sim && sim.pending && shownEvent !== sim.pending) {
+        shownEvent = sim.pending;
+        shownType = null;
+        renderEvent();
+      }
+      if (sim && !sim.pending && shownEvent) {
+        shownEvent = null;
+        if (!sim.typeCard) els.event.hidden = true;
       }
       if (sim && sim.typeCard && !sim.pending && shownType !== sim.typeCard) {
         shownType = sim.typeCard;
@@ -7679,6 +9821,7 @@
         shownType = null;
         if (!sim.pending) els.event.hidden = true;
       }
+      if (sim && !sim.pending && !sim.typeCard) sim._cardCam = null;
       if (!els.sim.hidden) draw();
     }
 
@@ -7712,13 +9855,14 @@
 
     var pointers = {};
     function zoomBy(mult) {
-      var before = cam.zoom || 1;
       var cssW = els.canvas._cssW || 800;
-      var next = HR.render ? HR.render.clampZoom(cssW, before * mult) : before * mult;
+      if (cssW < 720 && sim && sim.floorOn) return;
+      var before = cam.zoom || 1;
+      var cssH = els.canvas._cssH || 450;
+      var next = HR.render ? HR.render.clampZoom(cssW, before * mult, cssH) : before * mult;
       if (Math.abs(next - before) < 0.005) {
-        if (mult < 1 && cssW < 720 && !cam.overview) {
-          toggleFrame();
-          toast('Phone view stays close so people stay readable. The map is the whole floor.');
+        if (mult < 1 && cssW < 720) {
+          toast('The floor fills this screen.', true);
           return;
         }
         toast(mult < 1 ? 'That is as far as the camera pulls back.' : 'That is as close as the camera goes.');
@@ -7732,11 +9876,12 @@
       draw();
     }
     function toggleFrame() {
+      if ((els.canvas._cssW || 0) < 720 && sim && sim.floorOn) return;
       cam.overview = !cam.overview;
       cam.fit = false;
       var frameBtn = document.getElementById('hr-frame');
       if (frameBtn) frameBtn.setAttribute('aria-pressed', cam.overview ? 'true' : 'false');
-      cam.follow = !cam.overview;
+      cam.follow = false;
       draw();
     }
     var zoomIn = document.getElementById('hr-zoom-in');
@@ -7767,7 +9912,7 @@
       if (frameNow) frameNow.setAttribute('aria-pressed', 'false');
       cam.x = Math.max(0, WORLD_W - view.viewW);
       cam.follow = false;
-      setTimeout(function () { if (!coach) cam.follow = true; }, 2600);
+      cam.userPan = true;
       draw();
     });
     ['left', 'right', 'up', 'down'].forEach(function (dir) {
@@ -7785,7 +9930,7 @@
         cam.x = clamp(cam.x, 0, Math.max(0, WORLD_W - view.viewW));
         cam.y = clamp(cam.y, 0, Math.max(0, WORLD_H - view.viewH));
         cam.follow = false;
-        setTimeout(function () { if (!coach) cam.follow = true; }, 2600);
+        cam.userPan = true;
         draw();
       });
     });
@@ -7799,6 +9944,7 @@
 
     els.stage.addEventListener('pointerdown', function (ev) {
       if (els.sim.hidden || ev.button > 0) return;
+      if (cardTapBlocked()) return;
       pointers[ev.pointerId] = { x: ev.clientX, y: ev.clientY };
       if (Object.keys(pointers).length >= 2) return;
       if (ev.target.closest && ev.target.closest('button, .hr-card')) return;
@@ -7813,7 +9959,6 @@
         else if (preview && preview.ping) { px = preview.ping.x; py = preview.ping.y; }
         else if (preview && preview.x != null) { px = preview.x; py = preview.y; }
         tapFx(sim, px, py);
-        draw();
       }
       cam.drag = { x: ev.clientX, y: ev.clientY, cx: cam.x, cy: cam.y, moved: false, phone: phonePan, locked: touchTap ? '' : (phonePan ? '' : 'pan'), touch: touchTap };
       if (!phonePan) {
@@ -7822,6 +9967,11 @@
       }
     }, { passive: true });
     els.stage.addEventListener('pointermove', function (ev) {
+      if (sim && !(cam.drag && cam.drag.moved)) {
+        var hovered = nearestLabeled(ev);
+        var hoverKey = hovered ? actorKey(hovered) : worldKeyAt(ev);
+        if (sim._hoverKey !== hoverKey) sim._hoverKey = hoverKey;
+      }
       if (pointers[ev.pointerId]) pointers[ev.pointerId] = { x: ev.clientX, y: ev.clientY };
       var ids = Object.keys(pointers);
       if (ids.length >= 2 && HR.render) {
@@ -7855,11 +10005,13 @@
         try { els.stage.setPointerCapture(ev.pointerId); } catch (eCap) {}
       }
       var view = viewSize();
-      var scale = view.cssW / view.viewW;
+      var dragRect = els.canvas.getBoundingClientRect();
+      var scale = (dragRect.width || view.cssW) / Math.max(1, view.viewW);
       var mx = ev.clientX - cam.drag.x;
       var my = ev.clientY - cam.drag.y;
       if (Math.abs(mx) + Math.abs(my) > 10) cam.drag.moved = true;
       if (!cam.drag.moved) return;
+      if (sim && sim._phone && sim.floorOn) return;
       cam.x = clamp(cam.drag.cx - mx / scale, 0, Math.max(0, WORLD_W - view.viewW));
       cam.y = clamp(cam.drag.cy - my / scale, 0, Math.max(0, WORLD_H - view.viewH));
     }, { passive: true });
@@ -7868,8 +10020,11 @@
       if (Object.keys(pointers).length < 2) cam.pinch = 0;
       var wasTap = cam.drag && !cam.drag.moved;
       if (cam.drag && cam.drag.moved) {
-        setTimeout(function () { if (!coach) cam.follow = true; }, 2600);
-      } else if (!coach) cam.follow = true;
+        var travel = ev ? Math.abs(ev.clientX - cam.drag.x) + Math.abs(ev.clientY - cam.drag.y) : 99;
+        var wrapHold = sim && sim.mechanic === 'wrap' && !sim._playerAct && !(sim.wraps > 0);
+        if (!(sim && sim._phone && sim.floorOn) && (!wrapHold || travel > 24)) cam.userPan = true;
+      }
+      cam.follow = false;
       cam.drag = null;
       if (wasTap && ev && !(ev.target && ev.target.closest && ev.target.closest('button'))) onStageTap(ev);
     }
@@ -7890,11 +10045,39 @@
       if (name === 'calm') return { x: SPOTS.reg1.x, y: QUEUE.reg1.y };
       return { x: SPOTS.reg1.x, y: SPOTS.reg1.y };
     }
+    function pressWrap() {
+      if (!sim) return;
+      var ping = null;
+      if (sim.pings) {
+        for (var i = 0; i < sim.pings.length; i++) {
+          if (sim.pings[i].kind === 'wrap' && !sim.pings[i].dead) { ping = sim.pings[i]; break; }
+        }
+      }
+      if (!ping) {
+        toast('Wait for the next gift. Wrap glows on the table.');
+        sfx('miss');
+        return;
+      }
+      tapFx(sim, ping.x, ping.y);
+      flashAt(sim, ping.x, ping.y);
+      hooks.tap();
+      hooks.coin();
+      resolvePing(sim, ping);
+      sfx('place');
+      buzz(12);
+      paintHud();
+      draw();
+      saveRun();
+    }
     function pressAct(name, btn) {
       if (!sim) return;
       lastActAt = root.performance ? root.performance.now() : Date.now();
       if (btn) btn.classList.add('is-down');
       if (root.CGSfx && root.CGSfx.juice && btn) root.CGSfx.juice(btn, 'pop');
+      if (name === 'wrap') {
+        pressWrap();
+        return;
+      }
       playerAct(name, { point: actPoint(name) });
     }
     els.sim.addEventListener('pointerdown', function (ev) {
@@ -8111,10 +10294,16 @@
       paintSpriteStatus();
       bakeStorePlate();
       resize();
+      try { if (localStorage.getItem('hr_tut_done') === '1') root.__hrSawTut = 1; } catch (eSawTut) {}
       var saved = readJSON('hr_run_v1');
       var campBoot = campaignGet();
       var resumable = saved && saved.v === 3 && saved.ymd === ymd && saved.phase && saved.phase !== 'intro' && saved.days && saved.days.length === SHIFT_COUNT;
-      if ((previewHas('kiosk') || previewHas('bus')) && books && HR.economy) {
+      var seedPreview = (previewHas('kiosk') || previewHas('bus')) && books && HR.economy;
+      var seedGranted = false;
+      if (seedPreview) {
+        try { seedGranted = localStorage.getItem('hr_seed_grant') === '1'; } catch (eGrant) { seedGranted = false; }
+      }
+      if (seedPreview && !seedGranted) {
         if (previewHas('kiosk')) {
           books.cash = Math.max(books.cash || 0, 20000);
           ['knock', 'lane', 'kiosk'].forEach(function (id) {
@@ -8126,33 +10315,47 @@
         }
         if (HR.save) HR.save.save(writeJSON, books);
         try {
-          localStorage.setItem('hr_tut_done', '1');
+          root.__hrInternal = true;
           localStorage.setItem('hr_coach_price', '1');
           localStorage.setItem('hr_coach_mall', '1');
+          localStorage.setItem('hr_seed_grant', '1');
           localStorage.removeItem('hr_run_v1');
         } catch (eSeed) {}
+        root.__hrInternal = false;
         var seedCamp = campaignGet();
         seedCamp.seen = true;
         seedCamp.bank = books.cash;
         campaignPut(seedCamp);
         run = newRun(ymd);
         applyCampaign(run);
-        run.phase = 'map';
         syncFloor(true);
-        renderMap();
-        var seedMsg = previewHas('kiosk')
-          ? 'Plaza Kiosk is unlocked. Pick a shift to play that floor.'
-          : 'Pick a shift. The tour bus is queued.';
-        if (previewHas('kiosk') && previewHas('bus')) seedMsg = 'Plaza Kiosk is unlocked. The tour bus is queued on this shift.';
-        toast(seedMsg, true);
         if (els.stage) els.stage.dataset.seed = previewSeeds().join(',');
+        if (!tutDone()) {
+          beginShift(0);
+        } else {
+          run.phase = 'map';
+          renderMap();
+          var seedMsg = previewHas('kiosk')
+            ? 'Plaza Kiosk is unlocked. Pick a shift to play that floor.'
+            : 'Pick a shift. The tour bus is queued.';
+          if (previewHas('kiosk') && previewHas('bus')) seedMsg = 'Plaza Kiosk is unlocked. The tour bus is queued on this shift.';
+          toast(seedMsg, true);
+        }
+      } else if (resumable && !tutDone()) {
+        run = saved;
+        applyCampaign(run);
+        run.simState = null;
+        run.day = 0;
+        run.phase = 'sim';
+        beginShift(0);
       } else if (resumable) {
         run = saved;
+        run._wrote = 1;
         applyCampaign(run);
         if (!run.suggested) run.suggested = [];
         track('holiday_rush_resume', { seed: ymd });
         enterPhase();
-      } else if (!campBoot.seen) {
+      } else if ((!campBoot.seen && !seedPreview) || !tutDone()) {
         beginShift(0);
       } else {
         run = newRun(ymd);
@@ -8178,6 +10381,7 @@
       combo: function (n) {
         if (!isQA() || !sim) return;
         sim.combo = n == null ? 4 : n;
+        if (sim.combo > (sim.bestCombo || 0)) sim.bestCombo = sim.combo;
         paintHud();
       },
       rush: function (on) {
@@ -8188,14 +10392,36 @@
       },
       card: function (id) {
         if (!isQA() || !sim) return '';
+        if (sim.pending) {
+          var heldTitle = document.getElementById('hr-ev-title');
+          return heldTitle ? heldTitle.textContent : (sim.pending.title || '');
+        }
+        var beat = null;
+        for (var bi = 0; bi < FLOOR_BEATS.length; bi++) if (FLOOR_BEATS[bi].id === id) beat = FLOOR_BEATS[bi];
+        if (beat) {
+          beatCard(sim, beat.id, beat.title, beat.body, beat.choices(sim, run));
+          renderEvent();
+          var beatTitle = document.getElementById('hr-ev-title');
+          var beatBody = els.event ? els.event.querySelector('p') : null;
+          return (beatTitle ? beatTitle.textContent : '') + ' | ' + (beatBody ? beatBody.textContent : '');
+        }
         sim.coachHold = false;
-        sim.paused = false;
-        sim.pending = buildEvent(id || 'boss', sim, run);
-        sim.pendingUntil = sim.t + 40;
+        openPending(sim, buildEvent(id || 'boss', sim, run), 40);
         renderEvent();
         var title = document.getElementById('hr-ev-title');
         var body = els.event ? els.event.querySelector('p') : null;
         return (title ? title.textContent : '') + ' | ' + (body ? body.textContent : '');
+      },
+      clock: function () {
+        if (!isQA() || !sim) return null;
+        var title = document.getElementById('hr-ev-title');
+        return {
+          t: Math.round(sim.t * 100) / 100,
+          paused: !!sim.paused,
+          hold: sim._hold || '',
+          id: sim.pending ? sim.pending.id : '',
+          title: title && !document.getElementById('hr-event').hidden ? title.textContent : ''
+        };
       },
       wrapState: function () {
         if (!isQA() || !sim) return null;
@@ -8260,6 +10486,19 @@
         var lab = document.querySelector('.hr-sales__top span');
         return lab ? lab.textContent : '';
       },
+      emptyBack: function () {
+        if (!isQA() || !sim) return '';
+        var bag = stockBag(sim);
+        if (bag) {
+          var id;
+          for (id in bag) if (Object.prototype.hasOwnProperty.call(bag, id)) bag[id] = 0;
+        }
+        sim.stock = 0;
+        sim.paused = true;
+        paintHud();
+        var stockText = document.getElementById('hr-stock-text');
+        return stockText ? stockText.textContent : '';
+      },
       setSales: function (sales, goal) {
         if (!isQA() || !sim) return;
         if (sales != null) sim.sales = sales;
@@ -8267,8 +10506,19 @@
         sim._paintSales = sim.sales;
         paintHud();
       },
+      setCosts: function (cogs) {
+        if (!isQA() || !sim) return;
+        sim.cogs = cogs || 0;
+      },
+      extra: function (n) {
+        if (!isQA() || !sim) return 0;
+        var count = n || 8;
+        for (var ei = 0; ei < count; ei++) spawnCustomer(sim, run, 'family');
+        return sim.customers.length;
+      },
       hold: function (on) {
         if (!isQA() || !sim) return;
+        if (sim._hold === 'card') return;
         sim.paused = on !== false;
       },
       forceTier: function (n) {
@@ -8388,6 +10638,8 @@
     newRun: newRun,
     greedy: greedy,
     simulate: simulate,
+    simulateLive: simulateLive,
+    kioskOneStarCosts: kioskOneStarCosts,
     verifyAtlases: verifyAtlases,
     verifySpritePack: verifySpritePack,
     SPRITE_PACK: SPRITE_PACK,
@@ -8433,11 +10685,17 @@
     line('mid8', mid8);
     if (comboMult(10) !== 4 || comboMult(40) !== 4 || multLabel(10) !== '×4' || multLabel(24) !== '×4') bad = true;
     if (goalStars(0.74) !== 0 || goalStars(0.75) !== 1 || goalStars(1) !== 2 || goalStars(1.2) !== 3) bad = true;
+    if (!(comboMult(4) < 3) || comboMult(6) >= 3 || !(comboMult(7) >= 3)) bad = true;
     var seedEnc = seedsFromSearch('?seed=kiosk%2Cbus&_vercel_share=abc').join(',');
     var seedDbl = seedsFromSearch('?seed=kiosk%252Cbus').join(',');
     var seedPlus = seedsFromSearch('?qa=1&seed=kiosk+bus').join(',');
     var seedBus = seedsFromSearch('?seed=bus').join(',');
     if (seedEnc !== 'kiosk,bus' || seedDbl !== 'kiosk,bus' || seedPlus !== 'kiosk,bus' || seedBus !== 'bus') bad = true;
+    if (seedsFromSearch('?seed=kiosk%2Cbus').join(',') !== 'kiosk,bus') bad = true;
+    var seededDay = newRun('2026-10-22');
+    if (!seededDay.days[0] || seededDay.days[0].events.join(',') !== 'boss,spill') bad = true;
+    if (!seededDay.days[0] || seededDay.days[0].eventTimes.join(',') !== '16.5,37.2') bad = true;
+    if (clockLabel(56, 62) !== '6:50 PM' || clockLabel(62, 62) !== '7:59 PM' || clockLabel(0, 62) !== '8:00 AM') bad = true;
     var wrapSim = { rng: function () { return 0.5; }, pings: [], floorOn: true, live: true, mechanic: 'wrap', t: 1 };
     offerWrap(wrapSim);
     if (!wrapSim.pings[0] || wrapSim.pings[0].life !== 22) bad = true;
@@ -8445,7 +10703,7 @@
     if (wrapSim.pings.length !== 1) bad = true;
     wrapSim.pings[0].dead = true;
     keepWrap(wrapSim);
-    if (wrapSim.pings.length !== 2 || wrapSim._wrapCamUntil !== 9) bad = true;
+    if (wrapSim.pings.length !== 2 || wrapSim._wrapCamUntil !== 15) bad = true;
     var tuned = { speedMul: 1, patience: 2, maxPatience: 2, saleMul: 1 };
     applyKioskTune({ crowd: 'gift' }, tuned);
     if (Math.abs(tuned.speedMul - 0.72) > 0.001 || Math.abs(tuned.patience - 3.1) > 0.001 || Math.abs(tuned.saleMul - 0.62) > 0.001) bad = true;
@@ -8467,6 +10725,42 @@
       if (mins < prevMin) bad = true;
       prevMin = mins;
     }
+    var faceSim = { t: 24.6, duration: 62 };
+    var faceA = liveClockFace(faceSim);
+    faceSim.t = 24.3;
+    var faceB = liveClockFace(faceSim);
+    if (clockMinutes(faceB) < clockMinutes(faceA) || faceSim._clockBack !== 1) bad = true;
+    var gapSim = {
+      floorOn: true,
+      live: true,
+      t: 10,
+      duration: 62,
+      pending: null,
+      typeCard: '',
+      paused: false,
+      _hold: '',
+      coachHold: false,
+      events: ['boss'],
+      eventIndex: 0,
+      eventTimes: [10],
+      actions: 3,
+      morale: 50,
+      stars: 3,
+      notes: [],
+      customers: [],
+      staff: []
+    };
+    openPending(gapSim, buildEvent('boss', gapSim, { day: 0 }), 7);
+    if (!gapSim.paused || gapSim._hold !== 'card') bad = true;
+    var heldT = gapSim.t;
+    resolvePending(gapSim, { day: 0 }, 0);
+    if (gapSim.paused || gapSim._clockArm !== 1) bad = true;
+    if (Math.abs((gapSim._nextCardAt - heldT) - (62 / 12)) > 0.02) bad = true;
+    maybeEvent(gapSim, { day: 0 });
+    if (gapSim.eventIndex !== 0 || gapSim.pending) bad = true;
+    gapSim.t = gapSim._nextCardAt;
+    maybeEvent(gapSim, { day: 0 });
+    if (!gapSim.pending || gapSim.pending.id !== 'boss' || gapSim.eventIndex !== 1) bad = true;
     var beatSeen = {};
     for (var beatI = 0; beatI < FLOOR_BEATS.length; beatI++) {
       var beatRow = FLOOR_BEATS[beatI];
