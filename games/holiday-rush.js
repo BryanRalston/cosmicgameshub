@@ -7092,10 +7092,6 @@
       els.canvas._dprCap = cap;
       var w = Math.max(280, Math.round(rect.width));
       var h = Math.max(200, Math.round(rect.height));
-      if (sim && sim._fixedCam && sim._phone && sim.floorOn) {
-        w = sim._fixedCam.cssW;
-        h = sim._fixedCam.cssH;
-      }
       els.canvas.width = Math.round(w * dpr);
       els.canvas.height = Math.round(h * dpr);
       els.canvas.style.width = w + 'px';
@@ -7346,7 +7342,7 @@
       var fitW = cssW / Math.max(1, worldW);
       var fitH = cssH / Math.max(1, worldH);
       var phone = cssW < 720;
-      var fit = phone ? Math.max(fitW, fitH) : Math.min(fitW, cssH / 800);
+      var fit = phone ? Math.min(fitW, fitH) : Math.min(fitW, cssH / 800);
       if (!(fit > 0.05)) fit = 0.05;
       return fit;
     }
@@ -7363,50 +7359,14 @@
       return camClamp(wrapAt.x - view.viewW * 0.5, wrapY - view.viewH * 0.46, view);
     }
 
-    function frameTarget(kind, view) {
-      if (kind === 'truck' && SPOTS.truck) {
-        return camClamp(SPOTS.truck.x - view.viewW * 0.58, SPOTS.truck.y - view.viewH * 0.36, view);
-      }
-      if (kind === 'wrap') return wrapCamTarget(view);
-      return null;
-    }
-
-    function freezePhoneCam() {
-      if (!sim || !sim._phone || !sim.floorOn) return false;
-      var lockW = els.canvas._cssW || 0;
-      var lockH = els.canvas._cssH || 0;
-      if (!sim._fixedCam) {
-        if (lockW < 300 || lockH < 420) return false;
-        cam.zoom = playZoomFor(lockW, lockH);
-        var lockedAt = playCamTarget(viewSize());
-        sim._fixedCam = { x: lockedAt.x, y: lockedAt.y, zoom: cam.zoom, cssW: lockW, cssH: lockH };
-      }
-      cam.follow = false;
-      cam.userPan = false;
-      cam.overview = false;
-      cam.fit = false;
-      sim._ease = null;
-      sim._heldWrap = 0;
-      cam.x = sim._fixedCam.x;
-      cam.y = sim._fixedCam.y;
-      cam.zoom = sim._fixedCam.zoom;
-      sim._cardCam = {
-        x: cam.x,
-        y: cam.y,
-        zoom: cam.zoom,
-        cssW: sim._fixedCam.cssW,
-        cssH: sim._fixedCam.cssH
-      };
-      els.canvas._cssW = sim._fixedCam.cssW;
-      els.canvas._cssH = sim._fixedCam.cssH;
-      return true;
-    }
-
     function playCamTarget(view) {
       if (sim && sim.floorOn && !cam.overview) {
         var worldW = WORLD_W || 1280;
         var worldH = WORLD_H || 900;
         var cssW = view.cssW || (els.canvas && els.canvas._cssW) || 800;
+        if (cssW < 720) {
+          return camClamp((worldW - view.viewW) / 2, (worldH - view.viewH) / 2, view);
+        }
         if (cssW >= 720) {
           var fullRoom = view.viewW >= worldW - 16 && view.viewH >= worldH - 16;
           if (fullRoom) return camClamp((worldW - view.viewW) / 2, (worldH - view.viewH) / 2, view);
@@ -7420,20 +7380,6 @@
           if (deskY < 0) deskY = 0;
           return camClamp((worldW - view.viewW) / 2, deskY, view);
         }
-        var leftQueue = ((SPOTS.reg1 && SPOTS.reg1.x) || 420) - 86;
-        var rightQueue = ((SPOTS.reg2 && SPOTS.reg2.x) || 680) + 86;
-        var edgePad = 74;
-        var x = (leftQueue + rightQueue) * 0.5 - view.viewW * 0.5;
-        if (x > leftQueue - edgePad) x = leftQueue - edgePad;
-        if (x + view.viewW < rightQueue + edgePad) x = rightQueue + edgePad - view.viewW;
-        var booth = wrapSpot();
-        var ringY = booth.y - wrapLift(booth) - 48;
-        var doorY = (SPOTS.door && SPOTS.door.y) || (worldH - 36);
-        var y = ringY;
-        if (y + view.viewH < doorY + 24) y = doorY + 24 - view.viewH;
-        if (y > ringY) y = ringY;
-        if (y < 0) y = 0;
-        return camClamp(x, y, view);
       }
       var left = SPOTS.reg1 || { x: 420, y: 700 };
       var right = SPOTS.reg2 || left;
@@ -7562,7 +7508,6 @@
       if (coach) return;
       var cap = document.getElementById('hr-coach');
       var hint = coachHint();
-      var wide = (els.canvas && els.canvas._cssW || window.innerWidth) >= 720;
       if (!cap) return;
       if (!wrapCoachOn()) {
         if (cap.getAttribute('data-wrap') === '1') {
@@ -7576,19 +7521,13 @@
         return;
       }
       var text = 'Tap the Wrap button, or the WRAP ring on the gift table. Each gift rings this drawer.';
-      if (wide) {
-        cap.hidden = true;
-        cap.removeAttribute('data-wrap');
-        if (hint && hint.dataset.coach !== '1') {
-          if (!hint.dataset.base) hint.dataset.base = hint.textContent;
-          hint.dataset.wrap = '1';
-          hint.textContent = text;
-        }
-        return;
+      cap.hidden = true;
+      cap.removeAttribute('data-wrap');
+      if (hint && hint.dataset.coach !== '1') {
+        if (!hint.dataset.base) hint.dataset.base = hint.textContent;
+        hint.dataset.wrap = '1';
+        hint.textContent = text;
       }
-      cap.hidden = false;
-      cap.setAttribute('data-wrap', '1');
-      cap.textContent = 'Tap the Wrap button, or the WRAP ring on the gift table.\nEach gift rings this drawer.';
     }
 
     function coachBlocksPlay() {
@@ -8341,7 +8280,8 @@
     }
 
     function viewSize() {
-      var frozen = sim && sim._cardCam && sim._cardCam.cssW;
+      var floorLive = !!(sim && sim.floorOn && !cam.overview && !cam.fit);
+      var frozen = !floorLive && sim && sim._cardCam && sim._cardCam.cssW;
       var cssW = frozen ? sim._cardCam.cssW : (els.canvas._cssW || 800);
       var cssH = frozen ? sim._cardCam.cssH : (els.canvas._cssH || 450);
       if (sim && sim.floorOn && !cam.overview && !cam.fit) {
@@ -8399,18 +8339,8 @@
       var dpr = els.canvas._dpr || 1;
       var cardFrozen = !!(sim && sim._cardCam);
       var focus = null;
-      var aimKind = '';
-      var deskWide = (els.canvas._cssW || 0) >= 720;
-      if (sim && sim.floorOn && !cam.overview && !cam.fit) {
-        if (!coach && wrapCoachOn() && !deskWide) aimKind = 'wrap';
-      }
-      var phoneLock = aimKind ? false : freezePhoneCam();
-      var deskLock = !!(sim && sim.floorOn && deskWide && !cam.overview && !cam.fit && !cam.userPan);
-      var lockPlay = !aimKind && (phoneLock || deskLock || !!(sim && sim.floorOn && !cam.overview && !cam.fit && !cam.userPan && !coach));
-      if (phoneLock) {
-        cardFrozen = false;
-        sim._camLock = { x: cam.x, y: cam.y, zoom: cam.zoom };
-      } else if (lockPlay) {
+      var lockPlay = !!(sim && sim.floorOn && !cam.overview && !cam.fit && (sim._phone || !cam.userPan));
+      if (lockPlay) {
         cam.follow = false;
         sim._ease = null;
         sim._heldWrap = 0;
@@ -8508,20 +8438,12 @@
           cam.y += ((fy - view.viewH * 0.58) - cam.y) * 0.08;
         }
       }
-      if (!cardFrozen && !phoneLock) {
+      if (!cardFrozen) {
         var snapped = camClamp(cam.x, cam.y, view);
         cam.x = snapped.x;
         cam.y = snapped.y;
       }
-      if (aimKind) {
-        var aimed = frameTarget(aimKind, view);
-        if (aimed) {
-          cam.follow = false;
-          cam.x = aimed.x;
-          cam.y = aimed.y;
-        }
-      }
-      if (sim && sim.floorOn && !aimKind) {
+      if (sim && sim.floorOn) {
         sim._frame = { x0: cam.x, y0: cam.y, x1: cam.x + view.viewW, y1: cam.y + view.viewH };
       } else if (sim) sim._frame = null;
       if (sim && sim._camLock && !sim._lockCss) sim._lockCss = { w: view.cssW, h: view.cssH };
@@ -8597,7 +8519,7 @@
         els.stage.dataset.cast = cast.join(' ');
       }
       ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.fillStyle = (sim && sim.floorOn && !sim._phone && (view.cssW || 0) >= 720) ? '#342824' : '#1a1412';
+      ctx.fillStyle = (sim && sim.floorOn) ? '#342824' : '#1a1412';
       ctx.fillRect(0, 0, els.canvas.width, els.canvas.height);
       var shakeX = 0;
       var shakeY = 0;
