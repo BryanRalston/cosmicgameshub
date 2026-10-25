@@ -1538,11 +1538,11 @@
     return loc && loc.stock ? loc.stock : null;
   }
 
-  function deliverEveningTruck(sim) {
-    if (!sim || sim._eveningTruck) return 0;
+  function addBackStock(sim, scale) {
+    if (!sim || !HR.economy || !HR.economy.starterStock) return 0;
     var bag = stockBag(sim);
-    if (!bag || !HR.economy || !HR.economy.starterStock) return 0;
-    var add = HR.economy.starterStock(0.1);
+    if (!bag) return 0;
+    var add = HR.economy.starterStock(scale);
     var n = 0;
     var id;
     for (id in add) {
@@ -1551,15 +1551,41 @@
       n += add[id];
     }
     if (!n) return 0;
-    sim._eveningTruck = 1;
     sim.stock = Math.max(sim.stock || 0, 0.74);
     sim.truck = 0;
     clearRestockPing(sim);
     return n;
   }
 
+  function deliverEveningTruck(sim) {
+    if (!sim || sim._eveningTruck) return 0;
+    var n = addBackStock(sim, 0.1);
+    if (!n) return 0;
+    sim._eveningTruck = 1;
+    return n;
+  }
+
+  function ensureOpeningStock(sim) {
+    if (!sim || sim.tenant || !sim.books) return;
+    if (!HR.economy || !HR.economy.starterStock || !HR.economy.unitsLeft) return;
+    var full = 0;
+    var base = HR.economy.starterStock(1);
+    var id;
+    for (id in base) full += base[id] || 0;
+    if (HR.economy.unitsLeft(sim.books) >= Math.round(full * 0.45)) return;
+    var bag = stockBag(sim);
+    if (!bag) return;
+    var floorBag = HR.economy.starterStock(0.55);
+    for (id in floorBag) {
+      if (!floorBag[id]) continue;
+      if ((bag[id] || 0) < floorBag[id]) bag[id] = floorBag[id];
+    }
+    sim.stock = Math.max(sim.stock || 0, 0.78);
+    sim._eveningTruck = 0;
+  }
+
   function keepRestockPing(sim) {
-    if (!sim || sim._eveningTruck || sim.done) return;
+    if (!sim || sim.done) return;
     if (!sim.pings) sim.pings = [];
     for (var i = 0; i < sim.pings.length; i++) {
       if (sim.pings[i].kind === 'restock' && !sim.pings[i].dead) {
@@ -2362,15 +2388,20 @@
       card.choices = [
         choice('Raincheck them', 0, function () { sim.stars = clamp(sim.stars - 0.12, 1, 5); sim.morale = clamp(sim.morale - 1, 0, 100); }),
         choice('Rush whoever is on freight', 0, function () {
-          if (stationPower(sim, run, 'freight') > 0.4) {
+          var powered = stationPower(sim, run, 'freight') > 0.4;
+          if (powered) {
             sim.stock = clamp(sim.stock + 0.16, 0, 1);
             note(sim, 'Freight filled the hole.');
           } else {
             sim.stock = clamp(sim.stock + 0.04, 0, 1);
             note(sim, 'Nobody really on freight.');
           }
+          if (sim.floorOn && sim.live && !sim.tenant) addBackStock(sim, powered ? 0.12 : 0.06);
         }),
-        choice('Fill it yourself', 1, function () { sim.stock = clamp(sim.stock + 0.22, 0, 1); })
+        choice('Fill it yourself', 1, function () {
+          sim.stock = clamp(sim.stock + 0.22, 0, 1);
+          if (sim.floorOn && sim.live && !sim.tenant) addBackStock(sim, 0.16);
+        })
       ];
       return card;
     }
@@ -2683,10 +2714,12 @@
       var leftNow = backLeft(sim);
       if (!sim._eveningTruck && leftNow <= 28) {
         if (deliverEveningTruck(sim)) note(sim, 'A late truck restocked the back room.');
+        leftNow = backLeft(sim);
       } else if (leftNow <= 0) {
         sim.stock = 0;
       }
-      if (!sim._eveningTruck && leftNow <= 40) keepRestockPing(sim);
+      if (leftNow <= 40) keepRestockPing(sim);
+      else clearRestockPing(sim);
     }
     if (frozen) {
       /* count holds the shelf still */
@@ -3385,8 +3418,8 @@
       spend();
       var hadTruck = sim.truck > 0;
       var calledTruck = 0;
-      if (sim.floorOn && sim.live && !sim.tenant && backLeft(sim) <= 48) {
-        calledTruck = deliverEveningTruck(sim);
+      if (sim.floorOn && sim.live && !sim.tenant && backLeft(sim) <= 40) {
+        calledTruck = addBackStock(sim, 0.28);
       }
       sim.truck = 0;
       sim.hornPlayed = false;
@@ -3403,7 +3436,7 @@
       }
       floater(sim, SPOTS.truck.x, SPOTS.truck.y - 20, calledTruck ? 'Truck called' : (hadTruck ? 'Unloaded' : 'Stocked'), '#ffe08a', true);
       flashAt(sim, SPOTS.truck.x, SPOTS.truck.y);
-      if (calledTruck) note(sim, 'The late truck filled the back room.');
+      if (calledTruck) note(sim, 'A truck is filling the back room.');
       return { ok: true, msg: calledTruck ? 'A truck is filling the back room.' : (hadTruck ? 'You cleared the truck.' : 'You stocked the shelf.') };
     }
     if (name === 'calm') {
@@ -3962,7 +3995,10 @@
     if (!c.met) c.met = {};
     return c;
   }
-  function campaignPut(c) { writeJSON('hr_campaign_v1', c); }
+  function campaignPut(c) {
+    if (root.__hrNoSave) return;
+    writeJSON('hr_campaign_v1', c);
+  }
 
   function bankCopy(snap) {
     if (snap && snap.tenant) {
@@ -4570,7 +4606,14 @@
             try {
               root.__hrInternal = true;
               origRemove.call(this, 'hr_tut_done');
+              origRemove.call(this, 'hr_campaign_v1');
             } catch (eTut) {}
+            root.__hrInternal = false;
+          } else if (key === 'hr_run_v1' || key === 'hr_boot') {
+            try {
+              root.__hrInternal = true;
+              origRemove.call(this, 'hr_campaign_v1');
+            } catch (eCamp) {}
             root.__hrInternal = false;
           }
           root.__hrNoSave = true;
@@ -4884,6 +4927,7 @@
       try {
         localStorage.removeItem('hr_tut_done');
         localStorage.removeItem('hr_run_v1');
+        localStorage.removeItem('hr_campaign_v1');
       } catch (eTut) {}
       root.__hrInternal = false;
     }
@@ -5322,6 +5366,7 @@
         sim.books = books;
         sim.cogs = 0;
         sim.stockouts = 0;
+        ensureOpeningStock(sim);
       }
       applyStoreTune(sim);
       camp.seen = true;
@@ -5487,6 +5532,7 @@
             sim.books = books;
             sim.cogs = 0;
             sim.stockouts = 0;
+            ensureOpeningStock(sim);
           }
           renderSim({ resume: false });
         }
@@ -5786,11 +5832,11 @@
         var stockLabel = backUnits <= 0
           ? 'Shelf empty · Back 0'
           : ('Shelf ' + shelfPct + '% · Back ' + backUnits);
-        if (backUnits > 0 && sim.floorOn && !sim.tenant && !sim._eveningTruck && backUnits <= 40) stockLabel += ' · Call truck';
+        var callTruck = !!(sim.floorOn && !sim.tenant && backUnits <= 40);
+        if (callTruck) stockLabel += ' · Call truck';
         stockText.textContent = stockLabel;
         var freightName = els.sim && els.sim.querySelector('[data-act="freight"] span:last-child');
         if (freightName && sim.floorOn && !sim.tenant) {
-          var callTruck = !sim._eveningTruck && backUnits <= 40;
           var nextLabel = callTruck ? 'Call truck' : 'Work freight';
           if (freightName.textContent !== nextLabel) freightName.textContent = nextLabel;
         }
@@ -5920,7 +5966,10 @@
       var crewBtn = document.getElementById('hr-crew-btn');
       if (crewBtn) crewBtn.hidden = !!coach;
       if (act) {
-        if (coach && coach.step === 1) {
+        var wideCoach = (els.canvas && els.canvas._cssW || window.innerWidth) >= 720;
+        if (coach && wideCoach) {
+          act.textContent = '';
+        } else if (coach && coach.step === 1) {
           act.textContent = 'A truck is in. Work freight unloads it. The floor keeps moving.';
         } else if (coach) {
           act.textContent = 'Tutorial · clock is paused · step ' + (coach.step + 1) + ' of 3. Skip is there if you want the floor now.';
@@ -7297,7 +7346,7 @@
       var fitW = cssW / Math.max(1, worldW);
       var fitH = cssH / Math.max(1, worldH);
       var phone = cssW < 720;
-      var fit = phone ? Math.max(fitW, fitH) : fitW;
+      var fit = phone ? Math.max(fitW, fitH) : Math.min(fitW, cssH / 800);
       if (!(fit > 0.05)) fit = 0.05;
       return fit;
     }
@@ -7361,13 +7410,13 @@
         if (cssW >= 720) {
           var fullRoom = view.viewW >= worldW - 16 && view.viewH >= worldH - 16;
           if (fullRoom) return camClamp((worldW - view.viewW) / 2, (worldH - view.viewH) / 2, view);
-          var deskBooth = wrapSpot();
-          var deskTable = deskBooth.y - 20;
-          var deskRegs = ((SPOTS.reg1 && SPOTS.reg1.y) || 700) + 70;
-          var deskY = deskRegs + 36 - view.viewH;
-          if (deskY > deskTable) deskY = deskTable;
-          var deskTruck = (SPOTS.truck && SPOTS.truck.y) || 120;
-          if (view.viewH >= deskRegs + 36 - (deskTruck - 40)) deskY = deskTruck - 40;
+          var deskTruck = (SPOTS.truck && SPOTS.truck.y) || 130;
+          var deskTop = deskTruck - 78;
+          if (deskTop < 0) deskTop = 0;
+          var deskBottom = ((SPOTS.reg1 && SPOTS.reg1.y) || 700) + 130;
+          var deskY = deskTop;
+          if (deskTop + view.viewH < deskBottom) deskY = deskBottom - view.viewH;
+          if (deskY > deskTop) deskY = deskTop;
           if (deskY < 0) deskY = 0;
           return camClamp((worldW - view.viewW) / 2, deskY, view);
         }
@@ -7512,11 +7561,28 @@
     function paintWrapCoach() {
       if (coach) return;
       var cap = document.getElementById('hr-coach');
+      var hint = coachHint();
+      var wide = (els.canvas && els.canvas._cssW || window.innerWidth) >= 720;
       if (!cap) return;
       if (!wrapCoachOn()) {
         if (cap.getAttribute('data-wrap') === '1') {
           cap.hidden = true;
           cap.removeAttribute('data-wrap');
+        }
+        if (hint && hint.dataset.wrap === '1') {
+          delete hint.dataset.wrap;
+          if (hint.dataset.coach !== '1') hint.textContent = hint.dataset.base || '';
+        }
+        return;
+      }
+      var text = 'Tap the Wrap button, or the WRAP ring on the gift table. Each gift rings this drawer.';
+      if (wide) {
+        cap.hidden = true;
+        cap.removeAttribute('data-wrap');
+        if (hint && hint.dataset.coach !== '1') {
+          if (!hint.dataset.base) hint.dataset.base = hint.textContent;
+          hint.dataset.wrap = '1';
+          hint.textContent = text;
         }
         return;
       }
@@ -7545,9 +7611,8 @@
       var skip = document.getElementById('hr-skip');
       var hint = coachHint();
       var line = coachLine();
-      var phoneCoach = (els.canvas && els.canvas._cssW || window.innerWidth) < 720;
       if (hint && !hint.dataset.base) hint.dataset.base = hint.textContent;
-      if (phoneCoach && line) {
+      if (line) {
         if (cap) cap.hidden = true;
         if (hint) {
           hint.dataset.coach = '1';
@@ -7558,13 +7623,7 @@
           delete hint.dataset.coach;
           hint.textContent = hint.dataset.base || '';
         }
-        if (cap) {
-          cap.hidden = !line;
-          if (line) {
-            cap.textContent = line;
-            cap.removeAttribute('data-wrap');
-          }
-        }
+        if (cap && cap.getAttribute('data-wrap') !== '1') cap.hidden = true;
       }
       if (skip) skip.hidden = !coach;
       placeChrome();
@@ -8341,11 +8400,13 @@
       var cardFrozen = !!(sim && sim._cardCam);
       var focus = null;
       var aimKind = '';
+      var deskWide = (els.canvas._cssW || 0) >= 720;
       if (sim && sim.floorOn && !cam.overview && !cam.fit) {
-        if (!coach && wrapCoachOn()) aimKind = 'wrap';
+        if (!coach && wrapCoachOn() && !deskWide) aimKind = 'wrap';
       }
       var phoneLock = aimKind ? false : freezePhoneCam();
-      var lockPlay = !aimKind && (phoneLock || !!(sim && sim.floorOn && !cam.overview && !cam.fit && !cam.userPan && !coach));
+      var deskLock = !!(sim && sim.floorOn && deskWide && !cam.overview && !cam.fit && !cam.userPan);
+      var lockPlay = !aimKind && (phoneLock || deskLock || !!(sim && sim.floorOn && !cam.overview && !cam.fit && !cam.userPan && !coach));
       if (phoneLock) {
         cardFrozen = false;
         sim._camLock = { x: cam.x, y: cam.y, zoom: cam.zoom };
@@ -8536,7 +8597,7 @@
         els.stage.dataset.cast = cast.join(' ');
       }
       ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.fillStyle = '#1a1412';
+      ctx.fillStyle = (sim && sim.floorOn && !sim._phone && (view.cssW || 0) >= 720) ? '#342824' : '#1a1412';
       ctx.fillRect(0, 0, els.canvas.width, els.canvas.height);
       var shakeX = 0;
       var shakeY = 0;
