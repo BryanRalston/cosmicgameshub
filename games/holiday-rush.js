@@ -1875,15 +1875,19 @@
     for (i = 0; i < nodes.length; i++) {
       var drawX = nodes[i].x;
       var drawY = nodes[i].y;
-      var edge = sim && sim._frame;
-      if (edge && !nodes[i].lock) {
-        var half = spriteFootBox(sim).w * 0.55;
-        var limit = edge.x1 - half;
-        if (drawX > limit - half && drawX < edge.x1 + half) drawX = limit - half;
-      }
       if (nodes[i].lock && nodes[i].actor.reg) {
         var tillSide = nodes[i].actor.reg === 'reg2' ? 1 : -1;
         drawX += tillSide * (sim && sim._phone ? 48 : 34);
+      }
+      var edge = sim && sim._frame;
+      if (edge) {
+        var half = spriteFootBox(sim).w * 0.95;
+        var leftLimit = edge.x0 + half;
+        var rightLimit = edge.x1 - half;
+        if (rightLimit > leftLimit) {
+          if (drawX < leftLimit) drawX = leftLimit;
+          if (drawX > rightLimit) drawX = rightLimit;
+        }
       }
       nodes[i].actor._drawX = drawX;
       nodes[i].actor._drawY = drawY;
@@ -4554,14 +4558,20 @@
       var origClear = storeProto.clear;
       var origRemove = storeProto.removeItem;
       storeProto.clear = function () {
-        root.__hrNoSave = true;
-        bootToken = '';
+        if (!root.__hrInternal) {
+          root.__hrNoSave = true;
+          bootToken = '';
+        }
         return origClear.apply(this, arguments);
       };
       storeProto.removeItem = function (key) {
-        if (key === 'hr_boot' || key === 'hr_run_v1' || key === 'hr_meta_v1') {
+        if (!root.__hrInternal && (key === 'hr_boot' || key === 'hr_run_v1' || key === 'hr_meta_v1')) {
           if ((key === 'hr_run_v1' || key === 'hr_boot') && run && run._wrote) {
-            try { origRemove.call(this, 'hr_tut_done'); } catch (eTut) {}
+            try {
+              root.__hrInternal = true;
+              origRemove.call(this, 'hr_tut_done');
+            } catch (eTut) {}
+            root.__hrInternal = false;
           }
           root.__hrNoSave = true;
           bootToken = '';
@@ -4601,24 +4611,23 @@
       var feelCss = document.createElement('style');
       feelCss.id = 'hr-feel-css';
       feelCss.textContent = [
-        '#hr-event.hr-inline{position:absolute;left:8px;right:8px;top:8px;bottom:auto;height:auto;max-height:46%;z-index:6;margin:0;padding:0;background:transparent;display:flex;justify-content:center;align-items:flex-start;pointer-events:none;overflow:visible;}',
+        '#hr-event.hr-inline{position:relative;inset:auto;left:auto;right:auto;top:auto;bottom:auto;height:auto;max-height:none;z-index:6;margin:4px 0 0;padding:0;background:transparent;display:block;pointer-events:none;overflow:visible;}',
         '#hr-event.hr-inline[hidden]{display:none !important;}',
-        '#hr-event.hr-inline .hr-card{pointer-events:auto;width:min(560px,100%);max-height:100%;overflow:visible;padding:0.28rem 0.45rem 0.32rem;border-radius:12px;background:rgba(246,240,228,0.96);box-shadow:0 8px 22px rgba(0,0,0,0.35);box-sizing:border-box;display:flex;flex-direction:column;touch-action:pan-y;}',
-        '#hr-event.hr-inline .hr-card h2{font-size:0.92rem;line-height:1.15;margin:0 0 0.08rem;}',
-        '#hr-event.hr-inline .hr-card p{font-size:0.75rem;line-height:1.25;margin:0 0 0.2rem;display:block;overflow:visible;}',
+        '#hr-event.hr-inline .hr-card{pointer-events:auto;width:100%;max-height:none;overflow:visible;padding:0.2rem 0.4rem 0.24rem;border-radius:12px;background:rgba(246,240,228,0.96);box-shadow:0 6px 16px rgba(0,0,0,0.28);box-sizing:border-box;display:flex;flex-direction:column;touch-action:pan-y;}',
+        '#hr-event.hr-inline .hr-card h2{font-size:0.82rem;line-height:1.15;margin:0 0 0.08rem;}',
+        '#hr-event.hr-inline .hr-card p{font-size:0.72rem;line-height:1.2;margin:0 0 0.12rem;display:block;overflow:visible;}',
         '#hr-event.hr-inline .hr-card__art{display:none;}',
         '#hr-event.hr-inline .hr-choices{flex-direction:row;flex-wrap:wrap;gap:4px;align-items:stretch;overflow:visible;touch-action:manipulation;}',
-        '#hr-event.hr-inline .hr-choices button{width:auto;flex:1 1 auto;max-width:100%;height:auto;min-height:44px;font-size:0.8rem;padding:0.28rem 0.45rem;white-space:normal;line-height:1.2;align-items:center;background:#fff;background-image:none;color:#2b1d2e;border:2px solid #2b1d2e;overflow:visible;}',
+        '#hr-event.hr-inline .hr-choices button{width:auto;flex:1 1 140px;max-width:100%;height:auto;min-height:44px;font-size:0.78rem;padding:0.22rem 0.4rem;white-space:normal;line-height:1.2;align-items:center;background:#fff;background-image:none;color:#2b1d2e;border:2px solid #2b1d2e;overflow:visible;}',
         '#hr-event.hr-inline .hr-choices button span{flex:1 1 auto;min-width:0;white-space:normal;line-height:1.2;}',
         '#hr-event.hr-inline .hr-choice-cost{flex:0 0 auto;white-space:nowrap;}',
         '@media (max-width:720px){',
-        '#hr-event.hr-inline{position:absolute;left:8px;right:8px;top:8px;bottom:auto;height:auto;max-height:42%;margin:0;z-index:7;display:flex;align-items:flex-start;justify-content:center;overflow:visible;}',
-        '#hr-event.hr-inline .hr-card{width:100%;max-height:100%;overflow:visible;padding:0.22rem 0.35rem 0.26rem;box-sizing:border-box;display:flex;flex-direction:column;}',
-        '#hr-event.hr-inline .hr-card h2{font-size:0.86rem;line-height:1.15;margin:0 0 0.06rem;flex:0 0 auto;}',
-        '#hr-event.hr-inline .hr-card p{font-size:12px;line-height:1.2;margin:0 0 0.16rem;display:block;overflow:visible;white-space:normal;flex:0 0 auto;}',
-        '#hr-event.hr-inline .hr-choices{flex:0 0 auto;min-height:0;flex-direction:column;flex-wrap:nowrap;gap:4px;overflow:visible;touch-action:manipulation;padding-bottom:0;}',
-        '#hr-event.hr-inline .hr-choices button{width:100%;flex:0 0 auto;min-height:44px;height:auto;max-height:none;font-size:0.78rem;padding:0.22rem 0.4rem;white-space:normal;line-height:1.2;justify-content:flex-start;background:#fff;background-image:none;color:#2b1d2e;border:2px solid #2b1d2e;overflow:visible;}',
-        '#hr-event.hr-inline .hr-choice-cost{font-size:12px;padding:0.1rem 0.35rem;flex:0 0 auto;white-space:nowrap;}',
+        '#hr-event.hr-inline{position:relative;inset:auto;margin:2px 0 0;z-index:7;display:block;overflow:visible;}',
+        '#hr-event.hr-inline .hr-card{width:100%;padding:0.16rem 0.3rem 0.2rem;}',
+        '#hr-event.hr-inline .hr-card h2{font-size:0.78rem;line-height:1.1;margin:0 0 0.06rem;}',
+        '#hr-event.hr-inline .hr-card p{font-size:12px;line-height:1.15;margin:0 0 0.08rem;}',
+        '#hr-event.hr-inline .hr-choices{flex-direction:row;flex-wrap:wrap;gap:4px;}',
+        '#hr-event.hr-inline .hr-choices button{width:auto;flex:1 1 120px;min-height:44px;height:auto;font-size:0.75rem;padding:0.18rem 0.35rem;white-space:normal;line-height:1.15;background:#fff;background-image:none;color:#2b1d2e;border:2px solid #2b1d2e;overflow:visible;}',
         '}',
         '.hr-combo.is-idle{background:#3a2a18;color:#ffe7a3;box-shadow:inset 0 0 0 2px #e0a322;}',
         '.hr-card__timer{height:4px;border-radius:99px;background:rgba(43,29,46,0.15);overflow:hidden;margin:0 0 0.35rem;}',
@@ -4713,22 +4722,23 @@
       }
     }
     function placeEventCard() {
-      if (!els.event || !els.stage) return;
-      if (els.event.parentNode !== els.stage) els.stage.appendChild(els.event);
+      if (!els.event || !els.sim) return;
+      var dock = document.getElementById('hr-toast-dock');
+      if (dock && dock.parentNode === els.sim) {
+        if (els.event.parentNode !== els.sim || els.event.nextSibling !== dock) els.sim.insertBefore(els.event, dock);
+        return;
+      }
+      if (els.stage && els.event.parentNode !== els.stage) els.stage.appendChild(els.event);
     }
 
     function fitCardBox() {
       if (!els.event || !els.stage || els.event.hidden) return;
       var h = els.stage.clientHeight || 0;
       if (!(h > 0)) return;
-      var phoneCard = (els.canvas && els.canvas._cssW || 800) < 720;
-      els.event.style.position = 'absolute';
+      els.event.style.position = 'relative';
+      els.event.style.inset = 'auto';
       els.event.style.background = 'transparent';
       els.event.style.pointerEvents = 'none';
-      els.event.style.top = '8px';
-      els.event.style.bottom = 'auto';
-      els.event.style.left = '8px';
-      els.event.style.right = '8px';
       els.event.style.height = 'auto';
       els.event.style.maxHeight = 'none';
       els.event.style.overflow = 'visible';
@@ -4773,28 +4783,28 @@
           label.style.maxHeight = 'none';
         }
       }
-      var limit = Math.floor(h * (phoneCard ? 0.42 : 0.46));
-      if (body && card.offsetHeight > limit) {
-        var extra = card.offsetHeight - limit;
-        var nextBody = body.offsetHeight - extra;
-        if (nextBody < 36) nextBody = 36;
-        body.style.maxHeight = nextBody + 'px';
-        body.style.overflowY = 'auto';
+      var limit = Math.max(72, Math.floor(h * 0.2));
+      if (body && card.offsetHeight > limit) body.style.display = 'none';
+      if (title && card.offsetHeight > limit) {
+        title.style.whiteSpace = 'nowrap';
+        title.style.overflow = 'hidden';
+        title.style.textOverflow = 'ellipsis';
       }
       var clip = '0';
       var cardBox = card.getBoundingClientRect();
-      var stageBox = els.stage.getBoundingClientRect();
+      var viewBottom = window.innerHeight || (cardBox.bottom + 1);
       for (var ci = 0; ci < btns.length; ci++) {
         var box = btns[ci].getBoundingClientRect();
         var span = btns[ci].querySelector('span');
         var textCut = span && (span.scrollWidth > span.clientWidth + 2 || span.scrollHeight > span.clientHeight + 2);
         var outside = box.bottom > cardBox.bottom + 1 || box.top < cardBox.top - 1 || box.right > cardBox.right + 1 || box.left < cardBox.left - 1;
-        var offStage = box.bottom > stageBox.bottom + 1 || box.top < stageBox.top - 1 || box.right > stageBox.right + 1 || box.left < stageBox.left - 1;
-        if (textCut || outside || offStage || box.height < 36) clip = '1';
+        var offView = box.bottom > viewBottom + 1 || box.top < -1 || box.right > (window.innerWidth || box.right) + 1 || box.left < -1;
+        if (textCut || outside || offView || box.height < 36) clip = '1';
       }
       if (isQA() && els.stage) {
         els.stage.dataset.cardCap = String(Math.round(card.offsetHeight));
         els.stage.dataset.cardClip = clip;
+        els.stage.dataset.cardRatio = h ? String(Math.round((card.offsetHeight / h) * 100)) : '0';
       }
     }
 
@@ -4868,25 +4878,39 @@
     }
 
     function holdClearedRun() {
-      try { localStorage.removeItem('hr_tut_done'); } catch (eTut) {}
       root.__hrNoSave = true;
       bootToken = '';
+      root.__hrInternal = true;
+      try {
+        localStorage.removeItem('hr_tut_done');
+        localStorage.removeItem('hr_run_v1');
+      } catch (eTut) {}
+      root.__hrInternal = false;
+    }
+
+    function userClearedSave() {
+      if (root.__hrNoSave) return true;
+      try {
+        if (bootToken && localStorage.getItem('hr_boot') !== bootToken) return true;
+        if (run && run._wrote && localStorage.getItem('hr_run_v1') == null) return true;
+        if (root.__hrSawTut && localStorage.getItem('hr_tut_done') !== '1') return true;
+      } catch (eClear) { return true; }
+      return false;
     }
 
     function saveRun() {
-      if (root.__hrNoSave || !storageLive()) return;
+      if (userClearedSave()) {
+        holdClearedRun();
+        return;
+      }
+      if (!storageLive()) return;
       if (!run) return;
-      try {
-        if (run._wrote && localStorage.getItem('hr_run_v1') == null) {
-          holdClearedRun();
-          return;
-        }
-      } catch (eGone) {}
       if (sim && run.phase === 'sim' && !sim.done) {
         try { run.simState = exportSim(sim); } catch (e) { run.simState = null; }
       }
       writeJSON('hr_run_v1', run);
       try { if (localStorage.getItem('hr_run_v1')) run._wrote = 1; } catch (eWrote) {}
+      try { if (localStorage.getItem('hr_tut_done') === '1') root.__hrSawTut = 1; } catch (eSaw) {}
     }
 
     function show(which) {
@@ -6568,12 +6592,19 @@
           : '<span class="hr-lock" aria-label="Locked">Lock</span>';
         html += '<button type="button" class="hr-node' + (open ? '' : ' is-locked') + (next ? ' is-next' : '') + '" data-shift="' + i + '"' + (open ? '' : ' disabled') + '><b>' + esc(def.short) + '</b><small>' + (i + 1) + '</small>' + mark + '</button>';
       }
-      html += '</div><div class="hr-cta"><button type="button" class="btn" id="hr-map-shop">Upgrades</button></div>';
+      html += '</div><div class="hr-cta"><button type="button" class="btn" id="hr-replay-tut">Replay tutorial</button><button type="button" class="btn" id="hr-map-shop">Upgrades</button></div>';
       els.map.innerHTML = html;
       els.map.querySelector('.hr-map').addEventListener('click', function (ev) {
         var btn = ev.target.closest('[data-shift]');
         if (!btn || btn.disabled) return;
         beginShift(+btn.getAttribute('data-shift'));
+      });
+      document.getElementById('hr-replay-tut').addEventListener('click', function () {
+        root.__hrInternal = true;
+        try { localStorage.removeItem('hr_tut_done'); } catch (eReplay) {}
+        root.__hrInternal = false;
+        root.__hrSawTut = 0;
+        beginShift(0);
       });
       document.getElementById('hr-map-shop').addEventListener('click', function () {
         if (run) { run.phase = 'shop'; saveRun(); }
@@ -6996,10 +7027,11 @@
     }
 
     function pixelBudget() {
-      if (sim && sim._phone && !(sim.customers && sim.customers.length > 70)) return 2;
-      if (sim && sim._dprCap) return sim._dprCap;
-      if (sim && sim.customers && sim.customers.length > 70) return 0.5;
-      return 2;
+      if (sim && sim.customers && sim.customers.length > 70) return 1;
+      var cssW = els.canvas && els.canvas._cssW || 0;
+      if (cssW >= 720) return 1;
+      if (sim && sim._phone) return 2;
+      return 1;
     }
 
     function resize() {
@@ -7181,7 +7213,10 @@
           skip.style.right = (stageBox.width < 720 ? 8 : clearance) + 'px';
         }
       }
-      if (!coachEl) return;
+      if (!coachEl) {
+        cacheBannerBottom();
+        return;
+      }
       var skipW = skip && !skip.hidden ? skip.offsetWidth + 8 : 0;
       if (bannerLow) {
         coachEl.style.top = 'auto';
@@ -7199,6 +7234,20 @@
         coachEl.style.left = '8px';
         coachEl.style.right = (clearance + skipW) + 'px';
       }
+      cacheBannerBottom();
+    }
+
+    function cacheBannerBottom() {
+      var coachNode = document.getElementById('hr-coach');
+      var canvas = els.canvas;
+      root.__hrBannerBottom = 0;
+      if (!coachNode || coachNode.hidden || !canvas) return;
+      var coachBox = coachNode.getBoundingClientRect();
+      var canvasBox = canvas.getBoundingClientRect();
+      if (!(coachBox.height > 8) || !(canvasBox.height > 8)) return;
+      if (coachBox.bottom <= canvasBox.top || coachBox.top >= canvasBox.bottom) return;
+      var stageH = canvas._cssH || canvasBox.height;
+      root.__hrBannerBottom = (coachBox.bottom - canvasBox.top) * (stageH / canvasBox.height);
     }
 
     function showPlanNote(text) {
@@ -7248,7 +7297,7 @@
       var fitW = cssW / Math.max(1, worldW);
       var fitH = cssH / Math.max(1, worldH);
       var phone = cssW < 720;
-      var fit = phone ? Math.max(fitW, fitH) : Math.min(fitW, fitH);
+      var fit = phone ? Math.max(fitW, fitH) : fitW;
       if (!(fit > 0.05)) fit = 0.05;
       return fit;
     }
@@ -7310,10 +7359,24 @@
         var worldH = WORLD_H || 900;
         var cssW = view.cssW || (els.canvas && els.canvas._cssW) || 800;
         if (cssW >= 720) {
-          return camClamp((worldW - view.viewW) / 2, (worldH - view.viewH) / 2, view);
+          var fullRoom = view.viewW >= worldW - 16 && view.viewH >= worldH - 16;
+          if (fullRoom) return camClamp((worldW - view.viewW) / 2, (worldH - view.viewH) / 2, view);
+          var deskBooth = wrapSpot();
+          var deskTable = deskBooth.y - 20;
+          var deskRegs = ((SPOTS.reg1 && SPOTS.reg1.y) || 700) + 70;
+          var deskY = deskRegs + 36 - view.viewH;
+          if (deskY > deskTable) deskY = deskTable;
+          var deskTruck = (SPOTS.truck && SPOTS.truck.y) || 120;
+          if (view.viewH >= deskRegs + 36 - (deskTruck - 40)) deskY = deskTruck - 40;
+          if (deskY < 0) deskY = 0;
+          return camClamp((worldW - view.viewW) / 2, deskY, view);
         }
-        var focus = view.viewW > 1100 ? 740 : 620;
-        var x = focus - view.viewW * 0.5;
+        var leftQueue = ((SPOTS.reg1 && SPOTS.reg1.x) || 420) - 86;
+        var rightQueue = ((SPOTS.reg2 && SPOTS.reg2.x) || 680) + 86;
+        var edgePad = 74;
+        var x = (leftQueue + rightQueue) * 0.5 - view.viewW * 0.5;
+        if (x > leftQueue - edgePad) x = leftQueue - edgePad;
+        if (x + view.viewW < rightQueue + edgePad) x = rightQueue + edgePad - view.viewW;
         var booth = wrapSpot();
         var ringY = booth.y - wrapLift(booth) - 48;
         var doorY = (SPOTS.door && SPOTS.door.y) || (worldH - 36);
@@ -7430,8 +7493,10 @@
         if (c.bubble === 'angry' || (c.maxPatience && c.patience < c.maxPatience * 0.4)) angry = c;
       }
       var calmAt = angry ? { x: angry.x, y: angry.y - 40 } : { x: SPOTS.floor.x, y: SPOTS.floor.y - 40 };
-      var calmAim = aimOnScreen(calmAt.x, calmAt.y, 48);
+      var calmScale = Math.max(0.05, screenScale());
+      var calmAim = aimOnScreen(calmAt.x, calmAt.y, Math.max(72, 88 / calmScale));
       calmAim.label = '3/3  Tap the upset shopper\nA calm keeps the star.';
+      calmAim.cust = angry;
       return calmAim;
     }
 
@@ -7471,15 +7536,34 @@
       return focus ? focus.label : '';
     }
 
+    function coachHint() {
+      return document.querySelector('#hr-sim .hr-hint');
+    }
+
     function paintCoach() {
       var cap = document.getElementById('hr-coach');
       var skip = document.getElementById('hr-skip');
+      var hint = coachHint();
       var line = coachLine();
-      if (cap) {
-        cap.hidden = !line;
-        if (line) {
-          cap.textContent = line;
-          cap.removeAttribute('data-wrap');
+      var phoneCoach = (els.canvas && els.canvas._cssW || window.innerWidth) < 720;
+      if (hint && !hint.dataset.base) hint.dataset.base = hint.textContent;
+      if (phoneCoach && line) {
+        if (cap) cap.hidden = true;
+        if (hint) {
+          hint.dataset.coach = '1';
+          hint.textContent = line.replace(/\n+/g, ' ');
+        }
+      } else {
+        if (hint && hint.dataset.coach === '1') {
+          delete hint.dataset.coach;
+          hint.textContent = hint.dataset.base || '';
+        }
+        if (cap) {
+          cap.hidden = !line;
+          if (line) {
+            cap.textContent = line;
+            cap.removeAttribute('data-wrap');
+          }
         }
       }
       if (skip) skip.hidden = !coach;
@@ -7544,7 +7628,7 @@
         sim.tutorial = false;
         sim.nextPing = sim.t + 3;
       }
-      try { localStorage.setItem('hr_tut_done', '1'); } catch (e) {}
+      try { localStorage.setItem('hr_tut_done', '1'); root.__hrSawTut = 1; } catch (e) {}
       paintCoach();
       cam.follow = false;
       if (sim) releaseStashedCard();
@@ -7624,8 +7708,13 @@
         if (res.msg) toast(res.msg);
       }
       paintHud();
-      draw();
-      saveRun();
+      if (!root.__hrSaveSoon) {
+        root.__hrSaveSoon = true;
+        requestAnimationFrame(function () {
+          root.__hrSaveSoon = false;
+          saveRun();
+        });
+      }
     }
 
     function pointerScale(rect) {
@@ -7688,6 +7777,28 @@
     function pickHit(ev) {
       var phoneHit = (els.canvas._cssW || window.innerWidth) < 720;
       var minTap = 44;
+      if (coach && coach.step === 2) {
+        var calmFocus = coachFocus();
+        var calmWho = calmFocus && calmFocus.cust;
+        if (!calmWho) {
+          for (var ci = 0; ci < sim.customers.length; ci++) {
+            var calmCand = sim.customers[ci];
+            if (calmCand.dead || calmCand.state === 'leave') continue;
+            if (calmCand.bubble === 'angry' || (calmCand.maxPatience && calmCand.patience < calmCand.maxPatience * 0.4)) {
+              calmWho = calmCand;
+              break;
+            }
+          }
+        }
+        if (calmWho) {
+          var calmBody = bodyPoint(calmWho);
+          var calmD = screenDist(calmBody.x, calmBody.y, ev);
+          var calmRing = screenDist(calmWho.x, calmWho.y - 40, ev);
+          if (calmRing < calmD) calmD = calmRing;
+          if (calmFocus && screenDist(calmFocus.x, calmFocus.y, ev) < calmD) calmD = screenDist(calmFocus.x, calmFocus.y, ev);
+          if (calmD <= 180) return { cust: calmWho };
+        }
+      }
       if (sim.pings) {
         var wrapHit = null;
         var look = wrapLook();
@@ -7771,8 +7882,13 @@
         hooks.coin();
         resolvePing(sim, hit.ping);
         paintHud();
-        draw();
-        saveRun();
+        if (!root.__hrSaveSoon) {
+          root.__hrSaveSoon = true;
+          requestAnimationFrame(function () {
+            root.__hrSaveSoon = false;
+            saveRun();
+          });
+        }
         return;
       }
       if (!hit) {
@@ -8039,14 +8155,10 @@
           if (aboveY - pillH / 2 < 4) aboveY = Math.max(pillH / 2 + 2, sy - Math.min(fitCss * 0.62, Math.max(0, sy - pillH)));
           if (belowY + pillH / 2 > look.stageH - 4) belowY = look.stageH - 4 - pillH / 2;
           var coachEl = document.getElementById('hr-coach');
-          if (coachEl && !coachEl.hidden && els.canvas) {
-            var coachBox = coachEl.getBoundingClientRect();
-            var canvasBox = els.canvas.getBoundingClientRect();
-            if (coachBox.height > 8 && canvasBox.height > 8 && coachBox.bottom > canvasBox.top && coachBox.top < canvasBox.bottom) {
-              var bannerBottom = (coachBox.bottom - canvasBox.top) * (look.stageH / canvasBox.height);
-              var minAbove = bannerBottom + 4 + pillH / 2;
-              if (aboveY < minAbove) aboveY = minAbove;
-            }
+          var bannerBottom = root.__hrBannerBottom || 0;
+          if (coachEl && !coachEl.hidden && bannerBottom > 0) {
+            var minAbove = bannerBottom + 4 + pillH / 2;
+            if (aboveY < minAbove) aboveY = minAbove;
           }
           if (belowY - aboveY < pillH + 4) belowY = aboveY + pillH + 4;
           var pills = [['Wrap?', aboveY], ['WRAP', belowY]];
@@ -8375,12 +8487,39 @@
         }
         els.stage.dataset.restockAt = restockPing ? (Math.round(restockPing.x) + ',' + Math.round(restockPing.y)) : '';
         els.stage.dataset.wraps = String(sim.wraps || 0);
+        if (coach && coach.step === 2) {
+          var calmNow = coachFocus();
+          var calmWho = calmNow && calmNow.cust;
+          els.stage.dataset.calmAt = calmWho ? (Math.round(calmWho.x) + ',' + Math.round(calmWho.y)) : '';
+          els.stage.dataset.coachStep = '2';
+        } else {
+          if (els.stage.dataset.calmAt) delete els.stage.dataset.calmAt;
+          els.stage.dataset.coachStep = coach ? String(coach.step) : '';
+        }
         els.stage.dataset.combo = String(sim.bestCombo || 0);
         els.stage.dataset.back = String(backLeft(sim));
         els.stage.dataset.sales = String(Math.round(sim.sales || 0));
         els.stage.dataset.goal = String(Math.round(sim.goal || 0));
         els.stage.dataset.clock = liveClockFace(sim);
         els.stage.dataset.view = Math.round(view.viewW) + ',' + Math.round(view.viewH);
+        if (sim._phone && sim.customers && view.cssW) {
+          var edgeScale = view.cssW / Math.max(1, view.viewW);
+          var edgeLeft = 9999;
+          var edgeRight = -1;
+          var edgeHalf = spriteFootBox(sim).w * 0.5 * edgeScale;
+          for (var ei = 0; ei < sim.customers.length; ei++) {
+            var edgeCust = sim.customers[ei];
+            if (!edgeCust || edgeCust.dead || edgeCust.hidden) continue;
+            var edgeX = (edgeCust._drawX != null ? edgeCust._drawX : edgeCust.x) - cam.x;
+            var edgeSx = edgeX * edgeScale;
+            if (edgeSx - edgeHalf < edgeLeft) edgeLeft = edgeSx - edgeHalf;
+            if (edgeSx + edgeHalf > edgeRight) edgeRight = edgeSx + edgeHalf;
+          }
+          if (edgeLeft < 9000) {
+            els.stage.dataset.edgeL = String(Math.round(edgeLeft));
+            els.stage.dataset.edgeR = String(Math.round(edgeRight));
+          }
+        }
         els.stage.dataset.zoomNow = String(Math.round((cam.zoom || 1) * 100) / 100);
         var regAx = SPOTS.reg1 ? SPOTS.reg1.x : 0;
         var regBx = SPOTS.reg2 ? SPOTS.reg2.x : regAx;
@@ -9827,7 +9966,6 @@
         else if (preview && preview.ping) { px = preview.ping.x; py = preview.ping.y; }
         else if (preview && preview.x != null) { px = preview.x; py = preview.y; }
         tapFx(sim, px, py);
-        draw();
       }
       cam.drag = { x: ev.clientX, y: ev.clientY, cx: cam.x, cy: cam.y, moved: false, phone: phonePan, locked: touchTap ? '' : (phonePan ? '' : 'pan'), touch: touchTap };
       if (!phonePan) {
@@ -10163,6 +10301,7 @@
       paintSpriteStatus();
       bakeStorePlate();
       resize();
+      try { if (localStorage.getItem('hr_tut_done') === '1') root.__hrSawTut = 1; } catch (eSawTut) {}
       var saved = readJSON('hr_run_v1');
       var campBoot = campaignGet();
       var resumable = saved && saved.v === 3 && saved.ymd === ymd && saved.phase && saved.phase !== 'intro' && saved.days && saved.days.length === SHIFT_COUNT;
@@ -10183,26 +10322,39 @@
         }
         if (HR.save) HR.save.save(writeJSON, books);
         try {
+          root.__hrInternal = true;
           localStorage.setItem('hr_coach_price', '1');
           localStorage.setItem('hr_coach_mall', '1');
           localStorage.setItem('hr_seed_grant', '1');
           localStorage.removeItem('hr_run_v1');
         } catch (eSeed) {}
+        root.__hrInternal = false;
         var seedCamp = campaignGet();
         seedCamp.seen = true;
         seedCamp.bank = books.cash;
         campaignPut(seedCamp);
         run = newRun(ymd);
         applyCampaign(run);
-        run.phase = 'map';
         syncFloor(true);
-        renderMap();
-        var seedMsg = previewHas('kiosk')
-          ? 'Plaza Kiosk is unlocked. Pick a shift to play that floor.'
-          : 'Pick a shift. The tour bus is queued.';
-        if (previewHas('kiosk') && previewHas('bus')) seedMsg = 'Plaza Kiosk is unlocked. The tour bus is queued on this shift.';
-        toast(seedMsg, true);
         if (els.stage) els.stage.dataset.seed = previewSeeds().join(',');
+        if (!tutDone()) {
+          beginShift(0);
+        } else {
+          run.phase = 'map';
+          renderMap();
+          var seedMsg = previewHas('kiosk')
+            ? 'Plaza Kiosk is unlocked. Pick a shift to play that floor.'
+            : 'Pick a shift. The tour bus is queued.';
+          if (previewHas('kiosk') && previewHas('bus')) seedMsg = 'Plaza Kiosk is unlocked. The tour bus is queued on this shift.';
+          toast(seedMsg, true);
+        }
+      } else if (resumable && !tutDone()) {
+        run = saved;
+        applyCampaign(run);
+        run.simState = null;
+        run.day = 0;
+        run.phase = 'sim';
+        beginShift(0);
       } else if (resumable) {
         run = saved;
         run._wrote = 1;
@@ -10210,7 +10362,7 @@
         if (!run.suggested) run.suggested = [];
         track('holiday_rush_resume', { seed: ymd });
         enterPhase();
-      } else if (!campBoot.seen && !seedPreview) {
+      } else if ((!campBoot.seen && !seedPreview) || !tutDone()) {
         beginShift(0);
       } else {
         run = newRun(ymd);

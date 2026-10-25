@@ -375,11 +375,7 @@
         height: 100dvh;
       }
       body:has(#hr-sim:not([hidden])) .nav { display: none; }
-      body:has(#hr-sim:not([hidden])) .hr-hero { padding: 0; }
-      body:has(#hr-sim:not([hidden])) .hr-hero p,
-      body:has(#hr-sim:not([hidden])) .section__eyebrow { display: none; }
-      body:has(#hr-sim:not([hidden])) .hr-hero h1 { font-size: 1.15rem; margin: 0; line-height: 1.15; }
-      body:has(#hr-sim:not([hidden])) .hr-pills { margin: 0.15rem 0 0; }
+      body:has(#hr-sim:not([hidden])) .hr-hero { display: none; }
       body:has(#hr-sim:not([hidden])) .hr-wrap {
         height: 100dvh;
         max-height: 100dvh;
@@ -388,6 +384,8 @@
         flex-direction: column;
         box-sizing: border-box;
         padding: 4px 12px 6px;
+        max-width: none;
+        width: 100%;
       }
       body:has(#hr-sim:not([hidden])) #hr-sim {
         flex: 1 1 auto;
@@ -396,7 +394,9 @@
         flex-direction: column;
         overflow: hidden;
       }
-      body:has(#hr-sim:not([hidden])) .hr-hud { flex: 0 0 auto; padding: 0.15rem 0; }
+      body:has(#hr-sim:not([hidden])) .hr-hud { flex: 0 0 auto; padding: 0.1rem 0; flex-wrap: nowrap; }
+      body:has(#hr-sim:not([hidden])) .hr-hud__extra:not(.hr-stat--stars) { display: none; }
+      body:has(#hr-sim:not([hidden])) #hr-sim .hr-stockline { flex: 0 1 auto; width: auto; font-size: 14px; }
       body:has(#hr-sim:not([hidden])) .hr-clock { width: 64px; height: 64px; }
       body:has(#hr-sim:not([hidden])) .hr-clock span { width: 52px; height: 52px; }
       body:has(#hr-sim:not([hidden])) .hr-clock b { font-size: 0.95rem; }
@@ -414,7 +414,20 @@
         max-height: 28px;
       }
       body:has(#hr-sim:not([hidden])) .hr-hint { flex: 0 0 auto; margin: 0.15rem 0 0; }
-      body:has(#hr-sim:not([hidden])) .hr-actions { flex: 0 0 auto; margin-top: 6px; }
+      body:has(#hr-sim:not([hidden])) .hr-actions {
+        flex: 0 0 auto;
+        margin-top: 4px;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 6px;
+      }
+      body:has(#hr-sim:not([hidden])) .hr-actions button {
+        min-height: 44px;
+        justify-content: center;
+        text-align: center;
+        padding: 0 6px;
+        font-size: 0.78rem;
+      }
+      body:has(#hr-sim:not([hidden])) .hr-actions button[data-act="wrap"] { grid-column: auto; }
       body:has(#hr-sim:not([hidden])) .hr-actline { flex: 0 0 auto; margin: 0.15rem 0 0; }
     }
   </style>
