@@ -82,6 +82,8 @@
   };
   var MONDAY_GOAL_MUL = 0.55;
   var LIVE_PROFIT_FLOOR = 48;
+  var LIVE_RING_RATE = 0.95;
+  var LIVE_BASKET = 0.78;
 
   function liveQueueGap(sim) {
     return sim && sim._phone ? 210 : 140;
@@ -1433,8 +1435,9 @@
       c.maxPatience = c.patience;
     }
     if (forcedArch) {
-      c.x = SPOTS.floor.x + 36;
-      c.y = SPOTS.floor.y + 16;
+      var doorIn = SPOTS.door || SPOTS.floor || { x: 640, y: 820 };
+      c.x = doorIn.x + (sim.rng() * 48 - 24);
+      c.y = doorIn.y - 6;
       c.intro = true;
       if (c.arch !== 'lift') {
         c.state = 'enter';
@@ -1544,12 +1547,18 @@
     }
     c.sold = true;
     var gap = sim.t - (sim.lastSaleAt == null ? -999 : sim.lastSaleAt);
+    var comboCap = CONFIG.comboMax;
+    if (sim.floorOn && sim.live && !sim.tenant) {
+      var hotWrap = sim._wrapAt != null && sim.t - sim._wrapAt < 6;
+      if (!hotWrap) comboCap = 2;
+    }
     if (gap <= CONFIG.comboWindow && (sim.combo || 0) >= 1) {
-      if (sim.combo < CONFIG.comboMax) sim.combo += 1;
+      if (sim.combo < comboCap) sim.combo += 1;
     } else sim.combo = 1;
     sim.lastSaleAt = sim.t;
     if (sim.combo > (sim.bestCombo || 0)) sim.bestCombo = sim.combo;
     var mult = comboMult(sim.combo);
+    if (sim.floorOn && sim.live && !sim.tenant) basket *= LIVE_BASKET;
     basket = Math.round(basket * mult);
     if (sim.floorOn && sim.doubleUntil && sim.t < sim.doubleUntil) basket *= 2;
     sim.sales += basket;
@@ -1657,11 +1666,11 @@
     for (i = 0; i < sim.customers.length; i++) {
       var c = sim.customers[i];
       if (c.dead) continue;
-      if (c.state === 'queue' || c.state === 'checkout' || c.state === 'leave' || c.state === 'flee' || c.state === 'toQueue') continue;
+      if (c.state === 'queue' || c.state === 'checkout' || c.state === 'leave' || c.state === 'flee' || c.state === 'toQueue' || c.state === 'enter') continue;
       list.push(c);
     }
     var crowded = list.length >= 8;
-    var gap = crowded ? (sim._phone ? 44 : 36) : Math.round(liveQueueGap(sim) * 0.72);
+    var gap = sim._phone ? 58 : 42;
     for (i = 0; i < list.length; i++) {
       for (var j = i + 1; j < list.length; j++) {
         var a = list[i];
@@ -1675,8 +1684,8 @@
           b.y += (j % 2 ? 10 : -10);
           continue;
         }
-        var push = (gap - dist) * (crowded ? 0.18 : 0.5);
-        if (crowded && push > 5) push = 5;
+        var push = (gap - dist) * (crowded ? 0.18 : 0.35);
+        if (push > 2.5) push = 2.5;
         var nx = dx / dist;
         var ny = dy / dist;
         if ((b.seq || 0) >= (a.seq || 0)) {
@@ -1790,6 +1799,10 @@
         var limit = edge.x1 - half;
         if (drawX > limit - half && drawX < edge.x1 + half) drawX = limit - half;
       }
+      if (nodes[i].lock && nodes[i].actor.reg) {
+        var tillSide = nodes[i].actor.reg === 'reg2' ? 1 : -1;
+        drawX += tillSide * (sim && sim._phone ? 48 : 34);
+      }
       nodes[i].actor._drawX = drawX;
       nodes[i].actor._drawY = drawY;
     }
@@ -1805,6 +1818,42 @@
         var slotAt = queueSlot(sim, regs[r], i);
         c.qx = slotAt.x;
         c.qy = slotAt.y;
+      }
+    }
+    var tillsBusy = false;
+    if (sim.floorOn) {
+      for (var tb = 0; tb < sim.customers.length; tb++) {
+        var busy = sim.customers[tb];
+        if (busy.dead) continue;
+        if (busy.state === 'queue' || busy.state === 'checkout') tillsBusy = true;
+      }
+      if (!sim.coachHold && !sim.tutorial && sim.t < (sim.duration || 62) * 0.4) {
+        if (!tillsBusy) sim._tillIdle = (sim._tillIdle || 0) + dt;
+        else sim._tillIdle = 0;
+        if (!tillsBusy && sim._tillIdle > 1.15) {
+          var nextUp = null;
+          for (var ni = 0; ni < sim.customers.length; ni++) {
+            var cand = sim.customers[ni];
+            if (cand.dead) continue;
+            if (cand.state !== 'browse' && cand.state !== 'wait' && cand.state !== 'enter' && cand.state !== 'toQueue') continue;
+            if (!nextUp || (cand.seq || 0) < (nextUp.seq || 0)) nextUp = cand;
+          }
+          if (nextUp) {
+            nextUp.reg = nextUp.reg || pickRegister(sim, run);
+            if (nextUp.reg && laneLoad(sim, nextUp.reg) < liveLineCap(sim)) {
+              var linedNow = queueSlot(sim, nextUp.reg, queueOf(sim, nextUp.reg).length);
+              nextUp.state = 'queue';
+              nextUp.x = linedNow.x;
+              nextUp.y = linedNow.y;
+              nextUp.qx = linedNow.x;
+              nextUp.qy = linedNow.y;
+              nextUp.checkT = null;
+              nextUp.path = null;
+              sim._tillIdle = 0;
+              tillsBusy = true;
+            }
+          }
+        }
       }
     }
     var speed = CONFIG.walkSpeed * (sim.t < sim.spillUntil ? 0.6 : 1);
@@ -1857,12 +1906,20 @@
         continue;
       }
       if (cust.state === 'enter') {
-        if (follow(cust, dt, custSpeed)) {
+        cust.enterT = (cust.enterT || 0) + dt;
+        var entered = follow(cust, dt, custSpeed);
+        if (!entered && sim.floorOn && cust.enterT > 1.15 && cust.shelf) {
+          cust.x = cust.shelf.x;
+          cust.y = cust.shelf.y;
+          cust.path = null;
+          entered = true;
+        }
+        if (entered) {
           cust.state = 'browse';
           var browse = 0.85 + sim.rng() * 1.35;
           if (cust.arch === 'rusher') browse = 0.22 + sim.rng() * 0.2;
           if (cust.arch === 'family') browse = 1.8 + sim.rng() * 1.1;
-          if (sim.floorOn && sim.live && !sim.tenant) browse += 1.6 + sim.rng() * 1.2;
+          if (sim.floorOn && sim.live && !sim.tenant) browse += 0.35 + sim.rng() * 0.4;
           cust.browseT = browse;
           cust.anim = 'idle';
           cust.bubble = null;
@@ -1871,7 +1928,9 @@
         cust.anim = 'idle';
         cust.dir = 'up';
         cust.face = 1;
-        cust.browseT -= dt * (stationPower(sim, run, 'floor') > 0.5 ? 1.25 : 1);
+        var browseRate = stationPower(sim, run, 'floor') > 0.5 ? 1.25 : 1;
+        if (sim.floorOn && !tillsBusy) browseRate += 1.4;
+        cust.browseT -= dt * browseRate;
         cust.patience -= dt * 0.012 * cocoa * drainMul * (cust.arch === 'rusher' ? 1.8 : 1);
         if (cust.patience <= 0) walkout(sim, cust);
         else if (cust.browseT <= 0) {
@@ -1926,7 +1985,7 @@
             var seekDx = cust.x - linedP.x;
             var seekDy = cust.y - linedP.y;
             var seekNear = seekDx * seekDx + seekDy * seekDy < 96 * 96;
-            if (moveToward(cust, linedP.x, linedP.y, dt, custSpeed) || seekNear || cust.seekT > 2.4) {
+            if (moveToward(cust, linedP.x, linedP.y, dt, custSpeed) || seekNear || cust.seekT > (sim.floorOn ? 1.1 : 2.4)) {
               if (queueOf(sim, cust.reg).length >= liveLineCap(sim)) {
                 cust.state = 'wait';
                 cust.seekT = 0;
@@ -1965,7 +2024,7 @@
           cust.anim = 'idle';
           if (!cust.haggling) {
             cust.haggling = true;
-            cust.haggleT = sim.floorOn ? 1.5 : 3.6;
+            cust.haggleT = sim.floorOn ? 0.7 : 3.6;
             cust.bubble = 'price';
             cust.pop = 1;
           }
@@ -1991,13 +2050,13 @@
             if (sim._phone && sim.floorOn) rate *= 1.12;
             if (cust.arch === 'rusher') rate *= 1.65;
             if (cust.arch === 'family') rate *= 0.7;
-            if (sim.floorOn && rate < 2.05) rate = 2.05;
-            var checkStart = cust.arch === 'family' ? 3.3 : 2.15;
+            if (sim.floorOn && rate < LIVE_RING_RATE) rate = LIVE_RING_RATE;
+            var checkStart = cust.arch === 'family' ? (sim.floorOn ? 0.95 : 3.3) : (sim.floorOn ? 0.7 : 2.15);
             cust.checkT = (cust.checkT == null ? checkStart : cust.checkT) - dt * rate;
             if (cust.checkT <= 0) completeSale(sim, run, cust);
           } else {
             cust.anim = at ? 'idle' : 'walk';
-            if (cust.checkT == null && cust.qIndex === 0 && cust.arch !== 'haggle') cust.checkT = cust.arch === 'family' ? 3.3 : 2.15;
+            if (cust.checkT == null && cust.qIndex === 0 && cust.arch !== 'haggle') cust.checkT = cust.arch === 'family' ? (sim.floorOn ? 0.95 : 3.3) : (sim.floorOn ? 0.7 : 2.15);
           }
           if (!cust.haggling) cust.bubble = cust.patience < cust.maxPatience * 0.38 ? 'angry' : null;
         }
@@ -2562,6 +2621,7 @@
     if (sim.tenant && sim.tenant.mechanic === 'cups') rate *= 1.25;
     if (sim.tenant && sim.tenant.mechanic === 'window') rate *= (sim.calendarDoor > 1 ? 1.25 : 0.78);
     rate *= 0.74 + Math.min(stationPower(sim, run, 'floor'), 1.6) * 0.2;
+    if (sim.floorOn && sim.live && !sim.tenant && sim.t < (sim.duration || 62) * 0.36) rate *= 1.45;
     if (sim.books && HR.sim) rate *= HR.sim.demandMul(sim.books);
     if (sim.books && sim.books.mall && sim.books.mall.door) rate *= sim.books.mall.door;
     if (sim.stock < 0.22) rate *= 0.58;
@@ -2939,6 +2999,7 @@
       sim.sales += fee;
       sim.wraps = (sim.wraps || 0) + 1;
       sim._wrapCoachDone = true;
+      sim._wrapAt = sim.t;
       sim._wrapQuietUntil = sim.t + 8;
       try { localStorage.setItem('hr_wrap_coach', '1'); } catch (eWrap) {}
       burstCoins(sim, ping.x, ping.y);
@@ -3848,6 +3909,10 @@
   }
   var bootToken = '';
   function armStorage() {
+    if (root.__hrNoSave) {
+      bootToken = '';
+      return;
+    }
     bootToken = String(Date.now()) + Math.random().toString(36).slice(2);
     try { localStorage.setItem('hr_boot', bootToken); } catch (e) { bootToken = ''; }
   }
@@ -4338,6 +4403,24 @@
     var app = document.getElementById('hr-app');
     if (!app) return;
     booted = true;
+    if (!root.__hrStorageHook && typeof Storage !== 'undefined') {
+      root.__hrStorageHook = true;
+      var storeProto = Storage.prototype;
+      var origClear = storeProto.clear;
+      var origRemove = storeProto.removeItem;
+      storeProto.clear = function () {
+        root.__hrNoSave = true;
+        bootToken = '';
+        return origClear.apply(this, arguments);
+      };
+      storeProto.removeItem = function (key) {
+        if (key === 'hr_boot' || key === 'hr_run_v1' || key === 'hr_meta_v1') {
+          root.__hrNoSave = true;
+          bootToken = '';
+        }
+        return origRemove.apply(this, arguments);
+      };
+    }
     armStorage();
     var staleScore = document.getElementById('hr-score');
     var staleFinal = document.getElementById('hr-final');
@@ -4370,7 +4453,7 @@
       var feelCss = document.createElement('style');
       feelCss.id = 'hr-feel-css';
       feelCss.textContent = [
-        '#hr-event.hr-inline{position:absolute;left:8px;right:8px;top:52px;bottom:auto;height:auto;max-height:46%;z-index:6;margin:0;padding:0;background:transparent;display:flex;justify-content:center;align-items:flex-start;pointer-events:none;overflow:hidden;}',
+        '#hr-event.hr-inline{position:absolute;left:8px;right:8px;top:52px;bottom:auto;height:auto;max-height:30%;z-index:6;margin:0;padding:0;background:transparent;display:flex;justify-content:center;align-items:flex-start;pointer-events:none;overflow:hidden;}',
         '#hr-event.hr-inline[hidden]{display:none !important;}',
         '#hr-event.hr-inline .hr-card{pointer-events:auto;width:min(640px,100%);max-height:100%;overflow:hidden;padding:0.45rem 0.6rem 0.5rem;border-radius:14px;background:rgba(246,240,228,0.96);box-shadow:0 10px 28px rgba(0,0,0,0.35);box-sizing:border-box;display:flex;flex-direction:column;touch-action:pan-y;}',
         '#hr-event.hr-inline .hr-card h2{font-size:1rem;margin:0 0 0.12rem;}',
@@ -4381,7 +4464,7 @@
         '#hr-event.hr-inline .hr-choice-cost{flex:0 0 auto;white-space:nowrap;}',
         '#hr-event.hr-inline .hr-card__art .hr-portrait,#hr-event.hr-inline .hr-card__art .hr-icon{width:36px !important;height:36px !important;border-radius:8px;}',
         '@media (max-width:720px){',
-        '#hr-event.hr-inline{position:absolute;left:8px;right:8px;top:52px;bottom:auto;height:auto;max-height:46%;margin:0;z-index:7;display:flex;align-items:flex-start;justify-content:center;overflow:hidden;}',
+        '#hr-event.hr-inline{position:absolute;left:8px;right:8px;top:52px;bottom:auto;height:auto;max-height:30%;margin:0;z-index:7;display:flex;align-items:flex-start;justify-content:center;overflow:hidden;}',
         '#hr-event.hr-inline .hr-card{width:100%;max-height:100%;overflow:hidden;padding:0.35rem 0.45rem 0.4rem;box-sizing:border-box;display:flex;flex-direction:column;}',
         '#hr-event.hr-inline .hr-card h2{font-size:0.95rem;line-height:1.15;margin:0 0 0.1rem;flex:0 0 auto;}',
         '#hr-event.hr-inline .hr-card p{font-size:12px;line-height:1.25;margin:0 0 0.25rem;display:block;overflow:visible;white-space:normal;flex:0 0 auto;}',
@@ -4450,7 +4533,17 @@
     window.addEventListener('pageshow', function () {
       paintMeta();
       var savedRun = readJSON('hr_run_v1');
-      if (!savedRun && els.final && !els.final.hidden) renderMap();
+      if (savedRun && !root.__hrNoSave) return;
+      var scoreOpen = els.score && !els.score.hidden;
+      var finalOpen = els.final && !els.final.hidden;
+      if (!scoreOpen && !finalOpen) return;
+      if (els.score) { els.score.hidden = true; els.score.innerHTML = ''; }
+      if (els.final) {
+        els.final.hidden = true;
+        var wipedBody = document.getElementById('hr-final-body');
+        if (wipedBody) wipedBody.innerHTML = '';
+      }
+      renderMap();
     });
 
     var toastQueue = [];
@@ -4482,8 +4575,8 @@
       var h = els.stage.clientHeight || 0;
       if (!(h > 0)) return;
       var phoneCard = (els.canvas && els.canvas._cssW || 800) < 720;
-      var cap = Math.floor(h * (phoneCard ? 0.34 : 0.30));
-      var capMax = Math.floor(h * (phoneCard ? 0.52 : 0.38));
+      var cap = Math.floor(h * 0.30);
+      var capMax = Math.floor(h * (phoneCard ? 0.30 : 0.38));
       if (cap < 1) cap = 1;
       if (capMax < cap) capMax = cap;
       function applyCap(next) {
@@ -4630,6 +4723,7 @@
     }
 
     function saveRun() {
+      if (root.__hrNoSave || !storageLive()) return;
       if (!run) return;
       if (sim && run.phase === 'sim' && !sim.done) {
         try { run.simState = exportSim(sim); } catch (e) { run.simState = null; }
@@ -5390,7 +5484,7 @@
       var hud =
         '<div class="hr-hud__stats">' +
         '<div class="hr-clock" id="hr-clock" style="--p:0"><span id="hr-clock-label"><b>8:00</b><small>AM</small></span></div>' +
-        '<div class="hr-sales"><div class="hr-sales__top"><span>Sales</span><strong id="hr-sales-text"></strong></div><div class="hr-bar"><i id="hr-sales-bar"></i></div></div>' +
+        '<div class="hr-sales"><div class="hr-sales__top"><span>Sales</span><strong id="hr-sales-text"></strong></div><div class="hr-bar"><i id="hr-sales-bar"></i></div><div class="hr-stockline" id="hr-stock-text">Shelf — · Back —</div></div>' +
         '<div class="hr-stat hr-stat--stars hr-hud__extra"><span>Stars</span><strong id="hr-star-text" class="hr-stars"></strong></div>' +
         '<div class="hr-combo is-idle" id="hr-combo" aria-hidden="true">×1</div>' +
         '<div class="hr-rush" id="hr-rush" aria-hidden="true">RUSH</div>' +
@@ -5503,6 +5597,15 @@
       }
       sim._paintSales = sim.sales;
       salesText.textContent = money(sim.sales) + ' / ' + money(sim.goal);
+      var stockText = document.getElementById('hr-stock-text');
+      if (stockText) {
+        var shelfPct = Math.round(clamp(sim.stock || 0, 0, 1) * 100);
+        var backUnits = 0;
+        if (sim.books && HR.economy && HR.economy.unitsLeft) {
+          backUnits = HR.economy.unitsLeft(sim.books, sim.tenant && sim.tenant.stock);
+        }
+        stockText.textContent = 'Shelf ' + shelfPct + '% · Back ' + backUnits;
+      }
       if (els.toast && els.toast.classList.contains('show')) placeToast();
       var bar = document.getElementById('hr-sales-bar');
       if (bar) {
@@ -6674,6 +6777,7 @@
     }
 
     function pixelBudget() {
+      if (sim && sim._phone && !(sim.customers && sim.customers.length > 70)) return 2;
       if (sim && sim._dprCap) return sim._dprCap;
       if (sim && sim.customers && sim.customers.length > 70) return 0.5;
       return 2;
@@ -6835,8 +6939,14 @@
       if (!stage) return;
       var stageBox = stage.getBoundingClientRect();
       if (stageBox.width < 8) return;
-      var phonePlay = stageBox.width < 720 && sim && sim.floorOn && !cam.overview;
+      var phonePlay = stageBox.width < 720 && sim && sim.floorOn;
       if (zoom) zoom.hidden = !!phonePlay;
+      if (phonePlay) {
+        ['hr-pan-left', 'hr-pan-right', 'hr-pan-up', 'hr-pan-down'].forEach(function (panId) {
+          var pan = document.getElementById(panId);
+          if (pan) pan.hidden = true;
+        });
+      }
       var bannerLow = false;
       if (stageBox.width < 720) {
         if (coach && coach.step === 1) bannerLow = true;
@@ -6915,7 +7025,19 @@
       return z;
     }
 
+    function floorFit(cssW, cssH) {
+      var worldW = WORLD_W || 1280;
+      var worldH = WORLD_H || 900;
+      var span = cssW < 720 ? 1100 : worldW;
+      var fit = cssW / Math.max(1, span);
+      var heightFit = cssH / Math.max(1, worldH);
+      if (cssW >= 720 && heightFit < fit) fit = heightFit;
+      if (!(fit > 0.05)) fit = 0.05;
+      return fit;
+    }
+
     function playZoomFor(cssW, cssH) {
+      if (sim && sim.floorOn && !cam.overview && !cam.fit) return floorFit(cssW, cssH);
       if (HR.render && HR.render.zoomMin) return HR.render.zoomMin(cssW, cssH);
       return cam.zoom || 1;
     }
@@ -6966,6 +7088,15 @@
     }
 
     function playCamTarget(view) {
+      if (sim && sim.floorOn && !cam.overview) {
+        var worldW = WORLD_W || 1280;
+        var worldH = WORLD_H || 900;
+        var phone = (view.cssW || 0) < 720;
+        var x = phone ? 90 : (view.viewW - worldW) * -0.5;
+        var y = (view.viewH - worldH) * -0.5;
+        if (y < 0) y = 0;
+        return camClamp(x, y, view);
+      }
       var left = SPOTS.reg1 || { x: 420, y: 700 };
       var right = SPOTS.reg2 || left;
       var q = QUEUE.reg1 || { y: left.y + 70 };
@@ -7626,35 +7757,31 @@
         var bob = reduceMotion ? 0 : Math.sin(Date.now() / 200 + i) * 4;
         var icon = ping.kind === 'wrap' ? 'return' : ping.kind === 'basket' ? 'price' : ping.kind === 'box' ? 'truck' : 'line';
         var label = ping.kind === 'wrap' ? 'Wrap' : ping.kind === 'basket' ? '+$' : ping.kind === 'box' ? 'Box' : 'Help';
-        if (ping.kind === 'wrap' && wrapCoachOn()) {
-          var pulse = reduceMotion ? 1.2 : 1.05 + Math.sin(Date.now() / 160) * 0.42;
+        if (ping.kind === 'wrap') {
           var phoneWrap = (els.canvas._cssW || 800) < 720;
-          var wrapR = Math.max(58, (phoneWrap ? 72 : 22) / Math.max(0.05, screenScale()));
+          var ringScale = Math.max(0.05, screenScale());
+          var coaching = wrapCoachOn();
+          var wrapR = Math.max(coaching ? 58 : 28, (phoneWrap ? 48 : 34) / ringScale);
+          var pulse = coaching && !reduceMotion ? 1.05 + Math.sin(Date.now() / 160) * 0.28 : 1;
           if (isQA() && els.stage) {
-            els.stage.dataset.wrapR = String(Math.round(wrapR * screenScale()));
-            els.stage.dataset.wrapHit = phoneWrap ? '156' : '96';
+            els.stage.dataset.wrapR = String(Math.round(wrapR * ringScale));
+            els.stage.dataset.wrapHit = phoneWrap ? '140' : '84';
             els.stage.dataset.wrapX = String(Math.round(ping.x));
             els.stage.dataset.wrapY = String(Math.round(ping.y));
           }
           ctx.save();
           ctx.strokeStyle = 'rgba(224,163,34,0.95)';
-          ctx.lineWidth = 8;
+          ctx.lineWidth = coaching ? 8 : 6;
           ctx.beginPath();
           ctx.arc(ping.x, ping.y + bob, wrapR * pulse, 0, Math.PI * 2);
           ctx.stroke();
           ctx.restore();
-          drawIconAt(icon, ping.x, ping.y + bob, 88 * pulse);
-          if (labelOn('ping:' + i)) {
-            var wrapAt = tagAnchor(ping.x, ping.y + bob - 78);
+          drawIconAt(icon, ping.x, ping.y + bob, (coaching ? 72 : 44) * pulse);
+          if (labelOn('ping:' + i) || coaching) {
+            var wrapAt = tagAnchor(ping.x, ping.y + bob - wrapR - 18);
             drawTag(label, wrapAt.x, wrapAt.y);
           }
           continue;
-        }
-        if (ping.kind === 'wrap' && isQA() && els.stage) {
-          els.stage.dataset.wrapR = '26';
-          els.stage.dataset.wrapHit = (els.canvas._cssW || 800) < 720 ? '120' : '72';
-          els.stage.dataset.wrapX = String(Math.round(ping.x));
-          els.stage.dataset.wrapY = String(Math.round(ping.y));
         }
         ctx.strokeStyle = 'rgba(224,163,34,0.85)';
         ctx.lineWidth = 3;
@@ -7752,6 +7879,18 @@
       var frozen = sim && sim._cardCam && sim._cardCam.cssW;
       var cssW = frozen ? sim._cardCam.cssW : (els.canvas._cssW || 800);
       var cssH = frozen ? sim._cardCam.cssH : (els.canvas._cssH || 450);
+      if (sim && sim.floorOn && !cam.overview && !cam.fit) {
+        var fit = floorFit(cssW, cssH);
+        return {
+          viewW: cssW / fit,
+          viewH: cssH / fit,
+          cssW: cssW,
+          cssH: cssH,
+          spritePx: CONFIG.sprite * fit,
+          productPx: 46 * fit,
+          zoom: fit
+        };
+      }
       if (HR.render) return HR.render.view(cssW, cssH, WORLD_W, WORLD_H, cam.zoom || 1, CONFIG.sprite);
       var target = cssW < 520 ? 118 : cssW < 900 ? 112 : 108;
       var viewW = CONFIG.sprite * cssW / target;
@@ -7996,9 +8135,9 @@
         sim._shed = (sim._frameMs || 0) > 18 || sim.customers.length > 70;
         sim._glow = 0;
       }
-      ctx.imageSmoothingEnabled = !(sim && sim._shed);
+      ctx.imageSmoothingEnabled = !(sim && (sim._shed || sim._phone));
       if ('imageSmoothingQuality' in ctx) {
-        ctx.imageSmoothingQuality = (sim && (sim.customers.length > 40 || sim._shed)) ? 'low' : 'medium';
+        ctx.imageSmoothingQuality = (sim && (sim._phone || sim.customers.length > 40 || sim._shed)) ? 'low' : 'medium';
       }
       if (plateKey() !== bakedKey) bakeStorePlate();
       if (storePlate) ctx.drawImage(storePlate, 0, 0, WORLD_W, WORLD_H);
@@ -8728,8 +8867,6 @@
     }
 
     function personDrawH() {
-      var cssW = els.canvas && els.canvas._cssW || 800;
-      if (cssW < 720) return Math.round(SPRITE_PACK.displayH * 1.28);
       return SPRITE_PACK.displayH;
     }
 

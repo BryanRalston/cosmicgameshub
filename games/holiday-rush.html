@@ -123,6 +123,7 @@
     .hr-sales__top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0.15rem 0.75rem; }
     .hr-sales__top span, .hr-sales__top strong { flex: 0 0 auto; min-width: max-content; }
     .hr-sales__top strong, .hr-stat strong { color: var(--text-hi); font-size: 0.92rem; }
+    .hr-stockline { margin-top: 2px; font-size: 12px; font-weight: 800; letter-spacing: 0.01em; color: var(--text-hi); white-space: nowrap; }
     .hr-stage { position: relative; width: 100%; height: clamp(300px, 58vh, 680px); background: #1a1412; border-radius: 14px; overflow: hidden; touch-action: none; border: 1px solid rgba(224,163,34,0.25); }
     #hr-skip { position: absolute; z-index: 9; top: 8px; right: 176px; min-width: 72px; min-height: 44px; border: 0; border-radius: 999px; background: #f6f0e4; color: #2b1d2e; font: inherit; font-weight: 800; padding: 0 14px; cursor: pointer; touch-action: manipulation; }
     #hr-coach { position: absolute; z-index: 4; top: 8px; left: 8px; right: 268px; margin: 0; pointer-events: none; background: rgba(43,29,46,0.9); color: #f6f0e4; border-radius: 12px; min-height: 44px; display: flex; align-items: center; padding: 0.4rem 0.75rem; font-weight: 800; font-size: 15.56px; }
@@ -326,8 +327,21 @@
     }
     @media (max-width: 720px) {
       body:has(#hr-sim:not([hidden])) { overflow: hidden; height: 100dvh; }
-      body:has(#hr-sim:not([hidden])) .hr-hint { display: block; font-size: 12px; line-height: 1.25; color: #f6ead8; font-weight: 700; }
-      body:has(#hr-sim:not([hidden])) #hr-actline { font-size: 12px; line-height: 1.25; margin: 2px 0 0; }
+      body:has(#hr-sim:not([hidden])) .hr-hint {
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        max-height: 1.2em;
+        font-size: 11px;
+        line-height: 1.2;
+        margin: 2px 0 0;
+        color: #f6ead8;
+        font-weight: 700;
+      }
+      body:has(#hr-sim:not([hidden])) .hr-actions { margin-top: 4px; gap: 4px; }
+      body:has(#hr-sim:not([hidden])) .hr-actions button { min-height: 36px; font-size: 0.75rem; padding: 0 8px; }
+      body:has(#hr-sim:not([hidden])) #hr-actline { display: none; }
       body:has(#hr-sim:not([hidden])) #hr-coach { font-size: 13px; min-height: 0; padding: 6px 8px; }
       body:has(#hr-sim:not([hidden])) .hr-wrap {
         height: 100dvh;
