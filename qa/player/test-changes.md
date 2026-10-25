@@ -14,6 +14,10 @@ These edits fix checks that measured the wrong thing. The pass bars are unchange
 
 The first tap on the drawer handle can land before its listener exists, so the name field stays off screen and the check died on a missing box. The phone path taps Got it if it is up, taps the handle, and types only once the tray has the open class. There is no settle delay between that open and `keyboard.type`.
 
+## Phone triple-click is one gesture
+
+Three separate taps appended to the name. A triple-click selects the text that is already there. The phone path now sends one touch and one triple-click, then types.
+
 ## A phone tap also sends the click the button expects
 
 Playwright's touch tap reaches the canvas, and the game places from `touchend`. The same tap does not activate `Got it`, which listens for `click`. The coachmark stayed up and the next tap hit the card, so the brick count stayed 0. A phone synthesizes that click. `clickAt` sends the touch. On a button or a field it also sends the click at that point. On the canvas it does not: the extra click placed a second brick beside the first.

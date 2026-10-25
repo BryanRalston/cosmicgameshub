@@ -139,13 +139,8 @@ async function typeInto(page, box, name, how) {
   const x = how === 'append' ? box.x + Math.max(8, box.width - 8) : box.x + box.width / 2;
   const y = box.y + box.height / 2;
   if (how === 'triple') {
-    if (page.__phone) {
-      await clickAt(page, x, y);
-      await clickAt(page, x, y);
-      await clickAt(page, x, y);
-    } else {
-      await page.mouse.click(x, y, { clickCount: 3, delay: 35 });
-    }
+    if (page.__phone) await page.touchscreen.tap(x, y);
+    await page.mouse.click(x, y, { clickCount: 3, delay: 35 });
   } else {
     await clickAt(page, x, y);
   }
