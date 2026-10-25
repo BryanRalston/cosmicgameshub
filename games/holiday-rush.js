@@ -8038,6 +8038,17 @@
           var belowY = sy + fitCss + 16;
           if (aboveY - pillH / 2 < 4) aboveY = Math.max(pillH / 2 + 2, sy - Math.min(fitCss * 0.62, Math.max(0, sy - pillH)));
           if (belowY + pillH / 2 > look.stageH - 4) belowY = look.stageH - 4 - pillH / 2;
+          var coachEl = document.getElementById('hr-coach');
+          if (coachEl && !coachEl.hidden && els.canvas) {
+            var coachBox = coachEl.getBoundingClientRect();
+            var canvasBox = els.canvas.getBoundingClientRect();
+            if (coachBox.height > 8 && canvasBox.height > 8 && coachBox.bottom > canvasBox.top && coachBox.top < canvasBox.bottom) {
+              var bannerBottom = (coachBox.bottom - canvasBox.top) * (look.stageH / canvasBox.height);
+              var minAbove = bannerBottom + 4 + pillH / 2;
+              if (aboveY < minAbove) aboveY = minAbove;
+            }
+          }
+          if (belowY - aboveY < pillH + 4) belowY = aboveY + pillH + 4;
           var pills = [['Wrap?', aboveY], ['WRAP', belowY]];
           for (var wp = 0; wp < pills.length; wp++) {
             var pillW = ctx.measureText(pills[wp][0]).width + 16;
