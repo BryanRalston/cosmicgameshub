@@ -1,0 +1,8 @@
+{
+  "name": "brix3d-player-qa",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "playwright": "1.49.1"
+  }
+}
