@@ -1,4 +1,4 @@
-import{A as je,Bd as at,Cd as ot,Ed as N,Fd as R,G as Ye,Ga as Je,Ha as z,I as Xe,Ka as $e,Na as et,Oc as st,Pc as S,Qa as tt,Ra as it,Rd as lt,Td as nt,Yc as k,dd as Q,fg as ut,hd as Ze,je as ht,md as V,mf as ct,na as Oe,od as rt,p as B,qa as Le,r as Ge,u as qe,v as Ve,zd as Qe}from"./brix3d-6ZSIPUNS.js";var I={name:"CopyShader",uniforms:{tDiffuse:{value:null},opacity:{value:1}},vertexShader:`
+import{Aa as ct,B as st,C as S,E as k,G as Q,Ha as ut,J as Ze,M as V,N as rt,P as Qe,Q as at,R as ot,T as N,U as R,_ as lt,aa as nt,h as B,i as Ge,ia as ht,j as qe,k as Ve,l as je,m as Ye,n as Xe,p as Oe,q as Le,s as Je,t as z,u as $e,v as et,w as tt,x as it}from"./brix3d-2377GCTF.js";var I={name:"CopyShader",uniforms:{tDiffuse:{value:null},opacity:{value:1}},vertexShader:`
 
 		varying vec2 vUv;
 

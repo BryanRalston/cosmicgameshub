@@ -4,7 +4,7 @@ function later() {
 
 // Split three.js evaluation from the game so they are not one long task.
 later()
-  .then(() => import('three'))
+  .then(() => import('./three-entry.js'))
   .then(() => later())
   .then(() => import('./main.js'))
   .catch((err) => {

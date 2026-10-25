@@ -77,7 +77,7 @@
     @keyframes bounce { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-15px) scale(1.05); } }
     
   </style>
-  <link rel="stylesheet" href="/games/brix3d/brix3d.0ebd2ecbd4.css">
+  <link rel="stylesheet" href="/games/brix3d/brix3d.711e6a7016.css">
   <meta property="og:image" content="https://www.cosmicgameshub.com/images/game-brix3d-og.jpg">
   <meta property="og:image:width" content="1280">
   <meta property="og:image:height" content="720">
@@ -126,8 +126,7 @@
         gtag('js', new Date());
         gtag('config', 'G-D272MF8NQP');
       };
-      if (window.requestIdleCallback) requestIdleCallback(loadGa, { timeout: 3000 });
-      else setTimeout(loadGa, 1500);
+      setTimeout(loadGa, 15000);
     });
   </script>
 </head>
@@ -317,13 +316,13 @@
           </div>
           <div class="share-options">
             <button id="shareDownloadImage" class="gallery-btn">📥 Download Image</button>
-            <button id="shareCopyLink" class="gallery-btn">🔗 Copy Build Code</button>
-            <button id="shareCopyUrl" class="gallery-btn">🔗 Copy Share Link</button>
+            <button id="shareCopyLink" class="gallery-btn">Copy build code</button>
+            <button id="shareCopyUrl" class="gallery-btn">Copy share link</button>
             <button id="shareDownloadFile" class="gallery-btn">💾 Download .brick File</button>
           </div>
           <div class="share-code-section">
-            <label>Build Code (paste to load):</label>
-            <textarea id="shareBuildCode" readonly placeholder="Click 'Copy Build Code' to generate..."></textarea>
+            <label for="shareBuildCode">Share link</label>
+            <textarea id="shareBuildCode" readonly placeholder="Copy the share link, or paste one here to load"></textarea>
             <button id="shareLoadCode" class="gallery-btn">📋 Load from Code</button>
           </div>
         </div>
@@ -521,7 +520,7 @@
     
     <!-- Project Management -->
     <div class="section collapsed">
-      <div class="section-title">📁 Project</div>
+      <div class="section-title">Project</div>
       <div class="section-content">
         <div class="project-controls">
           <input type="text" id="projectName" placeholder="My Project" maxlength="30" class="project-name-input">
@@ -540,11 +539,11 @@
     </div>
     
     <div class="section">
-      <div class="section-title">🧱 Bricks</div>
+      <div class="section-title">Bricks</div>
       <div class="section-content">
         <!-- Standard Bricks -->
         <div class="subsection">
-          <div class="subsection-title">📦 Standard</div>
+          <div class="subsection-title">Standard</div>
           <div class="subsection-content">
             <div class="brick-grid">
               <div class="brick-btn" data-brick="1x1">1×1</div>
@@ -565,7 +564,7 @@
         
         <!-- Plates -->
         <div class="subsection collapsed">
-          <div class="subsection-title">📋 Plates</div>
+          <div class="subsection-title">Plates</div>
           <div class="subsection-content">
             <div class="brick-grid">
               <div class="brick-btn" data-brick="1x1p">1×1</div>
@@ -582,7 +581,7 @@
         
         <!-- Tiles -->
         <div class="subsection collapsed">
-          <div class="subsection-title">✨ Tiles (smooth)</div>
+          <div class="subsection-title">Tiles (smooth)</div>
           <div class="subsection-content">
             <div class="brick-grid">
               <div class="brick-btn" data-brick="1x1t">1×1</div>
@@ -597,7 +596,7 @@
         
         <!-- Round -->
         <div class="subsection collapsed">
-          <div class="subsection-title">⭕ Round</div>
+          <div class="subsection-title">Round</div>
           <div class="subsection-content">
             <div class="brick-grid">
               <div class="brick-btn" data-brick="r1x1">●1×1</div>
@@ -611,7 +610,7 @@
         
         <!-- Slopes -->
         <div class="subsection collapsed">
-          <div class="subsection-title">⟋ Slopes</div>
+          <div class="subsection-title">Slopes</div>
           <div class="subsection-content">
             <div class="brick-grid">
               <div class="brick-btn" data-brick="slope2">2×2</div>
@@ -633,7 +632,7 @@
         
         <!-- SNOT -->
         <div class="subsection collapsed">
-          <div class="subsection-title">🔲 SNOT (Side Studs)</div>
+          <div class="subsection-title">SNOT (Side Studs)</div>
           <div class="subsection-content">
             <div class="brick-grid">
               <div class="brick-btn" data-brick="snot1x2">1×2</div>
@@ -647,7 +646,7 @@
         
         <!-- Light Bricks -->
         <div class="subsection collapsed">
-          <div class="subsection-title">💡 Light Bricks</div>
+          <div class="subsection-title">Light Bricks</div>
           <div class="subsection-content">
             <div class="brick-grid">
               <div class="brick-btn" data-brick="light1x1">1×1</div>
@@ -682,7 +681,7 @@
         
         <!-- Custom Block -->
         <div class="subsection collapsed">
-          <div class="subsection-title">🔧 Custom Block</div>
+          <div class="subsection-title">Custom Block</div>
           <div class="subsection-content">
             <div class="custom-block-creator">
               <div class="custom-row">
@@ -709,7 +708,7 @@
     </div>
     
     <div class="section collapsed">
-      <div class="section-title">🎨 Color</div>
+      <div class="section-title">Color</div>
       <div class="section-content">
         <input type="color" id="colorPicker" value="#e53935">
         <div class="color-presets">
@@ -748,7 +747,7 @@
     </div>
     
     <div class="section collapsed">
-      <div class="section-title">🖼️ Photo Tiles</div>
+      <div class="section-title">Photo Tiles</div>
       <div class="section-content">
         <div class="photo-tile-section">
           <div class="photo-upload-row">
@@ -764,13 +763,13 @@
     </div>
     
     <div class="section collapsed">
-      <div class="section-title">📦 Prefabs</div>
+      <div class="section-title">Prefabs</div>
       <div class="section-content">
         <input type="text" class="prefab-search" id="prefabSearch" placeholder="🔍 Search prefabs...">
         
         <!-- Building Structures -->
-        <div class="subsection">
-          <div class="subsection-title">🏗️ Building</div>
+        <div class="subsection collapsed">
+          <div class="subsection-title">Building</div>
           <div class="subsection-content">
             <div class="prefab-grid" id="prefabGrid">
               <button class="prefab-btn" data-prefab="wall4">🧱 Wall 4</button>
@@ -788,7 +787,7 @@
         
         <!-- Trees -->
         <div class="subsection collapsed">
-          <div class="subsection-title">🌳 Trees</div>
+          <div class="subsection-title">Trees</div>
           <div class="subsection-content">
             <div class="prefab-grid">
               <button class="prefab-btn" data-prefab="tree">🌳 Oak Small</button>
@@ -804,7 +803,7 @@
         
         <!-- Plants & Flowers -->
         <div class="subsection collapsed">
-          <div class="subsection-title">🌸 Plants & Flowers</div>
+          <div class="subsection-title">Plants & Flowers</div>
           <div class="subsection-content">
             <div class="prefab-grid">
               <button class="prefab-btn" data-prefab="bush">🌿 Bush</button>
@@ -831,7 +830,7 @@
         
         <!-- Rocks & Terrain -->
         <div class="subsection collapsed">
-          <div class="subsection-title">🪨 Rocks & Terrain</div>
+          <div class="subsection-title">Rocks & Terrain</div>
           <div class="subsection-content">
             <div class="prefab-grid">
               <button class="prefab-btn" data-prefab="rock">🪨 Rock</button>
@@ -844,7 +843,7 @@
         
         <!-- Furniture -->
         <div class="subsection collapsed">
-          <div class="subsection-title">🪑 Furniture</div>
+          <div class="subsection-title">Furniture</div>
           <div class="subsection-content">
             <div class="prefab-grid">
               <button class="prefab-btn" data-prefab="chair">🪑 Chair</button>
@@ -862,7 +861,7 @@
         
         <!-- Decor -->
         <div class="subsection collapsed">
-          <div class="subsection-title">🖼️ Decor & Rugs</div>
+          <div class="subsection-title">Decor & Rugs</div>
           <div class="subsection-content">
             <div class="prefab-grid">
               <button class="prefab-btn" data-prefab="rugSmall">🟥 Rug Small</button>
@@ -877,7 +876,7 @@
         
         <!-- Kitchen & Bath -->
         <div class="subsection collapsed">
-          <div class="subsection-title">🍳 Kitchen & Bath</div>
+          <div class="subsection-title">Kitchen & Bath</div>
           <div class="subsection-content">
             <div class="prefab-grid">
               <button class="prefab-btn" data-prefab="fridge">🧊 Fridge</button>
@@ -892,7 +891,7 @@
         
         <!-- Vehicles -->
         <div class="subsection collapsed">
-          <div class="subsection-title">🚗 Vehicles</div>
+          <div class="subsection-title">Vehicles</div>
           <div class="subsection-content">
             <div class="prefab-grid">
               <button class="prefab-btn" data-prefab="car">🚗 Car</button>
@@ -905,7 +904,7 @@
         
         <!-- Play Structures -->
         <div class="subsection collapsed">
-          <div class="subsection-title">🏰 Play Structures</div>
+          <div class="subsection-title">Play Structures</div>
           <div class="subsection-content">
             <div class="prefab-grid">
               <button class="prefab-btn" data-prefab="rocket">🚀 Rocket</button>
@@ -916,7 +915,7 @@
         
         <!-- Custom Prefab Creator -->
         <div class="subsection collapsed">
-          <div class="subsection-title">✨ Custom Prefab</div>
+          <div class="subsection-title">Custom Prefab</div>
           <div class="subsection-content">
             <div class="custom-prefab-section">
               <div class="custom-prefab-controls">
@@ -940,7 +939,7 @@
     </div>
     
     <div class="section collapsed">
-      <div class="section-title">🔧 Tools</div>
+      <div class="section-title">Tools</div>
       <div class="section-content">
         <div class="tool-grid">
           <button class="tool-btn" id="rotateBtn">
@@ -1021,7 +1020,7 @@
     </div>
     
     <div class="section collapsed">
-      <div class="section-title">💾 Actions</div>
+      <div class="section-title">Actions</div>
       <div class="section-content">
         <div class="tool-grid">
           <button class="tool-btn" id="undoBtn">
@@ -1057,7 +1056,7 @@
     </div>
     
     <div class="section collapsed">
-      <div class="section-title">🌤️ Environment</div>
+      <div class="section-title">Environment</div>
       <div class="section-content">
         <div class="env-controls">
           <div class="env-row">
@@ -1134,7 +1133,7 @@
     <div class="shortcut"><span class="key">Ctrl+S</span> Save project</div>
   </div>
   
-  <div class="fps" id="fps">-- FPS · 0 bricks · 0 draws</div>
+  <div class="fps" id="fps">-- FPS</div>
   <div id="qualityBar">
     <button data-quality="high">High</button>
     <button data-quality="balanced" class="active">Balanced</button>
@@ -1231,7 +1230,7 @@
     setTimeout(function () {
       var s = document.createElement('script');
       s.type = 'module';
-      s.src = '/games/brix3d/brix3d.HYURBFMB.js';
+      s.src = '/games/brix3d/brix3d.XKNB3XZP.js';
       document.body.appendChild(s);
     }, 300);
   </script>

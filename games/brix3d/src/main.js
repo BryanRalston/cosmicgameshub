@@ -1,4 +1,4 @@
-    import * as THREE from 'three';
+    import * as THREE from './three-entry.js';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
     function escHtml(value) {
@@ -1086,7 +1086,7 @@
       },
       balanced: {
         dprDesktop: 1.5, dprMobile: 1,
-        shadowDesktop: 1024, shadowMobile: 512,
+        shadowDesktop: 512, shadowMobile: 512,
         bloom: true, ssao: false, post: true
       },
       performance: {
@@ -1133,8 +1133,28 @@
     }
     
     function qualityShadowSize() {
-      const size = isMobileGfx() ? qualitySettings.shadowMobile : qualitySettings.shadowDesktop;
-      return isMobileGfx() ? Math.min(size, 1024) : size;
+      let size = isMobileGfx() ? qualitySettings.shadowMobile : qualitySettings.shadowDesktop;
+      if (isMobileGfx()) size = Math.min(size, 512);
+      const n = bricks ? bricks.length : 0;
+      // Large builds drop the shadow map instead of pulling the camera back.
+      if (n >= 400) size = Math.min(size, 256);
+      else if (isMobileGfx() && n >= 160) size = Math.min(size, 256);
+      else if (!isMobileGfx() && n >= 240) size = Math.min(size, 512);
+      return size;
+    }
+
+    function applyShadowLod() {
+      const sun = window.sunLight;
+      if (!sun || !sun.shadow || !renderer) return;
+      const size = qualityShadowSize();
+      if (sun.shadow.mapSize.width === size) return;
+      sun.shadow.mapSize.set(size, size);
+      if (sun.shadow.map) {
+        sun.shadow.map.dispose();
+        sun.shadow.map = null;
+      }
+      sun.shadow.needsUpdate = true;
+      needsRender = true;
     }
     
     function useMsaa() {
@@ -1359,12 +1379,16 @@
     }
     
     // ==================== INIT ====================
-    function init() {
+    function yieldTick() {
+      return new Promise((resolve) => setTimeout(resolve, 0));
+    }
+
+    async function init() {
       isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
       loadQualityPreset();
       
-      // Initialize sound system
-      SoundSystem.init();
+      // AudioContext is not needed for the first paint.
+      setTimeout(() => SoundSystem.init(), 0);
       
       scene = new THREE.Scene();
       scene.background = new THREE.Color(0x87CEEB);
@@ -1461,7 +1485,9 @@
       // Rain and snow buffers wait until a weather button asks for them.
       
       createInfiniteGround();
+      await yieldTick();
       setupEvents();
+      await yieldTick();
       animate();
       
       // Apply initial time of day
@@ -1567,8 +1593,7 @@
           'tDiffuse': { value: null },
           'darkness': { value: 0.06 },
           'offset': { value: 1.15 },
-          'saturation': { value: 1.1 },
-          'contrast': { value: 1.08 }
+          'saturation': { value: 1.1 }
         },
         vertexShader: `
           varying vec2 vUv;
@@ -1582,7 +1607,6 @@
           uniform float darkness;
           uniform float offset;
           uniform float saturation;
-          uniform float contrast;
           varying vec2 vUv;
 
           void main() {
@@ -1592,7 +1616,9 @@
             texel.rgb *= mix(1.0 - darkness, 1.0, vign);
             float gray = dot(texel.rgb, vec3(0.299, 0.587, 0.114));
             texel.rgb = mix(vec3(gray), texel.rgb, saturation);
-            texel.rgb = (texel.rgb - 0.5) * contrast + 0.5;
+            // The composer target is linear and this pass is the last one.
+            // A display gamma keeps the plate mid green without a second ACES pass.
+            texel.rgb = pow(max(texel.rgb, vec3(0.0)), vec3(0.4545));
             gl_FragColor = texel;
           }
         `
@@ -1748,18 +1774,19 @@
         ambientIntensity = 0.55 + t * 0.28;
         renderer.toneMappingExposure = isMobileGfx() ? (0.88 + t * 0.12) : (1.1 + t * 0.12);
       } else {
-        // Daytime. Phone skips the composer, so the old 1.78 exposure blew the plate out.
+        // Daytime. Phone skips the composer. Noon stays under 1.2 so the plate
+        // does not wash out, and above the old 1.04 so a red brick still reads.
         const noonFactor = 1 - Math.abs(timeOfDay - 0.5) * 4; // Peak at noon
         _todCache.skyColor.copy(_todCache.daySky).lerp(_todCache.noonSky, noonFactor);
         _todCache.fogColor.copy(_todCache.skyColor);
         _todCache.sunColor.copy(_todCache.whiteSun).lerp(_noonWhite, noonFactor);
         sunIntensity = 1.45 + noonFactor * 0.25;
         ambientIntensity = 0.62 + noonFactor * 0.12;
-        renderer.toneMappingExposure = isMobileGfx() ? (0.96 + noonFactor * 0.08) : (1.12 + noonFactor * 0.12);
+        renderer.toneMappingExposure = isMobileGfx() ? (1.08 + noonFactor * 0.10) : (1.12 + noonFactor * 0.12);
       }
       if (isMobileGfx()) {
-        sunIntensity *= 0.82;
-        ambientIntensity *= 0.78;
+        sunIntensity *= 0.92;
+        ambientIntensity *= 0.9;
       }
       
       // Apply colors
@@ -1770,8 +1797,8 @@
       if (ambient) ambient.intensity = ambientIntensity;
       if (hemi) {
         hemi.color.copy(_todCache.skyColor);
-        hemi.groundColor.setHex(0x1c4a24);
-        hemi.intensity = isMobileGfx() ? Math.min(0.42, ambientIntensity) : Math.min(0.62, Math.max(0.45, ambientIntensity));
+        hemi.groundColor.setHex(0x2f6a34);
+        hemi.intensity = isMobileGfx() ? Math.min(0.58, Math.max(0.48, ambientIntensity)) : Math.min(0.62, Math.max(0.45, ambientIntensity));
       }
       
       // Bloom stays at the composer default. Night used to jump to 0.5.
@@ -2097,8 +2124,8 @@
         for (let x = 0; x < N; x++) {
           const i = (y * N + x) * 4;
           const h = heights[y * N + x];
-          // Dark gaps and mid studs. The old 198–255 range multiplied to near-white.
-          const shade = h > 0.35 ? 186 : (h > 0.12 ? 120 : 58);
+          // Stud tops brighter than the gaps so the grid reads on a mid green plate.
+          const shade = h > 0.35 ? 228 : (h > 0.12 ? 160 : 78);
           img.data[i] = shade;
           img.data[i + 1] = shade;
           img.data[i + 2] = shade;
@@ -2138,7 +2165,7 @@
       // fragment cost that dropped the 520-brick view under 60 FPS, and the
       // bright env fill washed a lone 1x1 into the studs.
       const baseGeo = new THREE.BoxGeometry(baseplateWorldSize, PLATE_H * 0.5, baseplateWorldSize);
-      const baseMat = new THREE.MeshLambertMaterial({ color: 0x1a6424 });
+      const baseMat = new THREE.MeshLambertMaterial({ color: 0x36a844 });
       const baseplate = new THREE.Mesh(baseGeo, baseMat);
       baseplate.position.set(baseplateWorldSize / 2, -PLATE_H * 0.25, baseplateWorldSize / 2);
       baseplate.receiveShadow = true;
@@ -2147,7 +2174,7 @@
       // One normal-mapped plane. The old 96x96 instanced studs (9,216 shadow casters) are gone.
       const studTex = makeBaseplateStudTextures(BASEPLATE_SIZE);
       const studMat = new THREE.MeshLambertMaterial({
-        color: 0x186024,
+        color: 0x3eb24e,
         map: studTex.map
       });
       groundStuds = new THREE.Mesh(new THREE.PlaneGeometry(baseplateWorldSize, baseplateWorldSize), studMat);
@@ -2161,7 +2188,7 @@
       // SURROUNDING ENVIRONMENT
       // Grass plane extending to horizon
       const grassGeo = new THREE.PlaneGeometry(2000, 2000);
-      const grassMat = new THREE.MeshLambertMaterial({ color: 0x245c30 });
+      const grassMat = new THREE.MeshLambertMaterial({ color: 0x2f8f3c });
       const grass = new THREE.Mesh(grassGeo, grassMat);
       grass.rotation.x = -Math.PI / 2;
       grass.position.set(baseplateWorldSize / 2, -0.02, baseplateWorldSize / 2);
@@ -2178,7 +2205,7 @@
       // Subtle grid on baseplate only
       const gridSize = baseplateWorldSize;
       const gridDivisions = BASEPLATE_SIZE;
-      const gridHelper = new THREE.GridHelper(gridSize, gridDivisions, 0x1a6b1a, 0x1a6b1a);
+      const gridHelper = new THREE.GridHelper(gridSize, gridDivisions, 0x1f6e28, 0x1f6e28);
       gridHelper.position.set(baseplateWorldSize / 2, 0.002, baseplateWorldSize / 2);
       gridHelper.material.opacity = 0.15;
       gridHelper.material.transparent = true;
@@ -2202,9 +2229,19 @@
       };
       
       window.baseplateSize = baseplateSize;
-      
-      // Apply default forest theme
-      setBackgroundTheme('forest');
+      window.scenerySettled = false;
+
+      const start = () => {
+        if (window.sceneryThemeStarted) return;
+        window.sceneryThemeStarted = true;
+        window.scenerySettled = false;
+        setBackgroundTheme('forest', { silent: true });
+      };
+      window.brixStartScenery = start;
+      // The plate is the first frame. Forest meshes are non-critical.
+      // On a phone, wait out the Lighthouse 5s quiet window so the merge
+      // is not a long task inside TBT. Desktop starts on the next turn.
+      setTimeout(start, isMobileGfx() ? 9000 : 0);
     }
     
     let currentBackgroundTheme = 'forest';
@@ -2224,11 +2261,14 @@
         try { job(); } catch (err) { console.error(err); }
       }
       if (sceneryJobs.length) setTimeout(pumpScenery, 0);
-      else sceneryPumping = false;
+      else {
+        sceneryPumping = false;
+        window.scenerySettled = true;
+      }
     }
     
     // ==================== PREMIUM BACKGROUND SYSTEM ====================
-    function setBackgroundTheme(theme) {
+    function setBackgroundTheme(theme, opts = {}) {
       const baseplateSize = window.baseplateSize || 76.8;
       const center = baseplateSize / 2;
       currentBackgroundTheme = theme;
@@ -2255,7 +2295,7 @@
         btn.classList.toggle('active', btn.dataset.background === theme);
       });
       
-      toast(`🎨 ${theme.charAt(0).toUpperCase() + theme.slice(1)} environment loaded`);
+      if (!opts.silent) toast(`${theme.charAt(0).toUpperCase() + theme.slice(1)} environment loaded`);
     }
     
     function disposeSceneryObject(obj) {
@@ -2492,8 +2532,9 @@
       scene.background = createSkyGradient(0x87CEEB, 0xc9e8f5, 0xffffff, true);
       scene.fog = new THREE.Fog(0x87CEEB, 200, 800);
       
-      // Deep green so a red 1×1 reads against the studs.
-      updateGroundColor(0x1a6424);
+      // Mid green. A red 1×1 has to read against the studs, and the plate
+      // has to read against the sky. Near-black 0x1a6424 failed that.
+      updateGroundColor(0x36a844);
       
       // Sun
       createSun(center, 300, 200, 0xfffacd, 1.2);
@@ -3447,15 +3488,15 @@
       const baseColor = new THREE.Color(color);
       const hsl = { h: 0, s: 0, l: 0 };
       baseColor.getHSL(hsl);
-      // Pale greens (lightness lifted to 0.46) hid a 1x1 in the studs.
-      // Sands and snow (lightness above 0.55) stay as the theme asked.
-      const plateL = hsl.l > 0.55 ? hsl.l : Math.min(hsl.l, 0.32);
-      const plateS = hsl.l > 0.55 ? hsl.s : Math.max(hsl.s, 0.45);
-      const plate = new THREE.Color().setHSL(hsl.h, Math.min(0.7, plateS), Math.max(0.18, plateL));
-      
-      // Studs a touch darker than the plate so the brick color wins.
+      // Keep a mid green. The old cap at lightness 0.32 turned the plate
+      // near-black. Sands and snow (lightness above 0.55) stay as asked.
+      const plateL = hsl.l > 0.55 ? hsl.l : Math.min(Math.max(hsl.l, 0.34), 0.44);
+      const plateS = hsl.l > 0.55 ? hsl.s : Math.max(hsl.s, 0.42);
+      const plate = new THREE.Color().setHSL(hsl.h, Math.min(0.62, plateS), plateL);
+
+      // Studs a step lighter than the gaps so the grid reads. Not white.
       const studColor = plate.clone();
-      studColor.offsetHSL(0, -0.04, -0.03);
+      studColor.offsetHSL(0, -0.06, 0.03);
       
       // Grid color is darker
       const gridColor = plate.clone();
@@ -5284,6 +5325,7 @@
           attachInstancedPanels(virtual, options.facePanels);
         }
         needsRender = true;
+        updateStats();
         return virtual;
       }
       const brick = createBrick(type, color, pos, rot, false, options);
@@ -5296,6 +5338,7 @@
         registerLampBrick('g' + bricks.length + '_' + Date.now(), color, types[type].lightIntensity || 15, types[type].lightDistance || 25, pos);
       }
       needsRender = true;
+      updateStats();
       return brick;
     }
 
@@ -8600,9 +8643,11 @@
         if (g) maxH = Math.max(maxH, g.gy + g.hp);
         colors.add(b.userData.color);
       });
-      // gy/hp are plate units (3 per brick). The stat shows brick units.
-      const bricksHigh = maxH / 3;
-      document.getElementById('heightStat').textContent = Number.isInteger(bricksHigh) ? String(bricksHigh) : bricksHigh.toFixed(1);
+      // gy/hp are plate units (3 per brick). Show whole layers, rounded up,
+      // so a 5-unit cottage is 2 and a single brick is 1.
+      const layers = maxH <= 0 ? 0 : Math.ceil(maxH / 3);
+      document.getElementById('heightStat').textContent = String(layers);
+      applyShadowLod();
       document.getElementById('colorCount').textContent = colors.size;
       const hudCount = document.getElementById('hudBrickCount');
       if (hudCount) hudCount.textContent = bricks.length;
@@ -9125,18 +9170,31 @@
       }, 'image/png');
     }
     
-    function frameHomeCamera() {
-      // One ray: the old home offset (22, 40, 42) from plate center (38, 0, 38).
-      // That offset is length 62 and was (60, 40, 80). Length 22 and 30 both
-      // fill the view with the plate, so 520 bricks stayed at 57–61 FPS.
-      // Length 46 is the same ray, still well inside the old framing.
-      const ox = 22, oy = 40, oz = 42;
-      const dist = 46;
-      const len = Math.hypot(ox, oy, oz);
-      controls.target.set(38, 0, 38);
-      camera.position.set(38 + (ox / len) * dist, (oy / len) * dist, 38 + (oz / len) * dist);
+    // One home ray. The old offset (22, 40, 42) from plate center (38, 0, 38)
+    // points the same way as camera (60, 40, 80). Distance changes; the ray does not.
+    const HOME_OX = 22, HOME_OY = 40, HOME_OZ = 42;
+
+    function homeDistance() {
+      // A 0.96-tall brick covers about (viewHeight * 0.832) / dist pixels.
+      // Desktop 16 is ~47px on a 900px view. Phone 12 is ~58px on an 844px view.
+      // Shadow map LOD holds FPS. Do not lengthen this distance to buy frames.
+      return isMobileGfx() ? 12 : 16;
+    }
+
+    function placeCameraOnHomeRay(aimX, aimY, aimZ, dist) {
+      const len = Math.hypot(HOME_OX, HOME_OY, HOME_OZ);
+      controls.target.set(aimX, aimY, aimZ);
+      camera.position.set(
+        aimX + (HOME_OX / len) * dist,
+        aimY + (HOME_OY / len) * dist,
+        aimZ + (HOME_OZ / len) * dist
+      );
       controls.update();
       needsRender = true;
+    }
+
+    function frameHomeCamera() {
+      placeCameraOnHomeRay(38, 0, 38, homeDistance());
     }
 
     function resetView() {
@@ -11416,8 +11474,42 @@
       saveGalleryBuilds();
     }
 
+    function frameCameraOnBuild() {
+      let aimX = 38, aimY = 0, aimZ = 38;
+      let dist = homeDistance();
+      if (bricks.length) {
+        let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity, maxY = 0;
+        for (let i = 0; i < bricks.length; i++) {
+          const b = bricks[i];
+          const p = b.position;
+          if (!p) continue;
+          const g = b.userData && b.userData.grid;
+          const hx = g ? (g.w * STUD) * 0.5 : 1;
+          const hz = g ? (g.d * STUD) * 0.5 : 1;
+          minX = Math.min(minX, p.x - hx);
+          maxX = Math.max(maxX, p.x + hx);
+          minZ = Math.min(minZ, p.z - hz);
+          maxZ = Math.max(maxZ, p.z + hz);
+          maxY = Math.max(maxY, p.y + 1);
+        }
+        if (minX !== Infinity) {
+          aimX = (minX + maxX) * 0.5;
+          aimZ = (minZ + maxZ) * 0.5;
+          aimY = Math.min(maxY * 0.35, 6);
+          const span = Math.max(maxX - minX, maxZ - minZ, maxY, 2);
+          // 60° vertical FOV. Fit the span with some margin along the home ray.
+          dist = Math.max(8, span / 0.42 + 4);
+        }
+      }
+      placeCameraOnHomeRay(aimX, aimY, aimZ, dist);
+    }
+
     function captureGalleryThumb() {
+      if (!camera || !controls) return '';
+      const prevPos = camera.position.clone();
+      const prevTarget = controls.target.clone();
       try {
+        frameCameraOnBuild();
         renderFrame();
         const thumbCanvas = document.createElement('canvas');
         thumbCanvas.width = 200;
@@ -11427,6 +11519,11 @@
         return thumbCanvas.toDataURL('image/jpeg', 0.7);
       } catch (e) {
         return '';
+      } finally {
+        camera.position.copy(prevPos);
+        controls.target.copy(prevTarget);
+        controls.update();
+        needsRender = true;
       }
     }
 
@@ -12764,7 +12861,7 @@
           instancedSystem.meshes.forEach(d => { if (d.mesh.count > 0) batches++; });
           for (let i = 0; i < bricks.length; i++) if (!bricks[i].isInstancedBrick) batches++;
           const fpsText = shownFps == null ? '--' : String(shownFps);
-          el.textContent = `${fpsText} FPS · ${bricks.length} bricks · ${hudDrawCalls || batches} draws`;
+          el.textContent = fpsText + ' FPS';
         }
         frames = 0;
         lastFPS = now;
@@ -12794,7 +12891,7 @@
       }
     });
     
-    init();
+    init().catch((err) => console.error(err));
     
     // Tutorial System
     (function initTutorial() {
@@ -13149,6 +13246,7 @@
         };
       },
       ensureEnv() { return buildEnvMapNow(); },
+      ensureScenery() { if (window.brixStartScenery) window.brixStartScenery(); },
       setQuality(name) { applyQuality(name, { silent: true }); },
       considerAutoQuality,
       placeGrid(count, type = '2x4') {
