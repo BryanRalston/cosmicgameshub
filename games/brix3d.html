@@ -38,7 +38,7 @@
       position: fixed; inset: 0; 
       background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
       display: flex; flex-direction: column; justify-content: center; align-items: center;
-      z-index: 10000; transition: opacity 0.6s ease-out;
+      z-index: 10000; transition: opacity 0.18s ease-out;
     }
     #loadingScreen.hide { opacity: 0; pointer-events: none; visibility: hidden; }
     .loading-logo { 
@@ -69,7 +69,7 @@
       height: 100%; 
       background: linear-gradient(90deg, #ffd700, #ff8c00, #ffd700);
       background-size: 200% 100%;
-      animation: load 1.2s ease-out forwards, shimmer 1.5s linear infinite;
+      animation: load 0.35s ease-out forwards, shimmer 0.8s linear infinite;
       border-radius: 3px;
     }
     @keyframes load { from { width: 0; } to { width: 100%; } }
@@ -77,7 +77,7 @@
     @keyframes bounce { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-15px) scale(1.05); } }
     
   </style>
-  <link rel="stylesheet" href="/games/brix3d/brix3d.3b9a5ae424.css">
+  <link rel="stylesheet" href="/games/brix3d/brix3d.5d86be25fb.css">
   <meta property="og:image" content="https://www.cosmicgameshub.com/images/game-brix3d-og.jpg">
   <meta property="og:image:width" content="1280">
   <meta property="og:image:height" content="720">
@@ -143,17 +143,16 @@
     <div class="tutorial-container">
       <div class="tutorial-header">
         <h2>🧱 Welcome to BRIX 3D!</h2>
-        <div class="page-indicator">Page <span id="tutorialCurrentPage">1</span> of <span id="tutorialTotalPages">7</span></div>
+        <div class="page-indicator">Page <span id="tutorialCurrentPage">1</span> of <span id="tutorialTotalPages">3</span></div>
       </div>
       
-      <!-- Page 1: Welcome -->
       <div class="tutorial-page active" data-page="1">
-        <h3><span class="icon">🎮</span> Getting Started</h3>
-        <p>Build amazing LEGO creations in your browser! This tutorial will guide you through the basics.</p>
+        <h3><span class="icon">🎮</span> Look, then place</h3>
+        <p>Drag to orbit, scroll to zoom, and right-drag to pan. The first brick is a 2×2.</p>
         <ul>
-          <li><strong>Orbit Camera:</strong> Click and drag to rotate the view</li>
-          <li><strong>Zoom:</strong> Scroll wheel to zoom in/out</li>
-          <li><strong>Pan:</strong> Right-click and drag to pan</li>
+          <li><strong>Place:</strong> Pick a brick, then click the plate or another brick</li>
+          <li><strong>Rotate:</strong> Press <kbd>R</kbd> before you click</li>
+          <li><strong>Color:</strong> Choose a swatch. Bricks snap to the stud grid</li>
         </ul>
         <div class="tutorial-tip">Tap a starter to drop a build, or close this and place a brick.</div>
         <div class="starter-inline">
@@ -162,86 +161,25 @@
           <button type="button" data-starter="buggy">Buggy</button>
         </div>
       </div>
-      
-      <!-- Page 2: Placing Bricks -->
+
       <div class="tutorial-page" data-page="2">
-        <h3><span class="icon">🧱</span> Placing Bricks</h3>
-        <p>Select a brick type from the sidebar, then click on the build area to place it.</p>
+        <h3><span class="icon">🛠️</span> Change the build</h3>
         <ul>
-          <li><strong>Select Brick:</strong> Click any brick button in the sidebar</li>
-          <li><strong>Place:</strong> Click on the ground or on top of existing bricks</li>
-          <li><strong>Rotate:</strong> Press <kbd>R</kbd> to rotate before placing</li>
-          <li><strong>Colors:</strong> Pick a color from the palette before placing</li>
+          <li><strong>Delete (<kbd>X</kbd>)</strong> and <strong>Undo (<kbd>Ctrl+Z</kbd>)</strong></li>
+          <li><strong>Paint (<kbd>P</kbd>)</strong>, <strong>Face paint (<kbd>Shift+P</kbd>)</strong>, <strong>Dropper (<kbd>I</kbd>)</strong></li>
+          <li><strong>Wall</strong> and <strong>Floor</strong> drag out a run of bricks</li>
+          <li><strong>Mirror (<kbd>M</kbd>)</strong> and <strong>Transparent (<kbd>T</kbd>)</strong></li>
         </ul>
-        <div class="tutorial-tip">💡 Bricks automatically snap to the grid and stack on top of each other!</div>
       </div>
-      
-      <!-- Page 3: Editing Tools -->
+
       <div class="tutorial-page" data-page="3">
-        <h3><span class="icon">🛠️</span> Editing Tools</h3>
-        <p>Use these tools to modify your creation:</p>
+        <h3><span class="icon">📦</span> Walk, save, share</h3>
         <ul>
-          <li><strong>🗑️ Delete Mode (<kbd>X</kbd>):</strong> Click bricks to remove them</li>
-          <li><strong>🎨 Paint Mode (<kbd>P</kbd>):</strong> Recolor existing bricks</li>
-          <li><strong>🖌️ Face Paint (<kbd>Shift+P</kbd>):</strong> Paint individual brick sides</li>
-          <li><strong>💧 Color Dropper (<kbd>I</kbd>):</strong> Pick color from existing brick</li>
-          <li><strong>↩️ Undo (<kbd>Ctrl+Z</kbd>):</strong> Undo last action</li>
+          <li><strong>Walk (<kbd>V</kbd>):</strong> <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>, mouse to look, <kbd>Space</kbd> to jump</li>
+          <li><strong>Save:</strong> Project save, or Gallery, keeps the build in this browser</li>
+          <li><strong>Slots 1–5</strong> and <kbd>?</kbd> for the rest of the keys</li>
         </ul>
-      </div>
-      
-      <!-- Page 4: Building Tools -->
-      <div class="tutorial-page" data-page="4">
-        <h3><span class="icon">🏗️</span> Quick Building Tools</h3>
-        <p>Build faster with these powerful tools:</p>
-        <ul>
-          <li><strong>🧱 Wall Builder:</strong> Click and drag to create walls instantly</li>
-          <li><strong>⬛ Floor Builder:</strong> Drag to fill areas with plates or tiles</li>
-          <li><strong>🪞 Mirror Mode (<kbd>M</kbd>):</strong> Symmetrically place bricks</li>
-          <li><strong>👻 Transparent (<kbd>T</kbd>):</strong> Make bricks see-through</li>
-        </ul>
-        <div class="tutorial-tip">💡 Wall builder lets you set height and auto-creates staggered brick patterns!</div>
-      </div>
-      
-      <!-- Page 5: Walk Mode -->
-      <div class="tutorial-page" data-page="5">
-        <h3><span class="icon">👤</span> Walk Mode</h3>
-        <p>Explore your creation from a first-person perspective!</p>
-        <ul>
-          <li><strong>Enter Walk Mode:</strong> Press <kbd>V</kbd> or click Walk Mode button</li>
-          <li><strong>Move:</strong> <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> keys</li>
-          <li><strong>Look:</strong> Move your mouse</li>
-          <li><strong>Jump:</strong> <kbd>Space</kbd></li>
-          <li><strong>Place Bricks:</strong> Click or press <kbd>Enter</kbd></li>
-          <li><strong>Open Menu:</strong> Press <kbd>Tab</kbd> for brick selection</li>
-        </ul>
-        <div class="tutorial-tip">💡 Use <kbd>Page Up</kbd>/<kbd>Page Down</kbd> to adjust placement height!</div>
-      </div>
-      
-      <!-- Page 6: Prefabs & Saving -->
-      <div class="tutorial-page" data-page="6">
-        <h3><span class="icon">📦</span> Prefabs & Saving</h3>
-        <p>Use pre-built structures and save your work:</p>
-        <ul>
-          <li><strong>Prefabs:</strong> Find ready-made structures in the Prefabs section</li>
-          <li><strong>Search:</strong> Use the search box to find specific prefabs</li>
-          <li><strong>Save (<kbd>Ctrl+S</kbd>):</strong> Download your creation as a file</li>
-          <li><strong>Load (<kbd>Ctrl+O</kbd>):</strong> Open a saved creation</li>
-          <li><strong>Clear All:</strong> Start fresh (in Edit menu)</li>
-        </ul>
-      </div>
-      
-      <!-- Page 7: Tips & Tricks -->
-      <div class="tutorial-page" data-page="7">
-        <h3><span class="icon">⭐</span> Tips & Tricks</h3>
-        <ul>
-          <li><strong>Quick Slots (1-5):</strong> Access favorite bricks instantly</li>
-          <li><strong>Weather:</strong> Try different weather effects for ambiance</li>
-          <li><strong>Starter Worlds:</strong> Begin with pre-built scenes</li>
-          <li><strong>Gravity (<kbd>G</kbd>):</strong> Drop bricks realistically</li>
-          <li><strong>Selection Box:</strong> Click and drag to select multiple bricks</li>
-          <li><strong>Press <kbd>?</kbd>:</strong> Show keyboard shortcuts anytime</li>
-        </ul>
-        <div class="tutorial-tip">💡 Have fun building! There's no wrong way to create.</div>
+        <div class="tutorial-tip">Have fun building. There is no wrong way to stack.</div>
       </div>
       
       <div class="tutorial-footer">
@@ -300,6 +238,18 @@
       <div class="load-confirm-actions">
         <button type="button" id="loadConfirmCancel">Cancel</button>
         <button type="button" id="loadConfirmOk">Load</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="namePrompt" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="namePromptTitle">
+    <div class="load-confirm">
+      <h2 id="namePromptTitle">Name your build</h2>
+      <p id="namePromptBody">Save this build to the gallery.</p>
+      <input id="namePromptInput" class="name-prompt-input" type="text" maxlength="30" autocomplete="off" enterkeyhint="done">
+      <div class="load-confirm-actions">
+        <button type="button" id="namePromptCancel">Cancel</button>
+        <button type="button" id="namePromptOk">Save</button>
       </div>
     </div>
   </div>
@@ -425,7 +375,7 @@
   <!-- Current brick type -->
   <div class="hud-btn" style="cursor:default;pointer-events:none;">
     <span class="hud-icon">🧱</span>
-    <span class="hud-label" id="hudBrickType">1×4</span>
+    <span class="hud-label" id="hudBrickType">2×2</span>
   </div>
 
   <div class="hud-sep"></div>
@@ -454,7 +404,7 @@
         <span>R/Scroll</span> Rot
         <span>Tab</span> Menu
       </div>
-      <div class="fps-brick-info" id="fpsBrickInfo">2×4 Brick • 0°</div>
+      <div class="fps-brick-info" id="fpsBrickInfo">2×2 Brick • 0°</div>
       <div class="fps-buttons">
         <button id="jumpBtn" class="fps-btn">⬆️ Jump</button>
         <button id="crouchBtn" class="fps-btn">🦵 Crouch</button>
@@ -464,8 +414,8 @@
     
     <!-- Quick slot hotbar -->
     <div class="fps-hotbar" id="fpsHotbar">
-      <div class="fps-slot selected" data-slot="0"><span class="slot-key">1</span><span class="slot-name">2×4</span></div>
-      <div class="fps-slot" data-slot="1"><span class="slot-key">2</span><span class="slot-name">2×2</span></div>
+      <div class="fps-slot selected" data-slot="0"><span class="slot-key">1</span><span class="slot-name">2×2</span></div>
+      <div class="fps-slot" data-slot="1"><span class="slot-key">2</span><span class="slot-name">2×4</span></div>
       <div class="fps-slot" data-slot="2"><span class="slot-key">3</span><span class="slot-name">1×2</span></div>
       <div class="fps-slot" data-slot="3"><span class="slot-key">4</span><span class="slot-name">Plate</span></div>
       <div class="fps-slot" data-slot="4"><span class="slot-key">5</span><span class="slot-name">Slope</span></div>
@@ -522,6 +472,7 @@
   </nav>
   <div id="controls">
     <div class="panel-toggle" id="panelToggle">▲ Bricks &amp; tools</div>
+    <div class="tray-scroll">
     <div class="drawer-starters" aria-label="Starter builds">
       <button type="button" data-starter="cottage">Cottage</button>
       <button type="button" data-starter="tower">Tower</button>
@@ -529,7 +480,7 @@
     </div>
     
     <div class="preview">
-      <div class="preview-name" id="previewName">2×4 Brick</div>
+      <div class="preview-name" id="previewName">2×2 Brick</div>
       <div class="preview-rot" id="previewRot">0° rotation</div>
     </div>
     
@@ -566,9 +517,9 @@
               <div class="brick-btn" data-brick="1x3">1×3</div>
               <div class="brick-btn" data-brick="1x4">1×4</div>
               <div class="brick-btn" data-brick="1x6">1×6</div>
-              <div class="brick-btn" data-brick="2x2">2×2</div>
+              <div class="brick-btn selected" data-brick="2x2">2×2</div>
               <div class="brick-btn" data-brick="2x3">2×3</div>
-              <div class="brick-btn selected" data-brick="2x4">2×4</div>
+              <div class="brick-btn" data-brick="2x4">2×4</div>
               <div class="brick-btn" data-brick="2x6">2×6</div>
               <div class="brick-btn" data-brick="2x8">2×8</div>
               <div class="brick-btn" data-brick="4x4">4×4</div>
@@ -729,10 +680,10 @@
         <div class="color-presets">
           <div class="color-preset selected" style="background:#ff2200" data-color="#ff2200"></div>
           <div class="color-preset" style="background:#1e88e5" data-color="#1e88e5"></div>
-          <div class="color-preset" style="background:#fdd835" data-color="#fdd835"></div>
-          <div class="color-preset" style="background:#43a047" data-color="#43a047"></div>
+          <div class="color-preset" style="background:#ffe600" data-color="#ffe600"></div>
+          <div class="color-preset" style="background:#00c853" data-color="#00c853"></div>
           <div class="color-preset" style="background:#ff9800" data-color="#ff9800"></div>
-          <div class="color-preset" style="background:#8e24aa" data-color="#8e24aa"></div>
+          <div class="color-preset" style="background:#d500f9" data-color="#d500f9"></div>
           <div class="color-preset" style="background:#00bcd4" data-color="#00bcd4"></div>
           <div class="color-preset" style="background:#e91e63" data-color="#e91e63"></div>
           <div class="color-preset" style="background:#ffffff" data-color="#ffffff"></div>
@@ -750,10 +701,10 @@
             <div class="color-preset trans clear-glass" style="background:linear-gradient(135deg,rgba(255,255,255,0.3),rgba(200,230,255,0.15))" data-color="#e0f7fa" data-trans="true" title="Clear Glass"></div>
             <div class="color-preset trans" style="background:linear-gradient(135deg,rgba(255,34,0,0.5),rgba(255,34,0,0.3))" data-color="#ff2200" data-trans="true"></div>
             <div class="color-preset trans" style="background:linear-gradient(135deg,rgba(30,136,229,0.5),rgba(30,136,229,0.3))" data-color="#1e88e5" data-trans="true"></div>
-            <div class="color-preset trans" style="background:linear-gradient(135deg,rgba(253,216,53,0.5),rgba(253,216,53,0.3))" data-color="#fdd835" data-trans="true"></div>
-            <div class="color-preset trans" style="background:linear-gradient(135deg,rgba(67,160,71,0.5),rgba(67,160,71,0.3))" data-color="#43a047" data-trans="true"></div>
+            <div class="color-preset trans" style="background:linear-gradient(135deg,rgba(255,230,0,0.55),rgba(255,230,0,0.32))" data-color="#ffe600" data-trans="true"></div>
+            <div class="color-preset trans" style="background:linear-gradient(135deg,rgba(0,200,83,0.55),rgba(0,200,83,0.32))" data-color="#00c853" data-trans="true"></div>
             <div class="color-preset trans" style="background:linear-gradient(135deg,rgba(0,188,212,0.5),rgba(0,188,212,0.3))" data-color="#00bcd4" data-trans="true"></div>
-            <div class="color-preset trans" style="background:linear-gradient(135deg,rgba(142,36,170,0.5),rgba(142,36,170,0.3))" data-color="#8e24aa" data-trans="true"></div>
+            <div class="color-preset trans" style="background:linear-gradient(135deg,rgba(213,0,249,0.55),rgba(213,0,249,0.32))" data-color="#d500f9" data-trans="true"></div>
             <div class="color-preset trans" style="background:linear-gradient(135deg,rgba(255,255,255,0.5),rgba(255,255,255,0.3))" data-color="#ffffff" data-trans="true"></div>
             <div class="color-preset trans" style="background:linear-gradient(135deg,rgba(33,33,33,0.5),rgba(33,33,33,0.3))" data-color="#212121" data-trans="true"></div>
           </div>
@@ -1116,6 +1067,7 @@
         </div>
       </div>
     </div>
+    </div>
   </div>
   
   <div class="rotation-ind">
@@ -1245,7 +1197,7 @@
   <!-- /brix-preloads -->
   <script>
     window.__BRIX_THREE_PARTS__ = ["/games/brix3d/brix3d-t8ace133d.js","/games/brix3d/brix3d-tbc6133a4.js","/games/brix3d/brix3d-t62b30f22.js","/games/brix3d/brix3d-t648c2d79.js","/games/brix3d/brix3d-t4b1717b2.js","/games/brix3d/brix3d-t60cf97c3.js","/games/brix3d/brix3d-ta7c5f3b4.js","/games/brix3d/brix3d-t07100c87.js","/games/brix3d/brix3d-t5b49c793.js","/games/brix3d/brix3d-t2d0877d9.js","/games/brix3d/brix3d-t03c0285d.js","/games/brix3d/brix3d-tab495f51.js","/games/brix3d/brix3d-t83f05a07.js","/games/brix3d/brix3d-ta9dedaa9.js","/games/brix3d/brix3d-t62dfe2b7.js","/games/brix3d/brix3d-t17be306f.js","/games/brix3d/brix3d-t69dde6b9.js","/games/brix3d/brix3d-tcf8ce360.js","/games/brix3d/brix3d-tf315ae30.js","/games/brix3d/brix3d-tfa14fdff.js","/games/brix3d/brix3d-te1cdfc2e.js","/games/brix3d/brix3d-t47e60291.js","/games/brix3d/brix3d-tec5b87d8.js","/games/brix3d/brix3d-ta47cbbac.js","/games/brix3d/brix3d-tc988a6c7.js","/games/brix3d/brix3d-t0d1885b6.js","/games/brix3d/brix3d-t5e3502ef.js","/games/brix3d/brix3d-t571e42db.js","/games/brix3d/brix3d-t2249c0d3.js","/games/brix3d/brix3d-tf49cbac6.js","/games/brix3d/brix3d-t5b6c41c0.js","/games/brix3d/brix3d-t53c1b1cc.js","/games/brix3d/brix3d-tdd3867e3.js","/games/brix3d/brix3d-tcf0a0ce9.js","/games/brix3d/brix3d-t8b007a75.js","/games/brix3d/brix3d-t850fdccb.js","/games/brix3d/brix3d-tf78f6518.js","/games/brix3d/brix3d-tdb707e7b.js","/games/brix3d/brix3d-te31fc306.js","/games/brix3d/brix3d-t0121eb22.js","/games/brix3d/brix3d-tef5112a6.js","/games/brix3d/brix3d-t4fa9c0b7.js","/games/brix3d/brix3d-t88d10c3b.js","/games/brix3d/brix3d-t1ca68ed2.js","/games/brix3d/brix3d-tf84063ed.js","/games/brix3d/brix3d-t0b6a3fb9.js","/games/brix3d/brix3d-tb3a05d78.js","/games/brix3d/brix3d-tfc63a718.js","/games/brix3d/brix3d-tee088fd3.js","/games/brix3d/brix3d-ta9e37717.js","/games/brix3d/brix3d-tfcda8b98.js","/games/brix3d/brix3d-t763f0735.js","/games/brix3d/brix3d-tbfe89e7b.js","/games/brix3d/brix3d-t4cb08b67.js","/games/brix3d/brix3d-tdaa46e93.js","/games/brix3d/brix3d-t7dc8ae7d.js","/games/brix3d/brix3d-t4fa9013e.js","/games/brix3d/brix3d-t9ed8d064.js","/games/brix3d/brix3d-t88052ab0.js","/games/brix3d/brix3d-tdc48d8f3.js","/games/brix3d/brix3d-t06f516ed.js","/games/brix3d/brix3d-t03da3df4.js","/games/brix3d/brix3d-te2d91458.js","/games/brix3d/brix3d-t4753c601.js","/games/brix3d/brix3d-tb35b9815.js","/games/brix3d/brix3d-te7a17841.js","/games/brix3d/brix3d-t9270b9e4.js","/games/brix3d/brix3d-t59d78734.js","/games/brix3d/brix3d-t3223d01b.js","/games/brix3d/brix3d-t3f056e76.js","/games/brix3d/brix3d-t86d87bbd.js","/games/brix3d/brix3d-t29d7da96.js","/games/brix3d/brix3d-t4a95b7e3.js","/games/brix3d/brix3d-tb65d7fd0.js","/games/brix3d/brix3d-tfda2daa4.js","/games/brix3d/brix3d-t27757d7c.js","/games/brix3d/brix3d-t1928af51.js","/games/brix3d/brix3d-tbdefef68.js","/games/brix3d/brix3d-t39bac9e7.js","/games/brix3d/brix3d-t7725956d.js","/games/brix3d/brix3d-tee86902f.js","/games/brix3d/brix3d-tc7cb1f4a.js","/games/brix3d/brix3d-ted56199b.js","/games/brix3d/brix3d-tcbdf71a0.js","/games/brix3d/brix3d-tcaa0775a.js","/games/brix3d/brix3d-tc662ad58.js","/games/brix3d/brix3d-te4aa69de.js"];
-    window.__BRIX_MAIN_PARTS__ = ["/games/brix3d/brix3d-md2ebfef0.js","/games/brix3d/brix3d-mf11cc424.js","/games/brix3d/brix3d-m802662e2.js","/games/brix3d/brix3d-m0beed778.js","/games/brix3d/brix3d-m98e3b1d5.js","/games/brix3d/brix3d-m80644ff0.js","/games/brix3d/brix3d-mc817059f.js","/games/brix3d/brix3d-mec671cff.js","/games/brix3d/brix3d-mad88f11e.js","/games/brix3d/brix3d-md0f56881.js","/games/brix3d/brix3d-ma25cb533.js","/games/brix3d/brix3d-m7467be66.js","/games/brix3d/brix3d-m79a29c58.js","/games/brix3d/brix3d-m46b98d05.js","/games/brix3d/brix3d-mbcc31a83.js","/games/brix3d/brix3d-m9706266a.js","/games/brix3d/brix3d-mc78c40fd.js","/games/brix3d/brix3d-m0f55ff3a.js","/games/brix3d/brix3d-m2bbc54c2.js","/games/brix3d/brix3d-m01fcf127.js","/games/brix3d/brix3d-m8768c158.js","/games/brix3d/brix3d-m77d1b318.js","/games/brix3d/brix3d-m28f945a7.js","/games/brix3d/brix3d-m49654a68.js","/games/brix3d/brix3d-mdf0b4645.js","/games/brix3d/brix3d-ma893dc40.js","/games/brix3d/brix3d-m25f47bf4.js","/games/brix3d/brix3d-mda818b1d.js","/games/brix3d/brix3d-m67f235d4.js","/games/brix3d/brix3d-mab7ea806.js","/games/brix3d/brix3d-m96fd8e28.js","/games/brix3d/brix3d-m5a1a2fb3.js","/games/brix3d/brix3d-m5ba40200.js","/games/brix3d/brix3d-m8e598415.js"];
+    window.__BRIX_MAIN_PARTS__ = ["/games/brix3d/brix3d-md2ebfef0.js","/games/brix3d/brix3d-m9de371c3.js","/games/brix3d/brix3d-me13ef326.js","/games/brix3d/brix3d-m55715b47.js","/games/brix3d/brix3d-m98e3b1d5.js","/games/brix3d/brix3d-m80644ff0.js","/games/brix3d/brix3d-mc817059f.js","/games/brix3d/brix3d-mec671cff.js","/games/brix3d/brix3d-mad88f11e.js","/games/brix3d/brix3d-md0f56881.js","/games/brix3d/brix3d-ma25cb533.js","/games/brix3d/brix3d-m71599747.js","/games/brix3d/brix3d-m694c779b.js","/games/brix3d/brix3d-m46b98d05.js","/games/brix3d/brix3d-mbcc31a83.js","/games/brix3d/brix3d-me76dd79f.js","/games/brix3d/brix3d-md1ffd8f1.js","/games/brix3d/brix3d-mf9f64886.js","/games/brix3d/brix3d-m9dc48e3a.js","/games/brix3d/brix3d-m01fcf127.js","/games/brix3d/brix3d-m22268c5f.js","/games/brix3d/brix3d-m77d1b318.js","/games/brix3d/brix3d-mb67ffec1.js","/games/brix3d/brix3d-mecfd2d96.js","/games/brix3d/brix3d-m31ea89a6.js","/games/brix3d/brix3d-m4d179c38.js","/games/brix3d/brix3d-mcec7814c.js","/games/brix3d/brix3d-m4109f4bf.js","/games/brix3d/brix3d-m5ba50c8b.js","/games/brix3d/brix3d-m73f0d217.js","/games/brix3d/brix3d-m1f6562b6.js","/games/brix3d/brix3d-me4e0fcf0.js","/games/brix3d/brix3d-mfaf9af14.js","/games/brix3d/brix3d-md73144e9.js","/games/brix3d/brix3d-m3615a0c4.js"];
     window.__BRIX_WARM__ = ["/games/brix3d/brix3d.BO6YLT3K.js","/games/brix3d/brix3d.CG5CNZ4I.js"];
     setTimeout(function () {
       var s = document.createElement('script');

@@ -38,6 +38,7 @@
       },
       
       resume() {
+        if (!this.ctx) this.init();
         if (this.ctx && this.ctx.state === 'suspended') {
           this.ctx.resume();
         }
@@ -45,8 +46,8 @@
       
       // Synthesize a click/snap sound for brick placement
       playPlace() {
-        if (!this.enabled || !this.ctx) return;
         this.resume();
+        if (!this.enabled || !this.ctx) return;
         const t = this.ctx.currentTime;
         const bufferSize = Math.floor(this.ctx.sampleRate * 0.045);
         const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
@@ -82,8 +83,8 @@
       
       // Synthesize a pop sound for deletion
       playDelete() {
-        if (!this.enabled || !this.ctx) return;
         this.resume();
+        if (!this.enabled || !this.ctx) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.connect(gain);
@@ -98,8 +99,8 @@
       
       // Click sound for rotation
       playRotate() {
-        if (!this.enabled || !this.ctx) return;
         this.resume();
+        if (!this.enabled || !this.ctx) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.connect(gain);
@@ -115,8 +116,8 @@
       
       // UI click sound
       playClick() {
-        if (!this.enabled || !this.ctx) return;
         this.resume();
+        if (!this.enabled || !this.ctx) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.connect(gain);
@@ -131,8 +132,8 @@
       
       // Error/invalid placement sound
       playError() {
-        if (!this.enabled || !this.ctx) return;
         this.resume();
+        if (!this.enabled || !this.ctx) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.connect(gain);
@@ -148,8 +149,8 @@
       
       // Success/achievement sound
       playSuccess() {
-        if (!this.enabled || !this.ctx) return;
         this.resume();
+        if (!this.enabled || !this.ctx) return;
         const notes = [523, 659, 784]; // C5, E5, G5 chord
         notes.forEach((freq, i) => {
           const osc = this.ctx.createOscillator();
@@ -166,8 +167,8 @@
       
       // Footstep sound for walk mode
       playFootstep() {
-        if (!this.enabled || !this.ctx) return;
         this.resume();
+        if (!this.enabled || !this.ctx) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         const filter = this.ctx.createBiquadFilter();
@@ -186,8 +187,8 @@
       
       // Jump sound
       playJump() {
-        if (!this.enabled || !this.ctx) return;
         this.resume();
+        if (!this.enabled || !this.ctx) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.connect(gain);
@@ -202,8 +203,8 @@
       
       // Ambient music - simple generative melody
       startMusic() {
-        if (!this.enabled || !this.ctx || this.musicPlaying) return;
         this.resume();
+        if (!this.enabled || !this.ctx || this.musicPlaying) return;
         this.musicPlaying = true;
         
         const playNote = () => {
@@ -281,7 +282,7 @@
     let ghost = null;
     let mirrorGhosts = []; // Ghost previews for mirrored bricks
     let prefabGhosts = []; // Ghost previews for prefab bricks
-    let selectedBrick = (typeof window !== 'undefined' && window.innerWidth <= 768) ? '1x1' : '2x4';
+    let selectedBrick = (typeof window !== 'undefined' && window.innerWidth <= 768) ? '1x1' : '2x2';
     let selectedColor = 0xff2200;
     let selectedLightColor = 0xffdd44; // Default warm white for light bricks
     let isTransparent = false; // Whether current color is transparent
@@ -382,8 +383,8 @@
     
     // Walk mode quick slots (bricks/prefabs for fast selection)
     let fpQuickSlots = [
-      { type: 'brick', id: '2x4' },
       { type: 'brick', id: '2x2' },
+      { type: 'brick', id: '2x4' },
       { type: 'brick', id: '1x2' },
       { type: 'brick', id: '2x4p' },
       { type: 'brick', id: 'slope2' },
@@ -466,9 +467,8 @@
       balanced: {
         dprDesktop: 1.5, dprMobile: 1,
         shadowDesktop: 512, shadowMobile: 512,
-        // UnrealBloomPass is five blur mips, about 13 draws, on top of a
-        // threshold that barely fires. High still blooms. Balanced keeps the
-        // vignette so the plate stays mid green and the home view stays ≤28 draws.
+        // A one-mip bloom still missed the bar on this GPU (draws 26/29,
+        // 520 FPS 59/60). Balanced stays vignette-only. High still blooms.
         bloom: false, ssao: false, post: true
       },
       performance: {
@@ -771,18 +771,23 @@
       isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
       loadQualityPreset();
       
-      // AudioContext is not needed for the first paint.
-      setTimeout(() => SoundSystem.init(), 0);
-      
+      // AudioContext is created on the first gesture, inside SoundSystem.resume.
       scene = new THREE.Scene();
       scene.background = new THREE.Color(0x87CEEB);
       scene.fog = new THREE.Fog(0x87CEEB, 100, 400);
       
       camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 1000);
-      
-      renderer = new THREE.WebGLRenderer({ antialias: useMsaa(), preserveDrawingBuffer: false, powerPreference: 'high-performance' });
-      renderer.setSize(innerWidth, innerHeight);
+      // Scene and camera are their own turn. The WebGL constructor is the next one.
+      await yieldTick();
+
+      const glCanvas = document.createElement('canvas');
+      glCanvas.width = 1;
+      glCanvas.height = 1;
+      renderer = new THREE.WebGLRenderer({ canvas: glCanvas, antialias: useMsaa(), preserveDrawingBuffer: false, powerPreference: 'high-performance' });
+      // Context creation stays on this turn. The full framebuffer is the next one.
+      await yieldTick();
       renderer.setPixelRatio(qualityDpr());
+      renderer.setSize(innerWidth, innerHeight);
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFShadowMap;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -790,7 +795,8 @@
       renderer.info.autoReset = false;
       document.getElementById('container').appendChild(renderer.domElement);
       performance.mark('brix-renderer');
-      
+      await yieldTick();
+
       // PMREM is a long main-thread task and the plate does not use it.
       // Build it on a later turn, after the first brick can be placed.
       envMap = null;
@@ -891,24 +897,22 @@
       // Apply initial time of day
       updateTimeOfDay();
       
-      setTimeout(() => {
-        const boot = document.getElementById('loadingScreen');
-        if (boot) {
-          boot.classList.add('hide');
-          setTimeout(() => { boot.style.display = 'none'; }, 280);
+      const boot = document.getElementById('loadingScreen');
+      if (boot) {
+        boot.classList.add('hide');
+        setTimeout(() => { if (boot.classList.contains('hide')) boot.style.display = 'none'; }, 180);
+      }
+      const openingShare = !!shareTokenFromLocation();
+      if (!openingShare && !bricks.length) {
+        if (window.innerWidth <= 768) {
+          toast('Tap a starter, or tap the plate. The ghost is your 1×1.', 'success');
+        } else {
+          toast('Plate is ready. Tap a starter or place your first brick.', 'success');
         }
-        const openingShare = !!shareTokenFromLocation();
-        if (!openingShare && !bricks.length) {
-          if (window.innerWidth <= 768) {
-            toast('Tap a starter, or tap the plate. The ghost is your 1×1.', 'success');
-          } else {
-            toast('Plate is ready. Tap a starter or place your first brick.', 'success');
-          }
-        }
-        tryLoadShareFromLocation();
-        initDailyPrompt();
-        if (bricks.length || openingShare) hideStarterBar();
-      }, 400);
+      }
+      tryLoadShareFromLocation();
+      initDailyPrompt();
+      if (bricks.length || openingShare) hideStarterBar();
       
       updateUI();
     }
@@ -983,6 +987,8 @@
           0.35,
           0.88
         );
+        // High keeps five mips. Balanced uses one so the extra draws stay near five.
+        if (qualityPreset !== 'high') bloomPass.nMips = 1;
         composer.addPass(bloomPass);
       }
 
@@ -991,7 +997,7 @@
           'tDiffuse': { value: null },
           'darkness': { value: 0.06 },
           'offset': { value: 1.15 },
-          'saturation': { value: 1.1 }
+          'saturation': { value: 1.18 }
         },
         vertexShader: `
           varying vec2 vUv;
@@ -1081,6 +1087,11 @@
         if (started || !renderer) return started;
         started = true;
         performance.mark('brix-env-start');
+        if (isMobileGfx()) {
+          scene.environment = null;
+          performance.mark('brix-env');
+          return true;
+        }
         if (!pmremGenerator) {
           pmremGenerator = new THREE.PMREMGenerator(renderer);
           pmremGenerator.compileEquirectangularShader();
@@ -1179,7 +1190,7 @@
         _todCache.sunColor.copy(_todCache.whiteSun).lerp(_noonWhite, noonFactor);
         sunIntensity = 1.45 + noonFactor * 0.25;
         ambientIntensity = 0.62 + noonFactor * 0.12;
-        renderer.toneMappingExposure = isMobileGfx() ? (1.08 + noonFactor * 0.10) : (1.12 + noonFactor * 0.12);
+        renderer.toneMappingExposure = isMobileGfx() ? (1.08 + noonFactor * 0.10) : (1.22 + noonFactor * 0.10);
       }
       if (isMobileGfx()) {
         sunIntensity *= 0.92;
@@ -1507,7 +1518,7 @@
       const heights = new Float32Array(N * N);
       const cx = (N - 1) / 2;
       const cy = (N - 1) / 2;
-      const rad = N * 0.33;
+      const rad = N * 0.30;
       for (let y = 0; y < N; y++) {
         for (let x = 0; x < N; x++) {
           const dist = Math.hypot(x - cx, y - cy);
@@ -1522,7 +1533,7 @@
           const i = (y * N + x) * 4;
           const h = heights[y * N + x];
           // Stud tops brighter than the gaps so the grid reads on a mid green plate.
-          const shade = h > 0.35 ? 228 : (h > 0.12 ? 160 : 78);
+          const shade = h > 0.45 ? 196 : (h > 0.18 ? 158 : 124);
           img.data[i] = shade;
           img.data[i + 1] = shade;
           img.data[i + 2] = shade;
@@ -4292,11 +4303,26 @@
           roughness: 0.9,
           metalness: 0,
           transparent: true,
-          opacity: 0.78,
+          opacity: 0.45,
           depthWrite: false
         }));
       }
       return ghostMatCache.get(key);
+    }
+
+    const _ghostTint = new THREE.Color();
+    const _ghostWhite = new THREE.Color(0xffffff);
+    let _ghostTintHex = 0;
+    let _ghostTintSrc = -1;
+    function softGhostColor(valid) {
+      if (!valid) return 0xff4444;
+      if (_ghostTintSrc !== selectedColor) {
+        _ghostTint.set(selectedColor);
+        _ghostTint.lerp(_ghostWhite, 0.45);
+        _ghostTintHex = _ghostTint.getHex();
+        _ghostTintSrc = selectedColor;
+      }
+      return _ghostTintHex;
     }
     
     function getTexturedInstancedMaterial(tex) {
@@ -5712,7 +5738,7 @@
         gz * STUD + (dims.d * STUD) / 2
       );
       
-      ghost = createBrick(selectedBrick, canPlaceHere ? 0x00ff88 : 0xff4444, pos, currentRotation, true, {pitch: currentPitch, roll: currentRoll});
+      ghost = createBrick(selectedBrick, softGhostColor(canPlaceHere), pos, currentRotation, true, {pitch: currentPitch, roll: currentRoll});
       if (ghost) {
         ghost.userData.ghostData = {gx, gz, gy, w: dims.w, d: dims.d, hp, canPlace: canPlaceHere, pitch: currentPitch, roll: currentRoll};
         scene.add(ghost);
@@ -5837,7 +5863,7 @@
         );
         
         // Use cyan for valid prefab ghosts, red for invalid
-        const ghostColor = canPlaceHere ? 0x00ddff : 0xff4444;
+        const ghostColor = softGhostColor(canPlaceHere);
         const prefabGhost = createBrick(item.type, ghostColor, pos, itemRot, true);
         if (prefabGhost) {
           prefabGhost.userData.prefabData = {gx, gz, gy, w: dims.w, d: dims.d, hp, rot: itemRot, type: item.type, color, transparent: itemTransparent, canPlace: canPlaceHere};
@@ -5913,7 +5939,7 @@
             );
             
             // Purple color for mirror ghosts
-            const ghostColor = canPlaceHere ? 0x8855ff : 0xff4444;
+            const ghostColor = softGhostColor(canPlaceHere);
             const mirrorGhost = createBrick(brick.type, ghostColor, pos, mirrorRot, true);
             if (mirrorGhost) {
               mirrorGhost.userData.prefabData = {
@@ -5961,7 +5987,7 @@
         );
         
         // Use a different color for mirror ghosts (purple tint)
-        const mirrorGhost = createBrick(selectedBrick, canPlaceMirror ? 0x8855ff : 0xff4444, mirrorPos, mp.rot, true);
+        const mirrorGhost = createBrick(selectedBrick, softGhostColor(canPlaceMirror), mirrorPos, mp.rot, true);
         if (mirrorGhost) {
           mirrorGhost.userData.ghostData = {gx: mp.gx, gz: mp.gz, gy: mirrorGy, w: dims.w, d: dims.d, hp, canPlace: canPlaceMirror, rot: mp.rot};
           scene.add(mirrorGhost);
@@ -6168,7 +6194,7 @@
         gz * STUD + (dims.d * STUD) / 2
       );
       
-      const ghostColor = canPlaceHere ? 0xf97316 : 0xff4444;
+      const ghostColor = softGhostColor(canPlaceHere);
       wallModeGhost = createBrick(wallBrickType, ghostColor, pos, wallRot, true);
       
       if (wallModeGhost) {
@@ -6576,6 +6602,7 @@
         const brickData = await decodeShareToken(token);
         if (!Array.isArray(brickData) || !brickData.length) return;
         const n = applyCodeBricks(brickData);
+        frameCameraOnBuild();
         hideStarterBar();
         toast('Shared build loaded (' + n + ' bricks)', 'success');
       } catch (e) {
@@ -7426,7 +7453,7 @@
         );
         
         const canPlaceHere = canPlace(p.gx, p.gz, dims.w, dims.d, p.gy, p.hp, false);
-        const ghostColor = canPlaceHere ? 0x10b981 : 0xff4444;
+        const ghostColor = softGhostColor(canPlaceHere);
         const floorGhost = createBrick(p.type, ghostColor, pos, 0, true);
         
         if (floorGhost) {
@@ -8103,6 +8130,8 @@
       name = name.replace('x', '×');
       
       document.getElementById('previewName').textContent = name + (isTransparent ? ' 🔮' : '');
+      const hudType = document.getElementById('hudBrickType');
+      if (hudType) hudType.textContent = selectedBrick.replace(/x/g, '×');
       let rotText = currentRotation + '°';
       if (currentPitch !== 0 || currentRoll !== 0) {
         rotText += ` (P:${currentPitch}° R:${currentRoll}°)`;
@@ -8654,10 +8683,29 @@
     const HOME_OX = 22, HOME_OY = 40, HOME_OZ = 42;
 
     function homeDistance() {
-      // A 0.96-tall brick covers about (viewHeight * 0.832) / dist pixels.
-      // Desktop 14 is ~53px on a 900px view. Phone 12 is ~58px on an 844px view.
-      // Shadow map LOD holds FPS. Do not lengthen this distance to buy frames.
-      return isMobileGfx() ? 12 : 14;
+      // Empty plate uses the same fit as a 2×2. Do not lengthen this to buy frames.
+      const span = 2 * STUD;
+      return liveFitDistance(span, BRICK_H, span);
+    }
+
+    function fitDistanceForBox(spanX, spanY, spanZ, fill) {
+      const aspect = Math.max(camera.aspect || 1, 0.3);
+      const halfTan = Math.tan((camera.fov * Math.PI / 180) / 2);
+      // The home ray is oblique, so the view includes the top and the front.
+      const fit = Math.max(spanX / aspect, spanZ / aspect, spanY * 1.35, spanX, spanZ);
+      return (fit / fill) / (2 * halfTan);
+    }
+
+    function liveFitDistance(spanX, spanY, spanZ) {
+      const raw = fitDistanceForBox(spanX, spanY, spanZ, 0.55);
+      const minD = isMobileGfx() ? 6.6 : 7.4;
+      const maxD = isMobileGfx() ? 28 : 36;
+      return Math.min(maxD, Math.max(minD, raw));
+    }
+
+    function captureFitDistance(spanX, spanY, spanZ) {
+      const raw = fitDistanceForBox(spanX, spanY, spanZ, 0.78);
+      return Math.min(40, Math.max(2.8, raw));
     }
 
     function placeCameraOnHomeRay(aimX, aimY, aimZ, dist) {
@@ -8673,7 +8721,8 @@
     }
 
     function frameHomeCamera() {
-      placeCameraOnHomeRay(38, 0, 38, homeDistance());
+      const span = 2 * STUD;
+      placeCameraOnHomeRay(38, 0.5, 38, liveFitDistance(span, BRICK_H, span));
     }
 
     function resetView() {
@@ -8780,6 +8829,19 @@
         pointerDirty = false;
         hideHoverGhost();
       });
+      const hideGhostOn = (id) => {
+        const el = typeof id === 'string' ? document.getElementById(id) : id;
+        if (!el) return;
+        el.addEventListener('pointerenter', () => {
+          pointerDirty = false;
+          hideHoverGhost();
+        });
+      };
+      hideGhostOn('controls');
+      hideGhostOn('buildHud');
+      hideGhostOn('quickBar');
+      hideGhostOn('qualityBar');
+      hideGhostOn(document.querySelector('.zoom-controls'));
       
       renderer.domElement.addEventListener('mousedown', e => {
         if (e.button === 0 && floorMode) {
@@ -9086,7 +9148,7 @@
           item.addEventListener('click', () => {
             if (isPrefab) {
               selectedPrefab = itemId;
-              selectedBrick = '2x4'; // Reset brick
+              selectedBrick = '2x2';
             } else {
               selectedBrick = itemId;
               selectedPrefab = null;
@@ -10346,9 +10408,9 @@
           
           // Clone the brick as a ghost
           const ghostMat = new THREE.MeshStandardMaterial({
-            color: 0x00ff00,
+            color: softGhostColor(true),
             transparent: true,
-            opacity: 0.5,
+            opacity: 0.45,
             depthWrite: false
           });
           
@@ -10975,59 +11037,72 @@
       saveGalleryBuilds();
     }
 
-    function frameCameraOnBuild() {
-      removeGhost();
-      removeWallModeGhost();
-      let aimX = 38, aimY = 0, aimZ = 38;
-      let dist = homeDistance();
-      if (bricks.length) {
-        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity, minZ = Infinity, maxZ = -Infinity;
-        for (let i = 0; i < bricks.length; i++) {
-          const b = bricks[i];
-          const p = b.position;
-          if (!p) continue;
-          const g = b.userData && b.userData.grid;
-          const hx = g ? (g.w * STUD) * 0.5 : 0.4;
-          const hz = g ? (g.d * STUD) * 0.5 : 0.4;
-          const hy = g && g.hp >= 3 ? BRICK_H : PLATE_H;
-          minX = Math.min(minX, p.x - hx);
-          maxX = Math.max(maxX, p.x + hx);
-          minY = Math.min(minY, p.y);
-          maxY = Math.max(maxY, p.y + hy);
-          minZ = Math.min(minZ, p.z - hz);
-          maxZ = Math.max(maxZ, p.z + hz);
-        }
-        if (minX !== Infinity) {
-          aimX = (minX + maxX) * 0.5;
-          aimZ = (minZ + maxZ) * 0.5;
-          aimY = (minY + maxY) * 0.5;
-          const spanX = Math.max(maxX - minX, 0.8);
-          const spanY = Math.max(maxY - minY, 0.8);
-          const spanZ = Math.max(maxZ - minZ, 0.8);
-          const aspect = Math.max(camera.aspect || 1, 0.3);
-          const halfTan = Math.tan((camera.fov * Math.PI / 180) / 2);
-          // Same home ray. Fit the box to about 70% of the frame, with padding.
-          // The ray is oblique, so use the largest axis and allow a close camera.
-          const fit = Math.max(spanX / aspect, spanZ / aspect, spanY, spanX, spanZ);
-          dist = Math.max(1.7, (fit / 0.7) / (2 * halfTan));
-          controls.minDistance = Math.min(controls.minDistance, dist);
-        }
+    function buildBounds() {
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity, minZ = Infinity, maxZ = -Infinity;
+      for (let i = 0; i < bricks.length; i++) {
+        const b = bricks[i];
+        const p = b.position;
+        if (!p) continue;
+        const g = b.userData && b.userData.grid;
+        const hx = g ? (g.w * STUD) * 0.5 : 0.4;
+        const hz = g ? (g.d * STUD) * 0.5 : 0.4;
+        const hy = g && g.hp >= 3 ? BRICK_H : PLATE_H;
+        minX = Math.min(minX, p.x - hx);
+        maxX = Math.max(maxX, p.x + hx);
+        minY = Math.min(minY, p.y);
+        maxY = Math.max(maxY, p.y + hy);
+        minZ = Math.min(minZ, p.z - hz);
+        maxZ = Math.max(maxZ, p.z + hz);
       }
-      placeCameraOnHomeRay(aimX, aimY, aimZ, dist);
+      if (minX === Infinity) {
+        return { aimX: 38, aimY: 0.5, aimZ: 38, spanX: 2 * STUD, spanY: BRICK_H, spanZ: 2 * STUD };
+      }
+      return {
+        aimX: (minX + maxX) * 0.5,
+        aimY: Math.max(0.45, (minY + maxY) * 0.5),
+        aimZ: (minZ + maxZ) * 0.5,
+        spanX: Math.max(maxX - minX, 0.8),
+        spanY: Math.max(maxY - minY, 0.32),
+        spanZ: Math.max(maxZ - minZ, 0.8)
+      };
     }
 
-    function withFramedBuild(draw) {
+    function frameCameraOnBuild(opts) {
+      removeGhost();
+      removeWallModeGhost();
+      const box = buildBounds();
+      const forCapture = !!(opts && opts.forCapture);
+      const dist = forCapture
+        ? captureFitDistance(box.spanX, box.spanY, box.spanZ)
+        : liveFitDistance(box.spanX, box.spanY, box.spanZ);
+      if (forCapture) controls.minDistance = Math.min(controls.minDistance, dist);
+      placeCameraOnHomeRay(box.aimX, box.aimY, box.aimZ, dist);
+    }
+
+    function withFramedBuild(destW, destH, draw) {
       const prevPos = camera.position.clone();
       const prevTarget = controls.target.clone();
       const prevMin = controls.minDistance;
+      const prevAspect = camera.aspect;
+      const prevPr = renderer.getPixelRatio();
+      const size = new THREE.Vector2();
+      renderer.getSize(size);
       try {
-        frameCameraOnBuild();
+        renderer.setPixelRatio(1);
+        renderer.setSize(destW, destH, false);
+        camera.aspect = destW / Math.max(1, destH);
+        camera.updateProjectionMatrix();
+        frameCameraOnBuild({ forCapture: true });
         draw();
       } finally {
         controls.minDistance = prevMin;
         camera.position.copy(prevPos);
         controls.target.copy(prevTarget);
         controls.update();
+        renderer.setPixelRatio(prevPr);
+        renderer.setSize(size.x, size.y, false);
+        camera.aspect = prevAspect;
+        camera.updateProjectionMatrix();
         needsRender = true;
       }
     }
@@ -11036,8 +11111,8 @@
       if (!camera || !controls) return '';
       let url = '';
       try {
-        withFramedBuild(() => {
-          renderFrame();
+        withFramedBuild(200, 150, () => {
+          renderer.render(scene, camera);
           const thumbCanvas = document.createElement('canvas');
           thumbCanvas.width = 200;
           thumbCanvas.height = 150;
@@ -11079,10 +11154,12 @@
     function capturePreview(canvasId) {
       const canvas = document.getElementById(canvasId);
       if (!canvas || !camera || !controls) return;
-      withFramedBuild(() => {
-        renderFrame();
+      const w = canvas.width || 320;
+      const h = canvas.height || 180;
+      withFramedBuild(w, h, () => {
+        renderer.render(scene, camera);
         const ctx = canvas.getContext('2d');
-        ctx.drawImage(renderer.domElement, 0, 0, canvas.width, canvas.height);
+        ctx.drawImage(renderer.domElement, 0, 0, w, h);
       });
     }
     
@@ -11102,7 +11179,7 @@
         renderer.setSize(800 * scale, 600 * scale, false);
         camera.aspect = 800 / 600;
         camera.updateProjectionMatrix();
-        frameCameraOnBuild();
+        frameCameraOnBuild({ forCapture: true });
         renderer.render(scene, camera);
         const canvas = document.getElementById('screenshotCanvas');
         canvas.width = 800 * scale;
@@ -11137,10 +11214,48 @@
       SoundSystem.playClick();
     }
     
-    function saveToGallery() {
+    function promptName(message, suggested) {
+      return new Promise((resolve) => {
+        const root = document.getElementById('namePrompt');
+        const body = document.getElementById('namePromptBody');
+        const input = document.getElementById('namePromptInput');
+        const ok = document.getElementById('namePromptOk');
+        const cancel = document.getElementById('namePromptCancel');
+        if (!root || !input || !ok || !cancel) {
+          resolve(null);
+          return;
+        }
+        if (body) body.textContent = message || 'Name your build';
+        input.value = suggested || '';
+        root.style.display = 'flex';
+        const finish = (value) => {
+          root.style.display = 'none';
+          ok.removeEventListener('click', onOk);
+          cancel.removeEventListener('click', onCancel);
+          root.removeEventListener('click', onBackdrop);
+          document.removeEventListener('keydown', onKey);
+          resolve(value);
+        };
+        const onOk = () => finish(input.value);
+        const onCancel = () => finish(null);
+        const onBackdrop = (event) => { if (event.target === root) finish(null); };
+        const onKey = (event) => {
+          if (event.key === 'Escape') finish(null);
+          else if (event.key === 'Enter') finish(input.value);
+        };
+        ok.addEventListener('click', onOk);
+        cancel.addEventListener('click', onCancel);
+        root.addEventListener('click', onBackdrop);
+        document.addEventListener('keydown', onKey);
+        input.focus();
+        input.select();
+      });
+    }
+
+    async function saveToGallery() {
       mergeSavedBuilds();
       const suggested = (document.getElementById('projectName').value || '').trim() || `Build ${galleryBuilds.length + 1}`;
-      const named = prompt('Name your build:', suggested);
+      const named = await promptName('Save this build to the gallery.', suggested);
       if (named === null) return;
       try {
         saveNamedBuild(named.trim() || suggested);
@@ -12533,7 +12648,7 @@
       const defaultKeybinds = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
       
       // Slot names for display
-      const slotNames = ['2×4 Brick', '2×2 Brick', '1×2 Brick', 'Plate', 'Slope', 'Stairs', 'Pillar', 'Door', 'Window'];
+      const slotNames = ['2×2 Brick', '2×4 Brick', '1×2 Brick', 'Plate', 'Slope', 'Stairs', 'Pillar', 'Door', 'Window'];
       
       // Load custom keybinds or use defaults
       let customKeybinds = JSON.parse(localStorage.getItem('brickBuilderKeybinds')) || [...defaultKeybinds];
