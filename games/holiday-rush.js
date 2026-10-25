@@ -1501,12 +1501,18 @@
   function completeSale(sim, run, c) {
     if (c.sold) return;
     if (sim.stock <= 0.025) {
-      if (sim.books) {
-        sim.stockouts = (sim.stockouts || 0) + 1;
-        floater(sim, c.x, c.y - 96, 'Empty shelf', '#ffb4b4', true);
+      var shelfBag = sim.tenant && sim.tenant.stock;
+      var shelfLeft = sim.books && HR.economy ? HR.economy.unitsLeft(sim.books, shelfBag) : 0;
+      if (sim.floorOn && shelfLeft > 0) {
+        sim.stock = 0.42;
+      } else {
+        if (sim.books) {
+          sim.stockouts = (sim.stockouts || 0) + 1;
+          floater(sim, c.x, c.y - 96, 'Empty shelf', '#ffb4b4', true);
+        }
+        walkout(sim, c);
+        return;
       }
-      walkout(sim, c);
-      return;
     }
     var basket;
     if (sim.books && HR.sim && HR.economy) {
@@ -1683,7 +1689,7 @@
       }
     }
     var minX = crowded ? 120 : 48;
-    var maxX = (WORLD_W || 1280) - (crowded ? 120 : 48);
+    var maxX = (WORLD_W || 1280) - (crowded ? 120 : (sim._phone ? 80 : 150));
     var minY = 150;
     var maxY = (WORLD_H || 900) - (crowded ? 80 : 48);
     for (i = 0; i < list.length; i++) {
@@ -1778,10 +1784,11 @@
     for (i = 0; i < nodes.length; i++) {
       var drawX = nodes[i].x;
       var drawY = nodes[i].y;
-      if (nodes[i].lock && sim && sim._phone) {
-        var lane = nodes[i].actor.reg === 'reg2' ? 40 : -40;
-        drawX += lane;
-        drawY += 28;
+      var edge = sim && sim._frame;
+      if (edge && !nodes[i].lock) {
+        var half = spriteFootBox(sim).w * 0.55;
+        var limit = edge.x1 - half;
+        if (drawX > limit - half && drawX < edge.x1 + half) drawX = limit - half;
       }
       nodes[i].actor._drawX = drawX;
       nodes[i].actor._drawY = drawY;
@@ -1958,7 +1965,7 @@
           cust.anim = 'idle';
           if (!cust.haggling) {
             cust.haggling = true;
-            cust.haggleT = 3.6;
+            cust.haggleT = sim.floorOn ? 1.5 : 3.6;
             cust.bubble = 'price';
             cust.pop = 1;
           }
@@ -1984,6 +1991,7 @@
             if (sim._phone && sim.floorOn) rate *= 1.12;
             if (cust.arch === 'rusher') rate *= 1.65;
             if (cust.arch === 'family') rate *= 0.7;
+            if (sim.floorOn && rate < 2.05) rate = 2.05;
             var checkStart = cust.arch === 'family' ? 3.3 : 2.15;
             cust.checkT = (cust.checkT == null ? checkStart : cust.checkT) - dt * rate;
             if (cust.checkT <= 0) completeSale(sim, run, cust);
@@ -2523,7 +2531,9 @@
     if (frozen) {
       /* count holds the shelf still */
     } else if (warehouseOpen && sim.truck) {
-      sim.stock = Math.max(0, sim.stock - used * 0.01);
+      var drained = sim.stock - used * 0.01;
+      if (sim.floorOn && fp <= 0.35 && drained < 0.36) drained = 0.36;
+      sim.stock = Math.max(0, drained);
       if (fp > 0.35) sim.truckWork += used * fp;
       if (sim.truckWork > 5.5 / (1 + 0.25 * stockLv)) {
         sim.truck = 0;
@@ -2895,6 +2905,7 @@
       if (sim.pings[i].kind === 'wrap' && !sim.pings[i].dead) open++;
     }
     if (open >= 1) return;
+    if (sim._wrapQuietUntil && sim.t < sim._wrapQuietUntil) return;
     offerWrap(sim);
     if (sim._wrapCamUntil == null) sim._wrapCamUntil = sim.t + 14;
   }
@@ -2928,6 +2939,7 @@
       sim.sales += fee;
       sim.wraps = (sim.wraps || 0) + 1;
       sim._wrapCoachDone = true;
+      sim._wrapQuietUntil = sim.t + 8;
       try { localStorage.setItem('hr_wrap_coach', '1'); } catch (eWrap) {}
       burstCoins(sim, ping.x, ping.y);
       floater(sim, ping.x, ping.y - 28, 'Wrapped +$' + fee, '#ffe08a', true);
@@ -4327,6 +4339,12 @@
     if (!app) return;
     booted = true;
     armStorage();
+    var staleScore = document.getElementById('hr-score');
+    var staleFinal = document.getElementById('hr-final');
+    if (staleScore) { staleScore.hidden = true; staleScore.innerHTML = ''; }
+    if (staleFinal) staleFinal.hidden = true;
+    var staleBody = document.getElementById('hr-final-body');
+    if (staleBody) staleBody.innerHTML = '';
 
     var els = {
       intro: document.getElementById('hr-intro'),
@@ -4428,6 +4446,12 @@
       els.streak.textContent = String(m.streak);
       els.best.textContent = bestGet(ymd) ? String(bestGet(ymd)) : '—';
     }
+
+    window.addEventListener('pageshow', function () {
+      paintMeta();
+      var savedRun = readJSON('hr_run_v1');
+      if (!savedRun && els.final && !els.final.hidden) renderMap();
+    });
 
     var toastQueue = [];
     var toastOn = false;
@@ -4623,6 +4647,12 @@
       if (els.shop) els.shop.hidden = which !== 'shop';
       if (els.map) els.map.hidden = which !== 'map';
       els.final.hidden = which !== 'final';
+      if (which !== 'score' && which !== 'perk' && els.score) els.score.innerHTML = '';
+      if (which !== 'final') {
+        var finalBody = document.getElementById('hr-final-body');
+        if (finalBody) finalBody.innerHTML = '';
+      }
+      paintMeta();
       if (which !== 'sim') {
         els.event.hidden = true;
         els.modal.hidden = true;
@@ -5597,6 +5627,7 @@
           act.textContent = sim.actions + ' / ' + maxA + ' actions · refills every ' + (Math.round(regenSec * 10) / 10) + 's' + (sim.actions < maxA ? ' · ' + Math.round(fill * 100) + '% to the next' : '');
         }
       }
+      placeChrome();
     }
 
     function paintPromptTimer() {
@@ -6227,6 +6258,7 @@
 
     function renderMap() {
       show('map');
+      paintMeta();
       var camp = campaignGet();
       var purse = books ? books.cash : camp.bank;
       var dailyLine = '';
@@ -6800,19 +6832,43 @@
       var skip = document.getElementById('hr-skip');
       var coachEl = document.getElementById('hr-coach');
       var stage = els.stage;
-      if (!zoom || !stage) return;
-      var z = zoom.getBoundingClientRect();
+      if (!stage) return;
       var stageBox = stage.getBoundingClientRect();
-      if (z.width < 8 || stageBox.width < 8) return;
-      var clearance = Math.round(stageBox.right - z.left + 8);
-      if (skip) skip.style.right = clearance + 'px';
+      if (stageBox.width < 8) return;
+      var phonePlay = stageBox.width < 720 && sim && sim.floorOn && !cam.overview;
+      if (zoom) zoom.hidden = !!phonePlay;
+      var bannerLow = false;
+      if (stageBox.width < 720) {
+        if (coach && coach.step === 1) bannerLow = true;
+        else if (!coach && wrapCoachOn()) bannerLow = true;
+      }
+      var z = zoom && !zoom.hidden ? zoom.getBoundingClientRect() : null;
+      var clearance = z && z.width >= 8 ? Math.round(stageBox.right - z.left + 8) : 8;
+      if (skip) {
+        if (bannerLow) {
+          skip.style.top = 'auto';
+          skip.style.bottom = '8px';
+          skip.style.right = '8px';
+        } else {
+          skip.style.bottom = 'auto';
+          skip.style.top = '8px';
+          skip.style.right = (stageBox.width < 720 ? 8 : clearance) + 'px';
+        }
+      }
       if (!coachEl) return;
       var skipW = skip && !skip.hidden ? skip.offsetWidth + 8 : 0;
-      if (stageBox.width < 720) {
-        coachEl.style.top = Math.round(z.height + 14) + 'px';
-        coachEl.style.right = '8px';
+      if (bannerLow) {
+        coachEl.style.top = 'auto';
+        coachEl.style.bottom = '8px';
         coachEl.style.left = '8px';
+        coachEl.style.right = (skipW + 8) + 'px';
+      } else if (stageBox.width < 720) {
+        coachEl.style.bottom = 'auto';
+        coachEl.style.top = '8px';
+        coachEl.style.left = '8px';
+        coachEl.style.right = (skipW + 8) + 'px';
       } else {
+        coachEl.style.bottom = 'auto';
         coachEl.style.top = '8px';
         coachEl.style.left = '8px';
         coachEl.style.right = (clearance + skipW) + 'px';
@@ -6867,7 +6923,15 @@
     function wrapCamTarget(view) {
       var wrapAt = wrapSpot();
       var wrapY = wrapAt.y - wrapLift(wrapAt);
-      return camClamp(wrapAt.x - view.viewW * 0.5, wrapY - view.viewH * 0.62, view);
+      return camClamp(wrapAt.x - view.viewW * 0.5, wrapY - view.viewH * 0.46, view);
+    }
+
+    function frameTarget(kind, view) {
+      if (kind === 'truck' && SPOTS.truck) {
+        return camClamp(SPOTS.truck.x - view.viewW * 0.58, SPOTS.truck.y - view.viewH * 0.36, view);
+      }
+      if (kind === 'wrap') return wrapCamTarget(view);
+      return null;
     }
 
     function freezePhoneCam() {
@@ -6907,6 +6971,10 @@
       var q = QUEUE.reg1 || { y: left.y + 70 };
       var midX = (left.x + right.x) * 0.5;
       var x = midX - view.viewW * 0.5;
+      var rightKeep = right.x + 86 + 130;
+      if (x + view.viewW < rightKeep) x = rightKeep - view.viewW;
+      var leftKeep = left.x - 86 - 90;
+      if (x > leftKeep) x = leftKeep;
       var y = q.y - view.viewH * 0.72;
       if (view.cssW < 720) {
         var gap = liveQueueGap({ _phone: true });
@@ -7549,6 +7617,7 @@
       if (isQA() && els.stage) {
         delete els.stage.dataset.wrapX;
         delete els.stage.dataset.wrapY;
+        delete els.stage.dataset.wrapR;
       }
       if (!sim.pings) return;
       for (var i = 0; i < sim.pings.length; i++) {
@@ -7557,13 +7626,13 @@
         var bob = reduceMotion ? 0 : Math.sin(Date.now() / 200 + i) * 4;
         var icon = ping.kind === 'wrap' ? 'return' : ping.kind === 'basket' ? 'price' : ping.kind === 'box' ? 'truck' : 'line';
         var label = ping.kind === 'wrap' ? 'Wrap' : ping.kind === 'basket' ? '+$' : ping.kind === 'box' ? 'Box' : 'Help';
-        if (ping.kind === 'wrap') {
+        if (ping.kind === 'wrap' && wrapCoachOn()) {
           var pulse = reduceMotion ? 1.2 : 1.05 + Math.sin(Date.now() / 160) * 0.42;
           var phoneWrap = (els.canvas._cssW || 800) < 720;
           var wrapR = Math.max(58, (phoneWrap ? 72 : 22) / Math.max(0.05, screenScale()));
           if (isQA() && els.stage) {
             els.stage.dataset.wrapR = String(Math.round(wrapR * screenScale()));
-            els.stage.dataset.wrapHit = phoneWrap ? (wrapCoachOn() ? '156' : '120') : (wrapCoachOn() ? '96' : '72');
+            els.stage.dataset.wrapHit = phoneWrap ? '156' : '96';
             els.stage.dataset.wrapX = String(Math.round(ping.x));
             els.stage.dataset.wrapY = String(Math.round(ping.y));
           }
@@ -7580,6 +7649,12 @@
             drawTag(label, wrapAt.x, wrapAt.y);
           }
           continue;
+        }
+        if (ping.kind === 'wrap' && isQA() && els.stage) {
+          els.stage.dataset.wrapR = '26';
+          els.stage.dataset.wrapHit = (els.canvas._cssW || 800) < 720 ? '120' : '72';
+          els.stage.dataset.wrapX = String(Math.round(ping.x));
+          els.stage.dataset.wrapY = String(Math.round(ping.y));
         }
         ctx.strokeStyle = 'rgba(224,163,34,0.85)';
         ctx.lineWidth = 3;
@@ -7720,8 +7795,13 @@
       var dpr = els.canvas._dpr || 1;
       var cardFrozen = !!(sim && sim._cardCam);
       var focus = null;
-      var phoneLock = freezePhoneCam();
-      var lockPlay = phoneLock || !!(sim && sim.floorOn && !cam.overview && !cam.fit && !cam.userPan && !coach);
+      var aimKind = '';
+      if (sim && sim.floorOn && !cam.overview && !cam.fit) {
+        if (coach && coach.step === 1) aimKind = 'truck';
+        else if (!coach && wrapCoachOn()) aimKind = 'wrap';
+      }
+      var phoneLock = aimKind ? false : freezePhoneCam();
+      var lockPlay = !aimKind && (phoneLock || !!(sim && sim.floorOn && !cam.overview && !cam.fit && !cam.userPan && !coach));
       if (phoneLock) {
         cardFrozen = false;
         sim._camLock = { x: cam.x, y: cam.y, zoom: cam.zoom };
@@ -7828,6 +7908,17 @@
         cam.x = snapped.x;
         cam.y = snapped.y;
       }
+      if (aimKind) {
+        var aimed = frameTarget(aimKind, view);
+        if (aimed) {
+          cam.follow = false;
+          cam.x = aimed.x;
+          cam.y = aimed.y;
+        }
+      }
+      if (sim && sim.floorOn && !aimKind) {
+        sim._frame = { x0: cam.x, y0: cam.y, x1: cam.x + view.viewW, y1: cam.y + view.viewH };
+      } else if (sim) sim._frame = null;
       if (sim && sim._camLock && !sim._lockCss) sim._lockCss = { w: view.cssW, h: view.cssH };
       paintEdges(view);
       if (isQA() && els.stage && sim) {
@@ -8638,7 +8729,7 @@
 
     function personDrawH() {
       var cssW = els.canvas && els.canvas._cssW || 800;
-      if (cssW < 720) return Math.round(SPRITE_PACK.displayH * 2.1);
+      if (cssW < 720) return Math.round(SPRITE_PACK.displayH * 1.28);
       return SPRITE_PACK.displayH;
     }
 
