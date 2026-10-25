@@ -4661,7 +4661,7 @@
       var feelCss = document.createElement('style');
       feelCss.id = 'hr-feel-css';
       feelCss.textContent = [
-        '#hr-event.hr-inline{position:relative;inset:auto;left:auto;right:auto;top:auto;bottom:auto;height:auto;max-height:none;z-index:6;margin:4px 0 0;padding:0;background:transparent;display:block;pointer-events:none;overflow:visible;}',
+        '#hr-event.hr-inline{position:absolute;left:8px;right:8px;top:auto;bottom:8px;width:auto;height:auto;max-height:34%;z-index:8;margin:0;padding:0;background:transparent;display:block;pointer-events:none;overflow:visible;}',
         '#hr-event.hr-inline[hidden]{display:none !important;}',
         '#hr-event.hr-inline .hr-card{pointer-events:auto;width:100%;max-height:none;overflow:visible;padding:0.2rem 0.4rem 0.24rem;border-radius:12px;background:rgba(246,240,228,0.96);box-shadow:0 6px 16px rgba(0,0,0,0.28);box-sizing:border-box;display:flex;flex-direction:column;touch-action:pan-y;}',
         '#hr-event.hr-inline .hr-card h2{font-size:0.82rem;line-height:1.15;margin:0 0 0.08rem;}',
@@ -4672,7 +4672,7 @@
         '#hr-event.hr-inline .hr-choices button span{flex:1 1 auto;min-width:0;white-space:normal;line-height:1.2;}',
         '#hr-event.hr-inline .hr-choice-cost{flex:0 0 auto;white-space:nowrap;}',
         '@media (max-width:720px){',
-        '#hr-event.hr-inline{position:relative;inset:auto;margin:2px 0 0;z-index:7;display:block;overflow:visible;}',
+        '#hr-event.hr-inline{position:absolute;left:4px;right:4px;top:auto;bottom:4px;margin:0;z-index:8;display:block;overflow:visible;max-height:38%;}',
         '#hr-event.hr-inline .hr-card{width:100%;padding:0.16rem 0.3rem 0.2rem;}',
         '#hr-event.hr-inline .hr-card h2{font-size:0.78rem;line-height:1.1;margin:0 0 0.06rem;}',
         '#hr-event.hr-inline .hr-card p{font-size:12px;line-height:1.15;margin:0 0 0.08rem;}',
@@ -4772,25 +4772,25 @@
       }
     }
     function placeEventCard() {
-      if (!els.event || !els.sim) return;
-      var dock = document.getElementById('hr-toast-dock');
-      if (dock && dock.parentNode === els.sim) {
-        if (els.event.parentNode !== els.sim || els.event.nextSibling !== dock) els.sim.insertBefore(els.event, dock);
-        return;
-      }
-      if (els.stage && els.event.parentNode !== els.stage) els.stage.appendChild(els.event);
+      if (!els.event || !els.stage) return;
+      if (els.event.parentNode !== els.stage) els.stage.appendChild(els.event);
     }
 
     function fitCardBox() {
       if (!els.event || !els.stage || els.event.hidden) return;
       var h = els.stage.clientHeight || 0;
       if (!(h > 0)) return;
-      els.event.style.position = 'relative';
-      els.event.style.inset = 'auto';
+      els.event.style.position = 'absolute';
+      els.event.style.left = '8px';
+      els.event.style.right = '8px';
+      els.event.style.top = 'auto';
+      els.event.style.bottom = '8px';
+      els.event.style.margin = '0';
+      els.event.style.width = 'auto';
       els.event.style.background = 'transparent';
       els.event.style.pointerEvents = 'none';
       els.event.style.height = 'auto';
-      els.event.style.maxHeight = 'none';
+      els.event.style.maxHeight = '34%';
       els.event.style.overflow = 'visible';
       var card = els.event.querySelector('.hr-card');
       if (!card) return;
@@ -4833,7 +4833,7 @@
           label.style.maxHeight = 'none';
         }
       }
-      var limit = Math.max(72, Math.floor(h * 0.2));
+      var limit = Math.max(96, Math.min(176, Math.floor(h * 0.34)));
       if (body && card.offsetHeight > limit) body.style.display = 'none';
       if (title && card.offsetHeight > limit) {
         title.style.whiteSpace = 'nowrap';
@@ -7092,10 +7092,10 @@
       }
       var parent = stage.parentElement;
       if (!parent) return;
-      var width = stage.clientWidth || parent.clientWidth;
-      if (!(width > 0)) return;
-      var frame = phoneStoreFrame();
-      var ideal = width * (frame.bottom - frame.top) / Math.max(1, frame.right - frame.left);
+      var parentH = parent.clientHeight;
+      if (!(parentH > 200)) return;
+      var pcs = window.getComputedStyle(parent);
+      var pad = (parseFloat(pcs.paddingTop) || 0) + (parseFloat(pcs.paddingBottom) || 0);
       var others = 0;
       var kids = parent.children;
       for (var i = 0; i < kids.length; i++) {
@@ -7103,14 +7103,16 @@
         if (kid === stage || kid.hidden) continue;
         var cs = window.getComputedStyle(kid);
         if (cs.display === 'none' || cs.position === 'absolute' || cs.position === 'fixed') continue;
-        others += kid.offsetHeight;
+        var mt = parseFloat(cs.marginTop) || 0;
+        var mb = parseFloat(cs.marginBottom) || 0;
+        others += kid.offsetHeight + mt + mb;
       }
-      var avail = parent.clientHeight - others;
-      if (!(avail > 160)) avail = ideal;
-      var next = Math.round(Math.max(200, Math.min(avail, ideal)));
+      var avail = parentH - pad - others;
+      if (!(avail > 160)) return;
+      var next = Math.round(avail);
       if (stage._phoneH === next) return;
       stage._phoneH = next;
-      stage.style.flex = '0 0 auto';
+      stage.style.flex = '1 1 auto';
       stage.style.height = next + 'px';
     }
 
@@ -7365,7 +7367,9 @@
     }
 
     function phoneStoreFrame() {
-      return { left: 96, top: 0, right: 1264, bottom: 900 };
+      // Registers through the wrap shelf. A tall phone canvas zooms until
+      // this span fills the width, so the store draws larger than the full room.
+      return { left: 320, top: 0, right: 1040, bottom: 900 };
     }
 
     function floorFit(cssW, cssH) {
@@ -7376,7 +7380,9 @@
         var frame = phoneStoreFrame();
         var fw = Math.max(1, frame.right - frame.left);
         var fh = Math.max(1, frame.bottom - frame.top);
-        fit = Math.min(cssW / fw, cssH / fh);
+        var fitW = cssW / fw;
+        var fitH = cssH / fh;
+        fit = fitH < fitW ? fitH : fitW;
       } else {
         var fitW = cssW / Math.max(1, worldW);
         fit = Math.min(fitW, cssH / 800);
@@ -7404,30 +7410,16 @@
         var cssW = view.cssW || (els.canvas && els.canvas._cssW) || 800;
         if (cssW < 720) {
           var frame = phoneStoreFrame();
-          var frameX = frame.left + ((frame.right - frame.left) - view.viewW) / 2;
-          var frameY = frame.top + ((frame.bottom - frame.top) - view.viewH) / 2;
+          var anchorX = (frame.left + frame.right) / 2;
+          var frameX = anchorX - view.viewW / 2;
+          var frameH = frame.bottom - frame.top;
+          var frameY = view.viewH > frameH ? frame.top + (frameH - view.viewH) / 2 : frame.top;
           return camClamp(frameX, frameY, view);
         }
         if (cssW >= 720) {
           var fullRoom = view.viewW >= worldW - 16 && view.viewH >= worldH - 16;
           if (fullRoom) return camClamp((worldW - view.viewW) / 2, (worldH - view.viewH) / 2, view);
-          var deskTruck = (SPOTS.truck && SPOTS.truck.y) || 130;
-          var deskTop = 0;
-          var deskBottom = ((SPOTS.reg1 && SPOTS.reg1.y) || 700) + 130;
-          var cardOpen = !!(sim && (sim.pending || sim.typeCard));
-          if (cardOpen) {
-            var doorBottom = ((SPOTS.door && SPOTS.door.y) || (worldH - 45)) + 36;
-            if (doorBottom > deskBottom) deskBottom = doorBottom;
-          }
-          var deskY = deskTop;
-          if (deskTop + view.viewH < deskBottom) deskY = deskBottom - view.viewH;
-          if (cardOpen) {
-            var truckKeep = deskTruck - 16;
-            if (truckKeep < 0) truckKeep = 0;
-            if (deskY > truckKeep) deskY = truckKeep;
-          } else if (deskY > deskTop) deskY = deskTop;
-          if (deskY < 0) deskY = 0;
-          return camClamp((worldW - view.viewW) / 2, deskY, view);
+          return camClamp((worldW - view.viewW) / 2, 0, view);
         }
       }
       var left = SPOTS.reg1 || { x: 420, y: 700 };
