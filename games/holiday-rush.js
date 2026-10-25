@@ -4891,17 +4891,12 @@
       }, ms || 2200);
     }
     function clearCloseToast() {
-      function closeLine(msg) {
-        return msg === 'In the black.' || msg.indexOf('In the black.') === 0 || msg.indexOf('Streak ') === 0;
-      }
-      toastQueue = toastQueue.filter(function (m) { return !closeLine(m); });
+      toastQueue = [];
       if (!els.toast) return;
-      if (!closeLine(els.toast.textContent || '')) return;
       els.toast.classList.remove('show');
       els.toast.textContent = '';
       clearTimeout(toastTimer);
       toastOn = false;
-      if (toastQueue.length) playToast();
     }
 
     function clearRefillNotice() {
