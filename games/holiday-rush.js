@@ -5647,8 +5647,8 @@
       function actButton(name, label, icon) {
         return '<button type="button" data-act="' + name + '"><span class="hr-icon" style="' + iconStyle(icon, 28) + '" aria-hidden="true"></span><span>' + label + '</span></button>';
       }
-      var actions =
-        actButton('cover', 'Cover a gap', 'boss') +
+      var actions = (sim.mechanic === 'wrap' ? actButton('wrap', 'Wrap', 'return') : '') +
+        actButton('cover', 'Stand in', 'boss') +
         actButton('pull', 'Pull to register', 'line') +
         actButton('freight', 'Work freight', 'truck') +
         actButton('calm', 'Calm a customer', 'angry');
@@ -5693,7 +5693,7 @@
       paintMute();
       if (sim.mechanic === 'wrap' && !opts.resume && !sim._wrapTold) {
         sim._wrapTold = true;
-        toast('Plaza Kiosk. Tap Wrap at the wrap table. Each gift adds to this drawer.', true);
+        toast('Plaza Kiosk. Tap the Wrap button when a gift is ready. Each gift adds to this drawer.', true);
       }
       draw();
       saveRun();
@@ -5755,6 +5755,17 @@
           var callTruck = !sim._eveningTruck && backUnits <= 40;
           var nextLabel = callTruck ? 'Call truck' : 'Work freight';
           if (freightName.textContent !== nextLabel) freightName.textContent = nextLabel;
+        }
+        var wrapBtn = els.sim && els.sim.querySelector('[data-act="wrap"]');
+        if (wrapBtn) {
+          var wrapReady = false;
+          if (sim.pings) {
+            for (var wr = 0; wr < sim.pings.length; wr++) {
+              if (sim.pings[wr].kind === 'wrap' && !sim.pings[wr].dead) wrapReady = true;
+            }
+          }
+          wrapBtn.classList.toggle('is-live', wrapReady);
+          wrapBtn.setAttribute('aria-label', wrapReady ? 'Wrap the gift' : 'Wrap, waiting for a gift');
         }
       }
       if (els.toast && els.toast.classList.contains('show')) placeToast();
@@ -5871,7 +5882,9 @@
       var crewBtn = document.getElementById('hr-crew-btn');
       if (crewBtn) crewBtn.hidden = !!coach;
       if (act) {
-        if (coach) {
+        if (coach && coach.step === 1) {
+          act.textContent = 'A truck is in. Work freight unloads it. The floor keeps moving.';
+        } else if (coach) {
           act.textContent = 'Tutorial · clock is paused · step ' + (coach.step + 1) + ' of 3. Skip is there if you want the floor now.';
         } else {
           var maxA = sim.actionMax || CONFIG.baseActions;
@@ -7387,11 +7400,7 @@
         lineAim.label = '1/3  Tap the line\nA cashier keeps the sale.';
         return lineAim;
       }
-      if (coach.step === 1) {
-        var truckAim = aimOnScreen(SPOTS.truck.x, SPOTS.truck.y - 24, 58);
-        truckAim.label = '2/3  Tap the truck\nUnload it before shelves thin out.';
-        return truckAim;
-      }
+      if (coach.step === 1) return null;
       var angry = null;
       for (var i = 0; i < sim.customers.length; i++) {
         var c = sim.customers[i];
@@ -7426,24 +7435,35 @@
       }
       cap.hidden = false;
       cap.setAttribute('data-wrap', '1');
-      cap.textContent = 'Tap the pulsing Wrap on the gift table.\nEach gift rings this drawer.';
+      cap.textContent = 'Tap the Wrap button, or the WRAP ring on the gift table.\nEach gift rings this drawer.';
+    }
+
+    function coachBlocksPlay() {
+      return !!(coach && coach.step !== 1);
+    }
+
+    function coachLine() {
+      if (!coach) return '';
+      if (coach.step === 1) return '2/3  A truck is in\nWork freight unloads it. Keep playing.';
+      var focus = coachFocus();
+      return focus ? focus.label : '';
     }
 
     function paintCoach() {
       var cap = document.getElementById('hr-coach');
       var skip = document.getElementById('hr-skip');
-      var focus = coach ? coachFocus() : null;
+      var line = coachLine();
       if (cap) {
-        cap.hidden = !focus;
-        if (focus) {
-          cap.textContent = focus.label;
+        cap.hidden = !line;
+        if (line) {
+          cap.textContent = line;
           cap.removeAttribute('data-wrap');
         }
       }
       if (skip) skip.hidden = !coach;
       placeChrome();
-      if (sim) sim.coachHold = !!coach;
-      if (focus && els.live) els.live.textContent = focus.label + '. Skip is available.';
+      if (sim) sim.coachHold = coachBlocksPlay();
+      if (line && els.live) els.live.textContent = line + '. Skip is available.';
       paintWrapCoach();
     }
 
@@ -7535,12 +7555,13 @@
         sim.truck = 1;
         sim.truckWork = 0;
         sim.hornPlayed = false;
+        coach.until = (sim.t || 0) + 6;
       } else if (coach.step === 2) angerSomeone();
       else {
         toast('Floor is yours. Chain checkouts for a combo.');
         endCoach();
       }
-      var next = coach ? coachFocus() : null;
+      var next = coach && coach.step !== 1 ? coachFocus() : null;
       if (next) focusCam(next.x, next.y);
       paintCoach();
       draw();
@@ -7645,12 +7666,6 @@
     function pickHit(ev) {
       var phoneHit = (els.canvas._cssW || window.innerWidth) < 720;
       var minTap = 44;
-      if (coach && coach.step === 1) {
-        var truckAim = coachFocus();
-        if (truckAim && screenDist(truckAim.x, truckAim.y, ev) <= minTap) {
-          return { station: 'freight', x: SPOTS.truck.x, y: SPOTS.truck.y };
-        }
-      }
       if (sim.pings) {
         var wrapHit = null;
         var wrapReach = phoneHit ? 120 : 72;
@@ -7979,8 +7994,19 @@
           ctx.stroke();
           ctx.restore();
           drawIconAt(icon, ping.x, ping.y + bob, (coaching ? 72 : 52) * pulse);
-          var wrapAt = tagAnchor(ping.x, ping.y + bob - wrapR - 18);
-          drawTag(label, wrapAt.x, wrapAt.y);
+          ctx.save();
+          var wordPx = Math.max(16, Math.round(18 / ringScale));
+          ctx.font = '800 ' + wordPx + 'px Outfit, Inter, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          var wordW = ctx.measureText('WRAP').width + wordPx;
+          var wordH = wordPx + 10;
+          var wordY = ping.y + bob + wrapR + wordH * 0.65;
+          ctx.fillStyle = 'rgba(43,29,46,0.94)';
+          ctx.fillRect(ping.x - wordW / 2, wordY - wordH / 2, wordW, wordH);
+          ctx.fillStyle = '#ffe08a';
+          ctx.fillText('WRAP', ping.x, wordY);
+          ctx.restore();
           continue;
         }
         if (ping.kind === 'restock') {
@@ -8039,7 +8065,7 @@
         ctx.beginPath();
         ctx.arc(SPOTS.truck.x, SPOTS.truck.y - 24, 30, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * done);
         ctx.stroke();
-        if (labelOn('truck')) {
+        if (labelOn('truck') || (coach && coach.step === 1)) {
           var truckAt = tagAnchor(SPOTS.truck.x, SPOTS.truck.y - 68);
           drawTag(fp > 0.35 ? left.toFixed(1) + 's' : 'Unload', truckAt.x, truckAt.y);
         }
@@ -8152,8 +8178,7 @@
       var focus = null;
       var aimKind = '';
       if (sim && sim.floorOn && !cam.overview && !cam.fit) {
-        if (coach && coach.step === 1) aimKind = 'truck';
-        else if (!coach && wrapCoachOn()) aimKind = 'wrap';
+        if (!coach && wrapCoachOn()) aimKind = 'wrap';
       }
       var phoneLock = aimKind ? false : freezePhoneCam();
       var lockPlay = !aimKind && (phoneLock || !!(sim && sim.floorOn && !cam.overview && !cam.fit && !cam.userPan && !coach));
@@ -9549,7 +9574,8 @@
       }
       if (sim) sim._frameMs = rawMs;
         if (sim && !sim.paused && !sim.done) {
-        if (coach || sim.tutorial) {
+        if (coach && coach.step === 1 && coach.until != null && sim.t >= coach.until - 1e-4) onCoachProgress('freight');
+        if (coachBlocksPlay()) {
           for (var cs = 0; cs < sim.staff.length; cs++) updateStaffActor(sim, run, sim.staff[cs], dt);
           if (sim.you) updateStaffActor(sim, run, sim.you, dt);
           for (var cc = 0; cc < sim.customers.length; cc++) tickAnim(sim.customers[cc], dt);
@@ -9580,7 +9606,7 @@
         simSaveAcc += dt;
         if (simSaveAcc > 1) { simSaveAcc = 0; saveRun(); }
       }
-      if (sim && (coach || sim.tutorial)) {
+      if (sim && coachBlocksPlay()) {
         if (els.event && !els.event.hidden) els.event.hidden = true;
         shownEvent = null;
         shownType = null;
@@ -9836,11 +9862,39 @@
       if (name === 'calm') return { x: SPOTS.reg1.x, y: QUEUE.reg1.y };
       return { x: SPOTS.reg1.x, y: SPOTS.reg1.y };
     }
+    function pressWrap() {
+      if (!sim) return;
+      var ping = null;
+      if (sim.pings) {
+        for (var i = 0; i < sim.pings.length; i++) {
+          if (sim.pings[i].kind === 'wrap' && !sim.pings[i].dead) { ping = sim.pings[i]; break; }
+        }
+      }
+      if (!ping) {
+        toast('Wait for the next gift. Wrap glows on the table.');
+        sfx('miss');
+        return;
+      }
+      tapFx(sim, ping.x, ping.y);
+      flashAt(sim, ping.x, ping.y);
+      hooks.tap();
+      hooks.coin();
+      resolvePing(sim, ping);
+      sfx('place');
+      buzz(12);
+      paintHud();
+      draw();
+      saveRun();
+    }
     function pressAct(name, btn) {
       if (!sim) return;
       lastActAt = root.performance ? root.performance.now() : Date.now();
       if (btn) btn.classList.add('is-down');
       if (root.CGSfx && root.CGSfx.juice && btn) root.CGSfx.juice(btn, 'pop');
+      if (name === 'wrap') {
+        pressWrap();
+        return;
+      }
       playerAct(name, { point: actPoint(name) });
     }
     els.sim.addEventListener('pointerdown', function (ev) {

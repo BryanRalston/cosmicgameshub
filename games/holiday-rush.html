@@ -154,6 +154,8 @@
     }
     .hr-mute { min-width: 4.5rem; min-height: 44px; border-radius: 999px; border: 1px solid rgba(224,163,34,0.45); background: #2a2118; color: #f6f0e4; font: inherit; font-weight: 800; font-size: 0.82rem; cursor: pointer; touch-action: manipulation; padding: 0 12px; white-space: nowrap; flex: 0 0 auto; }
     .hr-clock.rush { box-shadow: 0 0 0 3px #d64545; }
+    .hr-actions button[data-act="wrap"] { grid-column: 1 / -1; justify-content: center; text-align: center; background: #4a3018; border: 2px solid #e0a322; color: #fff8ea; font-weight: 800; }
+    .hr-actions button[data-act="wrap"].is-live { background: #e0a322; color: #2b1d2e; }
     .hr-actions button:disabled { opacity: 0.4; cursor: not-allowed; }
     .hr-hint { color: #f6ead8; font-size: 15.56px; margin: 0.4rem 0 0; line-height: 1.3; font-weight: 700; }
     .hr-toast-dock { height: 40px; min-height: 40px; max-height: 40px; display: flex; align-items: center; justify-content: center; overflow: hidden; pointer-events: none; }
@@ -478,7 +480,7 @@
         <button type="button" id="hr-skip" hidden>Skip</button>
       </div>
       <div id="hr-toast-dock" class="hr-toast-dock"></div>
-      <p class="hr-hint">Tap Wrap when it glows. Call the truck when Back is low. Pull a cashier if the line stalls.</p>
+      <p class="hr-hint">Tap the Wrap button when a gift is ready. Call the truck when Back is low. Pull a cashier if the line stalls.</p>
       <div class="hr-actions"></div>
       <p class="hr-actline" id="hr-actline"></p>
     </section>
