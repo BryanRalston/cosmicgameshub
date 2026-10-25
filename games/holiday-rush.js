@@ -83,8 +83,8 @@
   var MONDAY_GOAL_MUL = 0.55;
   var LIVE_PROFIT_FLOOR = 48;
   var LIVE_RING_RATE = 0.95;
-  var LIVE_BASKET = 0.54;
-  var LIVE_STAFFED = 1.24;
+  var LIVE_BASKET = 0.46;
+  var LIVE_STAFFED = 1.52;
 
   function liveQueueGap(sim) {
     return sim && sim._phone ? 210 : 140;
@@ -1513,6 +1513,11 @@
     return false;
   }
 
+  function liveLineDrain(sim, drain) {
+    if (sim && sim.floorOn && sim.live && !sim.tenant && liveTillStaffed(sim)) return drain * 0.45;
+    return drain;
+  }
+
   function backLeft(sim) {
     if (!sim || !sim.books || !HR.economy || !HR.economy.unitsLeft) return 0;
     return HR.economy.unitsLeft(sim.books, sim.tenant && sim.tenant.stock);
@@ -2040,7 +2045,7 @@
           var pocket = cust.waitSpot || waitPocket(cust);
           cust.waitSpot = pocket;
           if (moveToward(cust, pocket.x, pocket.y, dt, custSpeed * 0.8)) cust.anim = 'idle';
-          cust.patience -= dt * 0.008 * cocoa * drainMul;
+          cust.patience -= liveLineDrain(sim, dt * 0.008 * cocoa * drainMul);
           if (cust.patience <= 0) walkout(sim, cust);
         }
       } else if (cust.state === 'toQueue') {
@@ -2117,7 +2122,7 @@
             completeSale(sim, run, cust);
           }
         } else {
-          cust.patience -= dt * drain * drainMul;
+          cust.patience -= liveLineDrain(sim, dt * drain * drainMul);
           if (cust.patience <= 0) walkout(sim, cust);
           else if (cust.qIndex === 0 && at && !cust.haggling) {
             cust.state = 'checkout';
@@ -2125,6 +2130,7 @@
             var rate = power > 0.35 ? (0.55 + power * 0.85) : 0.2;
             if (sim._mondayEase && sim.floorOn) rate *= 1.22;
             if (sim._phone && sim.floorOn) rate *= 1.12;
+            else if (sim.floorOn && sim.live && !sim.tenant && liveTillStaffed(sim)) rate *= 1.12;
             if (cust.arch === 'rusher') rate *= 1.65;
             if (cust.arch === 'family') rate *= 0.7;
             if (sim.floorOn && rate < LIVE_RING_RATE) rate = LIVE_RING_RATE;
