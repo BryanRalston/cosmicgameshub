@@ -282,7 +282,7 @@
     let mirrorGhosts = []; // Ghost previews for mirrored bricks
     let prefabGhosts = []; // Ghost previews for prefab bricks
     let selectedBrick = (typeof window !== 'undefined' && window.innerWidth <= 768) ? '1x1' : '2x4';
-    let selectedColor = 0xe53935;
+    let selectedColor = 0xff5252;
     let selectedLightColor = 0xffdd44; // Default warm white for light bricks
     let isTransparent = false; // Whether current color is transparent
     let currentRotation = 0; // Y axis rotation (yaw)
@@ -396,642 +396,21 @@
     let fpRadialMenuOpen = false;
     
     // ==================== PREFAB DEFINITIONS ====================
-    const prefabs = {
-      // ==================== BUILDING STRUCTURES ====================
-      wall4: [
-        {type:'2x4',dx:0,dy:0,dz:0,rot:0},
-        {type:'2x4',dx:0,dy:3,dz:0,rot:0},
-        {type:'2x4',dx:0,dy:6,dz:0,rot:0}
-      ],
-      wall8: [
-        {type:'2x4',dx:0,dy:0,dz:0,rot:0},{type:'2x4',dx:4,dy:0,dz:0,rot:0},
-        {type:'2x4',dx:2,dy:3,dz:0,rot:0},{type:'2x4',dx:-2,dy:3,dz:0,rot:0},
-        {type:'2x4',dx:0,dy:6,dz:0,rot:0},{type:'2x4',dx:4,dy:6,dz:0,rot:0}
-      ],
-      corner: [
-        {type:'2x2',dx:0,dy:0,dz:0,rot:0},{type:'2x2',dx:0,dy:3,dz:0,rot:0},{type:'2x2',dx:0,dy:6,dz:0,rot:0},
-        {type:'2x2',dx:2,dy:0,dz:0,rot:0},{type:'2x2',dx:2,dy:3,dz:0,rot:0},{type:'2x2',dx:2,dy:6,dz:0,rot:0},
-        {type:'2x2',dx:0,dy:0,dz:2,rot:0},{type:'2x2',dx:0,dy:3,dz:2,rot:0},{type:'2x2',dx:0,dy:6,dz:2,rot:0}
-      ],
-      pillar: [
-        {type:'2x2',dx:0,dy:0,dz:0,rot:0},{type:'2x2',dx:0,dy:3,dz:0,rot:0},
-        {type:'2x2',dx:0,dy:6,dz:0,rot:0},{type:'2x2',dx:0,dy:9,dz:0,rot:0}
-      ],
-      stairs: [
-        {type:'2x4',dx:0,dy:0,dz:0,rot:0},{type:'2x4',dx:0,dy:3,dz:2,rot:0},
-        {type:'2x4',dx:0,dy:6,dz:4,rot:0},{type:'2x4',dx:0,dy:9,dz:6,rot:0}
-      ],
-      arch: [
-        {type:'1x2',dx:0,dy:0,dz:0,rot:90},{type:'1x2',dx:0,dy:3,dz:0,rot:90},{type:'1x2',dx:0,dy:6,dz:0,rot:90},{type:'1x2',dx:0,dy:9,dz:0,rot:90},
-        {type:'1x2',dx:4,dy:0,dz:0,rot:90},{type:'1x2',dx:4,dy:3,dz:0,rot:90},{type:'1x2',dx:4,dy:6,dz:0,rot:90},{type:'1x2',dx:4,dy:9,dz:0,rot:90},
-        {type:'2x6',dx:0,dy:12,dz:0,rot:90}
-      ],
-      window: [
-        {type:'2x6',dx:0,dy:0,dz:0,rot:90},
-        {type:'1x2',dx:0,dy:3,dz:0,rot:0},{type:'1x2',dx:0,dy:6,dz:0,rot:0},
-        {type:'1x2',dx:5,dy:3,dz:0,rot:0},{type:'1x2',dx:5,dy:6,dz:0,rot:0},
-        {type:'2x6',dx:0,dy:9,dz:0,rot:90},
-        {type:'2x4',dx:1,dy:3,dz:0,rot:90,color:0xb3e5fc,transparent:true},
-        {type:'2x4',dx:1,dy:6,dz:0,rot:90,color:0xb3e5fc,transparent:true}
-      ],
-      door: [
-        {type:'1x2',dx:0,dy:0,dz:0,rot:0},{type:'1x2',dx:0,dy:3,dz:0,rot:0},{type:'1x2',dx:0,dy:6,dz:0,rot:0},{type:'1x2',dx:0,dy:9,dz:0,rot:0},{type:'1x2',dx:0,dy:12,dz:0,rot:0},
-        {type:'1x2',dx:5,dy:0,dz:0,rot:0},{type:'1x2',dx:5,dy:3,dz:0,rot:0},{type:'1x2',dx:5,dy:6,dz:0,rot:0},{type:'1x2',dx:5,dy:9,dz:0,rot:0},{type:'1x2',dx:5,dy:12,dz:0,rot:0},
-        {type:'2x6',dx:0,dy:15,dz:0,rot:90},
-        {type:'2x4',dx:1,dy:0,dz:0,rot:90,color:0x8d6e63},{type:'2x4',dx:1,dy:3,dz:0,rot:90,color:0x8d6e63},{type:'2x4',dx:1,dy:6,dz:0,rot:90,color:0x8d6e63},{type:'2x4',dx:1,dy:9,dz:0,rot:90,color:0x8d6e63},{type:'2x4',dx:1,dy:12,dz:0,rot:90,color:0x8d6e63}
-      ],
-      fence: [
-        {type:'1x1',dx:0,dy:0,dz:0,rot:0,color:0x8d6e63},{type:'1x1',dx:0,dy:3,dz:0,rot:0,color:0x8d6e63},
-        {type:'1x4p',dx:0,dy:4,dz:0,rot:0,color:0x8d6e63},
-        {type:'1x1',dx:0,dy:0,dz:3,rot:0,color:0x8d6e63},{type:'1x1',dx:0,dy:3,dz:3,rot:0,color:0x8d6e63}
-      ],
-      
-      // ==================== NATURAL - TREES ====================
-      tree: [
-        // Classic deciduous tree with fuller canopy
-        {type:'r2x2',dx:0,dy:0,dz:0,rot:0,color:0x5d4037},{type:'r2x2',dx:0,dy:3,dz:0,rot:0,color:0x6d4c41},
-        // Lower canopy layer
-        {type:'2x2',dx:-2,dy:6,dz:0,rot:0,color:0x1b5e20},{type:'2x2',dx:2,dy:6,dz:0,rot:0,color:0x2e7d32},
-        {type:'2x2',dx:0,dy:6,dz:-2,rot:0,color:0x2e7d32},{type:'2x2',dx:0,dy:6,dz:2,rot:0,color:0x1b5e20},
-        {type:'2x2',dx:-1,dy:6,dz:-1,rot:0,color:0x388e3c},{type:'2x2',dx:1,dy:6,dz:-1,rot:0,color:0x43a047},
-        {type:'2x2',dx:-1,dy:6,dz:1,rot:0,color:0x43a047},{type:'2x2',dx:1,dy:6,dz:1,rot:0,color:0x388e3c},
-        // Upper canopy
-        {type:'2x2',dx:-1,dy:9,dz:0,rot:0,color:0x4caf50},{type:'2x2',dx:1,dy:9,dz:0,rot:0,color:0x43a047},
-        {type:'2x2',dx:0,dy:9,dz:-1,rot:0,color:0x43a047},{type:'2x2',dx:0,dy:9,dz:1,rot:0,color:0x4caf50},
-        // Top
-        {type:'2x2',dx:0,dy:12,dz:0,rot:0,color:0x66bb6a}
-      ],
-      pine: [
-        // Tall conifer with tiered branches
-        {type:'r1x1',dx:0,dy:0,dz:0,rot:0,color:0x4e342e},{type:'r1x1',dx:0,dy:3,dz:0,rot:0,color:0x5d4037},{type:'r1x1',dx:0,dy:6,dz:0,rot:0,color:0x6d4c41},
-        // Bottom tier - widest
-        {type:'slope2',dx:-2,dy:6,dz:-1,rot:180,color:0x1b5e20},{type:'slope2',dx:1,dy:6,dz:-1,rot:180,color:0x2e7d32},
-        {type:'slope2',dx:-2,dy:6,dz:1,rot:0,color:0x2e7d32},{type:'slope2',dx:1,dy:6,dz:1,rot:0,color:0x1b5e20},
-        {type:'slope2',dx:-1,dy:6,dz:-2,rot:90,color:0x2e7d32},{type:'slope2',dx:-1,dy:6,dz:1,rot:270,color:0x1b5e20},
-        {type:'2x2',dx:-1,dy:6,dz:-1,rot:0,color:0x388e3c},{type:'2x2',dx:1,dy:6,dz:-1,rot:0,color:0x2e7d32},
-        {type:'2x2',dx:-1,dy:6,dz:1,rot:0,color:0x2e7d32},{type:'2x2',dx:1,dy:6,dz:1,rot:0,color:0x388e3c},
-        // Middle tier
-        {type:'2x2',dx:-1,dy:9,dz:-1,rot:0,color:0x388e3c},{type:'2x2',dx:1,dy:9,dz:-1,rot:0,color:0x43a047},
-        {type:'2x2',dx:-1,dy:9,dz:1,rot:0,color:0x43a047},{type:'2x2',dx:1,dy:9,dz:1,rot:0,color:0x388e3c},
-        // Upper tier
-        {type:'2x2',dx:0,dy:12,dz:0,rot:0,color:0x4caf50},
-        // Top point
-        {type:'1x1',dx:0,dy:15,dz:0,rot:0,color:0x66bb6a}
-      ],
-      palm: [
-        // Tropical palm with textured trunk and detailed fronds
-        {type:'r1x1',dx:0,dy:0,dz:0,rot:0,color:0x5d4037},{type:'r1x1',dx:0,dy:3,dz:0,rot:0,color:0x6d4c41},
-        {type:'r1x1',dx:0,dy:6,dz:0,rot:0,color:0x795548},{type:'r1x1',dx:0,dy:9,dz:0,rot:0,color:0x8d6e63},
-        {type:'r1x1',dx:0,dy:12,dz:0,rot:0,color:0xa1887f},
-        // Coconuts cluster
-        {type:'r1x1p',dx:0,dy:15,dz:0,rot:0,color:0x4e342e},
-        {type:'r1x1p',dx:1,dy:14,dz:0,rot:0,color:0x5d4037},{type:'r1x1p',dx:-1,dy:14,dz:0,rot:0,color:0x6d4c41},
-        // Fronds - 8 directions
-        {type:'1x4',dx:0,dy:15,dz:-2,rot:0,color:0x558b2f},{type:'1x4',dx:0,dy:15,dz:2,rot:0,color:0x689f38},
-        {type:'1x4',dx:-2,dy:15,dz:0,rot:90,color:0x689f38},{type:'1x4',dx:2,dy:15,dz:0,rot:90,color:0x558b2f},
-        {type:'1x3',dx:-1,dy:15,dz:-1,rot:0,color:0x7cb342},{type:'1x3',dx:1,dy:15,dz:1,rot:0,color:0x7cb342},
-        {type:'1x3',dx:-1,dy:15,dz:1,rot:90,color:0x8bc34a},{type:'1x3',dx:1,dy:15,dz:-1,rot:90,color:0x8bc34a}
-      ],
-      oak: [
-        // Majestic oak with thick trunk and sprawling canopy
-        {type:'2x2',dx:0,dy:0,dz:0,rot:0,color:0x4e342e},{type:'2x2',dx:0,dy:3,dz:0,rot:0,color:0x5d4037},
-        {type:'2x2',dx:0,dy:6,dz:0,rot:0,color:0x6d4c41},
-        // Branches extending from trunk
-        {type:'1x2',dx:-2,dy:6,dz:0,rot:90,color:0x5d4037},{type:'1x2',dx:2,dy:6,dz:0,rot:90,color:0x5d4037},
-        // Main canopy - large spread
-        {type:'4x4',dx:-1,dy:9,dz:-1,rot:0,color:0x2e7d32},
-        {type:'2x4',dx:-3,dy:9,dz:-1,rot:0,color:0x388e3c},{type:'2x4',dx:3,dy:9,dz:-1,rot:0,color:0x1b5e20},
-        {type:'2x4',dx:-1,dy:9,dz:-3,rot:90,color:0x1b5e20},{type:'2x4',dx:-1,dy:9,dz:3,rot:90,color:0x388e3c},
-        // Upper canopy
-        {type:'4x4',dx:-1,dy:12,dz:-1,rot:0,color:0x43a047},
-        {type:'2x2',dx:-2,dy:12,dz:0,rot:0,color:0x4caf50},{type:'2x2',dx:2,dy:12,dz:0,rot:0,color:0x4caf50},
-        {type:'2x2',dx:0,dy:12,dz:-2,rot:0,color:0x4caf50},{type:'2x2',dx:0,dy:12,dz:2,rot:0,color:0x4caf50},
-        // Top crown
-        {type:'2x2',dx:0,dy:15,dz:0,rot:0,color:0x66bb6a}
-      ],
-      deadTree: [
-        // Spooky dead tree with gnarled branches
-        {type:'r1x1',dx:0,dy:0,dz:0,rot:0,color:0x3e2723},{type:'r1x1',dx:0,dy:3,dz:0,rot:0,color:0x4e342e},
-        {type:'r1x1',dx:0,dy:6,dz:0,rot:0,color:0x5d4037},{type:'r1x1',dx:0,dy:9,dz:0,rot:0,color:0x4e342e},
-        // Main branches
-        {type:'1x2',dx:-1,dy:9,dz:0,rot:90,color:0x4e342e},{type:'1x2',dx:1,dy:9,dz:0,rot:90,color:0x5d4037},
-        {type:'1x2',dx:0,dy:9,dz:-1,rot:0,color:0x5d4037},{type:'1x2',dx:0,dy:9,dz:1,rot:0,color:0x4e342e},
-        // Branch tips
-        {type:'1x1',dx:-3,dy:9,dz:0,rot:0,color:0x3e2723},{type:'1x1',dx:3,dy:9,dz:0,rot:0,color:0x3e2723},
-        {type:'1x1',dx:-2,dy:12,dz:0,rot:0,color:0x4e342e},{type:'1x1',dx:2,dy:12,dz:0,rot:0,color:0x4e342e},
-        {type:'1x1',dx:0,dy:12,dz:0,rot:0,color:0x5d4037}
-      ],
-      willow: [
-        // Weeping willow with drooping branches
-        {type:'r2x2',dx:0,dy:0,dz:0,rot:0,color:0x5d4037},{type:'r2x2',dx:0,dy:3,dz:0,rot:0,color:0x6d4c41},
-        {type:'r2x2',dx:0,dy:6,dz:0,rot:0,color:0x795548},
-        // Crown
-        {type:'2x2',dx:-1,dy:9,dz:-1,rot:0,color:0x7cb342},{type:'2x2',dx:1,dy:9,dz:-1,rot:0,color:0x8bc34a},
-        {type:'2x2',dx:-1,dy:9,dz:1,rot:0,color:0x8bc34a},{type:'2x2',dx:1,dy:9,dz:1,rot:0,color:0x7cb342},
-        // Drooping branches (using plates to simulate hanging)
-        {type:'1x1p',dx:-2,dy:6,dz:-1,rot:0,color:0x9ccc65},{type:'1x1p',dx:-2,dy:5,dz:-1,rot:0,color:0xaed581},
-        {type:'1x1p',dx:-2,dy:4,dz:-1,rot:0,color:0xc5e1a5},{type:'1x1p',dx:-2,dy:3,dz:-1,rot:0,color:0xdcedc8},
-        {type:'1x1p',dx:3,dy:6,dz:0,rot:0,color:0x9ccc65},{type:'1x1p',dx:3,dy:5,dz:0,rot:0,color:0xaed581},
-        {type:'1x1p',dx:3,dy:4,dz:0,rot:0,color:0xc5e1a5},{type:'1x1p',dx:3,dy:3,dz:0,rot:0,color:0xdcedc8},
-        {type:'1x1p',dx:0,dy:6,dz:-2,rot:0,color:0x9ccc65},{type:'1x1p',dx:0,dy:5,dz:-2,rot:0,color:0xaed581},
-        {type:'1x1p',dx:0,dy:4,dz:-2,rot:0,color:0xc5e1a5},
-        {type:'1x1p',dx:0,dy:6,dz:3,rot:0,color:0x9ccc65},{type:'1x1p',dx:0,dy:5,dz:3,rot:0,color:0xaed581},
-        {type:'1x1p',dx:0,dy:4,dz:3,rot:0,color:0xc5e1a5}
-      ],
-      cherry: [
-        // Cherry blossom tree with pink flowers
-        {type:'r2x2',dx:0,dy:0,dz:0,rot:0,color:0x4e342e},{type:'r2x2',dx:0,dy:3,dz:0,rot:0,color:0x5d4037},
-        // Branches
-        {type:'1x2',dx:-2,dy:6,dz:0,rot:90,color:0x5d4037},{type:'1x2',dx:2,dy:6,dz:0,rot:90,color:0x5d4037},
-        // Pink blossom canopy
-        {type:'2x2',dx:-2,dy:6,dz:-1,rot:0,color:0xf8bbd9},{type:'2x2',dx:2,dy:6,dz:-1,rot:0,color:0xf48fb1},
-        {type:'2x2',dx:-2,dy:6,dz:1,rot:0,color:0xf48fb1},{type:'2x2',dx:2,dy:6,dz:1,rot:0,color:0xf8bbd9},
-        {type:'2x2',dx:-1,dy:6,dz:-2,rot:0,color:0xf48fb1},{type:'2x2',dx:1,dy:6,dz:-2,rot:0,color:0xf8bbd9},
-        {type:'2x2',dx:-1,dy:6,dz:2,rot:0,color:0xf8bbd9},{type:'2x2',dx:1,dy:6,dz:2,rot:0,color:0xf48fb1},
-        {type:'2x2',dx:-1,dy:9,dz:-1,rot:0,color:0xfce4ec},{type:'2x2',dx:1,dy:9,dz:-1,rot:0,color:0xf8bbd9},
-        {type:'2x2',dx:-1,dy:9,dz:1,rot:0,color:0xf8bbd9},{type:'2x2',dx:1,dy:9,dz:1,rot:0,color:0xfce4ec},
-        {type:'2x2',dx:0,dy:12,dz:0,rot:0,color:0xfce4ec}
-      ],
-      
-      // ==================== NATURAL - PLANTS & FLOWERS ====================
-      bush: [
-        // Full rounded bush with layered foliage
-        {type:'2x2',dx:-1,dy:0,dz:-1,rot:0,color:0x1b5e20},{type:'2x2',dx:1,dy:0,dz:-1,rot:0,color:0x2e7d32},
-        {type:'2x2',dx:-1,dy:0,dz:1,rot:0,color:0x2e7d32},{type:'2x2',dx:1,dy:0,dz:1,rot:0,color:0x1b5e20},
-        {type:'2x2',dx:0,dy:0,dz:0,rot:0,color:0x388e3c},
-        {type:'2x2',dx:0,dy:3,dz:0,rot:0,color:0x43a047},
-        {type:'1x1',dx:-1,dy:3,dz:0,rot:0,color:0x4caf50},{type:'1x1',dx:2,dy:3,dz:0,rot:0,color:0x4caf50},
-        {type:'1x1',dx:0,dy:3,dz:-1,rot:0,color:0x4caf50},{type:'1x1',dx:0,dy:3,dz:2,rot:0,color:0x4caf50}
-      ],
-      bushBerry: [
-        // Berry bush with red berries
-        {type:'2x2',dx:0,dy:0,dz:0,rot:0,color:0x2e7d32},
-        {type:'1x1',dx:-1,dy:0,dz:0,rot:0,color:0x388e3c},{type:'1x1',dx:2,dy:0,dz:0,rot:0,color:0x388e3c},
-        {type:'1x1',dx:0,dy:0,dz:-1,rot:0,color:0x388e3c},{type:'1x1',dx:0,dy:0,dz:2,rot:0,color:0x388e3c},
-        {type:'2x2',dx:0,dy:3,dz:0,rot:0,color:0x43a047},
-        // Berries scattered
-        {type:'r1x1p',dx:-1,dy:1,dz:0,rot:0,color:0xc62828},{type:'r1x1p',dx:2,dy:2,dz:1,rot:0,color:0xd32f2f},
-        {type:'r1x1p',dx:0,dy:2,dz:-1,rot:0,color:0xe53935},{type:'r1x1p',dx:1,dy:1,dz:2,rot:0,color:0xc62828}
-      ],
-      flowerRed: [
-        // Rose bush with multiple blooms
-        {type:'1x1',dx:0,dy:0,dz:0,rot:0,color:0x2e7d32},{type:'1x1',dx:0,dy:3,dz:0,rot:0,color:0x388e3c},
-        {type:'r1x1',dx:0,dy:6,dz:0,rot:0,color:0xc62828},
-        {type:'r1x1p',dx:-1,dy:5,dz:0,rot:0,color:0xd32f2f},{type:'r1x1p',dx:1,dy:5,dz:0,rot:0,color:0xe53935},
-        {type:'r1x1p',dx:0,dy:5,dz:-1,rot:0,color:0xef5350},{type:'r1x1p',dx:0,dy:5,dz:1,rot:0,color:0xd32f2f},
-        {type:'1x1p',dx:-1,dy:3,dz:0,rot:0,color:0x43a047},{type:'1x1p',dx:1,dy:3,dz:0,rot:0,color:0x43a047}
-      ],
-      flowerYellow: [
-        // Sunflower - tall with big head
-        {type:'1x1',dx:0,dy:0,dz:0,rot:0,color:0x33691e},{type:'1x1',dx:0,dy:3,dz:0,rot:0,color:0x388e3c},
-        {type:'1x1',dx:0,dy:6,dz:0,rot:0,color:0x43a047},
-        // Flower head
-        {type:'r2x2',dx:-1,dy:9,dz:-1,rot:0,color:0xfdd835},
-        {type:'r1x1p',dx:0,dy:9,dz:0,rot:0,color:0x795548},
-        // Petals
-        {type:'1x1p',dx:-2,dy:8,dz:0,rot:0,color:0xffeb3b},{type:'1x1p',dx:2,dy:8,dz:0,rot:0,color:0xffeb3b},
-        {type:'1x1p',dx:0,dy:8,dz:-2,rot:0,color:0xffeb3b},{type:'1x1p',dx:0,dy:8,dz:2,rot:0,color:0xffeb3b},
-        // Leaves
-        {type:'1x2p',dx:-1,dy:4,dz:0,rot:90,color:0x4caf50},{type:'1x2p',dx:1,dy:5,dz:0,rot:90,color:0x4caf50}
-      ],
-      flowerPink: [
-        // Peony - lush pink bloom
-        {type:'1x1',dx:0,dy:0,dz:0,rot:0,color:0x2e7d32},{type:'1x1',dx:0,dy:3,dz:0,rot:0,color:0x388e3c},
-        {type:'r2x2',dx:-1,dy:6,dz:-1,rot:0,color:0xec407a},
-        {type:'r1x1',dx:0,dy:6,dz:0,rot:0,color:0xf48fb1},
-        {type:'r1x1p',dx:-1,dy:7,dz:0,rot:0,color:0xfce4ec},{type:'r1x1p',dx:1,dy:7,dz:0,rot:0,color:0xf8bbd9},
-        {type:'r1x1p',dx:0,dy:7,dz:-1,rot:0,color:0xf8bbd9},{type:'r1x1p',dx:0,dy:7,dz:1,rot:0,color:0xfce4ec},
-        {type:'1x2p',dx:-1,dy:2,dz:0,rot:90,color:0x43a047},{type:'1x2p',dx:0,dy:3,dz:-1,rot:0,color:0x43a047}
-      ],
-      flowerBlue: [
-        // Hydrangea - clustered blue flowers
-        {type:'1x2',dx:0,dy:0,dz:0,rot:0,color:0x33691e},{type:'1x1',dx:0,dy:3,dz:0,rot:0,color:0x388e3c},
-        {type:'2x2',dx:-1,dy:6,dz:-1,rot:0,color:0x1565c0},
-        {type:'1x1',dx:-2,dy:5,dz:0,rot:0,color:0x1976d2},{type:'1x1',dx:2,dy:5,dz:0,rot:0,color:0x1e88e5},
-        {type:'1x1',dx:0,dy:5,dz:-2,rot:0,color:0x1e88e5},{type:'1x1',dx:0,dy:5,dz:2,rot:0,color:0x1976d2},
-        {type:'r1x1p',dx:0,dy:8,dz:0,rot:0,color:0x42a5f5},{type:'r1x1p',dx:-1,dy:7,dz:-1,rot:0,color:0x64b5f6},
-        {type:'r1x1p',dx:1,dy:7,dz:1,rot:0,color:0x64b5f6},
-        {type:'1x2p',dx:-1,dy:2,dz:0,rot:90,color:0x43a047},{type:'1x2p',dx:1,dy:3,dz:0,rot:90,color:0x4caf50}
-      ],
-      flowerWhite: [
-        // Lily - elegant white flower
-        {type:'1x1',dx:0,dy:0,dz:0,rot:0,color:0x2e7d32},{type:'1x1',dx:0,dy:3,dz:0,rot:0,color:0x388e3c},
-        {type:'r1x1',dx:0,dy:6,dz:0,rot:0,color:0xfafafa},
-        {type:'1x1p',dx:-1,dy:5,dz:0,rot:0,color:0xffffff},{type:'1x1p',dx:1,dy:5,dz:0,rot:0,color:0xeeeeee},
-        {type:'1x1p',dx:0,dy:5,dz:-1,rot:0,color:0xeeeeee},{type:'1x1p',dx:0,dy:5,dz:1,rot:0,color:0xffffff},
-        {type:'r1x1p',dx:0,dy:7,dz:0,rot:0,color:0xffeb3b},
-        {type:'1x2p',dx:-1,dy:1,dz:0,rot:90,color:0x43a047}
-      ],
-      tulips: [
-        // Tulip garden - taller with proper tulip shapes
-        {type:'1x1',dx:0,dy:0,dz:0,rot:0,color:0x388e3c},{type:'1x1',dx:0,dy:3,dz:0,rot:0,color:0x43a047},
-        {type:'r1x1',dx:0,dy:6,dz:0,rot:0,color:0xc62828},{type:'r1x1p',dx:0,dy:7,dz:0,rot:0,color:0xe53935},
-        {type:'1x1',dx:2,dy:0,dz:0,rot:0,color:0x43a047},{type:'1x1',dx:2,dy:3,dz:0,rot:0,color:0x4caf50},
-        {type:'r1x1',dx:2,dy:6,dz:0,rot:0,color:0xfdd835},{type:'r1x1p',dx:2,dy:7,dz:0,rot:0,color:0xffeb3b},
-        {type:'1x1',dx:1,dy:0,dz:2,rot:0,color:0x388e3c},{type:'1x1',dx:1,dy:3,dz:2,rot:0,color:0x43a047},
-        {type:'r1x1',dx:1,dy:6,dz:2,rot:0,color:0x7b1fa2},{type:'r1x1p',dx:1,dy:7,dz:2,rot:0,color:0x9c27b0},
-        {type:'1x1',dx:3,dy:0,dz:1,rot:0,color:0x43a047},{type:'1x1',dx:3,dy:3,dz:1,rot:0,color:0x4caf50},
-        {type:'r1x1',dx:3,dy:6,dz:1,rot:0,color:0xf48fb1},{type:'r1x1p',dx:3,dy:7,dz:1,rot:0,color:0xf8bbd9}
-      ],
-      tallGrass: [
-        // Realistic grass clump with varying heights
-        {type:'1x1p',dx:0,dy:0,dz:0,rot:0,color:0x558b2f},{type:'1x1p',dx:0,dy:1,dz:0,rot:0,color:0x689f38},
-        {type:'1x1p',dx:0,dy:2,dz:0,rot:0,color:0x7cb342},
-        {type:'1x1p',dx:1,dy:0,dz:0,rot:0,color:0x689f38},{type:'1x1p',dx:1,dy:1,dz:0,rot:0,color:0x7cb342},
-        {type:'1x1p',dx:2,dy:0,dz:0,rot:0,color:0x7cb342},{type:'1x1p',dx:2,dy:1,dz:0,rot:0,color:0x8bc34a},
-        {type:'1x1p',dx:2,dy:2,dz:0,rot:0,color:0x9ccc65},{type:'1x1p',dx:2,dy:3,dz:0,rot:0,color:0xaed581},
-        {type:'1x1p',dx:0,dy:0,dz:1,rot:0,color:0x7cb342},{type:'1x1p',dx:0,dy:1,dz:1,rot:0,color:0x8bc34a},
-        {type:'1x1p',dx:0,dy:2,dz:1,rot:0,color:0x9ccc65},
-        {type:'1x1p',dx:1,dy:0,dz:1,rot:0,color:0x8bc34a},{type:'1x1p',dx:1,dy:1,dz:1,rot:0,color:0x9ccc65},
-        {type:'1x1p',dx:1,dy:2,dz:1,rot:0,color:0xaed581},{type:'1x1p',dx:1,dy:3,dz:1,rot:0,color:0xc5e1a5}
-      ],
-      fern: [
-        // Fern with fronds spreading outward
-        {type:'r1x1',dx:0,dy:0,dz:0,rot:0,color:0x33691e},
-        {type:'1x3p',dx:0,dy:1,dz:-1,rot:0,color:0x388e3c},{type:'1x3p',dx:0,dy:1,dz:1,rot:0,color:0x43a047},
-        {type:'1x3p',dx:-1,dy:1,dz:0,rot:90,color:0x43a047},{type:'1x3p',dx:1,dy:1,dz:0,rot:90,color:0x388e3c},
-        {type:'1x2p',dx:-1,dy:2,dz:-1,rot:0,color:0x4caf50},{type:'1x2p',dx:1,dy:2,dz:1,rot:0,color:0x4caf50},
-        {type:'1x2p',dx:-1,dy:2,dz:1,rot:90,color:0x66bb6a},{type:'1x2p',dx:1,dy:2,dz:-1,rot:90,color:0x66bb6a}
-      ],
-      cactus: [
-        // Saguaro cactus with arms
-        {type:'r1x1',dx:0,dy:0,dz:0,rot:0,color:0x1b5e20},{type:'r1x1',dx:0,dy:3,dz:0,rot:0,color:0x2e7d32},
-        {type:'r1x1',dx:0,dy:6,dz:0,rot:0,color:0x388e3c},{type:'r1x1',dx:0,dy:9,dz:0,rot:0,color:0x43a047},
-        {type:'r1x1',dx:0,dy:12,dz:0,rot:0,color:0x4caf50},
-        // Left arm
-        {type:'1x1',dx:-1,dy:6,dz:0,rot:0,color:0x388e3c},
-        {type:'r1x1',dx:-2,dy:6,dz:0,rot:0,color:0x43a047},{type:'r1x1',dx:-2,dy:9,dz:0,rot:0,color:0x4caf50},
-        // Right arm
-        {type:'1x1',dx:1,dy:9,dz:0,rot:0,color:0x43a047},
-        {type:'r1x1',dx:2,dy:9,dz:0,rot:0,color:0x4caf50},{type:'r1x1',dx:2,dy:12,dz:0,rot:0,color:0x66bb6a},
-        // Flower on top
-        {type:'r1x1p',dx:0,dy:13,dz:0,rot:0,color:0xffeb3b}
-      ],
-      cactusSmall: [
-        // Small barrel cactus
-        {type:'r2x2',dx:0,dy:0,dz:0,rot:0,color:0x2e7d32},
-        {type:'r2x2p',dx:0,dy:3,dz:0,rot:0,color:0x388e3c},
-        {type:'r1x1p',dx:0,dy:4,dz:0,rot:0,color:0xe91e63}
-      ],
-      mushroom: [
-        // Red spotted mushroom (Amanita style)
-        {type:'r1x1',dx:0,dy:0,dz:0,rot:0,color:0xefebe9},{type:'r1x1',dx:0,dy:3,dz:0,rot:0,color:0xfafafa},
-        {type:'r2x2',dx:-1,dy:6,dz:-1,rot:0,color:0xc62828},
-        {type:'r2x2p',dx:-1,dy:7,dz:-1,rot:0,color:0xd32f2f},
-        // White spots
-        {type:'r1x1p',dx:-1,dy:7,dz:-1,rot:0,color:0xffffff},{type:'r1x1p',dx:1,dy:7,dz:0,rot:0,color:0xfafafa},
-        {type:'r1x1p',dx:0,dy:7,dz:1,rot:0,color:0xffffff}
-      ],
-      mushroomBrown: [
-        // Porcini-style mushroom
-        {type:'r1x1',dx:0,dy:0,dz:0,rot:0,color:0xd7ccc8},{type:'r1x1',dx:0,dy:3,dz:0,rot:0,color:0xefebe9},
-        {type:'r2x2',dx:-1,dy:6,dz:-1,rot:0,color:0x5d4037},
-        {type:'r2x2p',dx:-1,dy:7,dz:-1,rot:0,color:0x6d4c41},
-        {type:'r1x1p',dx:0,dy:8,dz:0,rot:0,color:0x795548}
-      ],
-      mushroomCluster: [
-        // Cluster of small mushrooms
-        {type:'r1x1',dx:0,dy:0,dz:0,rot:0,color:0xefebe9},{type:'r1x1p',dx:0,dy:3,dz:0,rot:0,color:0xbcaaa4},
-        {type:'r1x1',dx:2,dy:0,dz:1,rot:0,color:0xfafafa},{type:'r1x1p',dx:2,dy:2,dz:1,rot:0,color:0xa1887f},
-        {type:'r1x1p',dx:1,dy:0,dz:2,rot:0,color:0xefebe9},{type:'r1x1p',dx:1,dy:1,dz:2,rot:0,color:0x8d6e63},
-        {type:'r1x1p',dx:3,dy:0,dz:0,rot:0,color:0xd7ccc8},{type:'r1x1p',dx:3,dy:1,dz:0,rot:0,color:0x795548}
-      ],
-      lilyPad: [
-        // Lily pad with water lily flower
-        {type:'r4x4p',dx:-1,dy:0,dz:-1,rot:0,color:0x2e7d32},
-        {type:'r2x2p',dx:0,dy:0,dz:0,rot:0,color:0x388e3c},
-        // Lily flower
-        {type:'r1x1',dx:0,dy:1,dz:0,rot:0,color:0xf8bbd9},
-        {type:'1x1p',dx:-1,dy:1,dz:0,rot:0,color:0xfce4ec},{type:'1x1p',dx:1,dy:1,dz:0,rot:0,color:0xfce4ec},
-        {type:'1x1p',dx:0,dy:1,dz:-1,rot:0,color:0xfce4ec},{type:'1x1p',dx:0,dy:1,dz:1,rot:0,color:0xfce4ec},
-        {type:'r1x1p',dx:0,dy:2,dz:0,rot:0,color:0xffeb3b}
-      ],
-      reeds: [
-        // Cattail reeds
-        {type:'1x1p',dx:0,dy:0,dz:0,rot:0,color:0x558b2f},{type:'1x1p',dx:0,dy:1,dz:0,rot:0,color:0x689f38},
-        {type:'1x1p',dx:0,dy:2,dz:0,rot:0,color:0x7cb342},{type:'1x1p',dx:0,dy:3,dz:0,rot:0,color:0x8bc34a},
-        {type:'r1x1',dx:0,dy:4,dz:0,rot:0,color:0x5d4037},{type:'1x1p',dx:0,dy:5,dz:0,rot:0,color:0x9ccc65},
-        {type:'1x1p',dx:1,dy:0,dz:0,rot:0,color:0x689f38},{type:'1x1p',dx:1,dy:1,dz:0,rot:0,color:0x7cb342},
-        {type:'1x1p',dx:1,dy:2,dz:0,rot:0,color:0x8bc34a},{type:'r1x1',dx:1,dy:3,dz:0,rot:0,color:0x6d4c41},
-        {type:'1x1p',dx:2,dy:0,dz:1,rot:0,color:0x7cb342},{type:'1x1p',dx:2,dy:1,dz:1,rot:0,color:0x8bc34a},
-        {type:'1x1p',dx:2,dy:2,dz:1,rot:0,color:0x9ccc65},{type:'1x1p',dx:2,dy:3,dz:1,rot:0,color:0xaed581},
-        {type:'r1x1',dx:2,dy:4,dz:1,rot:0,color:0x5d4037}
-      ],
-      vine: [
-        // Hanging vine
-        {type:'1x1p',dx:0,dy:0,dz:0,rot:0,color:0x1b5e20},
-        {type:'1x1p',dx:0,dy:-1,dz:0,rot:0,color:0x2e7d32},{type:'1x1p',dx:1,dy:-1,dz:0,rot:0,color:0x388e3c},
-        {type:'1x1p',dx:0,dy:-2,dz:0,rot:0,color:0x388e3c},{type:'1x1p',dx:1,dy:-2,dz:1,rot:0,color:0x43a047},
-        {type:'1x1p',dx:0,dy:-3,dz:1,rot:0,color:0x43a047},{type:'1x1p',dx:0,dy:-4,dz:1,rot:0,color:0x4caf50},
-        {type:'1x1p',dx:1,dy:-3,dz:0,rot:0,color:0x4caf50},{type:'1x1p',dx:1,dy:-4,dz:0,rot:0,color:0x66bb6a},
-        {type:'1x1p',dx:0,dy:-5,dz:0,rot:0,color:0x66bb6a}
-      ],
-      
-      // ==================== NATURAL - ROCKS & TERRAIN ====================
-      rock: [
-        {type:'2x2',dx:0,dy:0,dz:0,rot:0,color:0x757575},
-        {type:'1x1',dx:-1,dy:0,dz:0,rot:0,color:0x616161},{type:'1x1',dx:2,dy:0,dz:1,rot:0,color:0x9e9e9e}
-      ],
-      boulder: [
-        {type:'2x4',dx:0,dy:0,dz:0,rot:0,color:0x616161},
-        {type:'2x2',dx:0,dy:0,dz:2,rot:0,color:0x757575},{type:'2x2',dx:2,dy:0,dz:2,rot:0,color:0x9e9e9e},
-        {type:'2x2',dx:1,dy:3,dz:1,rot:0,color:0x757575}
-      ],
-      stump: [
-        {type:'r2x2',dx:0,dy:0,dz:0,rot:0,color:0x5d4037},
-        {type:'r2x2p',dx:0,dy:3,dz:0,rot:0,color:0x8d6e63}
-      ],
-      log: [
-        {type:'r2x2',dx:0,dy:0,dz:0,rot:0,color:0x5d4037},{type:'r2x2',dx:0,dy:0,dz:2,rot:0,color:0x5d4037},{type:'r2x2',dx:0,dy:0,dz:4,rot:0,color:0x5d4037}
-      ],
-      
-      // ==================== DOMESTIC - FURNITURE ====================
-      chair: [
-        // Seat
-        {type:'2x2p',dx:0,dy:3,dz:0,rot:0,color:0x8d6e63},
-        // Legs
-        {type:'1x1',dx:0,dy:0,dz:0,rot:0,color:0x5d4037},{type:'1x1',dx:1,dy:0,dz:0,rot:0,color:0x5d4037},
-        {type:'1x1',dx:0,dy:0,dz:1,rot:0,color:0x5d4037},{type:'1x1',dx:1,dy:0,dz:1,rot:0,color:0x5d4037},
-        // Back
-        {type:'1x2',dx:0,dy:4,dz:0,rot:90,color:0x8d6e63},{type:'1x2',dx:0,dy:7,dz:0,rot:90,color:0x8d6e63}
-      ],
-      table: [
-        // Top
-        {type:'4x4p',dx:0,dy:6,dz:0,rot:0,color:0x8d6e63},
-        // Legs
-        {type:'1x1',dx:0,dy:0,dz:0,rot:0,color:0x5d4037},{type:'1x1',dx:0,dy:3,dz:0,rot:0,color:0x5d4037},
-        {type:'1x1',dx:3,dy:0,dz:0,rot:0,color:0x5d4037},{type:'1x1',dx:3,dy:3,dz:0,rot:0,color:0x5d4037},
-        {type:'1x1',dx:0,dy:0,dz:3,rot:0,color:0x5d4037},{type:'1x1',dx:0,dy:3,dz:3,rot:0,color:0x5d4037},
-        {type:'1x1',dx:3,dy:0,dz:3,rot:0,color:0x5d4037},{type:'1x1',dx:3,dy:3,dz:3,rot:0,color:0x5d4037}
-      ],
-      coffeeTable: [
-        {type:'4x4p',dx:0,dy:3,dz:0,rot:0,color:0x6d4c41},
-        {type:'1x1',dx:0,dy:0,dz:0,rot:0,color:0x5d4037},{type:'1x1',dx:3,dy:0,dz:0,rot:0,color:0x5d4037},
-        {type:'1x1',dx:0,dy:0,dz:3,rot:0,color:0x5d4037},{type:'1x1',dx:3,dy:0,dz:3,rot:0,color:0x5d4037}
-      ],
-      sofa: [
-        // Base/seat cushion
-        {type:'2x6',dx:0,dy:0,dz:0,rot:0,color:0x1565c0},{type:'2x6',dx:0,dy:3,dz:0,rot:0,color:0x1976d2},
-        // Back
-        {type:'2x6',dx:0,dy:6,dz:0,rot:0,color:0x1976d2},{type:'2x6',dx:0,dy:9,dz:0,rot:0,color:0x1e88e5},
-        // Arms
-        {type:'2x2',dx:0,dy:0,dz:2,rot:0,color:0x1565c0},{type:'2x2',dx:0,dy:3,dz:2,rot:0,color:0x1976d2},
-        {type:'2x2',dx:4,dy:0,dz:2,rot:0,color:0x1565c0},{type:'2x2',dx:4,dy:3,dz:2,rot:0,color:0x1976d2}
-      ],
-      bed: [
-        // Mattress
-        {type:'4x6',dx:0,dy:3,dz:0,rot:0,color:0xffffff},
-        // Frame
-        {type:'2x6',dx:-1,dy:0,dz:0,rot:0,color:0x5d4037},{type:'2x6',dx:4,dy:0,dz:0,rot:0,color:0x5d4037},
-        {type:'2x4',dx:0,dy:0,dz:-1,rot:90,color:0x5d4037},{type:'2x4',dx:0,dy:0,dz:6,rot:90,color:0x5d4037},
-        // Headboard
-        {type:'2x4',dx:0,dy:6,dz:-1,rot:90,color:0x6d4c41},{type:'2x4',dx:0,dy:9,dz:-1,rot:90,color:0x6d4c41},
-        // Pillow
-        {type:'2x2p',dx:1,dy:4,dz:0,rot:0,color:0xe3f2fd}
-      ],
-      desk: [
-        // Desktop
-        {type:'2x6',dx:0,dy:6,dz:0,rot:0,color:0x8d6e63},{type:'2x6',dx:0,dy:6,dz:2,rot:0,color:0x8d6e63},
-        // Legs
-        {type:'1x2',dx:0,dy:0,dz:0,rot:0,color:0x5d4037},{type:'1x2',dx:0,dy:3,dz:0,rot:0,color:0x5d4037},
-        {type:'1x2',dx:5,dy:0,dz:0,rot:0,color:0x5d4037},{type:'1x2',dx:5,dy:3,dz:0,rot:0,color:0x5d4037},
-        {type:'1x2',dx:0,dy:0,dz:3,rot:0,color:0x5d4037},{type:'1x2',dx:0,dy:3,dz:3,rot:0,color:0x5d4037},
-        {type:'1x2',dx:5,dy:0,dz:3,rot:0,color:0x5d4037},{type:'1x2',dx:5,dy:3,dz:3,rot:0,color:0x5d4037}
-      ],
-      bookshelf: [
-        // Frame
-        {type:'1x4',dx:0,dy:0,dz:0,rot:0,color:0x5d4037},{type:'1x4',dx:0,dy:3,dz:0,rot:0,color:0x5d4037},{type:'1x4',dx:0,dy:6,dz:0,rot:0,color:0x5d4037},{type:'1x4',dx:0,dy:9,dz:0,rot:0,color:0x5d4037},{type:'1x4',dx:0,dy:12,dz:0,rot:0,color:0x5d4037},
-        {type:'1x4',dx:5,dy:0,dz:0,rot:0,color:0x5d4037},{type:'1x4',dx:5,dy:3,dz:0,rot:0,color:0x5d4037},{type:'1x4',dx:5,dy:6,dz:0,rot:0,color:0x5d4037},{type:'1x4',dx:5,dy:9,dz:0,rot:0,color:0x5d4037},{type:'1x4',dx:5,dy:12,dz:0,rot:0,color:0x5d4037},
-        // Shelves
-        {type:'2x4',dx:1,dy:0,dz:0,rot:90,color:0x6d4c41},{type:'2x4',dx:1,dy:5,dz:0,rot:90,color:0x6d4c41},{type:'2x4',dx:1,dy:10,dz:0,rot:90,color:0x6d4c41},
-        // Books
-        {type:'1x1',dx:1,dy:1,dz:0,rot:0,color:0xe53935},{type:'1x1',dx:2,dy:1,dz:0,rot:0,color:0x1e88e5},{type:'1x1',dx:3,dy:1,dz:0,rot:0,color:0x43a047},{type:'1x1',dx:4,dy:1,dz:0,rot:0,color:0xfdd835},
-        {type:'1x1',dx:1,dy:6,dz:0,rot:0,color:0x8e24aa},{type:'1x1',dx:2,dy:6,dz:0,rot:0,color:0xff9800},{type:'1x1',dx:3,dy:6,dz:0,rot:0,color:0x00bcd4}
-      ],
-      lamp: [
-        // Base
-        {type:'r2x2p',dx:0,dy:0,dz:0,rot:0,color:0x212121},
-        // Pole
-        {type:'r1x1',dx:0,dy:1,dz:0,rot:0,color:0x424242},{type:'r1x1',dx:0,dy:4,dz:0,rot:0,color:0x424242},
-        // Shade
-        {type:'r2x2',dx:-1,dy:7,dz:-1,rot:0,color:0xfff9c4}
-      ],
-      floorLamp: [
-        {type:'r2x2p',dx:0,dy:0,dz:0,rot:0,color:0x212121},
-        {type:'r1x1',dx:0,dy:1,dz:0,rot:0,color:0x424242},{type:'r1x1',dx:0,dy:4,dz:0,rot:0,color:0x424242},{type:'r1x1',dx:0,dy:7,dz:0,rot:0,color:0x424242},{type:'r1x1',dx:0,dy:10,dz:0,rot:0,color:0x424242},
-        {type:'2x2',dx:-1,dy:13,dz:-1,rot:0,color:0xfff9c4}
-      ],
-      
-      // ==================== DOMESTIC - RUGS & DECOR ====================
-      rugSmall: [
-        {type:'4x4t',dx:0,dy:0,dz:0,rot:0,color:0xb71c1c},
-        {type:'2x2t',dx:1,dy:0,dz:1,rot:0,color:0xffeb3b}
-      ],
-      rugLarge: [
-        {type:'4x6t',dx:0,dy:0,dz:0,rot:0,color:0x1a237e},
-        {type:'2x4t',dx:1,dy:0,dz:1,rot:0,color:0xc5cae9},
-        {type:'2x2t',dx:2,dy:0,dz:2,rot:0,color:0xffc107}
-      ],
-      rugRound: [
-        {type:'r4x4p',dx:0,dy:0,dz:0,rot:0,color:0x4a148c},
-        {type:'r2x2p',dx:0,dy:0,dz:0,rot:0,color:0x7b1fa2}
-      ],
-      potPlant: [
-        {type:'r2x2',dx:0,dy:0,dz:0,rot:0,color:0x795548},
-        {type:'1x1',dx:0,dy:3,dz:0,rot:0,color:0x33691e},{type:'1x1',dx:0,dy:6,dz:0,rot:0,color:0x43a047},
-        {type:'1x1',dx:-1,dy:4,dz:0,rot:0,color:0x388e3c},{type:'1x1',dx:1,dy:5,dz:0,rot:0,color:0x2e7d32}
-      ],
-      vase: [
-        {type:'r1x1',dx:0,dy:0,dz:0,rot:0,color:0x00838f},{type:'r1x1',dx:0,dy:3,dz:0,rot:0,color:0x0097a7},
-        {type:'r1x1p',dx:-1,dy:4,dz:0,rot:0,color:0xe91e63},{type:'r1x1p',dx:1,dy:5,dz:0,rot:0,color:0xffc107},{type:'r1x1p',dx:0,dy:4,dz:1,rot:0,color:0x8e24aa}
-      ],
-      painting: [
-        {type:'4x4t',dx:0,dy:0,dz:0,rot:0,color:0x8d6e63},
-        {type:'2x2t',dx:1,dy:0,dz:0,rot:0,color:0x64b5f6},
-        {type:'1x1t',dx:1,dy:0,dz:0,rot:0,color:0xfdd835},{type:'1x1t',dx:2,dy:0,dz:0,rot:0,color:0x81c784}
-      ],
-      clock: [
-        {type:'r2x2',dx:0,dy:0,dz:0,rot:0,color:0x5d4037},
-        {type:'r1x1p',dx:0,dy:0,dz:0,rot:0,color:0xffffff}
-      ],
-      
-      // ==================== DOMESTIC - KITCHEN ====================
-      fridge: [
-        {type:'2x2',dx:0,dy:0,dz:0,rot:0,color:0xeceff1},{type:'2x2',dx:0,dy:3,dz:0,rot:0,color:0xeceff1},
-        {type:'2x2',dx:0,dy:6,dz:0,rot:0,color:0xcfd8dc},{type:'2x2',dx:0,dy:9,dz:0,rot:0,color:0xcfd8dc},
-        {type:'2x2',dx:0,dy:12,dz:0,rot:0,color:0xb0bec5},{type:'2x2p',dx:0,dy:15,dz:0,rot:0,color:0xb0bec5},
-        {type:'1x1p',dx:1,dy:8,dz:-1,rot:0,color:0x424242}
-      ],
-      stove: [
-        {type:'2x4',dx:0,dy:0,dz:0,rot:0,color:0x37474f},{type:'2x4',dx:0,dy:3,dz:0,rot:0,color:0x455a64},
-        {type:'2x4t',dx:0,dy:6,dz:0,rot:0,color:0x263238},
-        {type:'r1x1p',dx:0,dy:6,dz:1,rot:0,color:0x212121},{type:'r1x1p',dx:1,dy:6,dz:1,rot:0,color:0x212121},
-        {type:'r1x1p',dx:0,dy:6,dz:2,rot:0,color:0x212121},{type:'r1x1p',dx:1,dy:6,dz:2,rot:0,color:0x212121}
-      ],
-      sink: [
-        {type:'2x4',dx:0,dy:0,dz:0,rot:0,color:0x455a64},{type:'2x4',dx:0,dy:3,dz:0,rot:0,color:0x546e7a},
-        {type:'2x2t',dx:0,dy:6,dz:1,rot:0,color:0x78909c},
-        {type:'1x1',dx:0,dy:6,dz:0,rot:0,color:0xb0bec5}
-      ],
-      counter: [
-        {type:'2x4',dx:0,dy:0,dz:0,rot:0,color:0x5d4037},{type:'2x4',dx:0,dy:3,dz:0,rot:0,color:0x6d4c41},
-        {type:'2x4t',dx:0,dy:6,dz:0,rot:0,color:0x8d6e63}
-      ],
-      
-      // ==================== DOMESTIC - BATHROOM ====================
-      toilet: [
-        {type:'2x2',dx:0,dy:0,dz:0,rot:0,color:0xfafafa},
-        {type:'1x2',dx:0,dy:3,dz:0,rot:0,color:0xfafafa},{type:'1x2p',dx:0,dy:6,dz:0,rot:0,color:0xeeeeee},
-        {type:'1x2',dx:0,dy:0,dz:2,rot:0,color:0xfafafa},{type:'1x2',dx:0,dy:3,dz:2,rot:0,color:0xfafafa}
-      ],
-      bathtub: [
-        {type:'2x6',dx:0,dy:0,dz:0,rot:0,color:0xfafafa},{type:'2x6',dx:0,dy:3,dz:0,rot:0,color:0xfafafa},
-        {type:'1x6',dx:0,dy:0,dz:2,rot:0,color:0xeceff1},{type:'1x6',dx:1,dy:0,dz:2,rot:0,color:0xeceff1},
-        {type:'2x2t',dx:0,dy:3,dz:1,rot:0,color:0xb3e5fc}
-      ],
-      
-      // ==================== VEHICLES ====================
-      car: [
-        // Chassis/undercarriage (sits between wheels)
-        {type:'2x4',dx:0,dy:1,dz:0,rot:0,color:0x424242},
-        // Body
-        {type:'2x4',dx:0,dy:4,dz:0,rot:0,color:0xe53935},
-        // Hood
-        {type:'2x2p',dx:0,dy:7,dz:0,rot:0,color:0xe53935},
-        // Cabin
-        {type:'2x2',dx:0,dy:7,dz:2,rot:0,color:0xe53935},
-        // Roof
-        {type:'2x2p',dx:0,dy:10,dz:2,rot:0,color:0xe53935},
-        // Windshield
-        {type:'1x2t',dx:0,dy:10,dz:1,rot:90,color:0x90caf9},
-        // Wheels (round plates as tires)
-        {type:'r1x1',dx:-1,dy:0,dz:0,rot:0,color:0x212121},{type:'r1x1',dx:2,dy:0,dz:0,rot:0,color:0x212121},
-        {type:'r1x1',dx:-1,dy:0,dz:3,rot:0,color:0x212121},{type:'r1x1',dx:2,dy:0,dz:3,rot:0,color:0x212121},
-        // Headlights
-        {type:'1x1p',dx:0,dy:7,dz:-1,rot:0,color:0xffeb3b},{type:'1x1p',dx:1,dy:7,dz:-1,rot:0,color:0xffeb3b}
-      ],
-      truck: [
-        // Chassis
-        {type:'2x6',dx:0,dy:1,dz:0,rot:0,color:0x424242},
-        // Cab base
-        {type:'2x2',dx:0,dy:4,dz:0,rot:0,color:0x1565c0},
-        // Cab top
-        {type:'2x2',dx:0,dy:7,dz:0,rot:0,color:0x1565c0},
-        // Cab roof
-        {type:'2x2p',dx:0,dy:10,dz:0,rot:0,color:0x1565c0},
-        // Windshield
-        {type:'1x2t',dx:0,dy:10,dz:-1,rot:90,color:0x90caf9},
-        // Truck bed floor
-        {type:'2x4p',dx:0,dy:4,dz:2,rot:0,color:0x37474f},
-        // Truck bed sides
-        {type:'1x4',dx:-1,dy:4,dz:2,rot:0,color:0x1565c0},{type:'1x4',dx:2,dy:4,dz:2,rot:0,color:0x1565c0},
-        // Truck bed back
-        {type:'2x2',dx:0,dy:4,dz:6,rot:90,color:0x1565c0},
-        // Wheels
-        {type:'r1x1',dx:-1,dy:0,dz:0,rot:0,color:0x212121},{type:'r1x1',dx:2,dy:0,dz:0,rot:0,color:0x212121},
-        {type:'r1x1',dx:-1,dy:0,dz:5,rot:0,color:0x212121},{type:'r1x1',dx:2,dy:0,dz:5,rot:0,color:0x212121},
-        // Headlights
-        {type:'1x1p',dx:0,dy:7,dz:-1,rot:0,color:0xffeb3b},{type:'1x1p',dx:1,dy:7,dz:-1,rot:0,color:0xffeb3b}
-      ],
-      boat: [
-        // Hull bottom
-        {type:'2x6',dx:0,dy:0,dz:0,rot:0,color:0x5d4037},
-        // Hull sides
-        {type:'1x6',dx:-1,dy:0,dz:0,rot:0,color:0x6d4c41},{type:'1x6',dx:2,dy:0,dz:0,rot:0,color:0x6d4c41},
-        {type:'1x6',dx:-1,dy:3,dz:0,rot:0,color:0x6d4c41},{type:'1x6',dx:2,dy:3,dz:0,rot:0,color:0x6d4c41},
-        // Bow (front pointed)
-        {type:'1x2',dx:0,dy:0,dz:-1,rot:0,color:0x5d4037},{type:'1x2',dx:0,dy:3,dz:-1,rot:0,color:0x6d4c41},
-        // Stern (back)
-        {type:'2x2',dx:0,dy:0,dz:6,rot:0,color:0x5d4037},{type:'2x2',dx:0,dy:3,dz:6,rot:0,color:0x6d4c41},
-        // Deck
-        {type:'2x4t',dx:0,dy:6,dz:1,rot:0,color:0x8d6e63},
-        // Mast base
-        {type:'r1x1',dx:0,dy:6,dz:2,rot:0,color:0x4e342e},{type:'r1x1',dx:0,dy:9,dz:2,rot:0,color:0x4e342e},
-        {type:'r1x1',dx:0,dy:12,dz:2,rot:0,color:0x4e342e},{type:'r1x1',dx:0,dy:15,dz:2,rot:0,color:0x4e342e},
-        // Sail
-        {type:'2x4t',dx:1,dy:9,dz:1,rot:0,color:0xfafafa},{type:'2x4t',dx:1,dy:12,dz:1,rot:0,color:0xfafafa}
-      ],
-      
-      // ==================== VEHICLES - FUN BUILDS ====================
-      rocket: [
-        // Engine base
-        {type:'r2x2',dx:0,dy:0,dz:0,rot:0,color:0x424242},
-        // Exhaust nozzle
-        {type:'r1x1',dx:0,dy:-1,dz:0,rot:0,color:0xff5722},
-        // Main body (silver)
-        {type:'r2x2',dx:0,dy:3,dz:0,rot:0,color:0xb0bec5},
-        {type:'r2x2',dx:0,dy:6,dz:0,rot:0,color:0xcfd8dc},
-        {type:'r2x2',dx:0,dy:9,dz:0,rot:0,color:0xb0bec5},
-        {type:'r2x2',dx:0,dy:12,dz:0,rot:0,color:0xcfd8dc},
-        // Red stripe
-        {type:'r2x2',dx:0,dy:15,dz:0,rot:0,color:0xe53935},
-        {type:'r2x2',dx:0,dy:18,dz:0,rot:0,color:0xef5350},
-        // Nose cone
-        {type:'r2x2',dx:0,dy:21,dz:0,rot:0,color:0xb0bec5},
-        {type:'r1x1',dx:0,dy:24,dz:0,rot:0,color:0xcfd8dc},
-        {type:'r1x1p',dx:0,dy:27,dz:0,rot:0,color:0xff5722},
-        // Fins
-        {type:'slope2',dx:-2,dy:0,dz:0,rot:270,color:0xe53935},
-        {type:'slope2',dx:2,dy:0,dz:0,rot:90,color:0xe53935},
-        {type:'slope2',dx:0,dy:0,dz:-2,rot:0,color:0xe53935},
-        {type:'slope2',dx:0,dy:0,dz:2,rot:180,color:0xe53935},
-        // Windows
-        {type:'r1x1p',dx:0,dy:10,dz:1,rot:0,color:0x42a5f5},
-        {type:'r1x1p',dx:0,dy:13,dz:1,rot:0,color:0x42a5f5}
-      ],
-      castleTower: [
-        // Base foundation
-        {type:'4x4',dx:0,dy:0,dz:0,rot:0,color:0x757575},
-        // Tower body
-        {type:'4x4',dx:0,dy:3,dz:0,rot:0,color:0x9e9e9e},
-        {type:'4x4',dx:0,dy:6,dz:0,rot:0,color:0x9e9e9e},
-        {type:'4x4',dx:0,dy:9,dz:0,rot:0,color:0xbdbdbd},
-        {type:'4x4',dx:0,dy:12,dz:0,rot:0,color:0x9e9e9e},
-        {type:'4x4',dx:0,dy:15,dz:0,rot:0,color:0xbdbdbd},
-        {type:'4x4',dx:0,dy:18,dz:0,rot:0,color:0x9e9e9e},
-        {type:'4x4',dx:0,dy:21,dz:0,rot:0,color:0xbdbdbd},
-        {type:'4x4',dx:0,dy:24,dz:0,rot:0,color:0x9e9e9e},
-        // Window slits
-        {type:'1x1t',dx:1,dy:9,dz:-1,rot:0,color:0x424242},
-        {type:'1x1t',dx:2,dy:15,dz:-1,rot:0,color:0x424242},
-        {type:'1x1t',dx:1,dy:21,dz:-1,rot:0,color:0x424242},
-        // Battlements (crenellations)
-        {type:'2x2',dx:0,dy:27,dz:0,rot:0,color:0x757575},
-        {type:'2x2',dx:2,dy:27,dz:2,rot:0,color:0x757575},
-        {type:'1x1',dx:0,dy:27,dz:3,rot:0,color:0x616161},
-        {type:'1x1',dx:3,dy:27,dz:0,rot:0,color:0x616161},
-        // Flag pole
-        {type:'r1x1',dx:1,dy:30,dz:1,rot:0,color:0x5d4037},
-        {type:'r1x1',dx:1,dy:33,dz:1,rot:0,color:0x5d4037},
-        // Flag
-        {type:'1x2p',dx:2,dy:33,dz:1,rot:90,color:0xe53935},
-        {type:'1x2p',dx:2,dy:34,dz:1,rot:90,color:0xfdd835}
-      ],
-      airplane: [
-        // Fuselage
-        {type:'r2x2',dx:0,dy:0,dz:0,rot:0,color:0xfafafa},
-        {type:'r2x2',dx:0,dy:0,dz:2,rot:0,color:0xfafafa},
-        {type:'r2x2',dx:0,dy:0,dz:4,rot:0,color:0xfafafa},
-        {type:'r2x2',dx:0,dy:0,dz:6,rot:0,color:0xfafafa},
-        // Nose
-        {type:'r1x1',dx:0,dy:0,dz:-1,rot:0,color:0x42a5f5},
-        // Cockpit windows
-        {type:'1x2t',dx:0,dy:1,dz:0,rot:0,color:0x90caf9},
-        // Wings
-        {type:'2x6',dx:-4,dy:0,dz:2,rot:0,color:0xfafafa},
-        {type:'2x6',dx:2,dy:0,dz:2,rot:0,color:0xfafafa},
-        // Tail fin
-        {type:'1x2',dx:0,dy:3,dz:6,rot:0,color:0xe53935},
-        {type:'1x1p',dx:0,dy:6,dz:7,rot:0,color:0xe53935},
-        // Horizontal stabilizers
-        {type:'1x3',dx:-2,dy:0,dz:6,rot:0,color:0xfafafa},
-        {type:'1x3',dx:1,dy:0,dz:6,rot:0,color:0xfafafa},
-        // Engine (under wing)
-        {type:'r1x1',dx:-2,dy:-1,dz:3,rot:0,color:0x757575},
-        {type:'r1x1',dx:2,dy:-1,dz:3,rot:0,color:0x757575}
-      ]
-    };
-    
+    const prefabs = {};
+    let prefabsReady = null;
+    function ensurePrefabs() {
+      if (!prefabsReady) {
+        prefabsReady = import('./prefabs.js').then((mod) => {
+          const src = mod.prefabs || {};
+          for (const key of Object.keys(src)) {
+            if (!Object.prototype.hasOwnProperty.call(prefabs, key)) prefabs[key] = src[key];
+          }
+          return prefabs;
+        });
+      }
+      return prefabsReady;
+    }
+
     // ==================== BRICK TYPES ====================
     const types = {
       // Standard bricks
@@ -1110,6 +489,8 @@
     let pmremGenerator = null;
     const _noonWhite = new THREE.Color(0xffffff);
     
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
     function isMobileGfx() {
       const ua = navigator.userAgent || '';
       const touch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
@@ -1469,6 +850,7 @@
       const hemi = new THREE.HemisphereLight(0xd7ecff, 0x6d9460, 0.8);
       hemi.name = 'hemi';
       scene.add(hemi);
+      await yieldTick();
       
       initBrickLightPool();
       setupPostProcessing();
@@ -1484,11 +866,13 @@
       
       // Rain and snow buffers wait until a weather button asks for them.
       
+      await yieldTick();
       createInfiniteGround();
       await yieldTick();
       setupEvents();
       await yieldTick();
       animate();
+      setTimeout(() => { ensurePrefabs(); }, 1500);
       
       // Apply initial time of day
       updateTimeOfDay();
@@ -2155,6 +1539,8 @@
       }
       return { map, normalMap };
     }
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
     function createInfiniteGround() {
       // BASEPLATE: Fixed size studded building area
@@ -5364,6 +4750,8 @@
     }
 
     // ==================== BRICK CREATION ====================
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
     function createBrick(type, color, pos, rot, isGhost = false, options = {}) {
       const t = types[type];
       if (!t) return null;
@@ -6034,11 +5422,18 @@
 
     let wallModeGhost = null; // Single brick ghost for wall mode before dragging
     
-    function updateGhost() {
+    function updateGhost(opts) {
+      const forPlace = !!(opts && opts.forPlace);
       // Don't update regular ghost in walk mode - use fpGhost instead
       if (firstPersonMode) {
         removeGhost();
         removeWallModeGhost();
+        return;
+      }
+      if (!forPlace && document.body.classList.contains('phone-tray-open')) {
+        removeGhost();
+        removeWallModeGhost();
+        needsRender = true;
         return;
       }
       
@@ -6688,6 +6083,13 @@
         scene.remove(wg);
       }
       wallGhosts = [];
+    }
+
+    function hideHoverGhost() {
+      if (floorDragStart || wallDragStart) return;
+      removeGhost();
+      removeWallModeGhost();
+      needsRender = true;
     }
     
     function removeWallModeGhost() {
@@ -7606,18 +7008,21 @@
     
     // ==================== PREFABS ====================
     function selectPrefab(prefabName) {
-      if (selectedPrefab === prefabName) {
-        // Deselect if clicking same prefab
-        selectedPrefab = null;
-        document.querySelectorAll('.prefab-btn').forEach(b => b.classList.remove('selected'));
-        toast('Prefab deselected');
-      } else {
-        selectedPrefab = prefabName;
-        document.querySelectorAll('.prefab-btn').forEach(b => b.classList.remove('selected'));
-        document.querySelector(`.prefab-btn[data-prefab="${prefabName}"]`)?.classList.add('selected');
-        toast(`📦 ${prefabName} selected - click to place`);
-      }
-      updateGhost();
+      const apply = () => {
+        if (selectedPrefab === prefabName) {
+          selectedPrefab = null;
+          document.querySelectorAll('.prefab-btn').forEach(b => b.classList.remove('selected'));
+          toast('Prefab deselected');
+        } else {
+          selectedPrefab = prefabName;
+          document.querySelectorAll('.prefab-btn').forEach(b => b.classList.remove('selected'));
+          document.querySelector(`.prefab-btn[data-prefab="${prefabName}"]`)?.classList.add('selected');
+          toast(`📦 ${prefabName} selected - click to place`);
+        }
+        updateGhost();
+      };
+      if (selectedPrefab === prefabName || prefabs[prefabName]) apply();
+      else ensurePrefabs().then(apply);
     }
     
     function placePrefabFromGhosts() {
@@ -9067,17 +8472,55 @@
       }
     }
     
-    function loadProject(key) {
+    function confirmLoad(message) {
+      return new Promise((resolve) => {
+        const root = document.getElementById('loadConfirm');
+        const body = document.getElementById('loadConfirmBody');
+        const ok = document.getElementById('loadConfirmOk');
+        const cancel = document.getElementById('loadConfirmCancel');
+        if (!root || !body || !ok || !cancel) {
+          resolve(false);
+          return;
+        }
+        body.textContent = message;
+        root.style.display = 'flex';
+        const finish = (yes) => {
+          root.style.display = 'none';
+          ok.removeEventListener('click', onOk);
+          cancel.removeEventListener('click', onCancel);
+          root.removeEventListener('click', onBackdrop);
+          document.removeEventListener('keydown', onKey);
+          resolve(yes);
+        };
+        const onOk = () => finish(true);
+        const onCancel = () => finish(false);
+        const onBackdrop = (event) => { if (event.target === root) finish(false); };
+        const onKey = (event) => {
+          if (event.key === 'Escape') finish(false);
+          else if (event.key === 'Enter') finish(true);
+        };
+        ok.addEventListener('click', onOk);
+        cancel.addEventListener('click', onCancel);
+        root.addEventListener('click', onBackdrop);
+        document.addEventListener('keydown', onKey);
+        ok.focus();
+      });
+    }
+
+    async function loadProject(key) {
       try {
         const stored = localStorage.getItem(key);
-        if (stored) {
-          const data = JSON.parse(stored);
-          loadProjectData(data);
-          document.getElementById('projectName').value = data.name || 'Untitled';
-          document.getElementById('savedProjectsList').style.display = 'none';
-          hasUnsavedChanges = false; // Just loaded, no unsaved changes
-          toast(`📂 Project "${data.name}" loaded!`, 'success');
-        }
+        if (!stored) return;
+        const data = JSON.parse(stored);
+        const name = data.name || 'Untitled';
+        const count = Array.isArray(data.bricks) ? data.bricks.length : 0;
+        const ok = await confirmLoad('Load "' + name + '" (' + count + ' bricks)? This will replace your current build.');
+        if (!ok) return;
+        loadProjectData(data);
+        document.getElementById('projectName').value = name;
+        document.getElementById('savedProjectsList').style.display = 'none';
+        hasUnsavedChanges = false;
+        toast('📂 Project "' + name + '" loaded!', 'success');
       } catch (e) {
         console.error('Load failed:', e);
         toast('❌ Load failed', 'error');
@@ -9160,6 +8603,8 @@
     }
     
     function screenshot() {
+      removeGhost();
+      removeWallModeGhost();
       renderer.render(scene, camera);
       renderer.domElement.toBlob(blob => {
         const a = document.createElement('a');
@@ -9176,9 +8621,9 @@
 
     function homeDistance() {
       // A 0.96-tall brick covers about (viewHeight * 0.832) / dist pixels.
-      // Desktop 16 is ~47px on a 900px view. Phone 12 is ~58px on an 844px view.
+      // Desktop 14 is ~53px on a 900px view. Phone 12 is ~58px on an 844px view.
       // Shadow map LOD holds FPS. Do not lengthen this distance to buy frames.
-      return isMobileGfx() ? 12 : 16;
+      return isMobileGfx() ? 12 : 14;
     }
 
     function placeCameraOnHomeRay(aimX, aimY, aimZ, dist) {
@@ -9232,6 +8677,10 @@
     }
     
     let hoverRaf = 0;
+    function pointerToMouse(clientX, clientY) {
+      mouse.x = (clientX / innerWidth) * 2 - 1;
+      mouse.y = -(clientY / innerHeight) * 2 + 1;
+    }
     function scheduleHover() {
       pointerDirty = true;
       if (hoverRaf) return;
@@ -9282,6 +8731,8 @@
     }
 
     // ==================== EVENTS ====================
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
     function setupEvents() {
       // Mouse events. Hover work runs once per frame from animate(), not on every event.
       renderer.domElement.addEventListener('mousemove', e => {
@@ -9289,6 +8740,11 @@
         mouse.x = (e.clientX / innerWidth) * 2 - 1;
         mouse.y = -(e.clientY / innerHeight) * 2 + 1;
         scheduleHover();
+      });
+
+      renderer.domElement.addEventListener('pointerleave', () => {
+        pointerDirty = false;
+        hideHoverGhost();
       });
       
       renderer.domElement.addEventListener('mousedown', e => {
@@ -9355,6 +8811,9 @@
         }
         
         if (e.button === 0 && !floorMode && !wallMode) {
+          pointerToMouse(e.clientX, e.clientY);
+          pointerDirty = false;
+          updateGhost({ forPlace: true });
           // When in prefab selection mode, clicking on bricks toggles selection
           // But if we have a valid ghost for placement, prioritize placement
           if (isRecordingPrefab) {
@@ -9717,7 +9176,10 @@
         // Quick tap = place/delete/paint, long press handled differently
         if (!touchMoved && touchDuration < 300) {
           suppressClickUntil = performance.now() + 700;
-          flushPointerHover();
+          const lift = e.changedTouches && e.changedTouches[0];
+          if (lift) pointerToMouse(lift.clientX, lift.clientY);
+          pointerDirty = false;
+          updateGhost({ forPlace: true });
           if (deleteMode) deleteBrick();
           else if (dropperMode) pickColor();
           else if (paintMode) paintBrick();
@@ -11334,6 +10796,11 @@
           mobileControlsPanel.classList.toggle('collapsed-mobile', !mobileTrayUserExpanded);
         }
         document.body.classList.toggle('phone-tray-open', window.innerWidth <= 430 && mobileTrayUserExpanded);
+        if (document.body.classList.contains('phone-tray-open')) {
+          removeGhost();
+          removeWallModeGhost();
+          needsRender = true;
+        }
         if (panelToggle) panelToggle.textContent = mobileTrayUserExpanded ? '▼ Hide tools' : '▲ Bricks & tools';
       }
       applyMobileTray();
@@ -11475,56 +10942,79 @@
     }
 
     function frameCameraOnBuild() {
+      removeGhost();
+      removeWallModeGhost();
       let aimX = 38, aimY = 0, aimZ = 38;
       let dist = homeDistance();
       if (bricks.length) {
-        let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity, maxY = 0;
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity, minZ = Infinity, maxZ = -Infinity;
         for (let i = 0; i < bricks.length; i++) {
           const b = bricks[i];
           const p = b.position;
           if (!p) continue;
           const g = b.userData && b.userData.grid;
-          const hx = g ? (g.w * STUD) * 0.5 : 1;
-          const hz = g ? (g.d * STUD) * 0.5 : 1;
+          const hx = g ? (g.w * STUD) * 0.5 : 0.4;
+          const hz = g ? (g.d * STUD) * 0.5 : 0.4;
+          const hy = g && g.hp >= 3 ? BRICK_H : PLATE_H;
           minX = Math.min(minX, p.x - hx);
           maxX = Math.max(maxX, p.x + hx);
+          minY = Math.min(minY, p.y);
+          maxY = Math.max(maxY, p.y + hy);
           minZ = Math.min(minZ, p.z - hz);
           maxZ = Math.max(maxZ, p.z + hz);
-          maxY = Math.max(maxY, p.y + 1);
         }
         if (minX !== Infinity) {
           aimX = (minX + maxX) * 0.5;
           aimZ = (minZ + maxZ) * 0.5;
-          aimY = Math.min(maxY * 0.35, 6);
-          const span = Math.max(maxX - minX, maxZ - minZ, maxY, 2);
-          // 60° vertical FOV. Fit the span with some margin along the home ray.
-          dist = Math.max(8, span / 0.42 + 4);
+          aimY = (minY + maxY) * 0.5;
+          const spanX = Math.max(maxX - minX, 0.8);
+          const spanY = Math.max(maxY - minY, 0.8);
+          const spanZ = Math.max(maxZ - minZ, 0.8);
+          const aspect = Math.max(camera.aspect || 1, 0.3);
+          const halfTan = Math.tan((camera.fov * Math.PI / 180) / 2);
+          // Same home ray. Fit the box to about 70% of the frame, with padding.
+          // The ray is oblique, so use the largest axis and allow a close camera.
+          const fit = Math.max(spanX / aspect, spanZ / aspect, spanY, spanX, spanZ);
+          dist = Math.max(1.7, (fit / 0.7) / (2 * halfTan));
+          controls.minDistance = Math.min(controls.minDistance, dist);
         }
       }
       placeCameraOnHomeRay(aimX, aimY, aimZ, dist);
     }
 
-    function captureGalleryThumb() {
-      if (!camera || !controls) return '';
+    function withFramedBuild(draw) {
       const prevPos = camera.position.clone();
       const prevTarget = controls.target.clone();
+      const prevMin = controls.minDistance;
       try {
         frameCameraOnBuild();
-        renderFrame();
-        const thumbCanvas = document.createElement('canvas');
-        thumbCanvas.width = 200;
-        thumbCanvas.height = 150;
-        const ctx = thumbCanvas.getContext('2d');
-        ctx.drawImage(renderer.domElement, 0, 0, 200, 150);
-        return thumbCanvas.toDataURL('image/jpeg', 0.7);
-      } catch (e) {
-        return '';
+        draw();
       } finally {
+        controls.minDistance = prevMin;
         camera.position.copy(prevPos);
         controls.target.copy(prevTarget);
         controls.update();
         needsRender = true;
       }
+    }
+
+    function captureGalleryThumb() {
+      if (!camera || !controls) return '';
+      let url = '';
+      try {
+        withFramedBuild(() => {
+          renderFrame();
+          const thumbCanvas = document.createElement('canvas');
+          thumbCanvas.width = 200;
+          thumbCanvas.height = 150;
+          const ctx = thumbCanvas.getContext('2d');
+          ctx.drawImage(renderer.domElement, 0, 0, 200, 150);
+          url = thumbCanvas.toDataURL('image/jpeg', 0.7);
+        });
+      } catch (e) {
+        url = '';
+      }
+      return url;
     }
 
     function saveNamedBuild(name) {
@@ -11543,68 +11033,63 @@
 
     function loadGalleryBuilds() {
       mergeSavedBuilds();
-      renderGalleryGrid();
+      paintGalleryGrid();
     }
     
-    function renderGalleryGrid() {
-      const grid = document.getElementById('galleryGrid');
-      if (galleryBuilds.length === 0) {
-        grid.innerHTML = '<div class="gallery-empty">No saved builds yet. Save your first creation!</div>';
-        return;
-      }
-      
-      grid.innerHTML = galleryBuilds.map((build, i) => {
-        const safeThumb = typeof build.thumbnail === 'string' && build.thumbnail.startsWith('data:image/')
-          ? build.thumbnail
-          : '';
-        const thumb = safeThumb
-          ? `<img src="${safeThumb}" alt="">`
-          : '<div class="gallery-thumb-fallback">No preview</div>';
-        return `
-        <div class="gallery-item" data-index="${i}">
-          ${thumb}
-          <div class="gallery-item-info">
-            <div class="gallery-item-name">${escHtml(build.name)}</div>
-            <div class="gallery-item-meta">${escHtml(String(build.brickCount))} bricks • ${escHtml(build.date || '')}</div>
-          </div>
-          <div class="gallery-item-actions">
-            <button onclick="loadGalleryBuild(${i})">📂 Load</button>
-            <button class="delete" onclick="deleteGalleryBuild(${i})">🗑️</button>
-          </div>
-        </div>`;
-      }).join('');
+    function paintGalleryGrid() {
+      return import('./gallery-lazy.js').then((mod) => {
+        mod.renderGalleryGrid(document.getElementById('galleryGrid'), galleryBuilds, escHtml);
+      });
     }
     
     function capturePreview(canvasId) {
-      renderFrame();
       const canvas = document.getElementById(canvasId);
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(renderer.domElement, 0, 0, canvas.width, canvas.height);
+      if (!canvas || !camera || !controls) return;
+      withFramedBuild(() => {
+        renderFrame();
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(renderer.domElement, 0, 0, canvas.width, canvas.height);
+      });
     }
     
     function captureScreenshot() {
-      const scale = parseInt(document.getElementById('screenshotRes').value);
+      const scale = parseInt(document.getElementById('screenshotRes').value, 10) || 1;
       const transparent = document.getElementById('screenshotTransparent').checked;
       const originalBg = scene.background;
+      const prevPos = camera.position.clone();
+      const prevTarget = controls.target.clone();
+      const prevMin = controls.minDistance;
       if (transparent) {
         scene.background = null;
         renderer.setClearColor(0x000000, 0);
       }
-      renderer.setPixelRatio(1);
-      renderer.setSize(800 * scale, 600 * scale, false);
-      renderer.render(scene, camera);
-      const canvas = document.getElementById('screenshotCanvas');
-      canvas.width = 800 * scale;
-      canvas.height = 600 * scale;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(renderer.domElement, 0, 0);
-      renderer.setPixelRatio(qualityDpr());
-      renderer.setSize(innerWidth, innerHeight);
-      if (transparent) {
-        scene.background = originalBg;
-        renderer.setClearColor(0x000000, 1);
+      try {
+        renderer.setPixelRatio(1);
+        renderer.setSize(800 * scale, 600 * scale, false);
+        camera.aspect = 800 / 600;
+        camera.updateProjectionMatrix();
+        frameCameraOnBuild();
+        renderer.render(scene, camera);
+        const canvas = document.getElementById('screenshotCanvas');
+        canvas.width = 800 * scale;
+        canvas.height = 600 * scale;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(renderer.domElement, 0, 0);
+      } finally {
+        controls.minDistance = prevMin;
+        camera.position.copy(prevPos);
+        controls.target.copy(prevTarget);
+        controls.update();
+        renderer.setPixelRatio(qualityDpr());
+        renderer.setSize(innerWidth, innerHeight);
+        camera.aspect = innerWidth / innerHeight;
+        camera.updateProjectionMatrix();
+        if (transparent) {
+          scene.background = originalBg;
+          renderer.setClearColor(0x000000, 1);
+        }
+        needsRender = true;
       }
-      needsRender = true;
       SoundSystem.playSuccess();
       toast('📸 Screenshot captured!', 'success');
     }
@@ -11625,7 +11110,7 @@
       if (named === null) return;
       try {
         saveNamedBuild(named.trim() || suggested);
-        renderGalleryGrid();
+        paintGalleryGrid();
         SoundSystem.playSuccess();
         toast('💾 Build saved to gallery!', 'success');
       } catch (e) {
@@ -11634,11 +11119,11 @@
       }
     }
     
-    function loadGalleryBuild(index) {
+    async function loadGalleryBuild(index) {
       const build = galleryBuilds[index];
       if (!build) return;
       
-      if (!confirm(`Load "${build.name}"? This will replace your current build.`)) return;
+      if (!(await confirmLoad('Load "' + build.name + '"? This will replace your current build.'))) return;
       
       saveUndo();
       bricks.forEach(b => { if (!b.isInstancedBrick) scene.remove(b); });
@@ -11681,7 +11166,7 @@
       }
       galleryBuilds.splice(index, 1);
       saveGalleryBuilds();
-      renderGalleryGrid();
+      paintGalleryGrid();
       SoundSystem.playDelete();
     }
     
@@ -11745,9 +11230,9 @@
       if (!raw) return;
       const code = String(raw).trim();
 
-      const finish = (brickData) => {
+      const finish = async (brickData) => {
         if (!Array.isArray(brickData)) throw new Error('Invalid format');
-        if (!confirm('Load build with ' + brickData.length + ' bricks? This will replace your current build.')) return;
+        if (!(await confirmLoad('Load build with ' + brickData.length + ' bricks? This will replace your current build.'))) return;
         const n = applyCodeBricks(brickData);
         closeGallery();
         SoundSystem.playSuccess();
@@ -12952,7 +12437,8 @@
       const phoneOk = document.getElementById('phoneTutorialOk');
       function dismissPhoneTutorial() {
         if (phoneCard) phoneCard.hidden = true;
-        localStorage.setItem('brickBuilderTutorialDismissed', 'true');
+        const box = document.getElementById('phoneTutorialDontShow');
+        if (!box || box.checked) localStorage.setItem('brickBuilderTutorialDismissed', 'true');
       }
       if (phoneOk) phoneOk.addEventListener('click', dismissPhoneTutorial);
       

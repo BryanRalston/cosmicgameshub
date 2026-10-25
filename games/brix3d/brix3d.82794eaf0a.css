@@ -2212,6 +2212,22 @@
     }
     .phone-tutorial-card h2 { margin: 0 0 6px; font-size: 18px; }
     .phone-tutorial-card p { margin: 0 0 6px; font-size: 14px; line-height: 1.35; }
+    .phone-tutorial-dismiss {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 4px 0 0;
+      color: #d7ead7;
+      font-size: 14px;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+    .phone-tutorial-dismiss input {
+      width: 18px;
+      height: 18px;
+      margin: 0;
+      flex: 0 0 auto;
+    }
     .phone-tutorial-card button {
       margin-top: 8px;
       width: 100%;
@@ -2293,6 +2309,8 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 8px 12px;
       margin-top: 25px;
       padding-top: 20px;
       border-top: 1px solid rgba(255,255,255,0.1);
@@ -2303,6 +2321,9 @@
       gap: 8px;
       color: rgba(255,255,255,0.6);
       font-size: 13px;
+      line-height: 1.2;
+      white-space: nowrap;
+      flex: 0 0 auto;
       cursor: pointer;
     }
     .tutorial-checkbox input {
@@ -2933,8 +2954,10 @@
     top: auto !important;
     width: 100% !important;
     bottom: calc(78px + env(safe-area-inset-bottom, 0px)) !important;
-    max-height: min(164px, calc(30vh - 80px - env(safe-area-inset-bottom, 0px))) !important;
+    /* 478px keeps the sheet under the zoom stack and above the HUD. */
+    max-height: min(420px, calc(100vh - 478px - env(safe-area-inset-bottom, 0px))) !important;
     height: auto !important;
+    transition: none !important;
     z-index: 180 !important;
     border-radius: 18px 18px 0 0 !important;
     box-sizing: border-box !important;
@@ -2948,7 +2971,7 @@
   #controls.tray-open {
     transform: none !important;
     overflow: auto !important;
-    max-height: min(164px, calc(30vh - 80px - env(safe-area-inset-bottom, 0px))) !important;
+    max-height: min(420px, calc(100vh - 478px - env(safe-area-inset-bottom, 0px))) !important;
   }
   #controls .panel-toggle {
     display: flex !important;
@@ -3050,8 +3073,9 @@ body.phone-tray-open .drawer-starters { display: flex; }
     bottom: calc(196px + env(safe-area-inset-bottom, 0px)) !important;
   }
   body.phone-tray-open .zoom-controls {
-    bottom: calc(252px + env(safe-area-inset-bottom, 0px)) !important;
+    bottom: calc(94px + min(420px, calc(100vh - 478px - env(safe-area-inset-bottom, 0px))) + env(safe-area-inset-bottom, 0px)) !important;
   }
+  body.phone-tray-open #controls .preview { display: none !important; }
   .toast {
     top: 196px !important;
     bottom: auto !important;
@@ -3067,6 +3091,36 @@ body.phone-tray-open .drawer-starters { display: flex; }
     bottom: calc(124px + env(safe-area-inset-bottom, 0px)) !important;
   }
   #controls.tray-open {
-    max-height: min(164px, calc(30vh - 80px - env(safe-area-inset-bottom, 0px))) !important;
+    max-height: min(420px, calc(100vh - 478px - env(safe-area-inset-bottom, 0px))) !important;
+  }
+}
+
+#loadConfirm.modal-overlay { z-index: 10060; background: rgba(0,0,0,0.72); }
+.load-confirm {
+  width: min(420px, calc(100% - 32px));
+  background: #142018;
+  color: #f4fff4;
+  border-radius: 16px;
+  padding: 18px 18px 14px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.45);
+}
+.load-confirm h2 { margin: 0 0 8px; font-size: 18px; }
+.load-confirm p { margin: 0 0 14px; font-size: 15px; line-height: 1.35; }
+.load-confirm-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.load-confirm-actions button {
+  min-height: 44px;
+  min-width: 96px;
+  border: 0;
+  border-radius: 12px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+#loadConfirmCancel { background: rgba(255,255,255,0.12); color: #fff; }
+#loadConfirmOk { background: #f97316; color: #fff; }
+@media (max-width: 430px) {
+  #controls.tray-open {
+    padding-bottom: 12px !important;
+    scroll-padding-bottom: 12px;
   }
 }

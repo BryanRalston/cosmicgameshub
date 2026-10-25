@@ -28,7 +28,7 @@ const built = await esbuild.build({
   splitting: true,
   minify: true,
   format: 'esm',
-  target: 'es2020',
+  target: 'es2022',
   outdir,
   entryNames: 'brix3d.[hash]',
   chunkNames: 'brix3d-[hash]',
