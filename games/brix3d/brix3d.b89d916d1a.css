@@ -187,6 +187,11 @@
       background: linear-gradient(135deg, #ef4444, #dc2626);
       border-color: #f87171;
     }
+    #hudDeleteBtn.delete-active {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      border-color: #f87171;
+      color: #fff;
+    }
     .tool-btn.dropper-active { 
       background: linear-gradient(135deg, #a855f7, #9333ea);
       border-color: #c084fc;
@@ -2610,15 +2615,18 @@
     }
     .gallery-btn.primary:hover { opacity: 0.9; }
     .share-preview, .screenshot-preview {
-      background: #000;
+      background: transparent;
       border-radius: 8px;
-      padding: 10px;
-      text-align: center;
+      padding: 0;
       margin-bottom: 15px;
+      line-height: 0;
     }
     .share-preview canvas, .screenshot-preview canvas {
-      max-width: 100%;
+      width: 100%;
+      height: auto;
+      display: block;
       border-radius: 4px;
+      background: transparent;
     }
     .share-options, .screenshot-options, .screenshot-actions {
       display: flex;
@@ -3119,10 +3127,11 @@ body.phone-tray-open .drawer-starters button {
     left: 50% !important;
     right: auto !important;
     top: auto !important;
-    bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important;
+    bottom: calc(136px + env(safe-area-inset-bottom, 0px)) !important;
     transform: translateX(-50%) !important;
     z-index: 250 !important;
-    padding: 6px 12px !important;
+    padding: 4px 12px !important;
+    font-size: 12px !important;
   }
   body.phone-tray-open .rotation-ind {
     bottom: calc(78px + 30vh + 8px + env(safe-area-inset-bottom, 0px)) !important;
@@ -3149,7 +3158,21 @@ body.phone-tray-open .drawer-starters button {
   .zoom-controls {
     top: auto !important;
     right: 8px !important;
-    bottom: calc(196px + env(safe-area-inset-bottom, 0px)) !important;
+    bottom: calc(228px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  #qualityBar {
+    top: 178px !important;
+    bottom: auto !important;
+    right: 8px !important;
+    left: auto !important;
+    z-index: 230;
+    max-width: calc(100vw - 16px);
+  }
+  #qualityBar button {
+    font-size: 11px;
+    letter-spacing: 0;
+    padding: 4px 6px;
+    white-space: nowrap;
   }
   body.phone-tray-open .zoom-controls {
     left: 8px !important;
@@ -3161,7 +3184,7 @@ body.phone-tray-open .drawer-starters button {
   body.phone-tray-open #controls .preview { display: none !important; }
   .toast {
     top: auto !important;
-    bottom: calc(118px + env(safe-area-inset-bottom, 0px)) !important;
+    bottom: calc(230px + env(safe-area-inset-bottom, 0px)) !important;
     max-width: calc(100vw - 24px);
     z-index: 260;
     text-align: center;
@@ -3172,7 +3195,7 @@ body.phone-tray-open .drawer-starters button {
   }
   .trans-label { font-size: 16px !important; }
   #starterBar {
-    bottom: calc(124px + env(safe-area-inset-bottom, 0px)) !important;
+    bottom: calc(176px + env(safe-area-inset-bottom, 0px)) !important;
   }
   #controls.tray-open {
     max-height: 30vh !important;

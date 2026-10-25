@@ -17,6 +17,10 @@
     const PLATE_H = 0.32;
     const STUD_H = 0.17;
     const STUD_R = 0.24;
+    // Close studs use a rounder cylinder. Far studs stay at 8 sides so a full plate holds frame rate.
+    const STUD_SEG_NEAR = 20;
+    const STUD_SEG_FAR = 8;
+    const STUD_NEAR_DIST = 10;
     const BASE_Y = 0;
     
     // ==================== SOUND SYSTEM ====================
@@ -706,6 +710,7 @@
       const extent = Math.max(maxX - minX, maxZ - minZ) * 0.5 + 8;
       cam.left = -extent;
       cam.right = extent;
+      updateZoomLimits();
       cam.top = extent;
       cam.bottom = -extent;
       cam.near = 1;
@@ -925,7 +930,7 @@
       } else if (!openingShare && !bricks.length) {
         if (window.innerWidth <= 768) {
           toast('Tap a starter, or tap the plate. The ghost is your 2×2.', 'success');
-        } else {
+        } else if (!dailyTipWillShow()) {
           toast('Plate is ready. Tap a starter or place your first brick.', 'success');
         }
       }
@@ -1589,16 +1594,17 @@
       normalC.width = normalC.height = N;
       const nctx = normalC.getContext('2d');
       const nimg = nctx.createImageData(N, N);
-      const heights = new Float32Array(N * N);
+      // Hard disk at the brick stud radius (STUD_R / STUD of the cell).
+      // A soft dome at this same radius read about twice as wide.
       const cx = (N - 1) / 2;
       const cy = (N - 1) / 2;
-      const rad = N * 0.30;
+      const rad = N * (STUD_R / STUD);
+      const heights = new Float32Array(N * N);
       for (let y = 0; y < N; y++) {
         for (let x = 0; x < N; x++) {
           const dist = Math.hypot(x - cx, y - cy);
-          let h = 0;
-          if (dist < rad) h = Math.sqrt(Math.max(0, 1 - (dist / rad) * (dist / rad)));
-          heights[y * N + x] = h;
+          const edge = rad - dist;
+          heights[y * N + x] = edge >= 1.2 ? 1 : (edge > 0 ? edge / 1.2 : 0);
         }
       }
       const sample = (x, y) => heights[(Math.max(0, Math.min(N - 1, y)) * N) + Math.max(0, Math.min(N - 1, x))];
@@ -1606,16 +1612,15 @@
         for (let x = 0; x < N; x++) {
           const i = (y * N + x) * 4;
           const h = heights[y * N + x];
-          // Stud tops brighter than the gaps so the grid reads on a mid green plate.
-          const shade = h > 0.45 ? 196 : (h > 0.18 ? 158 : 124);
+          const shade = h > 0.85 ? 210 : (h > 0.15 ? 168 : 118);
           img.data[i] = shade;
           img.data[i + 1] = shade;
           img.data[i + 2] = shade;
           img.data[i + 3] = 255;
           const hx = sample(x + 1, y) - sample(x - 1, y);
           const hy = sample(x, y + 1) - sample(x, y - 1);
-          const nx = -hx * 2.4;
-          const ny = hy * 2.4;
+          const nx = -hx * 3.2;
+          const ny = hy * 3.2;
           const nz = 1;
           const len = Math.hypot(nx, ny, nz) || 1;
           nimg.data[i] = Math.round(((nx / len) * 0.5 + 0.5) * 255);
@@ -1676,7 +1681,7 @@
       const grass = new THREE.Mesh(grassGeo, grassMat);
       grass.rotation.x = -Math.PI / 2;
       grass.position.set(baseplateWorldSize / 2, -0.02, baseplateWorldSize / 2);
-      grass.receiveShadow = true;
+      grass.receiveShadow = false;
       grass.userData.isGround = true; // Mark for color updates
       scene.add(grass);
       window.grassPlane = grass; // Store reference
@@ -4139,8 +4144,38 @@
       dummy: new THREE.Object3D()
     };
     
+    // Top cap only. The underside sits inside the brick and never shows.
+    function makeStudGeometry(segments) {
+      const segs = segments || STUD_SEG_FAR;
+      const side = new THREE.CylinderGeometry(STUD_R, STUD_R * 0.95, STUD_H, segs, 1, true);
+      const cap = new THREE.CircleGeometry(STUD_R, segs);
+      cap.rotateX(-Math.PI / 2);
+      cap.translate(0, STUD_H / 2, 0);
+      const merged = mergeBufferGeometries([side, cap]);
+      side.dispose();
+      cap.dispose();
+      return merged;
+    }
+
+    function studSegmentsAt(pos) {
+      if (!camera || !pos) return STUD_SEG_NEAR;
+      const dx = camera.position.x - pos.x;
+      const dy = camera.position.y - pos.y;
+      const dz = camera.position.z - pos.z;
+      return (dx * dx + dy * dy + dz * dz) <= STUD_NEAR_DIST * STUD_NEAR_DIST ? STUD_SEG_NEAR : STUD_SEG_FAR;
+    }
+
+    // ACES plus the green ground light turns #ffe600 olive. A redder albedo
+    // lands on a clean yellow after that grade. The swatch stays #ffe600.
+    function brickDisplayColor(color) {
+      const c = new THREE.Color(color);
+      if (c.r > 0.82 && c.g > 0.62 && c.b < 0.22 && c.g > c.r * 0.55) c.setRGB(1, 0.74, 0);
+      return c;
+    }
+
     // Create merged geometry for a brick type (body + studs combined)
-    function createBrickGeometry(type, rot) {
+    function createBrickGeometry(type, rot, segments) {
+      const studSeg = segments || STUD_SEG_NEAR;
       const t = types[type];
       if (!t) return null;
       
@@ -4174,7 +4209,7 @@
       
       // Stud geometries
       if (!t.noStuds && !t.slope && !t.cornerSlope && !t.invCornerSlope) {
-        const studGeo = new THREE.CylinderGeometry(STUD_R, STUD_R * 0.95, STUD_H, 8);
+        const studGeo = makeStudGeometry(studSeg);
         
         for (let sx = 0; sx < w; sx++) {
           for (let sz = 0; sz < d; sz++) {
@@ -4195,7 +4230,7 @@
       }
       
       if (t.cornerSlope) {
-        const peakStud = new THREE.CylinderGeometry(STUD_R, STUD_R * 0.95, STUD_H, 8);
+        const peakStud = makeStudGeometry(studSeg);
         const cornerOffset = (t.w * STUD / 2) - STUD / 2;
         const normalizedRot = ((Math.round(rot / 90) * 90) % 360 + 360) % 360;
         let px = -cornerOffset, pz = -cornerOffset;
@@ -4207,7 +4242,7 @@
       }
       
       if (t.sideStuds && t.sideStuds.length) {
-        const sideStudGeo = new THREE.CylinderGeometry(STUD_R, STUD_R * 0.95, STUD_H, 8);
+        const sideStudGeo = makeStudGeometry(studSeg);
         const rotatedSides = t.sideStuds.map(side => rotateSideName(side, rot));
         const studY = h / 2;
         for (const side of rotatedSides) {
@@ -4330,12 +4365,13 @@
     }
     
     // Get or create geometry for a brick type
-    function getInstancedGeometry(type, rot) {
+    function getInstancedGeometry(type, rot, segs) {
       const geoRot = instancedGeoRot(type, rot);
-      const key = `${type}_${geoRot}`;
+      const segments = segs || STUD_SEG_NEAR;
+      const key = `${type}_${geoRot}_s${segments}`;
       
       if (!instancedSystem.geometryCache.has(key)) {
-        const geo = createBrickGeometry(type, geoRot);
+        const geo = createBrickGeometry(type, geoRot, segments);
         if (geo) instancedSystem.geometryCache.set(key, geo);
       }
       return instancedSystem.geometryCache.get(key);
@@ -4391,7 +4427,7 @@
     function softGhostColor(valid) {
       if (!valid) return 0xff4444;
       if (_ghostTintSrc !== selectedColor) {
-        _ghostTint.set(selectedColor);
+        _ghostTint.copy(brickDisplayColor(selectedColor));
         _ghostTint.lerp(_ghostWhite, 0.45);
         _ghostTintHex = _ghostTint.getHex();
         _ghostTintSrc = selectedColor;
@@ -4415,20 +4451,21 @@
     }
 
     // Get or create InstancedMesh for a specific combination
-    function getInstancedMesh(type, rot, color, transparent, extra = {}) {
+    function getInstancedMesh(type, rot, color, transparent, extra = {}, studSeg) {
       const normRot = ((rot % 360) + 360) % 360;
       const isLight = !!(types[type] && types[type].light);
       const tex = extra.texture || null;
+      const segs = studSeg || STUD_SEG_FAR;
       // Solid bricks share one mesh per geometry. Color is per instance, so a large build stays one draw.
-      // One extra batch per photo texture. Tilt lives in the instance matrix.
+      // Near and far studs are separate batches. One extra batch per photo texture.
       const key = tex
-        ? `${type}_${normRot}_tex_${tex.uuid}`
+        ? `${type}_${normRot}_tex_${tex.uuid}_s${segs}`
         : (isLight
-          ? `${type}_${normRot}_${color}_${transparent}_L`
-          : `${type}_${normRot}_${transparent ? 1 : 0}_batch`);
+          ? `${type}_${normRot}_${color}_${transparent}_L_s${segs}`
+          : `${type}_${normRot}_${transparent ? 1 : 0}_s${segs}`);
       
       if (!instancedSystem.meshes.has(key)) {
-        const geo = getInstancedGeometry(type, rot);
+        const geo = getInstancedGeometry(type, rot, segs);
         const mat = tex
           ? getTexturedInstancedMaterial(tex)
           : getInstancedMaterial(isLight ? color : 0xffffff, transparent, isLight);
@@ -4477,7 +4514,7 @@
 
     // Add a brick using instanced rendering
     function addInstancedBrick(type, color, pos, rot, transparent, gridData, extra = {}) {
-      const data = getInstancedMesh(type, rot, color, transparent, extra);
+      const data = getInstancedMesh(type, rot, color, transparent, extra, studSegmentsAt(pos));
       if (!data) return null;
       
       const brickId = instancedSystem.nextId++;
@@ -4505,7 +4542,7 @@
       data.mesh.instanceMatrix.needsUpdate = true;
       const tint = extra.texture ? 0xffffff : color;
       if (!(types[type] && types[type].light)) {
-        data.mesh.setColorAt(index, new THREE.Color(tint));
+        data.mesh.setColorAt(index, brickDisplayColor(tint));
         data.mesh.instanceColor.needsUpdate = true;
       }
       data.mesh.count++;
@@ -4978,7 +5015,7 @@
       
       // Add studs on top of brick - OPTIMIZED: Use merged geometry for all studs
       if (!t.noStuds && !t.slope && !t.cornerSlope && !t.invCornerSlope) {
-        const studGeo = new THREE.CylinderGeometry(STUD_R, STUD_R * 0.95, STUD_H, 8); // Reduced from 16 to 8 segments
+        const studGeo = makeStudGeometry(STUD_SEG_NEAR);
         const studMat = new THREE.MeshStandardMaterial({
           color: color,
           roughness: isGhost ? 0.9 : (transparent ? 0.1 : 0.2),
@@ -5030,7 +5067,7 @@
       
       // Add single stud at peak corner for outside corner slopes
       if (t.cornerSlope && !isGhost) {
-        const peakStudGeo = new THREE.CylinderGeometry(STUD_R, STUD_R * 0.95, STUD_H, 8);
+        const peakStudGeo = makeStudGeometry(STUD_SEG_NEAR);
         const peakStudMat = new THREE.MeshStandardMaterial({
           color: color,
           roughness: transparent ? 0.1 : 0.2,
@@ -5061,7 +5098,7 @@
       
       // Add side studs for SNOT bricks - OPTIMIZED
       if (t.sideStuds && t.sideStuds.length > 0) {
-        const sideStudGeo = new THREE.CylinderGeometry(STUD_R, STUD_R * 0.95, STUD_H, 8); // Reduced segments
+        const sideStudGeo = makeStudGeometry(STUD_SEG_NEAR);
         const sideStudMat = new THREE.MeshStandardMaterial({
           color: color,
           roughness: isGhost ? 0.9 : (transparent ? 0.1 : 0.2),
@@ -5557,6 +5594,8 @@
     let wallModeGhost = null; // Single brick ghost for wall mode before dragging
     
     function updateGhost(opts) {
+      const hudDel = document.getElementById('hudDeleteBtn');
+      if (hudDel) hudDel.classList.toggle('delete-active', deleteMode);
       const forPlace = !!(opts && opts.forPlace);
       // Don't update regular ghost in walk mode - use fpGhost instead
       if (firstPersonMode) {
@@ -6531,6 +6570,13 @@
         if (localStorage.getItem('brickBuilderTutorialDismissed') === 'true') return false;
       } catch (e) {}
       return true;
+    }
+
+    function dailyTipWillShow() {
+      if (window.innerWidth <= 768 || bricks.length || shareTokenFromLocation()) return false;
+      let dismissed = '';
+      try { dismissed = localStorage.getItem('brixDailyDismissed') || ''; } catch (e) {}
+      return dismissed !== dailyKey();
     }
 
     function initDailyPrompt() {
@@ -8802,9 +8848,66 @@
       return Math.min(maxD, Math.max(minD, raw));
     }
 
-    function captureFitDistance(spanX, spanY, spanZ) {
-      const raw = fitDistanceForBox(spanX, spanY, spanZ, 0.78);
-      return Math.min(40, Math.max(2.8, raw));
+    function projectedFill(box, dist, aspect) {
+      const len = Math.hypot(HOME_OX, HOME_OY, HOME_OZ) || 1;
+      const dx = HOME_OX / len;
+      const dy = HOME_OY / len;
+      const dz = HOME_OZ / len;
+      const eyeX = box.aimX + dx * dist;
+      const eyeY = box.aimY + dy * dist;
+      const eyeZ = box.aimZ + dz * dist;
+      let fx = box.aimX - eyeX;
+      let fy = box.aimY - eyeY;
+      let fz = box.aimZ - eyeZ;
+      const fl = Math.hypot(fx, fy, fz) || 1;
+      fx /= fl; fy /= fl; fz /= fl;
+      let rx = -fz;
+      let ry = 0;
+      let rz = fx;
+      const rl = Math.hypot(rx, ry, rz);
+      if (rl < 1e-6) { rx = 1; ry = 0; rz = 0; }
+      else { rx /= rl; ry /= rl; rz /= rl; }
+      const ux = ry * fz - rz * fy;
+      const uy = rz * fx - rx * fz;
+      const uz = rx * fy - ry * fx;
+      const halfY = Math.tan((camera.fov * Math.PI / 180) / 2);
+      const halfX = halfY * Math.max(aspect, 0.3);
+      const hx = box.spanX * 0.5;
+      const hy = box.spanY * 0.5;
+      const hz = box.spanZ * 0.5;
+      let minNX = Infinity, maxNX = -Infinity, minNY = Infinity, maxNY = -Infinity;
+      for (let xi = -1; xi <= 1; xi += 2) {
+        for (let yi = -1; yi <= 1; yi += 2) {
+          for (let zi = -1; zi <= 1; zi += 2) {
+            const vx = box.aimX + xi * hx - eyeX;
+            const vy = box.aimY + yi * hy - eyeY;
+            const vz = box.aimZ + zi * hz - eyeZ;
+            const z = vx * fx + vy * fy + vz * fz;
+            if (z < 0.05) return 4;
+            const nx = (vx * rx + vy * ry + vz * rz) / (z * halfX);
+            const ny = (vx * ux + vy * uy + vz * uz) / (z * halfY);
+            if (nx < minNX) minNX = nx;
+            if (nx > maxNX) maxNX = nx;
+            if (ny < minNY) minNY = ny;
+            if (ny > maxNY) maxNY = ny;
+          }
+        }
+      }
+      return Math.max(maxNX - minNX, maxNY - minNY) * 0.5;
+    }
+
+    function captureFitDistance(spanX, spanY, spanZ, box) {
+      const aspect = Math.max(camera.aspect || 1, 0.3);
+      const probe = box || { aimX: 38, aimY: 0.5, aimZ: 38, spanX: spanX, spanY: spanY, spanZ: spanZ };
+      const target = 0.72;
+      let lo = 0.35;
+      let hi = 80;
+      for (let i = 0; i < 16; i++) {
+        const mid = (lo + hi) * 0.5;
+        if (projectedFill(probe, mid, aspect) > target) lo = mid;
+        else hi = mid;
+      }
+      return Math.min(48, Math.max(0.8, (lo + hi) * 0.5));
     }
 
     function placeCameraOnHomeRay(aimX, aimY, aimZ, dist) {
@@ -8819,8 +8922,20 @@
       needsRender = true;
     }
 
+    function updateZoomLimits() {
+      if (!controls || !camera) return;
+      const box = buildBounds();
+      const plate = 96 * STUD;
+      const spanX = Math.min(plate, Math.max(box.spanX * 2.4, 12 * STUD));
+      const spanZ = Math.min(plate, Math.max(box.spanZ * 2.4, 12 * STUD));
+      const cap = fitDistanceForBox(spanX, Math.max(box.spanY, BRICK_H), spanZ, 0.7);
+      const home = isMobileGfx() ? 6.6 : 7.4;
+      controls.maxDistance = Math.max(home + 2, cap);
+    }
+
     function frameHomeCamera() {
       const span = 2 * STUD;
+      updateZoomLimits();
       placeCameraOnHomeRay(38, 0.5, 38, liveFitDistance(span, BRICK_H, span));
     }
 
@@ -8990,9 +9105,20 @@
       });
       
       let suppressClickUntil = 0;
+      let pointerDownX = 0;
+      let pointerDownY = 0;
+      let pointerDownSeen = false;
+      renderer.domElement.addEventListener('pointerdown', (e) => {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        pointerDownX = e.clientX;
+        pointerDownY = e.clientY;
+        pointerDownSeen = true;
+      });
       renderer.domElement.addEventListener('click', e => {
         // A tap already placed from touchend. Chrome still synthesizes a click.
         if (performance.now() < suppressClickUntil) return;
+        // Orbit uses the left button. A drag must not place.
+        if (pointerDownSeen && Math.hypot(e.clientX - pointerDownX, e.clientY - pointerDownY) > 6) return;
         // If in walk mode menu mode, re-lock the pointer
         if (firstPersonMode && fpMenuMode && !document.pointerLockElement) {
           fpMenuMode = false;
@@ -9332,6 +9458,8 @@
       // Touch events
       let touchStartTime = 0;
       let touchMoved = false;
+      let touchStartX = 0;
+      let touchStartY = 0;
       
       renderer.domElement.addEventListener('touchstart', e => {
         touchStartTime = Date.now();
@@ -9339,6 +9467,8 @@
         
         if (e.touches.length === 1) {
           const touch = e.touches[0];
+          touchStartX = touch.clientX;
+          touchStartY = touch.clientY;
           mouse.x = (touch.clientX / innerWidth) * 2 - 1;
           mouse.y = -(touch.clientY / innerHeight) * 2 + 1;
           pointerDirty = false;
@@ -9353,7 +9483,12 @@
       }, {passive: true});
       
       renderer.domElement.addEventListener('touchmove', e => {
-        touchMoved = true;
+        if (e.touches.length === 1) {
+          const moved = e.touches[0];
+          if (Math.hypot(moved.clientX - touchStartX, moved.clientY - touchStartY) > 6) touchMoved = true;
+        } else {
+          touchMoved = true;
+        }
         if (e.touches.length === 1) {
           const touch = e.touches[0];
           mouse.x = (touch.clientX / innerWidth) * 2 - 1;
@@ -9437,9 +9572,21 @@
         }
       }
       
+      function typingInField(e) {
+        const nodes = [e.target, document.activeElement];
+        for (let i = 0; i < nodes.length; i++) {
+          const el = nodes[i];
+          if (!el || !el.tagName) continue;
+          const tag = el.tagName;
+          if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+          if (el.isContentEditable) return true;
+        }
+        return false;
+      }
+
       // Keyboard
       document.addEventListener('keydown', e => {
-        if (e.target.tagName === 'INPUT') return;
+        if (typingInField(e)) return;
         
         // F11 for fullscreen (check before toLowerCase)
         if (e.key === 'F11') {
@@ -10821,9 +10968,10 @@
         updateGhost();
         needsRender = true;
       });
-      document.getElementById('hudDeleteBtn').addEventListener('click', () => {
-        // Toggle delete tool — find and click the delete tool button in sidebar
-        const deleteTool = document.querySelector('[data-tool="delete"]') || document.getElementById('deleteTool');
+      document.getElementById('hudDeleteBtn').addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const deleteTool = document.getElementById('deleteBtn');
         if (deleteTool) deleteTool.click();
       });
       document.getElementById('hudColorBtn').addEventListener('click', () => {
@@ -11161,7 +11309,7 @@
         aimY: Math.max(0.45, (minY + maxY) * 0.5),
         aimZ: (minZ + maxZ) * 0.5,
         spanX: Math.max(maxX - minX, 0.8),
-        spanY: Math.max(maxY - minY, 0.32),
+        spanY: Math.max(maxY - minY + STUD_H, 0.32),
         spanZ: Math.max(maxZ - minZ, 0.8)
       };
     }
@@ -11172,9 +11320,12 @@
       const box = buildBounds();
       const forCapture = !!(opts && opts.forCapture);
       const dist = forCapture
-        ? captureFitDistance(box.spanX, box.spanY, box.spanZ)
+        ? captureFitDistance(box.spanX, box.spanY, box.spanZ, box)
         : liveFitDistance(box.spanX, box.spanY, box.spanZ);
-      if (forCapture) controls.minDistance = Math.min(controls.minDistance, dist);
+      if (forCapture) {
+        controls.minDistance = Math.min(controls.minDistance, dist);
+        controls.maxDistance = Math.max(controls.maxDistance, dist + 1);
+      }
       placeCameraOnHomeRay(box.aimX, box.aimY, box.aimZ, dist);
     }
 
@@ -11182,6 +11333,7 @@
       const prevPos = camera.position.clone();
       const prevTarget = controls.target.clone();
       const prevMin = controls.minDistance;
+      const prevMax = controls.maxDistance;
       const prevAspect = camera.aspect;
       const prevPr = renderer.getPixelRatio();
       const size = new THREE.Vector2();
@@ -11195,6 +11347,7 @@
         draw();
       } finally {
         controls.minDistance = prevMin;
+        controls.maxDistance = prevMax;
         camera.position.copy(prevPos);
         controls.target.copy(prevTarget);
         controls.update();
@@ -11216,7 +11369,8 @@
           thumbCanvas.width = 200;
           thumbCanvas.height = 150;
           const ctx = thumbCanvas.getContext('2d');
-          ctx.drawImage(renderer.domElement, 0, 0, 200, 150);
+          const src = renderer.domElement;
+          ctx.drawImage(src, 0, 0, src.width, src.height, 0, 0, 200, 150);
           url = thumbCanvas.toDataURL('image/jpeg', 0.7);
         });
       } catch (e) {
@@ -11258,7 +11412,8 @@
       withFramedBuild(w, h, () => {
         renderer.render(scene, camera);
         const ctx = canvas.getContext('2d');
-        ctx.drawImage(renderer.domElement, 0, 0, w, h);
+        const src = renderer.domElement;
+        ctx.drawImage(src, 0, 0, src.width, src.height, 0, 0, w, h);
       });
     }
     
@@ -11269,6 +11424,7 @@
       const prevPos = camera.position.clone();
       const prevTarget = controls.target.clone();
       const prevMin = controls.minDistance;
+      const prevMax = controls.maxDistance;
       if (transparent) {
         scene.background = null;
         renderer.setClearColor(0x000000, 0);
@@ -11284,9 +11440,11 @@
         canvas.width = 800 * scale;
         canvas.height = 600 * scale;
         const ctx = canvas.getContext('2d');
-        ctx.drawImage(renderer.domElement, 0, 0);
+        const src = renderer.domElement;
+        ctx.drawImage(src, 0, 0, src.width, src.height, 0, 0, canvas.width, canvas.height);
       } finally {
         controls.minDistance = prevMin;
+        controls.maxDistance = prevMax;
         camera.position.copy(prevPos);
         controls.target.copy(prevTarget);
         controls.update();
@@ -11371,7 +11529,8 @@
       const build = galleryBuilds[index];
       if (!build) return;
       
-      if (!(await confirmLoad('Load "' + build.name + '"? This will replace your current build.'))) return;
+      const galleryCount = build.brickCount != null ? build.brickCount : (build.data ? build.data.length : 0);
+      if (!(await confirmLoad('Load "' + build.name + '" (' + galleryCount + ' bricks)? This will replace your current build.'))) return;
       
       saveUndo();
       bricks.forEach(b => { if (!b.isInstancedBrick) scene.remove(b); });
@@ -11974,13 +12133,13 @@
       
       // Create or update ghost
       if (!fpGhost) {
-        fpGhost = createBrick(selectedBrick, selectedColor, new THREE.Vector3(worldX, worldY, worldZ), currentRotation, true);
+        fpGhost = createBrick(selectedBrick, brickDisplayColor(selectedColor).getHex(), new THREE.Vector3(worldX, worldY, worldZ), currentRotation, true);
         if (fpGhost) scene.add(fpGhost);
         fpLastCanPlace = null; // Reset to force color update
       } else {
         if (fpGhost.userData.type !== selectedBrick || fpGhost.userData.rot !== currentRotation) {
           scene.remove(fpGhost);
-          fpGhost = createBrick(selectedBrick, selectedColor, new THREE.Vector3(worldX, worldY, worldZ), currentRotation, true);
+          fpGhost = createBrick(selectedBrick, brickDisplayColor(selectedColor).getHex(), new THREE.Vector3(worldX, worldY, worldZ), currentRotation, true);
           if (fpGhost) scene.add(fpGhost);
           fpLastCanPlace = null; // Reset to force color update
         } else {
@@ -12529,7 +12688,13 @@
       // the shadow map. One combined render was a 30ms+ main-thread task.
       if (presentStep === 0 && !(composer && qualitySettings.post)) {
         const so = window.sceneryObjects;
-        const nodes = so ? [].concat(so.trees || [], so.mountains || [], so.clouds || [], so.extras || []) : [];
+        const nodes = [window.baseplateRef, window.groundStudsRef, window.grassPlane, window.gridHelper];
+        if (so) {
+          nodes.push.apply(nodes, so.trees || []);
+          nodes.push.apply(nodes, so.mountains || []);
+          nodes.push.apply(nodes, so.clouds || []);
+          nodes.push.apply(nodes, so.extras || []);
+        }
         sceneryReveal = [];
         for (let i = 0; i < nodes.length; i++) {
           const node = nodes[i];
@@ -12538,11 +12703,6 @@
             sceneryReveal.push(node);
           }
         }
-        const shadows = renderer.shadowMap.enabled;
-        renderer.shadowMap.enabled = false;
-        renderer.render(scene, camera);
-        renderer.shadowMap.enabled = shadows;
-        hudDrawCalls = renderer.info.render.calls;
         presentStep = 1;
         window.sceneryShown = sceneryReveal.length === 0;
         needsRender = true;
