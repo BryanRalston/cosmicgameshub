@@ -3058,7 +3058,6 @@
     var liveWrap = sim.floorOn && sim.live && !sim.tenant;
     var fee = liveWrap ? (8 + Math.round(sim.rng() * 4)) : (28 + Math.round(sim.rng() * 24));
     sim.pings.push({ kind: 'wrap', x: spot.x, y: spot.y - lift, life: 22, pop: 1, dead: false, fee: fee });
-    floater(sim, spot.x, spot.y - lift - 56, 'Wrap?', '#ffe08a', true);
   }
 
   function keepWrap(sim) {
@@ -3376,7 +3375,7 @@
       sim.you.pop = 1;
       floater(sim, spot.x, spot.y - 52, 'Cover', '#e0a322', true);
       flashAt(sim, spot.x, spot.y);
-      return { ok: true, msg: 'You are on ' + STATION_LABEL[worst] + '.' };
+      return { ok: true, msg: 'You are on ' + STATION_LABEL[worst] + '. Standing in covers that station for a short stretch.' };
     }
     if (name === 'freight') {
       spend();
@@ -4561,6 +4560,9 @@
       };
       storeProto.removeItem = function (key) {
         if (key === 'hr_boot' || key === 'hr_run_v1' || key === 'hr_meta_v1') {
+          if ((key === 'hr_run_v1' || key === 'hr_boot') && run && run._wrote) {
+            try { origRemove.call(this, 'hr_tut_done'); } catch (eTut) {}
+          }
           root.__hrNoSave = true;
           bootToken = '';
         }
@@ -4599,25 +4601,24 @@
       var feelCss = document.createElement('style');
       feelCss.id = 'hr-feel-css';
       feelCss.textContent = [
-        '#hr-event.hr-inline{position:absolute;left:8px;right:8px;top:52px;bottom:auto;height:auto;max-height:none;z-index:6;margin:0;padding:0;background:transparent;display:flex;justify-content:center;align-items:flex-start;pointer-events:none;overflow:visible;}',
+        '#hr-event.hr-inline{position:absolute;left:8px;right:8px;top:8px;bottom:auto;height:auto;max-height:46%;z-index:6;margin:0;padding:0;background:transparent;display:flex;justify-content:center;align-items:flex-start;pointer-events:none;overflow:visible;}',
         '#hr-event.hr-inline[hidden]{display:none !important;}',
-        '#hr-event.hr-inline .hr-card{pointer-events:auto;width:min(640px,100%);max-height:none;overflow:visible;padding:0.45rem 0.6rem 0.5rem;border-radius:14px;background:rgba(246,240,228,0.96);box-shadow:0 10px 28px rgba(0,0,0,0.35);box-sizing:border-box;display:flex;flex-direction:column;touch-action:pan-y;}',
-        '#hr-event.hr-inline .hr-card h2{font-size:1rem;margin:0 0 0.12rem;}',
-        '#hr-event.hr-inline .hr-card p{font-size:0.82rem;margin:0 0 0.35rem;display:block;overflow:visible;}',
-        '#hr-event.hr-inline .hr-choices{flex-direction:row;flex-wrap:wrap;gap:6px;align-items:stretch;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;}',
-        '#hr-event.hr-inline .hr-choices button{width:auto;flex:1 1 auto;max-width:100%;height:auto;min-height:44px;font-size:0.85rem;padding:0.4rem 0.6rem;white-space:normal;line-height:1.25;align-items:center;background:#fff;background-image:none;color:#2b1d2e;border:2px solid #2b1d2e;overflow:visible;}',
-        '#hr-event.hr-inline .hr-choices button span{flex:1 1 auto;min-width:0;white-space:normal;line-height:1.25;}',
-        '#hr-event.hr-inline .hr-choice-cost{flex:0 0 auto;white-space:nowrap;}',
-        '#hr-event.hr-inline .hr-card__art .hr-portrait,#hr-event.hr-inline .hr-card__art .hr-icon{width:36px !important;height:36px !important;border-radius:8px;}',
-        '@media (max-width:720px){',
-        '#hr-event.hr-inline{position:absolute;left:8px;right:8px;top:auto;bottom:8px;height:auto;max-height:none;margin:0;z-index:7;display:flex;align-items:flex-end;justify-content:center;overflow:visible;}',
-        '#hr-event.hr-inline .hr-card{width:100%;max-height:none;overflow:visible;padding:0.35rem 0.45rem 0.4rem;box-sizing:border-box;display:flex;flex-direction:column;}',
-        '#hr-event.hr-inline .hr-card h2{font-size:0.95rem;line-height:1.15;margin:0 0 0.1rem;flex:0 0 auto;}',
-        '#hr-event.hr-inline .hr-card p{font-size:12px;line-height:1.25;margin:0 0 0.25rem;display:block;overflow:visible;white-space:normal;flex:0 0 auto;}',
+        '#hr-event.hr-inline .hr-card{pointer-events:auto;width:min(560px,100%);max-height:100%;overflow:visible;padding:0.28rem 0.45rem 0.32rem;border-radius:12px;background:rgba(246,240,228,0.96);box-shadow:0 8px 22px rgba(0,0,0,0.35);box-sizing:border-box;display:flex;flex-direction:column;touch-action:pan-y;}',
+        '#hr-event.hr-inline .hr-card h2{font-size:0.92rem;line-height:1.15;margin:0 0 0.08rem;}',
+        '#hr-event.hr-inline .hr-card p{font-size:0.75rem;line-height:1.25;margin:0 0 0.2rem;display:block;overflow:visible;}',
         '#hr-event.hr-inline .hr-card__art{display:none;}',
+        '#hr-event.hr-inline .hr-choices{flex-direction:row;flex-wrap:wrap;gap:4px;align-items:stretch;overflow:visible;touch-action:manipulation;}',
+        '#hr-event.hr-inline .hr-choices button{width:auto;flex:1 1 auto;max-width:100%;height:auto;min-height:44px;font-size:0.8rem;padding:0.28rem 0.45rem;white-space:normal;line-height:1.2;align-items:center;background:#fff;background-image:none;color:#2b1d2e;border:2px solid #2b1d2e;overflow:visible;}',
+        '#hr-event.hr-inline .hr-choices button span{flex:1 1 auto;min-width:0;white-space:normal;line-height:1.2;}',
+        '#hr-event.hr-inline .hr-choice-cost{flex:0 0 auto;white-space:nowrap;}',
+        '@media (max-width:720px){',
+        '#hr-event.hr-inline{position:absolute;left:8px;right:8px;top:8px;bottom:auto;height:auto;max-height:42%;margin:0;z-index:7;display:flex;align-items:flex-start;justify-content:center;overflow:visible;}',
+        '#hr-event.hr-inline .hr-card{width:100%;max-height:100%;overflow:visible;padding:0.22rem 0.35rem 0.26rem;box-sizing:border-box;display:flex;flex-direction:column;}',
+        '#hr-event.hr-inline .hr-card h2{font-size:0.86rem;line-height:1.15;margin:0 0 0.06rem;flex:0 0 auto;}',
+        '#hr-event.hr-inline .hr-card p{font-size:12px;line-height:1.2;margin:0 0 0.16rem;display:block;overflow:visible;white-space:normal;flex:0 0 auto;}',
         '#hr-event.hr-inline .hr-choices{flex:0 0 auto;min-height:0;flex-direction:column;flex-wrap:nowrap;gap:4px;overflow:visible;touch-action:manipulation;padding-bottom:0;}',
-        '#hr-event.hr-inline .hr-choices button{width:100%;flex:0 0 auto;min-height:44px;height:auto;max-height:none;font-size:0.82rem;padding:0.35rem 0.5rem;white-space:normal;line-height:1.25;justify-content:flex-start;background:#fff;background-image:none;color:#2b1d2e;border:2px solid #2b1d2e;overflow:visible;}',
-        '#hr-event.hr-inline .hr-choice-cost{font-size:12px;padding:0.12rem 0.4rem;flex:0 0 auto;white-space:nowrap;}',
+        '#hr-event.hr-inline .hr-choices button{width:100%;flex:0 0 auto;min-height:44px;height:auto;max-height:none;font-size:0.78rem;padding:0.22rem 0.4rem;white-space:normal;line-height:1.2;justify-content:flex-start;background:#fff;background-image:none;color:#2b1d2e;border:2px solid #2b1d2e;overflow:visible;}',
+        '#hr-event.hr-inline .hr-choice-cost{font-size:12px;padding:0.1rem 0.35rem;flex:0 0 auto;white-space:nowrap;}',
         '}',
         '.hr-combo.is-idle{background:#3a2a18;color:#ffe7a3;box-shadow:inset 0 0 0 2px #e0a322;}',
         '.hr-card__timer{height:4px;border-radius:99px;background:rgba(43,29,46,0.15);overflow:hidden;margin:0 0 0.35rem;}',
@@ -4724,8 +4725,8 @@
       els.event.style.position = 'absolute';
       els.event.style.background = 'transparent';
       els.event.style.pointerEvents = 'none';
-      els.event.style.top = phoneCard ? 'auto' : '8px';
-      els.event.style.bottom = phoneCard ? '8px' : 'auto';
+      els.event.style.top = '8px';
+      els.event.style.bottom = 'auto';
       els.event.style.left = '8px';
       els.event.style.right = '8px';
       els.event.style.height = 'auto';
@@ -4772,7 +4773,7 @@
           label.style.maxHeight = 'none';
         }
       }
-      var limit = Math.floor(h * (phoneCard ? 0.72 : 0.65));
+      var limit = Math.floor(h * (phoneCard ? 0.42 : 0.46));
       if (body && card.offsetHeight > limit) {
         var extra = card.offsetHeight - limit;
         var nextBody = body.offsetHeight - extra;
@@ -4789,7 +4790,7 @@
         var textCut = span && (span.scrollWidth > span.clientWidth + 2 || span.scrollHeight > span.clientHeight + 2);
         var outside = box.bottom > cardBox.bottom + 1 || box.top < cardBox.top - 1 || box.right > cardBox.right + 1 || box.left < cardBox.left - 1;
         var offStage = box.bottom > stageBox.bottom + 1 || box.top < stageBox.top - 1 || box.right > stageBox.right + 1 || box.left < stageBox.left - 1;
-        if (textCut || outside || offStage || box.height < 44) clip = '1';
+        if (textCut || outside || offStage || box.height < 36) clip = '1';
       }
       if (isQA() && els.stage) {
         els.stage.dataset.cardCap = String(Math.round(card.offsetHeight));
@@ -4866,13 +4867,26 @@
       if (root.CGSfx && root.CGSfx.haptic) root.CGSfx.haptic(ms || 12);
     }
 
+    function holdClearedRun() {
+      try { localStorage.removeItem('hr_tut_done'); } catch (eTut) {}
+      root.__hrNoSave = true;
+      bootToken = '';
+    }
+
     function saveRun() {
       if (root.__hrNoSave || !storageLive()) return;
       if (!run) return;
+      try {
+        if (run._wrote && localStorage.getItem('hr_run_v1') == null) {
+          holdClearedRun();
+          return;
+        }
+      } catch (eGone) {}
       if (sim && run.phase === 'sim' && !sim.done) {
         try { run.simState = exportSim(sim); } catch (e) { run.simState = null; }
       }
       writeJSON('hr_run_v1', run);
+      try { if (localStorage.getItem('hr_run_v1')) run._wrote = 1; } catch (eWrote) {}
     }
 
     function show(which) {
@@ -7153,10 +7167,7 @@
         });
       }
       var bannerLow = false;
-      if (stageBox.width < 720) {
-        if (coach && coach.step === 1) bannerLow = true;
-        else if (!coach && wrapCoachOn()) bannerLow = true;
-      }
+      if (stageBox.width < 720 && coach && coach.step === 1) bannerLow = true;
       var z = zoom && !zoom.hidden ? zoom.getBoundingClientRect() : null;
       var clearance = z && z.width >= 8 ? Math.round(stageBox.right - z.left + 8) : 8;
       if (skip) {
@@ -7372,6 +7383,17 @@
     function screenScale() {
       var view = viewSize();
       return view.cssW / Math.max(1, view.viewW);
+    }
+
+    function wrapLook() {
+      var scale = Math.max(0.05, screenScale());
+      var coaching = wrapCoachOn();
+      var ringCss = coaching ? 84 : 76;
+      var reach = ringCss + 46;
+      var floor = coaching ? 156 : 120;
+      if (reach < floor) reach = floor;
+      var view = viewSize();
+      return { scale: scale, ringCss: ringCss, wrapR: ringCss / scale, reach: reach, wordCss: 22, stageH: view.cssH || 0 };
     }
 
     function aimOnScreen(x, y, rWorld) {
@@ -7668,18 +7690,25 @@
       var minTap = 44;
       if (sim.pings) {
         var wrapHit = null;
-        var wrapReach = phoneHit ? 120 : 72;
-        if (wrapCoachOn()) wrapReach = phoneHit ? 156 : 96;
-        var wrapD = wrapReach;
+        var look = wrapLook();
+        var wrapD = look.reach;
+        var restockHit = null;
+        var restockD = phoneHit ? 120 : 72;
         for (var wpi = 0; wpi < sim.pings.length; wpi++) {
           var wrapPing = sim.pings[wpi];
-          if (!wrapPing || wrapPing.dead || (wrapPing.kind !== 'wrap' && wrapPing.kind !== 'restock')) continue;
-          var wd = screenDist(wrapPing.x, wrapPing.y, ev);
-          var shelfD = screenDist(wrapPing.x, wrapPing.y + 96, ev);
-          if (shelfD < wd) wd = shelfD;
-          if (wd <= wrapD) { wrapD = wd; wrapHit = wrapPing; }
+          if (!wrapPing || wrapPing.dead) continue;
+          if (wrapPing.kind === 'wrap') {
+            var wd = screenDist(wrapPing.x, wrapPing.y, ev);
+            if (wd <= wrapD) { wrapD = wd; wrapHit = wrapPing; }
+          } else if (wrapPing.kind === 'restock') {
+            var rd = screenDist(wrapPing.x, wrapPing.y, ev);
+            var shelfD = screenDist(wrapPing.x, wrapPing.y + 96, ev);
+            if (shelfD < rd) rd = shelfD;
+            if (rd <= restockD) { restockD = rd; restockHit = wrapPing; }
+          }
         }
         if (wrapHit) return { ping: wrapHit };
+        if (restockHit) return { ping: restockHit };
       }
       var lineReach = queuedReach(phoneHit);
       var best = null;
@@ -7975,37 +8004,49 @@
         var icon = ping.kind === 'wrap' ? 'return' : ping.kind === 'basket' ? 'price' : ping.kind === 'box' ? 'truck' : 'line';
         var label = ping.kind === 'wrap' ? 'Wrap' : ping.kind === 'basket' ? '+$' : ping.kind === 'box' ? 'Box' : 'Help';
         if (ping.kind === 'wrap') {
-          var phoneWrap = (els.canvas._cssW || 800) < 720;
-          var ringScale = Math.max(0.05, screenScale());
+          var look = wrapLook();
           var coaching = wrapCoachOn();
-          var wrapR = Math.max(coaching ? 64 : 36, (phoneWrap ? 76 : 42) / ringScale);
-          var pulse = coaching && !reduceMotion ? 1.05 + Math.sin(Date.now() / 160) * 0.28 : 1;
+          var pulse = coaching && !reduceMotion ? 1.05 + Math.sin(Date.now() / 160) * 0.08 : 1;
           if (isQA() && els.stage) {
-            els.stage.dataset.wrapR = String(Math.round(wrapR * ringScale));
-            els.stage.dataset.wrapHit = phoneWrap ? '140' : '84';
+            els.stage.dataset.wrapR = String(Math.round(look.ringCss));
+            els.stage.dataset.wrapHit = String(look.reach);
+            els.stage.dataset.wrapWord = 'Wrap?';
             els.stage.dataset.wrapX = String(Math.round(ping.x));
             els.stage.dataset.wrapY = String(Math.round(ping.y));
           }
+          var dpr = els.canvas._dpr || 1;
+          var sx = (ping.x - cam.x) * look.scale;
+          var sy = (ping.y + bob - cam.y) * look.scale;
+          var fitCss = look.ringCss;
+          if (sy - fitCss < 8) fitCss = Math.max(40, sy - 8);
+          if (sy + fitCss > look.stageH - 8) fitCss = Math.max(40, look.stageH - sy - 8);
           ctx.save();
           ctx.strokeStyle = 'rgba(224,163,34,0.95)';
-          ctx.lineWidth = coaching ? 8 : 6;
+          ctx.lineWidth = (coaching ? 5 : 4) / look.scale;
           ctx.beginPath();
-          ctx.arc(ping.x, ping.y + bob, wrapR * pulse, 0, Math.PI * 2);
+          ctx.arc(ping.x, ping.y + bob, (fitCss / look.scale) * pulse, 0, Math.PI * 2);
           ctx.stroke();
           ctx.restore();
-          drawIconAt(icon, ping.x, ping.y + bob, (coaching ? 72 : 52) * pulse);
+          drawIconAt(icon, ping.x, ping.y + bob, (Math.min(34, fitCss * 0.5) / look.scale) * pulse);
           ctx.save();
-          var wordPx = Math.max(16, Math.round(18 / ringScale));
-          ctx.font = '800 ' + wordPx + 'px Outfit, Inter, sans-serif';
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          var wordW = ctx.measureText('WRAP').width + wordPx;
-          var wordH = wordPx + 10;
-          var wordY = ping.y + bob + wrapR + wordH * 0.65;
-          ctx.fillStyle = 'rgba(43,29,46,0.94)';
-          ctx.fillRect(ping.x - wordW / 2, wordY - wordH / 2, wordW, wordH);
-          ctx.fillStyle = '#ffe08a';
-          ctx.fillText('WRAP', ping.x, wordY);
+          ctx.font = '800 ' + look.wordCss + 'px Outfit, Inter, sans-serif';
+          var pillH = look.wordCss + 8;
+          var aboveY = sy - fitCss - 16;
+          var belowY = sy + fitCss + 16;
+          if (aboveY - pillH / 2 < 4) aboveY = Math.max(pillH / 2 + 2, sy - Math.min(fitCss * 0.62, Math.max(0, sy - pillH)));
+          if (belowY + pillH / 2 > look.stageH - 4) belowY = look.stageH - 4 - pillH / 2;
+          var pills = [['Wrap?', aboveY], ['WRAP', belowY]];
+          for (var wp = 0; wp < pills.length; wp++) {
+            var pillW = ctx.measureText(pills[wp][0]).width + 16;
+            var pillY = pills[wp][1];
+            ctx.fillStyle = 'rgba(43,29,46,0.94)';
+            ctx.fillRect(sx - pillW / 2, pillY - pillH / 2, pillW, pillH);
+            ctx.fillStyle = '#ffe08a';
+            ctx.fillText(pills[wp][0], sx, pillY);
+          }
           ctx.restore();
           continue;
         }
@@ -10153,6 +10194,7 @@
         if (els.stage) els.stage.dataset.seed = previewSeeds().join(',');
       } else if (resumable) {
         run = saved;
+        run._wrote = 1;
         applyCampaign(run);
         if (!run.suggested) run.suggested = [];
         track('holiday_rush_resume', { seed: ymd });
