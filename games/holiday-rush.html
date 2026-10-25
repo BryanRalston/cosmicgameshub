@@ -117,7 +117,7 @@
     #hr-tenant-name { display: inline; max-width: none; overflow: visible; text-overflow: clip; white-space: nowrap; vertical-align: bottom; }
     .hr-clock { width: 86px; height: 86px; border-radius: 50%; display: grid; place-items: center; background: conic-gradient(#e0a322 calc(var(--p, 0) * 1turn), rgba(255,255,255,0.12) 0); flex: 0 0 auto; }
     .hr-clock span { width: 72px; height: 72px; border-radius: 50%; background: #141018; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-size: 1.05rem; font-weight: 800; color: #fff; text-align: center; line-height: 1; }
-    .hr-clock b { font-size: 1.15rem; font-weight: 800; line-height: 1; letter-spacing: -0.03em; }
+    .hr-clock b { font-size: 1.15rem; font-weight: 800; line-height: 1; letter-spacing: -0.03em; white-space: nowrap; }
     .hr-clock small { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; line-height: 1; }
     .hr-sales { flex: 0 1 auto; min-width: min(100%, max-content); max-width: 100%; }
     .hr-sales__top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0.15rem 0.75rem; }
@@ -253,10 +253,10 @@
       }
       #hr-sim .hr-stockline { order: 5; flex: 1 0 100%; font-size: 14px; }
       #hr-sim .hr-hud__stats { display: flex; flex: 1 1 auto; min-width: 0; gap: 4px; align-items: center; flex-wrap: nowrap; overflow: visible; }
-      #hr-clock { width: 40px; height: 40px; flex: 0 0 40px; }
-      #hr-clock span { width: 34px; height: 34px; }
-      #hr-clock b { font-size: 12px; }
-      #hr-clock small { font-size: 12px; letter-spacing: 0.04em; }
+      #hr-clock { width: 52px; height: 52px; flex: 0 0 52px; }
+      #hr-clock span { width: 44px; height: 44px; overflow: visible; }
+      #hr-clock b { font-size: 12px; white-space: nowrap; letter-spacing: -0.04em; }
+      #hr-clock small { font-size: 9px; letter-spacing: 0.02em; }
       #hr-sim .hr-sales { min-width: max-content; max-width: none; width: auto; flex: 0 0 auto; overflow: visible; }
       #hr-combo { width: 2.1rem; min-width: 2.1rem; max-width: 2.1rem; flex: 0 0 2.1rem; min-height: 36px; font-size: 11px; }
       #hr-sim .hr-stat--stars.hr-hud__extra { display: flex; flex: 0 0 auto; align-items: center; gap: 2px; min-height: 0; max-width: 4.2rem; padding: 0 2px; overflow: hidden; }
@@ -353,7 +353,7 @@
         padding-left: 4px;
         padding-right: 4px;
       }
-      #hr-sim #hr-clock small { font-size: 12px; }
+      #hr-sim #hr-clock small { font-size: 9px; }
       body:has(#hr-sim:not([hidden])) .hr-stage {
         flex: 1 1 0;
         height: auto !important;

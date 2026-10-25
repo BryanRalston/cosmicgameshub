@@ -83,8 +83,8 @@
   var MONDAY_GOAL_MUL = 0.55;
   var LIVE_PROFIT_FLOOR = 48;
   var LIVE_RING_RATE = 0.95;
-  var LIVE_BASKET = 0.46;
-  var LIVE_STAFFED = 1.46;
+  var LIVE_BASKET = 0.53;
+  var LIVE_STAFFED = 1.27;
 
   function liveQueueGap(sim) {
     return sim && sim._phone ? 210 : 140;
@@ -3706,6 +3706,37 @@
     return h12 + ':' + pad(m) + ' ' + ap;
   }
 
+  function clockMinutes(label) {
+    var parsed = /^(\d+):(\d+) (AM|PM)$/.exec(label || '');
+    if (!parsed) return 0;
+    var hh = (+parsed[1]) % 12;
+    if (parsed[3] === 'PM') hh += 12;
+    return hh * 60 + (+parsed[2]);
+  }
+
+  function faceFromMinutes(mins) {
+    if (!(mins >= 8 * 60)) mins = 8 * 60;
+    var hh = Math.floor(mins / 60);
+    var mm = mins % 60;
+    var ap = hh >= 12 ? 'PM' : 'AM';
+    var h12 = hh % 12;
+    if (h12 === 0) h12 = 12;
+    return h12 + ':' + pad(mm) + ' ' + ap;
+  }
+
+  function liveClockFace(sim) {
+    if (!sim) return '8:00 AM';
+    var t = sim.t;
+    if (!(t >= 0)) t = 0;
+    if (sim._clockT == null || t > sim._clockT) sim._clockT = t;
+    else if (t < sim._clockT) sim._clockBack = (sim._clockBack || 0) + 1;
+    var face = clockLabel(sim._clockT, sim.duration || 62);
+    var mins = clockMinutes(face);
+    if (sim._clockMin == null || mins >= sim._clockMin) sim._clockMin = mins;
+    else face = faceFromMinutes(sim._clockMin);
+    return face;
+  }
+
   function money(n) {
     n = Math.round(n || 0);
     var s = String(Math.abs(n));
@@ -4568,24 +4599,24 @@
       var feelCss = document.createElement('style');
       feelCss.id = 'hr-feel-css';
       feelCss.textContent = [
-        '#hr-event.hr-inline{position:absolute;left:8px;right:8px;top:52px;bottom:auto;height:auto;max-height:30%;z-index:6;margin:0;padding:0;background:transparent;display:flex;justify-content:center;align-items:flex-start;pointer-events:none;overflow:hidden;}',
+        '#hr-event.hr-inline{position:absolute;left:8px;right:8px;top:52px;bottom:auto;height:auto;max-height:none;z-index:6;margin:0;padding:0;background:transparent;display:flex;justify-content:center;align-items:flex-start;pointer-events:none;overflow:visible;}',
         '#hr-event.hr-inline[hidden]{display:none !important;}',
-        '#hr-event.hr-inline .hr-card{pointer-events:auto;width:min(640px,100%);max-height:100%;overflow:hidden;padding:0.45rem 0.6rem 0.5rem;border-radius:14px;background:rgba(246,240,228,0.96);box-shadow:0 10px 28px rgba(0,0,0,0.35);box-sizing:border-box;display:flex;flex-direction:column;touch-action:pan-y;}',
+        '#hr-event.hr-inline .hr-card{pointer-events:auto;width:min(640px,100%);max-height:none;overflow:visible;padding:0.45rem 0.6rem 0.5rem;border-radius:14px;background:rgba(246,240,228,0.96);box-shadow:0 10px 28px rgba(0,0,0,0.35);box-sizing:border-box;display:flex;flex-direction:column;touch-action:pan-y;}',
         '#hr-event.hr-inline .hr-card h2{font-size:1rem;margin:0 0 0.12rem;}',
         '#hr-event.hr-inline .hr-card p{font-size:0.82rem;margin:0 0 0.35rem;display:block;overflow:visible;}',
         '#hr-event.hr-inline .hr-choices{flex-direction:row;flex-wrap:wrap;gap:6px;align-items:stretch;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;}',
-        '#hr-event.hr-inline .hr-choices button{width:auto;flex:0 0 auto;max-width:100%;height:auto;min-height:44px;font-size:0.85rem;padding:0.4rem 0.6rem;white-space:nowrap;line-height:1.25;align-items:center;background:#fff;background-image:none;color:#2b1d2e;border:2px solid #2b1d2e;}',
-        '#hr-event.hr-inline .hr-choices button span{flex:0 0 auto;white-space:nowrap;line-height:1.25;}',
+        '#hr-event.hr-inline .hr-choices button{width:auto;flex:1 1 auto;max-width:100%;height:auto;min-height:44px;font-size:0.85rem;padding:0.4rem 0.6rem;white-space:normal;line-height:1.25;align-items:center;background:#fff;background-image:none;color:#2b1d2e;border:2px solid #2b1d2e;overflow:visible;}',
+        '#hr-event.hr-inline .hr-choices button span{flex:1 1 auto;min-width:0;white-space:normal;line-height:1.25;}',
         '#hr-event.hr-inline .hr-choice-cost{flex:0 0 auto;white-space:nowrap;}',
         '#hr-event.hr-inline .hr-card__art .hr-portrait,#hr-event.hr-inline .hr-card__art .hr-icon{width:36px !important;height:36px !important;border-radius:8px;}',
         '@media (max-width:720px){',
-        '#hr-event.hr-inline{position:absolute;left:8px;right:8px;top:52px;bottom:auto;height:auto;max-height:30%;margin:0;z-index:7;display:flex;align-items:flex-start;justify-content:center;overflow:hidden;}',
-        '#hr-event.hr-inline .hr-card{width:100%;max-height:100%;overflow:hidden;padding:0.35rem 0.45rem 0.4rem;box-sizing:border-box;display:flex;flex-direction:column;}',
+        '#hr-event.hr-inline{position:absolute;left:8px;right:8px;top:auto;bottom:8px;height:auto;max-height:none;margin:0;z-index:7;display:flex;align-items:flex-end;justify-content:center;overflow:visible;}',
+        '#hr-event.hr-inline .hr-card{width:100%;max-height:none;overflow:visible;padding:0.35rem 0.45rem 0.4rem;box-sizing:border-box;display:flex;flex-direction:column;}',
         '#hr-event.hr-inline .hr-card h2{font-size:0.95rem;line-height:1.15;margin:0 0 0.1rem;flex:0 0 auto;}',
         '#hr-event.hr-inline .hr-card p{font-size:12px;line-height:1.25;margin:0 0 0.25rem;display:block;overflow:visible;white-space:normal;flex:0 0 auto;}',
         '#hr-event.hr-inline .hr-card__art{display:none;}',
-        '#hr-event.hr-inline .hr-choices{flex:0 0 auto;min-height:0;flex-direction:column;flex-wrap:nowrap;gap:4px;overflow:hidden;touch-action:manipulation;padding-bottom:0;}',
-        '#hr-event.hr-inline .hr-choices button{width:100%;flex:0 0 auto;min-height:36px;height:auto;font-size:0.82rem;padding:0.2rem 0.5rem;white-space:nowrap;line-height:1.15;justify-content:flex-start;background:#fff;background-image:none;color:#2b1d2e;border:2px solid #2b1d2e;}',
+        '#hr-event.hr-inline .hr-choices{flex:0 0 auto;min-height:0;flex-direction:column;flex-wrap:nowrap;gap:4px;overflow:visible;touch-action:manipulation;padding-bottom:0;}',
+        '#hr-event.hr-inline .hr-choices button{width:100%;flex:0 0 auto;min-height:44px;height:auto;max-height:none;font-size:0.82rem;padding:0.35rem 0.5rem;white-space:normal;line-height:1.25;justify-content:flex-start;background:#fff;background-image:none;color:#2b1d2e;border:2px solid #2b1d2e;overflow:visible;}',
         '#hr-event.hr-inline .hr-choice-cost{font-size:12px;padding:0.12rem 0.4rem;flex:0 0 auto;white-space:nowrap;}',
         '}',
         '.hr-combo.is-idle{background:#3a2a18;color:#ffe7a3;box-shadow:inset 0 0 0 2px #e0a322;}',
@@ -4690,86 +4721,80 @@
       var h = els.stage.clientHeight || 0;
       if (!(h > 0)) return;
       var phoneCard = (els.canvas && els.canvas._cssW || 800) < 720;
-      var cap = Math.floor(h * (phoneCard ? 0.22 : 0.28));
-      var capMax = Math.floor(h * (phoneCard ? 0.26 : 0.42));
-      if (cap < 1) cap = 1;
-      if (capMax < cap) capMax = cap;
-      function applyCap(next) {
-        cap = next;
-        els.event.style.position = 'absolute';
-        els.event.style.background = 'transparent';
-        els.event.style.pointerEvents = 'none';
-        els.event.style.top = phoneCard ? 'auto' : '8px';
-        els.event.style.bottom = phoneCard ? '6px' : 'auto';
-        els.event.style.left = '8px';
-        els.event.style.right = '8px';
-        els.event.style.maxHeight = cap + 'px';
-        els.event.style.overflow = 'hidden';
-        var card = els.event.querySelector('.hr-card');
-        if (!card) return;
-        card.style.pointerEvents = 'auto';
-        card.style.maxHeight = cap + 'px';
-        card.style.overflow = 'hidden';
-        card.style.boxSizing = 'border-box';
-        var choices = card.querySelector('.hr-choices');
-        if (!choices) return;
-        var title = card.querySelector('h2');
-        var body = card.querySelector('p');
-        if (body) {
-          body.style.display = 'block';
-          body.style.overflow = 'visible';
-          body.style.webkitLineClamp = 'unset';
-          body.style.whiteSpace = 'normal';
-        }
-        var used = 8;
-        if (title) used += title.offsetHeight + 4;
-        if (body) used += body.offsetHeight + 4;
-        var room = cap - used;
-        if (room < 72) room = 72;
-        if (room > cap - 8) room = cap - 8;
-        choices.style.maxHeight = room + 'px';
-        choices.style.overflowY = phoneCard ? 'hidden' : 'auto';
-        choices.style.overflowX = 'hidden';
-        choices.style.touchAction = phoneCard ? 'manipulation' : 'pan-y';
-        var btns = choices.querySelectorAll('button');
-        if (btns.length) {
-          var gaps = Math.max(0, btns.length - 1) * 4;
-          var fitH = Math.floor((room - gaps) / btns.length);
-          if (phoneCard) {
-            if (fitH > 44) fitH = 44;
-            if (fitH < 32) fitH = 32;
-          } else {
-            if (fitH > 48) fitH = 48;
-            if (fitH < 36) fitH = 36;
-          }
-          for (var bi = 0; bi < btns.length; bi++) {
-            btns[bi].style.boxSizing = 'border-box';
-            btns[bi].style.height = fitH + 'px';
-            btns[bi].style.minHeight = fitH + 'px';
-            btns[bi].style.maxHeight = fitH + 'px';
-          }
+      els.event.style.position = 'absolute';
+      els.event.style.background = 'transparent';
+      els.event.style.pointerEvents = 'none';
+      els.event.style.top = phoneCard ? 'auto' : '8px';
+      els.event.style.bottom = phoneCard ? '8px' : 'auto';
+      els.event.style.left = '8px';
+      els.event.style.right = '8px';
+      els.event.style.height = 'auto';
+      els.event.style.maxHeight = 'none';
+      els.event.style.overflow = 'visible';
+      var card = els.event.querySelector('.hr-card');
+      if (!card) return;
+      card.style.pointerEvents = 'auto';
+      card.style.height = 'auto';
+      card.style.maxHeight = 'none';
+      card.style.overflow = 'visible';
+      card.style.boxSizing = 'border-box';
+      var title = card.querySelector('h2');
+      var body = card.querySelector('p');
+      var choices = card.querySelector('.hr-choices');
+      if (title) title.style.flex = '0 0 auto';
+      if (body) {
+        body.style.display = 'block';
+        body.style.overflow = 'visible';
+        body.style.maxHeight = 'none';
+        body.style.webkitLineClamp = 'unset';
+        body.style.whiteSpace = 'normal';
+        body.style.flex = '0 0 auto';
+      }
+      if (choices) {
+        choices.style.maxHeight = 'none';
+        choices.style.overflow = 'visible';
+        choices.style.flex = '0 0 auto';
+      }
+      var btns = choices ? choices.querySelectorAll('button') : [];
+      for (var bi = 0; bi < btns.length; bi++) {
+        var btn = btns[bi];
+        btn.style.boxSizing = 'border-box';
+        btn.style.height = 'auto';
+        btn.style.minHeight = '44px';
+        btn.style.maxHeight = 'none';
+        btn.style.overflow = 'visible';
+        btn.style.whiteSpace = 'normal';
+        var label = btn.querySelector('span');
+        if (label) {
+          label.style.whiteSpace = 'normal';
+          label.style.overflow = 'visible';
+          label.style.height = 'auto';
+          label.style.maxHeight = 'none';
         }
       }
-      applyCap(cap);
-      var grow = 0;
-      while (grow < 6 && cap < capMax) {
-        var cardNow = els.event.querySelector('.hr-card');
-        var bodyNow = cardNow && cardNow.querySelector('p');
-        var choiceNow = cardNow && cardNow.querySelector('.hr-choices');
-        var lastBtn = choiceNow ? choiceNow.querySelector('button:last-child') : null;
-        var textCut = bodyNow && bodyNow.scrollHeight > bodyNow.clientHeight + 1;
-        var cardCut = cardNow && cardNow.scrollHeight > cardNow.clientHeight + 1;
-        var btnCut = false;
-        if (lastBtn && cardNow) {
-          var btnBox = lastBtn.getBoundingClientRect();
-          var cardBox = cardNow.getBoundingClientRect();
-          btnCut = btnBox.bottom > cardBox.bottom + 1;
-        }
-        if (!textCut && !cardCut && !btnCut) break;
-        grow++;
-        applyCap(Math.min(capMax, cap + 28));
+      var limit = Math.floor(h * (phoneCard ? 0.72 : 0.65));
+      if (body && card.offsetHeight > limit) {
+        var extra = card.offsetHeight - limit;
+        var nextBody = body.offsetHeight - extra;
+        if (nextBody < 36) nextBody = 36;
+        body.style.maxHeight = nextBody + 'px';
+        body.style.overflowY = 'auto';
       }
-      if (isQA() && els.stage) els.stage.dataset.cardCap = String(cap);
+      var clip = '0';
+      var cardBox = card.getBoundingClientRect();
+      var stageBox = els.stage.getBoundingClientRect();
+      for (var ci = 0; ci < btns.length; ci++) {
+        var box = btns[ci].getBoundingClientRect();
+        var span = btns[ci].querySelector('span');
+        var textCut = span && (span.scrollWidth > span.clientWidth + 2 || span.scrollHeight > span.clientHeight + 2);
+        var outside = box.bottom > cardBox.bottom + 1 || box.top < cardBox.top - 1 || box.right > cardBox.right + 1 || box.left < cardBox.left - 1;
+        var offStage = box.bottom > stageBox.bottom + 1 || box.top < stageBox.top - 1 || box.right > stageBox.right + 1 || box.left < stageBox.left - 1;
+        if (textCut || outside || offStage || box.height < 44) clip = '1';
+      }
+      if (isQA() && els.stage) {
+        els.stage.dataset.cardCap = String(Math.round(card.offsetHeight));
+        els.stage.dataset.cardClip = clip;
+      }
     }
 
     function placeToast() {
@@ -5691,9 +5716,7 @@
       var clock = document.getElementById('hr-clock');
       var salesText = document.getElementById('hr-sales-text');
       if (!label || !salesText) return;
-      if (sim._clockT == null || sim.t > sim._clockT) sim._clockT = sim.t;
-      else if (sim.t < sim._clockT) sim._clockBack = (sim._clockBack || 0) + 1;
-      var face = clockLabel(sim._clockT, sim.duration);
+      var face = liveClockFace(sim);
       var faceBits = face.split(' ');
       var faceTime = label.querySelector('b');
       var faceAmpm = label.querySelector('small');
@@ -5725,7 +5748,7 @@
         var stockLabel = backUnits <= 0
           ? 'Shelf empty · Back 0'
           : ('Shelf ' + shelfPct + '% · Back ' + backUnits);
-        if (sim.floorOn && !sim.tenant && !sim._eveningTruck && backUnits <= 40) stockLabel += ' · Call truck';
+        if (backUnits > 0 && sim.floorOn && !sim.tenant && !sim._eveningTruck && backUnits <= 40) stockLabel += ' · Call truck';
         stockText.textContent = stockLabel;
         var freightName = els.sim && els.sim.querySelector('[data-act="freight"] span:last-child');
         if (freightName && sim.floorOn && !sim.tenant) {
@@ -6816,7 +6839,7 @@
       function gondola(x, y, label) {
         g.save();
         g.translate(x, y);
-        g.scale(0.56, 0.56);
+        g.scale(0.64, 0.64);
         g.translate(-x, -y);
         g.fillStyle = 'rgba(42,24,18,0.28)';
         traceRound(g, x - 64, y - 98, 136, 108, 10);
@@ -6850,6 +6873,42 @@
       }
       var bayName = ['TOYS', 'TREATS', 'WRAP', 'CARDS'];
       for (var si = 0; si < SHELVES.length; si++) gondola(SHELVES[si].x, SHELVES[si].y, SHELVES[si].label || bayName[si] || 'AISLE');
+      var boothShelf = null;
+      for (var bi = 0; bi < SHELVES.length; bi++) if (SHELVES[bi].label === 'BOOTH') boothShelf = SHELVES[bi];
+      function giftPile(px, py) {
+        g.save();
+        g.translate(px, py);
+        g.fillStyle = 'rgba(42,24,18,0.22)';
+        g.beginPath();
+        g.ellipse(0, 16, 22, 7, 0, 0, Math.PI * 2);
+        g.fill();
+        g.fillStyle = PAL.red;
+        traceRound(g, -16, -8, 22, 18, 3);
+        g.fill();
+        g.fillStyle = PAL.green;
+        traceRound(g, -2, -14, 20, 16, 3);
+        g.fill();
+        g.fillStyle = PAL.gold;
+        traceRound(g, 6, -2, 16, 14, 3);
+        g.fill();
+        g.strokeStyle = PAL.cream;
+        g.lineWidth = 2;
+        g.beginPath();
+        g.moveTo(-5, -8);
+        g.lineTo(-5, 10);
+        g.moveTo(-16, 1);
+        g.lineTo(6, 1);
+        g.moveTo(8, -14);
+        g.lineTo(8, 2);
+        g.moveTo(-2, -6);
+        g.lineTo(18, -6);
+        g.stroke();
+        g.restore();
+      }
+      if (boothShelf) {
+        giftPile(boothShelf.x - 150, boothShelf.y + 150);
+        giftPile(boothShelf.x + 170, boothShelf.y + 130);
+      }
       function counter(x, y, accent) {
         g.fillStyle = 'rgba(42,24,18,0.28)';
         traceRound(g, x - 62, y + 8, 132, 48, 8);
@@ -7144,10 +7203,11 @@
     }
 
     function camClamp(x, y, view) {
-      return {
-        x: Math.round(clamp(x, 0, Math.max(0, WORLD_W - view.viewW))),
-        y: Math.round(clamp(y, 0, Math.max(0, WORLD_H - view.viewH)))
-      };
+      var maxX = WORLD_W - view.viewW;
+      var maxY = WORLD_H - view.viewH;
+      var nx = maxX < 0 ? maxX / 2 : clamp(x, 0, maxX);
+      var ny = maxY < 0 ? maxY / 2 : clamp(y, 0, maxY);
+      return { x: Math.round(nx), y: Math.round(ny) };
     }
 
     function wrapHoldZoom(cssW, cssH) {
@@ -7163,7 +7223,8 @@
       var worldH = WORLD_H || 900;
       var fitW = cssW / Math.max(1, worldW);
       var fitH = cssH / Math.max(1, worldH);
-      var fit = Math.max(fitW, fitH);
+      var phone = cssW < 720;
+      var fit = phone ? Math.max(fitW, fitH) : Math.min(fitW, fitH);
       if (!(fit > 0.05)) fit = 0.05;
       return fit;
     }
@@ -7223,6 +7284,10 @@
       if (sim && sim.floorOn && !cam.overview) {
         var worldW = WORLD_W || 1280;
         var worldH = WORLD_H || 900;
+        var cssW = view.cssW || (els.canvas && els.canvas._cssW) || 800;
+        if (cssW >= 720) {
+          return camClamp((worldW - view.viewW) / 2, (worldH - view.viewH) / 2, view);
+        }
         var focus = view.viewW > 1100 ? 740 : 620;
         var x = focus - view.viewW * 0.5;
         var booth = wrapSpot();
@@ -8237,7 +8302,7 @@
         els.stage.dataset.back = String(backLeft(sim));
         els.stage.dataset.sales = String(Math.round(sim.sales || 0));
         els.stage.dataset.goal = String(Math.round(sim.goal || 0));
-        els.stage.dataset.clock = clockLabel(sim.t, sim.duration || 62);
+        els.stage.dataset.clock = liveClockFace(sim);
         els.stage.dataset.view = Math.round(view.viewW) + ',' + Math.round(view.viewH);
         els.stage.dataset.zoomNow = String(Math.round((cam.zoom || 1) * 100) / 100);
         var regAx = SPOTS.reg1 ? SPOTS.reg1.x : 0;
@@ -9508,7 +9573,7 @@
         liveAcc += dt;
         if (liveAcc > 5 && els.live) {
           liveAcc = 0;
-          els.live.textContent = shiftLabel(run.day) + ' ' + clockLabel(sim._clockT == null ? sim.t : sim._clockT, sim.duration) + ', sales ' + money(sim.sales) + ' of ' + money(sim.goal) + ', morale ' + Math.round(sim.morale) + '.';
+          els.live.textContent = shiftLabel(run.day) + ' ' + liveClockFace(sim) + ', sales ' + money(sim.sales) + ' of ' + money(sim.goal) + ', morale ' + Math.round(sim.morale) + '.';
         }
         if (hooks.heat) hooks.heat(sim.customers.length, !!(sim._heat && sim._heat.rush && !sim.coachHold));
         if (!coach && sim.done) finishDay();
@@ -10170,6 +10235,19 @@
         var lab = document.querySelector('.hr-sales__top span');
         return lab ? lab.textContent : '';
       },
+      emptyBack: function () {
+        if (!isQA() || !sim) return '';
+        var bag = stockBag(sim);
+        if (bag) {
+          var id;
+          for (id in bag) if (Object.prototype.hasOwnProperty.call(bag, id)) bag[id] = 0;
+        }
+        sim.stock = 0;
+        sim.paused = true;
+        paintHud();
+        var stockText = document.getElementById('hr-stock-text');
+        return stockText ? stockText.textContent : '';
+      },
       setSales: function (sales, goal) {
         if (!isQA() || !sim) return;
         if (sales != null) sim.sales = sales;
@@ -10396,6 +10474,11 @@
       if (mins < prevMin) bad = true;
       prevMin = mins;
     }
+    var faceSim = { t: 24.6, duration: 62 };
+    var faceA = liveClockFace(faceSim);
+    faceSim.t = 24.3;
+    var faceB = liveClockFace(faceSim);
+    if (clockMinutes(faceB) < clockMinutes(faceA) || faceSim._clockBack !== 1) bad = true;
     var gapSim = {
       floorOn: true,
       live: true,
