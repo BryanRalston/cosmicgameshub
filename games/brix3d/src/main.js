@@ -1,11 +1,5 @@
     import * as THREE from 'three';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-    import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-    import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-    import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-    import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
-    import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
-    import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
     
     // ==================== CONSTANTS ====================
     const STUD = 0.8;
@@ -269,7 +263,11 @@
     
     // ==================== STATE ====================
     let scene, camera, renderer, controls, raycaster, mouse, groundPlane;
-    let composer, bloomPass, ssaoPass, smaaPass, vignettePass;
+    let composer, bloomPass, ssaoPass, vignettePass;
+    let postMods = null;
+    let postModsPromise = null;
+    let ssaoPromise = null;
+    let postGen = 0;
     let ghost = null;
     let mirrorGhosts = []; // Ghost previews for mirrored bricks
     let prefabGhosts = []; // Ghost previews for prefab bricks
@@ -361,8 +359,6 @@
     let fpGhost = null; // Ghost preview for walk mode (single brick)
     let fpGhostOffset = {x: 0, z: 0, y: 0}; // Arrow key offset for ghost position
     let fpMenuMode = false; // True when pointer is released for menu access
-    let fpCachedMeshes = []; // Cached mesh array for raycasting
-    let fpCachedBrickCount = 0; // Track brick count for cache invalidation
     let fpLastGhostPos = null; // Last ghost grid position (to avoid redundant updates)
     let fpLastCanPlace = null; // Last canPlace state
     let fpUpdateCounter = 0; // Frame counter for throttling
@@ -1076,17 +1072,17 @@
       high: {
         dprDesktop: 1.5, dprMobile: 1,
         shadowDesktop: 2048, shadowMobile: 1024,
-        bloom: true, ssao: true, smaa: true, post: true
+        bloom: true, ssao: true, post: true
       },
       balanced: {
         dprDesktop: 1.5, dprMobile: 1,
         shadowDesktop: 2048, shadowMobile: 1024,
-        bloom: true, ssao: false, smaa: true, post: true
+        bloom: true, ssao: false, post: true
       },
       performance: {
         dprDesktop: 1, dprMobile: 1,
         shadowDesktop: 1024, shadowMobile: 512,
-        bloom: false, ssao: false, smaa: false, post: false
+        bloom: false, ssao: false, post: false
       }
     };
     let qualityPreset = 'balanced';
@@ -1130,9 +1126,8 @@
     }
     
     function useMsaa() {
-      // Phones: MSAA only. Desktop post: SMAA only. Never both.
-      if (isMobileGfx()) return true;
-      return !(qualitySettings.post && qualitySettings.smaa);
+      // One method: MSAA. SMAA is not used.
+      return true;
     }
     
     function stepDownQuality() {
@@ -1161,6 +1156,24 @@
         renderer.shadowMap.enabled = false;
         needsRender = true;
         toast('Shadows off to hold 50 FPS');
+      }
+    }
+
+    // Two seconds under 50 FPS while frames are actually being demanded.
+    function considerAutoQuality(fps, demanded, rendered) {
+      if (document.hidden || performance.now() - bootMs <= 4000) return;
+      if (demanded < 30 || rendered < 15) {
+        if (rendered >= 50) lowFpsStreak = 0;
+        return;
+      }
+      if (fps > 0 && fps < 50 && rendered / demanded > 0.5) {
+        lowFpsStreak++;
+        if (lowFpsStreak >= 2) {
+          lowFpsStreak = 0;
+          stepDownQuality();
+        }
+      } else if (fps >= 50) {
+        lowFpsStreak = 0;
       }
     }
     
@@ -1461,6 +1474,26 @@
     }
     
     // ==================== POST-PROCESSING ====================
+    function loadExternalModule(href) {
+      return import(href);
+    }
+
+    function loadPostMods() {
+      if (!postModsPromise) {
+        postModsPromise = loadExternalModule(__BRIX_POST__).then((mod) => {
+          postMods = {
+            EffectComposer: mod.EffectComposer,
+            RenderPass: mod.RenderPass,
+            UnrealBloomPass: mod.UnrealBloomPass,
+            ShaderPass: mod.ShaderPass,
+            SSAOPass: mod.SSAOPass
+          };
+          return postMods;
+        });
+      }
+      return postModsPromise;
+    }
+
     function setupPostProcessing() {
       if (composer) {
         try { composer.dispose(); } catch (e) {}
@@ -1468,26 +1501,44 @@
       }
       ssaoPass = null;
       bloomPass = null;
-      smaaPass = null;
       vignettePass = null;
-      
-      if (!qualitySettings.post) {
-        composer = null;
-        return;
+
+      if (!qualitySettings.post || isMobileGfx()) return;
+
+      const generation = ++postGen;
+      loadPostMods().then(() => {
+        if (generation !== postGen) return;
+        if (!qualitySettings.post || isMobileGfx() || !renderer || !postMods) return;
+        buildComposer();
+      }).catch(() => {});
+    }
+
+    function buildComposer() {
+      const { EffectComposer, RenderPass, UnrealBloomPass, ShaderPass, SSAOPass } = postMods;
+      const size = new THREE.Vector2();
+      renderer.getSize(size);
+      const pr = renderer.getPixelRatio();
+      let rt = null;
+      try {
+        rt = new THREE.WebGLRenderTarget(
+          Math.max(1, Math.floor(size.width * pr)),
+          Math.max(1, Math.floor(size.height * pr)),
+          { type: THREE.HalfFloatType, samples: 4 }
+        );
+      } catch (e) {
+        rt = null;
       }
-      
-      composer = new EffectComposer(renderer);
+      composer = rt ? new EffectComposer(renderer, rt) : new EffectComposer(renderer);
       composer.addPass(new RenderPass(scene, camera));
-      
-      const allowSsao = qualitySettings.ssao && !isMobileGfx();
-      if (allowSsao) {
+
+      if (qualitySettings.ssao && SSAOPass && !isMobileGfx()) {
         ssaoPass = new SSAOPass(scene, camera, innerWidth, innerHeight, 16);
         ssaoPass.kernelRadius = 8;
         ssaoPass.minDistance = 0.005;
         ssaoPass.maxDistance = 0.12;
         composer.addPass(ssaoPass);
       }
-      
+
       if (qualitySettings.bloom && !isMobileGfx()) {
         bloomPass = new UnrealBloomPass(
           new THREE.Vector2(innerWidth * 0.5, innerHeight * 0.5),
@@ -1497,7 +1548,7 @@
         );
         composer.addPass(bloomPass);
       }
-      
+
       const vignetteShader = {
         uniforms: {
           'tDiffuse': { value: null },
@@ -1520,7 +1571,7 @@
           uniform float saturation;
           uniform float contrast;
           varying vec2 vUv;
-          
+
           void main() {
             vec4 texel = texture2D(tDiffuse, vUv);
             vec2 uv = (vUv - vec2(0.5)) * vec2(offset);
@@ -1535,16 +1586,11 @@
       };
       vignettePass = new ShaderPass(vignetteShader);
       composer.addPass(vignettePass);
-      
-      if (qualitySettings.smaa && !isMobileGfx()) {
-        smaaPass = new SMAAPass(innerWidth, innerHeight);
-        composer.addPass(smaaPass);
-      }
-      
       composer.setSize(innerWidth, innerHeight);
+      needsRender = true;
     }
-    
-    // ==================== ENVIRONMENT MAP ====================
+
+        // ==================== ENVIRONMENT MAP ====================
     function createEnvMap() {
       // One PMREM. Do not regenerate every frame or on time-of-day ticks.
       if (!pmremGenerator) {
@@ -2161,6 +2207,7 @@
       
       const createTheme = themes[theme] || themes.forest;
       createTheme(center, baseplateSize);
+      setTimeout(mergeSceneryMeshes, 0);
       
       // Update button states
       document.querySelectorAll('[data-background]').forEach(btn => {
@@ -2170,21 +2217,27 @@
       toast(`🎨 ${theme.charAt(0).toUpperCase() + theme.slice(1)} environment loaded`);
     }
     
+    function disposeSceneryObject(obj) {
+      if (!obj || !obj.traverse) return;
+      obj.traverse(node => {
+        if (node.geometry && node.geometry.dispose) node.geometry.dispose();
+        if (node.material) {
+          const list = Array.isArray(node.material) ? node.material : [node.material];
+          for (let i = 0; i < list.length; i++) if (list[i] && list[i].dispose) list[i].dispose();
+        }
+      });
+    }
+
     function clearScenery() {
       if (!window.sceneryObjects) return;
-      
       const so = window.sceneryObjects;
-      if (so.sky) scene.remove(so.sky);
-      if (so.sun) scene.remove(so.sun);
-      if (so.moon) scene.remove(so.moon);
-      if (so.water) scene.remove(so.water);
-      if (so.particles) scene.remove(so.particles);
-      so.trees.forEach(t => scene.remove(t));
-      so.mountains.forEach(m => scene.remove(m));
-      so.clouds.forEach(c => scene.remove(c));
-      so.extras.forEach(e => scene.remove(e));
-      
-      // Reset
+      const drop = [so.sky, so.sun, so.moon, so.water, so.particles].concat(so.trees, so.mountains, so.clouds, so.extras);
+      for (let i = 0; i < drop.length; i++) {
+        const obj = drop[i];
+        if (!obj) continue;
+        scene.remove(obj);
+        disposeSceneryObject(obj);
+      }
       so.sky = null;
       so.sun = null;
       so.moon = null;
@@ -2194,6 +2247,163 @@
       so.mountains = [];
       so.clouds = [];
       so.extras = [];
+      window.sceneryMergedDraws = 0;
+    }
+
+    const _mergeV = new THREE.Vector3();
+    const _mergeN = new THREE.Matrix3();
+
+    function sceneryMaterialKey(mat) {
+      const color = mat.color ? mat.color.getHex() : 0;
+      const emissive = mat.emissive ? mat.emissive.getHex() : 0;
+      const opacity = mat.opacity === undefined ? 1 : mat.opacity;
+      return [
+        mat.type,
+        color.toString(16),
+        emissive.toString(16),
+        (mat.roughness === undefined ? 1 : mat.roughness).toFixed(3),
+        (mat.metalness === undefined ? 0 : mat.metalness).toFixed(3),
+        opacity.toFixed(3),
+        mat.transparent ? 1 : 0,
+        mat.side || 0,
+        mat.flatShading ? 1 : 0,
+        mat.depthWrite === false ? 0 : 1
+      ].join('|');
+    }
+
+    function makeSceneryMaterial(src) {
+      const params = {
+        color: src.color ? src.color.getHex() : 0xffffff,
+        opacity: src.opacity === undefined ? 1 : src.opacity,
+        transparent: !!src.transparent,
+        side: src.side,
+        depthWrite: src.depthWrite !== false
+      };
+      if (src.isMeshBasicMaterial) return new THREE.MeshBasicMaterial(params);
+      params.roughness = src.roughness === undefined ? 1 : src.roughness;
+      params.metalness = src.metalness === undefined ? 0 : src.metalness;
+      params.flatShading = !!src.flatShading;
+      params.emissive = src.emissive ? src.emissive.getHex() : 0x000000;
+      if (src.isMeshLambertMaterial) return new THREE.MeshLambertMaterial(params);
+      return new THREE.MeshStandardMaterial(params);
+    }
+
+    function sceneryRootMergeable(root) {
+      let meshes = 0;
+      let blocked = false;
+      root.traverse(obj => {
+        if (!obj.isMesh || obj.isInstancedMesh) return;
+        meshes++;
+        const mat = obj.material;
+        if (!mat || Array.isArray(mat) || mat.isShaderMaterial || mat.map || mat.normalMap) blocked = true;
+      });
+      return meshes > 0 && !blocked;
+    }
+
+    function bakeSceneryPart(obj) {
+      const src = obj.geometry;
+      if (!src || !src.attributes || !src.attributes.position) return null;
+      const geo = src.index ? src.toNonIndexed() : src;
+      const posAttr = geo.attributes.position;
+      const nrmAttr = geo.attributes.normal;
+      const count = posAttr.count;
+      if (!count) {
+        if (geo !== src) geo.dispose();
+        return null;
+      }
+      _mergeN.getNormalMatrix(obj.matrixWorld);
+      const positions = new Float32Array(count * 3);
+      const normals = new Float32Array(count * 3);
+      for (let i = 0; i < count; i++) {
+        _mergeV.fromBufferAttribute(posAttr, i).applyMatrix4(obj.matrixWorld);
+        positions[i * 3] = _mergeV.x;
+        positions[i * 3 + 1] = _mergeV.y;
+        positions[i * 3 + 2] = _mergeV.z;
+        if (nrmAttr) {
+          _mergeV.fromBufferAttribute(nrmAttr, i).applyMatrix3(_mergeN);
+          if (_mergeV.lengthSq() > 1e-8) _mergeV.normalize();
+        } else {
+          _mergeV.set(0, 1, 0);
+        }
+        normals[i * 3] = _mergeV.x;
+        normals[i * 3 + 1] = _mergeV.y;
+        normals[i * 3 + 2] = _mergeV.z;
+      }
+      if (geo !== src) geo.dispose();
+      return { positions, normals, count };
+    }
+
+    function mergeSceneryMeshes() {
+      const so = window.sceneryObjects;
+      if (!so) return 0;
+      const roots = so.trees.concat(so.mountains, so.clouds, so.extras);
+      const buckets = new Map();
+      const taken = [];
+      const kept = [];
+      for (let r = 0; r < roots.length; r++) {
+        const root = roots[r];
+        if (!root) continue;
+        if (!sceneryRootMergeable(root)) {
+          kept.push(root);
+          continue;
+        }
+        root.updateWorldMatrix(true, true);
+        let baked = 0;
+        root.traverse(obj => {
+          if (!obj.isMesh || obj.isInstancedMesh) return;
+          const part = bakeSceneryPart(obj);
+          if (!part) return;
+          const key = sceneryMaterialKey(obj.material);
+          let bucket = buckets.get(key);
+          if (!bucket) {
+            bucket = { material: makeSceneryMaterial(obj.material), chunks: [] };
+            buckets.set(key, bucket);
+          }
+          bucket.chunks.push(part);
+          baked++;
+        });
+        if (baked > 0) taken.push(root);
+        else kept.push(root);
+      }
+      if (!taken.length) return 0;
+      const merged = [];
+      buckets.forEach(bucket => {
+        let total = 0;
+        for (let i = 0; i < bucket.chunks.length; i++) total += bucket.chunks[i].count;
+        if (!total) {
+          bucket.material.dispose();
+          return;
+        }
+        const positions = new Float32Array(total * 3);
+        const normals = new Float32Array(total * 3);
+        let offset = 0;
+        for (let i = 0; i < bucket.chunks.length; i++) {
+          const chunk = bucket.chunks[i];
+          positions.set(chunk.positions, offset);
+          normals.set(chunk.normals, offset);
+          offset += chunk.count * 3;
+        }
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geo.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+        const mesh = new THREE.Mesh(geo, bucket.material);
+        mesh.castShadow = false;
+        mesh.receiveShadow = false;
+        mesh.userData.sceneryMerge = true;
+        scene.add(mesh);
+        merged.push(mesh);
+      });
+      for (let i = 0; i < taken.length; i++) {
+        scene.remove(taken[i]);
+        disposeSceneryObject(taken[i]);
+      }
+      so.trees = merged;
+      so.mountains = [];
+      so.clouds = [];
+      so.extras = kept;
+      window.sceneryMergedDraws = merged.length;
+      needsRender = true;
+      return merged.length;
     }
     
     // ==================== FOREST THEME ====================
@@ -5412,10 +5622,10 @@
     }
     
 
-    function pickBuild(ray) {
+    function pickBuild(ray, collect) {
       const dir = ray.direction;
       const orig = ray.origin;
-      const maxDist = 900;
+      const maxDist = collect && collect.maxDist ? collect.maxDist : 900;
       let groundT = Infinity;
       if (dir.y !== 0) {
         const gt = -orig.y / dir.y;
@@ -5446,12 +5656,21 @@
         if (t > 0.015 && y >= 0 && y < 480 && x > -2000 && x < 4000 && z > -2000 && z < 4000) {
           const brick = cellBrick.get(x + ',' + z + ',' + y);
           if (brick) {
-            return {
+            const hit = {
               point: orig.clone().addScaledVector(dir, t),
               distance: t,
               brick,
               normal: normal.clone()
             };
+            if (collect) {
+              if (!collect.seen.has(brick)) {
+                collect.seen.add(brick);
+                collect.hits.push(hit);
+              }
+              if (collect.hits.length >= (collect.limit || 64)) break;
+            } else {
+              return hit;
+            }
           }
         }
         if (tMaxX <= tMaxY && tMaxX <= tMaxZ) {
@@ -5471,6 +5690,7 @@
           normal.set(0, 0, -stepZ);
         }
       }
+      if (collect) return null;
       if (groundT < maxDist) {
         return {
           point: orig.clone().addScaledVector(dir, groundT),
@@ -5482,7 +5702,13 @@
       return null;
     }
 
-    function pickPoint() {
+    function pickBuildHits(ray, maxDist) {
+      const collect = { seen: new Set(), hits: [], limit: 64, maxDist: maxDist || 900 };
+      pickBuild(ray, collect);
+      return collect.hits;
+    }
+
+        function pickPoint() {
       raycaster.setFromCamera(mouse, camera);
       return pickBuild(raycaster.ray);
     }
@@ -6156,14 +6382,8 @@
     
     function updateWallModeGhost() {
       removeWallModeGhost();
-      
-      raycaster.setFromCamera(mouse, camera);
-      const groundHits = raycaster.intersectObject(groundPlane);
-      const brickHits = raycaster.intersectObjects(collectBrickMeshes(true), false);
-      
-      let hit = brickHits.length > 0 ? brickHits[0] : (groundHits.length > 0 ? groundHits[0] : null);
+      const hit = pickPoint();
       if (!hit) return;
-      
       const worldPos = hit.point;
       const gPos = worldToGrid(worldPos.x, worldPos.z);
       
@@ -6749,175 +6969,86 @@
     }
     
     function pickColor() {
-      raycaster.setFromCamera(mouse, camera);
-      const allPick = collectBrickMeshes(true);
-      const meshes = [];
-      const instancedMeshes = [];
-      for (let i = 0; i < allPick.length; i++) {
-        if (allPick[i].isInstancedMesh) instancedMeshes.push(allPick[i]);
-        else meshes.push(allPick[i]);
-      }
-      const regularHits = raycaster.intersectObjects(meshes, false);
-      const instancedHits = raycaster.intersectObjects(instancedMeshes, false);
-      
-      let closestHit = null;
-      let isInstancedHit = false;
-      
-      if (regularHits.length > 0) {
-        closestHit = regularHits[0];
-      }
-      if (instancedHits.length > 0) {
-        if (!closestHit || instancedHits[0].distance < closestHit.distance) {
-          closestHit = instancedHits[0];
-          isInstancedHit = true;
-        }
-      }
-      
-      if (!closestHit) return;
-      
-      if (isInstancedHit) {
-        // Get color from the material
-        const color = closestHit.object.material.color.getHex();
-        selectedColor = color;
-        document.getElementById('colorPicker').value = '#' + color.toString(16).padStart(6, '0');
-        document.querySelectorAll('.color-preset').forEach(p => p.classList.remove('selected'));
-        toast('🎨 Color picked!', 'success');
-        dropperMode = false;
-        document.getElementById('dropperBtn').classList.remove('dropper-active');
-        document.body.classList.remove('dropper-mode');
-        updateGhost();
-        { const swatch = document.getElementById('hudColorSwatch'); if (swatch) swatch.style.background = '#' + color.toString(16).padStart(6, '0'); }
-      } else {
-        let obj = closestHit.object;
-        while (obj && !obj.userData.isBrick) obj = obj.parent;
+      const picked = pickPoint();
+      const brick = picked && picked.brick;
+      if (!brick || !brick.userData || brick.userData.color === undefined) return;
+      const color = brick.userData.color;
+      selectedColor = color;
+      const hex = '#' + color.toString(16).padStart(6, '0');
+      const picker = document.getElementById('colorPicker');
+      if (picker) picker.value = hex;
+      document.querySelectorAll('.color-preset').forEach(p => p.classList.remove('selected'));
+      toast('🎨 Color picked!', 'success');
+      dropperMode = false;
+      const dropperBtn = document.getElementById('dropperBtn');
+      if (dropperBtn) dropperBtn.classList.remove('dropper-active');
+      document.body.classList.remove('dropper-mode');
+      updateGhost();
+      const swatch = document.getElementById('hudColorSwatch');
+      if (swatch) swatch.style.background = hex;
+    }
 
-        if (obj && obj.userData.isBrick) {
-          selectedColor = obj.userData.color;
-          document.getElementById('colorPicker').value = '#' + selectedColor.toString(16).padStart(6, '0');
-          document.querySelectorAll('.color-preset').forEach(p => p.classList.remove('selected'));
-          toast('🎨 Color picked!', 'success');
-          dropperMode = false;
-          document.getElementById('dropperBtn').classList.remove('dropper-active');
-          document.body.classList.remove('dropper-mode');
-          updateGhost();
-          { const swatch = document.getElementById('hudColorSwatch'); if (swatch) swatch.style.background = '#' + selectedColor.toString(16).padStart(6, '0'); }
-        }
+        function paintBrick() {
+      const picked = pickPoint();
+      const brick = picked && picked.brick;
+      if (!brick || !brick.userData || !brick.userData.isBrick) return;
+      const ud = brick.userData;
+      if (ud.color === selectedColor) {
+        toast('Already this color');
+        return;
       }
-    }
-    
-    function paintBrick() {
-      raycaster.setFromCamera(mouse, camera);
-      const meshes = collectBrickMeshes(true);
-      
-      const hits = raycaster.intersectObjects(meshes, false);
-      for (const hit of hits) {
-        // Check if it's an instanced mesh hit
-        if (hit.object.isInstancedMesh) {
-          const mesh = hit.object;
-          const instanceId = hit.instanceId;
-          
-          // Find the brick data
-          let foundBrickId = null;
-          instancedSystem.meshes.forEach(data => {
-            if (data.mesh === mesh) {
-              foundBrickId = data.reverseMap.get(instanceId);
-            }
-          });
-          
-          if (foundBrickId !== undefined) {
-            // Find the virtual brick in bricks array
-            const brickIndex = bricks.findIndex(b => b.isInstancedBrick && b.instanceId === foundBrickId);
-            if (brickIndex !== -1) {
-              const virtualBrick = bricks[brickIndex];
-              const ud = virtualBrick.userData;
-              
-              // Don't paint if already same color
-              if (ud.color === selectedColor) {
-                toast('Already this color');
-                return;
-              }
-              
-              saveUndo();
-              
-              // Remove old instance
-              removeInstancedBrick(foundBrickId);
-              bricks.splice(brickIndex, 1);
-              
-              // Create new instance with new color
-              const newBrickId = addInstancedBrick(
-                ud.brickType, 
-                selectedColor, 
-                virtualBrick.position.clone(),
-                ud.rot,
-                ud.transparent,
-                {
-                  gx: ud.grid.gx,
-                  gz: ud.grid.gz,
-                  w: ud.grid.w,
-                  d: ud.grid.d,
-                  gy: ud.grid.gy,
-                  hp: ud.grid.hp
-                }
-              );
-              
-              // Create new virtual brick
-              const newVirtualBrick = {
-                isInstancedBrick: true,
-                instanceId: newBrickId,
-                userData: {
-                  isBrick: true,
-                  grid: { gx: ud.grid.gx, gz: ud.grid.gz, w: ud.grid.w, d: ud.grid.d, gy: ud.grid.gy, hp: ud.grid.hp },
-                  brickType: ud.brickType,
-                  color: selectedColor,
-                  rot: ud.rot,
-                  transparent: ud.transparent
-                },
-                position: virtualBrick.position.clone()
-              };
-              bricks.push(newVirtualBrick);
-              
-              toast('🎨 Painted!', 'success');
-              updateStats();
-              return;
-            }
+      if (brick.isInstancedBrick) {
+        const foundBrickId = brick.instanceId;
+        const brickIndex = bricks.findIndex(b => b.isInstancedBrick && b.instanceId === foundBrickId);
+        if (brickIndex === -1) return;
+        saveUndo();
+        const virtualBrick = bricks[brickIndex];
+        removeInstancedBrick(foundBrickId);
+        bricks.splice(brickIndex, 1);
+        const newBrickId = addInstancedBrick(
+          ud.brickType,
+          selectedColor,
+          virtualBrick.position.clone(),
+          ud.rot,
+          ud.transparent,
+          {
+            gx: ud.grid.gx,
+            gz: ud.grid.gz,
+            w: ud.grid.w,
+            d: ud.grid.d,
+            gy: ud.grid.gy,
+            hp: ud.grid.hp
           }
-        }
-        
-        // Regular brick
-        let obj = hit.object;
-        while (obj && !obj.userData.isBrick) obj = obj.parent;
-        
-        if (obj && obj.userData.isBrick) {
-          // Don't paint if it's already the same color
-          if (obj.userData.color === selectedColor) {
-            toast('Already this color');
-            return;
-          }
-          
-          saveUndo();
-          
-          // Update the color in userData
-          obj.userData.color = selectedColor;
-          
-          // Update all mesh materials in this brick
-          obj.traverse(child => {
-            if (child.isMesh && child.material) {
-              child.material.color.setHex(selectedColor);
-            }
-            // Also handle InstancedMesh
-            if (child.isInstancedMesh && child.material) {
-              child.material.color.setHex(selectedColor);
-            }
-          });
-          
-          toast('🎨 Painted!', 'success');
-          updateStats();
-          break;
-        }
+        );
+        bricks.push({
+          isInstancedBrick: true,
+          instanceId: newBrickId,
+          userData: {
+            isBrick: true,
+            grid: { gx: ud.grid.gx, gz: ud.grid.gz, w: ud.grid.w, d: ud.grid.d, gy: ud.grid.gy, hp: ud.grid.hp },
+            brickType: ud.brickType,
+            color: selectedColor,
+            rot: ud.rot,
+            transparent: ud.transparent
+          },
+          position: virtualBrick.position.clone()
+        });
+        toast('🎨 Painted!', 'success');
+        updateStats();
+        return;
       }
+      saveUndo();
+      brick.userData.color = selectedColor;
+      if (brick.traverse) {
+        brick.traverse(child => {
+          if (child.isMesh && child.material && child.material.color) child.material.color.setHex(selectedColor);
+        });
+      }
+      toast('🎨 Painted!', 'success');
+      updateStats();
     }
-    
-    // Face paint - paint individual sides of bricks
+
+    // Face paint - paint individual sides of bricks    // Face paint - paint individual sides of bricks
     function facePaintBrick() {
       raycaster.setFromCamera(mouse, camera);
       
@@ -8669,6 +8800,18 @@
       return names[type] || type;
     }
     
+    let hoverRaf = 0;
+    function scheduleHover() {
+      pointerDirty = true;
+      if (hoverRaf) return;
+      hoverRaf = requestAnimationFrame(() => {
+        hoverRaf = 0;
+        if (!pointerDirty) return;
+        pointerDirty = false;
+        flushPointerHover();
+      });
+    }
+
     function flushPointerHover() {
       if (floorMode && floorDragStart) {
         const hit = pickPoint();
@@ -8714,7 +8857,7 @@
         lastPointerMs = performance.now();
         mouse.x = (e.clientX / innerWidth) * 2 - 1;
         mouse.y = -(e.clientY / innerHeight) * 2 + 1;
-        pointerDirty = true;
+        scheduleHover();
       });
       
       renderer.domElement.addEventListener('mousedown', e => {
@@ -8786,31 +8929,15 @@
               // Fall through to placeBrick
             } else {
               // No valid placement - check if we're clicking on an existing brick to toggle
-              raycaster.setFromCamera(mouse, camera);
-              const brickMeshes = collectBrickMeshes(true);
-              const hits = raycaster.intersectObjects(brickMeshes, false);
-              
-              if (hits.length > 0) {
-                const hit = hits[0];
-                
-                // Check if it's an instanced mesh
-                if (hit.object.isInstancedMesh) {
+              const pickedPrefab = pickPoint();
+              if (pickedPrefab && pickedPrefab.brick && bricks.includes(pickedPrefab.brick)) {
+                if (pickedPrefab.brick.isInstancedBrick) {
                   toast('⚠️ Instanced bricks cannot be selected for prefabs', 'error');
                   return;
                 }
-                
-                // Find the parent brick group
-                let obj = hit.object;
-                while (obj.parent && !bricks.includes(obj)) {
-                  obj = obj.parent;
-                }
-                
-                if (bricks.includes(obj) && obj.userData.grid) {
-                  toggleBrickForPrefab(obj);
-                  return;
-                }
+                toggleBrickForPrefab(pickedPrefab.brick);
+                return;
               }
-              // No brick to toggle and can't place - do nothing
               return;
             }
           }
@@ -9093,33 +9220,18 @@
       }
       
       function handleMoveClick(shiftKey = false) {
-        raycaster.setFromCamera(mouse, camera);
-        
-        // Check if clicking on a brick
-        const brickMeshes = collectBrickMeshes(true);
-        const hits = raycaster.intersectObjects(brickMeshes, false);
-        
-        if (hits.length > 0 && selectedGroup.length === 0) {
-          // First click - select group (or single brick with Shift)
-          let clickedBrick = hits[0].object;
-          while (clickedBrick.parent && !clickedBrick.userData.isBrick) {
-            clickedBrick = clickedBrick.parent;
-          }
-          if (clickedBrick.userData.isBrick) {
-            selectBrickGroup(clickedBrick, shiftKey);
+        const picked = pickPoint();
+        if (picked && picked.brick && selectedGroup.length === 0) {
+          if (picked.brick.userData && picked.brick.userData.isBrick) {
+            selectBrickGroup(picked.brick, shiftKey);
           }
         } else if (selectedGroup.length > 0) {
-          // Second click - place group at ghost location if valid
           if (moveGhosts.canPlace && (moveGhosts.targetGx !== undefined)) {
             placeMoveGroup(moveGhosts.targetGx, moveGhosts.targetGz);
             SoundSystem.playPlace();
-          } else {
-            // Fallback: get position from ground hit
-            const groundHits = raycaster.intersectObject(groundPlane);
-            if (groundHits.length > 0) {
-              const gPos = worldToGrid(groundHits[0].point.x, groundHits[0].point.z);
-              placeMoveGroup(gPos.x, gPos.z);
-            }
+          } else if (picked) {
+            const gPos = worldToGrid(picked.point.x, picked.point.z);
+            placeMoveGroup(gPos.x, gPos.z);
           }
         }
       }
@@ -9141,7 +9253,7 @@
           const touch = e.touches[0];
           mouse.x = (touch.clientX / innerWidth) * 2 - 1;
           mouse.y = -(touch.clientY / innerHeight) * 2 + 1;
-          pointerDirty = true;
+          pointerDirty = false;
           flushPointerHover();
           
           // Show touch indicator
@@ -9158,7 +9270,7 @@
           const touch = e.touches[0];
           mouse.x = (touch.clientX / innerWidth) * 2 - 1;
           mouse.y = -(touch.clientY / innerHeight) * 2 + 1;
-          pointerDirty = true;
+          scheduleHover();
         }
         document.getElementById('touchIndicator').classList.remove('active');
       }, {passive: true});
@@ -10764,22 +10876,27 @@
       function isPhoneChrome() { return window.innerWidth <= 768; }
       function applyMobileTray() {
         if (!mobileControlsPanel) return;
-        if (isPhoneChrome()) {
-          mobileControlsPanel.style.maxHeight = '';
-          if (!mobileTrayUserExpanded) mobileControlsPanel.classList.add('collapsed-mobile');
-          if (panelToggle) panelToggle.textContent = mobileControlsPanel.classList.contains('collapsed-mobile') ? '▲ Bricks & tools' : '▼ Hide tools';
-        } else {
-          mobileControlsPanel.classList.remove('collapsed-mobile');
+        if (!isPhoneChrome()) {
+          mobileControlsPanel.classList.remove('collapsed-mobile', 'tray-open');
           mobileTrayUserExpanded = false;
+          return;
         }
+        mobileControlsPanel.style.maxHeight = '';
+        if (window.innerWidth <= 430) {
+          mobileControlsPanel.classList.remove('collapsed-mobile');
+          mobileControlsPanel.classList.toggle('tray-open', mobileTrayUserExpanded);
+        } else {
+          mobileControlsPanel.classList.remove('tray-open');
+          mobileControlsPanel.classList.toggle('collapsed-mobile', !mobileTrayUserExpanded);
+        }
+        if (panelToggle) panelToggle.textContent = mobileTrayUserExpanded ? '▼ Hide tools' : '▲ Bricks & tools';
       }
       applyMobileTray();
       window.addEventListener('resize', applyMobileTray);
       if (panelToggle) panelToggle.addEventListener('click', () => {
         if (!isPhoneChrome()) return;
-        const collapsed = mobileControlsPanel.classList.toggle('collapsed-mobile');
-        mobileTrayUserExpanded = !collapsed;
-        panelToggle.textContent = collapsed ? '▲ Bricks & tools' : '▼ Hide tools';
+        mobileTrayUserExpanded = !mobileTrayUserExpanded;
+        applyMobileTray();
       });
     }
     
@@ -11403,89 +11520,33 @@
       raycaster.set(rayOrigin, rayDir);
       raycaster.near = 0.1;
       
-      // Rebuild mesh cache only when brick count changes
-      if (bricks.length !== fpCachedBrickCount) {
-        fpCachedMeshes = collectBrickMeshes(true);
-        fpCachedBrickCount = bricks.length;
-      }
-      
-      const brickHits = raycaster.intersectObjects(fpCachedMeshes, false);
-      
-      let targetPoint = null;
-      let targetNormal = new THREE.Vector3(0, 1, 0);
-      let hitBrick = false;
-      let hitBrickObj = null;
-      let hitBrickGrid = null; // Grid data of hit brick
-      
-      // Find the best hit based on look direction
-      let bestHit = null;
-      
-      if (lookingDown && brickHits.length > 0) {
-        // When looking moderately down, find the LOWEST hit (we want the floor, not ceiling)
-        let lowestHit = null;
+      const gridHits = pickBuildHits(raycaster.ray, fpPlaceDistance * 2);
+      let bestGridHit = null;
+      if (lookingDown && gridHits.length > 0) {
         let lowestY = Infinity;
-        for (const hit of brickHits) {
-          if (hit.distance > fpPlaceDistance * 2) continue;
-          // Skip hits above eye level (ceiling)
+        for (let hi = 0; hi < gridHits.length; hi++) {
+          const hit = gridHits[hi];
           if (hit.point.y > fpPosition.y) continue;
           if (hit.point.y < lowestY) {
             lowestY = hit.point.y;
-            lowestHit = hit;
+            bestGridHit = hit;
           }
         }
-        bestHit = lowestHit;
-      } else {
-        // When looking up or level, use first (closest) hit
-        for (const hit of brickHits) {
-          if (hit.distance > fpPlaceDistance * 2) break;
-          bestHit = hit;
-          break;
-        }
+      } else if (gridHits.length) {
+        bestGridHit = gridHits[0];
       }
-      
-      if (bestHit) {
-        targetNormal = bestHit.face.normal.clone();
-        targetNormal.transformDirection(bestHit.object.matrixWorld);
-        
-        // Nudge point slightly along normal
-        targetPoint = bestHit.point.clone().add(targetNormal.clone().multiplyScalar(0.02));
+
+      if (bestGridHit) {
+        targetNormal = bestGridHit.normal.clone();
+        targetPoint = bestGridHit.point.clone().add(targetNormal.clone().multiplyScalar(0.02));
         hitBrick = true;
-        
-        // Check if it's an instanced mesh hit
-        if (bestHit.object.isInstancedMesh) {
-          const mesh = bestHit.object;
-          const instanceId = bestHit.instanceId;
-          
-          // Find the virtual brick for this instance
-          let foundBrickId = null;
-          instancedSystem.meshes.forEach(data => {
-            if (data.mesh === mesh) {
-              foundBrickId = data.reverseMap.get(instanceId);
-            }
-          });
-          
-          if (foundBrickId !== undefined) {
-            // Find the virtual brick in bricks array
-            const virtualBrick = bricks.find(b => b.isInstancedBrick && b.instanceId === foundBrickId);
-            if (virtualBrick) {
-              hitBrickObj = virtualBrick;
-              hitBrickGrid = virtualBrick.userData.grid;
-            }
-          }
-        } else {
-          // Find the parent brick group (regular bricks)
-          let obj = bestHit.object;
-          while (obj.parent && !bricks.includes(obj)) {
-            obj = obj.parent;
-          }
-          if (bricks.includes(obj)) {
-            hitBrickObj = obj;
-            hitBrickGrid = obj.userData.grid;
-          }
+        if (bestGridHit.brick && bricks.includes(bestGridHit.brick)) {
+          hitBrickObj = bestGridHit.brick;
+          hitBrickGrid = bestGridHit.brick.userData && bestGridHit.brick.userData.grid;
         }
       }
-      
-      // Update target brick highlighting
+
+      // Update target brick highlighting      // Update target brick highlighting
       updateTargetBrickHighlight(hitBrickObj);
       
       // Update crosshair and target info
@@ -12111,89 +12172,22 @@
         return;
       }
       
-      // Fallback: raycast to find brick
       const rayOrigin = fpPosition.clone();
       const rayDir = new THREE.Vector3(
         -Math.sin(fpYaw) * Math.cos(fpPitch),
         Math.sin(fpPitch),
         -Math.cos(fpYaw) * Math.cos(fpPitch)
       ).normalize();
-      
       raycaster.set(rayOrigin, rayDir);
-      
-      const meshes = collectBrickMeshes(true);
-      const hits = raycaster.intersectObjects(meshes, false);
-      
-      if (hits.length > 0 && hits[0].distance < fpPlaceDistance * 3) {
-        const hit = hits[0];
-        
-        // Check if it's an instanced mesh hit
-        if (hit.object.isInstancedMesh) {
-          const mesh = hit.object;
-          const instanceId = hit.instanceId;
-          
-          // Find the brick data
-          let foundBrickId = null;
-          instancedSystem.meshes.forEach(data => {
-            if (data.mesh === mesh) {
-              foundBrickId = data.reverseMap.get(instanceId);
-            }
-          });
-          
-          if (foundBrickId !== undefined) {
-            saveUndo();
-            
-            // Remove the instanced brick
-            const brickIndex = bricks.findIndex(b => b.isInstancedBrick && b.instanceId === foundBrickId);
-            if (brickIndex !== -1) {
-              const virtualBrick = bricks[brickIndex];
-              
-              // If in prefab selection mode, deselect this brick
-              if (isRecordingPrefab && selectedForPrefab.has(virtualBrick)) {
-                toggleBrickForPrefab(virtualBrick);
-              }
-              
-              removeInstancedBrick(foundBrickId);
-              bricks.splice(brickIndex, 1);
-              
-              updateUI();
-              toast('🗑️ Deleted brick');
-              SoundSystem.playDelete();
-            }
-          }
-          return;
-        }
-        
-        // Find the parent brick group (regular brick)
-        let obj = hit.object;
-        while (obj.parent && !bricks.includes(obj)) {
-          obj = obj.parent;
-        }
-        
-        if (bricks.includes(obj)) {
-          saveUndo();
-          
-          // If in prefab selection mode, deselect this brick
-          if (isRecordingPrefab && selectedForPrefab.has(obj)) {
-            toggleBrickForPrefab(obj);
-          }
-          
-          // Remove from grid
-          removeFromGrid(obj);
-          
-          // Remove from scene and array
-          scene.remove(obj);
-          bricks = bricks.filter(b => b !== obj);
-          
-          updateUI();
-          toast('🗑️ Deleted brick');
-          SoundSystem.playDelete();
-        }
-      } else {
-        toast('No brick in range', 'error');
+      const picked = pickBuild(raycaster.ray);
+      if (picked && picked.brick && bricks.includes(picked.brick) && picked.distance < fpPlaceDistance * 3) {
+        fpTargetBrick = picked.brick;
+        deleteBrickInWalkMode();
+        return;
       }
+      toast('No brick in range', 'error');
     }
-    
+
     function onFirstPersonMouseMove(e) {
       if (!firstPersonMode || !document.pointerLockElement) return;
       
@@ -12265,15 +12259,7 @@
       
       if (now - lastFPS >= 1000) {
         if (frames > 0) lastHudFps = frames;
-        if (!document.hidden && now - bootMs > 4000 && demandFrames >= 40 && renderedFrames >= 20 && renderedFrames < 50 && renderedFrames / demandFrames > 0.55) {
-          lowFpsStreak++;
-          if (lowFpsStreak >= 2) {
-            lowFpsStreak = 0;
-            stepDownQuality();
-          }
-        } else if (renderedFrames >= 50) {
-          lowFpsStreak = 0;
-        }
+        considerAutoQuality(frames, demandFrames, renderedFrames);
         demandFrames = 0;
         renderedFrames = 0;
         const el = document.getElementById('fps');
@@ -12632,10 +12618,14 @@
           groupBricks,
           lamps: lightSources.size,
           pointLights: scene.children.filter(o => o.isPointLight).length,
-          preserveDrawingBuffer: !!(renderer.getContextAttributes() || {}).preserveDrawingBuffer
+          preserveDrawingBuffer: !!(renderer.getContextAttributes() || {}).preserveDrawingBuffer,
+          aa: (renderer.getContextAttributes() || {}).antialias ? 'msaa' : 'none',
+          scenery: window.sceneryMergedDraws || 0,
+          autoSteps: autoQualitySteps
         };
       },
       setQuality(name) { applyQuality(name, { silent: true }); },
+      considerAutoQuality,
       placeGrid(count, type = '2x4') {
         const t = types[type] || types['2x4'];
         const w = t.w, d = t.d, hp = getHP(type);

@@ -38,7 +38,7 @@
       ]
     },
     {
-      "source": "/games/brix3d/:file(brix3d.[0-9a-f]+.(js|css))",
+      "source": "/games/brix3d/(brix3d.*)\\.(js|css)",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
       ]

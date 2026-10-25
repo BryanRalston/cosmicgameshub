@@ -2835,3 +2835,73 @@
         font-size: 12px;
       }
     }
+
+@media (max-width: 430px) {
+  #buildHud {
+    position: fixed !important;
+    left: 4px !important;
+    right: 4px !important;
+    width: auto !important;
+    max-width: none !important;
+    transform: none !important;
+    bottom: calc(6px + env(safe-area-inset-bottom, 0px)) !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+    justify-content: space-between !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+    gap: 2px !important;
+    padding: 4px !important;
+    z-index: 240 !important;
+  }
+  #buildHud .hud-sep,
+  #buildHud #hudStats { display: none !important; }
+  #buildHud .hud-btn {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    width: auto !important;
+    max-width: none !important;
+    min-height: 52px !important;
+    height: 52px !important;
+    padding: 0 1px !important;
+  }
+  #buildHud .hud-label {
+    font-size: 8px !important;
+    letter-spacing: 0 !important;
+    max-width: 100%;
+    overflow: hidden;
+  }
+  #controls {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: auto !important;
+    width: 100% !important;
+    bottom: calc(66px + env(safe-area-inset-bottom, 0px)) !important;
+    max-height: min(62vh, 520px) !important;
+    height: auto !important;
+    z-index: 180 !important;
+    border-radius: 18px 18px 0 0 !important;
+    box-sizing: border-box !important;
+  }
+  #controls:not(.tray-open) {
+    transform: translateY(calc(100% - 52px)) !important;
+    max-height: none !important;
+    overflow: hidden !important;
+    padding-bottom: 0 !important;
+  }
+  #controls.tray-open {
+    transform: none !important;
+    overflow: auto !important;
+    max-height: min(62vh, 520px) !important;
+  }
+  #controls .panel-toggle {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    min-height: 52px !important;
+    height: 52px !important;
+    width: 100%;
+  }
+}
