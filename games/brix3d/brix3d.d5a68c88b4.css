@@ -2727,7 +2727,7 @@
       background: transparent;
       border: 1px solid transparent;
       border-radius: 10px;
-      color: rgba(255,255,255,0.65);
+      color: #fff;
       cursor: pointer;
       transition: all 0.15s ease;
       font-family: inherit;
@@ -2750,12 +2750,13 @@
     }
     .hud-icon { font-size: 20px; line-height: 1; }
     .hud-label {
-      font-size: 9px;
-      font-weight: 600;
-      letter-spacing: 0.04em;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
       text-transform: uppercase;
-      opacity: 0.6;
-      line-height: 1;
+      opacity: 1;
+      color: #fff;
+      line-height: 1.1;
     }
     .hud-btn:hover .hud-label { opacity: 0.9; }
     /* Color swatch in HUD */
@@ -2973,11 +2974,12 @@
     padding: 0 1px !important;
   }
   #buildHud .hud-label {
-    font-size: 12px !important;
+    font-size: 13px !important;
     letter-spacing: 0 !important;
-    line-height: 1.15;
-    font-weight: 700;
-    opacity: 0.95;
+    line-height: 1.1;
+    font-weight: 800;
+    opacity: 1;
+    color: #fff !important;
     white-space: nowrap;
     max-width: 100%;
   }
@@ -3247,15 +3249,24 @@ body.phone-tray-open .drawer-starters button {
   }
   body.phone-tray-open #controls .preview { display: none !important; }
   .toast {
-    top: auto !important;
-    bottom: calc(230px + env(safe-area-inset-bottom, 0px)) !important;
-    max-width: calc(100vw - 24px);
+    top: 48px !important;
+    bottom: auto !important;
+    left: 8px !important;
+    right: 8px !important;
+    width: auto;
+    max-width: none;
+    transform: none !important;
     z-index: 260;
     text-align: center;
   }
+  .toast.show {
+    transform: none !important;
+    opacity: 1;
+  }
   body.phone-tray-open .toast {
-    top: auto !important;
-    bottom: calc(78px + 30vh + 52px + env(safe-area-inset-bottom, 0px)) !important;
+    top: 48px !important;
+    bottom: auto !important;
+    transform: none !important;
   }
   .trans-label { font-size: 16px !important; }
   #starterBar {
@@ -3354,5 +3365,30 @@ body.phone-tray-open .drawer-starters button {
   #controls.tray-open {
     padding-bottom: 12px !important;
     scroll-padding-bottom: 12px;
+  }
+}
+@media (min-width: 769px) {
+  #controls {
+    gap: 16px;
+    padding: 16px 16px 18px;
+  }
+  #controls .section {
+    padding: 16px 16px 18px;
+  }
+  #controls .section-title {
+    margin-bottom: 14px;
+  }
+  #controls .subsection {
+    margin-top: 16px;
+    padding: 12px;
+  }
+  #controls .brick-grid {
+    gap: 8px;
+  }
+  #controls .brick-btn {
+    padding: 11px 4px;
+  }
+  #controls .tool-grid {
+    gap: 10px;
   }
 }

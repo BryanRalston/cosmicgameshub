@@ -823,9 +823,12 @@
       // AudioContext is created on the first gesture, inside SoundSystem.resume.
       scene = new THREE.Scene();
       scene.background = new THREE.Color(0x87CEEB);
-      scene.fog = new THREE.Fog(0x87CEEB, 100, 400);
+      // Horizon fog from the first frame. A far of 400 ended the ground
+      // near x 1150 and left a hard sky edge before the theme loaded.
+      scene.fog = new THREE.Fog(0x87CEEB, 480, 2200);
       
-      camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 1000);
+      // Far plane sits past the fog so the ground fade is not a hard clip.
+      camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 2800);
       // Scene and camera are their own turn. The WebGL constructor is the next one.
       await yieldTick();
 
@@ -887,10 +890,12 @@
       controls.enableDamping = true;
       controls.dampingFactor = 0.1;
       controls.rotateSpeed = 1.05;
-      controls.zoomSpeed = 1.15;
+      // Wheel zoom is handled ourselves so one notch cannot multiply
+      // distance down to the near clip. Pinch still uses this speed.
+      controls.zoomSpeed = 0.4;
       controls.minPolarAngle = 0.1; // Prevent looking straight down
       controls.maxPolarAngle = Math.PI / 2.1; // Prevent going below horizon
-      controls.minDistance = 3;
+      controls.minDistance = 6;
       controls.maxDistance = 300;
       frameHomeCamera();
       performance.mark('brix-controls');
@@ -1671,6 +1676,18 @@
       }
     }
     
+    function ensureLinearFog(hex, near, far) {
+      if (!scene.fog || !scene.fog.isFog) scene.fog = new THREE.Fog(hex, near, far);
+      scene.fog.color.setHex(hex);
+      scene.fog.near = near;
+      scene.fog.far = far;
+    }
+
+    function applyHorizonFog() {
+      const hex = scene.background && scene.background.isColor ? scene.background.getHex() : 0x87CEEB;
+      ensureLinearFog(hex, 480, 2200);
+    }
+
     function setWeather(type) {
       weatherType = type;
       if (type !== 'clear' && !rainParticles) createWeatherSystems();
@@ -1681,31 +1698,23 @@
       if (snowParticles) snowParticles.visible = false;
       if (window.rainSplashes) window.rainSplashes.visible = false;
       if (window.snowGround) window.snowGround.visible = false;
-      scene.fog.near = 100;
-      scene.fog.far = 400;
-      
+
       switch(type) {
         case 'rain':
           rainParticles.visible = true;
           if (window.rainSplashes) window.rainSplashes.visible = true;
-          scene.fog.near = 50;
-          scene.fog.far = 250;
-          scene.fog.color.setHex(0x556677);
+          ensureLinearFog(0x556677, 50, 250);
           break;
         case 'snow':
           snowParticles.visible = true;
           if (window.snowGround) window.snowGround.visible = true;
-          scene.fog.near = 40;
-          scene.fog.far = 200;
-          scene.fog.color.setHex(0xddeeff);
+          ensureLinearFog(0xddeeff, 40, 200);
           break;
         case 'fog':
-          scene.fog.near = 20;
-          scene.fog.far = 150;
-          scene.fog.color.setHex(0x99aaaa);
+          ensureLinearFog(0x99aaaa, 20, 150);
           break;
         case 'clear':
-          scene.fog.color.setHex(0x87CEEB);
+          applyHorizonFog();
           // Slowly melt snow when switching to clear
           if (window.snowAccumulation > 0) {
             const meltInterval = setInterval(() => {
@@ -1785,7 +1794,9 @@
             vec2 uvCell = fract(vMapUv);
             float dist = length(uvCell - 0.5);
             float rad = ${STUD_R / STUD};
-            float disk = 1.0 - smoothstep(rad - 0.012, rad + 0.012, dist);
+            // One-pixel edge. A fixed 0.012 UV band drew a ring around every stud.
+            float aa = clamp(fwidth(dist), 0.0012, 0.0045);
+            float disk = 1.0 - smoothstep(rad - aa, rad + aa, dist);
             diffuseColor.rgb *= mix(vec3(${studGap}), vec3(1.0), disk);
           }
           `
@@ -1799,9 +1810,23 @@
       scene.add(groundStuds);
       baseplate.castShadow = false;
       
-      // SURROUNDING ENVIRONMENT
-      // Grass plane extending to horizon
-      const grassGeo = new THREE.PlaneGeometry(2000, 2000);
+      // Dark rim so the plate edge reads against the grass.
+      const rimMat = new THREE.MeshLambertMaterial({ color: 0x1c5c28 });
+      rimMat.polygonOffset = true;
+      rimMat.polygonOffsetFactor = 1;
+      rimMat.polygonOffsetUnits = 1;
+      const rim = new THREE.Mesh(
+        new THREE.BoxGeometry(baseplateWorldSize + 1.6, PLATE_H * 0.28, baseplateWorldSize + 1.6),
+        rimMat
+      );
+      rim.position.set(baseplateWorldSize / 2, -PLATE_H * 0.42, baseplateWorldSize / 2);
+      rim.receiveShadow = true;
+      rim.name = 'plateRim';
+      scene.add(rim);
+
+      // Grass is subdivided so per-vertex fog reaches the horizon instead of
+      // ending in a hard line near x 1150 where the old 2000-unit plane clipped.
+      const grassGeo = new THREE.PlaneGeometry(16000, 16000, 80, 80);
       const grassMat = new THREE.MeshLambertMaterial({ color: 0x2f8f3c });
       const grass = new THREE.Mesh(grassGeo, grassMat);
       grass.rotation.x = -Math.PI / 2;
@@ -2234,7 +2259,9 @@
       // Solid sky. The old gradient ended in white, and a low camera looked
       // straight at that band above the horizon.
       scene.background = new THREE.Color(0x7ec8e8);
-      scene.fog = new THREE.Fog(0x7ec8e8, 200, 800);
+      // Fog matches the sky and ends before the ground plane, so the horizon
+      // is fog rather than a cut where the mesh stops.
+      scene.fog = new THREE.Fog(0x7ec8e8, 480, 2200);
       if (renderer) renderer.setClearColor(0x7ec8e8, 1);
       
       // Mid green. A red 1×1 has to read against the studs, and the plate
@@ -4588,23 +4615,30 @@
     }
 
     function makeAbsMaterial(color, transparent, isLight) {
+      let mat;
       if (usePerfLambert(transparent, isLight)) {
-        return new THREE.MeshLambertMaterial({ color: color });
+        mat = new THREE.MeshLambertMaterial({ color: color });
+      } else {
+        // Standard, not Physical+clearcoat. The clearcoat shader was the fill-rate
+        // cost that pulled 520 bricks under the desktop and phone FPS bars.
+        mat = new THREE.MeshStandardMaterial({
+          color: color,
+          roughness: transparent ? 0.12 : 0.28,
+          metalness: 0.0,
+          envMap: envMap,
+          envMapIntensity: transparent ? 0.35 : 0.04,
+          transparent: !!transparent,
+          opacity: transparent ? 0.5 : 1,
+          side: transparent ? THREE.DoubleSide : THREE.FrontSide,
+          emissive: isLight ? color : 0x000000,
+          emissiveIntensity: isLight ? 0.85 : 0
+        });
       }
-      // Standard, not Physical+clearcoat. The clearcoat shader was the fill-rate
-      // cost that pulled 520 bricks under the desktop and phone FPS bars.
-      return new THREE.MeshStandardMaterial({
-        color: color,
-        roughness: transparent ? 0.12 : 0.28,
-        metalness: 0.0,
-        envMap: envMap,
-        envMapIntensity: transparent ? 0.35 : 0.04,
-        transparent: !!transparent,
-        opacity: transparent ? 0.5 : 1,
-        side: transparent ? THREE.DoubleSide : THREE.FrontSide,
-        emissive: isLight ? color : 0x000000,
-        emissiveIntensity: isLight ? 0.85 : 0
-      });
+      // Window-space depth bias so coplanar tops do not flicker on the plate.
+      mat.polygonOffset = true;
+      mat.polygonOffsetFactor = -1;
+      mat.polygonOffsetUnits = -2;
+      return mat;
     }
     
     // Get or create material for a color/transparency combo
@@ -4744,7 +4778,7 @@
       const normRot = ((lookup.rot % 360) + 360) % 360;
       const geoRot = instancedGeoRot(lookup.type, lookup.rot);
       const instanceRot = (normRot - geoRot) * Math.PI / 180;
-      dummy.position.set(lookup.pos.x, lookup.pos.y + (lift || 0), lookup.pos.z);
+      dummy.position.set(lookup.pos.x, lookup.pos.y + (lift || 0) + (lookup.topBias || 0), lookup.pos.z);
       dummy.scale.set(1, scaleY == null ? 1 : scaleY, 1);
       _qYaw.setFromAxisAngle(_axisY, instanceRot);
       _brickEuler.set(
@@ -4780,7 +4814,9 @@
         transparent,
         pos: pos.clone(),
         pitch: extra.pitch || 0,
-        roll: extra.roll || 0
+        roll: extra.roll || 0,
+        // Stable vertical bias so two tops that share a height do not z-fight.
+        topBias: (brickId % 5) * 0.0016
       };
       const dummy = instancedSystem.dummy;
       writeBrickInstance(dummy, lookup, 0, 1);
@@ -7129,6 +7165,45 @@
         }
       }
     }
+
+    function deleteNewestBrick() {
+      if (!bricks.length) return false;
+      const brick = bricks[bricks.length - 1];
+      saveUndo();
+      if (brick.isInstancedBrick) {
+        const id = brick.instanceId;
+        const idx = bricks.lastIndexOf(brick);
+        if (idx >= 0) bricks.splice(idx, 1);
+        removeInstancedBrick(id);
+      } else {
+        removeFromGrid(brick);
+        scene.remove(brick);
+        const idx = bricks.indexOf(brick);
+        if (idx >= 0) bricks.splice(idx, 1);
+      }
+      markShadowDirty();
+      updateStats();
+      needsRender = true;
+      return true;
+    }
+
+    function setDeleteMode(on) {
+      deleteMode = !!on;
+      dropperMode = false;
+      paintMode = false;
+      facePaintMode = false;
+      const deleteTool = document.getElementById('deleteBtn');
+      const hudDel = document.getElementById('hudDeleteBtn');
+      if (deleteTool) deleteTool.classList.toggle('delete-active', deleteMode);
+      if (hudDel) hudDel.classList.toggle('delete-active', deleteMode);
+      const dropperBtn = document.getElementById('dropperBtn');
+      const paintBtn = document.getElementById('paintBtn');
+      if (dropperBtn) dropperBtn.classList.remove('dropper-active');
+      if (paintBtn) paintBtn.classList.remove('paint-active');
+      document.body.classList.toggle('delete-mode', deleteMode);
+      document.body.classList.remove('dropper-mode', 'paint-mode', 'facepaint-mode');
+      updateGhost();
+    }
     
     function pickColor() {
       const picked = pickPoint();
@@ -8884,7 +8959,7 @@
     
     async function newProject() {
       if (bricks.length > 0) {
-        const ok = await confirmLoad('Start new project? Current work will be lost unless saved.', { mode: 'new' });
+        const ok = await confirmLoad('The bricks on the plate will be cleared. Save first if you want to keep them.', { mode: 'new' });
         if (!ok) return;
       }
       bricks.forEach(b => { 
@@ -9081,36 +9156,19 @@
       return Math.min(maxD, Math.max(minD, raw));
     }
 
-    function captureCornerFit(box) {
-      camera.updateMatrixWorld(true);
-      const xs = [box.aimX - box.spanX * 0.5, box.aimX + box.spanX * 0.5];
-      const ys = [box.aimY - box.spanY * 0.5, box.aimY + box.spanY * 0.5];
-      const zs = [box.aimZ - box.spanZ * 0.5, box.aimZ + box.spanZ * 0.5];
-      const v = new THREE.Vector3();
-      let maxX = -2;
-      let minX = 2;
-      let maxY = -2;
-      let minY = 2;
-      for (let ix = 0; ix < 2; ix++) {
-        for (let iy = 0; iy < 2; iy++) {
-          for (let iz = 0; iz < 2; iz++) {
-            v.set(xs[ix], ys[iy], zs[iz]).project(camera);
-            if (v.z < -1 || v.z > 1) return { fill: 2, minMargin: 0, behind: true };
-            if (v.x < minX) minX = v.x;
-            if (v.x > maxX) maxX = v.x;
-            if (v.y < minY) minY = v.y;
-            if (v.y > maxY) maxY = v.y;
-          }
-        }
-      }
-      const fill = Math.max(maxX - minX, maxY - minY) * 0.5;
-      const minMargin = Math.min(minX + 1, 1 - maxX, minY + 1, 1 - maxY) * 0.5;
-      return { fill, minMargin, behind: false };
+    // Bounding sphere of the build, then the distance that leaves 10% padding
+    // on the limiting FOV. The home ray is only the view direction.
+    function sphereFitDistance(box) {
+      const radius = 0.5 * Math.hypot(box.spanX, box.spanY, box.spanZ);
+      const aspect = Math.max(camera.aspect || 1, 0.3);
+      const vFov = (camera.fov * Math.PI) / 180;
+      const hFov = 2 * Math.atan(Math.tan(vFov / 2) * aspect);
+      const limit = Math.min(vFov, hFov);
+      const alpha = Math.atan(Math.tan(limit / 2) * 0.8);
+      const dist = radius / Math.max(0.05, Math.sin(alpha));
+      return Math.max(dist, radius + 0.45);
     }
 
-    // About 60% of the frame, with at least 10% margin on every side.
-    // A corner behind the camera used to report 4, and the old dolly
-    // multiplied distance by that, which shrank a long build to a speck.
     function placeCaptureCamera(box) {
       const len = Math.hypot(HOME_OX, HOME_OY, HOME_OZ) || 1;
       const dirX = HOME_OX / len;
@@ -9119,29 +9177,82 @@
       const savedPolar = controls.maxPolarAngle;
       controls.maxPolarAngle = Math.PI / 2.02;
       controls.minDistance = 0.3;
-      controls.maxDistance = 200;
-      const place = (dist) => {
-        controls.target.set(box.aimX, box.aimY, box.aimZ);
-        camera.position.set(
-          box.aimX + dirX * dist,
-          Math.max(0.55, box.aimY + dirY * dist),
-          box.aimZ + dirZ * dist
-        );
-        controls.update();
-      };
-      let lo = 0.45;
-      let hi = 96;
-      let chosen = hi;
-      for (let n = 0; n < 16; n++) {
-        const dist = (lo + hi) * 0.5;
-        place(dist);
-        const fit = captureCornerFit(box);
-        if (fit.behind || fit.minMargin < 0.10 || fit.fill > 0.68) lo = dist;
-        else { chosen = dist; hi = dist; }
-      }
-      place(chosen);
+      controls.maxDistance = 400;
+      const dist = sphereFitDistance(box);
+      controls.target.set(box.aimX, box.aimY, box.aimZ);
+      camera.position.set(
+        box.aimX + dirX * dist,
+        Math.max(0.55, box.aimY + dirY * dist),
+        box.aimZ + dirZ * dist
+      );
+      controls.update();
+      // lookAt writes the quaternion after matrixWorld. A phone home pose
+      // does not share this ray, so project() would use the old orientation.
+      camera.updateMatrixWorld(true);
       controls.maxPolarAngle = savedPolar;
       needsRender = true;
+    }
+
+    let plateFrameCam = null;
+    let plateFrameCache = '';
+    let plateFrameValue = 0;
+    function plateFrameDistance(pad) {
+      if (!camera) return isMobileGfx() ? 48 : 40;
+      const mobile = isMobileGfx();
+      const aspect = camera.aspect || 1;
+      const key = (mobile ? 'm' : 'd') + pad.toFixed(3) + ':' + aspect.toFixed(3) + ':' + camera.fov;
+      if (key === plateFrameCache) return plateFrameValue;
+      const ox = mobile ? PHONE_OX : HOME_OX;
+      const oy = mobile ? PHONE_OY : HOME_OY;
+      const oz = mobile ? PHONE_OZ : HOME_OZ;
+      const len = Math.hypot(ox, oy, oz) || 1;
+      const dir = new THREE.Vector3(ox / len, oy / len, oz / len);
+      const target = new THREE.Vector3(38.4, 0.35, 38.4);
+      if (!plateFrameCam) plateFrameCam = new THREE.PerspectiveCamera(60, 1, 0.1, 2800);
+      const cam = plateFrameCam;
+      cam.fov = camera.fov;
+      cam.aspect = aspect;
+      cam.near = 0.1;
+      cam.far = 2800;
+      const size = 96 * STUD;
+      const rim = mobile ? 0 : STUD * 1.25;
+      const list = [
+        new THREE.Vector3(-rim, 0.02, -rim),
+        new THREE.Vector3(size + rim, 0.02, -rim),
+        new THREE.Vector3(-rim, 0.02, size + rim),
+        new THREE.Vector3(size + rim, 0.02, size + rim)
+      ];
+      if (!mobile) {
+        list.push(new THREE.Vector3(size * 0.5, 0.02, -rim));
+        list.push(new THREE.Vector3(size * 0.5, 0.02, size + rim));
+        list.push(new THREE.Vector3(-rim, 0.02, size * 0.5));
+        list.push(new THREE.Vector3(size + rim, 0.02, size * 0.5));
+      }
+      const v = new THREE.Vector3();
+      const fits = (dist) => {
+        cam.position.copy(target).addScaledVector(dir, dist);
+        cam.up.set(0, 1, 0);
+        cam.lookAt(target);
+        cam.updateMatrixWorld(true);
+        cam.updateProjectionMatrix();
+        for (let i = 0; i < list.length; i++) {
+          v.copy(list[i]).project(cam);
+          if (v.z < -1 || v.z > 1) return false;
+          if (v.x < -1 + pad || v.x > 1 - pad || v.y < -1 + pad || v.y > 1 - pad) return false;
+        }
+        return true;
+      };
+      let lo = 8;
+      let hi = 340;
+      let chosen = hi;
+      for (let n = 0; n < 18; n++) {
+        const dist = (lo + hi) * 0.5;
+        if (fits(dist)) { chosen = dist; hi = dist; }
+        else lo = dist;
+      }
+      plateFrameCache = key;
+      plateFrameValue = chosen;
+      return chosen;
     }
 
     function placeCameraOnHomeRay(aimX, aimY, aimZ, dist) {
@@ -9161,20 +9272,25 @@
 
     function updateZoomLimits() {
       if (!controls || !camera) return;
+      const mobile = isMobileGfx();
       const box = buildBounds();
       const plate = 96 * STUD;
       const spanX = Math.min(plate, Math.max(box.spanX * 2.4, 12 * STUD));
       const spanZ = Math.min(plate, Math.max(box.spanZ * 2.4, 12 * STUD));
       const cap = fitDistanceForBox(spanX, Math.max(box.spanY, BRICK_H), spanZ, 0.7);
-      const home = isMobileGfx() ? PHONE_HOME_DIST : 7.4;
-      const slack = isMobileGfx() ? 20 : 2;
-      controls.maxDistance = Math.max(home + slack, cap);
+      const framed = plateFrameDistance(mobile ? 0.02 : 0.05);
+      // Min distance keeps one zoom step from ending inside a tower.
+      controls.minDistance = mobile ? 5 : 6;
+      controls.maxDistance = Math.max(framed, cap) + 0.75;
     }
 
     function frameHomeCamera() {
-      const span = 2 * STUD;
       updateZoomLimits();
-      placeCameraOnHomeRay(38, 0.5, 38, liveFitDistance(span, BRICK_H, span));
+      if (isMobileGfx()) {
+        placeCameraOnHomeRay(38.4, 0.35, 38.4, PHONE_HOME_DIST);
+        return;
+      }
+      placeCameraOnHomeRay(38.4, 0.35, 38.4, plateFrameDistance(0.05));
     }
 
     function resetView() {
@@ -9490,10 +9606,12 @@
         }
       });
       
-      // Scroll wheel to rotate brick in walk mode
+      // Capture the wheel before OrbitControls. One notch used to scale
+      // distance by the full delta and land inside the build.
       renderer.domElement.addEventListener('wheel', e => {
+        e.preventDefault();
+        e.stopImmediatePropagation();
         if (firstPersonMode) {
-          e.preventDefault();
           // Rotate 90 degrees per scroll
           if (e.deltaY > 0) {
             currentRotation = (currentRotation + 90) % 360;
@@ -9510,8 +9628,17 @@
           fpPrefabGhosts.forEach(g => scene.remove(g));
           fpPrefabGhosts = [];
           updateFpBrickInfo();
+          return;
         }
-      }, { passive: false });
+        let ticks = e.deltaY;
+        if (e.deltaMode === 1) ticks = e.deltaY * 16;
+        else if (e.deltaMode === 2) ticks = e.deltaY * 80;
+        ticks = Math.max(-1, Math.min(1, ticks / 100));
+        if (!ticks) return;
+        const dist = camera.position.distanceTo(controls.target);
+        const step = Math.min(1.5, Math.max(0.4, dist * 0.045));
+        zoomCamera(Math.sign(ticks) * step * Math.min(1, Math.abs(ticks)));
+      }, { passive: false, capture: true });
       
       // Select a quick slot
       function selectFpQuickSlot(index) {
@@ -9820,7 +9947,10 @@
         direction.subVectors(camera.position, controls.target).normalize();
         
         const distance = camera.position.distanceTo(controls.target);
-        const newDistance = Math.max(controls.minDistance, Math.min(controls.maxDistance, distance + delta));
+        // One call moves at most 6% or 2.5 units, so a button hold stays smooth.
+        const limit = Math.min(2.5, Math.max(0.35, distance * 0.06));
+        const signed = Math.sign(delta) * Math.min(Math.abs(delta), limit);
+        const newDistance = Math.max(controls.minDistance, Math.min(controls.maxDistance, distance + signed));
         
         const newPos = controls.target.clone().addScaledVector(direction, newDistance);
         
@@ -9831,17 +9961,38 @@
         }
       }
       
+      function isTextField(el) {
+        if (!el || !el.tagName) return false;
+        const tag = el.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+        return !!el.isContentEditable;
+      }
+
       function typingInField(e) {
-        const nodes = [e.target, document.activeElement];
-        for (let i = 0; i < nodes.length; i++) {
-          const el = nodes[i];
-          if (!el || !el.tagName) continue;
-          const tag = el.tagName;
-          if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
-          if (el.isContentEditable) return true;
+        if (isTextField(e.target) || isTextField(document.activeElement)) return true;
+        if (e.composedPath) {
+          const path = e.composedPath();
+          for (let i = 0; i < path.length && i < 5; i++) {
+            if (isTextField(path[i])) return true;
+          }
         }
         return false;
       }
+
+      function focusFieldNow(el) {
+        if (!isTextField(el) || el.disabled) return;
+        if (document.activeElement === el) return;
+        try { el.focus({ preventScroll: true }); }
+        catch (err) { el.focus(); }
+      }
+
+      // Focus moves in pointerdown, before a keydown can hit a hotkey.
+      document.addEventListener('pointerdown', (e) => {
+        const t = e.target;
+        if (!t || !t.closest) return;
+        const field = t.closest('input, textarea, select, [contenteditable="true"]');
+        if (field) focusFieldNow(field);
+      }, true);
 
       function clearToolMode(id, className) {
         const el = document.getElementById(id);
@@ -9878,6 +10029,21 @@
 
       // Keyboard
       document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+          const mirrorPop = document.getElementById('mirrorPopup');
+          const mirrorOpen = mirrorOn || (mirrorPop && mirrorPop.classList.contains('visible'));
+          if (mirrorOpen) {
+            mirrorOn = false;
+            const mirrorBtn = document.getElementById('mirrorBtn');
+            const mirrorSettings = document.getElementById('mirrorSettings');
+            if (mirrorBtn) mirrorBtn.classList.remove('active');
+            if (mirrorSettings) mirrorSettings.classList.remove('visible');
+            if (mirrorPop) mirrorPop.classList.remove('visible');
+            updateMirrorLines();
+            updateGhost();
+            if (typingInField(e)) return;
+          }
+        }
         if (typingInField(e)) return;
 
         if (e.key === 'Escape') {
@@ -10465,13 +10631,7 @@
       }
       
       document.getElementById('deleteBtn').addEventListener('click', () => {
-        deleteMode = !deleteMode; dropperMode = false; paintMode = false;
-        document.getElementById('deleteBtn').classList.toggle('delete-active', deleteMode);
-        document.getElementById('dropperBtn').classList.remove('dropper-active');
-        document.getElementById('paintBtn').classList.remove('paint-active');
-        document.body.classList.toggle('delete-mode', deleteMode);
-        document.body.classList.remove('dropper-mode', 'paint-mode');
-        updateGhost();
+        setDeleteMode(!deleteMode);
         toast(deleteMode ? '🗑️ Delete ON' : 'Delete OFF');
       });
       
@@ -11281,12 +11441,27 @@
         updateGhost();
         needsRender = true;
       });
-      document.getElementById('hudDeleteBtn').addEventListener('click', (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        const deleteTool = document.getElementById('deleteBtn');
-        if (deleteTool) deleteTool.click();
-      });
+      let hudDeleteAt = 0;
+      function onHudDelete(event) {
+        if (event.button != null && event.button > 0) return;
+        const now = performance.now();
+        if (now - hudDeleteAt < 400) return;
+        hudDeleteAt = now;
+        const turningOn = !deleteMode;
+        setDeleteMode(turningOn);
+        if (!turningOn) {
+          toast('Delete OFF');
+          return;
+        }
+        const before = bricks.length;
+        if (event.clientX != null) pointerToMouse(event.clientX, event.clientY);
+        if (before) deleteBrick();
+        if (bricks.length === before && before) deleteNewestBrick();
+        toast(bricks.length < before ? '🗑️ Deleted' : '🗑️ Delete ON');
+      }
+      const hudDeleteBtn = document.getElementById('hudDeleteBtn');
+      hudDeleteBtn.addEventListener('pointerdown', onHudDelete);
+      hudDeleteBtn.addEventListener('click', onHudDelete);
       document.getElementById('hudColorBtn').addEventListener('click', () => {
         // Open the color section in the sidebar
         const colorSection = document.querySelector('.section[data-section="color"]') || document.getElementById('colorSection');
@@ -11309,7 +11484,17 @@
       // Project management buttons
       document.getElementById('newProjectBtn').addEventListener('click', newProject);
       refreshProjectList();
-      document.getElementById('saveProjectBtn').addEventListener('click', saveProject);
+      let savePressAt = 0;
+      function onSavePress(event) {
+        if (event && event.button != null && event.button > 0) return;
+        const now = performance.now();
+        if (now - savePressAt < 400) return;
+        savePressAt = now;
+        saveProject();
+      }
+      const saveProjectBtn = document.getElementById('saveProjectBtn');
+      saveProjectBtn.addEventListener('pointerdown', onSavePress);
+      saveProjectBtn.addEventListener('click', onSavePress);
       document.getElementById('loadProjectBtn').addEventListener('click', toggleProjectList);
       document.getElementById('tutorialBtn').addEventListener('click', () => {
         if (typeof showTutorial === 'function') showTutorial();
@@ -13741,6 +13926,40 @@
             gx: g.gx, gz: g.gz, gy: g.gy
           };
         });
+      },
+      // Project every brick corner through the same 4:3 sphere fit the gallery uses.
+      captureFit() {
+        const v = new THREE.Vector3();
+        let worst = 0;
+        let outside = 0;
+        let behind = 0;
+        let dist = 0;
+        withFramedBuild(200, 150, () => {
+          dist = camera.position.distanceTo(controls.target);
+          for (let i = 0; i < bricks.length; i++) {
+            const b = bricks[i];
+            const p = b.position;
+            if (!p) continue;
+            const g = b.userData && b.userData.grid;
+            const hx = g ? (g.w * STUD) * 0.5 : 0.4;
+            const hz = g ? (g.d * STUD) * 0.5 : 0.4;
+            const hy = g && g.hp >= 3 ? BRICK_H : PLATE_H;
+            const ys = [p.y, p.y + hy];
+            const xs = [p.x - hx, p.x + hx];
+            const zs = [p.z - hz, p.z + hz];
+            for (let yi = 0; yi < ys.length; yi++) {
+              for (let xi = 0; xi < xs.length; xi++) {
+                for (let zi = 0; zi < zs.length; zi++) {
+                  v.set(xs[xi], ys[yi], zs[zi]).project(camera);
+                  if (v.z < 0 || v.z > 1) behind++;
+                  if (Math.abs(v.x) > 1 || Math.abs(v.y) > 1) outside++;
+                  worst = Math.max(worst, Math.abs(v.x), Math.abs(v.y));
+                }
+              }
+            }
+          }
+        });
+        return { worst, outside, behind, dist, count: bricks.length };
       }
     };
 

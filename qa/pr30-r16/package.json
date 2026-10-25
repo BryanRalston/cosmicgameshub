@@ -1,0 +1,8 @@
+{
+  "name": "brix3d-r16-qa",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "playwright": "1.49.1"
+  }
+}
