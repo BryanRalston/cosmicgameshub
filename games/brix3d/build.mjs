@@ -18,23 +18,6 @@ function addonPlugin() {
   };
 }
 
-const postTmp = join(root, '.brix-post.js');
-await esbuild.build({
-  absWorkingDir: root,
-  entryPoints: [join(root, 'src/post.js')],
-  bundle: true,
-  minify: true,
-  format: 'esm',
-  target: 'es2020',
-  outfile: postTmp,
-  legalComments: 'none',
-  plugins: [addonPlugin()]
-});
-const postCode = readFileSync(postTmp);
-const postName = `brix3d-post.${createHash('sha256').update(postCode).digest('hex').slice(0, 10)}.js`;
-writeFileSync(join(root, postName), postCode);
-unlinkSync(postTmp);
-
 const outdir = join(root, '.brix-out');
 rmSync(outdir, { recursive: true, force: true });
 mkdirSync(outdir, { recursive: true });
@@ -52,10 +35,12 @@ const built = await esbuild.build({
   metafile: true,
   legalComments: 'none',
   loader: { '.png': 'dataurl', '.jpg': 'dataurl' },
-  define: { __BRIX_POST__: JSON.stringify(`/games/brix3d/${postName}`) },
   plugins: [addonPlugin()]
 });
+
 let mainName = '';
+let postName = '';
+let threeName = '';
 const written = [];
 for (const [outfile, meta] of Object.entries(built.metafile.outputs)) {
   if (!outfile.endsWith('.js')) continue;
@@ -64,16 +49,32 @@ for (const [outfile, meta] of Object.entries(built.metafile.outputs)) {
   written.push(name);
   const entry = (meta.entryPoint || '').replace(/\\/g, '/');
   if (entry.endsWith('src/boot.js')) mainName = name;
+  const inputs = Object.keys(meta.inputs || {}).map((p) => p.replace(/\\/g, '/'));
+  if (inputs.some((p) => p.endsWith('src/post.js'))) postName = name;
+  if (inputs.some((p) => /node_modules\/three\/build\/three/.test(p))) threeName = name;
 }
 if (!mainName) throw new Error('boot entry missing from esbuild metafile');
+if (!postName) throw new Error('post chunk missing from esbuild metafile');
+if (!threeName) throw new Error('three chunk missing from esbuild metafile');
+if (postName === mainName || postName === threeName) {
+  throw new Error('post chunk was folded into the boot or three graph');
+}
+const postMeta = built.metafile.outputs[Object.keys(built.metafile.outputs).find((p) => basename(p) === postName)];
+const postImports = (postMeta.imports || []).map((item) => basename(item.path || ''));
+if (!postImports.includes(threeName)) {
+  throw new Error('post chunk does not import the shared three chunk: ' + postImports.join(','));
+}
 rmSync(outdir, { recursive: true, force: true });
 
-const keep = new Set([postName, ...written]);
+const keep = new Set(written);
 for (const file of readdirSync(root)) {
+  if (/^brix3d-post\.[0-9a-f]+\.js$/.test(file)) {
+    unlinkSync(join(root, file));
+    continue;
+  }
   if (!/^brix3d[-.][A-Za-z0-9]+\.js$/.test(file)) continue;
   if (!keep.has(file)) unlinkSync(join(root, file));
 }
-const mainCode = Buffer.concat(written.map((name) => readFileSync(join(root, name))));
 
 let html = readFileSync(htmlPath, 'utf8');
 html = html.replace(/\/games\/brix3d\/brix3d[-.][A-Za-z0-9]+\.js/g, `/games/brix3d/${mainName}`);
@@ -88,8 +89,22 @@ if (cssName !== cssFiles[0]) {
 }
 writeFileSync(htmlPath, html);
 rmSync(join(root, '.brix-out'), { recursive: true, force: true });
+
+const bootCode = readFileSync(join(root, mainName));
+const gameNames = written.filter((name) => name !== mainName && name !== postName && name !== threeName);
+const earlyCode = Buffer.concat([bootCode, readFileSync(join(root, threeName)), ...gameNames.map((name) => readFileSync(join(root, name)))]);
+if (earlyCode.includes('SMAAPass')) throw new Error('SMAA still in the boot, three, or game chunk');
+const postCode = readFileSync(join(root, postName));
+if (!postCode.includes(threeName.replace('.js', ''))) {
+  throw new Error('post chunk text does not reference the shared three file');
+}
+let warningFiles = 0;
+for (const name of written) {
+  const code = readFileSync(join(root, name));
+  if (code.includes('Multiple instances of Three')) warningFiles++;
+}
+if (warningFiles !== 1) throw new Error('expected the three warning in one chunk, found ' + warningFiles);
+
 console.log('main', mainName, written.map((name) => name + ' ' + readFileSync(join(root, name)).length).join(', '));
-console.log('post', postName, postCode.length);
+console.log('post', postName, postCode.length, 'imports', threeName);
 console.log('css', cssName, cssBuf.length);
-if (mainCode.includes('SMAAPass')) throw new Error('SMAA still in main bundle');
-if (!mainCode.includes(postName)) throw new Error('main bundle missing post url');

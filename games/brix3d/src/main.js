@@ -1114,7 +1114,9 @@
       const ua = navigator.userAgent || '';
       const touch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
       const small = Math.min(innerWidth, innerHeight) < 900;
-      return touch && (small || /Mobi|Android|iPhone|iPad/i.test(ua));
+      // A narrow window is the phone layout even when Chrome's responsive
+      // mode leaves touch emulation off. That path used to load desktop post.
+      return small || (touch && /Mobi|Android|iPhone|iPad/i.test(ua));
     }
     
     function loadQualityPreset() {
@@ -1369,7 +1371,6 @@
       scene.fog = new THREE.Fog(0x87CEEB, 100, 400);
       
       camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 1000);
-      camera.position.set(60, 40, 80); // Position to see baseplate nicely
       
       renderer = new THREE.WebGLRenderer({ antialias: useMsaa(), preserveDrawingBuffer: false, powerPreference: 'high-performance' });
       renderer.setSize(innerWidth, innerHeight);
@@ -1395,7 +1396,7 @@
       controls.maxPolarAngle = Math.PI / 2.1; // Prevent going below horizon
       controls.minDistance = 3;
       controls.maxDistance = 300;
-      controls.target.set(38, 0, 38); // Center of 96x96 baseplate
+      frameHomeCamera();
       
       // Limit vertical panning to prevent going below ground
       controls.maxTargetRadius = Infinity; // Allow panning anywhere horizontally
@@ -1469,27 +1470,27 @@
           boot.classList.add('hide');
           setTimeout(() => { boot.style.display = 'none'; }, 700);
         }
-        if (window.innerWidth <= 768) {
-          toast('Tap a starter, or tap the plate. The ghost is your 1×1.', 'success');
-        } else {
-          toast('Plate is ready. Tap a starter or place your first brick.', 'success');
+        const openingShare = !!shareTokenFromLocation();
+        if (!openingShare && !bricks.length) {
+          if (window.innerWidth <= 768) {
+            toast('Tap a starter, or tap the plate. The ghost is your 1×1.', 'success');
+          } else {
+            toast('Plate is ready. Tap a starter or place your first brick.', 'success');
+          }
         }
         tryLoadShareFromLocation();
         initDailyPrompt();
-        if (bricks.length) hideStarterBar();
+        if (bricks.length || openingShare) hideStarterBar();
       }, 400);
       
       updateUI();
     }
     
     // ==================== POST-PROCESSING ====================
-    function loadExternalModule(href) {
-      return import(href);
-    }
-
     function loadPostMods() {
       if (!postModsPromise) {
-        postModsPromise = loadExternalModule(__BRIX_POST__).then((mod) => {
+        // Literal import so esbuild shares the one three.js chunk with this module.
+        postModsPromise = import('./post.js').then((mod) => {
           postMods = {
             EffectComposer: mod.EffectComposer,
             RenderPass: mod.RenderPass,
@@ -6700,6 +6701,12 @@
       const bar = document.getElementById('starterBar');
       if (bar) bar.classList.add('hidden');
       document.querySelectorAll('.drawer-starters').forEach((el) => el.classList.add('hidden'));
+      const daily = document.getElementById('dailyPrompt');
+      if (daily) daily.hidden = true;
+      const t = document.getElementById('toast');
+      if (t && /Plate is ready|Tap a starter|ghost is your/i.test(t.textContent || '')) {
+        t.classList.remove('show');
+      }
     }
 
     function bouncePlaced(brick) {
@@ -6915,6 +6922,10 @@
     function initDailyPrompt() {
       const el = document.getElementById('dailyPrompt');
       if (!el) return;
+      if (bricks.length || shareTokenFromLocation()) {
+        el.hidden = true;
+        return;
+      }
       const key = dailyKey();
       let dismissed = '';
       try { dismissed = localStorage.getItem('brixDailyDismissed') || ''; } catch (e) {}
@@ -7024,6 +7035,8 @@
       });
       updateStats();
       needsRender = true;
+      hasUnsavedChanges = false;
+      if (placed) hideStarterBar();
       return placed;
     }
 
@@ -8900,6 +8913,8 @@
       }
       
       updateStats();
+      hasUnsavedChanges = false;
+      if (bricks.length) hideStarterBar();
     }
     
     // Helper function to restore face panels from saved data
@@ -8981,14 +8996,9 @@
     
     function saveProject() {
       const name = document.getElementById('projectName').value.trim() || 'Untitled';
-      const key = 'brickProject_' + name.toLowerCase().replace(/[^a-z0-9]/g, '_');
-      
       try {
-        const data = getProjectData();
-        localStorage.setItem(key, JSON.stringify(data));
-        hasUnsavedChanges = false; // Mark as saved
-        toast(`💾 Project "${name}" saved!`, 'success');
-        refreshProjectList();
+        const clean = saveNamedBuild(name);
+        toast(`💾 Project "${clean}" saved!`, 'success');
       } catch (e) {
         console.error('Save failed:', e);
         toast('❌ Save failed - storage may be full', 'error');
@@ -9016,6 +9026,15 @@
       if (!confirm('Delete this project?')) return;
       try {
         localStorage.removeItem(key);
+        try {
+          const saved = localStorage.getItem('brickBuilderGallery');
+          galleryBuilds = saved ? JSON.parse(saved) : [];
+        } catch (e) {
+          galleryBuilds = [];
+        }
+        if (!Array.isArray(galleryBuilds)) galleryBuilds = [];
+        galleryBuilds = galleryBuilds.filter((b) => b && projectStorageKey(b.name) !== key);
+        saveGalleryBuilds();
         refreshProjectList();
         toast('🗑️ Project deleted');
       } catch (e) {
@@ -9036,6 +9055,7 @@
     function refreshProjectList() {
       const list = document.getElementById('savedProjectsList');
       list.innerHTML = '';
+      mergeSavedBuilds();
       
       // Find all project keys
       const projects = [];
@@ -9088,10 +9108,18 @@
       }, 'image/png');
     }
     
-    function resetView() {
-      camera.position.set(60, 40, 80);
+    function frameHomeCamera() {
+      // Same view ray as the old (60, 40, 80) camera aimed at plate center
+      // (38, 0, 38). That offset is length 62. Length 22 keeps the ray and
+      // puts a 0.96-tall brick at the target near 34px on a 900px-tall view.
       controls.target.set(38, 0, 38);
+      camera.position.set(45.8, 14.2, 52.9);
       controls.update();
+      needsRender = true;
+    }
+
+    function resetView() {
+      frameHomeCamera();
       toast('🎯 View reset', 'success');
     }
     
@@ -9231,7 +9259,10 @@
         }
       });
       
+      let suppressClickUntil = 0;
       renderer.domElement.addEventListener('click', e => {
+        // A tap already placed from touchend. Chrome still synthesizes a click.
+        if (performance.now() < suppressClickUntil) return;
         // If in walk mode menu mode, re-lock the pointer
         if (firstPersonMode && fpMenuMode && !document.pointerLockElement) {
           fpMenuMode = false;
@@ -9606,6 +9637,7 @@
         
         // Quick tap = place/delete/paint, long press handled differently
         if (!touchMoved && touchDuration < 300) {
+          suppressClickUntil = performance.now() + 700;
           flushPointerHover();
           if (deleteMode) deleteBrick();
           else if (dropperMode) pickColor();
@@ -10089,6 +10121,14 @@
       };
       
       sidebarToggle.addEventListener('click', window.toggleSidebar);
+
+      const infoPanel = document.getElementById('info');
+      if (infoPanel) {
+        const infoTitle = infoPanel.querySelector('h3');
+        if (infoTitle) {
+          infoTitle.addEventListener('click', () => infoPanel.classList.toggle('collapsed'));
+        }
+      }
       
       // Section collapse toggle
       document.querySelectorAll('.section-title').forEach(title => {
@@ -11266,22 +11306,126 @@
       document.getElementById('galleryModal').style.display = 'none';
     }
     
-    function loadGalleryBuilds() {
+    function projectStorageKey(name) {
+      const slug = String(name || 'Untitled').trim().toLowerCase().replace(/[^a-z0-9]/g, '_') || 'untitled';
+      return 'brickProject_' + slug;
+    }
+
+    function galleryDateLabel(iso) {
+      if (!iso) return '';
+      const d = new Date(iso);
+      return Number.isNaN(d.getTime()) ? String(iso) : d.toLocaleDateString();
+    }
+
+    function readGalleryArray() {
       try {
         const saved = localStorage.getItem('brickBuilderGallery');
-        galleryBuilds = saved ? JSON.parse(saved) : [];
-      } catch(e) {
-        galleryBuilds = [];
+        const parsed = saved ? JSON.parse(saved) : [];
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        return [];
       }
-      renderGalleryGrid();
     }
-    
+
     function saveGalleryBuilds() {
       try {
         localStorage.setItem('brickBuilderGallery', JSON.stringify(galleryBuilds));
       } catch(e) {
         console.log('Could not save gallery');
       }
+    }
+
+    function mergeSavedBuilds() {
+      galleryBuilds = readGalleryArray();
+      const seen = new Set();
+      galleryBuilds = galleryBuilds.filter((b) => {
+        if (!b || !b.name) return false;
+        const key = projectStorageKey(b.name);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!key || !key.startsWith('brickProject_') || seen.has(key)) continue;
+        try {
+          const data = JSON.parse(localStorage.getItem(key));
+          if (!data) continue;
+          const name = data.name || 'Untitled';
+          const recKey = projectStorageKey(name);
+          if (seen.has(recKey)) continue;
+          galleryBuilds.push({
+            name,
+            thumbnail: '',
+            brickCount: data.bricks ? data.bricks.length : 0,
+            date: galleryDateLabel(data.savedAt),
+            data: data.bricks || []
+          });
+          seen.add(recKey);
+        } catch (e) {}
+      }
+      for (const build of galleryBuilds) {
+        const key = projectStorageKey(build.name);
+        if (localStorage.getItem(key)) continue;
+        try {
+          localStorage.setItem(key, JSON.stringify({
+            v: 4,
+            name: build.name,
+            savedAt: new Date().toISOString(),
+            bricks: Array.isArray(build.data) ? build.data : []
+          }));
+        } catch (e) {}
+      }
+      saveGalleryBuilds();
+    }
+
+    function rememberGalleryBuild(name, data, thumbnail) {
+      const key = projectStorageKey(name);
+      const existing = galleryBuilds.findIndex((b) => b && projectStorageKey(b.name) === key);
+      const rec = {
+        name,
+        thumbnail: thumbnail || (existing >= 0 ? galleryBuilds[existing].thumbnail : '') || '',
+        brickCount: data.bricks ? data.bricks.length : 0,
+        date: galleryDateLabel(data.savedAt),
+        data: data.bricks || []
+      };
+      if (existing >= 0) galleryBuilds.splice(existing, 1);
+      galleryBuilds.unshift(rec);
+      if (galleryBuilds.length > 20) galleryBuilds.length = 20;
+      saveGalleryBuilds();
+    }
+
+    function captureGalleryThumb() {
+      try {
+        renderFrame();
+        const thumbCanvas = document.createElement('canvas');
+        thumbCanvas.width = 200;
+        thumbCanvas.height = 150;
+        const ctx = thumbCanvas.getContext('2d');
+        ctx.drawImage(renderer.domElement, 0, 0, 200, 150);
+        return thumbCanvas.toDataURL('image/jpeg', 0.7);
+      } catch (e) {
+        return '';
+      }
+    }
+
+    function saveNamedBuild(name) {
+      const clean = String(name || '').trim() || 'Untitled';
+      const input = document.getElementById('projectName');
+      if (input) input.value = clean;
+      const data = getProjectData();
+      data.name = clean;
+      localStorage.setItem(projectStorageKey(clean), JSON.stringify(data));
+      mergeSavedBuilds();
+      rememberGalleryBuild(clean, data, captureGalleryThumb());
+      hasUnsavedChanges = false;
+      refreshProjectList();
+      return clean;
+    }
+
+    function loadGalleryBuilds() {
+      mergeSavedBuilds();
+      renderGalleryGrid();
     }
     
     function renderGalleryGrid() {
@@ -11291,19 +11435,26 @@
         return;
       }
       
-      grid.innerHTML = galleryBuilds.map((build, i) => `
+      grid.innerHTML = galleryBuilds.map((build, i) => {
+        const safeThumb = typeof build.thumbnail === 'string' && build.thumbnail.startsWith('data:image/')
+          ? build.thumbnail
+          : '';
+        const thumb = safeThumb
+          ? `<img src="${safeThumb}" alt="">`
+          : '<div class="gallery-thumb-fallback">No preview</div>';
+        return `
         <div class="gallery-item" data-index="${i}">
-          <img src="${build.thumbnail}" alt="${build.name}">
+          ${thumb}
           <div class="gallery-item-info">
             <div class="gallery-item-name">${escHtml(build.name)}</div>
-            <div class="gallery-item-meta">${escHtml(String(build.brickCount))} bricks • ${escHtml(build.date)}</div>
+            <div class="gallery-item-meta">${escHtml(String(build.brickCount))} bricks • ${escHtml(build.date || '')}</div>
           </div>
           <div class="gallery-item-actions">
             <button onclick="loadGalleryBuild(${i})">📂 Load</button>
             <button class="delete" onclick="deleteGalleryBuild(${i})">🗑️</button>
           </div>
-        </div>
-      `).join('');
+        </div>`;
+      }).join('');
     }
     
     function capturePreview(canvasId) {
@@ -11350,44 +11501,19 @@
     }
     
     function saveToGallery() {
-      renderFrame();
-      const thumbCanvas = document.createElement('canvas');
-      thumbCanvas.width = 200;
-      thumbCanvas.height = 150;
-      const ctx = thumbCanvas.getContext('2d');
-      ctx.drawImage(renderer.domElement, 0, 0, 200, 150);
-      const thumbnail = thumbCanvas.toDataURL('image/jpeg', 0.7);
-      
-      // Get build name
-      const name = prompt('Name your build:', `Build ${galleryBuilds.length + 1}`) || `Build ${galleryBuilds.length + 1}`;
-      
-      // Serialize bricks
-      const brickData = bricks.map(b => ({
-        type: b.userData.brickType || b.userData.type,
-        color: b.userData.color,
-        grid: b.userData.grid,
-        rot: b.userData.rot || 0,
-        pitch: b.userData.pitch || 0,
-        roll: b.userData.roll || 0,
-        transparent: b.userData.transparent || false,
-        locked: b.userData.locked || false
-      }));
-      
-      const build = {
-        name: name,
-        thumbnail: thumbnail,
-        brickCount: bricks.length,
-        date: new Date().toLocaleDateString(),
-        data: brickData
-      };
-      
-      galleryBuilds.unshift(build);
-      if (galleryBuilds.length > 20) galleryBuilds.pop(); // Limit to 20 saves
-      saveGalleryBuilds();
-      renderGalleryGrid();
-      
-      SoundSystem.playSuccess();
-      toast('💾 Build saved to gallery!', 'success');
+      mergeSavedBuilds();
+      const suggested = (document.getElementById('projectName').value || '').trim() || `Build ${galleryBuilds.length + 1}`;
+      const named = prompt('Name your build:', suggested);
+      if (named === null) return;
+      try {
+        saveNamedBuild(named.trim() || suggested);
+        renderGalleryGrid();
+        SoundSystem.playSuccess();
+        toast('💾 Build saved to gallery!', 'success');
+      } catch (e) {
+        console.error(e);
+        toast('❌ Save failed - storage may be full', 'error');
+      }
     }
     
     function loadGalleryBuild(index) {
@@ -11402,7 +11528,8 @@
       grid.clear(); cellBrick.clear();
       clearInstancedBricks();
       
-      build.data.forEach(b => {
+      (build.data || []).forEach(b => {
+        if (!b || !b.grid || !b.type) return;
         const brickH = getBrickHeight(b.type);
         const dims = getEffectiveDims(b.type, b.rot || 0);
         const pos = new THREE.Vector3(
@@ -11414,10 +11541,14 @@
           transparent: b.transparent,
           pitch: b.pitch,
           roll: b.roll
-        }, { gx: b.grid.gx, gz: b.grid.gz, w: dims.w, d: dims.d, gy: b.grid.gy, hp: b.grid.hp });
+        }, { gx: b.grid.gx, gz: b.grid.gz, w: dims.w, d: dims.d, gy: b.grid.gy, hp: b.grid.hp || getHP(b.type) });
         if (brick && b.locked) brick.userData.locked = true;
       });
       
+      const nameInput = document.getElementById('projectName');
+      if (nameInput) nameInput.value = build.name || '';
+      hasUnsavedChanges = false;
+      if (bricks.length) hideStarterBar();
       updateStats();
       closeGallery();
       SoundSystem.playSuccess();
@@ -11426,6 +11557,10 @@
     
     function deleteGalleryBuild(index) {
       if (!confirm('Delete this build from gallery?')) return;
+      const build = galleryBuilds[index];
+      if (build && build.name) {
+        try { localStorage.removeItem(projectStorageKey(build.name)); } catch (e) {}
+      }
       galleryBuilds.splice(index, 1);
       saveGalleryBuilds();
       renderGalleryGrid();
@@ -12525,7 +12660,9 @@
     }
     
     // ==================== ANIMATION LOOP ====================
-    let frames = 0, lastFPS = performance.now();
+    let frames = 0, lastFPS = 0;
+    let animateStarted = 0;
+    let hudLive = false;
     let lastTime = performance.now();
     let needsRender = true;
     let hudDrawCalls = 0;
@@ -12546,6 +12683,11 @@
       requestAnimationFrame(animate);
       
       const now = performance.now();
+      if (!animateStarted) {
+        animateStarted = now;
+        lastFPS = now;
+        lastTime = now;
+      }
       const delta = Math.min((now - lastTime) / 1000, 0.05);
       lastTime = now;
       demandFrames++;
@@ -12583,9 +12725,16 @@
       
       if (lightSources.size) updateBrickLights(false);
       
-      if (now - lastFPS >= 1000) {
-        if (frames > 0) lastHudFps = frames;
+      if (lastFPS && now - lastFPS >= 1000) {
         considerAutoQuality(frames, demandFrames, renderedFrames);
+        // Startup samples include the boot long-task. Publish rAF ticks only
+        // after the loop has been running for 2.5s. Auto-quality still sees
+        // the rendered-frame count, so an idle plate does not step quality down.
+        if (animateStarted && lastFPS - animateStarted >= 2500) {
+          lastHudFps = demandFrames;
+          hudLive = true;
+        }
+        const shownFps = hudLive ? lastHudFps : null;
         demandFrames = 0;
         renderedFrames = 0;
         const el = document.getElementById('fps');
@@ -12593,7 +12742,8 @@
           let batches = 0;
           instancedSystem.meshes.forEach(d => { if (d.mesh.count > 0) batches++; });
           for (let i = 0; i < bricks.length; i++) if (!bricks[i].isInstancedBrick) batches++;
-          el.textContent = `${lastHudFps} FPS · ${bricks.length} bricks · ${hudDrawCalls || batches} draws`;
+          const fpsText = shownFps == null ? '--' : String(shownFps);
+          el.textContent = `${fpsText} FPS · ${bricks.length} bricks · ${hudDrawCalls || batches} draws`;
         }
         frames = 0;
         lastFPS = now;
@@ -12687,9 +12837,10 @@
         }
       });
       
-      // Phone: never auto-cover the canvas. Desktop first visit only.
+      // Phone: never auto-cover the canvas. A share link (#b=) opens on the build.
       const phoneChrome = window.innerWidth <= 768;
-      if (!tutorialDismissed && !phoneChrome) {
+      const openingShare = !!shareTokenFromLocation();
+      if (!tutorialDismissed && !phoneChrome && !openingShare) {
         const checkAndShow = () => {
           const loadingScreen = document.getElementById('loadingScreen');
           if (!loadingScreen || loadingScreen.style.display === 'none' || loadingScreen.classList.contains('hide')) {
@@ -12985,7 +13136,16 @@
         updateStats();
         needsRender = true;
       },
-      orbitTick() { needsRender = true; }
+      orbitTick() { needsRender = true; },
+      grids() {
+        return bricks.map((b) => {
+          const g = b.userData.grid || {};
+          return {
+            t: b.userData.brickType || b.userData.type,
+            gx: g.gx, gz: g.gz, gy: g.gy
+          };
+        });
+      }
     };
 
   
