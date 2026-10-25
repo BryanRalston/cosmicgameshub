@@ -14,6 +14,7 @@ const shots = join(here, 'shots');
 const PORT = 8772;
 const SMOKE = process.argv.includes('smoke');
 const SKIP_PERF = process.argv.includes('--skip-perf');
+const ONLY = process.argv.filter((arg) => arg.startsWith('only:')).map((arg) => arg.slice(5));
 const phoneUA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
 const NAMES = ['fifteen', 'mirror tower', 'zxc rdt', 'rrr mmm fgh', 'one brick', 'three far', 'six zebra', 'fifteen spread', 'qwerty mx'];
 const TYPES = {
@@ -30,6 +31,7 @@ function assert(cond, msg) {
 }
 
 async function check(id, name, fn) {
+  if (ONLY.length && !ONLY.some((part) => id.indexOf(part) >= 0)) return;
   try {
     const detail = await fn();
     results.push({ id, name, pass: true, detail: detail || '' });
@@ -108,8 +110,16 @@ async function openPage(browser, phone, tag) {
 }
 
 async function clickAt(page, x, y, opts) {
-  if (page.__phone) await page.touchscreen.tap(x, y);
-  else await page.mouse.click(x, y, opts || {});
+  if (!page.__phone) {
+    await page.mouse.click(x, y, opts || {});
+    return;
+  }
+  const onCanvas = await page.evaluate(([px, py]) => {
+    const el = document.elementFromPoint(px, py);
+    return !!(el && el.tagName === 'CANVAS');
+  }, [x, y]);
+  await page.touchscreen.tap(x, y);
+  if (!onCanvas) await page.mouse.click(x, y, opts || {});
 }
 
 async function clickLoc(page, locator, opts) {
@@ -130,9 +140,9 @@ async function typeInto(page, box, name, how) {
   const y = box.y + box.height / 2;
   if (how === 'triple') {
     if (page.__phone) {
-      await page.touchscreen.tap(x, y);
-      await page.touchscreen.tap(x, y);
-      await page.touchscreen.tap(x, y);
+      await clickAt(page, x, y);
+      await clickAt(page, x, y);
+      await clickAt(page, x, y);
     } else {
       await page.mouse.click(x, y, { clickCount: 3, delay: 35 });
     }
@@ -145,26 +155,26 @@ async function typeInto(page, box, name, how) {
 async function armName(page) {
   const deadline = Date.now() + 20000;
   while (Date.now() < deadline) {
-    const skip = await page.locator('#tutorialSkip').boundingBox().catch(() => null);
     const phoneOk = await page.locator('#phoneTutorialOk').boundingBox().catch(() => null);
-    const toggle = await page.locator('#panelToggle').boundingBox().catch(() => null);
     if (phoneOk && phoneOk.width > 4) {
       await clickAt(page, phoneOk.x + phoneOk.width / 2, phoneOk.y + phoneOk.height / 2);
-      if (toggle) await clickAt(page, toggle.x + toggle.width / 2, toggle.y + toggle.height / 2);
-      return page.locator('#projectName').boundingBox();
     }
-    if (page.__phone && toggle && toggle.width > 4) {
+    if (page.__phone) {
+      const toggle = await page.locator('#panelToggle').boundingBox().catch(() => null);
+      if (!toggle || toggle.width < 4) continue;
       await clickAt(page, toggle.x + toggle.width / 2, toggle.y + toggle.height / 2);
-      return page.locator('#projectName').boundingBox();
+      const open = await page.locator('#controls').evaluate((el) => el.classList.contains('tray-open')).catch(() => false);
+      if (!open) continue;
+      const field = await page.locator('#projectName').boundingBox();
+      if (field && field.width > 4) return field;
+      continue;
     }
-    if (!page.__phone && skip && skip.width > 4) {
+    const skip = await page.locator('#tutorialSkip').boundingBox().catch(() => null);
+    if (skip && skip.width > 4) {
       await clickAt(page, skip.x + skip.width / 2, skip.y + skip.height / 2);
-      return page.locator('#projectName').boundingBox();
     }
-    if (!page.__phone) {
-      const field = await page.locator('#projectName').boundingBox().catch(() => null);
-      if (field && field.width > 4 && field.y >= 0 && field.y < 800) return field;
-    }
+    const field = await page.locator('#projectName').boundingBox().catch(() => null);
+    if (field && field.width > 4 && field.y >= 0 && field.y < page.viewportSize().height) return field;
   }
   throw new Error('name field never became clickable');
 }
@@ -207,7 +217,18 @@ function assertClean(state, expected, dialogs) {
 }
 
 async function ready(page) {
-  await page.waitForFunction(() => window.brixCanPlace && window.camera && document.querySelector('#container canvas'), null, { timeout: 45000 });
+  await page.waitForFunction(() => {
+    if (!window.brixCanPlace || !window.camera || !document.querySelector('#container canvas')) return false;
+    const loading = document.getElementById('loadingScreen');
+    const loadingGone = !loading || loading.classList.contains('hide') || loading.style.display === 'none';
+    if (!loadingGone) return false;
+    const modal = document.getElementById('tutorialModal');
+    const phone = document.getElementById('phoneTutorial');
+    if (modal && modal.classList.contains('visible')) return true;
+    if (phone && !phone.hidden) return true;
+    try { if (localStorage.getItem('brickBuilderTutorialDismissed') === 'true') return true; } catch (e) {}
+    return false;
+  }, null, { timeout: 45000 });
   const skip = await page.locator('#tutorialSkip').boundingBox().catch(() => null);
   if (skip && skip.width > 4) await clickAt(page, skip.x + skip.width / 2, skip.y + skip.height / 2);
   const phoneOk = await page.locator('#phoneTutorialOk').boundingBox().catch(() => null);
@@ -261,13 +282,50 @@ async function brickCount(page) {
   return parseInt(t || '0', 10) || 0;
 }
 
-function platePoint(page, fx, fy) {
-  const vp = page.viewportSize();
-  const left = page.__phone ? 12 : 310;
-  const right = vp.width - 20;
-  const top = page.__phone ? 150 : 90;
-  const bottom = page.__phone ? vp.height - 230 : vp.height - 100;
-  return { x: left + (right - left) * fx, y: top + (bottom - top) * fy };
+function findStud(img, fx) {
+  const w = img.width;
+  const h = img.height;
+  const data = img.data;
+  const y0 = Math.floor(h * 0.5);
+  const y1 = Math.floor(h * 0.7);
+  const xMid = Math.floor(w * (0.22 + fx * 0.56));
+  let best = null;
+  let bestScore = 0;
+  for (let y = y0; y < y1; y += 3) {
+    for (let x = Math.max(2, xMid - 80); x < Math.min(w - 2, xMid + 80); x += 3) {
+      const i = (y * w + x) * 4;
+      const g = data[i + 1];
+      if (!(g > 80 && g > data[i] && g > data[i + 2] + 4)) continue;
+      const diff = Math.abs(data[(y * w + x + 2) * 4 + 1] - g);
+      if (diff > bestScore) {
+        bestScore = diff;
+        best = { x, y };
+      }
+    }
+  }
+  return bestScore > 12 ? best : null;
+}
+
+async function clickStud(page, fx, stack) {
+  const shot = await grabCanvas(page);
+  let pt = null;
+  if (stack) {
+    const blob = brickBlob(shot.img, plateInset(page, shot));
+    if (blob.n > 12) pt = { x: blob.cx, y: blob.cy };
+  }
+  if (!pt) pt = findStud(shot.img, fx);
+  if (!pt) throw new Error('no stud in view at ' + fx);
+  const x = shot.clip.x + pt.x / shot.dpr;
+  const y = shot.clip.y + pt.y / shot.dpr;
+  await placeAt(page, x, y);
+  return { x, y };
+}
+
+async function locateStud(page, fx) {
+  const shot = await grabCanvas(page);
+  const pt = findStud(shot.img, fx);
+  if (!pt) throw new Error('no stud in view at ' + fx);
+  return { x: shot.clip.x + pt.x / shot.dpr, y: shot.clip.y + pt.y / shot.dpr };
 }
 
 async function waitGrown(page, before, ms) {
@@ -333,6 +391,69 @@ function redBlob(img) {
   }
   if (!n) return { n: 0 };
   return { n, minX, maxX, minY, maxY, cx: sx / n, cy: sy / n, w: maxX - minX + 1, h: maxY - minY + 1 };
+}
+
+function brickBlob(img, insetLeft) {
+  const { width: w, height: h, data } = img;
+  const seen = new Uint8Array(w * h);
+  const y0 = Math.floor(h * 0.18);
+  const y1 = Math.floor(h * 0.84);
+  const x0 = insetLeft || 0;
+  let best = null;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const start = y * w + x;
+      if (seen[start]) continue;
+      const si = start * 4;
+      if (!isRed(data[si], data[si + 1], data[si + 2])) continue;
+      let n = 0;
+      let minX = x;
+      let maxX = x;
+      let minY = y;
+      let maxY = y;
+      let sx = 0;
+      let sy = 0;
+      const stack = [start];
+      seen[start] = 1;
+      while (stack.length) {
+        const p = stack.pop();
+        const px = p % w;
+        const py = (p - px) / w;
+        n++;
+        sx += px;
+        sy += py;
+        if (px < minX) minX = px;
+        if (px > maxX) maxX = px;
+        if (py < minY) minY = py;
+        if (py > maxY) maxY = py;
+        if (px > 0 && !seen[p - 1]) {
+          const i = (p - 1) * 4;
+          if (isRed(data[i], data[i + 1], data[i + 2])) { seen[p - 1] = 1; stack.push(p - 1); }
+        }
+        if (px + 1 < w && !seen[p + 1]) {
+          const i = (p + 1) * 4;
+          if (isRed(data[i], data[i + 1], data[i + 2])) { seen[p + 1] = 1; stack.push(p + 1); }
+        }
+        if (py > 0 && !seen[p - w]) {
+          const i = (p - w) * 4;
+          if (isRed(data[i], data[i + 1], data[i + 2])) { seen[p - w] = 1; stack.push(p - w); }
+        }
+        if (py + 1 < h && !seen[p + w]) {
+          const i = (p + w) * 4;
+          if (isRed(data[i], data[i + 1], data[i + 2])) { seen[p + w] = 1; stack.push(p + w); }
+        }
+      }
+      const cx = sx / n;
+      const cy = sy / n;
+      if (n < 8 || cy < y0 || cy > y1 || cx < x0) continue;
+      if (!best || n > best.n) best = { n, minX, maxX, minY, maxY, cx, cy, w: maxX - minX + 1, h: maxY - minY + 1 };
+    }
+  }
+  return best || { n: 0 };
+}
+
+function plateInset(page, shot) {
+  return page.__phone ? 0 : Math.round(260 * shot.dpr);
 }
 
 function redParts(img) {
@@ -425,33 +546,60 @@ function hardEdge(img) {
   return '';
 }
 
-function platePeak(img) {
+function plateEdgeRows(img, insetLeft) {
   const w = img.width;
   const h = img.height;
   const data = img.data;
-  const mask = new Uint8Array(w * h);
-  for (let y = 2; y < h - 2; y++) {
-    for (let x = 2; x < w - 2; x++) {
-      const i = (y * w + x) * 4;
-      const g = data[i + 1];
-      if (!(g > 60 && g >= data[i] && g >= data[i + 2])) continue;
-      let varied = 0;
-      if (Math.abs(data[((y) * w + (x + 2)) * 4 + 1] - g) > 16) varied++;
-      if (Math.abs(data[((y) * w + (x - 2)) * 4 + 1] - g) > 16) varied++;
-      if (Math.abs(data[((y + 2) * w + x) * 4 + 1] - g) > 16) varied++;
-      if (varied >= 2) mask[y * w + x] = 1;
+  const cell = 28;
+  const cols = Math.floor(w / cell);
+  const rows = Math.floor(h / cell);
+  const kind = new Uint8Array(cols * rows);
+  for (let cy = 0; cy < rows; cy++) {
+    for (let cx = 0; cx < cols; cx++) {
+      let n = 0;
+      let sg = 0;
+      let sg2 = 0;
+      let sky = 0;
+      const x0 = cx * cell;
+      const y0 = cy * cell;
+      for (let y = y0; y < y0 + cell; y += 2) {
+        for (let x = x0; x < x0 + cell; x += 2) {
+          const i = (y * w + x) * 4;
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          if (b > g + 12 && b > 100) sky++;
+          sg += g;
+          sg2 += g * g;
+          n++;
+        }
+      }
+      const mean = sg / n;
+      const variance = sg2 / n - mean * mean;
+      if (sky > n * 0.45) kind[cy * cols + cx] = 0;
+      else if (mean > 70 && variance > 280) kind[cy * cols + cx] = 1;
+      else if (mean > 50 && variance < 160) kind[cy * cols + cx] = 2;
     }
   }
-  const topIn = (x0, x1) => {
-    for (let y = 0; y < h; y++) {
-      for (let x = x0; x < x1; x++) if (mask[y * w + x]) return y;
+  const yMax = Math.floor(rows * 0.62);
+  const xSkip = Math.floor((insetLeft || 0) / cell);
+  let evidence = 0;
+  for (let cy = 1; cy < yMax; cy++) {
+    let first = -1;
+    let last = -1;
+    for (let cx = xSkip; cx < cols; cx++) {
+      if (kind[cy * cols + cx] !== 1) continue;
+      if (first < 0) first = cx;
+      last = cx;
     }
-    return h;
-  };
-  const left = topIn(Math.floor(w * 0.12), Math.floor(w * 0.30));
-  const mid = topIn(Math.floor(w * 0.42), Math.floor(w * 0.58));
-  const right = topIn(Math.floor(w * 0.70), Math.floor(w * 0.88));
-  return { peak: Math.min(left, right) - mid, left, mid, right, h };
+    if (first < 0 || last - first < 2) continue;
+    let left = 0;
+    let right = 0;
+    for (let cx = xSkip; cx < first; cx++) if (kind[cy * cols + cx] === 2) left++;
+    for (let cx = last + 1; cx < cols; cx++) if (kind[cy * cols + cx] === 2) right++;
+    if (left >= 2 || right >= 2) evidence++;
+  }
+  return evidence;
 }
 
 function moirePeaks(img) {
@@ -492,7 +640,7 @@ function moirePeaks(img) {
 }
 
 function stripeScore(img) {
-  const blob = redBlob(img);
+  const blob = brickBlob(img, 0);
   if (!blob.n || blob.w < 20) return { score: -1, n: blob.n };
   const { width, data } = img;
   let flips = 0;
@@ -591,8 +739,7 @@ async function runTyping(browser, phone) {
       if (how === 'after') {
         await ready(page);
         if (phone) await ensureDrawer(page);
-        const p = platePoint(page, 0.5, 0.45);
-        await placeAt(page, p.x, p.y);
+        await clickStud(page, 0.5, false);
         if (phone) await ensureDrawer(page);
         box = await page.locator('#projectName').boundingBox();
         howType = 'triple';
@@ -681,17 +828,17 @@ async function main() {
       try {
         await ready(page);
         const layouts = {
-          one: [platePoint(page, 0.55, 0.5)],
-          spread: [platePoint(page, 0.12, 0.42), platePoint(page, 0.55, 0.7), platePoint(page, 0.9, 0.35)],
-          tower: Array.from({ length: 6 }, () => platePoint(page, 0.5, 0.48)),
-          row: Array.from({ length: 15 }, (_, i) => platePoint(page, 0.08 + i * 0.055, 0.62))
+          one: [0.55],
+          spread: [0.12, 0.5, 0.88],
+          tower: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
+          row: Array.from({ length: 15 }, (_, i) => 0.06 + i * 0.06)
         };
         const lines = [];
         for (const kind of ['one', 'spread', 'tower', 'row']) {
           await page.evaluate(() => localStorage.clear());
           await page.reload({ waitUntil: 'domcontentloaded' });
           await ready(page);
-          for (const p of layouts[kind]) await placeAt(page, p.x, p.y);
+          for (let i = 0; i < layouts[kind].length; i++) await clickStud(page, layouts[kind][i], kind === 'tower' && i > 0);
           const field = await page.locator('#projectName').boundingBox();
           await typeInto(page, field, kind, 'click');
           await clickSel(page, '#saveProjectBtn');
@@ -724,16 +871,15 @@ async function main() {
       const { page, context } = await openPage(browser, false, 'dbrick');
       try {
         await ready(page);
-        const p = platePoint(page, 0.55, 0.5);
-        await placeAt(page, p.x, p.y);
+        const hit = await clickStud(page, 0.55, false);
         const shot = await grabCanvas(page, 'desktop-brick.png');
-        const blob = redBlob(shot.img);
+        const blob = brickBlob(shot.img, plateInset(page, shot));
         assert(blob.n > 8, 'no red brick in the frame');
         const px = Math.max(blob.w, blob.h) / shot.dpr;
         assert(px >= 25 && px <= 45, 'brick ' + px.toFixed(1) + ' px');
         const cx = shot.clip.x + blob.cx / shot.dpr;
         const cy = shot.clip.y + blob.cy / shot.dpr;
-        const dist = Math.hypot(cx - p.x, cy - p.y);
+        const dist = Math.hypot(cx - hit.x, cy - hit.y);
         assert(dist <= 12, 'brick centroid ' + dist.toFixed(1) + ' px from the click');
         return px.toFixed(1) + ' px, offset ' + dist.toFixed(1);
       } finally { await context.close(); }
@@ -743,10 +889,9 @@ async function main() {
       const { page, context } = await openPage(browser, true, 'pbrick');
       try {
         await ready(page);
-        const p = platePoint(page, 0.5, 0.42);
-        await placeAt(page, p.x, p.y);
+        await clickStud(page, 0.5, false);
         const shot = await grabCanvas(page, 'phone-brick.png');
-        const blob = redBlob(shot.img);
+        const blob = brickBlob(shot.img, plateInset(page, shot));
         assert(blob.n > 8, 'no red brick in the frame');
         const px = Math.max(blob.w, blob.h) / shot.dpr;
         assert(px >= 25 && px <= 45, 'brick ' + px.toFixed(1) + ' px');
@@ -759,9 +904,9 @@ async function main() {
       try {
         await ready(page);
         const shot = await grabCanvas(page, 'desktop-plate.png');
-        const peak = platePeak(shot.img);
-        assert(peak.peak >= peak.h * 0.05, 'plate edge not in frame, peak ' + peak.peak + ' of ' + peak.h);
-        return 'peak ' + peak.peak + 'px';
+        const rows = plateEdgeRows(shot.img, 280);
+        assert(rows >= 1, 'plate edge not in frame, edge rows ' + rows);
+        return 'edge rows ' + rows;
       } finally { await context.close(); }
     });
 
@@ -770,9 +915,9 @@ async function main() {
       try {
         await ready(page);
         const shot = await grabCanvas(page, 'phone-plate.png');
-        const peak = platePeak(shot.img);
-        assert(peak.peak >= peak.h * 0.05, 'plate edge not in frame, peak ' + peak.peak + ' of ' + peak.h);
-        return 'peak ' + peak.peak + 'px';
+        const rows = plateEdgeRows(shot.img, 0);
+        assert(rows >= 1, 'plate edge not in frame, edge rows ' + rows);
+        return 'edge rows ' + rows;
       } finally { await context.close(); }
     });
 
@@ -828,9 +973,8 @@ async function main() {
       const { page, context } = await openPage(browser, false, 'zfight');
       try {
         await ready(page);
-        const a = platePoint(page, 0.48, 0.5);
-        await placeAt(page, a.x, a.y);
-        await placeAt(page, a.x + 22, a.y);
+        await clickStud(page, 0.42, false);
+        await clickStud(page, 0.62, false);
         for (let i = 0; i < 16; i++) await clickSel(page, '#zoomInBtn');
         const s1 = await grabCanvas(page, 'zfight-1.png');
         const s2 = await grabCanvas(page, 'zfight-2.png');
@@ -847,10 +991,9 @@ async function main() {
       const { page, context } = await openPage(browser, false, 'zoom');
       try {
         await ready(page);
-        const p = platePoint(page, 0.22, 0.55);
-        await placeAt(page, p.x, p.y);
+        await clickStud(page, 0.18, false);
         const before = await grabCanvas(page, 'zoom-before.png');
-        const blob = redBlob(before.img);
+        const blob = brickBlob(before.img, plateInset(page, before));
         assert(blob.n > 8, 'brick missing before zoom');
         const cx = before.clip.x + blob.cx / before.dpr;
         const cy = before.clip.y + blob.cy / before.dpr;
@@ -858,7 +1001,7 @@ async function main() {
         await page.mouse.move(cx, cy);
         for (let i = 0; i < 4; i++) await page.mouse.wheel(0, -120);
         const after = await grabCanvas(page, 'zoom-after.png');
-        const blob2 = redBlob(after.img);
+        const blob2 = brickBlob(after.img, plateInset(page, after));
         assert(blob2.n > 8, 'brick left the screen');
         const cx2 = after.clip.x + blob2.cx / after.dpr;
         const cy2 = after.clip.y + blob2.cy / after.dpr;
@@ -876,13 +1019,15 @@ async function main() {
       const { page, context } = await openPage(browser, true, 'pzoom');
       try {
         await ready(page);
-        const p = platePoint(page, 0.5, 0.4);
-        await placeAt(page, p.x, p.y);
-        const s0 = redBlob((await grabCanvas(page, 'pzoom-0.png')).img);
+        await clickStud(page, 0.5, false);
+        const z0 = await grabCanvas(page, 'pzoom-0.png');
+        const s0 = brickBlob(z0.img, plateInset(page, z0));
         await clickSel(page, '#zoomInBtn');
-        const s1 = redBlob((await grabCanvas(page, 'pzoom-1.png')).img);
+        const z1 = await grabCanvas(page, 'pzoom-1.png');
+        const s1 = brickBlob(z1.img, plateInset(page, z1));
         await clickSel(page, '#zoomOutBtn');
-        const s2 = redBlob((await grabCanvas(page, 'pzoom-2.png')).img);
+        const z2 = await grabCanvas(page, 'pzoom-2.png');
+        const s2 = brickBlob(z2.img, plateInset(page, z2));
         const w = (b) => (b.n ? Math.max(b.w, b.h) : 0);
         assert(w(s1) > w(s0) + 3, '+ changed ' + w(s0) + ' to ' + w(s1));
         assert(w(s2) < w(s1) - 3, '- changed ' + w(s1) + ' to ' + w(s2));
@@ -913,15 +1058,14 @@ async function main() {
       const { page, context } = await openPage(browser, false, 'ddel');
       try {
         await ready(page);
-        const p = platePoint(page, 0.5, 0.5);
-        await placeAt(page, p.x, p.y);
+        await clickStud(page, 0.45, false);
         await openSection(page, /^Tools$/);
         await scrollUntil(page, page.locator('#deleteBtn'));
         await clickSel(page, '#deleteBtn');
         const armed = await page.evaluate(() => document.body.classList.contains('delete-mode') || document.getElementById('deleteBtn').classList.contains('delete-active'));
         assert(armed, 'delete mode did not arm');
         const before = await brickCount(page);
-        await placeAt(page, p.x + 40, p.y);
+        await clickStud(page, 0.72, false);
         const afterArm = await page.evaluate(() => document.body.classList.contains('delete-mode') || document.getElementById('deleteBtn').classList.contains('delete-active'));
         assert(!afterArm, 'delete mode stayed on after a placement');
         assert((await brickCount(page)) > before, 'placement did not add a brick');
@@ -1029,8 +1173,7 @@ async function main() {
       const { page, context } = await openPage(browser, false, 'native');
       try {
         await ready(page);
-        const p = platePoint(page, 0.5, 0.5);
-        await placeAt(page, p.x, p.y);
+        await clickStud(page, 0.5, false);
         const field = await page.locator('#projectName').boundingBox();
         await typeInto(page, field, 'keepme', 'click');
         await clickSel(page, '#saveProjectBtn');
@@ -1093,8 +1236,7 @@ async function main() {
           const sw = page.locator('.color-preset:not(.trans)[data-color="' + hex + '"]').first();
           await scrollUntil(page, sw);
           await clickLoc(page, sw);
-          const p = platePoint(page, 0.42 + lines.length * 0.08, 0.5);
-          await placeAt(page, p.x, p.y);
+          await clickStud(page, 0.35 + lines.length * 0.1, false);
         }
         for (let i = 0; i < 14; i++) await clickSel(page, '#zoomInBtn');
         const shot = await grabCanvas(page, 'colors.png');
@@ -1116,13 +1258,13 @@ async function main() {
         await ready(page);
         const cdp = await page.context().newCDPSession(page);
         await cdp.send('Emulation.setPageScaleFactor', { pageScaleFactor: 0.9 });
-        const p = platePoint(page, 0.6, 0.48);
+        const p = await locateStud(page, 0.6);
         const client = await page.context().newCDPSession(page);
         await client.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: p.x, y: p.y, button: 'left', clickCount: 1 });
         await client.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: p.x, y: p.y, button: 'left', clickCount: 1 });
         assert(await waitGrown(page, 0, 3000), 'scaled click did not place');
         const shot = await grabCanvas(page, 'click-90.png');
-        const blob = redBlob(shot.img);
+        const blob = brickBlob(shot.img, plateInset(page, shot));
         assert(blob.n > 8, 'no brick');
         const cx = shot.clip.x + blob.cx / shot.dpr;
         const cy = shot.clip.y + blob.cy / shot.dpr;
@@ -1136,7 +1278,7 @@ async function main() {
       const { page, context } = await openPage(browser, false, 'drag');
       try {
         await ready(page);
-        const p = platePoint(page, 0.4, 0.5);
+        const p = await locateStud(page, 0.4);
         const before = await brickCount(page);
         await page.mouse.move(p.x, p.y);
         await page.mouse.down();
@@ -1156,8 +1298,7 @@ async function main() {
       const { page, context } = await openPage(browser, false, 'share');
       try {
         await ready(page);
-        const p = platePoint(page, 0.5, 0.5);
-        await placeAt(page, p.x, p.y);
+        await clickStud(page, 0.5, false);
         await clickSel(page, '#galleryBtn');
         await clickSel(page, '.gallery-tab[data-tab="share"]');
         await page.waitForFunction(() => {
@@ -1200,7 +1341,7 @@ async function main() {
       const { page, context } = await openPage(browser, false, 'copy');
       try {
         await ready(page);
-        await placeAt(page, platePoint(page, 0.5, 0.5).x, platePoint(page, 0.5, 0.5).y);
+        await clickStud(page, 0.5, false);
         const count = await brickCount(page);
         await clickSel(page, '#newProjectBtn');
         const title = (await page.locator('#loadConfirmTitle').innerText()).trim();
@@ -1261,7 +1402,7 @@ async function main() {
         assert(toastTop >= 40 && toastTop <= 80, 'toast top ' + toastTop);
         const bar = await page.locator('#starterBar').boundingBox();
         assert(bar && bar.width > 10, 'starters missing before the first brick');
-        await placeAt(page, platePoint(page, 0.55, 0.5).x, platePoint(page, 0.55, 0.5).y);
+        await clickStud(page, 0.55, false);
         const hidden = await page.locator('#starterBar').evaluate((el) => el.classList.contains('hidden') || getComputedStyle(el).display === 'none' || getComputedStyle(el).visibility === 'hidden');
         assert(hidden, 'starters stayed after the first brick');
         return 'labels ' + style.size + 'px toast ' + toastTop;
@@ -1314,7 +1455,7 @@ async function main() {
       const { page, context } = await openPage(browser, true, 'studs');
       try {
         await ready(page);
-        await placeAt(page, platePoint(page, 0.5, 0.38).x, platePoint(page, 0.5, 0.38).y);
+        await clickStud(page, 0.5, false);
         for (let i = 0; i < 2; i++) await clickSel(page, '#zoomInBtn');
         const shot = await grabCanvas(page, 'stud-scale.png');
         const img = shot.img;
@@ -1333,7 +1474,7 @@ async function main() {
           }
           return bestLag;
         };
-        const blob = redBlob(img);
+        const blob = brickBlob(img, plateInset(page, shot));
         assert(blob.n > 40, 'brick too small to measure studs');
         const brickPitch = pitch(Math.floor((blob.minY + blob.maxY) / 2), (r, g, b) => r > 120 && r > g);
         let plateY = Math.min(img.height - 4, blob.maxY + 12);
