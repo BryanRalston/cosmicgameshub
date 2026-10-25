@@ -9,7 +9,7 @@ function afterPaint() {
 }
 
 // Each part is its own module, so parsing it cannot become one long task.
-// Yield once a slice has used about 8ms. Lighthouse's 4x CPU lane then
+// Yield once a slice has used about 5ms. A 4x Lighthouse CPU lane then
 // stays under the 50ms long-task line.
 async function runParts(urls) {
   const times = [];
@@ -18,7 +18,7 @@ async function runParts(urls) {
     const t0 = performance.now();
     await import(urls[i]);
     times.push(Math.round((performance.now() - t0) * 10) / 10);
-    if (performance.now() - slice >= 8) {
+    if (performance.now() - slice >= 5) {
       await later(0);
       slice = performance.now();
     }
@@ -33,8 +33,15 @@ window.__brixBootStarted = performance.now();
 
 // Fetch the parts without evaluating them so the later import() calls hit
 // the HTTP cache instead of paying one round trip per file.
-function warm(urls) {
-  return Promise.all(urls.map((url) => fetch(url).then((res) => res.arrayBuffer()).catch(() => null)));
+async function warm(urls) {
+  // Starting every fetch in one turn is its own long task. The requests
+  // still overlap; only the calls that kick them off are sliced.
+  const pending = [];
+  for (let i = 0; i < urls.length; i++) {
+    pending.push(fetch(urls[i]).then((res) => res.arrayBuffer()).catch(() => null));
+    if (i % 6 === 5) await later(0);
+  }
+  await Promise.all(pending);
 }
 
 afterPaint().then(async () => {

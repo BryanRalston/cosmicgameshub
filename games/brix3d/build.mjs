@@ -129,11 +129,11 @@ rmSync(outdir, { recursive: true, force: true });
 const mainSource = readFileSync(join(root, 'src/main.js'), 'utf8');
 const mainSplit = splitModule(mainSource, {
   scopeName: '__brixScope',
-  budget: 16000,
+  budget: 9000,
   // Top-level main.js assignments run at import time. Keep those groups
   // under one 50ms task on a 4x CPU throttle. Three's consts stay on the
   // larger budget; they are numbers and parse cheaply.
-  eagerBudget: 7000,
+  eagerBudget: 3200,
   tailTest: (piece) => piece.includes('init().catch')
 });
 const mainParts = await emitParts(mainSplit.groups, {

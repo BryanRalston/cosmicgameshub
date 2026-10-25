@@ -42,20 +42,16 @@
     }
     #loadingScreen.hide { opacity: 0; pointer-events: none; visibility: hidden; }
     .loading-logo { 
-      font-size: 80px;
-      line-height: 1;
-      width: 96px;
-      height: 96px;
-      text-align: center;
-      animation: bounce 0.6s ease-in-out infinite;
-      filter: drop-shadow(0 0 30px rgba(255, 215, 0, 0.5));
+      width: 72px;
+      height: 48px;
+      border-radius: 6px;
+      background: #e10600;
+      box-shadow: inset 0 14px 0 #ff3b22;
     }
     .loading-title { 
-      font-size: 32px; font-weight: 800; 
-      background: linear-gradient(135deg, #ffd700, #ff8c00);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin: 20px 0; 
+      font-size: 28px; font-weight: 800; 
+      color: #ffb000;
+      margin: 16px 0; 
       letter-spacing: 2px;
     }
     .loading-subtitle { font-size: 14px; color: rgba(255,255,255,0.5); margin-bottom: 24px; }
@@ -69,13 +65,19 @@
       height: 100%; 
       background: linear-gradient(90deg, #ffd700, #ff8c00, #ffd700);
       background-size: 200% 100%;
-      animation: load 0.35s ease-out forwards, shimmer 0.8s linear infinite;
+      animation: load 0.35s ease-out forwards;
       border-radius: 3px;
     }
     @keyframes load { from { width: 0; } to { width: 100%; } }
     @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
     @keyframes bounce { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-15px) scale(1.05); } }
-    
+    .brix-cold { content-visibility: hidden; contain-intrinsic-size: 1px 40px; }
+    /* Opaque panels already. Blur forces a full-document layout on every reveal. */
+    #brixHold, #brixHold * { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+    .quick-icon { font-size: 8px; font-weight: 700; letter-spacing: 0; }
+    @media (max-width: 430px) {
+      #controls:not(.tray-open) .tray-scroll { display: none !important; }
+    }
   </style>
   <link rel="stylesheet" href="/games/brix3d/brix3d.5d86be25fb.css">
   <meta property="og:image" content="https://www.cosmicgameshub.com/images/game-brix3d-og.jpg">
@@ -132,12 +134,12 @@
 </head>
 <body class="page-game">
   <div id="loadingScreen">
-    <div class="loading-logo">🧱</div>
+    <div class="loading-logo"></div>
     <div class="loading-title">BRIX 3D</div>
     <div class="loading-subtitle">3D Brick Builder</div>
     <div class="loading-bar"><div class="loading-progress"></div></div>
   </div>
-  
+  <template id="brixLate">
   <!-- Tutorial Modal -->
   <div id="tutorialModal">
     <div class="tutorial-container">
@@ -318,11 +320,11 @@
   
   <!-- Quick access bar at top -->
   <div id="quickBar">
-  <button id="walkModeToggle" class="quick-btn" title="Walk Mode (V)"><span class="quick-icon">👤</span></button>
-  <button id="fullscreenToggle" class="quick-btn" title="Fullscreen (F11)"><span class="quick-icon">⛶</span></button>
-  <button id="soundToggle" class="quick-btn" title="Sound Effects"><span class="quick-icon">🔊</span></button>
-  <button id="musicToggle" class="quick-btn" title="Music"><span class="quick-icon">🎵</span></button>
-  <button id="galleryBtn" class="quick-btn" title="Gallery"><span class="quick-icon">🖼️</span></button>
+  <button id="walkModeToggle" class="quick-btn" title="Walk Mode (V)"><span class="quick-icon">Walk</span></button>
+  <button id="fullscreenToggle" class="quick-btn" title="Fullscreen (F11)"><span class="quick-icon">Full</span></button>
+  <button id="soundToggle" class="quick-btn" title="Sound Effects"><span class="quick-icon">Sound</span></button>
+  <button id="musicToggle" class="quick-btn" title="Music"><span class="quick-icon">Music</span></button>
+  <button id="galleryBtn" class="quick-btn" title="Gallery"><span class="quick-icon">Gallery</span></button>
 </div>
 
 <div id="starterBar" aria-label="Starter builds">
@@ -340,11 +342,9 @@
 <div id="buildHud">
   <!-- Undo / Redo -->
   <button class="hud-btn" id="hudUndoBtn" title="Undo (Ctrl+Z)">
-    <span class="hud-icon">↩</span>
     <span class="hud-label">Undo</span>
   </button>
   <button class="hud-btn" id="hudRedoBtn" title="Redo (Ctrl+Y)">
-    <span class="hud-icon">↪</span>
     <span class="hud-label">Redo</span>
   </button>
 
@@ -352,13 +352,11 @@
 
   <!-- Rotate -->
   <button class="hud-btn" id="hudRotBtn" title="Rotate 90° (R)">
-    <span class="hud-icon">🔄</span>
     <span class="hud-label" id="hudRotLabel">0°</span>
   </button>
 
   <!-- Delete mode -->
   <button class="hud-btn" id="hudDeleteBtn" title="Delete Mode (Del)">
-    <span class="hud-icon">🗑️</span>
     <span class="hud-label">Delete</span>
   </button>
 
@@ -374,7 +372,6 @@
 
   <!-- Current brick type -->
   <div class="hud-btn" style="cursor:default;pointer-events:none;">
-    <span class="hud-icon">🧱</span>
     <span class="hud-label" id="hudBrickType">2×2</span>
   </div>
 
@@ -1071,7 +1068,7 @@
   </div>
   
   <div class="rotation-ind">
-    <span class="rot-arrow" id="rotArrow">➤</span>
+    <span class="rot-arrow" id="rotArrow">&gt;</span>
     <span>Rotation</span>
     <span class="rot-deg" id="rotDeg">0°</span>
   </div>
@@ -1195,27 +1192,171 @@
   
   <!-- brix-preloads -->
   <!-- /brix-preloads -->
+  </template>
   <script>
-    window.__BRIX_THREE_PARTS__ = ["/games/brix3d/brix3d-t8ace133d.js","/games/brix3d/brix3d-tbc6133a4.js","/games/brix3d/brix3d-t62b30f22.js","/games/brix3d/brix3d-t648c2d79.js","/games/brix3d/brix3d-t4b1717b2.js","/games/brix3d/brix3d-t60cf97c3.js","/games/brix3d/brix3d-ta7c5f3b4.js","/games/brix3d/brix3d-t07100c87.js","/games/brix3d/brix3d-t5b49c793.js","/games/brix3d/brix3d-t2d0877d9.js","/games/brix3d/brix3d-t03c0285d.js","/games/brix3d/brix3d-tab495f51.js","/games/brix3d/brix3d-t83f05a07.js","/games/brix3d/brix3d-ta9dedaa9.js","/games/brix3d/brix3d-t62dfe2b7.js","/games/brix3d/brix3d-t17be306f.js","/games/brix3d/brix3d-t69dde6b9.js","/games/brix3d/brix3d-tcf8ce360.js","/games/brix3d/brix3d-tf315ae30.js","/games/brix3d/brix3d-tfa14fdff.js","/games/brix3d/brix3d-te1cdfc2e.js","/games/brix3d/brix3d-t47e60291.js","/games/brix3d/brix3d-tec5b87d8.js","/games/brix3d/brix3d-ta47cbbac.js","/games/brix3d/brix3d-tc988a6c7.js","/games/brix3d/brix3d-t0d1885b6.js","/games/brix3d/brix3d-t5e3502ef.js","/games/brix3d/brix3d-t571e42db.js","/games/brix3d/brix3d-t2249c0d3.js","/games/brix3d/brix3d-tf49cbac6.js","/games/brix3d/brix3d-t5b6c41c0.js","/games/brix3d/brix3d-t53c1b1cc.js","/games/brix3d/brix3d-tdd3867e3.js","/games/brix3d/brix3d-tcf0a0ce9.js","/games/brix3d/brix3d-t8b007a75.js","/games/brix3d/brix3d-t850fdccb.js","/games/brix3d/brix3d-tf78f6518.js","/games/brix3d/brix3d-tdb707e7b.js","/games/brix3d/brix3d-te31fc306.js","/games/brix3d/brix3d-t0121eb22.js","/games/brix3d/brix3d-tef5112a6.js","/games/brix3d/brix3d-t4fa9c0b7.js","/games/brix3d/brix3d-t88d10c3b.js","/games/brix3d/brix3d-t1ca68ed2.js","/games/brix3d/brix3d-tf84063ed.js","/games/brix3d/brix3d-t0b6a3fb9.js","/games/brix3d/brix3d-tb3a05d78.js","/games/brix3d/brix3d-tfc63a718.js","/games/brix3d/brix3d-tee088fd3.js","/games/brix3d/brix3d-ta9e37717.js","/games/brix3d/brix3d-tfcda8b98.js","/games/brix3d/brix3d-t763f0735.js","/games/brix3d/brix3d-tbfe89e7b.js","/games/brix3d/brix3d-t4cb08b67.js","/games/brix3d/brix3d-tdaa46e93.js","/games/brix3d/brix3d-t7dc8ae7d.js","/games/brix3d/brix3d-t4fa9013e.js","/games/brix3d/brix3d-t9ed8d064.js","/games/brix3d/brix3d-t88052ab0.js","/games/brix3d/brix3d-tdc48d8f3.js","/games/brix3d/brix3d-t06f516ed.js","/games/brix3d/brix3d-t03da3df4.js","/games/brix3d/brix3d-te2d91458.js","/games/brix3d/brix3d-t4753c601.js","/games/brix3d/brix3d-tb35b9815.js","/games/brix3d/brix3d-te7a17841.js","/games/brix3d/brix3d-t9270b9e4.js","/games/brix3d/brix3d-t59d78734.js","/games/brix3d/brix3d-t3223d01b.js","/games/brix3d/brix3d-t3f056e76.js","/games/brix3d/brix3d-t86d87bbd.js","/games/brix3d/brix3d-t29d7da96.js","/games/brix3d/brix3d-t4a95b7e3.js","/games/brix3d/brix3d-tb65d7fd0.js","/games/brix3d/brix3d-tfda2daa4.js","/games/brix3d/brix3d-t27757d7c.js","/games/brix3d/brix3d-t1928af51.js","/games/brix3d/brix3d-tbdefef68.js","/games/brix3d/brix3d-t39bac9e7.js","/games/brix3d/brix3d-t7725956d.js","/games/brix3d/brix3d-tee86902f.js","/games/brix3d/brix3d-tc7cb1f4a.js","/games/brix3d/brix3d-ted56199b.js","/games/brix3d/brix3d-tcbdf71a0.js","/games/brix3d/brix3d-tcaa0775a.js","/games/brix3d/brix3d-tc662ad58.js","/games/brix3d/brix3d-te4aa69de.js"];
-    window.__BRIX_MAIN_PARTS__ = ["/games/brix3d/brix3d-md2ebfef0.js","/games/brix3d/brix3d-m9de371c3.js","/games/brix3d/brix3d-me13ef326.js","/games/brix3d/brix3d-m55715b47.js","/games/brix3d/brix3d-m98e3b1d5.js","/games/brix3d/brix3d-m80644ff0.js","/games/brix3d/brix3d-mc817059f.js","/games/brix3d/brix3d-mec671cff.js","/games/brix3d/brix3d-mad88f11e.js","/games/brix3d/brix3d-md0f56881.js","/games/brix3d/brix3d-ma25cb533.js","/games/brix3d/brix3d-m71599747.js","/games/brix3d/brix3d-m694c779b.js","/games/brix3d/brix3d-m46b98d05.js","/games/brix3d/brix3d-mbcc31a83.js","/games/brix3d/brix3d-me76dd79f.js","/games/brix3d/brix3d-md1ffd8f1.js","/games/brix3d/brix3d-mf9f64886.js","/games/brix3d/brix3d-m9dc48e3a.js","/games/brix3d/brix3d-m01fcf127.js","/games/brix3d/brix3d-m22268c5f.js","/games/brix3d/brix3d-m77d1b318.js","/games/brix3d/brix3d-mb67ffec1.js","/games/brix3d/brix3d-mecfd2d96.js","/games/brix3d/brix3d-m31ea89a6.js","/games/brix3d/brix3d-m4d179c38.js","/games/brix3d/brix3d-mcec7814c.js","/games/brix3d/brix3d-m4109f4bf.js","/games/brix3d/brix3d-m5ba50c8b.js","/games/brix3d/brix3d-m73f0d217.js","/games/brix3d/brix3d-m1f6562b6.js","/games/brix3d/brix3d-me4e0fcf0.js","/games/brix3d/brix3d-mfaf9af14.js","/games/brix3d/brix3d-md73144e9.js","/games/brix3d/brix3d-m3615a0c4.js"];
-    window.__BRIX_WARM__ = ["/games/brix3d/brix3d.BO6YLT3K.js","/games/brix3d/brix3d.CG5CNZ4I.js"];
-    setTimeout(function () {
-      var s = document.createElement('script');
-      s.type = 'module';
-      s.src = '/games/brix3d/brix3d.FLSKQRTN.js';
-      document.body.appendChild(s);
-    }, 0);
+    // The sidebar is a template so the first layout is only the splash.
+    // Park it in a hidden holder (no layout), start the module, then thaw
+    // one section per turn so no layout task stays on the main thread.
+    (function () {
+      function dump(tpl, hold, done) {
+        var start = performance.now();
+        var n = 0;
+        while (tpl.content.firstChild && performance.now() - start < 6 && n++ < 30) {
+          hold.appendChild(tpl.content.firstChild);
+        }
+        if (tpl.content.firstChild) setTimeout(function () { dump(tpl, hold, done); }, 0);
+        else done();
+      }
+      var thawQueue = [];
+      var thawOn = false;
+      var bootLeft = 0;
+      function arm(el) {
+        if (!el || el.nodeType !== 1 || el.id === 'container') return;
+        el.classList.add('brix-cold');
+      }
+      function enqueue(el, boot) {
+        if (!el || el.nodeType !== 1 || el.id === 'container') return;
+        if (!el.classList.contains('brix-cold')) arm(el);
+        if (el.__brixQueued) return;
+        el.__brixQueued = true;
+        el.__brixBoot = !!boot;
+        if (boot) bootLeft++;
+        thawQueue.push(el);
+      }
+      function pumpThaw() {
+        if (thawOn) return;
+        thawOn = true;
+        function step() {
+          var el = thawQueue.shift();
+          if (el) {
+            el.__brixQueued = false;
+            var t0 = performance.now();
+            el.classList.remove('brix-cold');
+            var name = el.id || (el.className || '').replace('brix-cold', '').trim().slice(0, 40);
+            (window.__thaw = window.__thaw || []).push(Math.round(t0) + ' ' + name + ' ' + Math.round(performance.now() - t0));
+            if (el.__brixBoot) {
+              bootLeft--;
+              if (bootLeft <= 0) window.brixChromeReady = true;
+            }
+          }
+          if (thawQueue.length) setTimeout(step, 0);
+          else {
+            thawOn = false;
+            if (bootLeft <= 0) window.brixChromeReady = true;
+            if (document.body.classList.contains('phone-tray-open')) window.brixTrayReady = true;
+            if (window.innerWidth > 430) window.brixTrayReady = true;
+          }
+        }
+        setTimeout(step, 0);
+      }
+      function releaseCold(el) {
+        if (!el || el.nodeType !== 1) return;
+        var nodes = [el];
+        var kids = el.querySelectorAll ? el.querySelectorAll('.brix-cold') : [];
+        for (var i = 0; i < kids.length; i++) nodes.push(kids[i]);
+        for (var n = 0; n < nodes.length; n++) {
+          if (nodes[n].classList.contains('brix-cold')) enqueue(nodes[n], false);
+        }
+        pumpThaw();
+      }
+      function markCold(hold) {
+        var phone = window.innerWidth <= 430;
+        var top = hold.children;
+        for (var i = 0; i < top.length; i++) {
+          var el = top[i];
+          if (el.id === 'container') continue;
+          if (el.hidden || el.classList.contains('hidden')) continue;
+          if (el.id === 'controls') {
+            var scroll = el.querySelector('.tray-scroll');
+            if (phone && scroll) {
+              enqueue(el, true);
+              arm(scroll);
+              var deep = scroll.querySelectorAll('.section, .subsection, .brick-btn');
+              for (var d = 0; d < deep.length; d++) arm(deep[d]);
+            } else {
+              enqueue(el, true);
+              var toggle = el.querySelector('.panel-toggle');
+              if (toggle) enqueue(toggle, true);
+              var inner = el.querySelectorAll('.section, .subsection, .brick-btn');
+              for (var j = 0; j < inner.length; j++) enqueue(inner[j], true);
+            }
+            continue;
+          }
+          var showNow = el.id === 'brixBack' || el.id === 'quickBar' || el.id === 'buildHud' || el.id === 'stats' || el.id === 'fps' || el.id === 'qualityBar' || el.id === 'toast' || el.classList.contains('zoom-controls') || el.classList.contains('brix-more') || el.classList.contains('rotation-ind');
+          if (showNow) enqueue(el, true);
+          else arm(el);
+        }
+        pumpThaw();
+      }
+      function watchShows(hold) {
+        var mo = new MutationObserver(function (recs) {
+          for (var i = 0; i < recs.length; i++) {
+            var t = recs[i].target;
+            if (!t || t.nodeType !== 1) continue;
+            if (t.id === 'fullscreenHint' && t.classList.contains('visible')) releaseCold(t);
+            if (t.id === 'controls' && t.classList.contains('tray-open')) releaseCold(t.querySelector('.tray-scroll') || t);
+            if ((t.id === 'tutorialModal' || t.id === 'keybindModal') && t.classList.contains('visible')) releaseCold(t);
+            if (t.classList && t.classList.contains('modal-overlay') && t.style.display && t.style.display !== 'none') releaseCold(t);
+            if (t.id === 'phoneTutorial' && !t.hidden) releaseCold(t);
+            if (t.id === 'starterBar' && !t.classList.contains('hidden')) releaseCold(t);
+            if (t.id === 'dailyPrompt' && !t.hidden) releaseCold(t);
+            if (t.classList && t.classList.contains('visible') && t.classList.contains('brix-cold')) releaseCold(t);
+          }
+        });
+        mo.observe(hold, { subtree: true, attributes: true, attributeFilter: ['class', 'hidden', 'style'] });
+      }
+      setTimeout(function () {
+        var tpl = document.getElementById('brixLate');
+        var hold = document.createElement('div');
+        hold.id = 'brixHold';
+        hold.style.display = 'none';
+        document.body.appendChild(hold);
+        dump(tpl, hold, function () {
+          tpl.remove();
+          if (window.innerWidth <= 768) {
+            var share = /(?:^#|[?&#])b=/.test(location.hash + location.search);
+            var dismissed = false;
+            try { dismissed = localStorage.getItem('brickBuilderTutorialDismissed') === 'true'; } catch (e) {}
+            if (!share && !dismissed) {
+              var bar = hold.querySelector('#starterBar');
+              if (bar) bar.classList.add('hidden');
+            }
+          }
+          watchShows(hold);
+          markCold(hold);
+          performance.mark('brix-hold-show');
+          hold.style.display = '';
+          performance.mark('brix-hold-shown');
+          if (window.innerWidth <= 768) {
+            var shareNow = /(?:^#|[?&#])b=/.test(location.hash + location.search);
+            var dismissedNow = false;
+            try { dismissedNow = localStorage.getItem('brickBuilderTutorialDismissed') === 'true'; } catch (e2) {}
+            if (!shareNow && !dismissedNow) {
+              var card = hold.querySelector('#phoneTutorial');
+              if (card) card.hidden = false;
+            }
+          }
+          window.__BRIX_THREE_PARTS__ = ["/games/brix3d/brix3d-t8ace133d.js","/games/brix3d/brix3d-tbc6133a4.js","/games/brix3d/brix3d-t62b30f22.js","/games/brix3d/brix3d-t648c2d79.js","/games/brix3d/brix3d-t4b1717b2.js","/games/brix3d/brix3d-t60cf97c3.js","/games/brix3d/brix3d-ta7c5f3b4.js","/games/brix3d/brix3d-t07100c87.js","/games/brix3d/brix3d-t5b49c793.js","/games/brix3d/brix3d-t2d0877d9.js","/games/brix3d/brix3d-t03c0285d.js","/games/brix3d/brix3d-tab495f51.js","/games/brix3d/brix3d-t83f05a07.js","/games/brix3d/brix3d-ta9dedaa9.js","/games/brix3d/brix3d-t62dfe2b7.js","/games/brix3d/brix3d-t17be306f.js","/games/brix3d/brix3d-t69dde6b9.js","/games/brix3d/brix3d-tcf8ce360.js","/games/brix3d/brix3d-tf315ae30.js","/games/brix3d/brix3d-tfa14fdff.js","/games/brix3d/brix3d-te1cdfc2e.js","/games/brix3d/brix3d-t47e60291.js","/games/brix3d/brix3d-tec5b87d8.js","/games/brix3d/brix3d-ta47cbbac.js","/games/brix3d/brix3d-tc988a6c7.js","/games/brix3d/brix3d-t0d1885b6.js","/games/brix3d/brix3d-t5e3502ef.js","/games/brix3d/brix3d-t571e42db.js","/games/brix3d/brix3d-t2249c0d3.js","/games/brix3d/brix3d-tf49cbac6.js","/games/brix3d/brix3d-t5b6c41c0.js","/games/brix3d/brix3d-t53c1b1cc.js","/games/brix3d/brix3d-tdd3867e3.js","/games/brix3d/brix3d-tcf0a0ce9.js","/games/brix3d/brix3d-t8b007a75.js","/games/brix3d/brix3d-t850fdccb.js","/games/brix3d/brix3d-tf78f6518.js","/games/brix3d/brix3d-tdb707e7b.js","/games/brix3d/brix3d-te31fc306.js","/games/brix3d/brix3d-t0121eb22.js","/games/brix3d/brix3d-tef5112a6.js","/games/brix3d/brix3d-t4fa9c0b7.js","/games/brix3d/brix3d-t88d10c3b.js","/games/brix3d/brix3d-t1ca68ed2.js","/games/brix3d/brix3d-tf84063ed.js","/games/brix3d/brix3d-t0b6a3fb9.js","/games/brix3d/brix3d-tb3a05d78.js","/games/brix3d/brix3d-tfc63a718.js","/games/brix3d/brix3d-tee088fd3.js","/games/brix3d/brix3d-ta9e37717.js","/games/brix3d/brix3d-tfcda8b98.js","/games/brix3d/brix3d-t763f0735.js","/games/brix3d/brix3d-tbfe89e7b.js","/games/brix3d/brix3d-t4cb08b67.js","/games/brix3d/brix3d-tdaa46e93.js","/games/brix3d/brix3d-t7dc8ae7d.js","/games/brix3d/brix3d-t4fa9013e.js","/games/brix3d/brix3d-t9ed8d064.js","/games/brix3d/brix3d-t88052ab0.js","/games/brix3d/brix3d-tdc48d8f3.js","/games/brix3d/brix3d-t06f516ed.js","/games/brix3d/brix3d-t03da3df4.js","/games/brix3d/brix3d-te2d91458.js","/games/brix3d/brix3d-t4753c601.js","/games/brix3d/brix3d-tb35b9815.js","/games/brix3d/brix3d-te7a17841.js","/games/brix3d/brix3d-t9270b9e4.js","/games/brix3d/brix3d-t59d78734.js","/games/brix3d/brix3d-t3223d01b.js","/games/brix3d/brix3d-t3f056e76.js","/games/brix3d/brix3d-t86d87bbd.js","/games/brix3d/brix3d-t29d7da96.js","/games/brix3d/brix3d-t4a95b7e3.js","/games/brix3d/brix3d-tb65d7fd0.js","/games/brix3d/brix3d-tfda2daa4.js","/games/brix3d/brix3d-t27757d7c.js","/games/brix3d/brix3d-t1928af51.js","/games/brix3d/brix3d-tbdefef68.js","/games/brix3d/brix3d-t39bac9e7.js","/games/brix3d/brix3d-t7725956d.js","/games/brix3d/brix3d-tee86902f.js","/games/brix3d/brix3d-tc7cb1f4a.js","/games/brix3d/brix3d-ted56199b.js","/games/brix3d/brix3d-tcbdf71a0.js","/games/brix3d/brix3d-tcaa0775a.js","/games/brix3d/brix3d-tc662ad58.js","/games/brix3d/brix3d-te4aa69de.js"];
+          window.__BRIX_MAIN_PARTS__ = ["/games/brix3d/brix3d-md1cc013a.js","/games/brix3d/brix3d-mcb58e1b0.js","/games/brix3d/brix3d-m6edb7acf.js","/games/brix3d/brix3d-m51979832.js","/games/brix3d/brix3d-mf7e74b58.js","/games/brix3d/brix3d-mc38fd6f3.js","/games/brix3d/brix3d-mc3c5a005.js","/games/brix3d/brix3d-m6810bcac.js","/games/brix3d/brix3d-m508d3781.js","/games/brix3d/brix3d-mde457766.js","/games/brix3d/brix3d-mcdb1622a.js","/games/brix3d/brix3d-m51fdefd9.js","/games/brix3d/brix3d-mf74b11b9.js","/games/brix3d/brix3d-m2a33cdb5.js","/games/brix3d/brix3d-ma356d8a7.js","/games/brix3d/brix3d-m8dd237c5.js","/games/brix3d/brix3d-mf7eb0851.js","/games/brix3d/brix3d-mf4528c6d.js","/games/brix3d/brix3d-m01d319ea.js","/games/brix3d/brix3d-maa5f955d.js","/games/brix3d/brix3d-mf2d62a10.js","/games/brix3d/brix3d-m8855e66f.js","/games/brix3d/brix3d-m73020dff.js","/games/brix3d/brix3d-mf736f417.js","/games/brix3d/brix3d-m4593bc74.js","/games/brix3d/brix3d-mb1efe42f.js","/games/brix3d/brix3d-me4a23f6d.js","/games/brix3d/brix3d-mb9c012b1.js","/games/brix3d/brix3d-mb032215a.js","/games/brix3d/brix3d-md9dafdb3.js","/games/brix3d/brix3d-me2028491.js","/games/brix3d/brix3d-m55968012.js","/games/brix3d/brix3d-m29a1b6c3.js","/games/brix3d/brix3d-m1afe3016.js","/games/brix3d/brix3d-m32009eb9.js","/games/brix3d/brix3d-mfcfb65d6.js","/games/brix3d/brix3d-mba7e5abf.js","/games/brix3d/brix3d-m86b3e125.js","/games/brix3d/brix3d-ma9c9cbda.js","/games/brix3d/brix3d-m793cc25f.js","/games/brix3d/brix3d-m1b4f1eed.js","/games/brix3d/brix3d-m85720333.js","/games/brix3d/brix3d-m359d8348.js","/games/brix3d/brix3d-m255befa7.js","/games/brix3d/brix3d-m730420cd.js","/games/brix3d/brix3d-ma62a6334.js","/games/brix3d/brix3d-m912e6b99.js","/games/brix3d/brix3d-m55db9360.js","/games/brix3d/brix3d-me2957eac.js","/games/brix3d/brix3d-m3403515c.js","/games/brix3d/brix3d-mcf794e29.js","/games/brix3d/brix3d-m01e0a6a0.js","/games/brix3d/brix3d-mbf3323c0.js","/games/brix3d/brix3d-m39f18ac7.js","/games/brix3d/brix3d-m6f82a150.js","/games/brix3d/brix3d-m0a064d2c.js","/games/brix3d/brix3d-m02798c34.js","/games/brix3d/brix3d-mbb7bd22b.js","/games/brix3d/brix3d-m76199242.js","/games/brix3d/brix3d-m2592307b.js","/games/brix3d/brix3d-mfdaa0933.js"];
+          window.__BRIX_WARM__ = ["/games/brix3d/brix3d.BO6YLT3K.js","/games/brix3d/brix3d.CG5CNZ4I.js"];
+          var s = document.createElement('script');
+          s.type = 'module';
+          s.src = '/games/brix3d/brix3d.BQPUFJXD.js';
+          document.body.appendChild(s);
+        });
+      }, 0);
+    })();
   </script>
   <script>
     (function () {
-      var nav = document.querySelector('.brix-more');
-      var btn = nav && nav.querySelector('.brix-more__toggle');
-      if (btn) {
-        btn.addEventListener('click', function () {
-          var open = nav.classList.toggle('is-open');
-          btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-        });
-      }
+      document.addEventListener('click', function (event) {
+        var btn = event.target.closest && event.target.closest('.brix-more__toggle');
+        if (!btn) return;
+        var nav = btn.closest('.brix-more');
+        if (!nav) return;
+        var open = nav.classList.toggle('is-open');
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
       function track(name, params) {
         if (typeof window.gtag !== 'function') return;
         window.gtag('event', name, params);

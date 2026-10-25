@@ -282,7 +282,7 @@
     let ghost = null;
     let mirrorGhosts = []; // Ghost previews for mirrored bricks
     let prefabGhosts = []; // Ghost previews for prefab bricks
-    let selectedBrick = (typeof window !== 'undefined' && window.innerWidth <= 768) ? '1x1' : '2x2';
+    let selectedBrick = '2x2';
     let selectedColor = 0xff2200;
     let selectedLightColor = 0xffdd44; // Default warm white for light bricks
     let isTransparent = false; // Whether current color is transparent
@@ -518,7 +518,7 @@
     
     function qualityShadowSize() {
       let size = isMobileGfx() ? qualitySettings.shadowMobile : qualitySettings.shadowDesktop;
-      if (isMobileGfx()) size = Math.min(size, 512);
+      if (isMobileGfx()) size = Math.min(size, 256);
       const n = bricks ? bricks.length : 0;
       // Large builds drop the shadow map instead of pulling the camera back.
       if (n >= 400) size = Math.min(size, 256);
@@ -538,6 +538,7 @@
         sun.shadow.map = null;
       }
       sun.shadow.needsUpdate = true;
+      markShadowDirty();
       needsRender = true;
     }
     
@@ -674,6 +675,10 @@
       }
     }
     
+    function markShadowDirty() {
+      if (renderer && renderer.shadowMap) renderer.shadowMap.needsUpdate = true;
+    }
+
     function updateShadowFrustum() {
       const sun = window.sunLight;
       if (!sun || !sun.shadow) return;
@@ -707,6 +712,7 @@
       cam.far = Math.max(160, extent * 3 + maxY);
       cam.updateProjectionMatrix();
       sun.target.position.set(cx, 0, cz);
+      markShadowDirty();
       sun.target.updateMatrixWorld();
     }
     
@@ -790,10 +796,16 @@
       renderer.setSize(innerWidth, innerHeight);
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFShadowMap;
+      // The sun frustum follows the bricks, not the view. Re-render the shadow
+      // map when the build changes, and reuse it while the camera orbits.
+      renderer.shadowMap.autoUpdate = false;
+      renderer.shadowMap.needsUpdate = true;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = isMobileGfx() ? 1.0 : 1.15;
       renderer.info.autoReset = false;
       document.getElementById('container').appendChild(renderer.domElement);
+      renderer.setClearColor(0x87CEEB, 1);
+      renderer.clear(true, true, true);
       performance.mark('brix-renderer');
       await yieldTick();
 
@@ -903,9 +915,16 @@
         setTimeout(() => { if (boot.classList.contains('hide')) boot.style.display = 'none'; }, 180);
       }
       const openingShare = !!shareTokenFromLocation();
-      if (!openingShare && !bricks.length) {
+      const phoneHold = phoneTutorialPending();
+      if (phoneHold) {
+        const bar = document.getElementById('starterBar');
+        if (bar) bar.classList.add('hidden');
+        document.querySelectorAll('.drawer-starters').forEach((el) => el.classList.add('hidden'));
+        const daily = document.getElementById('dailyPrompt');
+        if (daily) daily.hidden = true;
+      } else if (!openingShare && !bricks.length) {
         if (window.innerWidth <= 768) {
-          toast('Tap a starter, or tap the plate. The ghost is your 1×1.', 'success');
+          toast('Tap a starter, or tap the plate. The ghost is your 2×2.', 'success');
         } else {
           toast('Plate is ready. Tap a starter or place your first brick.', 'success');
         }
@@ -915,6 +934,59 @@
       if (bricks.length || openingShare) hideStarterBar();
       
       updateUI();
+      warmShaders();
+    }
+
+    let warmTarget = null;
+    async function warmShaders() {
+      await yieldTick();
+      if (!renderer || typeof renderer.compileAsync !== 'function') {
+        shadersWarmed = true;
+        needsRender = true;
+        return;
+      }
+      const seen = new Set();
+      if (!warmTarget) warmTarget = new THREE.WebGLRenderTarget(4, 4);
+      let idle = 0;
+      while (idle < 8) {
+        const meshes = [];
+        scene.traverse((obj) => {
+          if ((obj.isMesh || obj.isLine) && obj.material) meshes.push(obj);
+        });
+        let fresh = false;
+        for (const mesh of meshes) {
+          const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+          for (const mat of mats) {
+            if (!mat || seen.has(mat.uuid)) continue;
+            seen.add(mat.uuid);
+            fresh = true;
+            const holder = new THREE.Scene();
+            const proxy = new THREE.Mesh(mesh.geometry, mat);
+            proxy.castShadow = !!mesh.castShadow;
+            proxy.receiveShadow = !!mesh.receiveShadow;
+            proxy.frustumCulled = false;
+            holder.add(proxy);
+            try {
+              await renderer.compileAsync(holder, camera, scene);
+              renderer.setRenderTarget(warmTarget);
+              renderer.render(holder, camera);
+              renderer.setRenderTarget(null);
+            } catch (err) {
+              console.error(err);
+            }
+            await yieldTick();
+          }
+        }
+        if (fresh) {
+          idle = 0;
+          continue;
+        }
+        if (window.scenerySettled) break;
+        idle++;
+        await yieldTick();
+      }
+      shadersWarmed = true;
+      needsRender = true;
     }
     
     // ==================== POST-PROCESSING ====================
@@ -943,6 +1015,7 @@
       ssaoPass = null;
       bloomPass = null;
       vignettePass = null;
+      window.__brixPostOn = false;
 
       if (!qualitySettings.post || isMobileGfx()) return;
 
@@ -1030,6 +1103,7 @@
       vignettePass = new ShaderPass(vignetteShader);
       composer.addPass(vignettePass);
       composer.setSize(innerWidth, innerHeight);
+      window.__brixPostOn = true;
       needsRender = true;
     }
 
@@ -4268,14 +4342,14 @@
     }
     
     function makeAbsMaterial(color, transparent, isLight) {
-      return new THREE.MeshPhysicalMaterial({
+      // Standard, not Physical+clearcoat. The clearcoat shader was the fill-rate
+      // cost that pulled 520 bricks under the desktop and phone FPS bars.
+      return new THREE.MeshStandardMaterial({
         color: color,
-        roughness: transparent ? 0.12 : 0.32,
+        roughness: transparent ? 0.12 : 0.28,
         metalness: 0.0,
-        clearcoat: transparent ? 0.7 : 0.38,
-        clearcoatRoughness: transparent ? 0.12 : 0.22,
         envMap: envMap,
-        envMapIntensity: transparent ? 0.7 : 0.42,
+        envMapIntensity: transparent ? 0.55 : 0.28,
         transparent: !!transparent,
         opacity: transparent ? 0.5 : 1,
         side: transparent ? THREE.DoubleSide : THREE.FrontSide,
@@ -4492,6 +4566,7 @@
       // Decrement count
       data.mesh.count--;
       data.mesh.instanceMatrix.needsUpdate = true;
+      markShadowDirty();
       unregisterLampBrick(brickId);
       removePanelsForBrick(brickId);
       needsRender = true;
@@ -4776,6 +4851,7 @@
       addToGrid(gridData.gx, gridData.gz, gridData.w, gridData.d, gridData.gy, gridData.hp, brick);
       cachePickMeshes(brick);
       scene.add(brick);
+      markShadowDirty();
       bricks.push(brick);
       if (types[type] && types[type].light) {
         registerLampBrick('g' + bricks.length + '_' + Date.now(), color, types[type].lightIntensity || 15, types[type].lightDistance || 25, pos);
@@ -6215,6 +6291,13 @@
     const _bounceDummy = new THREE.Object3D();
     let dustPool = null;
 
+    function showStarterBar() {
+      if (bricks.length) return;
+      const bar = document.getElementById('starterBar');
+      if (bar) bar.classList.remove('hidden');
+      document.querySelectorAll('.drawer-starters').forEach((el) => el.classList.remove('hidden'));
+    }
+
     function hideStarterBar() {
       const bar = document.getElementById('starterBar');
       if (bar) bar.classList.add('hidden');
@@ -6246,10 +6329,12 @@
         writeBrickInstance(_bounceDummy, lookup, lift, scaleY);
         data.mesh.setMatrixAt(index, _bounceDummy.matrix);
         data.mesh.instanceMatrix.needsUpdate = true;
+        markShadowDirty();
       } else if (brick.position && brick.scale) {
         if (brick.userData._bounceBaseY === undefined) brick.userData._bounceBaseY = brick.position.y;
         brick.scale.set(1, scaleY, 1);
         brick.position.y = brick.userData._bounceBaseY + lift;
+        markShadowDirty();
       }
     }
 
@@ -6439,10 +6524,21 @@
       return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
     }
 
+    function phoneTutorialPending() {
+      if (window.innerWidth > 768) return false;
+      if (shareTokenFromLocation()) return false;
+      try {
+        if (localStorage.getItem('brickBuilderTutorialDismissed') === 'true') return false;
+      } catch (e) {}
+      return true;
+    }
+
     function initDailyPrompt() {
       const el = document.getElementById('dailyPrompt');
       if (!el) return;
-      if (bricks.length || shareTokenFromLocation()) {
+      // On a phone the tip, the plate toast, and the starter chips used to
+      // stack on the first screen. The tip stays a desktop empty-plate hint.
+      if (window.innerWidth <= 768 || bricks.length || shareTokenFromLocation()) {
         el.hidden = true;
         return;
       }
@@ -6747,6 +6843,7 @@
           
           removeFromGrid(obj);
           scene.remove(obj);
+          markShadowDirty();
           bricks.splice(bricks.indexOf(obj), 1);
           if (gravityOn) applyGravity();
           updateStats();
@@ -8073,6 +8170,7 @@
                     dummy.updateMatrix();
                     data.mesh.setMatrixAt(index, dummy.matrix);
                     data.mesh.instanceMatrix.needsUpdate = true;
+                    markShadowDirty();
                   }
                 }
               }
@@ -8084,6 +8182,7 @@
               addToGrid(g.gx, g.gz, g.w, g.d, g.gy, g.hp, brick);
               const brickH = getBrickHeight(brick.userData.type);
               brick.position.y = calcWorldY(g.gy, brickH);
+              markShadowDirty();
               changed = true;
             }
           }
@@ -12417,13 +12516,84 @@
     let hudLive = false;
     let lastTime = performance.now();
     let needsRender = true;
+    let shadersWarmed = false;
     let hudDrawCalls = 0;
     const MIN_CAMERA_HEIGHT = 0.5;
     const MIN_TARGET_HEIGHT = 0;
     
+    let presentStep = 0;
+    let sceneryReveal = null;
     function renderFrame() {
       if (renderer.info && typeof renderer.info.reset === 'function') renderer.info.reset();
+      // First frames upload the plate, then one scenery mesh at a time, then
+      // the shadow map. One combined render was a 30ms+ main-thread task.
+      if (presentStep === 0 && !(composer && qualitySettings.post)) {
+        const so = window.sceneryObjects;
+        const nodes = so ? [].concat(so.trees || [], so.mountains || [], so.clouds || [], so.extras || []) : [];
+        sceneryReveal = [];
+        for (let i = 0; i < nodes.length; i++) {
+          const node = nodes[i];
+          if (node && node.visible !== false) {
+            node.visible = false;
+            sceneryReveal.push(node);
+          }
+        }
+        const shadows = renderer.shadowMap.enabled;
+        renderer.shadowMap.enabled = false;
+        renderer.render(scene, camera);
+        renderer.shadowMap.enabled = shadows;
+        hudDrawCalls = renderer.info.render.calls;
+        presentStep = 1;
+        window.sceneryShown = sceneryReveal.length === 0;
+        needsRender = true;
+        return;
+      }
+      if (sceneryReveal && sceneryReveal.length && !(composer && qualitySettings.post)) {
+        const node = sceneryReveal.pop();
+        if (node) node.visible = true;
+        const shadows = renderer.shadowMap.enabled;
+        renderer.shadowMap.enabled = false;
+        renderer.render(scene, camera);
+        renderer.shadowMap.enabled = shadows;
+        hudDrawCalls = renderer.info.render.calls;
+        window.sceneryShown = sceneryReveal.length === 0;
+        needsRender = true;
+        if (sceneryReveal.length) return;
+        sceneryReveal = null;
+        presentStep = 2;
+        return;
+      }
+      if ((presentStep === 2 || presentStep === 3) && !(composer && qualitySettings.post)) {
+        const sun = window.sunLight;
+        if (sun && sun.shadow) {
+          const size = presentStep === 2 ? 64 : qualityShadowSize();
+          if (sun.shadow.mapSize.width !== size) {
+            sun.shadow.mapSize.set(size, size);
+            if (sun.shadow.map) {
+              sun.shadow.map.dispose();
+              sun.shadow.map = null;
+            }
+          }
+          sun.shadow.needsUpdate = true;
+        }
+        markShadowDirty();
+        performance.mark('brix-present-' + presentStep);
+        renderer.render(scene, camera);
+        hudDrawCalls = renderer.info.render.calls;
+        presentStep++;
+        needsRender = true;
+        return;
+      }
       if (composer && qualitySettings.post) {
+        // The direct-renderer warmup may have hidden scenery. The composer
+        // skips that path, so put every hidden node back before the pass.
+        if (sceneryReveal && sceneryReveal.length) {
+          for (let i = 0; i < sceneryReveal.length; i++) {
+            if (sceneryReveal[i]) sceneryReveal[i].visible = true;
+          }
+          sceneryReveal = null;
+        }
+        window.sceneryShown = true;
         composer.render();
       } else {
         renderer.render(scene, camera);
@@ -12501,7 +12671,7 @@
         lastFPS = now;
       }
       
-      if (needsRender) {
+      if (needsRender && shadersWarmed) {
         frames++;
         renderedFrames++;
         const skipPost = weatherOn && qualityPreset !== 'high';
@@ -12588,6 +12758,7 @@
         if (phoneCard) phoneCard.hidden = true;
         const box = document.getElementById('phoneTutorialDontShow');
         if (box && box.checked) localStorage.setItem('brickBuilderTutorialDismissed', 'true');
+        if (!bricks.length && !shareTokenFromLocation()) showStarterBar();
       }
       if (phoneOk) phoneOk.addEventListener('click', dismissPhoneTutorial);
       
@@ -12616,9 +12787,17 @@
         };
         setTimeout(checkAndShow, 900);
       }
+      function whenSplashHides(show) {
+        const check = () => {
+          const loadingScreen = document.getElementById('loadingScreen');
+          if (!loadingScreen || loadingScreen.style.display === 'none' || loadingScreen.classList.contains('hide')) show();
+          else setTimeout(check, 50);
+        };
+        check();
+      }
       if (!tutorialDismissed && !openingShare) {
         if (phoneChrome && phoneCard) {
-          whenLoaded(() => { phoneCard.hidden = false; });
+          whenSplashHides(() => { phoneCard.hidden = false; });
         } else if (!phoneChrome) {
           whenLoaded(() => { modal.classList.add('visible'); });
         }
@@ -12877,7 +13056,8 @@
           aa: (renderer.getContextAttributes() || {}).antialias ? 'msaa' : 'none',
           scenery: window.sceneryMergedDraws || 0,
           autoSteps: autoQualitySteps,
-          env: !!envMap
+          env: !!envMap,
+          post: !!(composer && qualitySettings.post)
         };
       },
       ensureEnv() { return buildEnvMapNow(); },
