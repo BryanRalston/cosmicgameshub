@@ -84,7 +84,7 @@
   var LIVE_PROFIT_FLOOR = 48;
   var LIVE_RING_RATE = 0.95;
   var LIVE_BASKET = 0.46;
-  var LIVE_STAFFED = 1.52;
+  var LIVE_STAFFED = 1.58;
 
   function liveQueueGap(sim) {
     return sim && sim._phone ? 210 : 140;
