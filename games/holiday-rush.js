@@ -83,7 +83,8 @@
   var MONDAY_GOAL_MUL = 0.55;
   var LIVE_PROFIT_FLOOR = 48;
   var LIVE_RING_RATE = 0.95;
-  var LIVE_BASKET = 0.78;
+  var LIVE_BASKET = 0.54;
+  var LIVE_STAFFED = 1.24;
 
   function liveQueueGap(sim) {
     return sim && sim._phone ? 210 : 140;
@@ -1501,6 +1502,77 @@
     c.pop = 1;
   }
 
+  function liveTillStaffed(sim) {
+    if (!sim) return false;
+    if (sim.you && sim.t < (sim.you.until || 0) && isTill(sim.you.station)) return true;
+    if (!sim.override) return false;
+    var id;
+    for (id in sim.override) {
+      if (isTill(sim.override[id])) return true;
+    }
+    return false;
+  }
+
+  function backLeft(sim) {
+    if (!sim || !sim.books || !HR.economy || !HR.economy.unitsLeft) return 0;
+    return HR.economy.unitsLeft(sim.books, sim.tenant && sim.tenant.stock);
+  }
+
+  function clearRestockPing(sim) {
+    if (!sim || !sim.pings) return;
+    for (var i = 0; i < sim.pings.length; i++) {
+      if (sim.pings[i].kind === 'restock') sim.pings[i].dead = true;
+    }
+  }
+
+  function stockBag(sim) {
+    if (!sim) return null;
+    if (sim.tenant && sim.tenant.stock) return sim.tenant.stock;
+    if (!sim.books || !sim.books.locations) return null;
+    var loc = sim.books.locations[sim.books.active];
+    return loc && loc.stock ? loc.stock : null;
+  }
+
+  function deliverEveningTruck(sim) {
+    if (!sim || sim._eveningTruck) return 0;
+    var bag = stockBag(sim);
+    if (!bag || !HR.economy || !HR.economy.starterStock) return 0;
+    var add = HR.economy.starterStock(0.1);
+    var n = 0;
+    var id;
+    for (id in add) {
+      if (!add[id]) continue;
+      bag[id] = (bag[id] || 0) + add[id];
+      n += add[id];
+    }
+    if (!n) return 0;
+    sim._eveningTruck = 1;
+    sim.stock = Math.max(sim.stock || 0, 0.74);
+    sim.truck = 0;
+    clearRestockPing(sim);
+    return n;
+  }
+
+  function keepRestockPing(sim) {
+    if (!sim || sim._eveningTruck || sim.done) return;
+    if (!sim.pings) sim.pings = [];
+    for (var i = 0; i < sim.pings.length; i++) {
+      if (sim.pings[i].kind === 'restock' && !sim.pings[i].dead) {
+        sim.pings[i].life = 8;
+        return;
+      }
+    }
+    var door = SPOTS.door || { x: 640, y: 855 };
+    sim.pings.push({
+      kind: 'restock',
+      x: door.x - 110,
+      y: door.y - 150,
+      life: 8,
+      pop: 1,
+      dead: false
+    });
+  }
+
   function completeSale(sim, run, c) {
     if (c.sold) return;
     if (sim.stock <= 0.025) {
@@ -1548,19 +1620,24 @@
     c.sold = true;
     var gap = sim.t - (sim.lastSaleAt == null ? -999 : sim.lastSaleAt);
     var comboCap = CONFIG.comboMax;
-    if (sim.floorOn && sim.live && !sim.tenant) {
-      var hotWrap = sim._wrapAt != null && sim.t - sim._wrapAt < 6;
-      if (!hotWrap) comboCap = 2;
-    }
+    if (sim.floorOn && sim.live && !sim.tenant) comboCap = 2;
     if (gap <= CONFIG.comboWindow && (sim.combo || 0) >= 1) {
       if (sim.combo < comboCap) sim.combo += 1;
     } else sim.combo = 1;
     sim.lastSaleAt = sim.t;
     if (sim.combo > (sim.bestCombo || 0)) sim.bestCombo = sim.combo;
     var mult = comboMult(sim.combo);
-    if (sim.floorOn && sim.live && !sim.tenant) basket *= LIVE_BASKET;
+    if (sim.floorOn && sim.live && !sim.tenant) {
+      basket *= LIVE_BASKET;
+      if (liveTillStaffed(sim)) basket *= LIVE_STAFFED;
+    }
     basket = Math.round(basket * mult);
-    if (sim.floorOn && sim.doubleUntil && sim.t < sim.doubleUntil) basket *= 2;
+    if (sim.floorOn && sim.live && !sim.tenant) {
+      if ((sim._doubleLeft || 0) > 0) {
+        basket *= 2;
+        sim._doubleLeft -= 1;
+      }
+    } else if (sim.doubleUntil && sim.t < sim.doubleUntil) basket *= 2;
     sim.sales += basket;
     sim.checkouts++;
     if (sim.mechanic === 'wrap' && sim.floorOn && sim.live && sim.rng() < 0.8) offerWrap(sim);
@@ -2587,6 +2664,15 @@
     var warehouseBag = sim.tenant && sim.tenant.stock;
     var warehouseOpen = !(sim.books && HR.economy && HR.economy.unitsLeft(sim.books, warehouseBag) <= 0);
     var frozen = sim.stockFreeze && sim.t < sim.stockFreeze;
+    if (sim.floorOn && sim.live && !sim.tenant) {
+      var leftNow = backLeft(sim);
+      if (!sim._eveningTruck && leftNow <= 28) {
+        if (deliverEveningTruck(sim)) note(sim, 'A late truck restocked the back room.');
+      } else if (leftNow <= 0) {
+        sim.stock = 0;
+      }
+      if (!sim._eveningTruck && leftNow <= 40) keepRestockPing(sim);
+    }
     if (frozen) {
       /* count holds the shelf still */
     } else if (warehouseOpen && sim.truck) {
@@ -2720,12 +2806,13 @@
     },
     {
       id: 'double', t: 24, title: 'Double ring',
-      body: 'Call it and the next sales ring twice for a few seconds. Let it pass and the till stays on one ring.',
+      body: 'Call it and the next fourteen sales ring twice. Let it pass and the till stays on one ring.',
       choices: function (sim) {
         return [
           choice('Call the double', 1, function () {
             sim.doubleUntil = sim.t + 12;
-            note(sim, 'Sales ring twice for a few seconds.');
+            sim._doubleLeft = (sim._doubleLeft || 0) + 14;
+            note(sim, 'The next sales ring twice.');
           }),
           choice('Let it pass', 0, function () { note(sim, 'The till stays on a single ring.'); })
         ];
@@ -2907,6 +2994,11 @@
     }
     var dayN = run && run.day ? run.day : 0;
     var beat = FLOOR_BEATS[dayN] || FLOOR_BEATS[dayN % FLOOR_BEATS.length];
+    if (sim.floorOn && sim.live && !sim.tenant && dayN === 0) {
+      for (var di = 0; di < FLOOR_BEATS.length; di++) {
+        if (FLOOR_BEATS[di].id === 'double') beat = FLOOR_BEATS[di];
+      }
+    }
     if (beat && !sim._beats[beat.id] && sim.t >= beat.t && beatCard(sim, beat.id, beat.title, beat.body, beat.choices(sim, run))) {
       sim._beats[beat.id] = 1;
       return;
@@ -2952,7 +3044,8 @@
     if (open >= 2) return;
     var spot = wrapSpot();
     var lift = wrapLift(spot);
-    var fee = 28 + Math.round(sim.rng() * 24);
+    var liveWrap = sim.floorOn && sim.live && !sim.tenant;
+    var fee = liveWrap ? (8 + Math.round(sim.rng() * 4)) : (28 + Math.round(sim.rng() * 24));
     sim.pings.push({ kind: 'wrap', x: spot.x, y: spot.y - lift, life: 22, pop: 1, dead: false, fee: fee });
     floater(sim, spot.x, spot.y - lift - 56, 'Wrap?', '#ffe08a', true);
   }
@@ -3006,6 +3099,12 @@
       floater(sim, ping.x, ping.y - 28, 'Wrapped +$' + fee, '#ffe08a', true);
       hooks.coin();
       markGoal(sim, ping.x, ping.y);
+      return;
+    }
+    if (ping.kind === 'restock') {
+      var restocked = deliverEveningTruck(sim);
+      floater(sim, ping.x, ping.y - 28, restocked ? 'Truck called' : 'Truck already in', '#b6f0c8', true);
+      if (restocked) note(sim, 'The late truck filled the back room.');
       return;
     }
     if (ping.kind === 'basket') {
@@ -3271,6 +3370,10 @@
     if (name === 'freight') {
       spend();
       var hadTruck = sim.truck > 0;
+      var calledTruck = 0;
+      if (sim.floorOn && sim.live && !sim.tenant && backLeft(sim) <= 48) {
+        calledTruck = deliverEveningTruck(sim);
+      }
       sim.truck = 0;
       sim.hornPlayed = false;
       sim.stock = clamp(sim.stock + 0.22 + 0.06 * upgradeLevel(run, 'stock'), 0, 1);
@@ -3284,9 +3387,10 @@
       if (sim.pings) {
         for (var bx = 0; bx < sim.pings.length; bx++) if (sim.pings[bx].kind === 'box') sim.pings[bx].dead = true;
       }
-      floater(sim, SPOTS.truck.x, SPOTS.truck.y - 20, hadTruck ? 'Unloaded' : 'Stocked', '#ffe08a', true);
+      floater(sim, SPOTS.truck.x, SPOTS.truck.y - 20, calledTruck ? 'Truck called' : (hadTruck ? 'Unloaded' : 'Stocked'), '#ffe08a', true);
       flashAt(sim, SPOTS.truck.x, SPOTS.truck.y);
-      return { ok: true, msg: hadTruck ? 'You cleared the truck.' : 'You stocked the shelf.' };
+      if (calledTruck) note(sim, 'The late truck filled the back room.');
+      return { ok: true, msg: calledTruck ? 'A truck is filling the back room.' : (hadTruck ? 'You cleared the truck.' : 'You stocked the shelf.') };
     }
     if (name === 'calm') {
       var upset = target.cust || null;
@@ -4575,20 +4679,24 @@
       var h = els.stage.clientHeight || 0;
       if (!(h > 0)) return;
       var phoneCard = (els.canvas && els.canvas._cssW || 800) < 720;
-      var cap = Math.floor(h * 0.30);
-      var capMax = Math.floor(h * (phoneCard ? 0.30 : 0.38));
+      var cap = Math.floor(h * (phoneCard ? 0.22 : 0.28));
+      var capMax = Math.floor(h * (phoneCard ? 0.26 : 0.42));
       if (cap < 1) cap = 1;
       if (capMax < cap) capMax = cap;
       function applyCap(next) {
         cap = next;
-        els.event.style.top = '52px';
-        els.event.style.bottom = 'auto';
+        els.event.style.position = 'absolute';
+        els.event.style.background = 'transparent';
+        els.event.style.pointerEvents = 'none';
+        els.event.style.top = phoneCard ? 'auto' : '8px';
+        els.event.style.bottom = phoneCard ? '6px' : 'auto';
         els.event.style.left = '8px';
         els.event.style.right = '8px';
         els.event.style.maxHeight = cap + 'px';
         els.event.style.overflow = 'hidden';
         var card = els.event.querySelector('.hr-card');
         if (!card) return;
+        card.style.pointerEvents = 'auto';
         card.style.maxHeight = cap + 'px';
         card.style.overflow = 'hidden';
         card.style.boxSizing = 'border-box';
@@ -4633,7 +4741,7 @@
       }
       applyCap(cap);
       var grow = 0;
-      while (phoneCard && grow < 6 && cap < capMax) {
+      while (grow < 6 && cap < capMax) {
         var cardNow = els.event.querySelector('.hr-card');
         var bodyNow = cardNow && cardNow.querySelector('p');
         var choiceNow = cardNow && cardNow.querySelector('.hr-choices');
@@ -5484,7 +5592,7 @@
       var hud =
         '<div class="hr-hud__stats">' +
         '<div class="hr-clock" id="hr-clock" style="--p:0"><span id="hr-clock-label"><b>8:00</b><small>AM</small></span></div>' +
-        '<div class="hr-sales"><div class="hr-sales__top"><span>Sales</span><strong id="hr-sales-text"></strong></div><div class="hr-bar"><i id="hr-sales-bar"></i></div><div class="hr-stockline" id="hr-stock-text">Shelf — · Back —</div></div>' +
+        '<div class="hr-sales"><div class="hr-sales__top"><span>Sales</span><strong id="hr-sales-text"></strong></div><div class="hr-bar"><i id="hr-sales-bar"></i></div></div>' +
         '<div class="hr-stat hr-stat--stars hr-hud__extra"><span>Stars</span><strong id="hr-star-text" class="hr-stars"></strong></div>' +
         '<div class="hr-combo is-idle" id="hr-combo" aria-hidden="true">×1</div>' +
         '<div class="hr-rush" id="hr-rush" aria-hidden="true">RUSH</div>' +
@@ -5495,6 +5603,7 @@
         (sim.mallRetune ? '<div class="hr-stat hr-hud__extra"><span>Plaza</span><strong id="hr-plaza-text">' + esc(sim.mallRetune) + '</strong></div>' : '') +
         (books ? '<div class="hr-stat hr-aisle hr-hud__extra"><span>Aisle</span><strong id="hr-aisle-text">Steady</strong></div>' : '') +
         '</div>' +
+        '<div class="hr-stockline" id="hr-stock-text">Shelf — · Back —</div>' +
         '<div class="hr-hud__tools">' +
         '<button type="button" id="hr-crew-btn" class="hr-mute">Crew</button>' +
         '<button type="button" id="hr-mute" class="hr-mute" aria-pressed="false" aria-label="Mute sound">Sound</button>' +
@@ -5600,11 +5709,19 @@
       var stockText = document.getElementById('hr-stock-text');
       if (stockText) {
         var shelfPct = Math.round(clamp(sim.stock || 0, 0, 1) * 100);
-        var backUnits = 0;
-        if (sim.books && HR.economy && HR.economy.unitsLeft) {
-          backUnits = HR.economy.unitsLeft(sim.books, sim.tenant && sim.tenant.stock);
+        var backUnits = backLeft(sim);
+        if (backUnits <= 0) shelfPct = 0;
+        var stockLabel = backUnits <= 0
+          ? 'Shelf empty · Back 0'
+          : ('Shelf ' + shelfPct + '% · Back ' + backUnits);
+        if (sim.floorOn && !sim.tenant && !sim._eveningTruck && backUnits <= 40) stockLabel += ' · Call truck';
+        stockText.textContent = stockLabel;
+        var freightName = els.sim && els.sim.querySelector('[data-act="freight"] span:last-child');
+        if (freightName && sim.floorOn && !sim.tenant) {
+          var callTruck = !sim._eveningTruck && backUnits <= 40;
+          var nextLabel = callTruck ? 'Call truck' : 'Work freight';
+          if (freightName.textContent !== nextLabel) freightName.textContent = nextLabel;
         }
-        stockText.textContent = 'Shelf ' + shelfPct + '% · Back ' + backUnits;
       }
       if (els.toast && els.toast.classList.contains('show')) placeToast();
       var bar = document.getElementById('hr-sales-bar');
@@ -6686,6 +6803,10 @@
       g.fillRect(908, 798, 32, 6);
       g.fillRect(1000, 798, 32, 6);
       function gondola(x, y, label) {
+        g.save();
+        g.translate(x, y);
+        g.scale(0.56, 0.56);
+        g.translate(-x, -y);
         g.fillStyle = 'rgba(42,24,18,0.28)';
         traceRound(g, x - 64, y - 98, 136, 108, 10);
         g.fill();
@@ -6711,9 +6832,10 @@
         g.lineWidth = 2;
         g.stroke();
         g.fillStyle = PAL.wall;
-        g.font = '800 12px Outfit, Inter, sans-serif';
+        g.font = '800 22px Outfit, Inter, sans-serif';
         g.textAlign = 'center';
         g.fillText(label, x, y - 124);
+        g.restore();
       }
       var bayName = ['TOYS', 'TREATS', 'WRAP', 'CARDS'];
       for (var si = 0; si < SHELVES.length; si++) gondola(SHELVES[si].x, SHELVES[si].y, SHELVES[si].label || bayName[si] || 'AISLE');
@@ -7028,10 +7150,9 @@
     function floorFit(cssW, cssH) {
       var worldW = WORLD_W || 1280;
       var worldH = WORLD_H || 900;
-      var span = cssW < 720 ? 1100 : worldW;
-      var fit = cssW / Math.max(1, span);
-      var heightFit = cssH / Math.max(1, worldH);
-      if (cssW >= 720 && heightFit < fit) fit = heightFit;
+      var fitW = cssW / Math.max(1, worldW);
+      var fitH = cssH / Math.max(1, worldH);
+      var fit = Math.max(fitW, fitH);
       if (!(fit > 0.05)) fit = 0.05;
       return fit;
     }
@@ -7091,9 +7212,14 @@
       if (sim && sim.floorOn && !cam.overview) {
         var worldW = WORLD_W || 1280;
         var worldH = WORLD_H || 900;
-        var phone = (view.cssW || 0) < 720;
-        var x = phone ? 90 : (view.viewW - worldW) * -0.5;
-        var y = (view.viewH - worldH) * -0.5;
+        var focus = view.viewW > 1100 ? 740 : 620;
+        var x = focus - view.viewW * 0.5;
+        var booth = wrapSpot();
+        var ringY = booth.y - wrapLift(booth) - 48;
+        var doorY = (SPOTS.door && SPOTS.door.y) || (worldH - 36);
+        var y = ringY;
+        if (y + view.viewH < doorY + 24) y = doorY + 24 - view.viewH;
+        if (y > ringY) y = ringY;
         if (y < 0) y = 0;
         return camClamp(x, y, view);
       }
@@ -7456,7 +7582,7 @@
         var wrapD = wrapReach;
         for (var wpi = 0; wpi < sim.pings.length; wpi++) {
           var wrapPing = sim.pings[wpi];
-          if (!wrapPing || wrapPing.dead || wrapPing.kind !== 'wrap') continue;
+          if (!wrapPing || wrapPing.dead || (wrapPing.kind !== 'wrap' && wrapPing.kind !== 'restock')) continue;
           var wd = screenDist(wrapPing.x, wrapPing.y, ev);
           var shelfD = screenDist(wrapPing.x, wrapPing.y + 96, ev);
           if (shelfD < wd) wd = shelfD;
@@ -7555,8 +7681,8 @@
     function tagPx() {
       var view = viewSize();
       var scale = view.cssW / Math.max(1, view.viewW);
-      var px = Math.round(15 / Math.max(0.22, scale));
-      if (px < 16) px = 16;
+      var px = Math.round(18 / Math.max(0.22, scale));
+      if (px < 18) px = 18;
       if (px > 46) px = 46;
       return px;
     }
@@ -7761,7 +7887,7 @@
           var phoneWrap = (els.canvas._cssW || 800) < 720;
           var ringScale = Math.max(0.05, screenScale());
           var coaching = wrapCoachOn();
-          var wrapR = Math.max(coaching ? 58 : 28, (phoneWrap ? 48 : 34) / ringScale);
+          var wrapR = Math.max(coaching ? 64 : 36, (phoneWrap ? 76 : 42) / ringScale);
           var pulse = coaching && !reduceMotion ? 1.05 + Math.sin(Date.now() / 160) * 0.28 : 1;
           if (isQA() && els.stage) {
             els.stage.dataset.wrapR = String(Math.round(wrapR * ringScale));
@@ -7776,11 +7902,25 @@
           ctx.arc(ping.x, ping.y + bob, wrapR * pulse, 0, Math.PI * 2);
           ctx.stroke();
           ctx.restore();
-          drawIconAt(icon, ping.x, ping.y + bob, (coaching ? 72 : 44) * pulse);
-          if (labelOn('ping:' + i) || coaching) {
-            var wrapAt = tagAnchor(ping.x, ping.y + bob - wrapR - 18);
-            drawTag(label, wrapAt.x, wrapAt.y);
-          }
+          drawIconAt(icon, ping.x, ping.y + bob, (coaching ? 72 : 52) * pulse);
+          var wrapAt = tagAnchor(ping.x, ping.y + bob - wrapR - 18);
+          drawTag(label, wrapAt.x, wrapAt.y);
+          continue;
+        }
+        if (ping.kind === 'restock') {
+          var restockPhone = (els.canvas._cssW || 800) < 720;
+          var restockScale = Math.max(0.05, screenScale());
+          var restockR = Math.max(56, (restockPhone ? 78 : 54) / restockScale);
+          ctx.save();
+          ctx.strokeStyle = 'rgba(47,158,87,0.95)';
+          ctx.lineWidth = 8;
+          ctx.beginPath();
+          ctx.arc(ping.x, ping.y + bob, restockR, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+          drawIconAt('truck', ping.x, ping.y + bob, 52);
+          var truckAt = tagAnchor(ping.x, ping.y + bob - restockR - 18);
+          drawTag('Call truck', truckAt.x, truckAt.y);
           continue;
         }
         ctx.strokeStyle = 'rgba(224,163,34,0.85)';
@@ -8074,6 +8214,19 @@
           }
         }
         els.stage.dataset.wrapAt = wrapPing ? (Math.round(wrapPing.x) + ',' + Math.round(wrapPing.y)) : '';
+        var restockPing = null;
+        if (sim.pings) {
+          for (var ri = 0; ri < sim.pings.length; ri++) {
+            if (sim.pings[ri].kind === 'restock' && !sim.pings[ri].dead) restockPing = sim.pings[ri];
+          }
+        }
+        els.stage.dataset.restockAt = restockPing ? (Math.round(restockPing.x) + ',' + Math.round(restockPing.y)) : '';
+        els.stage.dataset.wraps = String(sim.wraps || 0);
+        els.stage.dataset.combo = String(sim.bestCombo || 0);
+        els.stage.dataset.back = String(backLeft(sim));
+        els.stage.dataset.sales = String(Math.round(sim.sales || 0));
+        els.stage.dataset.goal = String(Math.round(sim.goal || 0));
+        els.stage.dataset.clock = clockLabel(sim.t, sim.duration || 62);
         els.stage.dataset.view = Math.round(view.viewW) + ',' + Math.round(view.viewH);
         els.stage.dataset.zoomNow = String(Math.round((cam.zoom || 1) * 100) / 100);
         var regAx = SPOTS.reg1 ? SPOTS.reg1.x : 0;
@@ -8867,6 +9020,7 @@
     }
 
     function personDrawH() {
+      if (sim && sim.floorOn && sim.live) return 96;
       return SPRITE_PACK.displayH;
     }
 
@@ -9191,6 +9345,13 @@
       if ((a.bubble === 'angry' || a.angry) && !reduceMotion) reactX = Math.sin(Date.now() / 70) * 1.8;
       ctx.save();
       ctx.translate(a.x + reactX, a.y);
+      if (a.kind === 'cust' && LOOKS[a.charId]) {
+        ctx.fillStyle = LOOKS[a.charId].top;
+        ctx.beginPath();
+        ctx.ellipse(0, 6, 22, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillRect(-20, -Math.round(size * 0.72), 16, 28);
+      }
       if (a.face < 0) ctx.scale(-1, 1);
       if (a.pop > 0) {
         var popS = 1 + a.pop * (reduceMotion ? 0.08 : 0.22);
