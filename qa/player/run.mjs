@@ -222,7 +222,8 @@ async function ready(page) {
     if (modal && modal.classList.contains('visible')) return true;
     if (phone && !phone.hidden) return true;
     try { if (localStorage.getItem('brickBuilderTutorialDismissed') === 'true') return true; } catch (e) {}
-    return false;
+    if (!window.__brixReadySince) window.__brixReadySince = Date.now();
+    return Date.now() - window.__brixReadySince > 1500;
   }, null, { timeout: 45000 });
   const skip = await page.locator('#tutorialSkip').boundingBox().catch(() => null);
   if (skip && skip.width > 4) await clickAt(page, skip.x + skip.width / 2, skip.y + skip.height / 2);

@@ -6,6 +6,10 @@ These edits fix checks that measured the wrong thing. The pass bars are unchange
 
 `platePoint` aimed at a fraction of the viewport. On the 1280×800 home shot that point is the horizon, and the brick count stayed 0. `clickStud` screenshots the canvas and clicks a real stud highlight in the middle band of the plate (y 50–70% of the frame, clear of the sidebar and the bottom toolbar). Drag and the 90% scale check use the same point and still send a real press, without `element.click()`.
 
+## A dismissed tutorial is still ready
+
+`ready()` waited until the tutorial was on screen. After Skip or Got it, that card stays hidden and the key is not stored, so the next `ready()` on the same page waited out the timeout. If the card does not appear within 1.5 s of the plate being ready, the player already closed it.
+
 ## The tutorial is in the way
 
 `brixCanPlace` becomes true before the tutorial card or the phone coachmark is up. `ready()` now waits until that card is visible (or the tutorial was already dismissed), then clicks Skip or Got it. A player cannot place through the card. The fresh typing checks do not use this wait. They still type on the first frame the name field can be clicked.
