@@ -266,8 +266,8 @@
       #hr-sim .hr-stat--stars.hr-hud__extra > span { display: none; }
       #hr-sim .hr-stat--stars .hr-stars { font-size: 12px; letter-spacing: 0.04em; }
       #hr-rush { position: static; flex: 0 0 auto; width: 2.5rem; min-width: 2.5rem; min-height: 36px; font-size: 11px; }
-      #hr-sim .hr-hud__tools { margin-left: 0; flex: 0 0 auto; gap: 4px; }
-      #hr-sim .hr-hud__tools .hr-mute { min-width: 40px; min-height: 36px; padding: 0 5px; font-size: 11px; }
+      #hr-sim .hr-hud__tools { order: 6; margin-left: 0; flex: 1 0 100%; gap: 4px; justify-content: flex-end; }
+      #hr-sim .hr-hud__tools .hr-mute { min-width: 44px; min-height: 36px; padding: 0 8px; font-size: 11px; }
       #hr-sim .hr-sales__top { flex-direction: row; align-items: baseline; flex-wrap: nowrap; gap: 4px; }
       #hr-sim .hr-sales__top span { display: none; }
       #hr-sim .hr-hud .hr-sales { padding: 2px 6px 4px; }
@@ -360,8 +360,7 @@
       }
       #hr-sim #hr-clock small { font-size: 9px; }
       body:has(#hr-sim:not([hidden])) .hr-stage {
-        flex: 1 1 0;
-        height: auto !important;
+        flex: 1 1 auto;
         min-height: 0;
         max-height: none;
         aspect-ratio: auto;

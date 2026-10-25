@@ -81,7 +81,6 @@
     earnRate: 0.1
   };
   var MONDAY_GOAL_MUL = 0.55;
-  var LIVE_PROFIT_FLOOR = 48;
   var LIVE_RING_RATE = 0.95;
   var LIVE_BASKET = 0.53;
   var LIVE_STAFFED = 1.27;
@@ -95,21 +94,21 @@
   }
 
   function kioskOneStarCosts(sales, cogs, wages, rent, goalPct) {
-    sales = Math.round(sales || 0);
-    cogs = Math.round(cogs || 0);
-    wages = Math.round(wages || 0);
-    rent = Math.round(rent || 0);
-    if (!(goalPct >= 0.70)) return { cogs: cogs, wages: wages };
-    var profit = sales - cogs - wages - rent;
-    if (profit >= LIVE_PROFIT_FLOOR) return { cogs: cogs, wages: wages };
-    var nextCogs = cogs - (LIVE_PROFIT_FLOOR - profit);
-    var nextWages = wages;
-    if (nextCogs < 0) {
-      nextWages = wages + nextCogs;
-      nextCogs = 0;
-      if (nextWages < 0) nextWages = 0;
-    }
-    return { cogs: Math.round(nextCogs), wages: Math.round(nextWages) };
+    return {
+      cogs: Math.round(cogs || 0),
+      wages: Math.round(wages || 0),
+      sales: Math.round(sales || 0),
+      rent: Math.round(rent || 0),
+      goalPct: goalPct || 0
+    };
+  }
+
+  function liveGoodsCost(cogs, revenue, rung) {
+    cogs = cogs || 0;
+    if (!(revenue > 0) || !(rung >= 0)) return cogs;
+    var goods = cogs * (rung / revenue);
+    if (goods < 0) goods = 0;
+    return goods;
   }
 
   var SHIFT_COUNT = 15;
@@ -1621,6 +1620,8 @@
       }
     }
     var basket;
+    var quotedCogs = 0;
+    var quotedRevenue = 0;
     if (sim.books && HR.sim && HR.economy) {
       var bag = sim.tenant && sim.tenant.stock;
       var quoted = HR.sim.checkout(sim.books, c, sim.rng, bag);
@@ -1632,12 +1633,14 @@
       }
       HR.economy.consume(sim.books, quoted, bag);
       basket = quoted.revenue;
+      quotedCogs = quoted.cogs || 0;
+      quotedRevenue = quoted.revenue || 0;
       if (stationPower(sim, run, 'floor') > 0.55) basket *= 1.1;
       if (sim.stock < 0.28) basket *= 0.64;
       if (sim.t < sim.discountUntil) basket *= 0.86;
       basket *= 1 + 0.09 * upgradeLevel(run, 'baskets');
       if (c.saleMul) basket *= c.saleMul;
-      sim.cogs = (sim.cogs || 0) + quoted.cogs;
+      sim.cogs = (sim.cogs || 0) + quotedCogs;
       c.receipt = quoted.label;
     } else {
       basket = CONFIG.basketMin + sim.rng() * (CONFIG.basketMax - CONFIG.basketMin);
@@ -1661,6 +1664,10 @@
     if (sim.floorOn && sim.live && !sim.tenant) {
       basket *= LIVE_BASKET;
       if (liveTillStaffed(sim)) basket *= LIVE_STAFFED;
+      if (quotedRevenue > 0) {
+        var goods = liveGoodsCost(quotedCogs, quotedRevenue, basket);
+        sim.cogs += goods - quotedCogs;
+      }
     }
     basket = Math.round(basket * mult);
     if (sim.floorOn && sim.live && !sim.tenant) {
@@ -4883,6 +4890,20 @@
         }, 160);
       }, ms || 2200);
     }
+    function clearCloseToast() {
+      function closeLine(msg) {
+        return msg === 'In the black.' || msg.indexOf('In the black.') === 0 || msg.indexOf('Streak ') === 0;
+      }
+      toastQueue = toastQueue.filter(function (m) { return !closeLine(m); });
+      if (!els.toast) return;
+      if (!closeLine(els.toast.textContent || '')) return;
+      els.toast.classList.remove('show');
+      els.toast.textContent = '';
+      clearTimeout(toastTimer);
+      toastOn = false;
+      if (toastQueue.length) playToast();
+    }
+
     function clearRefillNotice() {
       toastQueue = toastQueue.filter(function (m) { return m !== 'Actions are refilling.'; });
       var line = document.getElementById('hr-actline');
@@ -4977,6 +4998,7 @@
         els.event.hidden = true;
         els.modal.hidden = true;
         clearRefillNotice();
+        clearCloseToast();
       }
       document.body.dataset.hrPhase = which;
       if (which !== 'sim') stopLoop();
@@ -6109,26 +6131,6 @@
           stockouts: sim.stockouts || 0,
           goalPct: snap.goalPct
         });
-        if (kioskMonday && Math.round((snap.goalPct || 0) * 100) >= 70 && tape.profit < LIVE_PROFIT_FLOOR) {
-          var liftGap = LIVE_PROFIT_FLOOR - tape.profit;
-          var cogsCut = Math.min(tape.cogs || 0, liftGap);
-          tape.cogs = (tape.cogs || 0) - cogsCut;
-          liftGap -= cogsCut;
-          if (liftGap > 0) {
-            var wageCut = Math.min(tape.wages || 0, liftGap);
-            tape.wages = (tape.wages || 0) - wageCut;
-            liftGap -= wageCut;
-          }
-          var nextProfit = tape.sales - tape.cogs - tape.wages - tape.rent - (tape.loanPay || 0) + (tape.leaseIn || 0);
-          var profitDelta = nextProfit - tape.profit;
-          if (profitDelta) {
-            books.cash = Math.round((books.cash || 0) + profitDelta);
-            books.lifetimeProfit = Math.round((books.lifetimeProfit || 0) + profitDelta);
-            if (books.reviews && books.reviews[0]) books.reviews[0].profit = nextProfit;
-          }
-          tape.profit = nextProfit;
-          tape.cash = books.cash;
-        }
         if (!firstClose) books.cash = Math.round(books.cash - prevPost);
         else if (HR.world) {
           snap.background = HR.world.closeBackground(books, { day: run.day, ymd: run.ymd });
@@ -7083,7 +7085,42 @@
       return 1;
     }
 
+    function layoutPhoneStage() {
+      var stage = els.stage;
+      if (!stage) return;
+      var phone = (window.innerWidth || 0) < 720;
+      if (!phone || !sim || !sim.floorOn || (els.sim && els.sim.hidden)) {
+        if (stage.style.height) stage.style.height = '';
+        if (stage.style.flex) stage.style.flex = '';
+        stage._phoneH = 0;
+        return;
+      }
+      var parent = stage.parentElement;
+      if (!parent) return;
+      var width = stage.clientWidth || parent.clientWidth;
+      if (!(width > 0)) return;
+      var frame = phoneStoreFrame();
+      var ideal = width * (frame.bottom - frame.top) / Math.max(1, frame.right - frame.left);
+      var others = 0;
+      var kids = parent.children;
+      for (var i = 0; i < kids.length; i++) {
+        var kid = kids[i];
+        if (kid === stage || kid.hidden) continue;
+        var cs = window.getComputedStyle(kid);
+        if (cs.display === 'none' || cs.position === 'absolute' || cs.position === 'fixed') continue;
+        others += kid.offsetHeight;
+      }
+      var avail = parent.clientHeight - others;
+      if (!(avail > 160)) avail = ideal;
+      var next = Math.round(Math.max(200, Math.min(avail, ideal)));
+      if (stage._phoneH === next) return;
+      stage._phoneH = next;
+      stage.style.flex = '0 0 auto';
+      stage.style.height = next + 'px';
+    }
+
     function resize() {
+      layoutPhoneStage();
       var stage = els.stage;
       var rect = stage.getBoundingClientRect();
       var cap = pixelBudget();
@@ -7133,11 +7170,7 @@
       function leftOf(el) {
         return el.getBoundingClientRect().left;
       }
-      if (mute) {
-        var clipped = money && money.scrollWidth > money.clientWidth + 1;
-        var tight = money && combo && shown(combo) && leftOf(combo) - rightOf(money) < 4;
-        mute.hidden = !!(clipped || tight);
-      }
+      if (mute) mute.hidden = false;
       if (rush && rush.style.display === 'none' && rush.classList.contains('is-on')) rush.style.display = '';
       if (sales && combo && shown(combo)) {
         var salesLeft = leftOf(sales);
@@ -7146,7 +7179,7 @@
         if (limit > textW + 8) sales.style.maxWidth = Math.floor(limit) + 'px';
         else sales.style.maxWidth = '';
       }
-      if (money && money.scrollWidth > money.clientWidth + 1 && mute) mute.hidden = true;
+      if (mute) mute.hidden = false;
       var chips = [combo, rush, crew, mute];
       var prev = money;
       for (var i = 0; i < chips.length; i++) {
@@ -7336,13 +7369,23 @@
       return z;
     }
 
+    function phoneStoreFrame() {
+      return { left: 96, top: 0, right: 1264, bottom: 900 };
+    }
+
     function floorFit(cssW, cssH) {
       var worldW = WORLD_W || 1280;
-      var worldH = WORLD_H || 900;
-      var fitW = cssW / Math.max(1, worldW);
-      var fitH = cssH / Math.max(1, worldH);
       var phone = cssW < 720;
-      var fit = phone ? Math.min(fitW, fitH) : Math.min(fitW, cssH / 800);
+      var fit;
+      if (phone) {
+        var frame = phoneStoreFrame();
+        var fw = Math.max(1, frame.right - frame.left);
+        var fh = Math.max(1, frame.bottom - frame.top);
+        fit = Math.min(cssW / fw, cssH / fh);
+      } else {
+        var fitW = cssW / Math.max(1, worldW);
+        fit = Math.min(fitW, cssH / 800);
+      }
       if (!(fit > 0.05)) fit = 0.05;
       return fit;
     }
@@ -7365,14 +7408,16 @@
         var worldH = WORLD_H || 900;
         var cssW = view.cssW || (els.canvas && els.canvas._cssW) || 800;
         if (cssW < 720) {
-          return camClamp((worldW - view.viewW) / 2, (worldH - view.viewH) / 2, view);
+          var frame = phoneStoreFrame();
+          var frameX = frame.left + ((frame.right - frame.left) - view.viewW) / 2;
+          var frameY = frame.top + ((frame.bottom - frame.top) - view.viewH) / 2;
+          return camClamp(frameX, frameY, view);
         }
         if (cssW >= 720) {
           var fullRoom = view.viewW >= worldW - 16 && view.viewH >= worldH - 16;
           if (fullRoom) return camClamp((worldW - view.viewW) / 2, (worldH - view.viewH) / 2, view);
           var deskTruck = (SPOTS.truck && SPOTS.truck.y) || 130;
-          var deskTop = deskTruck - 78;
-          if (deskTop < 0) deskTop = 0;
+          var deskTop = 0;
           var deskBottom = ((SPOTS.reg1 && SPOTS.reg1.y) || 700) + 130;
           var cardOpen = !!(sim && (sim.pending || sim.typeCard));
           if (cardOpen) {
@@ -10777,6 +10822,16 @@
     if (!(active14.goalPct < active0.goalPct - 0.15)) bad = true;
     if (up14.goalPct < 1) bad = true;
     if (mid8.goalPct < 0.9) bad = true;
+    var goodsLow = liveGoodsCost(1000, 2000, 834);
+    var goodsHigh = liveGoodsCost(1500, 3000, 1668);
+    var marginLow = 834 - goodsLow;
+    var marginHigh = 1668 - goodsHigh;
+    if (!(marginHigh > marginLow + 200)) bad = true;
+    var flatA = kioskOneStarCosts(2341, 1800, 448, 520, 1.07);
+    var flatB = kioskOneStarCosts(2943, 2000, 448, 520, 1.34);
+    var shownA = 2341 - flatA.cogs - flatA.wages - flatA.rent;
+    var shownB = 2943 - flatB.cogs - flatB.wages - flatB.rent;
+    if (shownA === shownB || shownA === 48 || shownB === 48) bad = true;
     ['entities', 'economy', 'layout', 'world', 'sprites', 'render', 'room'].forEach(function (name) {
       var part = HR[name];
       if (!part || !part.selfTest) { bad = true; console.log(name, 'missing'); return; }
