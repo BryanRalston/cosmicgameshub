@@ -69,7 +69,7 @@
       height: 100%; 
       background: linear-gradient(90deg, #ffd700, #ff8c00, #ffd700);
       background-size: 200% 100%;
-      animation: load 7.2s ease-out forwards, shimmer 1.5s linear infinite;
+      animation: load 1.2s ease-out forwards, shimmer 1.5s linear infinite;
       border-radius: 3px;
     }
     @keyframes load { from { width: 0; } to { width: 100%; } }
@@ -77,7 +77,7 @@
     @keyframes bounce { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-15px) scale(1.05); } }
     
   </style>
-  <link rel="stylesheet" href="/games/brix3d/brix3d.82794eaf0a.css">
+  <link rel="stylesheet" href="/games/brix3d/brix3d.3b9a5ae424.css">
   <meta property="og:image" content="https://www.cosmicgameshub.com/images/game-brix3d-og.jpg">
   <meta property="og:image:width" content="1280">
   <meta property="og:image:height" content="720">
@@ -264,7 +264,7 @@
       <p>Drag to look around. Pinch, or use the zoom buttons.</p>
       <p>Tap the plate to place a brick. Open Bricks &amp; tools for colors and starters.</p>
       <label class="phone-tutorial-dismiss">
-        <input type="checkbox" id="phoneTutorialDontShow" checked>
+        <input type="checkbox" id="phoneTutorialDontShow">
         Don't show again
       </label>
       <button type="button" id="phoneTutorialOk">Got it</button>
@@ -553,7 +553,7 @@
       </div>
     </div>
     
-    <div class="section">
+    <div class="section" id="brickSection">
       <div class="section-title">Bricks</div>
       <div class="section-content">
         <!-- Standard Bricks -->
@@ -725,9 +725,9 @@
     <div class="section collapsed">
       <div class="section-title">Color</div>
       <div class="section-content">
-        <input type="color" id="colorPicker" value="#ff5252">
+        <input type="color" id="colorPicker" value="#ff2200">
         <div class="color-presets">
-          <div class="color-preset selected" style="background:#ff5252" data-color="#ff5252"></div>
+          <div class="color-preset selected" style="background:#ff2200" data-color="#ff2200"></div>
           <div class="color-preset" style="background:#1e88e5" data-color="#1e88e5"></div>
           <div class="color-preset" style="background:#fdd835" data-color="#fdd835"></div>
           <div class="color-preset" style="background:#43a047" data-color="#43a047"></div>
@@ -748,7 +748,7 @@
           <div class="trans-label">🔮 Transparent</div>
           <div class="color-presets trans-colors">
             <div class="color-preset trans clear-glass" style="background:linear-gradient(135deg,rgba(255,255,255,0.3),rgba(200,230,255,0.15))" data-color="#e0f7fa" data-trans="true" title="Clear Glass"></div>
-            <div class="color-preset trans" style="background:linear-gradient(135deg,rgba(255,82,82,0.5),rgba(255,82,82,0.3))" data-color="#ff5252" data-trans="true"></div>
+            <div class="color-preset trans" style="background:linear-gradient(135deg,rgba(255,34,0,0.5),rgba(255,34,0,0.3))" data-color="#ff2200" data-trans="true"></div>
             <div class="color-preset trans" style="background:linear-gradient(135deg,rgba(30,136,229,0.5),rgba(30,136,229,0.3))" data-color="#1e88e5" data-trans="true"></div>
             <div class="color-preset trans" style="background:linear-gradient(135deg,rgba(253,216,53,0.5),rgba(253,216,53,0.3))" data-color="#fdd835" data-trans="true"></div>
             <div class="color-preset trans" style="background:linear-gradient(135deg,rgba(67,160,71,0.5),rgba(67,160,71,0.3))" data-color="#43a047" data-trans="true"></div>
@@ -1241,13 +1241,18 @@
   
   <input type="file" id="fileInput" accept=".json" style="display:none">
   
+  <!-- brix-preloads -->
+  <!-- /brix-preloads -->
   <script>
+    window.__BRIX_THREE_PARTS__ = ["/games/brix3d/brix3d-t8ace133d.js","/games/brix3d/brix3d-tbc6133a4.js","/games/brix3d/brix3d-t62b30f22.js","/games/brix3d/brix3d-t648c2d79.js","/games/brix3d/brix3d-t4b1717b2.js","/games/brix3d/brix3d-t60cf97c3.js","/games/brix3d/brix3d-ta7c5f3b4.js","/games/brix3d/brix3d-t07100c87.js","/games/brix3d/brix3d-t5b49c793.js","/games/brix3d/brix3d-t2d0877d9.js","/games/brix3d/brix3d-t03c0285d.js","/games/brix3d/brix3d-tab495f51.js","/games/brix3d/brix3d-t83f05a07.js","/games/brix3d/brix3d-ta9dedaa9.js","/games/brix3d/brix3d-t62dfe2b7.js","/games/brix3d/brix3d-t17be306f.js","/games/brix3d/brix3d-t69dde6b9.js","/games/brix3d/brix3d-tcf8ce360.js","/games/brix3d/brix3d-tf315ae30.js","/games/brix3d/brix3d-tfa14fdff.js","/games/brix3d/brix3d-te1cdfc2e.js","/games/brix3d/brix3d-t47e60291.js","/games/brix3d/brix3d-tec5b87d8.js","/games/brix3d/brix3d-ta47cbbac.js","/games/brix3d/brix3d-tc988a6c7.js","/games/brix3d/brix3d-t0d1885b6.js","/games/brix3d/brix3d-t5e3502ef.js","/games/brix3d/brix3d-t571e42db.js","/games/brix3d/brix3d-t2249c0d3.js","/games/brix3d/brix3d-tf49cbac6.js","/games/brix3d/brix3d-t5b6c41c0.js","/games/brix3d/brix3d-t53c1b1cc.js","/games/brix3d/brix3d-tdd3867e3.js","/games/brix3d/brix3d-tcf0a0ce9.js","/games/brix3d/brix3d-t8b007a75.js","/games/brix3d/brix3d-t850fdccb.js","/games/brix3d/brix3d-tf78f6518.js","/games/brix3d/brix3d-tdb707e7b.js","/games/brix3d/brix3d-te31fc306.js","/games/brix3d/brix3d-t0121eb22.js","/games/brix3d/brix3d-tef5112a6.js","/games/brix3d/brix3d-t4fa9c0b7.js","/games/brix3d/brix3d-t88d10c3b.js","/games/brix3d/brix3d-t1ca68ed2.js","/games/brix3d/brix3d-tf84063ed.js","/games/brix3d/brix3d-t0b6a3fb9.js","/games/brix3d/brix3d-tb3a05d78.js","/games/brix3d/brix3d-tfc63a718.js","/games/brix3d/brix3d-tee088fd3.js","/games/brix3d/brix3d-ta9e37717.js","/games/brix3d/brix3d-tfcda8b98.js","/games/brix3d/brix3d-t763f0735.js","/games/brix3d/brix3d-tbfe89e7b.js","/games/brix3d/brix3d-t4cb08b67.js","/games/brix3d/brix3d-tdaa46e93.js","/games/brix3d/brix3d-t7dc8ae7d.js","/games/brix3d/brix3d-t4fa9013e.js","/games/brix3d/brix3d-t9ed8d064.js","/games/brix3d/brix3d-t88052ab0.js","/games/brix3d/brix3d-tdc48d8f3.js","/games/brix3d/brix3d-t06f516ed.js","/games/brix3d/brix3d-t03da3df4.js","/games/brix3d/brix3d-te2d91458.js","/games/brix3d/brix3d-t4753c601.js","/games/brix3d/brix3d-tb35b9815.js","/games/brix3d/brix3d-te7a17841.js","/games/brix3d/brix3d-t9270b9e4.js","/games/brix3d/brix3d-t59d78734.js","/games/brix3d/brix3d-t3223d01b.js","/games/brix3d/brix3d-t3f056e76.js","/games/brix3d/brix3d-t86d87bbd.js","/games/brix3d/brix3d-t29d7da96.js","/games/brix3d/brix3d-t4a95b7e3.js","/games/brix3d/brix3d-tb65d7fd0.js","/games/brix3d/brix3d-tfda2daa4.js","/games/brix3d/brix3d-t27757d7c.js","/games/brix3d/brix3d-t1928af51.js","/games/brix3d/brix3d-tbdefef68.js","/games/brix3d/brix3d-t39bac9e7.js","/games/brix3d/brix3d-t7725956d.js","/games/brix3d/brix3d-tee86902f.js","/games/brix3d/brix3d-tc7cb1f4a.js","/games/brix3d/brix3d-ted56199b.js","/games/brix3d/brix3d-tcbdf71a0.js","/games/brix3d/brix3d-tcaa0775a.js","/games/brix3d/brix3d-tc662ad58.js","/games/brix3d/brix3d-te4aa69de.js"];
+    window.__BRIX_MAIN_PARTS__ = ["/games/brix3d/brix3d-md2ebfef0.js","/games/brix3d/brix3d-mf11cc424.js","/games/brix3d/brix3d-m802662e2.js","/games/brix3d/brix3d-m0beed778.js","/games/brix3d/brix3d-m98e3b1d5.js","/games/brix3d/brix3d-m80644ff0.js","/games/brix3d/brix3d-mc817059f.js","/games/brix3d/brix3d-mec671cff.js","/games/brix3d/brix3d-mad88f11e.js","/games/brix3d/brix3d-md0f56881.js","/games/brix3d/brix3d-ma25cb533.js","/games/brix3d/brix3d-m7467be66.js","/games/brix3d/brix3d-m79a29c58.js","/games/brix3d/brix3d-m46b98d05.js","/games/brix3d/brix3d-mbcc31a83.js","/games/brix3d/brix3d-m9706266a.js","/games/brix3d/brix3d-mc78c40fd.js","/games/brix3d/brix3d-m0f55ff3a.js","/games/brix3d/brix3d-m2bbc54c2.js","/games/brix3d/brix3d-m01fcf127.js","/games/brix3d/brix3d-m8768c158.js","/games/brix3d/brix3d-m77d1b318.js","/games/brix3d/brix3d-m28f945a7.js","/games/brix3d/brix3d-m49654a68.js","/games/brix3d/brix3d-mdf0b4645.js","/games/brix3d/brix3d-ma893dc40.js","/games/brix3d/brix3d-m25f47bf4.js","/games/brix3d/brix3d-mda818b1d.js","/games/brix3d/brix3d-m67f235d4.js","/games/brix3d/brix3d-mab7ea806.js","/games/brix3d/brix3d-m96fd8e28.js","/games/brix3d/brix3d-m5a1a2fb3.js","/games/brix3d/brix3d-m5ba40200.js","/games/brix3d/brix3d-m8e598415.js"];
+    window.__BRIX_WARM__ = ["/games/brix3d/brix3d.BO6YLT3K.js","/games/brix3d/brix3d.CG5CNZ4I.js"];
     setTimeout(function () {
       var s = document.createElement('script');
       s.type = 'module';
-      s.src = '/games/brix3d/brix3d.4VM2QPTB.js';
+      s.src = '/games/brix3d/brix3d.FLSKQRTN.js';
       document.body.appendChild(s);
-    }, 300);
+    }, 0);
   </script>
   <script>
     (function () {

@@ -3,14 +3,17 @@ import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync, readdirSync, unlinkSync, rmSync, copyFileSync, mkdirSync } from 'node:fs';
 import { dirname, join, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { splitModule } from './split-module.mjs';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const htmlPath = join(root, '..', 'brix3d.html');
+const livePath = join(root, 'src/three-live.js');
 
 function addonPlugin() {
   return {
     name: 'three-addons',
     setup(build) {
+      build.onResolve({ filter: /^three$/ }, () => ({ path: livePath }));
       build.onResolve({ filter: /^three\/addons\// }, (args) => ({
         path: join(root, 'node_modules/three/examples/jsm', args.path.slice('three/addons/'.length))
       }));
@@ -18,29 +21,89 @@ function addonPlugin() {
   };
 }
 
+function hashName(prefix, code) {
+  return prefix + createHash('sha256').update(code).digest('hex').slice(0, 8) + '.js';
+}
+
+async function minify(code) {
+  const result = await esbuild.transform(code, {
+    minify: true,
+    target: 'es2022',
+    loader: 'js',
+    format: 'esm',
+    legalComments: 'none'
+  });
+  return result.code;
+}
+
+async function emitParts(groups, opts) {
+  const files = [];
+  const extraFor = (body) => (opts.extra ? opts.extra(body) : '');
+  const firstExtra = extraFor(groups[0]);
+  let first = (firstExtra ? firstExtra + '\n' : '') + 'export const __brixScope = {};\n' + groups[0];
+  if (groups.length === 1 && opts.footer) first += '\n' + opts.footer;
+  const firstCode = await minify(first);
+  const firstName = hashName(opts.prefix, firstCode);
+  files.push({ name: firstName, code: firstCode });
+  for (let i = 1; i < groups.length; i++) {
+    const extra = extraFor(groups[i]);
+    let body = `import { __brixScope } from './${firstName}';\n` + (extra ? extra + '\n' : '') + groups[i];
+    if (i === groups.length - 1 && opts.footer) body += '\n' + opts.footer;
+    const code = await minify(body);
+    files.push({ name: hashName(opts.prefix, code), code });
+  }
+  return files;
+}
+
+const threeSource = readFileSync(join(root, 'node_modules/three/build/three.module.js'), 'utf8');
+const threeSplit = splitModule(threeSource, { scopeName: '__brixScope', budget: 16000 });
+const threeParts = await emitParts(threeSplit.groups, {
+  prefix: 'brix3d-t',
+  footer: 'globalThis.__BRIX_THREE = __brixScope;'
+});
+
+const liveLines = ['const __brixScope = globalThis.__BRIX_THREE;'];
+const seenExport = new Set();
+for (const item of threeSplit.exports) {
+  if (seenExport.has(item.exported)) continue;
+  seenExport.add(item.exported);
+  liveLines.push(`export const ${item.exported} = __brixScope.${item.local};`);
+}
+writeFileSync(livePath, liveLines.join('\n') + '\n');
+
 const outdir = join(root, '.brix-out');
 rmSync(outdir, { recursive: true, force: true });
 mkdirSync(outdir, { recursive: true });
-const built = await esbuild.build({
-  absWorkingDir: root,
-  entryPoints: [join(root, 'src/boot.js')],
-  bundle: true,
-  splitting: true,
-  minify: true,
-  format: 'esm',
-  target: 'es2022',
-  outdir,
-  entryNames: 'brix3d.[hash]',
-  chunkNames: 'brix3d-[hash]',
-  metafile: true,
-  legalComments: 'none',
-  loader: { '.png': 'dataurl', '.jpg': 'dataurl' },
-  plugins: [addonPlugin()]
-});
+let built;
+try {
+  built = await esbuild.build({
+    absWorkingDir: root,
+    entryPoints: [
+      join(root, 'src/boot.js'),
+      livePath,
+      join(root, 'src/orbit-entry.js')
+    ],
+    bundle: true,
+    splitting: true,
+    minify: true,
+    format: 'esm',
+    target: 'es2022',
+    outdir,
+    entryNames: 'brix3d.[hash]',
+    chunkNames: 'brix3d-[hash]',
+    metafile: true,
+    legalComments: 'none',
+    loader: { '.png': 'dataurl', '.jpg': 'dataurl' },
+    plugins: [addonPlugin()]
+  });
+} finally {
+  unlinkSync(livePath);
+}
 
 let mainName = '';
 let postName = '';
-let threeName = '';
+let liveName = '';
+let orbitName = '';
 const written = [];
 for (const [outfile, meta] of Object.entries(built.metafile.outputs)) {
   if (!outfile.endsWith('.js')) continue;
@@ -49,24 +112,38 @@ for (const [outfile, meta] of Object.entries(built.metafile.outputs)) {
   written.push(name);
   const entry = (meta.entryPoint || '').replace(/\\/g, '/');
   if (entry.endsWith('src/boot.js')) mainName = name;
+  if (entry.endsWith('src/three-live.js')) liveName = name;
+  if (entry.endsWith('src/orbit-entry.js')) orbitName = name;
   const inputs = Object.keys(meta.inputs || {}).map((p) => p.replace(/\\/g, '/'));
   if (inputs.some((p) => p.endsWith('src/post.js'))) postName = name;
-  if (inputs.some((p) => /node_modules\/three\/build\/three/.test(p))) threeName = name;
 }
 if (!mainName) throw new Error('boot entry missing from esbuild metafile');
 if (!postName) throw new Error('post chunk missing from esbuild metafile');
-if (!threeName) throw new Error('three chunk missing from esbuild metafile');
-if (postName === mainName || postName === threeName) {
-  throw new Error('post chunk was folded into the boot or three graph');
-}
-const postMeta = built.metafile.outputs[Object.keys(built.metafile.outputs).find((p) => basename(p) === postName)];
-const postImports = (postMeta.imports || []).map((item) => basename(item.path || ''));
-if (!postImports.includes(threeName)) {
-  throw new Error('post chunk does not import the shared three chunk: ' + postImports.join(','));
+if (!liveName) throw new Error('three-live chunk missing from esbuild metafile');
+if (!orbitName) throw new Error('OrbitControls chunk missing from esbuild metafile');
+if (postName === mainName || liveName === mainName) {
+  throw new Error('post or three-live was folded into the boot chunk');
 }
 rmSync(outdir, { recursive: true, force: true });
 
-const keep = new Set(written);
+const mainSource = readFileSync(join(root, 'src/main.js'), 'utf8');
+const mainSplit = splitModule(mainSource, {
+  scopeName: '__brixScope',
+  budget: 16000,
+  // Top-level main.js assignments run at import time. Keep those groups
+  // under one 50ms task on a 4x CPU throttle. Three's consts stay on the
+  // larger budget; they are numbers and parse cheaply.
+  eagerBudget: 7000,
+  tailTest: (piece) => piece.includes('init().catch')
+});
+const mainParts = await emitParts(mainSplit.groups, {
+  prefix: 'brix3d-m'
+});
+
+const partFiles = threeParts.concat(mainParts);
+for (const file of partFiles) writeFileSync(join(root, file.name), file.code);
+
+const keep = new Set(written.concat(partFiles.map((file) => file.name)));
 for (const file of readdirSync(root)) {
   if (/^brix3d-post\.[0-9a-f]+\.js$/.test(file)) {
     unlinkSync(join(root, file));
@@ -77,7 +154,15 @@ for (const file of readdirSync(root)) {
 }
 
 let html = readFileSync(htmlPath, 'utf8');
-html = html.replace(/\/games\/brix3d\/brix3d[-.][A-Za-z0-9]+\.js/g, `/games/brix3d/${mainName}`);
+html = html.replace(/s\.src = '\/games\/brix3d\/[^']+'/, `s.src = '/games/brix3d/${mainName}'`);
+const threeList = JSON.stringify(threeParts.map((file) => `/games/brix3d/${file.name}`));
+const mainList = JSON.stringify(mainParts.map((file) => `/games/brix3d/${file.name}`));
+html = html.replace(/window\.__BRIX_THREE_PARTS__ = [^;]*;/, `window.__BRIX_THREE_PARTS__ = ${threeList};`);
+html = html.replace(/window\.__BRIX_MAIN_PARTS__ = [^;]*;/, `window.__BRIX_MAIN_PARTS__ = ${mainList};`);
+const warmList = JSON.stringify([orbitName, liveName].map((name) => `/games/brix3d/${name}`));
+if (!html.includes('window.__BRIX_WARM__')) throw new Error('missing __BRIX_WARM__ placeholder');
+html = html.replace(/window\.__BRIX_WARM__ = [^;]*;/, `window.__BRIX_WARM__ = ${warmList};`);
+html = html.replace(/<!-- brix-preloads -->[\s\S]*?<!-- \/brix-preloads -->/, '<!-- brix-preloads -->\n  <!-- /brix-preloads -->');
 const cssFiles = readdirSync(root).filter((f) => /^brix3d\.[0-9a-f]{10}\.css$/.test(f));
 if (cssFiles.length !== 1) throw new Error('expected one hashed css, got ' + cssFiles.join(','));
 const cssBuf = readFileSync(join(root, cssFiles[0]));
@@ -88,23 +173,37 @@ if (cssName !== cssFiles[0]) {
   html = html.split(`/games/brix3d/${cssFiles[0]}`).join(`/games/brix3d/${cssName}`);
 }
 writeFileSync(htmlPath, html);
-rmSync(join(root, '.brix-out'), { recursive: true, force: true });
 
 const bootCode = readFileSync(join(root, mainName));
-const gameNames = written.filter((name) => name !== mainName && name !== postName && name !== threeName);
-const earlyCode = Buffer.concat([bootCode, readFileSync(join(root, threeName)), ...gameNames.map((name) => readFileSync(join(root, name)))]);
-if (earlyCode.includes('SMAAPass')) throw new Error('SMAA still in the boot, three, or game chunk');
 const postCode = readFileSync(join(root, postName));
-if (!postCode.includes(threeName.replace('.js', ''))) {
-  throw new Error('post chunk text does not reference the shared three file');
+const postMeta = built.metafile.outputs[Object.keys(built.metafile.outputs).find((p) => basename(p) === postName)];
+const postImports = (postMeta.imports || []).map((item) => basename(item.path || ''));
+const sharedThree = postCode.includes('__BRIX_THREE') || postImports.some((name) => {
+  try {
+    return readFileSync(join(root, name), 'utf8').includes('__BRIX_THREE');
+  } catch {
+    return false;
+  }
+});
+if (!sharedThree) {
+  throw new Error('post chunk does not use the shared three instance: ' + postImports.join(','));
+}
+if (postCode.includes('Multiple instances of Three')) {
+  throw new Error('post chunk contains a second three.js copy');
+}
+const earlyNames = [mainName, liveName, orbitName].concat(partFiles.map((file) => file.name));
+for (const name of earlyNames) {
+  if (readFileSync(join(root, name)).includes('SMAAPass')) {
+    throw new Error('SMAA still in ' + name);
+  }
 }
 let warningFiles = 0;
-for (const name of written) {
-  const code = readFileSync(join(root, name));
-  if (code.includes('Multiple instances of Three')) warningFiles++;
+for (const name of keep) {
+  if (readFileSync(join(root, name)).includes('Multiple instances of Three')) warningFiles++;
 }
 if (warningFiles !== 1) throw new Error('expected the three warning in one chunk, found ' + warningFiles);
 
-console.log('main', mainName, written.map((name) => name + ' ' + readFileSync(join(root, name)).length).join(', '));
-console.log('post', postName, postCode.length, 'imports', threeName);
-console.log('css', cssName, cssBuf.length);
+const biggest = partFiles.map((file) => file.code.length).sort((a, b) => b - a)[0];
+console.log('boot', mainName, bootCode.length);
+console.log('post', postName, postCode.length, 'live', liveName, 'orbit', orbitName);
+console.log('parts', partFiles.length, 'biggest', biggest, 'css', cssName, cssBuf.length);

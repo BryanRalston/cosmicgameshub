@@ -282,7 +282,7 @@
     let mirrorGhosts = []; // Ghost previews for mirrored bricks
     let prefabGhosts = []; // Ghost previews for prefab bricks
     let selectedBrick = (typeof window !== 'undefined' && window.innerWidth <= 768) ? '1x1' : '2x4';
-    let selectedColor = 0xff5252;
+    let selectedColor = 0xff2200;
     let selectedLightColor = 0xffdd44; // Default warm white for light bricks
     let isTransparent = false; // Whether current color is transparent
     let currentRotation = 0; // Y axis rotation (yaw)
@@ -466,7 +466,10 @@
       balanced: {
         dprDesktop: 1.5, dprMobile: 1,
         shadowDesktop: 512, shadowMobile: 512,
-        bloom: true, ssao: false, post: true
+        // UnrealBloomPass is five blur mips, about 13 draws, on top of a
+        // threshold that barely fires. High still blooms. Balanced keeps the
+        // vignette so the plate stays mid green and the home view stays ≤28 draws.
+        bloom: false, ssao: false, post: true
       },
       performance: {
         dprDesktop: 1, dprMobile: 1,
@@ -786,10 +789,10 @@
       renderer.toneMappingExposure = isMobileGfx() ? 1.0 : 1.15;
       renderer.info.autoReset = false;
       document.getElementById('container').appendChild(renderer.domElement);
+      performance.mark('brix-renderer');
       
       // PMREM is a long main-thread task and the plate does not use it.
-      // Desktop builds it on the next turn. Phones wait until after the
-      // Lighthouse quiet window so the compile does not add to TBT.
+      // Build it on a later turn, after the first brick can be placed.
       envMap = null;
       scene.environment = null;
       scheduleEnvMap();
@@ -805,6 +808,7 @@
       controls.minDistance = 3;
       controls.maxDistance = 300;
       frameHomeCamera();
+      performance.mark('brix-controls');
       
       // Limit vertical panning to prevent going below ground
       controls.maxTargetRadius = Infinity; // Allow panning anywhere horizontally
@@ -821,6 +825,9 @@
       
       raycaster = new THREE.Raycaster();
       mouse = new THREE.Vector2();
+      // The WebGL context is its own task. Lights and the shadow map compile
+      // on the next turn so they do not join that task.
+      await yieldTick();
       
       // Lights: 1 directional sun + hemi + ambient. No extra cheap lights.
       const ambient = new THREE.AmbientLight(0xffffff, 0.78);
@@ -867,11 +874,18 @@
       // Rain and snow buffers wait until a weather button asks for them.
       
       await yieldTick();
+      performance.mark('brix-before-ground');
       createInfiniteGround();
+      performance.mark('brix-ground');
       await yieldTick();
       setupEvents();
+      performance.mark('brix-events');
+      window.brixCanPlace = true;
+      window.brixPlaceableAt = performance.now();
+      setTimeout(() => { if (buildEnvMapNow) buildEnvMapNow(); }, 0);
       await yieldTick();
       animate();
+      setTimeout(() => { if (window.brixStartScenery) window.brixStartScenery(); }, 0);
       setTimeout(() => { ensurePrefabs(); }, 1500);
       
       // Apply initial time of day
@@ -881,7 +895,7 @@
         const boot = document.getElementById('loadingScreen');
         if (boot) {
           boot.classList.add('hide');
-          setTimeout(() => { boot.style.display = 'none'; }, 700);
+          setTimeout(() => { boot.style.display = 'none'; }, 280);
         }
         const openingShare = !!shareTokenFromLocation();
         if (!openingShare && !bricks.length) {
@@ -1014,13 +1028,8 @@
     }
 
         // ==================== ENVIRONMENT MAP ====================
-    function createEnvMap() {
-      // One PMREM. Do not regenerate every frame or on time-of-day ticks.
-      if (!pmremGenerator) {
-        pmremGenerator = new THREE.PMREMGenerator(renderer);
-        pmremGenerator.compileEquirectangularShader();
-      }
-      
+    function renderEnvCube() {
+      // The cube render and the PMREM blur run on separate turns.
       // Create a gradient sky scene for the env map
       const envScene = new THREE.Scene();
       const envCamera = new THREE.PerspectiveCamera(90, 1, 0.1, 100);
@@ -1062,10 +1071,7 @@
       const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(256);
       const cubeCamera = new THREE.CubeCamera(0.1, 100, cubeRenderTarget);
       cubeCamera.update(renderer, envScene);
-      
-      const tex = pmremGenerator.fromCubemap(cubeRenderTarget.texture).texture;
-      cubeRenderTarget.dispose();
-      return tex;
+      return cubeRenderTarget;
     }
 
     let buildEnvMapNow = () => false;
@@ -1074,16 +1080,23 @@
       buildEnvMapNow = () => {
         if (started || !renderer) return started;
         started = true;
-        envMap = createEnvMap();
-        scene.environment = envMap;
-        needsRender = true;
+        performance.mark('brix-env-start');
+        if (!pmremGenerator) {
+          pmremGenerator = new THREE.PMREMGenerator(renderer);
+          pmremGenerator.compileEquirectangularShader();
+        }
+        const cube = renderEnvCube();
+        setTimeout(() => {
+          if (!cube) return;
+          envMap = pmremGenerator.fromCubemap(cube.texture).texture;
+          cube.dispose();
+          scene.environment = envMap;
+          performance.mark('brix-env');
+          needsRender = true;
+        }, 0);
         return true;
       };
-      if (isMobileGfx()) {
-        setTimeout(buildEnvMapNow, 12000);
-      } else {
-        setTimeout(buildEnvMapNow, 0);
-      }
+      // The caller starts the build after the first brick can be placed.
     }
     
     // ==================== TIME OF DAY SYSTEM ====================
@@ -1621,13 +1634,11 @@
         if (window.sceneryThemeStarted) return;
         window.sceneryThemeStarted = true;
         window.scenerySettled = false;
+        performance.mark('brix-scenery-start');
         setBackgroundTheme('forest', { silent: true });
+        performance.mark('brix-scenery');
       };
       window.brixStartScenery = start;
-      // The plate is the first frame. Forest meshes are non-critical.
-      // On a phone, wait out the Lighthouse 5s quiet window so the merge
-      // is not a long task inside TBT. Desktop starts on the next turn.
-      setTimeout(start, isMobileGfx() ? 9000 : 0);
     }
     
     let currentBackgroundTheme = 'forest';
@@ -1715,6 +1726,7 @@
       so.clouds = [];
       so.extras = [];
       window.sceneryMergedDraws = 0;
+      sceneryMergeState.clear();
     }
 
     const _mergeV = new THREE.Vector3();
@@ -1801,16 +1813,24 @@
     }
 
     const SCENERY_SECTOR = 120;
+    const sceneryMergeState = new Map();
 
     function mergeScenerySector(roots, key) {
-      const parts = key.split(',');
-      const sx = Number(parts[0]);
-      const sz = Number(parts[1]);
-      const originX = (sx + 0.5) * SCENERY_SECTOR;
-      const originZ = (sz + 0.5) * SCENERY_SECTOR;
-      const buckets = new Map();
-      const taken = [];
-      for (let r = 0; r < roots.length; r++) {
+      let state = sceneryMergeState.get(key);
+      if (!state) {
+        const parts = key.split(',');
+        const sx = Number(parts[0]);
+        const sz = Number(parts[1]);
+        state = {
+          buckets: new Map(),
+          taken: [],
+          originX: (sx + 0.5) * SCENERY_SECTOR,
+          originZ: (sz + 0.5) * SCENERY_SECTOR
+        };
+        sceneryMergeState.set(key, state);
+      }
+      const batch = Math.min(roots.length, 8);
+      for (let r = 0; r < batch; r++) {
         const root = roots[r];
         if (!root) continue;
         root.updateWorldMatrix(true, true);
@@ -1820,16 +1840,26 @@
           const part = bakeSceneryPart(obj);
           if (!part) return;
           const matKey = sceneryMaterialKey(obj.material);
-          let bucket = buckets.get(matKey);
+          let bucket = state.buckets.get(matKey);
           if (!bucket) {
             bucket = { material: makeSceneryMaterial(obj.material), chunks: [] };
-            buckets.set(matKey, bucket);
+            state.buckets.set(matKey, bucket);
           }
           bucket.chunks.push(part);
           baked++;
         });
-        if (baked > 0) taken.push(root);
+        if (baked > 0) state.taken.push(root);
       }
+      roots.splice(0, batch);
+      if (roots.length) {
+        queueScenery(() => mergeScenerySector(roots, key));
+        return;
+      }
+      sceneryMergeState.delete(key);
+      const buckets = state.buckets;
+      const taken = state.taken;
+      const originX = state.originX;
+      const originZ = state.originZ;
       const so = window.sceneryObjects;
       buckets.forEach(bucket => {
         let total = 0;
@@ -4712,6 +4742,7 @@
         }
         needsRender = true;
         updateStats();
+        hideStarterBar();
         return virtual;
       }
       const brick = createBrick(type, color, pos, rot, false, options);
@@ -4725,6 +4756,7 @@
       }
       needsRender = true;
       updateStats();
+      hideStarterBar();
       return brick;
     }
 
@@ -6166,6 +6198,8 @@
       const t = document.getElementById('toast');
       if (t && /Plate is ready|Tap a starter|ghost is your/i.test(t.textContent || '')) {
         t.classList.remove('show');
+        t.style.transition = 'none';
+        t.textContent = '';
       }
     }
 
@@ -12411,7 +12445,7 @@
       
       function closeTutorial(persist) {
         modal.classList.remove('visible');
-        if (persist || (dontShowCheckbox && dontShowCheckbox.checked)) {
+        if (dontShowCheckbox && dontShowCheckbox.checked) {
           localStorage.setItem('brickBuilderTutorialDismissed', 'true');
         }
       }
@@ -12421,7 +12455,7 @@
         if (currentPage < totalPages) {
           showPage(currentPage + 1);
         } else {
-          closeTutorial(true);
+          closeTutorial(false);
         }
       });
       
@@ -12431,14 +12465,14 @@
         }
       });
       
-      skipBtn.addEventListener('click', () => closeTutorial(true));
+      skipBtn.addEventListener('click', () => closeTutorial(false));
       
       const phoneCard = document.getElementById('phoneTutorial');
       const phoneOk = document.getElementById('phoneTutorialOk');
       function dismissPhoneTutorial() {
         if (phoneCard) phoneCard.hidden = true;
         const box = document.getElementById('phoneTutorialDontShow');
-        if (!box || box.checked) localStorage.setItem('brickBuilderTutorialDismissed', 'true');
+        if (box && box.checked) localStorage.setItem('brickBuilderTutorialDismissed', 'true');
       }
       if (phoneOk) phoneOk.addEventListener('click', dismissPhoneTutorial);
       
