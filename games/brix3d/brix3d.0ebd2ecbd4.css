@@ -2188,6 +2188,42 @@
     #tutorialModal.visible, #keybindModal.visible {
       display: flex;
     }
+    .phone-tutorial {
+      position: fixed;
+      inset: 0;
+      z-index: 10040;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 12px 12px calc(88px + env(safe-area-inset-bottom, 0px));
+      background: rgba(0, 0, 0, 0.45);
+    }
+    .phone-tutorial[hidden] { display: none !important; }
+    .phone-tutorial-card {
+      width: min(100%, 360px);
+      background: #142018;
+      color: #f4fff4;
+      border-radius: 16px;
+      padding: 14px 16px 12px;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+    }
+    .phone-tutorial-card h2 { margin: 0 0 6px; font-size: 18px; }
+    .phone-tutorial-card p { margin: 0 0 6px; font-size: 14px; line-height: 1.35; }
+    .phone-tutorial-card button {
+      margin-top: 8px;
+      width: 100%;
+      min-height: 44px;
+      border: 0;
+      border-radius: 12px;
+      background: #f97316;
+      color: #fff;
+      font: inherit;
+      font-weight: 800;
+      font-size: 16px;
+    }
+    @media (min-width: 769px) {
+      .phone-tutorial { display: none !important; }
+    }
     .tutorial-container {
       background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
       border-radius: 16px;
@@ -2894,7 +2930,7 @@
     top: auto !important;
     width: 100% !important;
     bottom: calc(66px + env(safe-area-inset-bottom, 0px)) !important;
-    max-height: min(30vh, 240px) !important;
+    max-height: min(180px, calc(30vh - 72px - env(safe-area-inset-bottom, 0px))) !important;
     height: auto !important;
     z-index: 180 !important;
     border-radius: 18px 18px 0 0 !important;
@@ -2909,7 +2945,7 @@
   #controls.tray-open {
     transform: none !important;
     overflow: auto !important;
-    max-height: min(30vh, 240px) !important;
+    max-height: min(180px, calc(30vh - 72px - env(safe-area-inset-bottom, 0px))) !important;
   }
   #controls .panel-toggle {
     display: flex !important;
@@ -3010,10 +3046,13 @@ body.phone-tray-open .drawer-starters { display: flex; }
     right: 8px !important;
     bottom: calc(196px + env(safe-area-inset-bottom, 0px)) !important;
   }
+  body.phone-tray-open .zoom-controls {
+    bottom: calc(252px + env(safe-area-inset-bottom, 0px)) !important;
+  }
   #starterBar {
     bottom: calc(124px + env(safe-area-inset-bottom, 0px)) !important;
   }
   #controls.tray-open {
-    max-height: min(30vh, 240px) !important;
+    max-height: min(180px, calc(30vh - 72px - env(safe-area-inset-bottom, 0px))) !important;
   }
 }

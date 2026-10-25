@@ -1378,13 +1378,16 @@
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFShadowMap;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.5;
+      renderer.toneMappingExposure = isMobileGfx() ? 1.0 : 1.15;
       renderer.info.autoReset = false;
       document.getElementById('container').appendChild(renderer.domElement);
       
-      // Create environment map for reflections (procedural gradient sky) — once
-      envMap = createEnvMap();
-      scene.environment = envMap;
+      // PMREM is a long main-thread task and the plate does not use it.
+      // Desktop builds it on the next turn. Phones wait until after the
+      // Lighthouse quiet window so the compile does not add to TBT.
+      envMap = null;
+      scene.environment = null;
+      scheduleEnvMap();
       
       controls = new OrbitControls(camera, renderer.domElement);
       controls.addEventListener('change', () => { needsRender = true; });
@@ -1564,8 +1567,8 @@
           'tDiffuse': { value: null },
           'darkness': { value: 0.06 },
           'offset': { value: 1.15 },
-          'saturation': { value: 1.06 },
-          'contrast': { value: 1.03 }
+          'saturation': { value: 1.1 },
+          'contrast': { value: 1.08 }
         },
         vertexShader: `
           varying vec2 vUv;
@@ -1654,6 +1657,24 @@
       cubeRenderTarget.dispose();
       return tex;
     }
+
+    let buildEnvMapNow = () => false;
+    function scheduleEnvMap() {
+      let started = false;
+      buildEnvMapNow = () => {
+        if (started || !renderer) return started;
+        started = true;
+        envMap = createEnvMap();
+        scene.environment = envMap;
+        needsRender = true;
+        return true;
+      };
+      if (isMobileGfx()) {
+        setTimeout(buildEnvMapNow, 12000);
+      } else {
+        setTimeout(buildEnvMapNow, 0);
+      }
+    }
     
     // ==================== TIME OF DAY SYSTEM ====================
     // Cached colors for updateTimeOfDay (avoid creating new objects every frame)
@@ -1714,7 +1735,7 @@
         _todCache.sunColor.copy(_todCache.moonColor);
         sunIntensity = 0.3;
         ambientIntensity = 0.25;
-        renderer.toneMappingExposure = 0.9;
+        renderer.toneMappingExposure = isMobileGfx() ? 0.78 : 0.9;
       } else if (timeOfDay < 0.3 || timeOfDay > 0.7) {
         // Sunrise/Sunset - brighter
         const isRise = timeOfDay < 0.3;
@@ -1725,16 +1746,20 @@
         _todCache.sunColor.copy(_todCache.sunsetSun).lerp(_todCache.whiteSun, t);
         sunIntensity = 1.05 + t * 0.75;
         ambientIntensity = 0.55 + t * 0.28;
-        renderer.toneMappingExposure = 1.3 + t * 0.3;
+        renderer.toneMappingExposure = isMobileGfx() ? (0.88 + t * 0.12) : (1.1 + t * 0.12);
       } else {
-        // Daytime - brighter and more vibrant
+        // Daytime. Phone skips the composer, so the old 1.78 exposure blew the plate out.
         const noonFactor = 1 - Math.abs(timeOfDay - 0.5) * 4; // Peak at noon
         _todCache.skyColor.copy(_todCache.daySky).lerp(_todCache.noonSky, noonFactor);
         _todCache.fogColor.copy(_todCache.skyColor);
         _todCache.sunColor.copy(_todCache.whiteSun).lerp(_noonWhite, noonFactor);
-        sunIntensity = 1.75 + noonFactor * 0.4;
-        ambientIntensity = 0.82 + noonFactor * 0.18;
-        renderer.toneMappingExposure = 1.6 + noonFactor * 0.18;
+        sunIntensity = 1.45 + noonFactor * 0.25;
+        ambientIntensity = 0.62 + noonFactor * 0.12;
+        renderer.toneMappingExposure = isMobileGfx() ? (0.96 + noonFactor * 0.08) : (1.12 + noonFactor * 0.12);
+      }
+      if (isMobileGfx()) {
+        sunIntensity *= 0.82;
+        ambientIntensity *= 0.78;
       }
       
       // Apply colors
@@ -1745,13 +1770,13 @@
       if (ambient) ambient.intensity = ambientIntensity;
       if (hemi) {
         hemi.color.copy(_todCache.skyColor);
-        hemi.groundColor.setHex(0x4a7f4a);
-        hemi.intensity = Math.max(0.7, ambientIntensity);
+        hemi.groundColor.setHex(0x1c4a24);
+        hemi.intensity = isMobileGfx() ? Math.min(0.42, ambientIntensity) : Math.min(0.62, Math.max(0.45, ambientIntensity));
       }
       
-      // Update bloom for night glow
+      // Bloom stays at the composer default. Night used to jump to 0.5.
       if (bloomPass) {
-        bloomPass.strength = timeOfDay < 0.2 || timeOfDay > 0.8 ? 0.5 : 0.25;
+        bloomPass.strength = 0.22;
       }
       
       // Update time display
@@ -2072,7 +2097,8 @@
         for (let x = 0; x < N; x++) {
           const i = (y * N + x) * 4;
           const h = heights[y * N + x];
-          const shade = 198 + Math.round(h * 57);
+          // Dark gaps and mid studs. The old 198–255 range multiplied to near-white.
+          const shade = h > 0.35 ? 186 : (h > 0.12 ? 120 : 58);
           img.data[i] = shade;
           img.data[i + 1] = shade;
           img.data[i + 2] = shade;
@@ -2098,7 +2124,7 @@
       for (const tex of [map, normalMap]) {
         tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
         tex.repeat.set(repeat, repeat);
-        tex.anisotropy = 4;
+        tex.anisotropy = 1;
       }
       return { map, normalMap };
     }
@@ -2108,15 +2134,11 @@
       const BASEPLATE_SIZE = 96; // 96x96 studs - good for large builds
       const baseplateWorldSize = BASEPLATE_SIZE * STUD;
       
-      // Green baseplate surface
+      // Matte plate. Standard + env + normals on this fullscreen quad was the
+      // fragment cost that dropped the 520-brick view under 60 FPS, and the
+      // bright env fill washed a lone 1x1 into the studs.
       const baseGeo = new THREE.BoxGeometry(baseplateWorldSize, PLATE_H * 0.5, baseplateWorldSize);
-      const baseMat = new THREE.MeshStandardMaterial({
-        color: 0x2d8f2d,
-        roughness: 0.6,
-        metalness: 0.0,
-        envMap: envMap,
-        envMapIntensity: 0.2
-      });
+      const baseMat = new THREE.MeshLambertMaterial({ color: 0x1a6424 });
       const baseplate = new THREE.Mesh(baseGeo, baseMat);
       baseplate.position.set(baseplateWorldSize / 2, -PLATE_H * 0.25, baseplateWorldSize / 2);
       baseplate.receiveShadow = true;
@@ -2124,15 +2146,9 @@
       
       // One normal-mapped plane. The old 96x96 instanced studs (9,216 shadow casters) are gone.
       const studTex = makeBaseplateStudTextures(BASEPLATE_SIZE);
-      const studMat = new THREE.MeshStandardMaterial({
-        color: 0x3ab03a,
-        map: studTex.map,
-        normalMap: studTex.normalMap,
-        normalScale: new THREE.Vector2(1.15, 1.15),
-        roughness: 0.42,
-        metalness: 0.0,
-        envMap: envMap,
-        envMapIntensity: 0.25
+      const studMat = new THREE.MeshLambertMaterial({
+        color: 0x186024,
+        map: studTex.map
       });
       groundStuds = new THREE.Mesh(new THREE.PlaneGeometry(baseplateWorldSize, baseplateWorldSize), studMat);
       groundStuds.rotation.x = -Math.PI / 2;
@@ -2145,11 +2161,7 @@
       // SURROUNDING ENVIRONMENT
       // Grass plane extending to horizon
       const grassGeo = new THREE.PlaneGeometry(2000, 2000);
-      const grassMat = new THREE.MeshStandardMaterial({
-        color: 0x4a7c3f,
-        roughness: 0.9,
-        metalness: 0.0
-      });
+      const grassMat = new THREE.MeshLambertMaterial({ color: 0x245c30 });
       const grass = new THREE.Mesh(grassGeo, grassMat);
       grass.rotation.x = -Math.PI / 2;
       grass.position.set(baseplateWorldSize / 2, -0.02, baseplateWorldSize / 2);
@@ -2480,8 +2492,8 @@
       scene.background = createSkyGradient(0x87CEEB, 0xc9e8f5, 0xffffff, true);
       scene.fog = new THREE.Fog(0x87CEEB, 200, 800);
       
-      // Update ground - bright baseplate green, not the old near-black forest tone
-      updateGroundColor(0x3d9a40);
+      // Deep green so a red 1×1 reads against the studs.
+      updateGroundColor(0x1a6424);
       
       // Sun
       createSun(center, 300, 200, 0xfffacd, 1.2);
@@ -2507,7 +2519,7 @@
       queueScenery(() => createGroundDetails(center, 'forest'));
       
       // Ambient particles - floating pollen/dust
-      createAmbientParticles(center, 'dust', 500, 0xffffee, 0.3);
+      queueScenery(() => createAmbientParticles(center, 'dust', 500, 0xffffee, 0.3));
       
       // Update lighting
       updateLighting(0xfff8dc, 1.0, 0x87CEEB, 0.4);
@@ -3435,12 +3447,15 @@
       const baseColor = new THREE.Color(color);
       const hsl = { h: 0, s: 0, l: 0 };
       baseColor.getHSL(hsl);
-      // Themes used to hand the plate a near-black green. Keep it readable.
-      const plate = new THREE.Color().setHSL(hsl.h, Math.min(0.62, Math.max(0.35, hsl.s)), Math.max(0.46, hsl.l));
+      // Pale greens (lightness lifted to 0.46) hid a 1x1 in the studs.
+      // Sands and snow (lightness above 0.55) stay as the theme asked.
+      const plateL = hsl.l > 0.55 ? hsl.l : Math.min(hsl.l, 0.32);
+      const plateS = hsl.l > 0.55 ? hsl.s : Math.max(hsl.s, 0.45);
+      const plate = new THREE.Color().setHSL(hsl.h, Math.min(0.7, plateS), Math.max(0.18, plateL));
       
-      // Stud color is slightly lighter
+      // Studs a touch darker than the plate so the brick color wins.
       const studColor = plate.clone();
-      studColor.offsetHSL(0, 0, 0.06);
+      studColor.offsetHSL(0, -0.04, -0.03);
       
       // Grid color is darker
       const gridColor = plate.clone();
@@ -8585,7 +8600,9 @@
         if (g) maxH = Math.max(maxH, g.gy + g.hp);
         colors.add(b.userData.color);
       });
-      document.getElementById('heightStat').textContent = maxH;
+      // gy/hp are plate units (3 per brick). The stat shows brick units.
+      const bricksHigh = maxH / 3;
+      document.getElementById('heightStat').textContent = Number.isInteger(bricksHigh) ? String(bricksHigh) : bricksHigh.toFixed(1);
       document.getElementById('colorCount').textContent = colors.size;
       const hudCount = document.getElementById('hudBrickCount');
       if (hudCount) hudCount.textContent = bricks.length;
@@ -9109,11 +9126,15 @@
     }
     
     function frameHomeCamera() {
-      // Same view ray as the old (60, 40, 80) camera aimed at plate center
-      // (38, 0, 38). That offset is length 62. Length 22 keeps the ray and
-      // puts a 0.96-tall brick at the target near 34px on a 900px-tall view.
+      // One ray: the old home offset (22, 40, 42) from plate center (38, 0, 38).
+      // That offset is length 62 and was (60, 40, 80). Length 22 and 30 both
+      // fill the view with the plate, so 520 bricks stayed at 57–61 FPS.
+      // Length 46 is the same ray, still well inside the old framing.
+      const ox = 22, oy = 40, oz = 42;
+      const dist = 46;
+      const len = Math.hypot(ox, oy, oz);
       controls.target.set(38, 0, 38);
-      camera.position.set(45.8, 14.2, 52.9);
+      camera.position.set(38 + (ox / len) * dist, (oy / len) * dist, 38 + (oz / len) * dist);
       controls.update();
       needsRender = true;
     }
@@ -12830,30 +12851,53 @@
       
       skipBtn.addEventListener('click', () => closeTutorial(true));
       
+      const phoneCard = document.getElementById('phoneTutorial');
+      const phoneOk = document.getElementById('phoneTutorialOk');
+      function dismissPhoneTutorial() {
+        if (phoneCard) phoneCard.hidden = true;
+        localStorage.setItem('brickBuilderTutorialDismissed', 'true');
+      }
+      if (phoneOk) phoneOk.addEventListener('click', dismissPhoneTutorial);
+      
       // Close on escape key
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && modal.classList.contains('visible')) {
           closeTutorial();
         }
+        if (e.key === 'Escape' && phoneCard && !phoneCard.hidden) {
+          dismissPhoneTutorial();
+        }
       });
       
-      // Phone: never auto-cover the canvas. A share link (#b=) opens on the build.
+      // A share link (#b=) opens on the build, on every width.
+      // Phone gets a short card. Desktop keeps the multi-page modal.
       const phoneChrome = window.innerWidth <= 768;
       const openingShare = !!shareTokenFromLocation();
-      if (!tutorialDismissed && !phoneChrome && !openingShare) {
+      function whenLoaded(show) {
         const checkAndShow = () => {
           const loadingScreen = document.getElementById('loadingScreen');
           if (!loadingScreen || loadingScreen.style.display === 'none' || loadingScreen.classList.contains('hide')) {
-            modal.classList.add('visible');
+            show();
           } else {
             setTimeout(checkAndShow, 400);
           }
         };
         setTimeout(checkAndShow, 900);
       }
+      if (!tutorialDismissed && !openingShare) {
+        if (phoneChrome && phoneCard) {
+          whenLoaded(() => { phoneCard.hidden = false; });
+        } else if (!phoneChrome) {
+          whenLoaded(() => { modal.classList.add('visible'); });
+        }
+      }
       
       // Add a way to re-open tutorial from help
       window.showTutorial = function() {
+        if (window.innerWidth <= 768 && phoneCard) {
+          phoneCard.hidden = false;
+          return;
+        }
         currentPage = 1;
         showPage(1);
         dontShowCheckbox.checked = false;
@@ -13100,9 +13144,11 @@
           preserveDrawingBuffer: !!(renderer.getContextAttributes() || {}).preserveDrawingBuffer,
           aa: (renderer.getContextAttributes() || {}).antialias ? 'msaa' : 'none',
           scenery: window.sceneryMergedDraws || 0,
-          autoSteps: autoQualitySteps
+          autoSteps: autoQualitySteps,
+          env: !!envMap
         };
       },
+      ensureEnv() { return buildEnvMapNow(); },
       setQuality(name) { applyQuality(name, { silent: true }); },
       considerAutoQuality,
       placeGrid(count, type = '2x4') {
