@@ -81,7 +81,6 @@
     earnRate: 0.1
   };
   var MONDAY_GOAL_MUL = 0.55;
-  var LIVE_PROFIT_FLOOR = 48;
   var LIVE_RING_RATE = 0.95;
   var LIVE_BASKET = 0.53;
   var LIVE_STAFFED = 1.27;
@@ -95,21 +94,21 @@
   }
 
   function kioskOneStarCosts(sales, cogs, wages, rent, goalPct) {
-    sales = Math.round(sales || 0);
-    cogs = Math.round(cogs || 0);
-    wages = Math.round(wages || 0);
-    rent = Math.round(rent || 0);
-    if (!(goalPct >= 0.70)) return { cogs: cogs, wages: wages };
-    var profit = sales - cogs - wages - rent;
-    if (profit >= LIVE_PROFIT_FLOOR) return { cogs: cogs, wages: wages };
-    var nextCogs = cogs - (LIVE_PROFIT_FLOOR - profit);
-    var nextWages = wages;
-    if (nextCogs < 0) {
-      nextWages = wages + nextCogs;
-      nextCogs = 0;
-      if (nextWages < 0) nextWages = 0;
-    }
-    return { cogs: Math.round(nextCogs), wages: Math.round(nextWages) };
+    return {
+      cogs: Math.round(cogs || 0),
+      wages: Math.round(wages || 0),
+      sales: Math.round(sales || 0),
+      rent: Math.round(rent || 0),
+      goalPct: goalPct || 0
+    };
+  }
+
+  function liveGoodsCost(cogs, revenue, rung) {
+    cogs = cogs || 0;
+    if (!(revenue > 0) || !(rung >= 0)) return cogs;
+    var goods = cogs * (rung / revenue);
+    if (goods < 0) goods = 0;
+    return goods;
   }
 
   var SHIFT_COUNT = 15;
@@ -1621,6 +1620,8 @@
       }
     }
     var basket;
+    var quotedCogs = 0;
+    var quotedRevenue = 0;
     if (sim.books && HR.sim && HR.economy) {
       var bag = sim.tenant && sim.tenant.stock;
       var quoted = HR.sim.checkout(sim.books, c, sim.rng, bag);
@@ -1632,12 +1633,14 @@
       }
       HR.economy.consume(sim.books, quoted, bag);
       basket = quoted.revenue;
+      quotedCogs = quoted.cogs || 0;
+      quotedRevenue = quoted.revenue || 0;
       if (stationPower(sim, run, 'floor') > 0.55) basket *= 1.1;
       if (sim.stock < 0.28) basket *= 0.64;
       if (sim.t < sim.discountUntil) basket *= 0.86;
       basket *= 1 + 0.09 * upgradeLevel(run, 'baskets');
       if (c.saleMul) basket *= c.saleMul;
-      sim.cogs = (sim.cogs || 0) + quoted.cogs;
+      sim.cogs = (sim.cogs || 0) + quotedCogs;
       c.receipt = quoted.label;
     } else {
       basket = CONFIG.basketMin + sim.rng() * (CONFIG.basketMax - CONFIG.basketMin);
@@ -1661,6 +1664,10 @@
     if (sim.floorOn && sim.live && !sim.tenant) {
       basket *= LIVE_BASKET;
       if (liveTillStaffed(sim)) basket *= LIVE_STAFFED;
+      if (quotedRevenue > 0) {
+        var goods = liveGoodsCost(quotedCogs, quotedRevenue, basket);
+        sim.cogs += goods - quotedCogs;
+      }
     }
     basket = Math.round(basket * mult);
     if (sim.floorOn && sim.live && !sim.tenant) {
@@ -4654,7 +4661,7 @@
       var feelCss = document.createElement('style');
       feelCss.id = 'hr-feel-css';
       feelCss.textContent = [
-        '#hr-event.hr-inline{position:relative;inset:auto;left:auto;right:auto;top:auto;bottom:auto;height:auto;max-height:none;z-index:6;margin:4px 0 0;padding:0;background:transparent;display:block;pointer-events:none;overflow:visible;}',
+        '#hr-event.hr-inline{position:absolute;left:8px;right:8px;top:auto;bottom:8px;width:auto;height:auto;max-height:34%;z-index:8;margin:0;padding:0;background:transparent;display:block;pointer-events:none;overflow:visible;}',
         '#hr-event.hr-inline[hidden]{display:none !important;}',
         '#hr-event.hr-inline .hr-card{pointer-events:auto;width:100%;max-height:none;overflow:visible;padding:0.2rem 0.4rem 0.24rem;border-radius:12px;background:rgba(246,240,228,0.96);box-shadow:0 6px 16px rgba(0,0,0,0.28);box-sizing:border-box;display:flex;flex-direction:column;touch-action:pan-y;}',
         '#hr-event.hr-inline .hr-card h2{font-size:0.82rem;line-height:1.15;margin:0 0 0.08rem;}',
@@ -4665,7 +4672,7 @@
         '#hr-event.hr-inline .hr-choices button span{flex:1 1 auto;min-width:0;white-space:normal;line-height:1.2;}',
         '#hr-event.hr-inline .hr-choice-cost{flex:0 0 auto;white-space:nowrap;}',
         '@media (max-width:720px){',
-        '#hr-event.hr-inline{position:relative;inset:auto;margin:2px 0 0;z-index:7;display:block;overflow:visible;}',
+        '#hr-event.hr-inline{position:absolute;left:4px;right:4px;top:auto;bottom:4px;margin:0;z-index:8;display:block;overflow:visible;max-height:38%;}',
         '#hr-event.hr-inline .hr-card{width:100%;padding:0.16rem 0.3rem 0.2rem;}',
         '#hr-event.hr-inline .hr-card h2{font-size:0.78rem;line-height:1.1;margin:0 0 0.06rem;}',
         '#hr-event.hr-inline .hr-card p{font-size:12px;line-height:1.15;margin:0 0 0.08rem;}',
@@ -4765,25 +4772,25 @@
       }
     }
     function placeEventCard() {
-      if (!els.event || !els.sim) return;
-      var dock = document.getElementById('hr-toast-dock');
-      if (dock && dock.parentNode === els.sim) {
-        if (els.event.parentNode !== els.sim || els.event.nextSibling !== dock) els.sim.insertBefore(els.event, dock);
-        return;
-      }
-      if (els.stage && els.event.parentNode !== els.stage) els.stage.appendChild(els.event);
+      if (!els.event || !els.stage) return;
+      if (els.event.parentNode !== els.stage) els.stage.appendChild(els.event);
     }
 
     function fitCardBox() {
       if (!els.event || !els.stage || els.event.hidden) return;
       var h = els.stage.clientHeight || 0;
       if (!(h > 0)) return;
-      els.event.style.position = 'relative';
-      els.event.style.inset = 'auto';
+      els.event.style.position = 'absolute';
+      els.event.style.left = '8px';
+      els.event.style.right = '8px';
+      els.event.style.top = 'auto';
+      els.event.style.bottom = '8px';
+      els.event.style.margin = '0';
+      els.event.style.width = 'auto';
       els.event.style.background = 'transparent';
       els.event.style.pointerEvents = 'none';
       els.event.style.height = 'auto';
-      els.event.style.maxHeight = 'none';
+      els.event.style.maxHeight = '34%';
       els.event.style.overflow = 'visible';
       var card = els.event.querySelector('.hr-card');
       if (!card) return;
@@ -4826,7 +4833,7 @@
           label.style.maxHeight = 'none';
         }
       }
-      var limit = Math.max(72, Math.floor(h * 0.2));
+      var limit = Math.max(96, Math.min(176, Math.floor(h * 0.34)));
       if (body && card.offsetHeight > limit) body.style.display = 'none';
       if (title && card.offsetHeight > limit) {
         title.style.whiteSpace = 'nowrap';
@@ -4883,6 +4890,15 @@
         }, 160);
       }, ms || 2200);
     }
+    function clearCloseToast() {
+      toastQueue = [];
+      if (!els.toast) return;
+      els.toast.classList.remove('show');
+      els.toast.textContent = '';
+      clearTimeout(toastTimer);
+      toastOn = false;
+    }
+
     function clearRefillNotice() {
       toastQueue = toastQueue.filter(function (m) { return m !== 'Actions are refilling.'; });
       var line = document.getElementById('hr-actline');
@@ -4977,6 +4993,7 @@
         els.event.hidden = true;
         els.modal.hidden = true;
         clearRefillNotice();
+        clearCloseToast();
       }
       document.body.dataset.hrPhase = which;
       if (which !== 'sim') stopLoop();
@@ -6109,26 +6126,6 @@
           stockouts: sim.stockouts || 0,
           goalPct: snap.goalPct
         });
-        if (kioskMonday && Math.round((snap.goalPct || 0) * 100) >= 70 && tape.profit < LIVE_PROFIT_FLOOR) {
-          var liftGap = LIVE_PROFIT_FLOOR - tape.profit;
-          var cogsCut = Math.min(tape.cogs || 0, liftGap);
-          tape.cogs = (tape.cogs || 0) - cogsCut;
-          liftGap -= cogsCut;
-          if (liftGap > 0) {
-            var wageCut = Math.min(tape.wages || 0, liftGap);
-            tape.wages = (tape.wages || 0) - wageCut;
-            liftGap -= wageCut;
-          }
-          var nextProfit = tape.sales - tape.cogs - tape.wages - tape.rent - (tape.loanPay || 0) + (tape.leaseIn || 0);
-          var profitDelta = nextProfit - tape.profit;
-          if (profitDelta) {
-            books.cash = Math.round((books.cash || 0) + profitDelta);
-            books.lifetimeProfit = Math.round((books.lifetimeProfit || 0) + profitDelta);
-            if (books.reviews && books.reviews[0]) books.reviews[0].profit = nextProfit;
-          }
-          tape.profit = nextProfit;
-          tape.cash = books.cash;
-        }
         if (!firstClose) books.cash = Math.round(books.cash - prevPost);
         else if (HR.world) {
           snap.background = HR.world.closeBackground(books, { day: run.day, ymd: run.ymd });
@@ -7083,7 +7080,44 @@
       return 1;
     }
 
+    function layoutPhoneStage() {
+      var stage = els.stage;
+      if (!stage) return;
+      var phone = (window.innerWidth || 0) < 720;
+      if (!phone || !sim || !sim.floorOn || (els.sim && els.sim.hidden)) {
+        if (stage.style.height) stage.style.height = '';
+        if (stage.style.flex) stage.style.flex = '';
+        stage._phoneH = 0;
+        return;
+      }
+      var parent = stage.parentElement;
+      if (!parent) return;
+      var parentH = parent.clientHeight;
+      if (!(parentH > 200)) return;
+      var pcs = window.getComputedStyle(parent);
+      var pad = (parseFloat(pcs.paddingTop) || 0) + (parseFloat(pcs.paddingBottom) || 0);
+      var others = 0;
+      var kids = parent.children;
+      for (var i = 0; i < kids.length; i++) {
+        var kid = kids[i];
+        if (kid === stage || kid.hidden) continue;
+        var cs = window.getComputedStyle(kid);
+        if (cs.display === 'none' || cs.position === 'absolute' || cs.position === 'fixed') continue;
+        var mt = parseFloat(cs.marginTop) || 0;
+        var mb = parseFloat(cs.marginBottom) || 0;
+        others += kid.offsetHeight + mt + mb;
+      }
+      var avail = parentH - pad - others;
+      if (!(avail > 160)) return;
+      var next = Math.round(avail);
+      if (stage._phoneH === next) return;
+      stage._phoneH = next;
+      stage.style.flex = '1 1 auto';
+      stage.style.height = next + 'px';
+    }
+
     function resize() {
+      layoutPhoneStage();
       var stage = els.stage;
       var rect = stage.getBoundingClientRect();
       var cap = pixelBudget();
@@ -7133,11 +7167,7 @@
       function leftOf(el) {
         return el.getBoundingClientRect().left;
       }
-      if (mute) {
-        var clipped = money && money.scrollWidth > money.clientWidth + 1;
-        var tight = money && combo && shown(combo) && leftOf(combo) - rightOf(money) < 4;
-        mute.hidden = !!(clipped || tight);
-      }
+      if (mute) mute.hidden = false;
       if (rush && rush.style.display === 'none' && rush.classList.contains('is-on')) rush.style.display = '';
       if (sales && combo && shown(combo)) {
         var salesLeft = leftOf(sales);
@@ -7146,7 +7176,7 @@
         if (limit > textW + 8) sales.style.maxWidth = Math.floor(limit) + 'px';
         else sales.style.maxWidth = '';
       }
-      if (money && money.scrollWidth > money.clientWidth + 1 && mute) mute.hidden = true;
+      if (mute) mute.hidden = false;
       var chips = [combo, rush, crew, mute];
       var prev = money;
       for (var i = 0; i < chips.length; i++) {
@@ -7336,13 +7366,27 @@
       return z;
     }
 
+    function phoneStoreFrame() {
+      // Registers through the wrap shelf. A tall phone canvas zooms until
+      // this span fills the width, so the store draws larger than the full room.
+      return { left: 320, top: 0, right: 1040, bottom: 900 };
+    }
+
     function floorFit(cssW, cssH) {
       var worldW = WORLD_W || 1280;
-      var worldH = WORLD_H || 900;
-      var fitW = cssW / Math.max(1, worldW);
-      var fitH = cssH / Math.max(1, worldH);
       var phone = cssW < 720;
-      var fit = phone ? Math.min(fitW, fitH) : Math.min(fitW, cssH / 800);
+      var fit;
+      if (phone) {
+        var frame = phoneStoreFrame();
+        var fw = Math.max(1, frame.right - frame.left);
+        var fh = Math.max(1, frame.bottom - frame.top);
+        var fitW = cssW / fw;
+        var fitH = cssH / fh;
+        fit = fitH < fitW ? fitH : fitW;
+      } else {
+        var fitW = cssW / Math.max(1, worldW);
+        fit = Math.min(fitW, cssH / 800);
+      }
       if (!(fit > 0.05)) fit = 0.05;
       return fit;
     }
@@ -7365,29 +7409,17 @@
         var worldH = WORLD_H || 900;
         var cssW = view.cssW || (els.canvas && els.canvas._cssW) || 800;
         if (cssW < 720) {
-          return camClamp((worldW - view.viewW) / 2, (worldH - view.viewH) / 2, view);
+          var frame = phoneStoreFrame();
+          var anchorX = (frame.left + frame.right) / 2;
+          var frameX = anchorX - view.viewW / 2;
+          var frameH = frame.bottom - frame.top;
+          var frameY = view.viewH > frameH ? frame.top + (frameH - view.viewH) / 2 : frame.top;
+          return camClamp(frameX, frameY, view);
         }
         if (cssW >= 720) {
           var fullRoom = view.viewW >= worldW - 16 && view.viewH >= worldH - 16;
           if (fullRoom) return camClamp((worldW - view.viewW) / 2, (worldH - view.viewH) / 2, view);
-          var deskTruck = (SPOTS.truck && SPOTS.truck.y) || 130;
-          var deskTop = deskTruck - 78;
-          if (deskTop < 0) deskTop = 0;
-          var deskBottom = ((SPOTS.reg1 && SPOTS.reg1.y) || 700) + 130;
-          var cardOpen = !!(sim && (sim.pending || sim.typeCard));
-          if (cardOpen) {
-            var doorBottom = ((SPOTS.door && SPOTS.door.y) || (worldH - 45)) + 36;
-            if (doorBottom > deskBottom) deskBottom = doorBottom;
-          }
-          var deskY = deskTop;
-          if (deskTop + view.viewH < deskBottom) deskY = deskBottom - view.viewH;
-          if (cardOpen) {
-            var truckKeep = deskTruck - 16;
-            if (truckKeep < 0) truckKeep = 0;
-            if (deskY > truckKeep) deskY = truckKeep;
-          } else if (deskY > deskTop) deskY = deskTop;
-          if (deskY < 0) deskY = 0;
-          return camClamp((worldW - view.viewW) / 2, deskY, view);
+          return camClamp((worldW - view.viewW) / 2, 0, view);
         }
       }
       var left = SPOTS.reg1 || { x: 420, y: 700 };
@@ -10777,6 +10809,16 @@
     if (!(active14.goalPct < active0.goalPct - 0.15)) bad = true;
     if (up14.goalPct < 1) bad = true;
     if (mid8.goalPct < 0.9) bad = true;
+    var goodsLow = liveGoodsCost(1000, 2000, 834);
+    var goodsHigh = liveGoodsCost(1500, 3000, 1668);
+    var marginLow = 834 - goodsLow;
+    var marginHigh = 1668 - goodsHigh;
+    if (!(marginHigh > marginLow + 200)) bad = true;
+    var flatA = kioskOneStarCosts(2341, 1800, 448, 520, 1.07);
+    var flatB = kioskOneStarCosts(2943, 2000, 448, 520, 1.34);
+    var shownA = 2341 - flatA.cogs - flatA.wages - flatA.rent;
+    var shownB = 2943 - flatB.cogs - flatB.wages - flatB.rent;
+    if (shownA === shownB || shownA === 48 || shownB === 48) bad = true;
     ['entities', 'economy', 'layout', 'world', 'sprites', 'render', 'room'].forEach(function (name) {
       var part = HR[name];
       if (!part || !part.selfTest) { bad = true; console.log(name, 'missing'); return; }
