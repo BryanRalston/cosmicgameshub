@@ -7374,9 +7374,18 @@
           var deskTop = deskTruck - 78;
           if (deskTop < 0) deskTop = 0;
           var deskBottom = ((SPOTS.reg1 && SPOTS.reg1.y) || 700) + 130;
+          var cardOpen = !!(sim && (sim.pending || sim.typeCard));
+          if (cardOpen) {
+            var doorBottom = ((SPOTS.door && SPOTS.door.y) || (worldH - 45)) + 36;
+            if (doorBottom > deskBottom) deskBottom = doorBottom;
+          }
           var deskY = deskTop;
           if (deskTop + view.viewH < deskBottom) deskY = deskBottom - view.viewH;
-          if (deskY > deskTop) deskY = deskTop;
+          if (cardOpen) {
+            var truckKeep = deskTruck - 16;
+            if (truckKeep < 0) truckKeep = 0;
+            if (deskY > truckKeep) deskY = truckKeep;
+          } else if (deskY > deskTop) deskY = deskTop;
           if (deskY < 0) deskY = 0;
           return camClamp((worldW - view.viewW) / 2, deskY, view);
         }
