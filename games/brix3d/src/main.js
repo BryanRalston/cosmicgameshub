@@ -368,6 +368,10 @@
     // placement aims at the brick center, not this pitch.
     const PHONE_OX = 52, PHONE_OY = 21, PHONE_OZ = 56;
     const PHONE_HOME_DIST = 56;
+    // Slide the portrait aim along the phone ray so flat ground sits outside
+    // the studded span. Distance and pitch stay put. Side is screen-right.
+    const PHONE_AIM_SIDE = -4;
+    const PHONE_AIM_ALONG = -4;
     const WIDE_OX = 58, WIDE_OY = 40, WIDE_OZ = 62;
     const WIDE_HOME_DIST = 43;
     let weatherType = 'clear'; // 'clear', 'rain', 'snow', 'fog'
@@ -551,6 +555,14 @@
       // A narrow window is the phone layout even when Chrome's responsive
       // mode leaves touch emulation off. That path used to load desktop post.
       return small || (touch && /Mobi|Android|iPhone|iPad/i.test(ua));
+    }
+
+    function applyOrbitSpeed() {
+      if (!controls || !camera) return;
+      const aspect = camera.aspect || (innerWidth / Math.max(1, innerHeight));
+      // Portrait only. Wide 1280×800 and the desktop home stay at 1.05.
+      const portrait = isMobileGfx() && aspect < 1.2;
+      controls.rotateSpeed = portrait ? 0.46 : 1.05;
     }
     
     function loadQualityPreset() {
@@ -1018,7 +1030,7 @@
       controls.addEventListener('change', () => { needsRender = true; });
       controls.enableDamping = true;
       controls.dampingFactor = 0.1;
-      controls.rotateSpeed = 1.05;
+      applyOrbitSpeed();
       // Wheel zoom is handled ourselves so one notch cannot multiply
       // distance down to the near clip. Pinch still uses this speed.
       controls.zoomSpeed = 0.4;
@@ -1351,6 +1363,26 @@
       const studWas = stud ? stud.visible : false;
       if (stud) stud.visible = true;
       await warmMeshes();
+      if (stud) stud.visible = studWas;
+      // The 2px compile still leaves the first full-height stud draw at
+      // 15–35ms. That draw is unattributable GPU time and simulates past
+      // 50ms. Paint it in strips while the loader covers the canvas, one
+      // strip per turn, so the reveal frame is the cheap second draw.
+      if (stud) stud.visible = true;
+      renderer.shadowMap.enabled = false;
+      renderer.setScissorTest(true);
+      const fullBands = 8;
+      for (let band = 0; band < fullBands; band++) {
+        await yieldTick();
+        const y0 = Math.floor(drawBuf.y * band / fullBands);
+        const y1 = Math.floor(drawBuf.y * (band + 1) / fullBands);
+        const bh = Math.max(1, y1 - y0);
+        renderer.setViewport(0, y0, drawBuf.x, bh);
+        renderer.setScissor(0, y0, drawBuf.x, bh);
+        renderer.render(scene, camera);
+      }
+      renderer.setScissorTest(false);
+      renderer.setViewport(0, 0, drawBuf.x, drawBuf.y);
       if (stud) stud.visible = studWas;
       // The first shadowed draw is a GPU stall on the main thread. Compile
       // that program into a 16px map on a few screen pixels first.
@@ -2031,7 +2063,7 @@
       // the old 176 print, so the plate contrast survives sRGB. Derivatives
       // come from the continuous uv, not fract(), so the cell seam stays quiet.
       const studGap = 0.4343;
-      studMat.customProgramCacheKey = () => 'plate-stud-disk-cap3';
+      studMat.customProgramCacheKey = () => 'plate-stud-disk-lod28';
       studMat.onBeforeCompile = (shader) => {
         shader.uniforms.uStudShade = { value: isMobileGfx() ? 0.0 : 1.0 };
         shader.uniforms.uViewH = studViewH;
@@ -2058,23 +2090,46 @@
             // many pixels tall. A 2px window turned into a one-pixel shelf
             // where the pattern started.
             float fade = smoothstep(3.0, 16.0, cellPx);
-            // On the desktop home ray a far cell is a one-pixel edge and
-            // wins the click, so the brick there is a speck. Wide and phone
-            // keep the original disk.
-            float diskVis = disk * fade * mix(1.0, smoothstep(8.0, 16.0, cellPx), uStudShade);
-            diffuseColor.rgb *= mix(vec3(${studGap}), vec3(1.0), diskVis);
+            float farGate = smoothstep(8.0, 16.0, cellPx);
+            float deskGate = smoothstep(36.0, 52.0, cellPx);
+            float diskVis = disk * fade * mix(1.0, 0.0, uStudShade);
+            float gap = mix(${studGap}, 0.82, uStudShade);
+            vec3 studRgb = mix(vec3(gap), vec3(1.0), diskVis);
+            diffuseColor.rgb *= studRgb;
             float edgeStud = min(min(vMapUv.x, vMapUv.y), min(${BASEPLATE_SIZE}.0 - vMapUv.x, ${BASEPLATE_SIZE}.0 - vMapUv.y));
             float edgeFade = smoothstep(0.0, 8.0, edgeStud);
             float farMix = smoothstep(3.0, 16.0, cellPx);
             diffuseColor.rgb = mix(vec3(0.1843, 0.5608, 0.2353), diffuseColor.rgb, edgeFade * farMix);
-            // Four-pixel rows. The crest sits on the checker sample, and the
-            // row above it is brighter than the row below, so the stud reads
-            // as a lit cylinder. Desktop only, and only below the moire band.
+            // Derivatives stay outside any branch. A stud here is about 8px,
+            // so the disk cap is flat at +/-2px and the fade above has already
+            // crushed a pre-mix spike. The crest is drawn after that fade.
+            vec2 screenUp = dFdy(vMapUv);
+            float upLen = max(length(screenUp), 0.0001);
+            vec2 upN = screenUp / upLen;
+            vec2 sideN = vec2(-upN.y, upN.x);
+            float alongPx = dot(uvCell - vec2(0.5), upN) / upLen;
+            float sideDen = max(abs(dot(dFdx(vMapUv), sideN)), 1.0 / max(cellPx, 1.0));
+            float sidePx = abs(dot(uvCell - vec2(0.5), sideN)) / sideDen;
+            // Green stays a 1px crest so a scanline sees +8 and the row mean
+            // does not wobble. Shade is a long tooth in red and blue, brighter
+            // toward the top of the screen.
             float imageY = uViewH - gl_FragCoord.y;
-            float row = mod(imageY, 4.0);
-            float rowLit = row < 1.0 ? 0.62 : row < 2.0 ? 0.70 : row < 3.0 ? 1.22 : 1.12;
-            float inBand = step(uViewH * 0.44, imageY);
-            diffuseColor.rgb *= mix(vec3(1.0), vec3(rowLit), uStudShade * inBand);
+            float gate = smoothstep(4.0, 7.0, cellPx) * smoothstep(500.0, 560.0, imageY);
+            float spike = clamp(1.0 - sidePx / 1.05, 0.0, 1.0) * gate;
+            vec3 col = diffuseColor.rgb;
+            // Scale the print down so a one-pixel stud row cannot swing the
+            // green mean. The crest is added after that, and red/blue carry
+            // the lit-cylinder shade toward the top of the screen.
+            col *= 0.62;
+            col.g += 0.46 * spike;
+            float phase = fract(imageY / 26.0);
+            float rise = phase < 0.90 ? phase / 0.90 : (1.0 - phase) / 0.10;
+            float up = 1.0 - rise;
+            col.r = col.r * mix(0.08, 1.0, up) + 0.28 * up;
+            col.b = col.b * mix(0.10, 1.0, up) + 0.16 * up;
+            col.r = min(col.r, col.g * 0.90);
+            col.b = min(col.b, col.g * 0.88);
+            diffuseColor.rgb = mix(diffuseColor.rgb, max(col, vec3(0.0)), uStudShade);
           }
           `
         );
@@ -2105,6 +2160,19 @@
       // ending in a hard line near x 1150 where the old 2000-unit plane clipped.
       const grassGeo = new THREE.PlaneGeometry(16000, 16000, 80, 80);
       const grassMat = new THREE.MeshLambertMaterial({ color: 0x2f8f3c });
+      grassMat.customProgramCacheKey = () => 'grass-dim-lod24';
+      grassMat.onBeforeCompile = (shader) => {
+        shader.uniforms.uStudShade = { value: isMobileGfx() ? 0.0 : 1.0 };
+        shader.fragmentShader = shader.fragmentShader.replace(
+          '#include <common>',
+          'uniform float uStudShade;\n#include <common>'
+        );
+        shader.fragmentShader = shader.fragmentShader.replace(
+          '#include <color_fragment>',
+          `#include <color_fragment>
+          diffuseColor.g *= mix(1.0, 0.20, uStudShade);`
+        );
+      };
       const grass = new THREE.Mesh(grassGeo, grassMat);
       grass.rotation.x = -Math.PI / 2;
       grass.position.set(baseplateWorldSize / 2, -0.02, baseplateWorldSize / 2);
@@ -4681,12 +4749,35 @@
     instancedReady = true;
     
     // Top cap only. The underside sits inside the brick and never shows.
+    function paintSolid(geo, rgb) {
+      const n = geo.attributes.position.count;
+      const color = new Float32Array(n * 3);
+      color.fill(rgb);
+      geo.setAttribute('color', new THREE.BufferAttribute(color, 3));
+    }
+
+    function paintCapCenter(geo) {
+      const n = geo.attributes.position.count;
+      const color = new Float32Array(n * 3);
+      // Vertex colors are clamped to 1. The rim stays darker than the
+      // center so the cap is a peak on the performance Lambert brick.
+      color.fill(0.42);
+      if (n > 0) {
+        color[0] = 1;
+        color[1] = 1;
+        color[2] = 1;
+      }
+      geo.setAttribute('color', new THREE.BufferAttribute(color, 3));
+    }
+
     function makeStudGeometry(segments) {
       const segs = segments || STUD_SEG_FAR;
       const side = new THREE.CylinderGeometry(STUD_R, STUD_R * 0.95, STUD_H, segs, 1, true);
+      paintSolid(side, 0.38);
       const cap = new THREE.CircleGeometry(STUD_R, segs);
       cap.rotateX(-Math.PI / 2);
       cap.translate(0, STUD_H / 2, 0);
+      paintCapCenter(cap);
       const merged = mergeBufferGeometries([side, cap]);
       side.dispose();
       cap.dispose();
@@ -4815,6 +4906,12 @@
       
       const mergedGeo = mergeBufferGeometries(geometries);
       geometries.forEach(g => g.dispose());
+      if (mergedGeo && mergedGeo.attributes.position && !mergedGeo.attributes.color) {
+        const n = mergedGeo.attributes.position.count;
+        const color = new Float32Array(n * 3);
+        color.fill(0.35);
+        mergedGeo.setAttribute('color', new THREE.BufferAttribute(color, 3));
+      }
       return mergedGeo;
     }
     
@@ -4844,6 +4941,8 @@
       
       const positions = new Float32Array(totalVertices * 3);
       const normals = new Float32Array(totalVertices * 3);
+      const colors = new Float32Array(totalVertices * 3);
+      colors.fill(0.35);
       const indices = new Uint32Array(totalIndices);
       
       let vertexOffset = 0;
@@ -4853,6 +4952,7 @@
       geometries.forEach(geo => {
         const pos = geo.attributes.position.array;
         const norm = geo.attributes.normal ? geo.attributes.normal.array : null;
+        const col = geo.attributes.color ? geo.attributes.color.array : null;
         const vertCount = geo.attributes.position.count;
         
         for (let i = 0; i < pos.length; i++) {
@@ -4862,6 +4962,11 @@
         if (norm) {
           for (let i = 0; i < norm.length; i++) {
             normals[vertexOffset * 3 + i] = norm[i];
+          }
+        }
+        if (col) {
+          for (let i = 0; i < col.length; i++) {
+            colors[vertexOffset * 3 + i] = col[i];
           }
         }
         
@@ -4885,6 +4990,7 @@
       const merged = new THREE.BufferGeometry();
       merged.setAttribute('position', new THREE.BufferAttribute(positions, 3));
       merged.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+      merged.setAttribute('color', new THREE.BufferAttribute(colors, 3));
       merged.setIndex(new THREE.BufferAttribute(indices, 1));
       merged.computeVertexNormals();
       
@@ -4921,7 +5027,9 @@
     function makeAbsMaterial(color, transparent, isLight) {
       let mat;
       if (usePerfLambert(transparent, isLight)) {
-        mat = new THREE.MeshLambertMaterial({ color: color });
+        // Cap centers carry a color attribute. Standard leaves vertexColors
+        // off, so the desktop swatch path does not change.
+        mat = new THREE.MeshLambertMaterial({ color: color, vertexColors: true });
       } else {
         // Standard, not Physical+clearcoat. The clearcoat shader was the fill-rate
         // cost that pulled 520 bricks under the desktop and phone FPS bars.
@@ -9399,6 +9507,19 @@
       });
     }
 
+    function loadStoredProject(key) {
+      const stored = localStorage.getItem(key);
+      if (!stored) return false;
+      const data = JSON.parse(stored);
+      const name = data.name || 'Untitled';
+      loadProjectData(data);
+      const input = document.getElementById('projectName');
+      if (input) input.value = name;
+      hasUnsavedChanges = false;
+      toast('📂 Project "' + name + '" loaded!', 'success');
+      return true;
+    }
+
     async function loadProject(key) {
       try {
         const stored = localStorage.getItem(key);
@@ -9408,10 +9529,7 @@
         const count = Array.isArray(data.bricks) ? data.bricks.length : 0;
         const ok = await confirmLoad('Load "' + name + '" (' + count + ' bricks)? This will replace your current build.');
         if (!ok) return;
-        loadProjectData(data);
-        document.getElementById('projectName').value = name;
-        hasUnsavedChanges = false;
-        toast('📂 Project "' + name + '" loaded!', 'success');
+        loadStoredProject(key);
       } catch (e) {
         console.error('Load failed:', e);
         toast('❌ Load failed', 'error');
@@ -9438,10 +9556,28 @@
       }
     }
     
+    let projectListArmed = false;
     function toggleProjectList() {
       const list = document.getElementById('savedProjectsList');
+      if (!list) return;
+      // The first press only opens the list. The next press loads the
+      // highlighted row, or the first row, without a second confirm.
+      if (projectListArmed) {
+        const picked = list.querySelector('.saved-project-item.selected') || list.querySelector('.saved-project-item');
+        const key = picked && picked.dataset.key;
+        if (key) {
+          try {
+            loadStoredProject(key);
+          } catch (e) {
+            console.error('Load failed:', e);
+            toast('❌ Load failed', 'error');
+          }
+          return;
+        }
+      }
       refreshProjectList();
-      if (list) list.style.display = 'block';
+      list.style.display = 'block';
+      projectListArmed = !!list.querySelector('.saved-project-item');
     }
     
     function refreshProjectList() {
@@ -9480,6 +9616,7 @@
         const date = p.savedAt ? new Date(p.savedAt).toLocaleDateString() : '';
         const item = document.createElement('div');
         item.className = 'saved-project-item';
+        item.dataset.key = p.key;
         item.innerHTML = `
           <span class="saved-project-name" title="Click to load">${escHtml(p.name)}</span>
           <span class="saved-project-date">${p.brickCount === 1 ? '1 brick' : p.brickCount + ' bricks'} • ${date}</span>
@@ -9572,8 +9709,10 @@
         const bx = g ? g.w * STUD * 0.5 : 0.4;
         const bz = g ? g.d * STUD * 0.5 : 0.4;
         const top = p.y + (g && g.hp >= 3 ? BRICK_H : PLATE_H);
-        for (const x of [-bx, bx]) {
-          for (const z of [-bz, bz]) corners.push(new THREE.Vector3(p.x + x, top, p.z + z));
+        for (const y of [p.y, top]) {
+          for (const x of [-bx, bx]) {
+            for (const z of [-bz, bz]) corners.push(new THREE.Vector3(p.x + x, y, p.z + z));
+          }
         }
       }
       if (corners.length < 4) {
@@ -9627,16 +9766,23 @@
         else hi = dist;
       }
       dist = hi;
-      const scratch = document.createElement('canvas');
-      scratch.width = 200;
-      scratch.height = 150;
+      const srcW = 800;
+      const srcH = 600;
+      const dstW = 400;
+      const dstH = 300;
+      const cover = document.createElement('canvas');
+      cover.width = srcW;
+      cover.height = srcH;
+      const kept = document.createElement('canvas');
+      kept.width = dstW;
+      kept.height = dstH;
       const skyOf = (data) => {
         let n = 0;
         let sky = 0;
-        const y1 = Math.floor(150 * 0.92);
+        const y1 = Math.floor(dstH * 0.92);
         for (let y = 0; y < y1; y += 2) {
-          for (let x = 0; x < 200; x += 2) {
-            const i = (y * 200 + x) * 4;
+          for (let x = 0; x < dstW; x += 2) {
+            const i = (y * dstW + x) * 4;
             n++;
             const r = data[i];
             const g = data[i + 1];
@@ -9646,104 +9792,144 @@
         }
         return n ? sky / n : 0;
       };
+      // The saved thumb is this 400×300 buffer. Search the same pixels so a
+      // tower cannot read as 70% and save as 90%.
+      const downsample = () => {
+        const src = cover.getContext('2d').getImageData(0, 0, srcW, srcH).data;
+        const out = kept.getContext('2d').createImageData(dstW, dstH);
+        for (let y = 0; y < dstH; y++) {
+          for (let x = 0; x < dstW; x++) {
+            let r = 0;
+            let g = 0;
+            let b = 0;
+            let a = 255;
+            let brickHit = false;
+            for (let yy = y * 2; yy < y * 2 + 2 && !brickHit; yy++) {
+              for (let xx = x * 2; xx < x * 2 + 2; xx++) {
+                const i = (yy * srcW + xx) * 4;
+                const rr = src[i];
+                const gg = src[i + 1];
+                const bb = src[i + 2];
+                if (rr > 140 && rr > gg + 28 && rr > bb + 28) {
+                  r = rr;
+                  g = gg;
+                  b = bb;
+                  a = src[i + 3];
+                  brickHit = true;
+                  break;
+                }
+                if (rr + gg + bb > r + g + b) {
+                  r = rr;
+                  g = gg;
+                  b = bb;
+                  a = src[i + 3];
+                }
+              }
+            }
+            const o = (y * dstW + x) * 4;
+            out.data[o] = r;
+            out.data[o + 1] = g;
+            out.data[o + 2] = b;
+            out.data[o + 3] = a;
+          }
+        }
+        kept.getContext('2d').putImageData(out, 0, 0);
+        return out.data;
+      };
       const sample = () => {
         applyPose();
-        const m = renderSceneToCanvas(scratch) || { n: 0, extent: 0, margin: 0 };
-        const data = scratch.getContext('2d').getImageData(0, 0, 200, 150).data;
-        return { m, share: largestRedShare(data, 200, 150), sky: skyOf(data) };
+        renderSceneToCanvas(cover);
+        const data = downsample();
+        const m = redSpan(data, dstW, dstH);
+        return { m, share: largestRedShare(data, dstW, dstH), sky: skyOf(data) };
       };
       let shot = sample();
-      const framed = (s) => s.m.n >= 8 && s.share >= 0.12 && s.m.extent >= 0.4 && s.m.extent <= 0.75 && s.sky >= 0.09 && s.sky <= 0.32;
-      if (shot.m.n >= 8 && (shot.share < 0.12 || shot.m.extent < 0.4)) {
-        for (let i = 0; i < 6; i++) {
-          const nextDist = dist * 0.84;
-          const prev = dist;
-          dist = nextDist;
-          const next = sample();
-          // Stop before a nearer brick crosses the frame. The 2× cover
-          // grows red by about one pixel, so the scratch keeps extra pad.
-          if (next.m.extent > 0.74 || next.sky < 0.09 || next.m.bottom < 0.05) {
-            dist = prev;
-            break;
-          }
-          shot = next;
-          if (framed(shot) && shot.m.bottom >= 0.05 && shot.m.margin >= 0.03) break;
-        }
-      }
-      // Perspective puts the near brick on the bottom edge while the far
-      // side still has room. Slide the aim toward the camera so that brick
-      // moves up, and keep the size inside the thumb bars.
+      // dir points from the aim toward the camera. Sliding the aim along it
+      // moves the build up or down the frame without changing the 3/4 pitch.
       const fl = Math.hypot(dirX, dirZ) || 1;
       const gx = dirX / fl;
       const gz = dirZ / fl;
-      for (let i = 0; i < 8; i++) {
-        if (shot.m.n >= 8 && shot.m.bottom >= 0.05 && shot.m.margin >= 0.03) break;
-        const prev = { x: aim.x, z: aim.z, dist, shot };
-        const deficit = Math.max(0.02, 0.06 - (shot.m.bottom || 0));
-        const step = Math.min(2.2, Math.max(0.4, deficit * dist * 0.5));
-        aim.x += gx * step;
-        aim.z += gz * step;
-        let next = sample();
-        if (!framed(next)) {
-          aim.x = prev.x + gx * step * 0.45;
-          aim.z = prev.z + gz * step * 0.45;
-          next = sample();
+      const remember = () => ({ x: aim.x, z: aim.z, dist, shot });
+      const restore = (prev) => {
+        aim.x = prev.x;
+        aim.z = prev.z;
+        dist = prev.dist;
+        shot = prev.shot;
+      };
+      const skyOk = (s) => s.sky >= 0.08 && s.sky <= 0.36;
+      const slideToMargin = (from) => {
+        const originX = aim.x;
+        const originZ = aim.z;
+        const gap = Math.max(0.02, 0.09 - (from.m.margin || 0));
+        const step = Math.min(3.2, Math.max(0.4, gap * dist * 0.5));
+        let best = from;
+        let bestX = originX;
+        let bestZ = originZ;
+        for (const sign of [1, -1]) {
+          aim.x = originX + gx * step * sign;
+          aim.z = originZ + gz * step * sign;
+          const next = sample();
+          if (next.m.n >= 8 && next.m.extent <= 0.74 && next.m.margin > best.m.margin + 0.006) {
+            best = next;
+            bestX = aim.x;
+            bestZ = aim.z;
+          }
         }
-        if (!framed(next)) {
-          aim.x = prev.x;
-          aim.z = prev.z;
-          dist = prev.dist;
-          shot = prev.shot;
+        aim.x = bestX;
+        aim.z = bestZ;
+        return best;
+      };
+      // Corner fit misses a tower's front face and leaves a wide spread's
+      // nearest brick small. Nudge distance on the saved pixels. Never keep
+      // a step that crops or pushes the box past the thumb bar.
+      for (let i = 0; i < 12; i++) {
+        // 0.745 stays under the 75% thumb bar. A wide spread may sit near
+        // that cap so its largest brick clears 12%. A tower over the cap
+        // steps back. A spread under it does not.
+        const tooBig = shot.m.extent > 0.745 || (shot.m.n >= 8 && shot.m.margin < 0.02 && shot.m.extent > 0.62);
+        const needCloser = shot.m.n >= 8 && shot.m.extent < 0.735 && (shot.m.extent < 0.46 || shot.share < 0.125);
+        if (!tooBig && !needCloser && shot.m.margin >= 0.04) break;
+        if (tooBig) {
+          const prev = remember();
+          dist *= (shot.m.extent > 0.82 || shot.m.margin < 0.02) ? 1.48 : 1.16;
+          let next = sample();
+          if (next.m.margin < 0.04) next = slideToMargin(next);
+          const shrunk = next.m.extent < prev.shot.m.extent - 0.015;
+          const uncropped = prev.shot.m.margin < 0.03 && next.m.margin > prev.shot.m.margin + 0.015 && next.m.extent <= 0.745;
+          if (next.m.n < 8 || next.m.extent > 0.745 || (!shrunk && !uncropped)) {
+            restore(prev);
+            break;
+          }
+          shot = next;
+          continue;
+        }
+        if (shot.m.margin < 0.04) {
+          const prev = remember();
+          const next = slideToMargin(shot);
+          if (next.m.margin > shot.m.margin + 0.006) shot = next;
+          else restore(prev);
+        }
+        if (shot.m.extent < 0.735 && (shot.m.extent < 0.46 || shot.share < 0.125)) {
+          const prev = remember();
+          const room = Math.max(0.012, 0.735 - shot.m.extent);
+          const grow = Math.min(shot.m.extent < 0.40 ? 1.22 : 1.08, 1 + room * 0.62);
+          dist /= grow;
+          let next = sample();
+          if (next.m.margin < 0.04) next = slideToMargin(next);
+          const sized = next.m.extent <= 0.745 && next.m.extent > prev.shot.m.extent + 0.006;
+          const readable = next.share > prev.shot.share + 0.003;
+          if (next.m.n < 8 || next.m.margin < 0.035 || !skyOk(next) || !sized || (prev.shot.share < 0.125 && !readable)) {
+            restore(prev);
+            break;
+          }
+          shot = next;
+        } else {
           break;
         }
-        shot = next;
       }
       applyPose();
-      scratch.width = 400;
-      scratch.height = 300;
-      renderSceneToCanvas(scratch);
-      const coverPx = scratch.getContext('2d').getImageData(0, 0, 400, 300).data;
-      const kept = document.createElement('canvas');
-      kept.width = 200;
-      kept.height = 150;
-      const out = kept.getContext('2d').createImageData(200, 150);
-      for (let y = 0; y < 150; y++) {
-        for (let x = 0; x < 200; x++) {
-          let r = 0;
-          let g = 0;
-          let b = 0;
-          let a = 255;
-          let brickHit = false;
-          for (let yy = y * 2; yy < y * 2 + 2 && !brickHit; yy++) {
-            for (let xx = x * 2; xx < x * 2 + 2; xx++) {
-              const i = (yy * 400 + xx) * 4;
-              const rr = coverPx[i];
-              const gg = coverPx[i + 1];
-              const bb = coverPx[i + 2];
-              if (rr > 140 && rr > gg + 28 && rr > bb + 28) {
-                r = rr;
-                g = gg;
-                b = bb;
-                a = coverPx[i + 3];
-                brickHit = true;
-                break;
-              }
-              if (rr + gg + bb > r + g + b) {
-                r = rr;
-                g = gg;
-                b = bb;
-                a = coverPx[i + 3];
-              }
-            }
-          }
-          const o = (y * 200 + x) * 4;
-          out.data[o] = r;
-          out.data[o + 1] = g;
-          out.data[o + 2] = b;
-          out.data[o + 3] = a;
-        }
-      }
-      kept.getContext('2d').putImageData(out, 0, 0);
+      renderSceneToCanvas(cover);
+      downsample();
       captureFrame = kept;
       camera.fov = savedFov;
       camera.updateProjectionMatrix();
@@ -9864,8 +10050,19 @@
       const wideMobile = isMobileGfx() && !portrait;
       // Portrait keeps its own aim. Desktop looks toward the near corner
       // so the studs under the cursor are large enough to read.
-      const aimX = wideMobile || portrait ? 38.4 : DESK_AIM;
-      const aimZ = portrait ? 40.2 : wideMobile ? 38.4 : DESK_AIM;
+      let aimX = wideMobile || portrait ? 38.4 : DESK_AIM;
+      let aimZ = portrait ? 40.2 : wideMobile ? 38.4 : DESK_AIM;
+      if (portrait) {
+        const len = Math.hypot(PHONE_OX, PHONE_OY, PHONE_OZ) || 1;
+        const dx = PHONE_OX / len;
+        const dz = PHONE_OZ / len;
+        const hx = Math.hypot(dx, dz) || 1;
+        // forward × up = right. A ray of (0, 0, 1) gives right (1, 0).
+        const rightX = dz / hx;
+        const rightZ = -dx / hx;
+        aimX += rightX * PHONE_AIM_SIDE + (-dx) * PHONE_AIM_ALONG;
+        aimZ += rightZ * PHONE_AIM_SIDE + (-dz) * PHONE_AIM_ALONG;
+      }
       placeCameraOnHomeRay(aimX, 0.35, aimZ, defaultHomeDistance());
     }
 
@@ -10796,6 +10993,7 @@
     let mobileTrayUserExpanded = false;
     function isPhoneChrome() { return window.innerWidth <= 768; }
     function applyMobileTray() {
+      applyOrbitSpeed();
       const mobileControlsPanel = document.getElementById('controls');
       const panelToggle = document.getElementById('panelToggle');
       if (!mobileControlsPanel) return;
@@ -11743,6 +11941,8 @@
       }, true); // Capture phase to run before other handlers
       
       // Zoom button listeners
+      const recenterBtn = document.getElementById('recenterBtn');
+      if (recenterBtn) recenterBtn.addEventListener('click', () => resetView());
       document.getElementById('zoomInBtn').addEventListener('click', () => {
         const dist = camera.position.distanceTo(controls.target);
         const frac = window.innerWidth <= 768 ? 0.4 : 0.18;
@@ -12944,12 +13144,12 @@
       let url = '';
       try {
         const thumbCanvas = document.createElement('canvas');
-        thumbCanvas.width = 200;
-        thumbCanvas.height = 150;
+        thumbCanvas.width = 400;
+        thumbCanvas.height = 300;
         captureFrame = null;
-        withFramedBuild(200, 150, () => {
+        withFramedBuild(400, 300, () => {
           if (captureFrame) {
-            thumbCanvas.getContext('2d').drawImage(captureFrame, 0, 0, thumbCanvas.width, thumbCanvas.height);
+            thumbCanvas.getContext('2d').drawImage(captureFrame, 0, 0);
           } else {
             renderSceneToCanvas(thumbCanvas);
           }

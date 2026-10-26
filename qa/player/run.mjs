@@ -907,6 +907,118 @@ function studShade(img) {
   return { n: diffs.length, shade: diffs[Math.floor(diffs.length / 2)] };
 }
 
+function signPeaks(means) {
+  let peaks = 0;
+  let prevSign = 0;
+  let prev = means[0] || 0;
+  for (let i = 1; i < means.length; i++) {
+    const d = means[i] - means[i - 1];
+    const sign = d > 1.2 ? 1 : d < -1.2 ? -1 : 0;
+    if (sign && prevSign && sign !== prevSign && Math.abs(means[i] - prev) > 5) {
+      peaks++;
+      prev = means[i];
+    }
+    if (sign) prevSign = sign;
+  }
+  return peaks;
+}
+
+function plateBand(img) {
+  const { width, height, data } = img;
+  const y0 = Math.floor(height * 0.5);
+  const y1 = Math.floor(height * 0.88);
+  const x0 = Math.floor(width * 0.12);
+  const x1 = Math.floor(width * 0.88);
+  const means = [];
+  for (let y = y0; y < y1; y++) {
+    let s = 0;
+    let n = 0;
+    for (let x = x0; x < x1; x += 2) {
+      const i = (y * width + x) * 4;
+      const g = data[i + 1];
+      if (g > 60 && g > data[i] + 6 && g > data[i + 2] + 6) {
+        s += g;
+        n++;
+      }
+    }
+    if (n > (x1 - x0) / 8) means.push(s / n);
+  }
+  function xPeaks(xa, xb, y) {
+    let n = 0;
+    let prev = 0;
+    for (let x = xa + 2; x < xb - 2; x++) {
+      const i = (y * width + x) * 4;
+      const g = data[i + 1];
+      const green = g > 70 && g > data[i] && g > data[i + 2];
+      if (!green) { prev = 0; continue; }
+      const left = data[(y * width + (x - 2)) * 4 + 1];
+      const right = data[(y * width + (x + 2)) * 4 + 1];
+      if (g >= left + 8 && g >= right + 8 && g >= prev) n++;
+      prev = g;
+    }
+    return n;
+  }
+  const thirds = [];
+  for (const fx of [0.14, 0.4, 0.66]) {
+    const xa = Math.floor(width * fx);
+    const xb = Math.floor(width * (fx + 0.2));
+    let best = 0;
+    for (const fy of [0.62, 0.74]) best = Math.max(best, xPeaks(xa, xb, Math.floor(height * fy)));
+    thirds.push(best);
+  }
+  return { peaks: signPeaks(means), rows: means.length, thirds };
+}
+
+function brickRelief(img, blob) {
+  if (!blob || blob.n < 8) return { spread: 0, studs: 0, n: blob ? blob.n : 0 };
+  const { width, data } = img;
+  const lumas = [];
+  const lumaAt = (x, y) => {
+    const i = (y * width + x) * 4;
+    if (!isRed(data[i], data[i + 1], data[i + 2])) return -1;
+    return data[i] * 0.25 + data[i + 1] * 0.65 + data[i + 2] * 0.1;
+  };
+  for (let y = blob.minY; y <= blob.maxY; y++) {
+    for (let x = blob.minX; x <= blob.maxX; x++) {
+      const l = lumaAt(x, y);
+      if (l >= 0) lumas.push(l);
+    }
+  }
+  if (lumas.length < 8) return { spread: 0, studs: 0, n: lumas.length };
+  const sorted = lumas.slice().sort((a, b) => a - b);
+  const spread = sorted[Math.floor(sorted.length * 0.9)] - sorted[Math.floor(sorted.length * 0.1)];
+  let studs = 0;
+  for (let y = blob.minY + 2; y <= blob.maxY - 2; y += 2) {
+    for (let x = blob.minX + 2; x <= blob.maxX - 2; x += 2) {
+      const l = lumaAt(x, y);
+      if (l < 0) continue;
+      let higher = 0;
+      let ok = true;
+      for (const [dx, dy] of [[2, 0], [-2, 0], [0, 2], [0, -2]]) {
+        const n = lumaAt(x + dx, y + dy);
+        if (n < 0) { ok = false; break; }
+        if (l > n + 8) higher++;
+      }
+      if (ok && higher >= 3) studs++;
+    }
+  }
+  return { spread, studs, n: lumas.length };
+}
+
+function viewAngle(a, b) {
+  if (!a || !b) return 999;
+  const ax = a.x - a.tx;
+  const ay = a.y - a.ty;
+  const az = a.z - a.tz;
+  const bx = b.x - b.tx;
+  const by = b.y - b.ty;
+  const bz = b.z - b.tz;
+  const na = Math.hypot(ax, ay, az) || 1;
+  const nb = Math.hypot(bx, by, bz) || 1;
+  const dot = (ax * bx + ay * by + az * bz) / (na * nb);
+  return Math.acos(Math.max(-1, Math.min(1, dot)));
+}
+
 async function modeSnap(page) {
   const pose = await camPose(page);
   const ui = await page.evaluate(() => {
@@ -2662,13 +2774,13 @@ async function main() {
       } finally { await context.close(); }
     });
 
-    await check('R18i-phone-camera', 'phone home centers the plate under 15% sky and the cottage is large', async () => {
+    await check('R18i-phone-camera', 'phone home centers the plate with 15-30% sky and the cottage is large', async () => {
       const { page, context } = await openPage(browser, true, 'r18i');
       try {
         await ready(page);
         const home = await grabCanvas(page, 'r18-phone-home.png');
         const sky = skyFraction(home.img);
-        assert(sky < 0.15, 'sky ' + (sky * 100).toFixed(1) + '%');
+        assert(sky >= 0.15 && sky <= 0.3, 'sky ' + (sky * 100).toFixed(1) + '%');
         const plate = studCentroid(home.img);
         assert(plate, 'plate not in frame');
         const dx = Math.abs(plate.x - home.img.width / 2) / home.img.width;
@@ -3577,6 +3689,446 @@ async function main() {
         assert(span.w >= 24 && span.h >= 14, 'ghost ' + span.w.toFixed(1) + 'x' + span.h.toFixed(1));
         return 'ghost ' + span.w.toFixed(0) + 'x' + span.h.toFixed(0);
       } finally { await context.close(); }
+    });
+
+    await check('R21a-plate-moire', 'desktop home plate has no horizontal stripes and studs across the plate', async () => {
+      const { page, context } = await openPage(browser, false, 'r21a', { width: 1440, height: 900 });
+      try {
+        await ready(page);
+        const shot = await grabCanvas(page, 'r21-plate.png');
+        const band = plateBand(shot.img);
+        const problems = [];
+        if (!(band.peaks < 3)) problems.push('horizontal moire peaks ' + band.peaks + ' rows ' + band.rows);
+        const weak = [];
+        for (let i = 0; i < band.thirds.length; i++) {
+          if (band.thirds[i] < 3) weak.push(['left', 'mid', 'right'][i] + ' ' + band.thirds[i]);
+        }
+        if (weak.length) problems.push('plate studs ' + weak.join(' '));
+        assert(problems.length === 0, problems.join('; '));
+        return 'peaks ' + band.peaks + ' studs ' + band.thirds.join('/');
+      } finally { await context.close(); }
+    });
+
+    await check('R21b-brick-shade', 'a placed brick at the desktop home zoom shows studs and face shading', async () => {
+      const { page, context } = await openPage(browser, false, 'r21b', { width: 1440, height: 900 });
+      try {
+        await ready(page);
+        await clickStud(page, 0.55, false);
+        const shot = await grabCanvas(page, 'r21-brick.png');
+        const blob = brickBlob(shot.img, plateInset(page, shot));
+        assert(blob.n > 8, 'no brick');
+        const relief = brickRelief(shot.img, blob);
+        const problems = [];
+        if (!(relief.spread >= 22)) problems.push('flat face spread ' + relief.spread.toFixed(1));
+        if (!(relief.studs >= 2)) problems.push('studs ' + relief.studs);
+        assert(problems.length === 0, problems.join('; '));
+        return 'spread ' + relief.spread.toFixed(1) + ' studs ' + relief.studs;
+      } finally { await context.close(); }
+    });
+
+    await check('R21c-thumb-res', 'thumbs are at least 400x300 and 3, 6, and 15 spreads stay readable', async () => {
+      const { page, context } = await openPage(browser, false, 'r21c');
+      try {
+        await ready(page);
+        const layouts = {
+          three: [[0.36, 0.42], [0.64, 0.46], [0.5, 0.68]],
+          six: [[0.32, 0.4], [0.5, 0.38], [0.68, 0.42], [0.36, 0.62], [0.55, 0.58], [0.7, 0.66]],
+          fifteen: []
+        };
+        for (let row = 0; row < 3; row++) {
+          for (let col = 0; col < 5; col++) layouts.fifteen.push([0.40 + col * 0.04, 0.48 + row * 0.045]);
+        }
+        const skies = [];
+        const lines = [];
+        const problems = [];
+        for (const kind of ['three', 'six', 'fifteen']) {
+          await page.evaluate(() => localStorage.clear());
+          await page.reload({ waitUntil: 'domcontentloaded' });
+          await ready(page);
+          for (const pair of layouts[kind]) {
+            const shot = await grabCanvas(page);
+            const pt = findStudNear(shot.img, pair[0], pair[1]) || findStud(shot.img, pair[0]);
+            assert(pt, kind + ' stud missing');
+            await placeAt(page, shot.clip.x + pt.x / shot.dpr, shot.clip.y + pt.y / shot.dpr);
+          }
+          const field = await page.locator('#projectName').boundingBox();
+          await typeInto(page, field, kind, 'click');
+          await clickSel(page, '#saveProjectBtn');
+          await page.waitForFunction((n) => localStorage.getItem('brickProject_' + n), kind, { timeout: 8000 });
+          await clickSel(page, '#galleryBtn');
+          await page.locator('#galleryGrid img').first().waitFor({ state: 'visible', timeout: 8000 });
+          const dim = await page.locator('#galleryGrid img').first().evaluate((img) => ({ w: img.naturalWidth, h: img.naturalHeight }));
+          if (!(dim.w >= 400 && dim.h >= 300)) problems.push(kind + ' thumb ' + dim.w + 'x' + dim.h);
+          const buf = await page.locator('#galleryGrid img').first().screenshot();
+          writeFileSync(join(shots, 'r21-thumb-' + kind + '.png'), buf);
+          const thumb = decodePng(buf);
+          const sky = skyFraction(thumb);
+          const stats = thumbStats(thumb);
+          const share = largestRedSide(thumb) / Math.min(thumb.width, thumb.height);
+          skies.push(sky);
+          if (!(sky >= 0.08 && sky <= 0.32)) problems.push(kind + ' sky ' + (sky * 100).toFixed(1) + '%');
+          if (!(stats.n >= 150)) problems.push(kind + ' red pixels ' + stats.n);
+          if (!(stats.extent >= 0.4 && stats.extent <= 0.75)) problems.push(kind + ' fill ' + (stats.extent * 100).toFixed(1) + '% outside 40-75');
+          if (!(stats.margin >= 0.02)) problems.push(kind + ' cropped, margin ' + stats.margin.toFixed(3));
+          if (!(share >= 0.12)) problems.push(kind + ' brick ' + (share * 100).toFixed(1) + '%');
+          lines.push(kind + ' ' + dim.w + 'x' + dim.h + ' sky ' + (sky * 100).toFixed(0) + ' brick ' + (share * 100).toFixed(1));
+          await page.keyboard.press('Escape');
+        }
+        const spread = Math.max.apply(null, skies) - Math.min.apply(null, skies);
+        if (!(spread <= 0.1)) problems.push('angle spread ' + (spread * 100).toFixed(1) + '%');
+        assert(problems.length === 0, problems.join('; '));
+        return lines.join(' | ');
+      } finally { await context.close(); }
+    });
+
+    await check('R21d-load-btn', 'the Load button loads the saved project on desktop and on the phone', async () => {
+      const lines = [];
+      for (const phone of [false, true]) {
+        const { page, context } = await openPage(browser, phone, 'r21d' + (phone ? 'p' : 'd'));
+        const tag = phone ? 'phone' : 'desktop';
+        try {
+          await ready(page);
+          await clickStud(page, 0.55, false);
+          if (phone) await ensureDrawer(page);
+          const field = await page.locator('#projectName').boundingBox();
+          await typeInto(page, field, 'cabin', 'click');
+          await clickSel(page, '#saveProjectBtn');
+          await page.waitForFunction(() => {
+            const raw = localStorage.getItem('brickProject_cabin');
+            if (!raw) return false;
+            try { return JSON.parse(raw).bricks.length >= 1; } catch { return false; }
+          }, null, { timeout: 8000 });
+          if (phone) await ensureDrawer(page);
+          await clickSel(page, '#newProjectBtn');
+          await page.locator('#loadConfirmOk').waitFor({ state: 'visible', timeout: 4000 });
+          await clickSel(page, '#loadConfirmOk');
+          await page.waitForFunction(() => (parseInt(document.getElementById('brickCount').textContent, 10) || 0) === 0, null, { timeout: 4000 });
+          if (phone) await ensureDrawer(page);
+          await clickSel(page, '#loadProjectBtn');
+          await page.locator('.saved-project-name').first().waitFor({ state: 'visible', timeout: 4000 });
+          const listed = await page.locator('.saved-project-name').first().innerText();
+          assert(listed.trim() === 'cabin', tag + ' list "' + listed + '"');
+          const mid = await brickCount(page);
+          assert(mid === 0, tag + ' opening the list loaded ' + mid);
+          await clickSel(page, '#loadProjectBtn');
+          let back = 0;
+          const t0 = Date.now();
+          while (Date.now() - t0 < 2000) {
+            back = await brickCount(page);
+            if (back >= 1) break;
+          }
+          const name = await page.locator('#projectName').inputValue();
+          assert(back >= 1 && name === 'cabin', tag + ' Load left ' + back + ' bricks named "' + name + '"');
+          lines.push(tag + ' loaded');
+        } finally { await context.close(); }
+      }
+      return lines.join(' | ');
+    });
+
+    await check('R21e-phone-orbit', 'phone orbit is gentle and a Recenter button is on screen', async () => {
+      const { page, context } = await openPage(browser, true, 'r21e');
+      try {
+        await ready(page);
+        await clickStud(page, 0.55, false);
+        const problems = [];
+        const frame = await page.evaluate(() => {
+          const buttons = Array.from(document.querySelectorAll('button'));
+          const hit = buttons.find((b) => /recenter|frame\s*build|frame-build/i.test((b.textContent || '').replace(/\s+/g, ' ')));
+          if (!hit) return null;
+          const r = hit.getBoundingClientRect();
+          const top = document.elementFromPoint(r.left + r.width / 2, r.top + Math.min(r.height / 2, 12));
+          return {
+            text: (hit.textContent || '').replace(/\s+/g, ' ').trim(),
+            x: r.x, y: r.y, w: r.width, h: r.height,
+            onTop: !!(top && (top === hit || hit.contains(top))),
+            inTray: !!hit.closest('.tray-scroll, #controls')
+          };
+        });
+        const vp = page.viewportSize();
+        if (!frame || frame.w < 8 || frame.h < 8) problems.push('no Recenter button');
+        else if (frame.inTray || frame.y < 0 || frame.y + frame.h > vp.height || frame.x < 0 || frame.x + frame.w > vp.width || !frame.onTop) {
+          problems.push('Recenter not on the play screen "' + frame.text + '"');
+        }
+        const spot = await page.evaluate(() => {
+          const canvas = document.querySelector('#container canvas');
+          const tries = [[220, 200], [200, 260], [180, 320]];
+          for (let i = 0; i < tries.length; i++) {
+            const el = document.elementFromPoint(tries[i][0], tries[i][1]);
+            if (el && el.tagName === 'CANVAS') return tries[i];
+          }
+          return null;
+        });
+        assert(spot, 'no empty canvas for the drag');
+        const before = await camPose(page);
+        const client = await page.context().newCDPSession(page);
+        const x0 = spot[0];
+        const y0 = spot[1];
+        await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: x0, y: y0, id: 1 }] });
+        for (let s = 1; s <= 4; s++) {
+          await client.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x0 + 9 * s, y: y0, id: 1 }] });
+          await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(resolve)));
+        }
+        await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+        await client.detach().catch(() => {});
+        await settlePose(page);
+        const angle = viewAngle(before, await camPose(page));
+        if (!(angle < 0.18)) problems.push('orbit swing ' + angle.toFixed(3) + ' rad');
+        if (!(angle > 0.02)) problems.push('drag did not orbit ' + angle.toFixed(3));
+        assert(problems.length === 0, problems.join('; '));
+        return 'swing ' + angle.toFixed(3) + ' ' + (frame ? frame.text : '');
+      } finally { await context.close(); }
+    });
+
+    await check('R21f-drawer-room', 'the phone drawer scrolls smoothly and Hide tools stays put', async () => {
+      const { page, context } = await openPage(browser, true, 'r21f');
+      try {
+        await ready(page);
+        await clickSel(page, '#panelToggle');
+        assert(await drawerOpen(page), 'drawer stayed closed');
+        const hideHit = async () => page.evaluate(() => {
+          const el = document.getElementById('panelToggle');
+          if (!el) return 'missing';
+          const r = el.getBoundingClientRect();
+          const vpH = window.innerHeight;
+          const vpW = window.innerWidth;
+          if (r.top < 0 || r.left < 0 || r.bottom > vpH + 1 || r.right > vpW + 1 || r.height < 8) return 'offscreen';
+          const pts = [
+            [r.left + r.width / 2, r.top + r.height / 2],
+            [r.left + 8, r.top + r.height / 2],
+            [r.right - 8, r.top + r.height / 2]
+          ];
+          for (let i = 0; i < pts.length; i++) {
+            const top = document.elementFromPoint(pts[i][0], pts[i][1]);
+            if (!top || (top !== el && !el.contains(top))) return 'covered ' + (top ? (top.id || top.className || top.tagName) : 'none');
+          }
+          return '';
+        });
+        const problems = [];
+        const atTop = await hideHit();
+        if (atTop) problems.push('Hide tools at top ' + atTop);
+        const room = await page.locator('.tray-scroll').evaluate((el) => {
+          const buttons = el.querySelectorAll('button');
+          const last = buttons[buttons.length - 1];
+          const scroll = el.getBoundingClientRect();
+          const lastRect = last ? last.getBoundingClientRect() : null;
+          const lastBottom = lastRect ? (lastRect.bottom - scroll.top) + el.scrollTop : 0;
+          return {
+            tail: el.scrollHeight - lastBottom,
+            ch: el.clientHeight,
+            label: last ? (last.id || (last.textContent || '').replace(/\s+/g, ' ').trim()).slice(0, 24) : ''
+          };
+        });
+        if (!(room.tail < 80)) problems.push('blank tail ' + Math.round(room.tail) + ' after ' + room.label);
+        const tray = await page.locator('.tray-scroll').boundingBox();
+        assert(tray && tray.height > 8, 'tray missing');
+        await page.mouse.move(tray.x + Math.min(36, tray.width * 0.35), tray.y + Math.min(24, tray.height / 2));
+        const before = await page.locator('.tray-scroll').evaluate((el) => ({ top: el.scrollTop, ch: el.clientHeight }));
+        await page.mouse.wheel(0, 100);
+        await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+        const after = await page.locator('.tray-scroll').evaluate((el) => el.scrollTop);
+        const delta = after - before.top;
+        if (delta > before.ch + 1) problems.push('wheel jump ' + Math.round(delta) + ' > ' + before.ch);
+        let stuck = 0;
+        let prev = after;
+        for (let i = 0; i < 40 && stuck < 2; i++) {
+          await page.mouse.wheel(0, Math.max(80, before.ch));
+          await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(resolve)));
+          const now = await page.locator('.tray-scroll').evaluate((el) => el.scrollTop);
+          if (now === prev) stuck += 1;
+          else stuck = 0;
+          prev = now;
+        }
+        const reached = await page.locator('.tray-scroll').evaluate((el) => {
+          const buttons = el.querySelectorAll('button');
+          const last = buttons[buttons.length - 1];
+          if (!last) return false;
+          const scroll = el.getBoundingClientRect();
+          const r = last.getBoundingClientRect();
+          const cy = r.top + r.height / 2;
+          return cy >= scroll.top && cy <= scroll.bottom;
+        });
+        if (!reached) problems.push('last tool stays outside the scroll');
+        const atEnd = await hideHit();
+        if (atEnd) problems.push('Hide tools at end ' + atEnd);
+        assert(problems.length === 0, problems.join('; '));
+        return 'tail ' + Math.round(room.tail) + ' wheel ' + Math.round(delta) + ' port ' + before.ch;
+      } finally { await context.close(); }
+    });
+
+    await check('R21g-phone-shade', 'phone default quality shows studs and face shading on a placed brick', async () => {
+      const { page, context } = await openPage(browser, true, 'r21g');
+      try {
+        await ready(page);
+        const quality = await page.locator('#qualityBar button.active').innerText().catch(() => '');
+        await clickStud(page, 0.55, false);
+        const shot = await grabCanvas(page, 'r21-phone-brick.png');
+        const blob = brickBlob(shot.img, 0);
+        assert(blob.n > 8, 'no brick');
+        const relief = brickRelief(shot.img, blob);
+        const problems = [];
+        if (!(relief.spread >= 22)) problems.push('flat face spread ' + relief.spread.toFixed(1));
+        if (!(relief.studs >= 2)) problems.push('studs ' + relief.studs);
+        assert(problems.length === 0, problems.join('; ') + (quality ? ' quality ' + quality.trim() : ''));
+        return (quality || 'quality').trim() + ' spread ' + relief.spread.toFixed(1) + ' studs ' + relief.studs;
+      } finally { await context.close(); }
+    });
+
+    await check('R21h-modal-float', 'Gallery and New cover the float controls, and the trash is fully on screen', async () => {
+      const problems = [];
+      async function floatsOver(page, modalSel) {
+        const sels = ['.gotw-tag', '.brix-more__toggle', '#phoneViewBtn', '#zoomInBtn'];
+        const lines = [];
+        for (const sel of sels) {
+          const over = await (async () => {
+            const box = await page.locator(sel).boundingBox().catch(() => null);
+            if (!box || box.width < 4 || box.height < 4) return '';
+            return topIsModal(page, sel, modalSel);
+          })();
+          if (over) lines.push(over);
+        }
+        const stray = await page.evaluate((modal) => {
+          const root = document.querySelector(modal);
+          const w = window.innerWidth;
+          const h = window.innerHeight;
+          const pts = [[w - 20, 60], [w - 20, 447], [w - 28, Math.max(80, h - 280)], [24, 120]];
+          const bad = [];
+          for (let i = 0; i < pts.length; i++) {
+            const x = pts[i][0];
+            const y = pts[i][1];
+            const el = document.elementFromPoint(x, y);
+            if (!el) { bad.push(Math.round(x) + ',' + Math.round(y) + ' none'); continue; }
+            if (root && (el === root || root.contains(el))) continue;
+            bad.push(Math.round(x) + ',' + Math.round(y) + ' ' + (el.id || el.className || el.tagName).toString().slice(0, 40));
+          }
+          return bad.join(' | ');
+        }, modalSel);
+        if (stray) lines.push('stray ' + stray);
+        return lines;
+      }
+      for (const phone of [false, true]) {
+        const { page, context } = await openPage(browser, phone, 'r21h' + (phone ? 'p' : 'd'));
+        const tag = phone ? 'phone' : 'desktop';
+        try {
+          await ready(page);
+          await page.waitForFunction(() => document.querySelector('.gotw-tag'), null, { timeout: 8000 }).catch(() => {});
+          await clickStud(page, 0.55, false);
+          if (phone) await ensureDrawer(page);
+          const field = await page.locator('#projectName').boundingBox();
+          await typeInto(page, field, 'cabin', 'click');
+          await clickSel(page, '#saveProjectBtn');
+          await page.waitForFunction(() => localStorage.getItem('brickProject_cabin'), null, { timeout: 8000 });
+          if (phone) await closeDrawer(page);
+          await clickSel(page, '#galleryBtn');
+          await page.locator('#galleryModal').waitFor({ state: 'visible', timeout: 8000 });
+          await page.locator('#galleryGrid .delete').first().waitFor({ state: 'visible', timeout: 8000 });
+          const overGallery = await floatsOver(page, '#galleryModal');
+          for (const line of overGallery) problems.push(tag + ' gallery ' + line);
+          const trash = await page.locator('#galleryGrid .delete').first().boundingBox();
+          const vp = page.viewportSize();
+          if (!trash || trash.width < 8) problems.push(tag + ' trash missing');
+          else if (trash.x < -1 || trash.y < -1 || trash.x + trash.width > vp.width + 1 || trash.y + trash.height > vp.height + 1) {
+            problems.push(tag + ' trash clipped');
+          } else {
+            const corners = await page.locator('#galleryGrid .delete').first().evaluate((el) => {
+              const r = el.getBoundingClientRect();
+              const pts = [
+                [r.left + 2, r.top + 2],
+                [r.right - 2, r.top + 2],
+                [r.left + 2, r.bottom - 2],
+                [r.right - 2, r.bottom - 2]
+              ];
+              return pts.map(([x, y]) => {
+                const top = document.elementFromPoint(x, y);
+                return top && (top === el || el.contains(top));
+              });
+            });
+            if (corners.some((ok) => !ok)) problems.push(tag + ' trash corner covered');
+          }
+          const bars = await page.locator('.gallery-content').evaluate((el) => ({
+            sw: el.scrollWidth,
+            cw: el.clientWidth,
+            page: document.documentElement.scrollWidth - document.documentElement.clientWidth
+          }));
+          if (bars.sw > bars.cw + 1) problems.push(tag + ' gallery scrollbar ' + bars.sw + '>' + bars.cw);
+          if (bars.page > 1) problems.push(tag + ' page scrollbar ' + bars.page);
+          await page.keyboard.press('Escape');
+          if (phone) await ensureDrawer(page);
+          await clickSel(page, '#newProjectBtn');
+          await page.locator('#loadConfirmOk').waitFor({ state: 'visible', timeout: 4000 });
+          const title = await page.locator('#loadConfirm h2').innerText();
+          if (!/new project/i.test(title)) problems.push(tag + ' new title "' + title + '"');
+          const overNew = await floatsOver(page, '#loadConfirm');
+          for (const line of overNew) problems.push(tag + ' new ' + line);
+          const beside = await page.evaluate(() => {
+            const btn = document.getElementById('loadConfirmOk');
+            const root = document.getElementById('loadConfirm');
+            if (!btn || !root) return 'missing';
+            const r = btn.getBoundingClientRect();
+            const pts = [[r.right - 2, r.top + r.height / 2], [Math.min(window.innerWidth - 2, r.right + 6), r.top + r.height / 2]];
+            const bad = [];
+            for (let i = 0; i < pts.length; i++) {
+              const el = document.elementFromPoint(pts[i][0], pts[i][1]);
+              if (el && (el === btn || btn.contains(el) || root.contains(el))) continue;
+              bad.push((el && (el.id || el.className || el.tagName) || 'none').toString().slice(0, 40));
+            }
+            return bad.join(' ');
+          });
+          if (beside) problems.push(tag + ' new button ' + beside);
+        } finally { await context.close(); }
+      }
+      assert(problems.length === 0, problems.join('; '));
+      return 'modals cover the floats and the trash fits';
+    });
+
+    await check('R21i-view-badge', 'the phone View stats panel does not cover the week badge', async () => {
+      const { page, context } = await openPage(browser, true, 'r21i');
+      try {
+        await ready(page);
+        await page.waitForFunction(() => document.querySelector('.gotw-tag'), null, { timeout: 8000 });
+        await clickSel(page, '#phoneViewBtn');
+        const open = await page.evaluate(() => document.body.classList.contains('phone-view-open'));
+        assert(open, 'View did not open');
+        const badge = await page.locator('.gotw-tag').boundingBox();
+        assert(badge && badge.width > 8, 'week badge missing');
+        const problems = [];
+        for (const sel of ['#stats', '#fps', '#qualityBar']) {
+          const box = await page.locator(sel).boundingBox().catch(() => null);
+          if (!box || box.width < 4 || box.height < 4) {
+            problems.push(sel + ' hidden');
+            continue;
+          }
+          if (overlaps(box, badge)) problems.push(sel + ' overlaps the badge');
+        }
+        assert(problems.length === 0, problems.join('; '));
+        return 'view clear of the badge';
+      } finally { await context.close(); }
+    });
+
+    await check('R21j-esc-delete', 'Escape leaves Delete mode without removing a brick', async () => {
+      const lines = [];
+      for (const phone of [false, true]) {
+        const { page, context } = await openPage(browser, phone, 'r21j' + (phone ? 'p' : 'd'));
+        const tag = phone ? 'phone' : 'desktop';
+        try {
+          await ready(page);
+          await clickStud(page, 0.55, false);
+          const placed = await brickCount(page);
+          assert(placed >= 1, tag + ' place failed');
+          await clickSel(page, '#hudDeleteBtn');
+          const armed = await brickCount(page);
+          const on = await page.evaluate(() => document.body.classList.contains('delete-mode'));
+          assert(armed === placed, tag + ' arm deleted');
+          assert(on, tag + ' Delete did not arm');
+          await page.keyboard.press('Escape');
+          const still = await page.evaluate(() => document.body.classList.contains('delete-mode'));
+          const banner = await page.locator('#deleteModeBanner').evaluate((el) => el.classList.contains('visible')).catch(() => false);
+          const kept = await brickCount(page);
+          assert(!still && !banner, tag + ' Escape left delete ' + (still ? 'on' : 'off') + (banner ? ' banner' : ''));
+          assert(kept === placed, tag + ' Escape changed the count to ' + kept);
+          lines.push(tag + ' esc');
+        } finally { await context.close(); }
+      }
+      return lines.join(' | ');
     });
 
     await check('boot-x5', 'five fresh boots after localStorage.clear have no errors', async () => {
