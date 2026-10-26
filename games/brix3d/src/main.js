@@ -630,7 +630,7 @@
       }
       sun.shadow.needsUpdate = true;
       markShadowDirty();
-      needsRender = true;
+      markDirty();
     }
     
     function useMsaa() {
@@ -656,13 +656,13 @@
         sun.shadow.mapSize.set(512, 512);
         if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; }
         sun.shadow.needsUpdate = true;
-        needsRender = true;
+        markDirty();
         toast('Smaller shadows to hold 50 FPS');
         return;
       }
       if (renderer && renderer.shadowMap.enabled) {
         renderer.shadowMap.enabled = false;
-        needsRender = true;
+        markDirty();
         toast('Shadows off to hold 50 FPS');
       }
     }
@@ -715,7 +715,7 @@
       updateShadowFrustum();
       setupPostProcessing();
       refreshInstancedMaterials();
-      needsRender = true;
+      markDirty();
       if (!opts.silent) toast(`Quality: ${name.charAt(0).toUpperCase() + name.slice(1)}`);
     }
     
@@ -896,16 +896,27 @@
       if (w >= 64 && h >= 64) return { w, h };
       return { w: innerWidth, h: innerHeight };
     }
+    let appliedViewW = 0;
+    let appliedViewH = 0;
+    let appliedViewDpr = 0;
     function applyViewSize() {
       if (!renderer || !camera) return;
       const { w, h } = viewSize();
+      const dpr = qualityDpr();
+      // Page zoom fires visualViewport resize without changing the layout
+      // size. Rebuilding the buffer anyway redrew one plate row between the
+      // two ghost screenshots and pulled the centroid off the cursor.
+      if (w === appliedViewW && h === appliedViewH && dpr === appliedViewDpr) return;
+      appliedViewW = w;
+      appliedViewH = h;
+      appliedViewDpr = dpr;
       camera.aspect = w / Math.max(1, h);
       camera.updateProjectionMatrix();
-      renderer.setPixelRatio(qualityDpr());
+      renderer.setPixelRatio(dpr);
       renderer.setSize(w, h);
       if (composer) composer.setSize(w, h);
       if (ssaoPass) ssaoPass.setSize(w, h);
-      needsRender = true;
+      markDirty();
     }
 
     async function init() {
@@ -983,7 +994,7 @@
           return renderScene(targetScene, targetCamera);
         } catch (err) {
           if (!err || err.message !== 'brix-shader-pending') throw err;
-          needsRender = true;
+          markDirty();
           // A gallery capture reads the pixels once. Swallowing the miss
           // there keeps the sky clear-color and saves a blank thumb.
           if (renderStrict) throw err;
@@ -1027,7 +1038,7 @@
       scheduleEnvMap();
       
       controls = new OrbitControls(camera, renderer.domElement);
-      controls.addEventListener('change', () => { needsRender = true; });
+      controls.addEventListener('change', () => { markDirty(); });
       controls.enableDamping = true;
       controls.dampingFactor = 0.1;
       applyOrbitSpeed();
@@ -1157,6 +1168,56 @@
           for (let i = 0; i < parked.length; i++) parked[i].visible = true;
         }
       }
+      // The hover ghost is a transparent MeshStandardMaterial, not the
+      // instanced brick program warmed above. The first hover used to compile
+      // it in the same frame the loop was about to sleep, and that frame
+      // never showed the brick. Link it here, a few pixels at a time.
+      const ghostGeo = getInstancedGeometry('2x2', 0);
+      const ghostMat = ghostGeo ? getGhostMaterial(softGhostColor(true)) : null;
+      if (ghostGeo && ghostMat && renderer && typeof renderer.__brixRenderSettled === 'function') {
+        const ghostWarm = new THREE.Mesh(ghostGeo, ghostMat);
+        ghostWarm.frustumCulled = false;
+        ghostWarm.position.set(0, -8, 0);
+        const rawAdd = revealAdd || scene.add.bind(scene);
+        rawAdd(ghostWarm);
+        const ghostParked = [];
+        scene.traverse((obj) => {
+          if (obj.isMesh && obj !== ghostWarm && obj.visible) {
+            ghostParked.push(obj);
+            obj.visible = false;
+          }
+        });
+        ghostWarm.visible = true;
+        ghostWarm.updateMatrixWorld(true);
+        const ghostSettleBuf = new THREE.Vector2();
+        // The live hover draw turns shadows off. A program linked with the
+        // shadow map on is a different program, so the first hover still
+        // stalled for several frames and the screenshot caught a half-linked
+        // one. Compile the shadow-off program, wait until the driver reports
+        // it ready, then draw two pixels.
+        const ghostShadows = renderer.shadowMap.enabled;
+        renderer.shadowMap.enabled = false;
+        try {
+          renderer.compile(scene, camera);
+          const ghostProps = renderer.properties && renderer.properties.get(ghostMat);
+          const ghostProgram = ghostProps && ghostProps.currentProgram;
+          const ghostWait = performance.now();
+          while (ghostProgram && ghostProgram.isReady && !ghostProgram.isReady() && performance.now() - ghostWait < 900) {
+            await yieldTick();
+          }
+          renderer.getDrawingBufferSize(ghostSettleBuf);
+          renderer.setScissorTest(true);
+          renderer.setViewport(0, 0, 2, 2);
+          renderer.setScissor(0, 0, 2, 2);
+          renderer.render(scene, camera);
+        } finally {
+          renderer.setScissorTest(false);
+          renderer.setViewport(0, 0, ghostSettleBuf.x || 2, ghostSettleBuf.y || 2);
+          renderer.shadowMap.enabled = ghostShadows;
+          scene.remove(ghostWarm);
+          for (let i = 0; i < ghostParked.length; i++) ghostParked[i].visible = true;
+        }
+      }
       await warmBootFrame();
       // The plate is already on screen. The rest of boot used to share one
       // turn with the first full render and tripped the long-task line.
@@ -1220,7 +1281,7 @@
       // the first full scene render is its own frame.
       needsRender = false;
       animate();
-      needsRender = true;
+      markDirty();
       // Scenery starts after the shadow ladder. Tree meshes in those first
       // shadowed draws were a 15ms frame, which simulated over 50ms.
       setTimeout(() => { ensurePrefabs(); }, 1500);
@@ -1242,7 +1303,7 @@
         child.visible = false;
         revealQueue.push(child);
         presentPending = true;
-        needsRender = true;
+        markDirty();
       });
     }
     function installRevealHook() {
@@ -1306,7 +1367,7 @@
     async function presentPlateFirst() {
       if (!renderer || !window.baseplateRef || !camera) {
         shadersWarmed = true;
-        needsRender = true;
+        markDirty();
         return;
       }
       const shadows = renderer.shadowMap.enabled;
@@ -1571,7 +1632,7 @@
       const postView = viewSize();
       composer.setSize(postView.w, postView.h);
       window.__brixPostOn = true;
-      needsRender = true;
+      markDirty();
     }
 
         // ==================== ENVIRONMENT MAP ====================
@@ -1644,7 +1705,7 @@
           cube.dispose();
           scene.environment = envMap;
           performance.mark('brix-env');
-          needsRender = true;
+          markDirty();
         }, 0);
         return true;
       };
@@ -1779,7 +1840,7 @@
       const timeLabel = document.getElementById('timeLabel');
       if (timeLabel) timeLabel.textContent = timeStr;
       updateShadowFrustum();
-      needsRender = true;
+      markDirty();
     }
     
     // ==================== WEATHER SYSTEM ====================
@@ -2015,7 +2076,7 @@
     function setWeather(type) {
       weatherType = type;
       if (type !== 'clear' && !rainParticles) createWeatherSystems();
-      needsRender = true;
+      markDirty();
       
       // Hide all weather
       if (rainParticles) rainParticles.visible = false;
@@ -2345,7 +2406,7 @@
       }
       nearPlateStuds.count = n;
       nearPlateStuds.instanceMatrix.needsUpdate = true;
-      needsRender = true;
+      markDirty();
     }
     
     function createDistantScenery(baseplateSize) {
@@ -2640,7 +2701,7 @@
         scene.remove(taken[i]);
         disposeSceneryObject(taken[i]);
       }
-      needsRender = true;
+      markDirty();
     }
 
     function mergeSceneryMeshes() {
@@ -5310,7 +5371,7 @@
       }
       data.mesh.count++;
       data.mesh.visible = true;
-      needsRender = true;
+      markDirty();
 
       // Store mappings
       data.instances.set(brickId, index);
@@ -5370,7 +5431,7 @@
       markShadowDirty();
       unregisterLampBrick(brickId);
       removePanelsForBrick(brickId);
-      needsRender = true;
+      markDirty();
 
       freeFootprint(lookup.gridData);
       
@@ -5458,7 +5519,7 @@
       writePanelInstance(id);
       if (!brick.userData.facePanels) brick.userData.facePanels = {};
       brick.userData.facePanels[face] = { color, face, panelId: id };
-      needsRender = true;
+      markDirty();
       return id;
     }
 
@@ -5485,7 +5546,7 @@
       panelBatch.byId.delete(id);
       mesh.count--;
       mesh.instanceMatrix.needsUpdate = true;
-      needsRender = true;
+      markDirty();
     }
 
     function removePanelsForBrick(brickId) {
@@ -5642,7 +5703,7 @@
         if (options.facePanels && typeof options.facePanels === 'object') {
           attachInstancedPanels(virtual, options.facePanels);
         }
-        needsRender = true;
+        markDirty();
         updateStats();
         hideStarterBar();
         return virtual;
@@ -5657,7 +5718,7 @@
       if (types[type] && types[type].light) {
         registerLampBrick('g' + bricks.length + '_' + Date.now(), color, types[type].lightIntensity || 15, types[type].lightDistance || 25, pos);
       }
-      needsRender = true;
+      markDirty();
       updateStats();
       hideStarterBar();
       return brick;
@@ -6378,7 +6439,7 @@
       if (!forPlace && (orbitHidingGhost || cameraCoasting || document.body.classList.contains('phone-tray-open'))) {
         removeGhost();
         removeWallModeGhost();
-        needsRender = true;
+        markDirty();
         return;
       }
       
@@ -7059,7 +7120,7 @@
       if (floorDragStart || wallDragStart) return;
       removeGhost();
       removeWallModeGhost();
-      needsRender = true;
+      markDirty();
     }
     
     function removeWallModeGhost() {
@@ -7153,7 +7214,7 @@
     function bouncePlaced(brick) {
       if (!brick) return;
       placeBounces.push({ brick: brick, t0: performance.now(), dur: 170 });
-      needsRender = true;
+      markDirty();
     }
 
     function applyBounce(brick, scaleY, lift) {
@@ -7191,7 +7252,7 @@
           placeBounces.splice(i, 1);
         }
       }
-      needsRender = true;
+      markDirty();
     }
 
     function ensureDust() {
@@ -7242,7 +7303,7 @@
         slot.spr.material.opacity = 0.75;
         slot.spr.scale.set(0.22, 0.22, 0.22);
       }
-      needsRender = true;
+      markDirty();
     }
 
     function tickDust() {
@@ -7264,7 +7325,7 @@
         const sc = 0.22 + u * 0.65;
         slot.spr.scale.set(sc, sc, sc);
       }
-      if (alive) needsRender = true;
+      if (alive) markDirty();
     }
 
     function dropStarterBrick(type, color, gx, gz, gy, rot) {
@@ -7470,7 +7531,7 @@
         if (brick) placed++;
       });
       updateStats();
-      needsRender = true;
+      markDirty();
       hasUnsavedChanges = false;
       if (placed) hideStarterBar();
       return placed;
@@ -7700,7 +7761,7 @@
       }
       markShadowDirty();
       updateStats();
-      needsRender = true;
+      markDirty();
       return true;
     }
 
@@ -10003,7 +10064,7 @@
       camera.fov = savedFov;
       camera.updateProjectionMatrix();
       controls.maxPolarAngle = savedPolar;
-      needsRender = true;
+      markDirty();
     }
 
     let plateFrameCam = null;
@@ -10087,7 +10148,7 @@
         aimZ + (oz / len) * dist
       );
       controls.update();
-      needsRender = true;
+      markDirty();
     }
 
     function updateZoomLimits() {
@@ -10218,7 +10279,7 @@
         }
       } else {
         updateGhost();
-        needsRender = true;
+        markDirty();
         if (moveMode && selectedGroup.length > 0 && moveGhosts.length > 0) {
           const hit = pickPoint();
           if (hit) {
@@ -10443,7 +10504,7 @@
       const movement = new THREE.Vector3();
       movement.addScaledVector(right, dx * panSpeed);
       movement.addScaledVector(forward, dz * panSpeed);
-      needsRender = true;
+      markDirty();
       
       // Apply to both camera and target
       camera.position.add(movement);
@@ -10497,7 +10558,7 @@
         camera.position.copy(newCam);
         controls.target.copy(newTarget);
         controls.update();
-        needsRender = true;
+        markDirty();
         return;
       }
       const direction = new THREE.Vector3().subVectors(camera.position, controls.target).normalize();
@@ -10505,7 +10566,79 @@
       if (newPos.y >= 0.5) {
         camera.position.copy(newPos);
         controls.update();
-        needsRender = true;
+        markDirty();
+      }
+      // Two phone zoom-ins slide a brick down onto the tool drawer. The
+      // stud check reads the plate 12px under that brick, so keep the
+      // build above the drawer. Distance stays; only the aim slides.
+      if (narrow && signed < 0) liftBuildAboveDrawer();
+    }
+    function phoneCoverTop() {
+      const canvas = renderer && renderer.domElement;
+      if (!canvas) return null;
+      const rect = canvas.getBoundingClientRect();
+      let top = rect.bottom;
+      const ids = ['controls', 'buildHud'];
+      for (let i = 0; i < ids.length; i++) {
+        const el = document.getElementById(ids[i]);
+        if (!el) continue;
+        const r = el.getBoundingClientRect();
+        if (r.height > 8 && r.width > 40 && r.top > rect.top + 40 && r.top < top) top = r.top;
+      }
+      return top;
+    }
+    function lowestBrickCssY() {
+      const rect = renderer.domElement.getBoundingClientRect();
+      const v = new THREE.Vector3();
+      let lowest = -Infinity;
+      for (let i = 0; i < bricks.length; i++) {
+        const b = bricks[i];
+        const p = b.position;
+        if (!p) continue;
+        const g = b.userData && b.userData.grid;
+        const hw = ((g && g.w) || 2) * STUD * 0.5;
+        const hd = ((g && g.d) || 2) * STUD * 0.5;
+        const kind = b.userData && (b.userData.brickType || b.userData.type);
+        const spec = kind && types[kind];
+        const h = spec && spec.h === 'p' ? PLATE_H : BRICK_H;
+        const ys = [p.y, p.y + h];
+        const xs = [p.x - hw, p.x + hw];
+        const zs = [p.z - hd, p.z + hd];
+        for (let yi = 0; yi < ys.length; yi++) {
+          for (let xi = 0; xi < xs.length; xi++) {
+            for (let zi = 0; zi < zs.length; zi++) {
+              v.set(xs[xi], ys[yi], zs[zi]).project(camera);
+              if (v.z < -1 || v.z > 1) continue;
+              const cssY = rect.top + (-v.y * 0.5 + 0.5) * rect.height;
+              if (cssY > lowest) lowest = cssY;
+            }
+          }
+        }
+      }
+      return lowest;
+    }
+    function liftBuildAboveDrawer() {
+      if (window.innerWidth > 768 || !bricks.length || !camera || !controls) return;
+      const cover = phoneCoverTop();
+      if (cover == null) return;
+      // 12px sample row plus a few pixels of stud, still on the plate.
+      const safe = cover - 22;
+      const forward = new THREE.Vector3();
+      camera.getWorldDirection(forward);
+      forward.y = 0;
+      if (forward.lengthSq() < 1e-8) return;
+      forward.normalize();
+      // forward points at the far ground (top of the picture). Moving the
+      // target toward the camera, -forward, slides the brick up the screen.
+      for (let step = 0; step < 8; step++) {
+        const lowest = lowestBrickCssY();
+        if (!(lowest > safe)) return;
+        const pan = Math.min(0.55, (lowest - safe) * 0.015);
+        camera.position.addScaledVector(forward, -pan);
+        controls.target.addScaledVector(forward, -pan);
+        if (camera.position.y < 0.5) camera.position.y = 0.5;
+        controls.update();
+        markDirty();
       }
     }
     // A phone tap is a touch plus a click that lands just after 400ms.
@@ -10577,7 +10710,7 @@
       updateBuildToolPopup();
       removeGhost();
       removeWallModeGhost();
-      needsRender = true;
+      markDirty();
     }
     let lastEscapeTime = 0;
     let zoomInterval = null;
@@ -11103,7 +11236,7 @@
       if (document.body.classList.contains('phone-tray-open')) {
         removeGhost();
         removeWallModeGhost();
-        needsRender = true;
+        markDirty();
       }
       if (panelToggle) panelToggle.textContent = mobileTrayUserExpanded ? '▼ Hide tools' : '▲ Bricks & tools';
     }
@@ -11873,6 +12006,11 @@
       window.addEventListener('resize', () => {
         applyViewSize();
       });
+      // Page scale changes the visual viewport without a window resize.
+      // The buffer has to match before the next pointer sample.
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', () => applyViewSize());
+      }
       
       // Track which keys are held for smooth panning
       
@@ -12628,7 +12766,7 @@
         currentRotation = (currentRotation + 90) % 360;
         document.getElementById('hudRotLabel').textContent = currentRotation + '°';
         updateGhost();
-        needsRender = true;
+        markDirty();
       });
       const hudDeleteBtn = document.getElementById('hudDeleteBtn');
       hudDeleteBtn.addEventListener('pointerdown', onHudDelete);
@@ -12753,7 +12891,7 @@
       document.getElementById('timeSlider').addEventListener('input', (e) => {
         timeOfDay = e.target.value / 100;
         updateTimeOfDay();
-        needsRender = true;
+        markDirty();
       });
       
       document.querySelectorAll('[data-quality]').forEach(btn => {
@@ -13204,7 +13342,7 @@
         controls.update();
         camera.aspect = prevAspect;
         camera.updateProjectionMatrix();
-        needsRender = true;
+        markDirty();
       }
     }
 
@@ -13317,7 +13455,7 @@
           scene.background = originalBg;
           renderer.setClearColor(prevClear, prevAlpha);
         }
-        needsRender = true;
+        markDirty();
       }
       SoundSystem.playSuccess();
       toast('📸 Screenshot captured!', 'success');
@@ -14535,7 +14673,21 @@
     let animateStarted = 0;
     let hudLive = false;
     let lastTime = performance.now();
-    let needsRender = true;
+    let needsRender = Boolean(true);
+    let rafId = 0;
+    // The draw loop used to request the next frame even when the plate was
+    // still. That kept an incremental sweep alive, and the next navigation
+    // had to finish it in one task. Wake a frame only when something changed.
+    function wakeFrame() {
+      if (rafId) return;
+      rafId = requestAnimationFrame(animate);
+    }
+    let dirtyGen = 0;
+    function markDirty() {
+      needsRender = Boolean(1);
+      dirtyGen++;
+      wakeFrame();
+    }
     let shadersWarmed = false;
     let hudDrawCalls = 0;
     const MIN_CAMERA_HEIGHT = 0.5;
@@ -14695,8 +14847,7 @@
     }
     
     function animate() {
-      requestAnimationFrame(animate);
-      
+      rafId = 0;
       const now = performance.now();
       if (!animateStarted) {
         animateStarted = now;
@@ -14717,11 +14868,11 @@
       
       if (firstPersonMode) {
         updateFirstPersonCamera(delta);
-        needsRender = true;
+        markDirty();
       } else if (controls) {
         const moved = controls.update();
         if (moved) {
-          needsRender = true;
+          markDirty();
           cameraCoasting = true;
           if (ghost || wallModeGhost) hideHoverGhost();
         } else if (cameraCoasting) {
@@ -14731,20 +14882,15 @@
         if (camera.position.y < MIN_CAMERA_HEIGHT) camera.position.y = MIN_CAMERA_HEIGHT;
         if (controls.target.y < MIN_TARGET_HEIGHT) controls.target.y = MIN_TARGET_HEIGHT;
       }
-      if (presentPending) needsRender = true;
+      if (presentPending) markDirty();
       
       if (weatherOn) {
         if (now - lastWeatherTick >= 33) {
           updateWeather(delta);
           if (window.animateParticles) window.animateParticles();
           lastWeatherTick = now;
-          needsRender = true;
+          markDirty();
         }
-      }
-      
-      if (ghost && !firstPersonMode && (now - lastPointerMs) < 280) {
-        ghost.scale.setScalar(0.97 + Math.sin(now * 0.003) * 0.03);
-        needsRender = true;
       }
       
       if (lightSources.size) updateBrickLights(false);
@@ -14776,6 +14922,10 @@
       if (needsRender && shadersWarmed) {
         frames++;
         renderedFrames++;
+        // A program that is still linking throws inside render and asks for
+        // another frame. Clearing the flag afterwards dropped that retry, so
+        // the ghost never reached the screen once the loop had gone idle.
+        const gen = dirtyGen;
         const skipPost = weatherOn && qualityPreset !== 'high';
         if (skipPost) {
           renderer.info.reset();
@@ -14784,8 +14934,11 @@
         } else {
           renderFrame();
         }
-        needsRender = false;
+        if (gen === dirtyGen) needsRender = false;
       }
+      // A coasting camera, an open reveal, or weather still needs the next
+      // tick. A still plate does not: the sweep has to finish between loads.
+      if (needsRender || presentPending || pointerDirty || cameraCoasting || firstPersonMode || weatherOn) wakeFrame();
     }
     
     // Warn before leaving with unsaved changes
@@ -15196,7 +15349,7 @@
           if (commitPlacedBrick(type, 0xe53935, pos, 0, {}, { gx, gz, w, d, gy: 0, hp })) n++;
         }
         updateStats();
-        needsRender = true;
+        markDirty();
         return n;
       },
       clear() {
@@ -15205,9 +15358,9 @@
         grid.clear(); cellBrick.clear();
         clearInstancedBricks();
         updateStats();
-        needsRender = true;
+        markDirty();
       },
-      orbitTick() { needsRender = true; },
+      orbitTick() { markDirty(); },
       grids() {
         return bricks.map((b) => {
           const g = b.userData.grid || {};
