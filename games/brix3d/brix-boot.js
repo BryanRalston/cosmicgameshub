@@ -39,16 +39,23 @@ function stepSheets() {
   link.onerror = next;
   document.head.appendChild(link);
 }
-setTimeout(function () {
-  for (var n = 0; n < names.length; n++) {
+var preloadAt = 0;
+setTimeout(function preloadSome() {
+  // One turn used to append every sheet. On a busy browser that turn
+  // simulated just past 50ms, so the preloads yield every few links.
+  var end = Math.min(preloadAt + 6, names.length);
+  for (; preloadAt < end; preloadAt++) {
     var preload = document.createElement('link');
     preload.rel = 'preload';
     preload.as = 'style';
-    preload.href = '/games/brix3d/' + names[n];
+    preload.href = '/games/brix3d/' + names[preloadAt];
     document.head.appendChild(preload);
   }
-  setTimeout(stepSheets, 0);
+  if (preloadAt < names.length) setTimeout(preloadSome, 0);
+  else setTimeout(stepSheets, 0);
 }, 0);
+}, 0);
+setTimeout(function () {
 (function () {
   document.addEventListener('click', function (event) {
     var btn = event.target.closest && event.target.closest('.brix-more__toggle');
