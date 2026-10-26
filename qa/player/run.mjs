@@ -805,6 +805,440 @@ function overlaps(a, b) {
   return a.x < b.x + b.width - 1 && a.x + a.width - 1 > b.x && a.y < b.y + b.height - 1 && a.y + a.height - 1 > b.y;
 }
 
+function gapPx(a, b) {
+  if (!a || !b) return 999;
+  const overlapX = a.x < b.x + b.width && b.x < a.x + a.width;
+  const overlapY = a.y < b.y + b.height && b.y < a.y + a.height;
+  if (overlapX && overlapY) return 0;
+  const gx = a.x + a.width < b.x ? b.x - (a.x + a.width) : b.x + b.width < a.x ? a.x - (b.x + b.width) : 0;
+  const gy = a.y + a.height < b.y ? b.y - (a.y + a.height) : b.y + b.height < a.y ? a.y - (b.y + b.height) : 0;
+  if (overlapX) return gy;
+  if (overlapY) return gx;
+  return Math.hypot(gx, gy);
+}
+
+function relLuminance(rgb) {
+  const f = (c) => {
+    const s = c / 255;
+    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * f(rgb[0]) + 0.7152 * f(rgb[1]) + 0.0722 * f(rgb[2]);
+}
+
+function contrastRatio(a, b) {
+  const L1 = relLuminance(a);
+  const L2 = relLuminance(b);
+  const hi = Math.max(L1, L2);
+  const lo = Math.min(L1, L2);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+async function camPose(page) {
+  return page.evaluate(() => {
+    const c = window.camera;
+    const t = window.controls && window.controls.target;
+    if (!c || !c.position || !t) return null;
+    return { x: c.position.x, y: c.position.y, z: c.position.z, tx: t.x, ty: t.y, tz: t.z };
+  });
+}
+
+function poseStill(a, b) {
+  if (!a || !b) return false;
+  return ['x', 'y', 'z', 'tx', 'ty', 'tz'].every((k) => Math.abs(a[k] - b[k]) < 0.05);
+}
+
+async function pointerSpace(page) {
+  return page.evaluate(() => {
+    const canvas = document.querySelector('#container canvas');
+    const rect = canvas.getBoundingClientRect();
+    return {
+      left: rect.left,
+      top: rect.top,
+      width: rect.width,
+      height: rect.height,
+      dpr: window.devicePixelRatio || 1,
+      pageScale: (window.visualViewport && window.visualViewport.scale) || 1
+    };
+  });
+}
+
+function mapPointer(space, shot, ix, iy) {
+  // Screenshot pixels per CSS pixel, then the page scale. At scale 1.1 the
+  // bitmap stays about 1280 wide while the drawn plate is scaled inside it,
+  // and devicePixelRatio stays 1. Scale 0.9 reports visualViewport.scale 1.
+  const dpr = (shot && shot.dpr) || (space && space.dpr) || 1;
+  const pageScale = (space && space.pageScale) || 1;
+  const originX = shot && shot.clip ? shot.clip.x : space.left;
+  const originY = shot && shot.clip ? shot.clip.y : space.top;
+  return {
+    x: originX + ix / dpr / pageScale,
+    y: originY + iy / dpr / pageScale
+  };
+}
+
+function findStudNear(img, fx, fy) {
+  const w = img.width;
+  const h = img.height;
+  const data = img.data;
+  const xMid = Math.floor(w * fx);
+  const yMid = Math.floor(h * fy);
+  let best = null;
+  let bestScore = 0;
+  for (let y = Math.max(2, yMid - 56); y < Math.min(h - 2, yMid + 56); y += 2) {
+    for (let x = Math.max(2, xMid - 56); x < Math.min(w - 2, xMid + 56); x += 2) {
+      const i = (y * w + x) * 4;
+      const g = data[i + 1];
+      if (!(g > 80 && g > data[i] && g > data[i + 2] + 4)) continue;
+      const diff = Math.abs(data[(y * w + x + 2) * 4 + 1] - g);
+      if (diff > bestScore) {
+        bestScore = diff;
+        best = { x, y };
+      }
+    }
+  }
+  return bestScore > 12 ? best : null;
+}
+
+function pixelShift(before, after) {
+  if (!before || !after || before.width !== after.width || before.height !== after.height) {
+    return { n: 0, size: (before && before.width) + 'x' + (before && before.height) + '/' + (after && after.width) + 'x' + (after && after.height) };
+  }
+  const w = before.width;
+  const h = before.height;
+  let n = 0;
+  let sx = 0;
+  let sy = 0;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      const dr = Math.abs(after.data[i] - before.data[i]);
+      const dg = Math.abs(after.data[i + 1] - before.data[i + 1]);
+      const db = Math.abs(after.data[i + 2] - before.data[i + 2]);
+      if (dr + dg + db > 28) {
+        n++;
+        sx += x;
+        sy += y;
+      }
+    }
+  }
+  if (!n) return { n: 0 };
+  return { n, cx: sx / n, cy: sy / n };
+}
+
+function largestRedSide(img) {
+  const w = img.width;
+  const h = img.height;
+  const data = img.data;
+  const seen = new Uint8Array(w * h);
+  const isRedPx = (i) => data[i] > 140 && data[i] > data[i + 1] + 28 && data[i] > data[i + 2] + 28;
+  let best = 0;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const start = y * w + x;
+      if (seen[start] || !isRedPx(start * 4)) continue;
+      let minX = x;
+      let maxX = x;
+      let minY = y;
+      let maxY = y;
+      const stack = [start];
+      seen[start] = 1;
+      while (stack.length) {
+        const p = stack.pop();
+        const px = p % w;
+        const py = (p - px) / w;
+        if (px < minX) minX = px;
+        if (px > maxX) maxX = px;
+        if (py < minY) minY = py;
+        if (py > maxY) maxY = py;
+        if (px > 0 && !seen[p - 1] && isRedPx((p - 1) * 4)) { seen[p - 1] = 1; stack.push(p - 1); }
+        if (px + 1 < w && !seen[p + 1] && isRedPx((p + 1) * 4)) { seen[p + 1] = 1; stack.push(p + 1); }
+        if (py > 0 && !seen[p - w] && isRedPx((p - w) * 4)) { seen[p - w] = 1; stack.push(p - w); }
+        if (py + 1 < h && !seen[p + w] && isRedPx((p + w) * 4)) { seen[p + w] = 1; stack.push(p + w); }
+      }
+      best = Math.max(best, maxX - minX + 1, maxY - minY + 1);
+    }
+  }
+  return best;
+}
+
+function horizonSeam(img) {
+  const w = img.width;
+  const h = img.height;
+  const data = img.data;
+  const at = (x, y) => {
+    const i = (y * w + x) * 4;
+    return [data[i], data[i + 1], data[i + 2]];
+  };
+  const sky = (c) => c[2] > 130 && c[2] > c[1] + 18 && c[2] > c[0] + 8;
+  const ground = (c) => c[1] > 55 && c[1] > c[2] + 6 && c[1] + 15 > c[0];
+  let vertical = 0;
+  let horizontal = 0;
+  const x0 = 1080;
+  const x1 = Math.min(w - 2, 1240);
+  const y0 = 70;
+  const y1 = Math.min(h - 2, 220);
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) {
+      const a = at(x, y);
+      const right = at(x + 1, y);
+      const down = at(x, y + 1);
+      if ((sky(a) && ground(right)) || (ground(a) && sky(right))) vertical++;
+      if ((sky(a) && ground(down)) || (ground(a) && sky(down))) horizontal++;
+    }
+  }
+  return { vertical, horizontal };
+}
+
+function skyFraction(img) {
+  const w = img.width;
+  const h = img.height;
+  const data = img.data;
+  let sky = 0;
+  let n = 0;
+  const y1 = Math.floor(h * 0.92);
+  for (let y = 0; y < y1; y += 2) {
+    for (let x = 0; x < w; x += 2) {
+      const i = (y * w + x) * 4;
+      n++;
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      if (b > 150 && b > g + 15 && b > r + 10) sky++;
+    }
+  }
+  return n ? sky / n : 1;
+}
+
+function studCentroid(img) {
+  const w = img.width;
+  const h = img.height;
+  const data = img.data;
+  const cell = 24;
+  let sx = 0;
+  let sy = 0;
+  let n = 0;
+  for (let y = cell; y < h - cell; y += cell) {
+    for (let x = cell; x < w - cell; x += cell) {
+      let sum = 0;
+      let sum2 = 0;
+      let c = 0;
+      let sky = 0;
+      for (let yy = y; yy < y + cell; yy += 3) {
+        for (let xx = x; xx < x + cell; xx += 3) {
+          const i = (yy * w + xx) * 4;
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          if (b > g + 12 && b > 100) sky++;
+          sum += g;
+          sum2 += g * g;
+          c++;
+        }
+      }
+      const mean = sum / c;
+      const variance = sum2 / c - mean * mean;
+      if (sky > c * 0.4) continue;
+      if (mean > 70 && variance > 280) {
+        sx += x + cell / 2;
+        sy += y + cell / 2;
+        n++;
+      }
+    }
+  }
+  if (!n) return null;
+  return { x: sx / n, y: sy / n, n };
+}
+
+function subjectSpan(img, frame) {
+  const w = img.width;
+  const h = img.height;
+  const data = img.data;
+  let n = 0;
+  let minX = w;
+  let maxX = 0;
+  let minY = h;
+  let maxY = 0;
+  const y0 = Math.floor(h * (frame && frame.y0 != null ? frame.y0 : 0.06));
+  const y1 = Math.floor(h * (frame && frame.y1 != null ? frame.y1 : 0.9));
+  const xLo = Math.floor(w * (frame && frame.x0 != null ? frame.x0 : 0));
+  const xHi = Math.floor(w * (frame && frame.x1 != null ? frame.x1 : 1));
+  for (let y = y0; y < y1; y += 2) {
+    for (let x = Math.max(2, xLo); x < Math.min(w - 2, xHi); x += 2) {
+      const i = (y * w + x) * 4;
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      if (b > 140 && b > g + 12 && b > r) continue;
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      const sat = max < 1 ? 0 : (max - min) / max;
+      if (sat < 0.28) continue;
+      if (g > r + 25 && g > b + 15 && r < 130) continue;
+      n++;
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+    }
+  }
+  if (n < 12) return { n, span: 0 };
+  return { n, span: Math.max(maxX - minX + 1, maxY - minY + 1) };
+}
+
+function centerSubject(img) {
+  const w = img.width;
+  const h = img.height;
+  const data = img.data;
+  const seen = new Uint8Array(w * h);
+  const keep = (x, y) => {
+    const i = (y * w + x) * 4;
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    if (b > 140 && b > g + 12 && b > r) return false;
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const sat = max < 1 ? 0 : (max - min) / max;
+    if (sat < 0.28) return false;
+    if (g > r + 25 && g > b + 15 && r < 130) return false;
+    return true;
+  };
+  let best = null;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const start = y * w + x;
+      if (seen[start] || !keep(x, y)) continue;
+      let n = 0;
+      let sx = 0;
+      let sy = 0;
+      let minX = x;
+      let maxX = x;
+      let minY = y;
+      let maxY = y;
+      const stack = [start];
+      seen[start] = 1;
+      while (stack.length) {
+        const p = stack.pop();
+        const px = p % w;
+        const py = (p - px) / w;
+        n++;
+        sx += px;
+        sy += py;
+        if (px < minX) minX = px;
+        if (px > maxX) maxX = px;
+        if (py < minY) minY = py;
+        if (py > maxY) maxY = py;
+        if (px > 0 && !seen[p - 1] && keep(px - 1, py)) { seen[p - 1] = 1; stack.push(p - 1); }
+        if (px + 1 < w && !seen[p + 1] && keep(px + 1, py)) { seen[p + 1] = 1; stack.push(p + 1); }
+        if (py > 0 && !seen[p - w] && keep(px, py - 1)) { seen[p - w] = 1; stack.push(p - w); }
+        if (py + 1 < h && !seen[p + w] && keep(px, py + 1)) { seen[p + w] = 1; stack.push(p + w); }
+      }
+      if (n < 20) continue;
+      const dist = Math.hypot(sx / n - w / 2, sy / n - h / 2);
+      const span = Math.max(maxX - minX + 1, maxY - minY + 1);
+      if (!best || dist < best.dist) best = { n, dist, span };
+    }
+  }
+  return best || { n: 0, span: 0 };
+}
+
+async function projectRaw(page, key) {
+  return page.evaluate((k) => localStorage.getItem(k), key);
+}
+
+async function cdpMove(page, x, y) {
+  const client = await page.context().newCDPSession(page);
+  try {
+    await client.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y });
+  } finally {
+    await client.detach().catch(() => {});
+  }
+}
+
+async function cdpClick(page, x, y) {
+  const client = await page.context().newCDPSession(page);
+  try {
+    await client.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y });
+    await client.send('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', clickCount: 1 });
+    await client.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', clickCount: 1 });
+  } finally {
+    await client.detach().catch(() => {});
+  }
+}
+
+async function settledInside(page, selector) {
+  let last = '';
+  let stable = 0;
+  const deadline = Date.now() + 900;
+  while (Date.now() < deadline) {
+    try {
+      const note = await inside(page, selector);
+      if (note === last) {
+        stable++;
+        if (stable >= 2) return note;
+      } else {
+        last = note;
+        stable = 1;
+      }
+    } catch {
+      last = '';
+      stable = 0;
+    }
+    await page.evaluate(() => new Promise((r) => requestAnimationFrame(r)));
+  }
+  return inside(page, selector);
+}
+
+async function blankModalPoint(page, selector) {
+  return page.evaluate((sel) => {
+    const root = document.querySelector(sel);
+    if (!root) return null;
+    const r = root.getBoundingClientRect();
+    for (let y = r.top + 10; y < r.bottom - 8; y += 14) {
+      for (let x = r.left + 10; x < r.right - 8; x += 22) {
+        const el = document.elementFromPoint(x, y);
+        if (!el || !root.contains(el)) continue;
+        const tag = el.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'BUTTON' || tag === 'A') continue;
+        return { x, y };
+      }
+    }
+    return { x: Math.max(2, r.left + 12), y: Math.max(2, r.top + 12) };
+  }, selector);
+}
+
+async function assertModalQuiet(page, selector, label) {
+  const before = await hotState(page);
+  const pose = await camPose(page);
+  const pt = await blankModalPoint(page, selector);
+  assert(pt, label + ' has no box');
+  await clickAt(page, pt.x, pt.y);
+  await page.keyboard.press('m');
+  await page.keyboard.press('n');
+  await page.keyboard.press('x');
+  await page.keyboard.press('q');
+  await page.mouse.move(pt.x, pt.y);
+  await page.mouse.wheel(0, -120);
+  await page.mouse.move(pt.x, pt.y);
+  await page.mouse.down();
+  await page.mouse.move(pt.x + 36, pt.y + 18, { steps: 4 });
+  await page.mouse.up();
+  const after = await hotState(page);
+  const pose2 = await camPose(page);
+  const problems = [];
+  if (after.mirror !== before.mirror) problems.push('mirror');
+  if (after.move !== before.move) problems.push('move');
+  if (after.del !== before.del) problems.push('delete');
+  if (after.rot !== before.rot) problems.push('rotation ' + after.rot);
+  if (!poseStill(pose, pose2)) problems.push('camera');
+  const still = await page.locator(selector).evaluate((el) => {
+    const s = getComputedStyle(el);
+    return s.display !== 'none' && s.visibility !== 'hidden' && el.getClientRects().length > 0;
+  }).catch(() => false);
+  if (!still) problems.push('closed by a hotkey');
+  if (problems.length) throw new Error(label + ' ' + problems.join(', '));
+}
+
 async function inside(page, selector) {
   const box = await page.locator(selector).boundingBox();
   const vp = page.viewportSize();
@@ -1267,7 +1701,7 @@ async function main() {
             await openSection(page, /^Tools$/);
             await scrollUntil(page, page.locator(item[0]));
             await clickSel(page, item[0]);
-            notes.push(label + ' ' + await inside(page, item[1]));
+            notes.push(label + ' ' + await settledInside(page, item[1]));
             await page.keyboard.press('Escape');
           }
         } finally { await context.close(); }
@@ -1656,6 +2090,8 @@ async function main() {
         const field = await page.locator('#projectName').boundingBox();
         await typeInto(page, field, 'phone list', 'click');
         await clickSel(page, '#saveProjectBtn');
+        const emptyOk = await page.locator('#loadConfirmOk').boundingBox().catch(() => null);
+        if (emptyOk && emptyOk.width > 4) await clickAt(page, emptyOk.x + emptyOk.width / 2, emptyOk.y + emptyOk.height / 2);
         await page.waitForFunction(() => (document.getElementById('savedProjectsList') || {}).innerText && document.getElementById('savedProjectsList').innerText.indexOf('phone list') >= 0, null, { timeout: 5000 });
         const saveAfter = await page.locator('#saveProjectBtn').boundingBox();
         assert(Math.abs(saveAfter.y - saveBox.y) < 8, 'save shifted ' + (saveAfter.y - saveBox.y).toFixed(1) + 'px');
@@ -1707,6 +2143,427 @@ async function main() {
         assert(brickPitch > 4 && platePitch > 4, 'pitch brick ' + brickPitch + ' plate ' + platePitch);
         assert(ratio < 1.7 && ratio > 0.6, 'plate/brick stud pitch ' + ratio.toFixed(2));
         return 'ratio ' + ratio.toFixed(2);
+      } finally { await context.close(); }
+    });
+
+    await check('R18a-name-after-place', 'one click after a brick focuses the name, six types, and three is not overwritten', async () => {
+      const { page, context } = await openPage(browser, false, 'r18a');
+      try {
+        const seed = JSON.stringify({
+          name: 'three',
+          bricks: [
+            { type: '2x2', color: '#ff2200', rot: 0, grid: { gx: 2, gz: 2, gy: 0, w: 2, d: 2, hp: 3 } },
+            { type: '2x2', color: '#ffe600', rot: 0, grid: { gx: 8, gz: 2, gy: 0, w: 2, d: 2, hp: 3 } },
+            { type: '2x2', color: '#1e88e5', rot: 0, grid: { gx: 14, gz: 2, gy: 0, w: 2, d: 2, hp: 3 } }
+          ]
+        });
+        await page.evaluate((raw) => localStorage.setItem('brickProject_three', raw), seed);
+        await page.reload({ waitUntil: 'domcontentloaded' });
+        await ready(page);
+        const setup = await page.locator('#projectName').boundingBox();
+        await typeInto(page, setup, 'three', 'click');
+        const named = await hotState(page);
+        assert(named.value === 'three', 'setup name "' + named.value + '"');
+        const field = await page.locator('#projectName').boundingBox();
+        assert(field && field.width > 8, 'name field missing');
+        const studShot = await grabCanvas(page);
+        const stud = findStud(studShot.img, 0.55);
+        assert(stud, 'no stud');
+        const before = await hotState(page);
+        const pose = await camPose(page);
+        await clickAt(page, studShot.clip.x + stud.x / studShot.dpr, studShot.clip.y + stud.y / studShot.dpr);
+        await clickAt(page, field.x + field.width - 12, field.y + field.height / 2);
+        await page.keyboard.type('six', { delay: 40 });
+        const after = await hotState(page);
+        const active = await page.evaluate(() => (document.activeElement && document.activeElement.id) || '');
+        assert(active === 'projectName', 'first click did not focus, active ' + active);
+        assert(after.value.indexOf('six') >= 0, 'value "' + after.value + '"');
+        assert(!after.del && after.del === before.del, 'delete toggled');
+        assert(!after.move && after.move === before.move, 'move toggled');
+        assert(!after.mirror && after.mirror === before.mirror, 'mirror toggled');
+        assert(poseStill(pose, await camPose(page)), 'a letter moved the camera');
+        const beforeRaw = await projectRaw(page, 'brickProject_three');
+        await clickSel(page, '#saveProjectBtn');
+        let confirm = false;
+        let afterRaw = beforeRaw;
+        const t0 = Date.now();
+        while (Date.now() - t0 < 1200) {
+          confirm = await page.locator('#loadConfirm').evaluate((el) => el.style.display === 'flex').catch(() => false);
+          afterRaw = await projectRaw(page, 'brickProject_three');
+          if (confirm || afterRaw !== beforeRaw) break;
+        }
+        assert(afterRaw === beforeRaw, 'save silently overwrote project three');
+        if (!confirm) {
+          const names = await savedNames(page);
+          assert(names.indexOf(after.value.trim()) >= 0, 'new name missing, saved ' + names.join(','));
+        }
+        return 'focused "' + after.value + '"' + (confirm ? ' confirm' : '');
+      } finally { await context.close(); }
+    });
+
+    await check('R18b-zoom-90-110', 'ghost, placement, and delete stay within 4 px at 90% and 110%', async () => {
+      const lines = [];
+      for (const scale of [0.9, 1.1]) {
+        const { page, context } = await openPage(browser, false, 'r18b' + scale);
+        try {
+          await ready(page);
+          const cdp = await page.context().newCDPSession(page);
+          await cdp.send('Emulation.setPageScaleFactor', { pageScaleFactor: scale });
+          const shot0 = await grabCanvas(page);
+          const rawStud = findStud(shot0.img, 0.58) || findStudNear(shot0.img, 0.58, 0.6);
+          assert(rawStud, 'no stud at scale ' + scale);
+          const space = await pointerSpace(page);
+          const aim = mapPointer(space, shot0, rawStud.x, rawStud.y);
+          const before = await grabCanvas(page);
+          await cdpMove(page, aim.x, aim.y);
+          const hovered0 = await grabCanvas(page);
+          const ghost0 = pixelShift(before.img, hovered0.img);
+          assert(ghost0.n > 12, 'no ghost at ' + scale + ' changed ' + ghost0.n + ' dpr ' + space.dpr + '/' + shot0.dpr + (ghost0.size ? ' ' + ghost0.size : ''));
+          const center = mapPointer(space, hovered0, ghost0.cx, ghost0.cy);
+          await cdpMove(page, center.x, center.y);
+          const hovered = await grabCanvas(page);
+          const ghost = pixelShift(before.img, hovered.img);
+          assert(ghost.n > 12, 'ghost left the stud at ' + scale);
+          const ghostAt = mapPointer(space, hovered, ghost.cx, ghost.cy);
+          const ghostOff = Math.hypot(ghostAt.x - center.x, ghostAt.y - center.y);
+          assert(ghostOff <= 4, 'ghost offset ' + ghostOff.toFixed(1) + ' at ' + scale);
+          const count0 = await brickCount(page);
+          await cdpClick(page, center.x, center.y);
+          assert(await waitGrown(page, count0, 2500), 'place missed at ' + scale);
+          const placed = await grabCanvas(page);
+          const blob = brickBlob(placed.img, plateInset(page, placed));
+          assert(blob.n > 8, 'no brick at ' + scale);
+          const brickAt = mapPointer(space, placed, blob.cx, blob.cy);
+          const placeOff = Math.hypot(brickAt.x - center.x, brickAt.y - center.y);
+          assert(placeOff <= 4, 'place offset ' + placeOff.toFixed(1) + ' at ' + scale);
+          await page.keyboard.press('x');
+          const armed = await page.evaluate(() => document.body.classList.contains('delete-mode'));
+          assert(armed, 'delete did not arm at ' + scale);
+          const count1 = await brickCount(page);
+          await cdpClick(page, brickAt.x, brickAt.y);
+          const gone = await page.waitForFunction((n) => {
+            const t = document.getElementById('brickCount');
+            return (parseInt(t && t.textContent, 10) || 0) < n;
+          }, count1, { timeout: 2500 }).then(() => true).catch(() => false);
+          assert(gone, 'delete missed the brick at ' + scale);
+          const cleared = await grabCanvas(page);
+          const left = brickBlob(cleared.img, plateInset(page, cleared));
+          if (left.n > 8) {
+            const leftAt = mapPointer(space, cleared, left.cx, left.cy);
+            const still = Math.hypot(leftAt.x - brickAt.x, leftAt.y - brickAt.y);
+            assert(still > 4, 'delete left the brick ' + still.toFixed(1) + ' px from the cursor at ' + scale);
+          }
+          lines.push(scale + ' ghost ' + ghostOff.toFixed(1) + ' place ' + placeOff.toFixed(1));
+        } finally { await context.close(); }
+      }
+      return lines.join(' | ');
+    });
+
+    await check('R18c-thumb-spread', 'gallery thumbs for 1, 6-spread, and 15-spread fill the frame without cropping', async () => {
+      const { page, context } = await openPage(browser, false, 'r18c');
+      try {
+        await ready(page);
+        const layouts = {
+          one: [[0.55, 0.58]],
+          six: [[0.44, 0.50], [0.56, 0.50], [0.44, 0.60], [0.56, 0.60], [0.50, 0.55], [0.50, 0.64]],
+          fifteen: []
+        };
+        for (let row = 0; row < 3; row++) {
+          for (let col = 0; col < 5; col++) {
+            layouts.fifteen.push([0.40 + col * 0.04, 0.48 + row * 0.045]);
+          }
+        }
+        const lines = [];
+        for (const kind of ['one', 'six', 'fifteen']) {
+          await page.evaluate(() => localStorage.clear());
+          await page.reload({ waitUntil: 'domcontentloaded' });
+          await ready(page);
+          for (const pair of layouts[kind]) {
+            const shot = await grabCanvas(page);
+            const pt = findStudNear(shot.img, pair[0], pair[1]) || findStud(shot.img, pair[0]);
+            assert(pt, kind + ' stud missing');
+            const x = shot.clip.x + pt.x / shot.dpr;
+            const y = shot.clip.y + pt.y / shot.dpr;
+            await placeAt(page, x, y);
+          }
+          const field = await page.locator('#projectName').boundingBox();
+          await typeInto(page, field, kind, 'click');
+          await clickSel(page, '#saveProjectBtn');
+          await page.waitForFunction((n) => {
+            for (let i = 0; i < localStorage.length; i++) {
+              const k = localStorage.key(i);
+              if (!k || !k.startsWith('brickProject_')) continue;
+              try { if (JSON.parse(localStorage.getItem(k)).name === n) return true; } catch { /* skip */ }
+            }
+            return false;
+          }, kind, { timeout: 8000 });
+          await clickSel(page, '#galleryBtn');
+          await page.locator('#galleryGrid img').first().waitFor({ state: 'visible', timeout: 8000 });
+          const buf = await page.locator('#galleryGrid img').first().screenshot();
+          writeFileSync(join(shots, 'r18-thumb-' + kind + '.png'), buf);
+          const thumb = decodePng(buf);
+          const stats = thumbStats(thumb);
+          assert(stats.n >= 150, kind + ' red pixels ' + stats.n + ' (speck or empty)');
+          assert(stats.extent >= 0.4 && stats.extent <= 0.75, kind + ' fill ' + (stats.extent * 100).toFixed(1) + '% outside 40-75');
+          assert(stats.margin >= 0.02, kind + ' cropped, margin ' + stats.margin.toFixed(3));
+          const side = largestRedSide(thumb);
+          const share = side / Math.min(thumb.width, thumb.height);
+          assert(share >= 0.12, kind + ' brick is a speck, ' + (share * 100).toFixed(1) + '% of the thumb');
+          lines.push(kind + ' fill ' + (stats.extent * 100).toFixed(1) + '% brick ' + (share * 100).toFixed(1) + '%');
+          await page.keyboard.press('Escape');
+        }
+        return lines.join(' | ');
+      } finally { await context.close(); }
+    });
+
+    await check('R18d-ground-1152', 'no hard ground edge near x 1152 y 132 at 1280x800', async () => {
+      const { page, context } = await openPage(browser, false, 'r18d');
+      try {
+        await ready(page);
+        const buf = await page.screenshot({ type: 'png' });
+        writeFileSync(join(shots, 'r18-ground.png'), buf);
+        const seam = horizonSeam(decodePng(buf));
+        assert(seam.vertical <= 12 && seam.horizontal <= 12, 'hard edge vertical ' + seam.vertical + ' horizontal ' + seam.horizontal);
+        return 'vertical ' + seam.vertical + ' horizontal ' + seam.horizontal;
+      } finally { await context.close(); }
+    });
+
+    await check('R18e-close-home', 'desktop 2x2 is 30-45 px, studs are quieter, and wheel zoom can inspect it', async () => {
+      const { page, context } = await openPage(browser, false, 'r18e');
+      try {
+        await ready(page);
+        const home = await grabCanvas(page, 'r18-home.png');
+        const peaks = moirePeaks(home.img);
+        assert(peaks < 3, 'moire peaks ' + peaks);
+        const hit = await clickStud(page, 0.55, false);
+        const shot = await grabCanvas(page, 'r18-brick.png');
+        const blob = brickBlob(shot.img, plateInset(page, shot));
+        assert(blob.n > 8, 'no brick');
+        const px = Math.max(blob.w, blob.h) / shot.dpr;
+        assert(px >= 30 && px <= 45, 'brick ' + px.toFixed(1) + ' px');
+        const cx = shot.clip.x + blob.cx / shot.dpr;
+        const cy = shot.clip.y + blob.cy / shot.dpr;
+        await page.mouse.move(cx, cy);
+        for (let i = 0; i < 14; i++) await page.mouse.wheel(0, -120);
+        const close = await grabCanvas(page, 'r18-close.png');
+        const blob2 = brickBlob(close.img, plateInset(page, close));
+        assert(blob2.n > 8, 'brick left during close zoom');
+        const px2 = Math.max(blob2.w, blob2.h) / close.dpr;
+        const cx2 = close.clip.x + blob2.cx / close.dpr;
+        const cy2 = close.clip.y + blob2.cy / close.dpr;
+        const shift = Math.hypot(cx2 - cx, cy2 - cy);
+        assert(px2 >= 80, 'close inspection ' + px2.toFixed(1) + ' px');
+        assert(shift < 36, 'zoom target moved ' + shift.toFixed(1) + ' px');
+        assert(hit.x > 0, 'click missing');
+        return 'home ' + px.toFixed(1) + ' close ' + px2.toFixed(1) + ' peaks ' + peaks + ' shift ' + shift.toFixed(1);
+      } finally { await context.close(); }
+    });
+
+    await check('R18f-modal-keys', 'hotkeys and the camera stay put while a modal is open, and one Esc closes the gallery', async () => {
+      const { page, context } = await openPage(browser, false, 'r18f');
+      try {
+        await page.waitForFunction(() => {
+          const m = document.getElementById('tutorialModal');
+          return m && m.classList.contains('visible');
+        }, null, { timeout: 20000 });
+        await assertModalQuiet(page, '#tutorialModal', 'tutorial');
+        await ready(page);
+        await clickSel(page, '#galleryBtn');
+        await page.locator('#galleryModal').waitFor({ state: 'visible', timeout: 8000 });
+        await assertModalQuiet(page, '#galleryModal', 'gallery');
+        await page.keyboard.press('Escape');
+        const galleryOpen = await page.locator('#galleryModal').evaluate((el) => el.style.display === 'flex');
+        assert(!galleryOpen, 'one Esc left the gallery open');
+        await clickStud(page, 0.5, false);
+        await clickSel(page, '#newProjectBtn');
+        await page.locator('#loadConfirm').waitFor({ state: 'visible', timeout: 4000 });
+        await assertModalQuiet(page, '#loadConfirm', 'new project');
+        return 'tutorial, gallery, new project';
+      } finally { await context.close(); }
+    });
+
+    await check('R18g-labels-m', 'toolbar labels are 12 px and WCAG AA, and m shows the mirror panel', async () => {
+      const { page, context } = await openPage(browser, false, 'r18g');
+      try {
+        await ready(page);
+        const rows = await page.locator('#buildHud .hud-label').evaluateAll((els) => {
+          function bgOf(el) {
+            let n = el;
+            while (n) {
+              const s = getComputedStyle(n);
+              const m = /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([\d.]+))?/.exec(s.backgroundColor || '');
+              if (m && (m[4] == null || Number(m[4]) >= 0.9)) return [Number(m[1]), Number(m[2]), Number(m[3])];
+              n = n.parentElement;
+            }
+            return [0, 0, 0];
+          }
+          return els.map((el) => {
+            const s = getComputedStyle(el);
+            const m = /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/.exec(s.color || '');
+            return { size: parseFloat(s.fontSize), color: m ? [Number(m[1]), Number(m[2]), Number(m[3])] : [0, 0, 0], bg: bgOf(el) };
+          });
+        });
+        assert(rows.length > 0, 'no toolbar labels');
+        let worst = 99;
+        for (const row of rows) {
+          assert(row.size >= 12, 'label ' + row.size + ' px');
+          const ratio = contrastRatio(row.color, row.bg);
+          if (ratio < worst) worst = ratio;
+          assert(ratio >= 4.5, 'contrast ' + ratio.toFixed(2) + ' on ' + row.bg.join(','));
+        }
+        const canvas = await page.locator('#container canvas').boundingBox();
+        await clickAt(page, canvas.x + canvas.width * 0.55, canvas.y + canvas.height * 0.45);
+        await page.keyboard.press('m');
+        const note = await settledInside(page, '#mirrorPopup');
+        return 'contrast ' + worst.toFixed(2) + ' ' + note;
+      } finally { await context.close(); }
+    });
+
+    await check('R18h-name-during-open', 'a tap on the name during the drawer open focuses it and saves one', async () => {
+      const { page, context } = await openPage(browser, true, 'r18h');
+      try {
+        await ready(page);
+        await clickStud(page, 0.5, false);
+        const handle = await page.locator('#panelToggle').boundingBox();
+        assert(handle && handle.width > 4, 'no drawer handle');
+        await page.touchscreen.tap(handle.x + handle.width / 2, handle.y + handle.height / 2);
+        let field = null;
+        const t0 = Date.now();
+        while (Date.now() - t0 < 700) {
+          const box = await page.locator('#projectName').boundingBox().catch(() => null);
+          if (box && box.width > 8 && box.y >= -1 && box.y < 820) {
+            field = box;
+            break;
+          }
+        }
+        assert(field, 'name field not tappable during open');
+        await page.touchscreen.tap(field.x + field.width / 2, field.y + field.height / 2);
+        await page.keyboard.type('one', { delay: 40 });
+        const state = await hotState(page);
+        const active = await page.evaluate(() => (document.activeElement && document.activeElement.id) || '');
+        assert(active === 'projectName', 'name tap did not focus, active ' + active);
+        assert(state.value.indexOf('one') >= 0, 'value "' + state.value + '"');
+        assert(!state.move, 'move mode toggled');
+        await clickSel(page, '#saveProjectBtn');
+        await page.waitForFunction(() => {
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (!k || !k.startsWith('brickProject_')) continue;
+            try { if (JSON.parse(localStorage.getItem(k)).name === 'one') return true; } catch { /* skip */ }
+          }
+          return false;
+        }, null, { timeout: 4000 });
+        const names = await savedNames(page);
+        assert(names.indexOf('Untitled') < 0, 'saved ' + names.join(','));
+        return 'saved one';
+      } finally { await context.close(); }
+    });
+
+    await check('R18i-phone-camera', 'phone home centers the plate under 15% sky and the cottage is large', async () => {
+      const { page, context } = await openPage(browser, true, 'r18i');
+      try {
+        await ready(page);
+        const home = await grabCanvas(page, 'r18-phone-home.png');
+        const sky = skyFraction(home.img);
+        assert(sky < 0.15, 'sky ' + (sky * 100).toFixed(1) + '%');
+        const plate = studCentroid(home.img);
+        assert(plate, 'plate not in frame');
+        const dx = Math.abs(plate.x - home.img.width / 2) / home.img.width;
+        const dy = Math.abs(plate.y - home.img.height / 2) / home.img.height;
+        assert(dx < 0.15 && dy < 0.18, 'plate off center dx ' + dx.toFixed(2) + ' dy ' + dy.toFixed(2));
+        await clickSel(page, '#starterBar [data-starter="cottage"]');
+        await page.waitForFunction(() => {
+          const t = document.getElementById('brickCount');
+          return (parseInt(t && t.textContent, 10) || 0) > 4;
+        }, null, { timeout: 8000 });
+        const shot = await grabCanvas(page, 'r18-cottage.png');
+        const span = centerSubject(shot.img);
+        const css = span.span / shot.dpr;
+        assert(css >= 48, 'cottage ' + css.toFixed(1) + ' px');
+        return 'sky ' + (sky * 100).toFixed(1) + '% cottage ' + css.toFixed(0) + ' px';
+      } finally { await context.close(); }
+    });
+
+    await check('R18j-single-tap', 'one phone tap places a brick', async () => {
+      const { page, context } = await openPage(browser, true, 'r18j');
+      try {
+        await ready(page);
+        const p = await locateStud(page, 0.5);
+        const before = await brickCount(page);
+        await page.touchscreen.tap(p.x, p.y);
+        assert(await waitGrown(page, before, 2000), 'single tap did not place');
+        return 'placed';
+      } finally { await context.close(); }
+    });
+
+    await check('R18k-hud-overlap', 'rotation, starters, quality, and the drawer do not cover each other', async () => {
+      const { page, context } = await openPage(browser, true, 'r18k');
+      try {
+        await ready(page);
+        const minus = () => page.locator('#zoomOutBtn').boundingBox();
+        const rot = () => page.locator('.rotation-ind').boundingBox();
+        let zoom = await minus();
+        let pill = await rot();
+        assert(zoom && pill && !overlaps(pill, zoom), 'rotation covers zoom with the drawer closed');
+        const starters = await page.locator('#starterBar').boundingBox();
+        assert(starters && gapPx(starters, zoom) >= 2, 'starter bar touches zoom, gap ' + (starters ? gapPx(starters, zoom).toFixed(1) : 'none'));
+        await clickSel(page, '#panelToggle');
+        zoom = await minus();
+        pill = await rot();
+        assert(zoom && pill && !overlaps(pill, zoom), 'rotation covers zoom with the drawer open');
+        const drawer = await page.locator('#controls').boundingBox();
+        assert(drawer && drawer.height / 844 <= 0.42, 'drawer covers ' + (drawer ? (drawer.height / 844).toFixed(2) : '?'));
+        assert(drawer.y > 844 * 0.45, 'drawer top ' + drawer.y.toFixed(0));
+        for (const item of [['#floorBtn', '#buildToolPopup', 'floor'], ['#wallBtn', '#buildToolPopup', 'wall'], ['#mirrorBtn', '#mirrorPopup', 'mirror']]) {
+          await openSection(page, /^Tools$/);
+          await scrollUntil(page, page.locator(item[0]));
+          await clickSel(page, item[0]);
+          await settledInside(page, item[1]);
+          const pop = await page.locator(item[1]).boundingBox();
+          const quality = await page.locator('#qualityBar').boundingBox();
+          if (overlaps(pop, quality)) {
+            const bleed = await page.locator(item[1]).evaluate((el) => {
+              const m = /rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+(?:\s*,\s*([\d.]+))?/.exec(getComputedStyle(el).backgroundColor || '');
+              if (!m) return 1;
+              if (m[1] == null) return 1;
+              return Number(m[1]);
+            });
+            assert(bleed >= 0.98, item[2] + ' shows the quality selector, alpha ' + bleed);
+          }
+          await page.keyboard.press('Escape');
+        }
+        return 'drawer ' + (drawer.height / 844).toFixed(3);
+      } finally { await context.close(); }
+    });
+
+    await check('R18l-empty-save', 'saving a project with zero bricks warns before it writes', async () => {
+      const { page, context } = await openPage(browser, false, 'r18l');
+      try {
+        await ready(page);
+        assert((await brickCount(page)) === 0, 'plate was not empty');
+        const before = await savedNames(page);
+        const mark = page._dialogs.length;
+        await clickSel(page, '#saveProjectBtn');
+        const dialogs = badDialogs(page, mark);
+        assert(dialogs.length === 0, 'native dialog ' + dialogs.join(' | '));
+        const warning = await page.evaluate(() => {
+          const nodes = document.body.querySelectorAll('*');
+          for (const el of nodes) {
+            if (el.childElementCount > 4) continue;
+            const s = getComputedStyle(el);
+            if (s.display === 'none' || s.visibility === 'hidden' || Number(s.opacity) === 0) continue;
+            const t = (el.innerText || '').replace(/\s+/g, ' ').trim();
+            if (t.length < 6 || t.length > 180) continue;
+            if (!/empty|no bricks|nothing to save|0 bricks|add a brick|brick first/i.test(t)) continue;
+            const r = el.getBoundingClientRect();
+            if (r.width > 8 && r.height > 8) return t.slice(0, 120);
+          }
+          return '';
+        });
+        const after = await savedNames(page);
+        assert(warning, 'no warning before an empty save');
+        assert(JSON.stringify(after) === JSON.stringify(before), 'wrote ' + after.join(',') + ' before confirm');
+        return warning;
       } finally { await context.close(); }
     });
 

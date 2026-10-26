@@ -327,15 +327,14 @@
     let timeOfDay = 0.5; // noon. Brighter default than the old morning preset.
     // Desktop home ray. (22, 40, 42) from the plate center points the same way as camera (60, 40, 80).
     const HOME_OX = 22, HOME_OY = 40, HOME_OZ = 42;
-    // Phone ray is shallower. A 60° portrait frame on the desktop ray stays
-    // 10° below the horizon at every distance. (58, 16, 62) puts the horizon
-    // in frame. Portrait distance keeps a 2×2 inside 25–45px and the studded
-    // rim inside the top 62% of the frame. Farther shrinks the brick under
-    // 25px and drops the rim below that band. The wide short window
-    // (1280×800) is the same mobile-gfx path but the brick is smaller, so
-    // it uses WIDE_HOME_DIST instead of the portrait distance.
-    const PHONE_OX = 58, PHONE_OY = 16, PHONE_OZ = 62;
-    const PHONE_HOME_DIST = 74;
+    // Portrait is steep enough that the sky stays under 15% and a starter
+    // clears 48px. The wide 1280×800 window stays low enough that the blue
+    // sky sits above the plate. A 2×2 on that ray stays inside 30–45px.
+    // The ghost sits on the cursor because placement aims at the brick
+    // center, not because this ray is vertical.
+    const PHONE_OX = 52, PHONE_OY = 32, PHONE_OZ = 56;
+    const PHONE_HOME_DIST = 62;
+    const WIDE_OX = 58, WIDE_OY = 40, WIDE_OZ = 62;
     const WIDE_HOME_DIST = 43;
     let weatherType = 'clear'; // 'clear', 'rain', 'snow', 'fog'
     let rainParticles = null;
@@ -652,7 +651,8 @@
       
       if (!renderer) return;
       renderer.setPixelRatio(qualityDpr());
-      renderer.setSize(innerWidth, innerHeight);
+      const view = viewSize();
+      renderer.setSize(view.w, view.h);
       
       const sun = window.sunLight;
       if (sun && sun.shadow) {
@@ -821,6 +821,25 @@
       return new Promise((resolve) => setTimeout(resolve, 0));
     }
 
+    function viewSize() {
+      const el = document.getElementById('container');
+      const w = el ? el.clientWidth : 0;
+      const h = el ? el.clientHeight : 0;
+      if (w >= 64 && h >= 64) return { w, h };
+      return { w: innerWidth, h: innerHeight };
+    }
+    function applyViewSize() {
+      if (!renderer || !camera) return;
+      const { w, h } = viewSize();
+      camera.aspect = w / Math.max(1, h);
+      camera.updateProjectionMatrix();
+      renderer.setPixelRatio(qualityDpr());
+      renderer.setSize(w, h);
+      if (composer) composer.setSize(w, h);
+      if (ssaoPass) ssaoPass.setSize(w, h);
+      needsRender = true;
+    }
+
     async function init() {
       isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
       loadQualityPreset();
@@ -833,7 +852,8 @@
       scene.fog = new THREE.Fog(0x87CEEB, 480, 2200);
       
       // Far plane sits past the fog so the ground fade is not a hard clip.
-      camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 2800);
+      const opening = viewSize();
+      camera = new THREE.PerspectiveCamera(60, opening.w / Math.max(1, opening.h), 0.1, 2800);
       // Scene and camera are their own turn. The WebGL constructor is the next one.
       await yieldTick();
 
@@ -865,7 +885,8 @@
       // The full framebuffer is the next turn.
       await yieldTick();
       renderer.setPixelRatio(qualityDpr());
-      renderer.setSize(innerWidth, innerHeight);
+      const plateView = viewSize();
+      renderer.setSize(plateView.w, plateView.h);
       // Shadows stay off until the place stamp. The first setSize then
       // does not allocate the shadow map.
       renderer.shadowMap.enabled = false;
@@ -1221,7 +1242,8 @@
       composer.addPass(new RenderPass(scene, camera));
 
       if (qualitySettings.ssao && SSAOPass && !isMobileGfx()) {
-        ssaoPass = new SSAOPass(scene, camera, innerWidth, innerHeight, 16);
+        const ssaoView = viewSize();
+        ssaoPass = new SSAOPass(scene, camera, ssaoView.w, ssaoView.h, 16);
         ssaoPass.kernelRadius = 8;
         ssaoPass.minDistance = 0.005;
         ssaoPass.maxDistance = 0.12;
@@ -1277,7 +1299,8 @@
       composer.addPass(vignettePass);
       if (OutputPass) composer.addPass(new OutputPass());
       gradeScreenPass = null;
-      composer.setSize(innerWidth, innerHeight);
+      const postView = viewSize();
+      composer.setSize(postView.w, postView.h);
       window.__brixPostOn = true;
       needsRender = true;
     }
@@ -1829,9 +1852,11 @@
             // fwidth of the repeated uv. A clamped 0.0045 edge stayed sharp
             // when a cell was smaller than a pixel and the horizon rang.
             float pixel = max(fwidth(vMapUv).x, fwidth(vMapUv).y);
-            float aa = clamp(max(pixel * 0.75, 0.0012), 0.0012, 0.08);
-            float disk = 1.0 - smoothstep(rad - aa, rad + aa, dist);
             float cellPx = 1.0 / max(pixel, 0.0001);
+            // Far disks beat into row-sized bands. Soften only that band.
+            float far = 1.0 - smoothstep(4.0, 18.0, cellPx);
+            float aa = clamp(max(pixel * mix(0.75, 3.2, far), 0.0012), 0.0012, 0.2);
+            float disk = 1.0 - smoothstep(rad - aa, rad + aa, dist);
             float fade = smoothstep(1.6, 3.2, cellPx);
             diffuseColor.rgb *= mix(vec3(${studGap}), vec3(1.0), disk * fade);
           }
@@ -6114,10 +6139,33 @@
           gy = findY(gx, gz, dims.w, dims.d, hp);
         }
       } else {
-        // Ground/baseplate hit - place at GROUND LEVEL, not findY (which finds top of column)
-        const gPos = worldToGrid(hit.point.x, hit.point.z);
-        gx = gPos.x - Math.floor((dims.w - 1) / 2);
-        gz = gPos.z - Math.floor((dims.d - 1) / 2);
+        // Ground/baseplate hit - place at GROUND LEVEL, not findY (which finds top of column).
+        // The mesh center sits brickH/2 above the footprint. A ground-plane hit puts
+        // that center off the cursor ray. Aim the stud snap at the visual center
+        // (body plus studs) so the ghost, the placed brick, and a later delete
+        // all land on the pointer. Even widths sit on a grid line, so floor(wx/STUD)
+        // would walk the center one stud positive; floor(wx/STUD - (w-1)/2) maps
+        // the center back to the same cell.
+        const onBase = hitBrick && hitBrick.userData.grid;
+        const baseGy = onBase ? hitBrick.userData.grid.gy + hitBrick.userData.grid.hp : 0;
+        const studExtra = (types[selectedBrick] && types[selectedBrick].noStuds) ? 0 : STUD_H;
+        const yCenter = calcWorldY(baseGy, brickH) + (brickH + studExtra) / 2;
+        let placeX = hit.point.x;
+        let placeZ = hit.point.z;
+        const aimRay = raycaster.ray;
+        if (aimRay.direction.y < -0.05) {
+          const tAim = (yCenter - aimRay.origin.y) / aimRay.direction.y;
+          if (tAim > 0) {
+            const cx = aimRay.origin.x + tAim * aimRay.direction.x;
+            const cz = aimRay.origin.z + tAim * aimRay.direction.z;
+            if (pointerOnPlate({ x: cx, z: cz })) {
+              placeX = cx;
+              placeZ = cz;
+            }
+          }
+        }
+        gx = Math.floor(placeX / STUD - (dims.w - 1) / 2);
+        gz = Math.floor(placeZ / STUD - (dims.d - 1) / 2);
         
         // Check if hitting a baseplate brick (has grid data) vs infinite ground plane
         if (hitBrick && hitBrick.userData.grid) {
@@ -9026,14 +9074,35 @@
     }
     
     function saveProject() {
-      const name = document.getElementById('projectName').value.trim() || 'Untitled';
-      try {
-        const clean = saveNamedBuild(name);
-        toast(`💾 Project "${clean}" saved!`, 'success');
-      } catch (e) {
-        console.error('Save failed:', e);
-        toast('❌ Save failed - storage may be full', 'error');
+      const field = document.getElementById('projectName');
+      const name = (field && field.value.trim()) || 'Untitled';
+      const write = () => {
+        try {
+          const clean = saveNamedBuild(name);
+          toast(`💾 Project "${clean}" saved!`, 'success');
+        } catch (e) {
+          console.error('Save failed:', e);
+          toast('❌ Save failed - storage may be full', 'error');
+        }
+      };
+      if (!bricks.length) {
+        confirmLoad('This plate has no bricks. Add a brick first.', { mode: 'empty' }).then((ok) => {
+          if (ok) write();
+        });
+        return;
       }
+      let storedName = '';
+      try {
+        const raw = localStorage.getItem(projectStorageKey(name));
+        if (raw) storedName = JSON.parse(raw).name || '';
+      } catch (e) { /* a bad entry must not block the save */ }
+      if (storedName && storedName !== name) {
+        confirmLoad('Saving will replace a different project named ' + storedName + '.', { mode: 'replace' }).then((ok) => {
+          if (ok) write();
+        });
+        return;
+      }
+      write();
     }
     
     function confirmLoad(message, opts) {
@@ -9050,8 +9119,10 @@
         const mode = opts && opts.mode;
         const fresh = mode === 'new';
         const deleting = mode === 'delete';
-        if (title) title.textContent = fresh ? 'Start a new project?' : deleting ? 'Delete this?' : 'Load this build?';
-        ok.textContent = fresh ? 'New project' : deleting ? 'Delete' : 'Load';
+        const empty = mode === 'empty';
+        const replace = mode === 'replace';
+        if (title) title.textContent = fresh ? 'Start a new project?' : deleting ? 'Delete this?' : empty ? 'Save an empty project?' : replace ? 'Replace that project?' : 'Load this build?';
+        ok.textContent = fresh ? 'New project' : deleting ? 'Delete' : empty ? 'Save anyway' : replace ? 'Replace' : 'Load';
         body.textContent = message;
         root.style.display = 'flex';
         const finish = (yes) => {
@@ -9064,7 +9135,7 @@
         };
         const onOk = () => finish(true);
         const onCancel = () => finish(false);
-        const onBackdrop = (event) => { if (event.target === root) finish(false); };
+        const onBackdrop = () => {};
         const onKey = (event) => {
           if (event.key === 'Escape') finish(false);
           else if (event.key === 'Enter') finish(true);
@@ -9225,10 +9296,15 @@
     let captureFrame = null;
 
     function placeCaptureCamera(box) {
-      const len = Math.hypot(HOME_OX, HOME_OY, HOME_OZ) || 1;
-      const dirX = HOME_OX / len;
-      const dirY = HOME_OY / len;
-      const dirZ = HOME_OZ / len;
+      // Steeper than the play camera so a spread brick's top, not a sliver
+      // of its side, fills the framed thumb.
+      const capX = 14;
+      const capY = 72;
+      const capZ = 14;
+      const len = Math.hypot(capX, capY, capZ) || 1;
+      const dirX = capX / len;
+      const dirY = capY / len;
+      const dirZ = capZ / len;
       const savedPolar = controls.maxPolarAngle;
       controls.maxPolarAngle = Math.PI / 2.02;
       controls.minDistance = 0.3;
@@ -9262,7 +9338,7 @@
       const v = new THREE.Vector3();
       const toCorner = new THREE.Vector3();
       const toAim = new THREE.Vector3();
-      const fillTarget = 0.62;
+      const fillTarget = 0.7;
       const sane = (corner) => {
         toCorner.copy(corner).sub(camera.position);
         if (toCorner.dot(toAim) <= 0) return false;
@@ -9342,8 +9418,8 @@
       };
       const framePenalty = (m) => {
         if (!m || m.n < 8) return 50;
-        let p = Math.abs(m.extent - 0.58);
-        if (m.extent < 0.45 || m.extent > 0.72) p += 2;
+        let p = Math.abs(m.extent - 0.68);
+        if (m.extent < 0.6 || m.extent > 0.74) p += 2;
         if (m.n < 200) p += 1.5;
         if (m.margin < 0.02) p += 1.5;
         return p;
@@ -9371,7 +9447,7 @@
             bestDist = mid;
             keep();
           }
-          if (m.n < 80 || m.extent < 0.58) hi = mid;
+          if (m.n < 80 || m.extent < 0.66) hi = mid;
           else lo = mid;
         }
         dist = bestDist;
@@ -9436,9 +9512,10 @@
       const aspect = camera.aspect || 1;
       const key = (mobile ? 'm' : 'd') + pad.toFixed(3) + ':' + aspect.toFixed(3) + ':' + camera.fov;
       if (key === plateFrameCache) return plateFrameValue;
-      const ox = mobile ? PHONE_OX : HOME_OX;
-      const oy = mobile ? PHONE_OY : HOME_OY;
-      const oz = mobile ? PHONE_OZ : HOME_OZ;
+      const portrait = mobile && aspect < 1.2;
+      const ox = portrait ? PHONE_OX : HOME_OX;
+      const oy = portrait ? PHONE_OY : HOME_OY;
+      const oz = portrait ? PHONE_OZ : HOME_OZ;
       const len = Math.hypot(ox, oy, oz) || 1;
       const dir = new THREE.Vector3(ox / len, oy / len, oz / len);
       const target = new THREE.Vector3(38.4, 0.35, 38.4);
@@ -9490,9 +9567,12 @@
     }
 
     function placeCameraOnHomeRay(aimX, aimY, aimZ, dist) {
-      const ox = isMobileGfx() ? PHONE_OX : HOME_OX;
-      const oy = isMobileGfx() ? PHONE_OY : HOME_OY;
-      const oz = isMobileGfx() ? PHONE_OZ : HOME_OZ;
+      const aspect = (camera && camera.aspect) || (innerWidth / Math.max(1, innerHeight));
+      const portrait = isMobileGfx() && aspect < 1.2;
+      const wideMobile = isMobileGfx() && !portrait;
+      const ox = portrait ? PHONE_OX : wideMobile ? WIDE_OX : HOME_OX;
+      const oy = portrait ? PHONE_OY : wideMobile ? WIDE_OY : HOME_OY;
+      const oz = portrait ? PHONE_OZ : wideMobile ? WIDE_OZ : HOME_OZ;
       const len = Math.hypot(ox, oy, oz) || 1;
       controls.target.set(aimX, aimY, aimZ);
       camera.position.set(
@@ -9530,12 +9610,10 @@
       updateZoomLimits();
       const aspect = (camera && camera.aspect) || (innerWidth / Math.max(1, innerHeight));
       const portrait = isMobileGfx() && aspect < 1.2;
-      // Same phone ray. The portrait frame is narrow, so the plate center
-      // hides both side rims. Aim toward the far corner: one studded rim
-      // and the grass beside it stay in the top of the frame, and a 2×2
-      // at this distance stays inside 25–45px. Wide and desktop stay centered.
-      const aimX = portrait ? 18.4 : 38.4;
-      const aimZ = portrait ? 58.4 : 38.4;
+      // Both frames look at the plate center. Portrait is close and steep
+      // enough that the cottage is large and one rim still crosses the top.
+      const aimX = 38.4;
+      const aimZ = portrait ? 40.2 : 38.4;
       placeCameraOnHomeRay(aimX, 0.35, aimZ, defaultHomeDistance());
     }
 
@@ -9576,10 +9654,13 @@
     let hoverRaf = 0;
     function pointerToMouse(clientX, clientY) {
       const rect = renderer.domElement.getBoundingClientRect();
-      const w = rect.width || innerWidth;
-      const h = rect.height || innerHeight;
-      mouse.x = ((clientX - rect.left) / w) * 2 - 1;
-      mouse.y = -((clientY - rect.top) / h) * 2 + 1;
+      const dpr = window.devicePixelRatio || 1;
+      // Browser zoom changes devicePixelRatio. The rect is CSS pixels.
+      // A buffer-sized box would miss the cursor by that ratio.
+      const cssW = rect.width || (renderer.domElement.width / dpr) || innerWidth;
+      const cssH = rect.height || (renderer.domElement.height / dpr) || innerHeight;
+      mouse.x = ((clientX - rect.left) / cssW) * 2 - 1;
+      mouse.y = -((clientY - rect.top) / cssH) * 2 + 1;
     }
     function scheduleHover() {
       pointerDirty = true;
@@ -9859,8 +9940,10 @@
       // steps used to reach minDistance and walk a build out of the frame.
       // The wheel still follows the cursor down to minDistance.
       const aimed = clientX != null && clientY != null;
+      // A wheel aims at the cursor and may come in close enough to inspect
+      // one brick. Buttons stay outside the build.
       const closeFloor = aimed
-        ? controls.minDistance
+        ? 2.2
         : Math.max(controls.minDistance, (defaultHomeDistance() || 20) * 0.42);
       const newDistance = Math.max(closeFloor, Math.min(controls.maxDistance, distance + signed));
       if (Math.abs(newDistance - distance) < 1e-4) return;
@@ -10460,8 +10543,7 @@
       // Mouse events. Hover work runs once per frame from animate(), not on every event.
       renderer.domElement.addEventListener('mousemove', e => {
         lastPointerMs = performance.now();
-        mouse.x = (e.clientX / innerWidth) * 2 - 1;
-        mouse.y = -(e.clientY / innerHeight) * 2 + 1;
+        pointerToMouse(e.clientX, e.clientY);
         scheduleHover();
       });
 
@@ -10531,6 +10613,7 @@
       });
       
       renderer.domElement.addEventListener('pointerdown', (e) => {
+        if (overlayBlocksPlay()) return;
         orbitPointerX = e.clientX;
         orbitPointerY = e.clientY;
         orbitPointerDown = true;
@@ -10685,6 +10768,7 @@
       renderer.domElement.addEventListener('wheel', e => {
         e.preventDefault();
         e.stopImmediatePropagation();
+        if (overlayBlocksPlay()) return;
         if (firstPersonMode) {
           // Rotate 90 degrees per scroll
           if (e.deltaY > 0) {
@@ -10742,8 +10826,7 @@
           const touch = e.touches[0];
           touchStartX = touch.clientX;
           touchStartY = touch.clientY;
-          mouse.x = (touch.clientX / innerWidth) * 2 - 1;
-          mouse.y = -(touch.clientY / innerHeight) * 2 + 1;
+          pointerToMouse(touch.clientX, touch.clientY);
           pointerDirty = false;
           flushPointerHover();
           
@@ -10764,15 +10847,30 @@
         }
         if (e.touches.length === 1) {
           const touch = e.touches[0];
-          mouse.x = (touch.clientX / innerWidth) * 2 - 1;
-          mouse.y = -(touch.clientY / innerHeight) * 2 + 1;
+          pointerToMouse(touch.clientX, touch.clientY);
           scheduleHover();
         }
         document.getElementById('touchIndicator').classList.remove('active');
       }, {passive: true});
       
     }
+    function overlayBlocksPlay() {
+      const marked = (id) => {
+        const el = document.getElementById(id);
+        return !!(el && el.classList.contains('visible'));
+      };
+      const flexed = (id) => {
+        const el = document.getElementById(id);
+        return !!(el && el.style.display === 'flex');
+      };
+      if (marked('tutorialModal') || marked('keybindModal')) return true;
+      if (flexed('galleryModal') || flexed('loadConfirm') || flexed('namePrompt')) return true;
+      const phone = document.getElementById('phoneTutorial');
+      if (phone && !phone.hidden) return true;
+      return false;
+    }
     function onBuilderKeyDown(e) {
+      if (overlayBlocksPlay() && e.key !== 'Escape') return;
       if (e.key === 'Escape') {
         const mirrorPop = document.getElementById('mirrorPopup');
         const mirrorOpen = mirrorOn || (mirrorPop && mirrorPop.classList.contains('visible'));
@@ -11177,13 +11275,7 @@
       });
       
       window.addEventListener('resize', () => {
-        camera.aspect = innerWidth / innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setPixelRatio(qualityDpr());
-        renderer.setSize(innerWidth, innerHeight);
-        if (composer) composer.setSize(innerWidth, innerHeight);
-        if (ssaoPass) ssaoPass.setSize(innerWidth, innerHeight);
-        needsRender = true;
+        applyViewSize();
       });
       
       // Track which keys are held for smooth panning
@@ -11200,7 +11292,9 @@
 
 
       // Focus moves in pointerdown, before a keydown can hit a hotkey.
+      // A modal also freezes orbit before the canvas sees the same press.
       document.addEventListener('pointerdown', (e) => {
+        if (controls) controls.enabled = !overlayBlocksPlay();
         const t = e.target;
         if (!t || !t.closest) return;
         const field = t.closest('input, textarea, select, [contenteditable="true"]');
@@ -11306,9 +11400,11 @@
       window.toggleSidebar = function() {
         sidebarCollapsed = !sidebarCollapsed;
         controlsPanel.classList.toggle('collapsed', sidebarCollapsed);
+        document.body.classList.toggle('sidebar-collapsed', sidebarCollapsed);
         sidebarToggle.textContent = sidebarCollapsed ? '☰' : '✕';
         sidebarToggle.title = sidebarCollapsed ? 'Show Menu (Tab)' : 'Hide Menu (Tab)';
         sidebarToggle.style.left = sidebarCollapsed ? '12px' : '304px';
+        applyViewSize();
       };
       
       sidebarToggle.addEventListener('click', window.toggleSidebar);

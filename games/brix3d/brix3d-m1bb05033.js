@@ -1,0 +1,1 @@
+import{__brixScope as e}from"./brix3d-m85d60a29.js";e.applyViewSize=function(){if(!e.renderer||!e.camera)return;const{w:r,h:i}=e.viewSize();e.camera.aspect=r/Math.max(1,i),e.camera.updateProjectionMatrix(),e.renderer.setPixelRatio(e.qualityDpr()),e.renderer.setSize(r,i),e.composer&&e.composer.setSize(r,i),e.ssaoPass&&e.ssaoPass.setSize(r,i),e.needsRender=!0};
