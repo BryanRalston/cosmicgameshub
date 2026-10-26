@@ -245,6 +245,29 @@ while (Date.now() < end) {
   return child;
 }
 
+function raiseChrome(port) {
+  const file = join(tmpdir(), 'brix-raise-chrome.ps1');
+  writeFileSync(file, `
+Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+public class WinF {
+  [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
+  [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr h, int n);
+}
+'@
+$conns = Get-NetTCPConnection -LocalPort ${port} -State Listen -ErrorAction SilentlyContinue
+foreach ($c in $conns) {
+  $p = Get-Process -Id $c.OwningProcess -ErrorAction SilentlyContinue
+  if ($p -and $p.MainWindowHandle -ne 0) {
+    [WinF]::ShowWindow($p.MainWindowHandle, 9) | Out-Null
+    [WinF]::SetForegroundWindow($p.MainWindowHandle) | Out-Null
+  }
+}
+`);
+  spawnSync('powershell', ['-NoProfile', '-File', file], { stdio: 'ignore' });
+}
+
 export async function measureLighthouse(base, port, outDir) {
   mkdirSync(outDir, { recursive: true });
   const clicker = allowClicker();
@@ -252,6 +275,7 @@ export async function measureLighthouse(base, port, outDir) {
   const rows = [];
   try {
     for (let i = 1; i <= 3; i++) {
+      raiseChrome(port);
       await blankBrixTabs(port);
       await sleep(8000);
       const out = join(outDir, 'lh-' + i + '.json');
