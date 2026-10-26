@@ -241,7 +241,18 @@
                 pumpThaw();
               }
             }
-            if (t.classList && t.classList.contains('modal-overlay') && t.style.display && t.style.display !== 'none') releaseCold(t);
+            if (t.classList && t.classList.contains('modal-overlay') && t.style.display && t.style.display !== 'none') {
+              // These two confirms are a few lines. The empty-save warning
+              // is read in the same turn as Save, so it cannot wait a thaw.
+              if (t.id === 'loadConfirm' || t.id === 'namePrompt') {
+                // Removing a class that is already gone still notifies this
+                // observer, and the callback then loops. Touch the list only
+                // when the token is present.
+                if (t.classList.contains('brix-park')) t.classList.remove('brix-park');
+                if (t.classList.contains('brix-cold')) t.classList.remove('brix-cold');
+              }
+              releaseCold(t);
+            }
             if (t.id === 'phoneTutorial' && !t.hidden) releaseCold(t);
             if (t.id === 'starterBar' && !t.classList.contains('hidden')) releaseCold(t);
             if (t.id === 'dailyPrompt' && !t.hidden) releaseCold(t);
@@ -310,20 +321,27 @@
           markCold(hold);
           // The name row stays display:none until Skip. A box under the
           // loader makes the first click type into the loader.
-          function unparkProjectName() {
-            var field = document.getElementById('projectName');
-            var node = field;
+          function unparkChain(start) {
+            var node = start;
             var guard = 0;
             while (node && node.id !== 'brixHold' && guard++ < 14) {
               node.classList.remove('brix-park');
               node.classList.remove('brix-cold');
               node = node.parentElement;
             }
+          }
+          function unparkProjectName() {
+            unparkChain(document.getElementById('projectName'));
             var title = document.querySelector('#projectSection > .section-title');
             if (title) {
               title.classList.remove('brix-park');
               title.classList.remove('brix-cold');
             }
+            // Save sits beside the name, not above it. The field's parents
+            // coming back left the button display:none until a later thaw,
+            // and an empty-plate Save then had no box.
+            var actions = ['newProjectBtn', 'saveProjectBtn', 'loadProjectBtn'];
+            for (var a = 0; a < actions.length; a++) unparkChain(document.getElementById(actions[a]));
           }
           // Skip has to close the card even when it lands before the game
           // module binds its own listener. A later show must not undo that.
