@@ -74,6 +74,14 @@ A color swatch whose box sat in the viewport was still the redo button, and Mirr
 
 A drag that cleared the HUD landed the next control under the drawer handle, and the reverse drag put it back on the HUD. Wall's center stayed on the color HUD button at the bottom of the sheet. Each drag now moves the control halfway toward the middle of the open tray, and it stops once the sheet no longer scrolls. The top-hit requirement and the color assertion are unchanged.
 
+## A phone tap counts only when that control receives the click
+
+`clickAt` treated any `click` on the document as the tap's click. On Floor, the finger's `pointerup` landed on the button and a `click` landed somewhere else, so the helper skipped the mouse click. The button stayed inactive and `#buildToolPopup` never opened. The helper now waits until the element under the finger, or a parent or child of it, receives the click. If that does not happen, it sends one `mouse.click` at the same point. The canvas stays touch-only. The popup must still sit fully inside the viewport.
+
+## The runner releases the port
+
+After the summary, `browser.close()` could sit forever and leave port 8772 taken, so the next run never started. The runner now waits at most 4 seconds for the browser to close, drops open connections, and exits. Pass and fail bars are unchanged.
+
 ## A title tap that misses is repeated once
 
 Under load the phone sheet is still coasting, so the title tap lands on the padding and the section stays collapsed. `openSection` reads the title's box again and taps up to three times. The popup and color assertions are unchanged.

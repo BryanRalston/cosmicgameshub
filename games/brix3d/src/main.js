@@ -10772,6 +10772,382 @@
       }, {passive: true});
       
     }
+    function onBuilderKeyDown(e) {
+      if (e.key === 'Escape') {
+        const mirrorPop = document.getElementById('mirrorPopup');
+        const mirrorOpen = mirrorOn || (mirrorPop && mirrorPop.classList.contains('visible'));
+        if (mirrorOpen) {
+          mirrorOn = false;
+          const mirrorBtn = document.getElementById('mirrorBtn');
+          const mirrorSettings = document.getElementById('mirrorSettings');
+          if (mirrorBtn) mirrorBtn.classList.remove('active');
+          if (mirrorSettings) mirrorSettings.classList.remove('visible');
+          if (mirrorPop) mirrorPop.classList.remove('visible');
+          updateMirrorLines();
+          updateGhost();
+          if (typingInField(e)) return;
+        }
+      }
+      if (typingInField(e)) return;
+
+      if (e.key === 'Escape') {
+        const loadConfirm = document.getElementById('loadConfirm');
+        const namePrompt = document.getElementById('namePrompt');
+        const confirmUp = (loadConfirm && loadConfirm.style.display === 'flex')
+          || (namePrompt && namePrompt.style.display === 'flex');
+        if (confirmUp) return;
+        const tutorial = document.getElementById('tutorialModal');
+        if (tutorial && tutorial.classList.contains('visible')) tutorial.classList.remove('visible');
+        const keybind = document.getElementById('keybindModal');
+        if (keybind && keybind.classList.contains('visible')) keybind.classList.remove('visible');
+        const phoneTut = document.getElementById('phoneTutorial');
+        if (phoneTut && !phoneTut.hidden) {
+          phoneTut.hidden = true;
+          const box = document.getElementById('phoneTutorialDontShow');
+          if (box && box.checked) {
+            try { localStorage.setItem('brickBuilderTutorialDismissed', 'true'); } catch (err) {}
+          }
+        }
+        const gallery = document.getElementById('galleryModal');
+        if (gallery && gallery.style.display === 'flex') {
+          closeGallery();
+          return;
+        }
+        returnToPlaceMode();
+        return;
+      }
+      
+      // F11 for fullscreen (check before toLowerCase)
+      if (e.key === 'F11') {
+        e.preventDefault();
+        toggleFullscreenMode();
+        return;
+      }
+      
+      const key = e.key.toLowerCase();
+      keysPressed.add(key);
+      
+      // First-person mode controls
+      if (firstPersonMode) {
+        switch(key) {
+          case 'w': fpKeys.forward = true; break;
+          case 's': fpKeys.backward = true; break;
+          case 'a': fpKeys.left = true; break;
+          case 'd': fpKeys.right = true; break;
+          case 'c': toggleCrouch(); break;
+          case 'control': fpCrouching = true; document.getElementById('crouchBtn').classList.add('active'); break;
+          case 'tab': 
+            e.preventDefault();
+            // Release mouse to access sidebar menu
+            if (document.pointerLockElement) {
+              fpMenuMode = true;
+              document.exitPointerLock();
+              toast('🖱️ Mouse released - click canvas to resume', 'info');
+            }
+            break;
+          case 'q':
+            // Previous brick in quick slots
+            fpQuickSlotIndex = (fpQuickSlotIndex - 1 + fpQuickSlots.length) % fpQuickSlots.length;
+            selectFpQuickSlot(fpQuickSlotIndex);
+            break;
+          case 'e':
+            // Next brick in quick slots
+            fpQuickSlotIndex = (fpQuickSlotIndex + 1) % fpQuickSlots.length;
+            selectFpQuickSlot(fpQuickSlotIndex);
+            break;
+          case 'r':
+            // Rotate brick with R key
+            currentRotation = (currentRotation + 90) % 360;
+            { const hudRot = document.getElementById('hudRotLabel'); if (hudRot) hudRot.textContent = currentRotation + '°'; }
+            if (fpGhost) { scene.remove(fpGhost); fpGhost = null; }
+            updateFpBrickInfo();
+            break;
+          case 'enter':
+            // Enter key to place brick
+            e.preventDefault();
+            if (fpBuildMode) {
+              placeBrickInWalkMode();
+            }
+            break;
+        }
+        
+        // Arrow keys to nudge ghost position
+        switch(e.key) {
+          case 'ArrowUp':
+            e.preventDefault();
+            fpGhostOffset.z -= 1;
+            if (fpGhost) { scene.remove(fpGhost); fpGhost = null; }
+            break;
+          case 'ArrowDown':
+            e.preventDefault();
+            fpGhostOffset.z += 1;
+            if (fpGhost) { scene.remove(fpGhost); fpGhost = null; }
+            break;
+          case 'ArrowLeft':
+            e.preventDefault();
+            fpGhostOffset.x -= 1;
+            if (fpGhost) { scene.remove(fpGhost); fpGhost = null; }
+            break;
+          case 'ArrowRight':
+            e.preventDefault();
+            fpGhostOffset.x += 1;
+            if (fpGhost) { scene.remove(fpGhost); fpGhost = null; }
+            break;
+          case 'PageUp':
+            e.preventDefault();
+            fpGhostOffset.y += 1; // Move up 1 plate
+            if (fpGhost) { scene.remove(fpGhost); fpGhost = null; }
+            break;
+          case 'PageDown':
+            e.preventDefault();
+            fpGhostOffset.y -= 1; // Move down 1 plate
+            if (fpGhost) { scene.remove(fpGhost); fpGhost = null; }
+            break;
+        }
+        
+        // Number keys 1-9 for quick brick selection (or custom keybinds)
+        const slotIndex = typeof getSlotByKey === 'function' ? getSlotByKey(key) : (key >= '1' && key <= '9' ? parseInt(key) - 1 : -1);
+        if (slotIndex >= 0 && slotIndex < fpQuickSlots.length) {
+          selectFpQuickSlot(slotIndex);
+        }
+        // Space bar for jump (check code since key might vary)
+        if (e.code === 'Space' || e.key === ' ') {
+          fpKeys.jump = true;
+          e.preventDefault();
+        }
+        if (e.key === 'Escape') {
+          if (fpRadialMenuOpen) {
+            closeFpRadialMenu();
+          } else if (fpMenuMode) {
+            // If already in menu mode and pressing escape again, just exit completely
+            // (The double-tap handler will catch this too, but this is clearer)
+            fpMenuMode = false;
+            exitFirstPersonMode();
+          } else {
+            exitFirstPersonMode();
+          }
+        }
+        return;
+      }
+      
+      // Handle arrow keys for panning
+      switch(e.key) {
+        case 'ArrowUp':
+          e.preventDefault();
+          panCamera(0, 1);
+          return;
+        case 'ArrowDown':
+          e.preventDefault();
+          panCamera(0, -1);
+          return;
+        case 'ArrowLeft':
+          e.preventDefault();
+          panCamera(-1, 0);
+          return;
+        case 'ArrowRight':
+          e.preventDefault();
+          panCamera(1, 0);
+          return;
+      }
+      
+      switch(key) {
+        // WASD for panning
+        case 'w':
+          panCamera(0, 1);
+          break;
+        case 's':
+          panCamera(0, -1);
+          break;
+        case 'a':
+          panCamera(-1, 0);
+          break;
+        case 'd':
+          panCamera(1, 0);
+          break;
+        case 'r':
+          rotate(e.shiftKey ? 45 : 90);
+          break;
+        case 'x': // Delete mode
+          deleteMode = !deleteMode; dropperMode = false; paintMode = false;
+          document.getElementById('deleteBtn').classList.toggle('delete-active', deleteMode);
+          document.getElementById('dropperBtn').classList.remove('dropper-active');
+          document.getElementById('paintBtn').classList.remove('paint-active');
+          document.body.classList.toggle('delete-mode', deleteMode);
+          document.body.classList.remove('dropper-mode', 'paint-mode');
+          updateGhost();
+          toast(deleteMode ? '🗑️ Delete ON' : 'Delete OFF');
+          break;
+        case 'c':
+          dropperMode = !dropperMode; deleteMode = false; paintMode = false;
+          document.getElementById('dropperBtn').classList.toggle('dropper-active', dropperMode);
+          document.getElementById('deleteBtn').classList.remove('delete-active');
+          document.getElementById('paintBtn').classList.remove('paint-active');
+          document.body.classList.toggle('dropper-mode', dropperMode);
+          document.body.classList.remove('delete-mode', 'paint-mode');
+          updateGhost();
+          toast(dropperMode ? '💧 Dropper ON' : 'Dropper OFF');
+          break;
+        case 'p':
+          if (e.shiftKey) {
+            // Shift+P = Face Paint mode
+            facePaintMode = !facePaintMode; paintMode = false; deleteMode = false; dropperMode = false; floorMode = false;
+            document.getElementById('facePaintBtn').classList.toggle('facepaint-active', facePaintMode);
+            document.getElementById('paintBtn').classList.remove('paint-active');
+            document.getElementById('deleteBtn').classList.remove('delete-active');
+            document.getElementById('dropperBtn').classList.remove('dropper-active');
+            document.getElementById('floorBtn').classList.remove('floor-active');
+            document.body.classList.toggle('facepaint-mode', facePaintMode);
+            document.body.classList.remove('delete-mode', 'dropper-mode', 'paint-mode');
+            updateGhost();
+            toast(facePaintMode ? '🖌️ Face Paint ON - click brick sides' : 'Face Paint OFF');
+          } else {
+            // P = Regular Paint mode
+            paintMode = !paintMode; facePaintMode = false; deleteMode = false; dropperMode = false; floorMode = false;
+            document.getElementById('paintBtn').classList.toggle('paint-active', paintMode);
+            document.getElementById('facePaintBtn').classList.remove('facepaint-active');
+            document.getElementById('deleteBtn').classList.remove('delete-active');
+            document.getElementById('dropperBtn').classList.remove('dropper-active');
+            document.getElementById('floorBtn').classList.remove('floor-active');
+            document.body.classList.toggle('paint-mode', paintMode);
+            document.body.classList.remove('delete-mode', 'dropper-mode', 'facepaint-mode');
+            if (paintMode) updateBuildToolPopup(); // Close build popup if open
+            updateGhost();
+            toast(paintMode ? '🎨 Paint ON' : 'Paint OFF');
+          }
+          break;
+        case 'f':
+          floorMode = !floorMode; deleteMode = false; dropperMode = false; paintMode = false; facePaintMode = false; wallMode = false;
+          document.getElementById('floorBtn').classList.toggle('floor-active', floorMode);
+          document.getElementById('wallBtn').classList.remove('wall-active');
+          document.getElementById('deleteBtn').classList.remove('delete-active');
+          document.getElementById('dropperBtn').classList.remove('dropper-active');
+          document.getElementById('paintBtn').classList.remove('paint-active');
+          document.getElementById('facePaintBtn').classList.remove('facepaint-active');
+          document.body.classList.remove('delete-mode', 'dropper-mode', 'paint-mode', 'facepaint-mode');
+          if (!floorMode) cancelFloorDrag();
+          updateGhost();
+          updateBuildToolPopup();
+          toast(floorMode ? '⬜ Floor mode ON - drag to draw' : 'Floor mode OFF');
+          break;
+        case 'b':
+          wallMode = !wallMode; deleteMode = false; dropperMode = false; paintMode = false; facePaintMode = false; floorMode = false;
+          document.getElementById('wallBtn').classList.toggle('wall-active', wallMode);
+          document.getElementById('floorBtn').classList.remove('floor-active');
+          document.getElementById('deleteBtn').classList.remove('delete-active');
+          document.getElementById('dropperBtn').classList.remove('dropper-active');
+          document.getElementById('paintBtn').classList.remove('paint-active');
+          document.getElementById('facePaintBtn').classList.remove('facepaint-active');
+          document.body.classList.remove('delete-mode', 'dropper-mode', 'paint-mode', 'facepaint-mode');
+          if (!wallMode) cancelWallDrag();
+          updateGhost();
+          updateBuildToolPopup();
+          toast(wallMode ? '🧱 Wall mode ON - drag to draw' : 'Wall mode OFF');
+          break;
+        case 'g':
+          gravityOn = !gravityOn;
+          document.getElementById('gravityBtn').classList.toggle('active', gravityOn);
+          if (gravityOn) applyGravity();
+          toast(gravityOn ? '🌍 Gravity ON' : 'Gravity OFF');
+          break;
+        case 't': // Pitch rotation
+          currentPitch = (currentPitch + 90) % 360;
+          updateGhost();
+          toast(`↕️ Pitch: ${currentPitch}°`);
+          break;
+        case 'y': // Roll rotation OR Ctrl+Y for redo
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            redo();
+          } else {
+            currentRoll = (currentRoll + 90) % 360;
+            updateGhost();
+            toast(`↔️ Roll: ${currentRoll}°`);
+          }
+          break;
+        case 'm':
+          mirrorOn = !mirrorOn;
+          document.getElementById('mirrorBtn').classList.toggle('active', mirrorOn);
+          document.getElementById('mirrorSettings').classList.toggle('visible', mirrorOn);
+          document.getElementById('mirrorPopup').classList.toggle('visible', mirrorOn);
+          if (mirrorOn) showFloating(document.getElementById('mirrorPopup'));
+          updateMirrorLines();
+          updateGhost();
+          toast(mirrorOn ? '🔀 Mirror ON' : 'Mirror OFF');
+          break;
+        case 'n':
+          moveMode = !moveMode;
+          deleteMode = dropperMode = paintMode = floorMode = wallMode = false;
+          document.getElementById('moveBtn').classList.toggle('move-active', moveMode);
+          document.getElementById('moveModeIndicator').classList.toggle('visible', moveMode);
+          document.getElementById('deleteBtn').classList.remove('delete-active');
+          document.getElementById('dropperBtn').classList.remove('dropper-active');
+          document.getElementById('paintBtn').classList.remove('paint-active');
+          document.getElementById('floorBtn').classList.remove('floor-active');
+          document.getElementById('wallBtn').classList.remove('wall-active');
+          document.body.classList.remove('delete-mode', 'dropper-mode', 'paint-mode');
+          if (!moveMode) clearMoveSelection();
+          updateGhost();
+          toast(moveMode ? '✋ Move mode ON' : 'Move mode OFF');
+          break;
+        case 'q': // Zoom in
+          zoomCamera(-3);
+          break;
+        case 'e': // Zoom out
+          zoomCamera(3);
+          break;
+        case 'z':
+          if (e.ctrlKey || e.metaKey) { e.preventDefault(); e.shiftKey ? redo() : undo(); }
+          break;
+        case 's':
+          if (e.ctrlKey || e.metaKey) { e.preventDefault(); saveProject(); }
+          break;
+        case 'tab':
+          e.preventDefault();
+          window.toggleSidebar();
+          break;
+        case 'v':
+          // Toggle walk mode
+          toggleFirstPersonMode();
+          break;
+        case 'escape':
+          // Exit fullscreen mode first
+          if (fullscreenMode) {
+            exitFullscreenMode();
+            return;
+          }
+          deleteMode = dropperMode = paintMode = false;
+          document.getElementById('deleteBtn').classList.remove('delete-active');
+          document.getElementById('dropperBtn').classList.remove('dropper-active');
+          document.getElementById('paintBtn').classList.remove('paint-active');
+          document.body.classList.remove('delete-mode', 'dropper-mode', 'paint-mode');
+          // Close mirror popup if open
+          if (mirrorOn) {
+            mirrorOn = false;
+            document.getElementById('mirrorBtn').classList.remove('active');
+            document.getElementById('mirrorSettings').classList.remove('visible');
+            document.getElementById('mirrorPopup').classList.remove('visible');
+            updateMirrorLines();
+          }
+          // Cancel move mode selection
+          if (moveMode && selectedGroup.length > 0) {
+            clearMoveSelection();
+            toast('Move selection cancelled');
+          } else if (moveMode) {
+            moveMode = false;
+            document.getElementById('moveBtn').classList.remove('move-active');
+            document.getElementById('moveModeIndicator').classList.remove('visible');
+            toast('Move mode OFF');
+          }
+          // Cancel floor drag if in progress
+          if (floorMode && floorDragStart) {
+            cancelFloorDrag();
+            toast('Floor drag cancelled');
+          }
+          updateGhost();
+          break;
+      }
+    }
+
     function bindInputEvents3() {
       renderer.domElement.addEventListener('touchend', e => {
         document.getElementById('touchIndicator').classList.remove('active');
@@ -10843,381 +11219,6 @@
 
       // Keyboard. A named function stays uncompiled until the first key,
       // so boot does not pay for this handler in one turn.
-      function onBuilderKeyDown(e) {
-        if (e.key === 'Escape') {
-          const mirrorPop = document.getElementById('mirrorPopup');
-          const mirrorOpen = mirrorOn || (mirrorPop && mirrorPop.classList.contains('visible'));
-          if (mirrorOpen) {
-            mirrorOn = false;
-            const mirrorBtn = document.getElementById('mirrorBtn');
-            const mirrorSettings = document.getElementById('mirrorSettings');
-            if (mirrorBtn) mirrorBtn.classList.remove('active');
-            if (mirrorSettings) mirrorSettings.classList.remove('visible');
-            if (mirrorPop) mirrorPop.classList.remove('visible');
-            updateMirrorLines();
-            updateGhost();
-            if (typingInField(e)) return;
-          }
-        }
-        if (typingInField(e)) return;
-
-        if (e.key === 'Escape') {
-          const loadConfirm = document.getElementById('loadConfirm');
-          const namePrompt = document.getElementById('namePrompt');
-          const confirmUp = (loadConfirm && loadConfirm.style.display === 'flex')
-            || (namePrompt && namePrompt.style.display === 'flex');
-          if (confirmUp) return;
-          const tutorial = document.getElementById('tutorialModal');
-          if (tutorial && tutorial.classList.contains('visible')) tutorial.classList.remove('visible');
-          const keybind = document.getElementById('keybindModal');
-          if (keybind && keybind.classList.contains('visible')) keybind.classList.remove('visible');
-          const phoneTut = document.getElementById('phoneTutorial');
-          if (phoneTut && !phoneTut.hidden) {
-            phoneTut.hidden = true;
-            const box = document.getElementById('phoneTutorialDontShow');
-            if (box && box.checked) {
-              try { localStorage.setItem('brickBuilderTutorialDismissed', 'true'); } catch (err) {}
-            }
-          }
-          const gallery = document.getElementById('galleryModal');
-          if (gallery && gallery.style.display === 'flex') {
-            closeGallery();
-            return;
-          }
-          returnToPlaceMode();
-          return;
-        }
-        
-        // F11 for fullscreen (check before toLowerCase)
-        if (e.key === 'F11') {
-          e.preventDefault();
-          toggleFullscreenMode();
-          return;
-        }
-        
-        const key = e.key.toLowerCase();
-        keysPressed.add(key);
-        
-        // First-person mode controls
-        if (firstPersonMode) {
-          switch(key) {
-            case 'w': fpKeys.forward = true; break;
-            case 's': fpKeys.backward = true; break;
-            case 'a': fpKeys.left = true; break;
-            case 'd': fpKeys.right = true; break;
-            case 'c': toggleCrouch(); break;
-            case 'control': fpCrouching = true; document.getElementById('crouchBtn').classList.add('active'); break;
-            case 'tab': 
-              e.preventDefault();
-              // Release mouse to access sidebar menu
-              if (document.pointerLockElement) {
-                fpMenuMode = true;
-                document.exitPointerLock();
-                toast('🖱️ Mouse released - click canvas to resume', 'info');
-              }
-              break;
-            case 'q':
-              // Previous brick in quick slots
-              fpQuickSlotIndex = (fpQuickSlotIndex - 1 + fpQuickSlots.length) % fpQuickSlots.length;
-              selectFpQuickSlot(fpQuickSlotIndex);
-              break;
-            case 'e':
-              // Next brick in quick slots
-              fpQuickSlotIndex = (fpQuickSlotIndex + 1) % fpQuickSlots.length;
-              selectFpQuickSlot(fpQuickSlotIndex);
-              break;
-            case 'r':
-              // Rotate brick with R key
-              currentRotation = (currentRotation + 90) % 360;
-              { const hudRot = document.getElementById('hudRotLabel'); if (hudRot) hudRot.textContent = currentRotation + '°'; }
-              if (fpGhost) { scene.remove(fpGhost); fpGhost = null; }
-              updateFpBrickInfo();
-              break;
-            case 'enter':
-              // Enter key to place brick
-              e.preventDefault();
-              if (fpBuildMode) {
-                placeBrickInWalkMode();
-              }
-              break;
-          }
-          
-          // Arrow keys to nudge ghost position
-          switch(e.key) {
-            case 'ArrowUp':
-              e.preventDefault();
-              fpGhostOffset.z -= 1;
-              if (fpGhost) { scene.remove(fpGhost); fpGhost = null; }
-              break;
-            case 'ArrowDown':
-              e.preventDefault();
-              fpGhostOffset.z += 1;
-              if (fpGhost) { scene.remove(fpGhost); fpGhost = null; }
-              break;
-            case 'ArrowLeft':
-              e.preventDefault();
-              fpGhostOffset.x -= 1;
-              if (fpGhost) { scene.remove(fpGhost); fpGhost = null; }
-              break;
-            case 'ArrowRight':
-              e.preventDefault();
-              fpGhostOffset.x += 1;
-              if (fpGhost) { scene.remove(fpGhost); fpGhost = null; }
-              break;
-            case 'PageUp':
-              e.preventDefault();
-              fpGhostOffset.y += 1; // Move up 1 plate
-              if (fpGhost) { scene.remove(fpGhost); fpGhost = null; }
-              break;
-            case 'PageDown':
-              e.preventDefault();
-              fpGhostOffset.y -= 1; // Move down 1 plate
-              if (fpGhost) { scene.remove(fpGhost); fpGhost = null; }
-              break;
-          }
-          
-          // Number keys 1-9 for quick brick selection (or custom keybinds)
-          const slotIndex = typeof getSlotByKey === 'function' ? getSlotByKey(key) : (key >= '1' && key <= '9' ? parseInt(key) - 1 : -1);
-          if (slotIndex >= 0 && slotIndex < fpQuickSlots.length) {
-            selectFpQuickSlot(slotIndex);
-          }
-          // Space bar for jump (check code since key might vary)
-          if (e.code === 'Space' || e.key === ' ') {
-            fpKeys.jump = true;
-            e.preventDefault();
-          }
-          if (e.key === 'Escape') {
-            if (fpRadialMenuOpen) {
-              closeFpRadialMenu();
-            } else if (fpMenuMode) {
-              // If already in menu mode and pressing escape again, just exit completely
-              // (The double-tap handler will catch this too, but this is clearer)
-              fpMenuMode = false;
-              exitFirstPersonMode();
-            } else {
-              exitFirstPersonMode();
-            }
-          }
-          return;
-        }
-        
-        // Handle arrow keys for panning
-        switch(e.key) {
-          case 'ArrowUp':
-            e.preventDefault();
-            panCamera(0, 1);
-            return;
-          case 'ArrowDown':
-            e.preventDefault();
-            panCamera(0, -1);
-            return;
-          case 'ArrowLeft':
-            e.preventDefault();
-            panCamera(-1, 0);
-            return;
-          case 'ArrowRight':
-            e.preventDefault();
-            panCamera(1, 0);
-            return;
-        }
-        
-        switch(key) {
-          // WASD for panning
-          case 'w':
-            panCamera(0, 1);
-            break;
-          case 's':
-            panCamera(0, -1);
-            break;
-          case 'a':
-            panCamera(-1, 0);
-            break;
-          case 'd':
-            panCamera(1, 0);
-            break;
-          case 'r':
-            rotate(e.shiftKey ? 45 : 90);
-            break;
-          case 'x': // Delete mode
-            deleteMode = !deleteMode; dropperMode = false; paintMode = false;
-            document.getElementById('deleteBtn').classList.toggle('delete-active', deleteMode);
-            document.getElementById('dropperBtn').classList.remove('dropper-active');
-            document.getElementById('paintBtn').classList.remove('paint-active');
-            document.body.classList.toggle('delete-mode', deleteMode);
-            document.body.classList.remove('dropper-mode', 'paint-mode');
-            updateGhost();
-            toast(deleteMode ? '🗑️ Delete ON' : 'Delete OFF');
-            break;
-          case 'c':
-            dropperMode = !dropperMode; deleteMode = false; paintMode = false;
-            document.getElementById('dropperBtn').classList.toggle('dropper-active', dropperMode);
-            document.getElementById('deleteBtn').classList.remove('delete-active');
-            document.getElementById('paintBtn').classList.remove('paint-active');
-            document.body.classList.toggle('dropper-mode', dropperMode);
-            document.body.classList.remove('delete-mode', 'paint-mode');
-            updateGhost();
-            toast(dropperMode ? '💧 Dropper ON' : 'Dropper OFF');
-            break;
-          case 'p':
-            if (e.shiftKey) {
-              // Shift+P = Face Paint mode
-              facePaintMode = !facePaintMode; paintMode = false; deleteMode = false; dropperMode = false; floorMode = false;
-              document.getElementById('facePaintBtn').classList.toggle('facepaint-active', facePaintMode);
-              document.getElementById('paintBtn').classList.remove('paint-active');
-              document.getElementById('deleteBtn').classList.remove('delete-active');
-              document.getElementById('dropperBtn').classList.remove('dropper-active');
-              document.getElementById('floorBtn').classList.remove('floor-active');
-              document.body.classList.toggle('facepaint-mode', facePaintMode);
-              document.body.classList.remove('delete-mode', 'dropper-mode', 'paint-mode');
-              updateGhost();
-              toast(facePaintMode ? '🖌️ Face Paint ON - click brick sides' : 'Face Paint OFF');
-            } else {
-              // P = Regular Paint mode
-              paintMode = !paintMode; facePaintMode = false; deleteMode = false; dropperMode = false; floorMode = false;
-              document.getElementById('paintBtn').classList.toggle('paint-active', paintMode);
-              document.getElementById('facePaintBtn').classList.remove('facepaint-active');
-              document.getElementById('deleteBtn').classList.remove('delete-active');
-              document.getElementById('dropperBtn').classList.remove('dropper-active');
-              document.getElementById('floorBtn').classList.remove('floor-active');
-              document.body.classList.toggle('paint-mode', paintMode);
-              document.body.classList.remove('delete-mode', 'dropper-mode', 'facepaint-mode');
-              if (paintMode) updateBuildToolPopup(); // Close build popup if open
-              updateGhost();
-              toast(paintMode ? '🎨 Paint ON' : 'Paint OFF');
-            }
-            break;
-          case 'f':
-            floorMode = !floorMode; deleteMode = false; dropperMode = false; paintMode = false; facePaintMode = false; wallMode = false;
-            document.getElementById('floorBtn').classList.toggle('floor-active', floorMode);
-            document.getElementById('wallBtn').classList.remove('wall-active');
-            document.getElementById('deleteBtn').classList.remove('delete-active');
-            document.getElementById('dropperBtn').classList.remove('dropper-active');
-            document.getElementById('paintBtn').classList.remove('paint-active');
-            document.getElementById('facePaintBtn').classList.remove('facepaint-active');
-            document.body.classList.remove('delete-mode', 'dropper-mode', 'paint-mode', 'facepaint-mode');
-            if (!floorMode) cancelFloorDrag();
-            updateGhost();
-            updateBuildToolPopup();
-            toast(floorMode ? '⬜ Floor mode ON - drag to draw' : 'Floor mode OFF');
-            break;
-          case 'b':
-            wallMode = !wallMode; deleteMode = false; dropperMode = false; paintMode = false; facePaintMode = false; floorMode = false;
-            document.getElementById('wallBtn').classList.toggle('wall-active', wallMode);
-            document.getElementById('floorBtn').classList.remove('floor-active');
-            document.getElementById('deleteBtn').classList.remove('delete-active');
-            document.getElementById('dropperBtn').classList.remove('dropper-active');
-            document.getElementById('paintBtn').classList.remove('paint-active');
-            document.getElementById('facePaintBtn').classList.remove('facepaint-active');
-            document.body.classList.remove('delete-mode', 'dropper-mode', 'paint-mode', 'facepaint-mode');
-            if (!wallMode) cancelWallDrag();
-            updateGhost();
-            updateBuildToolPopup();
-            toast(wallMode ? '🧱 Wall mode ON - drag to draw' : 'Wall mode OFF');
-            break;
-          case 'g':
-            gravityOn = !gravityOn;
-            document.getElementById('gravityBtn').classList.toggle('active', gravityOn);
-            if (gravityOn) applyGravity();
-            toast(gravityOn ? '🌍 Gravity ON' : 'Gravity OFF');
-            break;
-          case 't': // Pitch rotation
-            currentPitch = (currentPitch + 90) % 360;
-            updateGhost();
-            toast(`↕️ Pitch: ${currentPitch}°`);
-            break;
-          case 'y': // Roll rotation OR Ctrl+Y for redo
-            if (e.ctrlKey || e.metaKey) {
-              e.preventDefault();
-              redo();
-            } else {
-              currentRoll = (currentRoll + 90) % 360;
-              updateGhost();
-              toast(`↔️ Roll: ${currentRoll}°`);
-            }
-            break;
-          case 'm':
-            mirrorOn = !mirrorOn;
-            document.getElementById('mirrorBtn').classList.toggle('active', mirrorOn);
-            document.getElementById('mirrorSettings').classList.toggle('visible', mirrorOn);
-            document.getElementById('mirrorPopup').classList.toggle('visible', mirrorOn);
-            if (mirrorOn) showFloating(document.getElementById('mirrorPopup'));
-            updateMirrorLines();
-            updateGhost();
-            toast(mirrorOn ? '🔀 Mirror ON' : 'Mirror OFF');
-            break;
-          case 'n':
-            moveMode = !moveMode;
-            deleteMode = dropperMode = paintMode = floorMode = wallMode = false;
-            document.getElementById('moveBtn').classList.toggle('move-active', moveMode);
-            document.getElementById('moveModeIndicator').classList.toggle('visible', moveMode);
-            document.getElementById('deleteBtn').classList.remove('delete-active');
-            document.getElementById('dropperBtn').classList.remove('dropper-active');
-            document.getElementById('paintBtn').classList.remove('paint-active');
-            document.getElementById('floorBtn').classList.remove('floor-active');
-            document.getElementById('wallBtn').classList.remove('wall-active');
-            document.body.classList.remove('delete-mode', 'dropper-mode', 'paint-mode');
-            if (!moveMode) clearMoveSelection();
-            updateGhost();
-            toast(moveMode ? '✋ Move mode ON' : 'Move mode OFF');
-            break;
-          case 'q': // Zoom in
-            zoomCamera(-3);
-            break;
-          case 'e': // Zoom out
-            zoomCamera(3);
-            break;
-          case 'z':
-            if (e.ctrlKey || e.metaKey) { e.preventDefault(); e.shiftKey ? redo() : undo(); }
-            break;
-          case 's':
-            if (e.ctrlKey || e.metaKey) { e.preventDefault(); saveProject(); }
-            break;
-          case 'tab':
-            e.preventDefault();
-            window.toggleSidebar();
-            break;
-          case 'v':
-            // Toggle walk mode
-            toggleFirstPersonMode();
-            break;
-          case 'escape':
-            // Exit fullscreen mode first
-            if (fullscreenMode) {
-              exitFullscreenMode();
-              return;
-            }
-            deleteMode = dropperMode = paintMode = false;
-            document.getElementById('deleteBtn').classList.remove('delete-active');
-            document.getElementById('dropperBtn').classList.remove('dropper-active');
-            document.getElementById('paintBtn').classList.remove('paint-active');
-            document.body.classList.remove('delete-mode', 'dropper-mode', 'paint-mode');
-            // Close mirror popup if open
-            if (mirrorOn) {
-              mirrorOn = false;
-              document.getElementById('mirrorBtn').classList.remove('active');
-              document.getElementById('mirrorSettings').classList.remove('visible');
-              document.getElementById('mirrorPopup').classList.remove('visible');
-              updateMirrorLines();
-            }
-            // Cancel move mode selection
-            if (moveMode && selectedGroup.length > 0) {
-              clearMoveSelection();
-              toast('Move selection cancelled');
-            } else if (moveMode) {
-              moveMode = false;
-              document.getElementById('moveBtn').classList.remove('move-active');
-              document.getElementById('moveModeIndicator').classList.remove('visible');
-              toast('Move mode OFF');
-            }
-            // Cancel floor drag if in progress
-            if (floorMode && floorDragStart) {
-              cancelFloorDrag();
-              toast('Floor drag cancelled');
-            }
-            updateGhost();
-            break;
-        }
-      }
       document.addEventListener('keydown', onBuilderKeyDown);
     }
     function bindInputEvents4() {

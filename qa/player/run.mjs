@@ -122,28 +122,55 @@ async function clickAt(page, x, y, opts) {
     await page.touchscreen.tap(x, y);
     return;
   }
-  // One finger tap. Chrome usually synthesizes the click from the touch.
-  // A second mouse click toggles Floor, Wall, Mirror, and a section shut.
-  // If this tap produced no click, send one. Canvas stays touch-only.
-  await page.evaluate(() => {
-    window.__playerClicks = 0;
-    if (!window.__playerClickCounter) {
-      window.__playerClickCounter = true;
-      document.addEventListener('click', () => { window.__playerClicks++; }, true);
+  // One finger tap. Chrome usually synthesizes the click on the element
+  // under the finger. A click on some other node must not count: Floor then
+  // never receives a click, and a second mouse click would toggle it shut.
+  // Canvas stays touch-only.
+  await page.evaluate(([px, py]) => {
+    const el = document.elementFromPoint(px, py);
+    window.__playerHit = 0;
+    window.__playerHitEl = el;
+    window.__playerSameControl = window.__playerSameControl || function (want, target) {
+      if (!want || !target) return false;
+      if (target === want || (want.contains && want.contains(target))) return true;
+      let node = want.parentElement;
+      for (let i = 0; i < 4 && node; i++) {
+        if (node === target) return true;
+        node = node.parentElement;
+      }
+      return false;
+    };
+    if (!window.__playerHitBound) {
+      window.__playerHitBound = true;
+      document.addEventListener('click', (event) => {
+        const want = window.__playerHitEl;
+        const t = event.target;
+        if (want && t && window.__playerSameControl(want, t)) window.__playerHit++;
+      }, true);
     }
-  });
-  const before = await page.evaluate(() => window.__playerClicks);
+  }, [x, y]);
+  const before = await page.evaluate(() => window.__playerHit);
   await page.touchscreen.tap(x, y);
-  // The click Chrome synthesizes from the touch is a later task. Reading the
-  // counter in this turn misses it, and the fallback mouse click then toggles
-  // Floor, Wall, or Mirror back off.
   await page.evaluate(() => new Promise((resolve) => {
     let done = false;
-    const finish = () => { if (!done) { done = true; resolve(); } };
-    const timer = setTimeout(finish, 120);
-    document.addEventListener('click', () => { clearTimeout(timer); finish(); }, { capture: true, once: true });
+    const finish = () => {
+      if (done) return;
+      done = true;
+      document.removeEventListener('click', onClick, true);
+      resolve();
+    };
+    const timer = setTimeout(finish, 400);
+    const want = window.__playerHitEl;
+    function onClick(event) {
+      const t = event.target;
+      if (want && t && window.__playerSameControl(want, t)) {
+        clearTimeout(timer);
+        finish();
+      }
+    }
+    document.addEventListener('click', onClick, true);
   }));
-  const after = await page.evaluate(() => window.__playerClicks);
+  const after = await page.evaluate(() => window.__playerHit);
   if (after === before) await page.mouse.click(x, y, opts || {});
 }
 
@@ -1740,8 +1767,15 @@ async function main() {
     };
     writeFileSync(join(here, 'last-run.json'), JSON.stringify(summary, null, 2));
     console.log('SUITE', passed + '/' + results.length, 'failed', failed.map((r) => r.id).join(', '));
-    if (browser.isConnected()) await browser.close();
-    await new Promise((resolve) => server.close(resolve));
+    if (browser.isConnected()) {
+      await Promise.race([
+        browser.close(),
+        new Promise((resolve) => setTimeout(resolve, 4000))
+      ]);
+    }
+    server.closeAllConnections?.();
+    server.close();
+    process.exit(0);
   }
 }
 
