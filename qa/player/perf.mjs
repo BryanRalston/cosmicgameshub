@@ -221,6 +221,8 @@ while (Date.now() < end) {
         const timer = setTimeout(() => reject(new Error('ws')), 4000);
         ws.addEventListener('open', () => { clearTimeout(timer); resolve(); });
       });
+      ws.send(JSON.stringify({ id: 2, method: 'Emulation.setFocusEmulationEnabled', params: { enabled: true } }));
+      ws.send(JSON.stringify({ id: 3, method: 'Page.bringToFront' }));
       ws.send(JSON.stringify({ id: 1, method: 'Runtime.evaluate', params: { expression: \`(() => {
         if (window.__brixLoseHook) return 'already';
         window.__brixLoseHook = true;
@@ -254,14 +256,17 @@ using System.Runtime.InteropServices;
 public class WinF {
   [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
   [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr h, int n);
+  [DllImport("user32.dll")] public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
 }
 '@
-$conns = Get-NetTCPConnection -LocalPort ${port} -State Listen -ErrorAction SilentlyContinue
-foreach ($c in $conns) {
-  $p = Get-Process -Id $c.OwningProcess -ErrorAction SilentlyContinue
+$procs = Get-CimInstance Win32_Process -Filter "Name = 'chrome.exe'" | Where-Object { $_.CommandLine -match 'remote-debugging-port=${port}' }
+foreach ($c in $procs) {
+  $p = Get-Process -Id $c.ProcessId -ErrorAction SilentlyContinue
   if ($p -and $p.MainWindowHandle -ne 0) {
     [WinF]::ShowWindow($p.MainWindowHandle, 9) | Out-Null
+    [WinF]::keybd_event(0x12, 0, 0, [UIntPtr]::Zero)
     [WinF]::SetForegroundWindow($p.MainWindowHandle) | Out-Null
+    [WinF]::keybd_event(0x12, 0, 2, [UIntPtr]::Zero)
   }
 }
 `);
@@ -292,8 +297,10 @@ export async function measureLighthouse(base, port, outDir) {
         '--quiet'
       ];
       const r = spawnSync('npx', args, { stdio: 'inherit', shell: true, timeout: 180000 });
-      if (r.status !== 0) throw new Error('lighthouse run ' + i + ' status ' + r.status);
-      const j = JSON.parse((await import('node:fs')).readFileSync(out, 'utf8'));
+      const fs = await import('node:fs');
+      if (!fs.existsSync(out)) throw new Error('lighthouse run ' + i + ' status ' + r.status + ' wrote no report');
+      const j = JSON.parse(fs.readFileSync(out, 'utf8'));
+      if (j.runtimeError) throw new Error('lighthouse run ' + i + ' ' + j.runtimeError.code);
       const a = j.audits;
       const items = (a['long-tasks'] && a['long-tasks'].details && a['long-tasks'].details.items) || [];
       const long = items.filter((it) => it.duration > 50).map((it) => Math.round(it.duration) + '@' + Math.round(it.startTime));
