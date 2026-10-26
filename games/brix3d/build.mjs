@@ -216,10 +216,12 @@ for (const stale of readdirSync(root)) {
 }
 if (!/<!-- brix-sheets -->[\s\S]*?<!-- \/brix-sheets -->/.test(html)) throw new Error('sheet list missing');
 const nl = html.includes('\r\n') ? '\r\n' : '\n';
-const sheetTags = cssPartNames.map((name) => `  <link rel="preload" href="/games/brix3d/${name}" as="style" data-brix>`).join(nl);
+// One JSON list, not a preload tag per sheet. Twenty-four link elements in
+// the first HTML were part of the parse task that simulated past 50ms.
+const sheetJson = JSON.stringify(cssPartNames);
 html = html.replace(
   /<!-- brix-sheets -->[\s\S]*?<!-- \/brix-sheets -->/,
-  '<!-- brix-sheets -->' + nl + sheetTags + nl + '  <!-- /brix-sheets -->'
+  '<!-- brix-sheets -->' + nl + '  <script type="application/json" id="brix-sheets">' + sheetJson + '</script>' + nl + '  <!-- /brix-sheets -->'
 );
 writeFileSync(htmlPath, html);
 console.log('css parts', cssPartNames.join(' '), cssParts.map((p) => p.length).join(' '));

@@ -35,44 +35,25 @@
     #container { width: 100%; height: 100%; height: 100dvh; }
     
     #loadingScreen {
-      position: fixed; inset: 0; 
-      background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
+      position: fixed; inset: 0;
+      background: #0f0f1a;
       display: flex; flex-direction: column; justify-content: center; align-items: center;
-      z-index: 10000; transition: opacity 0.18s ease-out;
+      z-index: 10000;
     }
     #loadingScreen.hide { opacity: 0; pointer-events: none; visibility: hidden; }
-    .loading-logo { 
+    .loading-logo {
       width: 72px;
       height: 48px;
       border-radius: 6px;
       background: #e10600;
       box-shadow: inset 0 14px 0 #ff3b22;
     }
-    .loading-title { 
-      font-size: 28px; font-weight: 800; 
+    .loading-title {
+      font-size: 28px; font-weight: 800;
       color: #ffb000;
-      margin: 16px 0; 
+      margin: 16px 0;
       letter-spacing: 2px;
     }
-    .loading-subtitle { font-size: 14px; color: rgba(255,255,255,0.5); margin-bottom: 24px; }
-    .loading-bar { 
-      width: 280px; height: 6px; 
-      background: rgba(255,255,255,0.1); 
-      border-radius: 3px; overflow: hidden;
-      box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
-    }
-    .loading-progress { 
-      height: 100%;
-      width: 100%;
-      transform-origin: left center;
-      background: linear-gradient(90deg, #ffd700, #ff8c00, #ffd700);
-      background-size: 200% 100%;
-      animation: load 0.35s ease-out forwards;
-      border-radius: 3px;
-    }
-    @keyframes load { from { transform: scaleX(0); } to { transform: scaleX(1); } }
-    @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
-    @keyframes bounce { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-15px) scale(1.05); } }
     /* Painted with the splash, before any sliced sheet. Same box the phone
        toast keeps, so this text stays the largest paint. */
     #toast.brix-early {
@@ -96,67 +77,8 @@
     }
   </style>
   <!-- brix-sheets -->
-  <link rel="preload" href="/games/brix3d/brix3d-s00.74aa21305c.css" as="style" data-brix>
-  <link rel="preload" href="/games/brix3d/brix3d-s01.6c09f427c5.css" as="style" data-brix>
-  <link rel="preload" href="/games/brix3d/brix3d-s02.9c0b11d89c.css" as="style" data-brix>
-  <link rel="preload" href="/games/brix3d/brix3d-s03.eb6be5610c.css" as="style" data-brix>
-  <link rel="preload" href="/games/brix3d/brix3d-s04.a7ae12d2b8.css" as="style" data-brix>
-  <link rel="preload" href="/games/brix3d/brix3d-s05.297b2d8fca.css" as="style" data-brix>
-  <link rel="preload" href="/games/brix3d/brix3d-s06.130537a56b.css" as="style" data-brix>
-  <link rel="preload" href="/games/brix3d/brix3d-s07.8a3af5c887.css" as="style" data-brix>
-  <link rel="preload" href="/games/brix3d/brix3d-s08.a938ae2738.css" as="style" data-brix>
-  <link rel="preload" href="/games/brix3d/brix3d-s09.dfa0c9ea5d.css" as="style" data-brix>
-  <link rel="preload" href="/games/brix3d/brix3d-s10.2deea5502a.css" as="style" data-brix>
-  <link rel="preload" href="/games/brix3d/brix3d-s11.5815d7c3b9.css" as="style" data-brix>
-  <link rel="preload" href="/games/brix3d/brix3d-s12.c08da42935.css" as="style" data-brix>
-  <link rel="preload" href="/games/brix3d/brix3d-s13.74f51ca606.css" as="style" data-brix>
-  <link rel="preload" href="/games/brix3d/brix3d-s14.6b02a4341a.css" as="style" data-brix>
-  <link rel="preload" href="/games/brix3d/brix3d-s15.5936553273.css" as="style" data-brix>
-  <link rel="preload" href="/games/brix3d/brix3d-s16.17c8b37d3e.css" as="style" data-brix>
-  <link rel="preload" href="/games/brix3d/brix3d-s17.b2a9b31a0a.css" as="style" data-brix>
-  <link rel="preload" href="/games/brix3d/brix3d-s18.db9121b80f.css" as="style" data-brix>
-  <link rel="preload" href="/games/brix3d/brix3d-s19.29c83a4529.css" as="style" data-brix>
-  <link rel="preload" href="/games/brix3d/brix3d-s20.7a24cd5e5d.css" as="style" data-brix>
-  <link rel="preload" href="/games/brix3d/brix3d-s21.dcb8121881.css" as="style" data-brix>
-  <link rel="preload" href="/games/brix3d/brix3d-s22.44d5c7bbb3.css" as="style" data-brix>
-  <link rel="preload" href="/games/brix3d/brix3d-s23.faefa512dd.css" as="style" data-brix>
+  <script type="application/json" id="brix-sheets">["brix3d-s00.74aa21305c.css","brix3d-s01.6c09f427c5.css","brix3d-s02.9c0b11d89c.css","brix3d-s03.eb6be5610c.css","brix3d-s04.a7ae12d2b8.css","brix3d-s05.297b2d8fca.css","brix3d-s06.130537a56b.css","brix3d-s07.8a3af5c887.css","brix3d-s08.a938ae2738.css","brix3d-s09.dfa0c9ea5d.css","brix3d-s10.2deea5502a.css","brix3d-s11.5815d7c3b9.css","brix3d-s12.c08da42935.css","brix3d-s13.74f51ca606.css","brix3d-s14.6b02a4341a.css","brix3d-s15.5936553273.css","brix3d-s16.17c8b37d3e.css","brix3d-s17.b2a9b31a0a.css","brix3d-s18.db9121b80f.css","brix3d-s19.29c83a4529.css","brix3d-s20.7a24cd5e5d.css","brix3d-s21.dcb8121881.css","brix3d-s22.44d5c7bbb3.css","brix3d-s23.faefa512dd.css"]</script>
   <!-- /brix-sheets -->
-  <script>
-    setTimeout(function start() {
-      if (!document.body) { setTimeout(start, 0); return; }
-      var nodes = document.querySelectorAll('link[data-brix]');
-      var i = 0;
-      function boot() {
-        var s = document.createElement('script');
-        s.src = '/games/brix3d/brix-shell.js';
-        s.onload = function () {
-          setTimeout(function () {
-            var m = document.createElement('script');
-            m.src = '/games/brix3d/brix-mount.js';
-            document.body.appendChild(m);
-          }, 0);
-        };
-        document.body.appendChild(s);
-      }
-      // Preloads download together. Each sheet is parsed and laid out on its
-      // own turn. Applying every sheet in the first paint was the long task.
-      function step() {
-        if (i >= nodes.length) { boot(); return; }
-        var preload = nodes[i++];
-        var link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = preload.getAttribute('href');
-        function next() {
-          void document.body.offsetHeight;
-          setTimeout(step, 0);
-        }
-        link.onload = next;
-        link.onerror = next;
-        document.head.appendChild(link);
-      }
-      setTimeout(step, 0);
-    }, 0);
-  </script>
   <meta property="og:image" content="https://www.cosmicgameshub.com/images/game-brix3d-og.jpg">
   <meta property="og:image:width" content="1280">
   <meta property="og:image:height" content="720">
@@ -193,28 +115,12 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="CosmicGamesHub">
   <meta property="og:url" content="https://www.cosmicgameshub.com/games/brix3d">
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    window.addEventListener('load', function () {
-      var loadGa = function () {
-        var s = document.createElement('script');
-        s.async = true;
-        s.src = 'https://www.googletagmanager.com/gtag/js?id=G-D272MF8NQP';
-        document.head.appendChild(s);
-        gtag('js', new Date());
-        gtag('config', 'G-D272MF8NQP');
-      };
-      setTimeout(loadGa, 15000);
-    });
-  </script>
+
 </head>
 <body class="page-game">
   <div id="loadingScreen">
     <div class="loading-logo"></div>
     <div class="loading-title">BRIX 3D</div>
-    <div class="loading-subtitle">3D Brick Builder</div>
-    <div class="loading-bar"><div class="loading-progress"></div></div>
   </div>
   <div class="toast show success brix-early" id="toast">Tap a starter, or tap the plate. The ghost is your 2×2.</div>
   <div id="phoneTutorial" class="phone-tutorial" hidden>
@@ -229,61 +135,6 @@
       <button type="button" id="phoneTutorialOk">Got it</button>
     </div>
   </div>
-
-
-  <script>
-    (function () {
-      document.addEventListener('click', function (event) {
-        var btn = event.target.closest && event.target.closest('.brix-more__toggle');
-        if (!btn) return;
-        var nav = btn.closest('.brix-more');
-        if (!nav) return;
-        var open = nav.classList.toggle('is-open');
-        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-      });
-      function track(name, params) {
-        if (typeof window.gtag !== 'function') return;
-        window.gtag('event', name, params);
-      }
-      function referrerPath() {
-        try {
-          if (!document.referrer) return 'direct';
-          var url = new URL(document.referrer);
-          if (url.origin !== location.origin) return 'direct';
-          return url.pathname || '/';
-        } catch (err) {
-          return 'direct';
-        }
-      }
-      document.addEventListener('click', function (event) {
-        var link = event.target.closest && event.target.closest('a[href]');
-        if (!link) return;
-        var match = (link.getAttribute('href') || '').match(/^\/games\/([a-z0-9-]+)$/);
-        if (!match || match[1] === 'brix3d') return;
-        track('game_card_click', { game: match[1], source_page: '/games/brix3d', placement: 'more_games' });
-      }, true);
-      var started = false;
-      function start(event) {
-        if (started) return;
-        if (event.type === 'keydown' && (event.key === '/' || event.key === 'Escape' || event.metaKey || event.ctrlKey || event.altKey)) return;
-        var target = event.target;
-        if (target.closest && target.closest('.brix-more, a')) return;
-        started = true;
-        track('game_start', { game: 'brix3d', source_page: referrerPath() });
-      }
-      document.addEventListener('pointerdown', start, true);
-      document.addEventListener('keydown', start, true);
-      fetch('/data/featured.json', { credentials: 'same-origin' })
-        .then(function (response) { return response.json(); })
-        .then(function (data) {
-          if (!data || data.slug !== 'brix3d' || document.querySelector('.gotw-tag')) return;
-          var tag = document.createElement('p');
-          tag.className = 'gotw-tag gotw-tag--float';
-          tag.textContent = 'Game of the Week';
-          document.body.appendChild(tag);
-        })
-        .catch(function () {});
-    })();
-  </script>
+  <script>window.addEventListener('pagehide',function(ev){if(ev.persisted)return;try{if(window.__brixRelease)window.__brixRelease();}catch(e){}});setTimeout(function(){var s=document.createElement('script');s.src='/games/brix3d/brix-boot.js';document.body.appendChild(s);},0);</script>
 </body>
 </html>

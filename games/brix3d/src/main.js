@@ -279,6 +279,37 @@
     // ==================== STATE ====================
     let scene, camera, renderer, controls, raycaster, mouse, groundPlane;
     let composer, bloomPass, ssaoPass, vignettePass, gradeScreenPass;
+    // The next document's first task waits out any sweep still running in this
+    // process. Drop the world first so that sweep is small and happens here.
+    function releaseBrixHeap() {
+      try {
+        if (renderer) {
+          renderer.dispose();
+          renderer.forceContextLoss();
+        }
+      } catch (err) {}
+      renderer = null;
+      try {
+        instancedSystem.meshes.forEach((data) => {
+          const mesh = data && data.mesh;
+          if (!mesh) return;
+          if (mesh.geometry) mesh.geometry.dispose();
+          if (mesh.material && mesh.material.dispose) mesh.material.dispose();
+          mesh.dispose();
+        });
+        instancedSystem.meshes.clear();
+        instancedSystem.geometryCache.forEach((geo) => { try { geo.dispose(); } catch (err) {} });
+        instancedSystem.geometryCache.clear();
+        instancedSystem.materialCache.forEach((mat) => { try { mat.dispose(); } catch (err) {} });
+        instancedSystem.materialCache.clear();
+        instancedSystem.brickLookup.clear();
+      } catch (err) {}
+      try { if (scene) scene.clear(); } catch (err) {}
+      scene = null;
+      camera = null;
+      composer = null;
+    }
+    window.__brixRelease = releaseBrixHeap;
     let postMods = null;
     let postModsPromise = null;
     let ssaoPromise = null;
@@ -1085,7 +1116,10 @@
       // splash-only box now; the stylesheet already has the real toast size.
       document.body.classList.add('brix-live');
       const hinted = document.getElementById('toast');
-      if (hinted) hinted.classList.remove('brix-early');
+      // The splash hint is green so the first paint has a text box. A green
+      // bar left across the sky is a hard edge, so the playing hint is the
+      // dark toast and only when the phone card is not already explaining it.
+      if (hinted) hinted.classList.remove('brix-early', 'show', 'success');
       await yieldTick();
       const openingShare = !!shareTokenFromLocation();
       const phoneHold = phoneTutorialPending();
@@ -1101,7 +1135,7 @@
       // long enough to survive Lantern's prune, scheduled after every module.
       if (!phoneHold && !openingShare && !bricks.length) {
         if (window.innerWidth <= 768) {
-          toast('Tap a starter, or tap the plate. The ghost is your 2×2.', 'success', true);
+          toast('Tap a starter, or tap the plate. The ghost is your 2×2.', '', true);
         } else if (!dailyTipWillShow()) {
           toast('Plate is ready. Tap a starter or place your first brick.', 'success', true);
         }
