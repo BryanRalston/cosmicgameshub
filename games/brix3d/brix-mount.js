@@ -308,6 +308,23 @@
           }
           watchShows(hold);
           markCold(hold);
+          // The name row stays display:none until Skip. A box under the
+          // loader makes the first click type into the loader.
+          function unparkProjectName() {
+            var field = document.getElementById('projectName');
+            var node = field;
+            var guard = 0;
+            while (node && node.id !== 'brixHold' && guard++ < 14) {
+              node.classList.remove('brix-park');
+              node.classList.remove('brix-cold');
+              node = node.parentElement;
+            }
+            var title = document.querySelector('#projectSection > .section-title');
+            if (title) {
+              title.classList.remove('brix-park');
+              title.classList.remove('brix-cold');
+            }
+          }
           // Skip has to close the card even when it lands before the game
           // module binds its own listener. A later show must not undo that.
           hold.addEventListener('click', function (e) {
@@ -317,6 +334,7 @@
             if (!modal) return;
             modal.dataset.closed = '1';
             modal.classList.remove('visible');
+            unparkProjectName();
           }, true);
           // The game binds Escape only after its module evaluates. A player
           // can close the card in that gap. One Escape has to win.
@@ -326,6 +344,7 @@
             if (!modal || !modal.classList.contains('visible')) return;
             modal.dataset.closed = '1';
             modal.classList.remove('visible');
+            unparkProjectName();
           }, true);
           setTimeout(function () {
             hold.style.display = '';
@@ -337,11 +356,10 @@
             // the part files. A fetch that finishes before this paint is
             // simulated as render-blocking for the whole graph.
             setTimeout(function () {
-              // The name field thaws with the sidebar, after this turn. The
-              // card has to be up first, with Skip in this same turn, or a
-              // player who types and then hits Save clicks the card instead.
               // Desktop waits until the orbit pose exists. A card shown
               // before that reads as the camera moving under the modal.
+              // The name row stays parked until Skip, so a click cannot
+              // land on it while this card or the loader is on top.
               function showDeskTutorial() {
                 if (window.innerWidth <= 768) return;
                 if (/(?:^#|[?&#])b=/.test(location.hash + location.search)) return;

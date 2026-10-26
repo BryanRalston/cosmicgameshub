@@ -9599,6 +9599,87 @@
         dist = bestDist;
       }
       applyPose();
+      // A wide spread framed head-on keeps the group inside the card and
+      // leaves each brick a speck. Step outside the farthest brick and look
+      // back through it so that brick fills the card and the others stay in.
+      // A tight build already has a readable brick, so this search is skipped.
+      const widenNearBrick = () => {
+        const w = scratch.width;
+        const h = scratch.height;
+        const sample = () => {
+          const m = renderSceneToCanvas(scratch) || { n: 0, extent: 0, margin: 0 };
+          const data = scratch.getContext('2d').getImageData(0, 0, w, h).data;
+          return { m, share: largestRedShare(data, w, h) };
+        };
+        const pass = (s) => s.m.n >= 150 && s.m.extent >= 0.4 && s.m.extent <= 0.75 && s.m.margin >= 0.02 && s.share >= 0.12;
+        const base = sample();
+        if (pass(base) || base.m.n < 8) return;
+        let far = null;
+        let farD = 0;
+        for (let i = 0; i < bricks.length; i++) {
+          const p = bricks[i].position;
+          if (!p) continue;
+          const d = Math.hypot(p.x - aim.x, p.z - aim.z);
+          if (!far || d > farD) { farD = d; far = p; }
+        }
+        if (!far || farD < 0.4) return;
+        const home = camera.position.clone();
+        const ax = far.x - aim.x;
+        const az = far.z - aim.z;
+        const alen = Math.hypot(ax, az) || 1;
+        const ux = ax / alen;
+        const uz = az / alen;
+        const px = -uz;
+        const pz = ux;
+        const heights = [0.45, 1.3, 2.8];
+        const angs = [-0.9, -0.35, 0, 0.35, 0.9];
+        const gapHi = Math.max(8, farD * 1.4);
+        for (let a = 0; a < angs.length; a++) {
+          const s = Math.sin(angs[a]);
+          const c = Math.cos(angs[a]);
+          const dx = ux * c + px * s;
+          const dz = uz * c + pz * s;
+          for (let k = 0; k < heights.length; k++) {
+            let lo = 0.7;
+            let hi = gapHi;
+            for (let step = 0; step < 6; step++) {
+              const gap = (lo + hi) * 0.5;
+              camera.position.set(far.x + dx * gap, Math.max(0.55, far.y + heights[k]), far.z + dz * gap);
+              camera.up.set(0, 1, 0);
+              camera.lookAt(aim);
+              camera.updateMatrixWorld(true);
+              const shot = sample();
+              if (pass(shot)) {
+                let chosenGap = gap;
+                let chosenShare = shot.share;
+                for (let t = 0; t < 2; t++) {
+                  const tighter = chosenGap * 0.82;
+                  camera.position.set(far.x + dx * tighter, Math.max(0.55, far.y + heights[k]), far.z + dz * tighter);
+                  camera.up.set(0, 1, 0);
+                  camera.lookAt(aim);
+                  camera.updateMatrixWorld(true);
+                  const closer = sample();
+                  if (!(pass(closer) && closer.share > chosenShare)) break;
+                  chosenGap = tighter;
+                  chosenShare = closer.share;
+                }
+                camera.position.set(far.x + dx * chosenGap, Math.max(0.55, far.y + heights[k]), far.z + dz * chosenGap);
+                camera.up.set(0, 1, 0);
+                camera.lookAt(aim);
+                camera.updateMatrixWorld(true);
+                return;
+              }
+              if (shot.m.n < 40 || shot.m.margin < 0.02 || shot.m.extent > 0.75) lo = gap;
+              else hi = gap;
+            }
+          }
+        }
+        camera.position.copy(home);
+        camera.up.set(0, 1, 0);
+        camera.lookAt(aim);
+        camera.updateMatrixWorld(true);
+      };
+      widenNearBrick();
       // A 200px thumb samples the brick edge as plate green, so a wide
       // spread's red count sits a hair under the solidity bar. Draw at 2x
       // and keep a pixel when any of its samples is the brick.
@@ -10677,12 +10758,11 @@
       // Arming is only the mode. A brick leaves on a later plate click.
       toast('🗑️ Delete ON');
     }
-    let savePressAt = 0;
     function onSavePress(event) {
       if (event && event.button != null && event.button > 0) return;
-      const now = performance.now();
-      if (now - savePressAt < 400) return;
-      savePressAt = now;
+      // Click only. A pointerdown save plus a 400ms guard ate the next
+      // Save when the second brick landed inside that window, so a real
+      // overwrite never asked.
       saveProject();
     }
     let mobileTrayUserExpanded = false;
@@ -12229,7 +12309,6 @@
       document.getElementById('newProjectBtn').addEventListener('click', newProject);
       refreshProjectList();
       const saveProjectBtn = document.getElementById('saveProjectBtn');
-      saveProjectBtn.addEventListener('pointerdown', onSavePress);
       saveProjectBtn.addEventListener('click', onSavePress);
       document.getElementById('loadProjectBtn').addEventListener('click', toggleProjectList);
       document.getElementById('tutorialBtn').addEventListener('click', () => {
@@ -12638,6 +12717,44 @@
         gradeOut.texture.colorSpace = THREE.LinearSRGBColorSpace;
       }
     }
+    function largestRedShare(buf, w, h) {
+      if (!buf || w < 2 || h < 2) return 0;
+      const seen = new Uint8Array(w * h);
+      const redAt = (p) => {
+        const i = p * 4;
+        const r = buf[i];
+        const g = buf[i + 1];
+        const b = buf[i + 2];
+        return r > 140 && r > g + 28 && r > b + 28;
+      };
+      let best = 0;
+      const n = w * h;
+      for (let p = 0; p < n; p++) {
+        if (seen[p] || !redAt(p)) continue;
+        let minX = p % w;
+        let maxX = minX;
+        let minY = (p / w) | 0;
+        let maxY = minY;
+        const stack = [p];
+        seen[p] = 1;
+        while (stack.length) {
+          const q = stack.pop();
+          const x = q % w;
+          const y = (q - x) / w;
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+          if (x > 0 && !seen[q - 1] && redAt(q - 1)) { seen[q - 1] = 1; stack.push(q - 1); }
+          if (x + 1 < w && !seen[q + 1] && redAt(q + 1)) { seen[q + 1] = 1; stack.push(q + 1); }
+          if (y > 0 && !seen[q - w] && redAt(q - w)) { seen[q - w] = 1; stack.push(q - w); }
+          if (y + 1 < h && !seen[q + w] && redAt(q + w)) { seen[q + w] = 1; stack.push(q + w); }
+        }
+        best = Math.max(best, maxX - minX + 1, maxY - minY + 1);
+      }
+      return best / Math.min(w, h);
+    }
+
     function redSpan(buf, w, h) {
       let n = 0;
       let minX = w;
