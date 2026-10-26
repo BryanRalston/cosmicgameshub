@@ -172,9 +172,56 @@ const cssName = `brix3d.${createHash('sha256').update(cssBuf).digest('hex').slic
 if (cssName !== cssFiles[0]) {
   writeFileSync(join(root, cssName), cssBuf);
   unlinkSync(join(root, cssFiles[0]));
-  html = html.split(`/games/brix3d/${cssFiles[0]}`).join(`/games/brix3d/${cssName}`);
 }
+const cssText = cssBuf.toString('utf8');
+// Cut only after a top-level rule. A cut inside @media (max-width: 430px)
+// copied the phone tray onto the desktop and pushed the name field off screen.
+// Each part stays near 10KB so a slow sample still simulates under 50ms.
+function splitStylesheet(text, budget) {
+  const parts = [];
+  let depth = 0;
+  let partStart = 0;
+  let ruleStart = 0;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === '{') depth++;
+    else if (ch === '}') {
+      depth--;
+      if (depth < 0) throw new Error('css brace underflow');
+      if (depth === 0) {
+        const end = i + 1;
+        if (end - partStart > budget && ruleStart > partStart) {
+          parts.push(text.slice(partStart, ruleStart));
+          partStart = ruleStart;
+        }
+        ruleStart = end;
+      }
+    }
+  }
+  if (depth !== 0) throw new Error('css brace still open');
+  const tail = text.slice(partStart);
+  if (tail.trim()) parts.push(tail);
+  return parts;
+}
+const cssParts = splitStylesheet(cssText, 10000);
+const cssPartNames = cssParts.map((part, i) => {
+  const name = `brix3d-s${String(i).padStart(2, '0')}.${createHash('sha256').update(part).digest('hex').slice(0, 10)}.css`;
+  writeFileSync(join(root, name), part);
+  return name;
+});
+for (const stale of readdirSync(root)) {
+  if (/^brix3d-[a-h]\.[0-9a-f]{10}\.css$/.test(stale)) unlinkSync(join(root, stale));
+  if (/^brix3d-s\d{2}\.[0-9a-f]{10}\.css$/.test(stale) && !cssPartNames.includes(stale)) unlinkSync(join(root, stale));
+}
+if (!/<!-- brix-sheets -->[\s\S]*?<!-- \/brix-sheets -->/.test(html)) throw new Error('sheet list missing');
+const nl = html.includes('\r\n') ? '\r\n' : '\n';
+const sheetTags = cssPartNames.map((name) => `  <link rel="stylesheet" href="/games/brix3d/${name}" media="print" data-brix>`).join(nl);
+html = html.replace(
+  /<!-- brix-sheets -->[\s\S]*?<!-- \/brix-sheets -->/,
+  '<!-- brix-sheets -->' + nl + sheetTags + nl + '  <!-- /brix-sheets -->'
+);
 writeFileSync(htmlPath, html);
+console.log('css parts', cssPartNames.join(' '), cssParts.map((p) => p.length).join(' '));
 
 const bootCode = readFileSync(join(root, mainName));
 const postCode = readFileSync(join(root, postName));

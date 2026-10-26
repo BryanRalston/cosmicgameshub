@@ -118,8 +118,33 @@ async function clickAt(page, x, y, opts) {
     const el = document.elementFromPoint(px, py);
     return !!(el && el.tagName === 'CANVAS');
   }, [x, y]);
+  if (onCanvas) {
+    await page.touchscreen.tap(x, y);
+    return;
+  }
+  // One finger tap. Chrome usually synthesizes the click from the touch.
+  // A second mouse click toggles Floor, Wall, Mirror, and a section shut.
+  // If this tap produced no click, send one. Canvas stays touch-only.
+  await page.evaluate(() => {
+    window.__playerClicks = 0;
+    if (!window.__playerClickCounter) {
+      window.__playerClickCounter = true;
+      document.addEventListener('click', () => { window.__playerClicks++; }, true);
+    }
+  });
+  const before = await page.evaluate(() => window.__playerClicks);
   await page.touchscreen.tap(x, y);
-  if (!onCanvas) await page.mouse.click(x, y, opts || {});
+  // The click Chrome synthesizes from the touch is a later task. Reading the
+  // counter in this turn misses it, and the fallback mouse click then toggles
+  // Floor, Wall, or Mirror back off.
+  await page.evaluate(() => new Promise((resolve) => {
+    let done = false;
+    const finish = () => { if (!done) { done = true; resolve(); } };
+    const timer = setTimeout(finish, 120);
+    document.addEventListener('click', () => { clearTimeout(timer); finish(); }, { capture: true, once: true });
+  }));
+  const after = await page.evaluate(() => window.__playerClicks);
+  if (after === before) await page.mouse.click(x, y, opts || {});
 }
 
 async function clickLoc(page, locator, opts) {
@@ -236,41 +261,132 @@ async function ready(page) {
   await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
 }
 
+async function drawerOpen(page) {
+  return page.locator('#controls').evaluate((el) => el.classList.contains('tray-open'));
+}
+
 async function ensureDrawer(page) {
   if (!page.__phone) return;
-  const open = await page.locator('#controls').evaluate((el) => el.classList.contains('tray-open'));
-  if (!open) await clickSel(page, '#panelToggle');
+  if (!(await drawerOpen(page))) await clickSel(page, '#panelToggle');
+}
+
+async function closeDrawer(page) {
+  if (!page.__phone) return;
+  if (await drawerOpen(page)) await clickSel(page, '#panelToggle');
 }
 
 async function scrollUntil(page, locator) {
   const vp = page.viewportSize();
-  for (let i = 0; i < 16; i++) {
+  const onScreen = (b) => b && b.width > 4 && b.height > 4 && b.y > 4 && b.y + b.height < vp.height - 4 && b.x > -2 && b.x + b.width < vp.width + 2;
+  // A box inside the viewport can still sit under the phone HUD or above the
+  // tray's clip. A player keeps scrolling until the control is the top hit.
+  const hitInfo = async (b) => {
+    if (!b) return { ok: false, cover: 'low' };
+    const mid = b.y + b.height / 2;
+    if (mid < 0 || mid > vp.height) return { ok: false, cover: mid < 0 ? 'high' : 'low' };
+    if (!page.__phone) return { ok: onScreen(b), cover: onScreen(b) ? '' : 'low' };
+    const x = b.x + b.width / 2;
+    const y = mid;
+    return locator.evaluate((el, pt) => {
+      const top = document.elementFromPoint(pt.x, pt.y);
+      const ok = !!(top && (top === el || el.contains(top)));
+      let cover = '';
+      if (top && top.closest) {
+        if (top.closest('#buildHud')) cover = 'hud';
+        else if (top.closest('#panelToggle')) cover = 'toggle';
+        else if (top.closest('#projectSection') && !el.closest('#projectSection')) cover = 'project';
+      }
+      return { ok, cover };
+    }, { x, y }).catch(() => ({ ok: false, cover: '' }));
+  };
+  let lastScroll = null;
+  let stuck = 0;
+  for (let i = 0; i < 24; i++) {
     const b = await locator.boundingBox().catch(() => null);
-    if (b && b.width > 4 && b.height > 4 && b.y > 4 && b.y + b.height < vp.height - 4 && b.x > -2 && b.x + b.width < vp.width + 2) return b;
+    const info = await hitInfo(b);
+    if (info.ok) return b;
     const tray = await page.locator(page.__phone ? '.tray-scroll' : '#controls').first().boundingBox();
     if (!tray) break;
-    if (page.__phone) {
-      const client = await page.context().newCDPSession(page);
-      const x = tray.x + Math.min(40, tray.width / 2);
-      const y = Math.min(vp.height - 30, tray.y + Math.min(70, tray.height / 2));
-      await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y, id: 1 }] });
-      await client.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y: y - 120, id: 1 }] });
-      await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-    } else {
+    if (!page.__phone) {
+      const openTop = tray.y + 6;
+      const openBot = Math.min(vp.height - 6, tray.y + tray.height - 6);
+      const midY = b ? b.y + b.height / 2 : openBot + 80;
+      const cover = info.cover || '';
+      const fingerDown = cover === 'toggle' || cover === 'high' || cover === 'project' || midY < openTop;
       await page.mouse.move(tray.x + 36, Math.min(tray.y + 180, vp.height - 40));
-      await page.mouse.wheel(0, 360);
+      await page.mouse.wheel(0, fingerDown ? -420 : 420);
+      continue;
+    }
+    // Move the control's center toward the middle of the open sheet.
+    // A full reversal between the HUD and the handle never settled.
+    const safeTop = tray.y + 10;
+    const safeBot = Math.min(vp.height - 8, tray.y + tray.height - 10);
+    const safeMid = (safeTop + safeBot) / 2;
+    const midY = b ? b.y + b.height / 2 : safeBot + 40;
+    const error = midY - safeMid;
+    const mag = Math.max(28, Math.min(90, Math.abs(error) * 0.5));
+    const client = await page.context().newCDPSession(page);
+    const x = Math.round(tray.x + Math.min(36, tray.width * 0.35));
+    const y0 = Math.round(Math.min(safeBot - 16, Math.max(safeTop + 20, safeMid)));
+    const step = (error > 0 ? -mag : mag) / 4;
+    await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y: y0, id: 1 }] });
+    for (let s = 1; s <= 4; s++) {
+      await client.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y: Math.round(y0 + step * s), id: 1 }] });
+      await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(resolve)));
+    }
+    await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await client.detach().catch(() => {});
+    const scroll = await page.locator('.tray-scroll').evaluate((el) => Math.round(el.scrollTop)).catch(() => null);
+    if (scroll != null && scroll === lastScroll) {
+      stuck += 1;
+      if (stuck >= 2) break;
+    } else {
+      stuck = 0;
+      lastScroll = scroll;
     }
   }
   const last = await locator.boundingBox().catch(() => null);
-  if (last && last.width > 4) return last;
-  throw new Error('could not reveal control');
+  if ((await hitInfo(last)).ok) return last;
+  const why = await locator.evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    const top = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+    const sc = el.closest('.tray-scroll');
+    const sec = el.closest('.section');
+    const up = document.getElementById('uploadPhotoBtn');
+    const ur = up ? up.getBoundingClientRect() : null;
+    return {
+      id: el.id || (el.className || '').toString().slice(0, 24),
+      y: Math.round(r.y),
+      h: Math.round(r.height),
+      hit: top ? (top.id || String(top.className).slice(0, 24)) : null,
+      scroll: sc ? Math.round(sc.scrollTop) : null,
+      max: sc ? Math.round(sc.scrollHeight - sc.clientHeight) : null,
+      collapsed: sec ? sec.classList.contains('collapsed') : null,
+      upY: ur ? Math.round(ur.y) : null,
+      upH: ur ? Math.round(ur.height) : null
+    };
+  }).catch((err) => String(err && err.message ? err.message : err));
+  throw new Error('could not reveal control ' + JSON.stringify(why));
 }
 
 async function openSection(page, label) {
   await ensureDrawer(page);
   const loc = page.locator('.section-title', { hasText: label }).first();
-  const b = await scrollUntil(page, loc);
-  await clickAt(page, b.x + b.width / 2, b.y + b.height / 2);
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await scrollUntil(page, loc);
+    const info = await loc.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      return {
+        collapsed: !!(el.parentElement && el.parentElement.classList.contains('collapsed')),
+        x: r.left, y: r.top, w: r.width, h: r.height
+      };
+    });
+    if (!info.collapsed) return;
+    await clickAt(page, info.x + info.w / 2, info.y + info.h / 2);
+    const still = await loc.evaluate((el) => !!(el.parentElement && el.parentElement.classList.contains('collapsed')));
+    if (!still) return;
+  }
+  throw new Error('section stayed collapsed ' + label);
 }
 
 async function brickCount(page) {
@@ -690,19 +806,99 @@ async function zoomClicks(page, selector, times) {
   for (let i = 0; i < times; i++) await clickSel(page, selector);
 }
 
+function satOf(r, g, b) {
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  return max < 1 ? 0 : (max - min) / max;
+}
+
 function faceSamples(img, pred) {
-  const pts = [];
   const { width, height, data } = img;
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const i = (y * width + x) * 4;
+  const chrome = (x, y) => y < 90 || y > height - 100 || x > width - 80 || (width > 500 && x < 300);
+  function largest(allow) {
+    const seen = new Uint8Array(width * height);
+    let best = null;
+    let huge = false;
+    const stack = [];
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const start = y * width + x;
+        if (seen[start] || chrome(x, y)) continue;
+        const i0 = start * 4;
+        if (!allow(data[i0], data[i0 + 1], data[i0 + 2])) continue;
+        let n = 0;
+        let minX = x; let maxX = x; let minY = y; let maxY = y;
+        stack.push(start);
+        seen[start] = 1;
+        while (stack.length) {
+          const p = stack.pop();
+          const px = p % width;
+          const py = (p - px) / width;
+          const i = p * 4;
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          if (!allow(r, g, b)) continue;
+          n++;
+          if (px < minX) minX = px;
+          if (px > maxX) maxX = px;
+          if (py < minY) minY = py;
+          if (py > maxY) maxY = py;
+          const next = [p - 1, p + 1, p - width, p + width];
+          for (let k = 0; k < 4; k++) {
+            const q = next[k];
+            if (q < 0 || q >= seen.length || seen[q]) continue;
+            const qx = q % width;
+            const qy = (q - qx) / width;
+            if (Math.abs(qx - px) + Math.abs(qy - py) !== 1) continue;
+            seen[q] = 1;
+            if (!chrome(qx, qy)) stack.push(q);
+          }
+        }
+        const wide = maxX - minX > width * 0.85 && maxY - minY > height * 0.45;
+        if (wide) { huge = true; continue; }
+        if (!best || n > best.n) best = { n, seedX: x, seedY: y };
+      }
+    }
+    return { best, huge };
+  }
+  function collect(allow, seedX, seedY) {
+    const pts = [];
+    const seen = new Uint8Array(width * height);
+    const stack = [seedY * width + seedX];
+    seen[stack[0]] = 1;
+    while (stack.length) {
+      const p = stack.pop();
+      const px = p % width;
+      const py = (p - px) / width;
+      if (chrome(px, py)) continue;
+      const i = p * 4;
       const r = data[i];
       const g = data[i + 1];
       const b = data[i + 2];
-      if (!pred(r, g, b)) continue;
+      if (!allow(r, g, b)) continue;
       pts.push({ r, g, b, y: 0.2126 * r + 0.7152 * g + 0.0722 * b, h: hueOf(r, g, b) });
+      const next = [p - 1, p + 1, p - width, p + width];
+      for (let k = 0; k < 4; k++) {
+        const q = next[k];
+        if (q < 0 || q >= seen.length || seen[q]) continue;
+        const qx = q % width;
+        const qy = (q - qx) / width;
+        if (Math.abs(qx - px) + Math.abs(qy - py) !== 1) continue;
+        seen[q] = 1;
+        stack.push(q);
+      }
     }
+    return pts;
   }
+  let allow = pred;
+  let found = largest(allow);
+  if (!found.best && found.huge) {
+    allow = (r, g, b) => pred(r, g, b) && satOf(r, g, b) >= 0.78;
+    found = largest(allow);
+  }
+  if (!found.best || found.best.n < 40) return null;
+  const pts = collect(allow, found.best.seedX, found.best.seedY);
   if (pts.length < 40) return null;
   pts.sort((a, b) => a.y - b.y);
   const k = Math.max(8, Math.floor(pts.length * 0.12));
@@ -734,7 +930,9 @@ async function runTyping(browser, phone) {
       let howType = 'click';
       if (how === 'after') {
         await ready(page);
-        if (phone) await ensureDrawer(page);
+        // The sheet covers the lower plate. A stud search on that shot
+        // clicks grass above the sheet, so the brick is placed first.
+        if (phone) await closeDrawer(page);
         await clickStud(page, 0.5, false);
         if (phone) await ensureDrawer(page);
         box = await page.locator('#projectName').boundingBox();
@@ -1190,12 +1388,15 @@ async function main() {
         await openSection(page, /^Tools$/);
         await scrollUntil(page, page.locator('#clearBtn'));
         await probe('clear', () => clickSel(page, '#clearBtn'));
+        await page.keyboard.press('Escape');
         await clickSel(page, '#galleryBtn');
         await page.locator('#galleryGrid button.delete').first().waitFor({ state: 'visible', timeout: 8000 });
         await probe('gallery trash', () => clickSel(page, '#galleryGrid button.delete'));
         await page.keyboard.press('Escape');
+        await page.keyboard.press('Escape');
         await scrollUntil(page, page.locator('.saved-project-delete'));
         await probe('project trash', () => clickSel(page, '.saved-project-delete'));
+        await page.keyboard.press('Escape');
         await clickSel(page, '#galleryBtn');
         await clickSel(page, '.gallery-tab[data-tab="share"]');
         await probe('paste code', () => clickSel(page, '#shareLoadCode'));
@@ -1508,6 +1709,9 @@ async function main() {
         assert(row.ok, row.detail);
         return row.detail;
       });
+      // The headed player window covers the debug Chrome, and Lighthouse
+      // then reports no first paint. The functional checks are done.
+      if (browser.isConnected()) await browser.close();
       await check('lighthouse', 'TBT 0 and no simulated task over 50 ms on three runs', async () => {
         let port = 9333;
         try {
@@ -1536,7 +1740,7 @@ async function main() {
     };
     writeFileSync(join(here, 'last-run.json'), JSON.stringify(summary, null, 2));
     console.log('SUITE', passed + '/' + results.length, 'failed', failed.map((r) => r.id).join(', '));
-    await browser.close();
+    if (browser.isConnected()) await browser.close();
     await new Promise((resolve) => server.close(resolve));
   }
 }

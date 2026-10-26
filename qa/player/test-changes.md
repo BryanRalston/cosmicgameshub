@@ -37,3 +37,59 @@ The red box was every red pixel on the page, including the HUD swatch and the co
 ## Plate edge is the far rim, not horizon moiré or toolbar noise
 
 The peak check scored rings at the sky line and failed a desktop frame where the studded plate meets flat grass on the right. A corner count then passed on stud-sized noise along the bottom toolbar. The check now looks above the toolbar for a studded run with flat grass beside it. Desktop home has that row. The phone coachmark shot does not. Fill 40–75%, brick size 25–45 px, and the moiré peak bar are unchanged.
+
+## Colour samples were the yellow HUD
+
+`colors.png` shows a red brick. `faceSamples` averaged every pixel matching the red predicate, and the yellow HUD digits (`rgb(255, 225, 74)`, hue 50) match `r > 90 && r > g + 25 && r > b + 25`. The reported lit hue 50.1 is those digits, not the brick. The check now skips the sidebar, the top HUD, the bottom toolbar, and the zoom strip, then uses the largest connected component that is not the whole plate. Green also matches the baseplate, so a plate-sized component is dropped and the sample falls back to pixels with saturation at least 0.78. The hue windows are unchanged.
+
+## Custom confirms stay up after the click
+
+The harness dismisses a native `confirm` before the click returns, so the next click reached the gallery. A custom confirm stays on screen, and one click cannot both dismiss it and hit the button underneath. The check now presses Escape after Clear, after the gallery trash confirm, and after the project trash confirm. The gallery still needs the Escape it already had. The check still fails if any native dialog fires.
+
+## A phone control is revealed only when it is the top hit
+
+`scrollUntil` stopped when the bounding box sat inside the 390×844 viewport. On the phone the Floor button's box does that while its center is the build HUD (`z-index` 240) and the Color swatch's box does that while its center is the drawer handle. The tap never reached the control. The phone path now keeps scrolling until `elementFromPoint` is the control. A control clipped above the tray scrolls back down. The popup, color, and delete assertions are unchanged.
+
+## One phone tap is one click
+
+A tap on `#panelToggle` already delivers one `click` and opens the tray. `clickAt` then sent `mouse.click` as well. That second click shuts a toggle the finger just opened (Floor, Wall, Mirror, a section). HTML now sends the mouse click only when the tap produced none, which is what Got it needed. The canvas stays touch-only, so a tap still places one brick.
+
+## The phone tray scroll is a drag
+
+One CDP touchMove does not scroll `.tray-scroll`, so Floor and Color stayed under the HUD and `elementFromPoint` never became the control. The phone path now drags in small steps, the way a finger moves. The project block sticks to the top of the tray, so a title sitting under that block scrolls back down until the control is the top hit. The popup and color assertions are unchanged.
+
+## A lower-tray control scrolls up
+
+The drag treated every hit inside the project block as "scrolled too far" and moved the sheet back to the top. Tools and Color sit below that block, so the drag never reached them. A control whose center is in the lower part of the sheet now scrolls up. A control clipped above the tray, or tucked under the header in the top 96px, still scrolls down. The top-hit requirement and the color assertion are unchanged.
+
+## The finger moves across frames
+
+A burst of touch moves in one turn did not change `.tray-scroll` scrollTop, so Wall stayed below the phone sheet. The drag now steps across animation frames. A control above the open band, including one sitting under the drawer handle, scrolls down. A control below the band scrolls up. The top-hit requirement is unchanged.
+
+## The HUD and the handle are not the control
+
+A color swatch whose box sat in the viewport was still the redo button, and Mirror stopped a few pixels below the sheet. The drag now moves up when the hit is the bottom HUD and down when the hit is the drawer handle. A short gap uses a short drag so the control is not thrown past the open band. The top-hit requirement is unchanged.
+
+## The drag aims at the middle of the sheet
+
+A drag that cleared the HUD landed the next control under the drawer handle, and the reverse drag put it back on the HUD. Wall's center stayed on the color HUD button at the bottom of the sheet. Each drag now moves the control halfway toward the middle of the open tray, and it stops once the sheet no longer scrolls. The top-hit requirement and the color assertion are unchanged.
+
+## A title tap that misses is repeated once
+
+Under load the phone sheet is still coasting, so the title tap lands on the padding and the section stays collapsed. `openSection` reads the title's box again and taps up to three times. The popup and color assertions are unchanged.
+
+## Opening a section does not close it
+
+`openSection` always clicked the title. Tools was already open after Floor, so the next click collapsed it and Wall's center was no longer a button. The click now happens only when that section is collapsed. The popup and color assertions are unchanged.
+
+## Lighthouse paints only when the debug window is in front
+
+The audit returned NO_FCP while the headed player window still covered the debug Chrome, and again after that window was closed. Lighthouse was started with `spawnSync` inside the same process that serves the page, so the document never arrived and nothing painted. The player browser closes first, the debug window is raised once before each run, and Lighthouse runs as its own process so the server can answer. A loop that kept resizing that window during the trace stretched Speed Index, so it is not used. The bars stay TBT 0 and no task over 50 ms.
+
+## The after-placement name is typed on an open plate
+
+The phone "one brick" check opened the drawer and then searched the screenshot for a stud. The sheet covers the lower plate, so the brightest green pixel above it is grass and the brick count stays 0. The brick is placed with the sheet closed, then the drawer opens and the name is typed with no wait. The name must still match, and the hotkey flags are unchanged.
+
+## A phone tap's click is counted before a second click
+
+Chrome turns a touch into a click on a later task. The fallback mouse click was sent in the same turn, before that click existed, so Floor received two clicks and the panel closed. The tap now waits for the click event, or 120 ms if none arrives, and only then sends the mouse click. The panel still has to sit fully inside the viewport.

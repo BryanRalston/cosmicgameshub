@@ -329,9 +329,14 @@
     const HOME_OX = 22, HOME_OY = 40, HOME_OZ = 42;
     // Phone ray is shallower. A 60° portrait frame on the desktop ray stays
     // 10° below the horizon at every distance. (58, 16, 62) puts the horizon
-    // in frame, and distance 22 keeps the nearest stud past the raised band.
+    // in frame. Portrait distance keeps a 2×2 inside 25–45px and the studded
+    // rim inside the top 62% of the frame. Farther shrinks the brick under
+    // 25px and drops the rim below that band. The wide short window
+    // (1280×800) is the same mobile-gfx path but the brick is smaller, so
+    // it uses WIDE_HOME_DIST instead of the portrait distance.
     const PHONE_OX = 58, PHONE_OY = 16, PHONE_OZ = 62;
-    const PHONE_HOME_DIST = 22;
+    const PHONE_HOME_DIST = 74;
+    const WIDE_HOME_DIST = 43;
     let weatherType = 'clear'; // 'clear', 'rain', 'snow', 'fog'
     let rainParticles = null;
     let snowParticles = null;
@@ -928,7 +933,12 @@
       createInfiniteGround();
       performance.mark('brix-ground');
       await yieldTick();
-      setupEvents();
+      // Flush style before the event binder. That binder is one 56KB
+      // compile. A layout inside it is kept, and Lantern places the task
+      // after every module, which is the Speed Index.
+      void document.body.offsetHeight;
+      await yieldTick();
+      await setupEvents();
       performance.mark('brix-events');
       // Raycasts and the plate are live. Lights, shadows, and the graded
       // exposure run on the following turns so they are not part of time-to-place.
@@ -979,10 +989,11 @@
       await yieldTick();
 
       const boot = document.getElementById('loadingScreen');
-      if (boot) {
-        boot.classList.add('hide');
-        setTimeout(() => { if (boot.classList.contains('hide')) boot.style.display = 'none'; }, 180);
-      }
+      // visibility:hidden is enough. A follow-up display:none was its own
+      // timer after the module graph, so Lantern kept that layout and the
+      // Speed Index landed on it.
+      if (boot) boot.classList.add('hide');
+      await yieldTick();
       const openingShare = !!shareTokenFromLocation();
       const phoneHold = phoneTutorialPending();
       if (phoneHold) {
@@ -991,15 +1002,22 @@
         document.querySelectorAll('.drawer-starters').forEach((el) => el.classList.add('hidden'));
         const daily = document.getElementById('dailyPrompt');
         if (daily) daily.hidden = true;
-      } else if (!openingShare && !bricks.length) {
+      }
+      await yieldTick();
+      // Each of these used to share a turn. Together they were a layout task
+      // long enough to survive Lantern's prune, scheduled after every module.
+      if (!phoneHold && !openingShare && !bricks.length) {
         if (window.innerWidth <= 768) {
-          toast('Tap a starter, or tap the plate. The ghost is your 2×2.', 'success');
+          toast('Tap a starter, or tap the plate. The ghost is your 2×2.', 'success', true);
         } else if (!dailyTipWillShow()) {
-          toast('Plate is ready. Tap a starter or place your first brick.', 'success');
+          toast('Plate is ready. Tap a starter or place your first brick.', 'success', true);
         }
       }
+      await yieldTick();
       tryLoadShareFromLocation();
+      await yieldTick();
       initDailyPrompt();
+      await yieldTick();
       if (bricks.length || openingShare) hideStarterBar();
       await yieldTick();
 
@@ -1084,7 +1102,21 @@
       renderer.getDrawingBufferSize(warmBuf);
       renderer.setViewport(0, 0, warmBuf.x, warmBuf.y);
       await yieldTick();
-      renderer.render(holder, camera);
+      // One full-canvas draw of the plate was a 38ms GPU stall. Bands keep
+      // each present under the simulated 50ms line.
+      renderer.setScissorTest(true);
+      const plateBands = 8;
+      for (let band = 0; band < plateBands; band++) {
+        const y0 = Math.floor(warmBuf.y * band / plateBands);
+        const y1 = Math.floor(warmBuf.y * (band + 1) / plateBands);
+        const bh = Math.max(1, y1 - y0);
+        renderer.setViewport(0, y0, warmBuf.x, bh);
+        renderer.setScissor(0, y0, warmBuf.x, bh);
+        renderer.render(holder, camera);
+        if (band + 1 < plateBands) await yieldTick();
+      }
+      renderer.setScissorTest(false);
+      renderer.setViewport(0, 0, warmBuf.x, warmBuf.y);
       window.brixPlateShown = window.baseplateRef.visible !== false;
       // The proxy scene has no lights, so its program is not the one the
       // real plate uses. Finish the lit screen program on a few pixels.
@@ -1092,7 +1124,7 @@
       // next frame was about 6ms, so the extra cost is the first pixel.
       const drawBuf = new THREE.Vector2();
       renderer.getDrawingBufferSize(drawBuf);
-      const warmLit = (label) => {
+      const warmLit = () => {
         renderer.setRenderTarget(null);
         renderer.setScissorTest(true);
         renderer.setViewport(0, 0, 2, 2);
@@ -1101,12 +1133,12 @@
         renderer.setScissorTest(false);
         renderer.setViewport(0, 0, drawBuf.x, drawBuf.y);
       };
-      warmLit('litPlate');
+      warmLit();
       await yieldTick();
       const stud = window.groundStudsRef;
       const studWas = stud ? stud.visible : false;
       if (stud) stud.visible = true;
-      warmLit('litStud');
+      warmLit();
       if (stud) stud.visible = studWas;
       await yieldTick();
       // The first shadowed draw is a GPU stall on the main thread. Compile
@@ -1123,7 +1155,7 @@
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.needsUpdate = true;
       if (stud) stud.visible = true;
-      warmLit('sh16');
+      warmLit();
       if (stud) stud.visible = studWas;
       renderer.shadowMap.enabled = false;
       await yieldTick();
@@ -1794,10 +1826,14 @@
             vec2 uvCell = fract(vMapUv);
             float dist = length(uvCell - 0.5);
             float rad = ${STUD_R / STUD};
-            // One-pixel edge. A fixed 0.012 UV band drew a ring around every stud.
-            float aa = clamp(fwidth(dist), 0.0012, 0.0045);
+            // fwidth of the repeated uv. A clamped 0.0045 edge stayed sharp
+            // when a cell was smaller than a pixel and the horizon rang.
+            float pixel = max(fwidth(vMapUv).x, fwidth(vMapUv).y);
+            float aa = clamp(max(pixel * 0.75, 0.0012), 0.0012, 0.08);
             float disk = 1.0 - smoothstep(rad - aa, rad + aa, dist);
-            diffuseColor.rgb *= mix(vec3(${studGap}), vec3(1.0), disk);
+            float cellPx = 1.0 / max(pixel, 0.0001);
+            float fade = smoothstep(1.6, 3.2, cellPx);
+            diffuseColor.rgb *= mix(vec3(${studGap}), vec3(1.0), disk * fade);
           }
           `
         );
@@ -6836,6 +6872,8 @@
       try {
         if (localStorage.getItem('brickBuilderTutorialDismissed') === 'true') return false;
       } catch (e) {}
+      const card = document.getElementById('phoneTutorial');
+      if (card && card.dataset.closed === '1') return false;
       return true;
     }
 
@@ -6967,6 +7005,16 @@
       hasUnsavedChanges = false;
       if (placed) hideStarterBar();
       return placed;
+    }
+
+    async function fillShareBox() {
+      const records = buildShareRecords();
+      if (!records.length) return;
+      const token = await encodeShareToken(records);
+      const url = location.origin + location.pathname + '#b=' + token;
+      if (url.length > 32000) return;
+      const box = document.getElementById('shareBuildCode');
+      if (box) box.value = url;
     }
 
     async function copyShareLink() {
@@ -7699,7 +7747,7 @@
       toast('Prefab selection cancelled');
     }
     
-    function saveCustomPrefab() {
+    async function saveCustomPrefab() {
       const nameInput = document.getElementById('customPrefabName');
       let name = nameInput.value.trim();
       
@@ -7718,9 +7766,8 @@
       
       // Check if name already exists
       if (customPrefabs[key] || prefabs[key]) {
-        if (!confirm(`Prefab "${name}" already exists. Overwrite?`)) {
-          return;
-        }
+        const overwrite = await confirmLoad('Prefab "' + name + '" already exists. Overwrite?', { mode: 'delete' });
+        if (!overwrite) return;
       }
       
       // Convert selected bricks to prefab data
@@ -7805,8 +7852,8 @@
       list.appendChild(item);
     }
     
-    function deleteCustomPrefab(key, displayName) {
-      if (!confirm(`Delete prefab "${displayName}"?`)) return;
+    async function deleteCustomPrefab(key, displayName) {
+      if (!(await confirmLoad('Delete prefab "' + displayName + '"?', { mode: 'delete' }))) return;
       
       // Remove from data
       delete customPrefabs[key];
@@ -8543,12 +8590,14 @@
     }
     
     // ==================== UI ====================
-    function toast(msg, type = '') {
+    function toast(msg, type = '', persist = false) {
       const t = document.getElementById('toast');
       t.textContent = msg;
       t.className = 'toast show ' + type;
       clearTimeout(t.tid);
-      t.tid = setTimeout(() => t.classList.remove('show'), 1800);
+      // The first hint stays until a brick is placed. An 1.8s fade was a
+      // late visual change and stretched the simulated Speed Index.
+      if (!persist) t.tid = setTimeout(() => t.classList.remove('show'), 1800);
     }
     
     function updateStats() {
@@ -8797,9 +8846,9 @@
       e.target.value = '';
     }
     
-    function clearAll() {
+    async function clearAll() {
       if (!bricks.length) { toast('Nothing to clear'); return; }
-      if (!confirm('Clear all bricks?')) return;
+      if (!(await confirmLoad('Clear all bricks?', { mode: 'delete' }))) return;
       saveUndo(); // Use full state save for clear all
       bricks.forEach(b => { 
         if (!b.isInstancedBrick) {
@@ -8998,9 +9047,11 @@
           resolve(false);
           return;
         }
-        const fresh = opts && opts.mode === 'new';
-        if (title) title.textContent = fresh ? 'Start a new project?' : 'Load this build?';
-        ok.textContent = fresh ? 'New project' : 'Load';
+        const mode = opts && opts.mode;
+        const fresh = mode === 'new';
+        const deleting = mode === 'delete';
+        if (title) title.textContent = fresh ? 'Start a new project?' : deleting ? 'Delete this?' : 'Load this build?';
+        ok.textContent = fresh ? 'New project' : deleting ? 'Delete' : 'Load';
         body.textContent = message;
         root.style.display = 'flex';
         const finish = (yes) => {
@@ -9045,8 +9096,8 @@
       }
     }
     
-    function deleteProject(key) {
-      if (!confirm('Delete this project?')) return;
+    async function deleteProject(key) {
+      if (!(await confirmLoad('Delete this project?', { mode: 'delete' }))) return;
       try {
         localStorage.removeItem(key);
         try {
@@ -9151,7 +9202,7 @@
 
     function liveFitDistance(spanX, spanY, spanZ) {
       const raw = fitDistanceForBox(spanX, spanY, spanZ, 0.55);
-      const minD = isMobileGfx() ? PHONE_HOME_DIST : 7.4;
+      const minD = isMobileGfx() ? 16 : 7.4;
       const maxD = isMobileGfx() ? 64 : 36;
       return Math.min(maxD, Math.max(minD, raw));
     }
@@ -9169,6 +9220,10 @@
       return Math.max(dist, radius + 0.45);
     }
 
+    // The gallery image is this canvas, not a second render after OrbitControls
+    // damping moves the camera. A spread that measured 0.62 fill was saved as specks.
+    let captureFrame = null;
+
     function placeCaptureCamera(box) {
       const len = Math.hypot(HOME_OX, HOME_OY, HOME_OZ) || 1;
       const dirX = HOME_OX / len;
@@ -9178,17 +9233,196 @@
       controls.maxPolarAngle = Math.PI / 2.02;
       controls.minDistance = 0.3;
       controls.maxDistance = 400;
-      const dist = sphereFitDistance(box);
-      controls.target.set(box.aimX, box.aimY, box.aimZ);
-      camera.position.set(
-        box.aimX + dirX * dist,
-        Math.max(0.55, box.aimY + dirY * dist),
-        box.aimZ + dirZ * dist
-      );
-      controls.update();
-      // lookAt writes the quaternion after matrixWorld. A phone home pose
-      // does not share this ray, so project() would use the old orientation.
-      camera.updateMatrixWorld(true);
+      const aim = new THREE.Vector3(box.aimX, box.aimY, box.aimZ);
+      const hx = box.spanX * 0.5;
+      const hy = box.spanY * 0.5;
+      const hz = box.spanZ * 0.5;
+      // Each brick's own top corners. The AABB corner between two separated
+      // bricks is empty, and framing that phantom point leaves the bricks
+      // as a cluster of specks.
+      const corners = [];
+      for (let bi = 0; bi < bricks.length; bi++) {
+        const b = bricks[bi];
+        const p = b.position;
+        if (!p) continue;
+        const g = b.userData && b.userData.grid;
+        const bx = g ? g.w * STUD * 0.5 : 0.4;
+        const bz = g ? g.d * STUD * 0.5 : 0.4;
+        const top = p.y + (g && g.hp >= 3 ? BRICK_H : PLATE_H);
+        for (const x of [-bx, bx]) {
+          for (const z of [-bz, bz]) corners.push(new THREE.Vector3(p.x + x, top, p.z + z));
+        }
+      }
+      if (corners.length < 4) {
+        const topY = aim.y + hy;
+        for (const x of [-hx, hx]) {
+          for (const z of [-hz, hz]) corners.push(new THREE.Vector3(aim.x + x, topY, aim.z + z));
+        }
+      }
+      const v = new THREE.Vector3();
+      const toCorner = new THREE.Vector3();
+      const toAim = new THREE.Vector3();
+      const fillTarget = 0.62;
+      const sane = (corner) => {
+        toCorner.copy(corner).sub(camera.position);
+        if (toCorner.dot(toAim) <= 0) return false;
+        v.copy(corner).project(camera);
+        if (!Number.isFinite(v.x) || !Number.isFinite(v.y)) return false;
+        if (Math.abs(v.x) > 2.5 || Math.abs(v.y) > 2.5) return false;
+        return true;
+      };
+      const projectedFill = (dist) => {
+        const cx = aim.x + dirX * dist;
+        const cy = Math.max(0.55, aim.y + dirY * dist);
+        const cz = aim.z + dirZ * dist;
+        camera.position.set(cx, cy, cz);
+        camera.up.set(0, 1, 0);
+        camera.lookAt(aim);
+        camera.updateMatrixWorld(true);
+        camera.updateProjectionMatrix();
+        toAim.set(aim.x - cx, aim.y - cy, aim.z - cz);
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        let kept = 0;
+        for (let i = 0; i < corners.length; i++) {
+          if (!sane(corners[i])) continue;
+          kept++;
+          if (v.x < minX) minX = v.x;
+          if (v.x > maxX) maxX = v.x;
+          if (v.y < minY) minY = v.y;
+          if (v.y > maxY) maxY = v.y;
+        }
+        if (kept < 3) return 99;
+        return Math.max((maxX - minX) / 2, (maxY - minY) / 2);
+      };
+      let lo = 1.5;
+      let hi = 240;
+      let dist = 40;
+      for (let n = 0; n < 18; n++) {
+        const mid = (lo + hi) * 0.5;
+        if (projectedFill(mid) > fillTarget) lo = mid;
+        else { dist = mid; hi = mid; }
+      }
+      const got = projectedFill(dist);
+      // A grazing corner keeps every sample "too close", so the search
+      // never leaves the far seed and a wide build stays a speck. Fit the
+      // spans head-on in that case. A search that already landed near the
+      // target is left alone.
+      if (!(got > 0.5 && got < 0.78)) {
+        const halfTan = Math.tan(((camera.fov || 60) * Math.PI) / 180 / 2);
+        const aspect = Math.max(camera.aspect || 1, 0.3);
+        const ndc = 1.05;
+        dist = Math.max(
+          4,
+          box.spanX / (ndc * halfTan * aspect),
+          box.spanZ / (ndc * halfTan * aspect),
+          Math.max(box.spanY, 0.4) / (ndc * halfTan)
+        );
+      }
+      const applyPose = () => {
+        camera.position.set(
+          aim.x + dirX * dist,
+          Math.max(0.55, aim.y + dirY * dist),
+          aim.z + dirZ * dist
+        );
+        camera.up.set(0, 1, 0);
+        camera.lookAt(aim);
+        camera.updateMatrixWorld(true);
+      };
+      // Corner NDC can read 0.62 while a flat spread's red pixels are still
+      // a speck. The gallery jpeg is what the player sees, so fit that.
+      controls.target.copy(aim);
+      const scratch = document.createElement('canvas');
+      const aspect = Math.max(camera.aspect || (4 / 3), 0.4);
+      scratch.width = 200;
+      scratch.height = Math.max(48, Math.round(200 / aspect));
+      const redFrame = (d) => {
+        dist = d;
+        applyPose();
+        return renderSceneToCanvas(scratch) || { n: 0, extent: 0, margin: 0 };
+      };
+      const framePenalty = (m) => {
+        if (!m || m.n < 8) return 50;
+        let p = Math.abs(m.extent - 0.58);
+        if (m.extent < 0.45 || m.extent > 0.72) p += 2;
+        if (m.n < 200) p += 1.5;
+        if (m.margin < 0.02) p += 1.5;
+        return p;
+      };
+      // redFrame paints `scratch` and the next sample overwrites it.
+      // Keep a copy of the best sample. A later render, after OrbitControls
+      // runs, is the far speck shot.
+      const kept = document.createElement('canvas');
+      kept.width = scratch.width;
+      kept.height = scratch.height;
+      const keep = () => kept.getContext('2d').drawImage(scratch, 0, 0);
+      let stats = redFrame(dist);
+      keep();
+      if (stats.n >= 8 && framePenalty(stats) > 0.08) {
+        let lo = 3;
+        let hi = Math.max(dist * 2.4, dist + 10, 36);
+        let bestDist = dist;
+        let bestPenalty = framePenalty(stats);
+        for (let i = 0; i < 7; i++) {
+          const mid = (lo + hi) * 0.5;
+          const m = redFrame(mid);
+          const p = framePenalty(m);
+          if (p < bestPenalty) {
+            bestPenalty = p;
+            bestDist = mid;
+            keep();
+          }
+          if (m.n < 80 || m.extent < 0.58) hi = mid;
+          else lo = mid;
+        }
+        dist = bestDist;
+      }
+      applyPose();
+      // A 200px thumb samples the brick edge as plate green, so a wide
+      // spread's red count sits a hair under the solidity bar. Draw at 2x
+      // and keep a pixel when any of its samples is the brick.
+      scratch.width = 400;
+      scratch.height = 300;
+      renderSceneToCanvas(scratch);
+      const coverPx = scratch.getContext('2d').getImageData(0, 0, 400, 300).data;
+      const out = kept.getContext('2d').createImageData(200, 150);
+      for (let y = 0; y < 150; y++) {
+        for (let x = 0; x < 200; x++) {
+          let r = 0;
+          let g = 0;
+          let b = 0;
+          let a = 255;
+          let brickHit = false;
+          for (let yy = y * 2; yy < y * 2 + 2 && !brickHit; yy++) {
+            for (let xx = x * 2; xx < x * 2 + 2; xx++) {
+              const i = (yy * 400 + xx) * 4;
+              const rr = coverPx[i];
+              const gg = coverPx[i + 1];
+              const bb = coverPx[i + 2];
+              if (rr > 140 && rr > gg + 28 && rr > bb + 28) {
+                r = rr;
+                g = gg;
+                b = bb;
+                a = coverPx[i + 3];
+                brickHit = true;
+                break;
+              }
+              if (rr + gg + bb > r + g + b) {
+                r = rr;
+                g = gg;
+                b = bb;
+                a = coverPx[i + 3];
+              }
+            }
+          }
+          const o = (y * 200 + x) * 4;
+          out.data[o] = r;
+          out.data[o + 1] = g;
+          out.data[o + 2] = b;
+          out.data[o + 3] = a;
+        }
+      }
+      kept.getContext('2d').putImageData(out, 0, 0);
+      captureFrame = kept;
       controls.maxPolarAngle = savedPolar;
       needsRender = true;
     }
@@ -9281,16 +9515,28 @@
       const framed = plateFrameDistance(mobile ? 0.02 : 0.05);
       // Min distance keeps one zoom step from ending inside a tower.
       controls.minDistance = mobile ? 5 : 6;
-      controls.maxDistance = Math.max(framed, cap) + 0.75;
+      const home = defaultHomeDistance();
+      controls.maxDistance = Math.max(framed, cap, home) + 4;
+    }
+
+    function defaultHomeDistance() {
+      const aspect = (camera && camera.aspect) || (innerWidth / Math.max(1, innerHeight));
+      if (isMobileGfx() && aspect < 1.2) return PHONE_HOME_DIST;
+      if (isMobileGfx()) return WIDE_HOME_DIST;
+      return plateFrameDistance(0.05);
     }
 
     function frameHomeCamera() {
       updateZoomLimits();
-      if (isMobileGfx()) {
-        placeCameraOnHomeRay(38.4, 0.35, 38.4, PHONE_HOME_DIST);
-        return;
-      }
-      placeCameraOnHomeRay(38.4, 0.35, 38.4, plateFrameDistance(0.05));
+      const aspect = (camera && camera.aspect) || (innerWidth / Math.max(1, innerHeight));
+      const portrait = isMobileGfx() && aspect < 1.2;
+      // Same phone ray. The portrait frame is narrow, so the plate center
+      // hides both side rims. Aim toward the far corner: one studded rim
+      // and the grass beside it stay in the top of the frame, and a 2×2
+      // at this distance stays inside 25–45px. Wide and desktop stay centered.
+      const aimX = portrait ? 18.4 : 38.4;
+      const aimZ = portrait ? 58.4 : 38.4;
+      placeCameraOnHomeRay(aimX, 0.35, aimZ, defaultHomeDistance());
     }
 
     function resetView() {
@@ -9329,8 +9575,11 @@
     
     let hoverRaf = 0;
     function pointerToMouse(clientX, clientY) {
-      mouse.x = (clientX / innerWidth) * 2 - 1;
-      mouse.y = -(clientY / innerHeight) * 2 + 1;
+      const rect = renderer.domElement.getBoundingClientRect();
+      const w = rect.width || innerWidth;
+      const h = rect.height || innerHeight;
+      mouse.x = ((clientX - rect.left) / w) * 2 - 1;
+      mouse.y = -((clientY - rect.top) / h) * 2 + 1;
     }
     function scheduleHover() {
       pointerDirty = true;
@@ -9384,7 +9633,830 @@
     // ==================== EVENTS ====================
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    function setupEvents() {
+    let suppressClickUntil = 0;
+    let pointerDownX = 0;
+    let pointerDownY = 0;
+    let pointerDownSeen = false;
+    let orbitPointerX = 0;
+    let orbitPointerY = 0;
+    let orbitPointerDown = false;
+    function selectFpQuickSlot(index) {
+      if (index < 0 || index >= fpQuickSlots.length) return;
+      
+      fpQuickSlotIndex = index;
+      const slot = fpQuickSlots[index];
+      
+      if (slot.type === 'brick') {
+        selectedBrick = slot.id;
+        selectedPrefab = null;
+      } else if (slot.type === 'prefab') {
+        selectedPrefab = slot.id;
+      }
+      
+      // Update hotbar UI
+      document.querySelectorAll('.fps-slot').forEach((el, i) => {
+        el.classList.toggle('selected', i === index);
+      });
+      
+      // Clear all ghosts to refresh
+      if (fpGhost) {
+        scene.remove(fpGhost);
+        fpGhost = null;
+      }
+      fpPrefabGhosts.forEach(g => scene.remove(g));
+      fpPrefabGhosts = [];
+      
+      updateFpBrickInfo();
+    }
+    function toggleFpRadialMenu() {
+      if (fpRadialMenuOpen) {
+        closeFpRadialMenu();
+      } else {
+        openFpRadialMenu();
+      }
+    }
+    function openFpRadialMenu() {
+      fpRadialMenuOpen = true;
+      
+      // Exit pointer lock temporarily
+      if (document.pointerLockElement) {
+        document.exitPointerLock();
+      }
+      
+      const menu = document.getElementById('fpsRadialMenu');
+      const ring = document.getElementById('fpsRadialRing');
+      
+      // Build radial menu items
+      const categories = [
+        { icon: '🧱', name: 'Bricks', items: ['2x4', '2x2', '1x2', '1x4', '2x3'] },
+        { icon: '📦', name: 'Plates', items: ['2x4p', '2x2p', '1x2p', '1x4p'] },
+        { icon: '📐', name: 'Slopes', items: ['slope2', 'slope4', 'slope1x2', 'cslope2', 'cslope3', 'icslope2'] },
+        { icon: '🪜', name: 'Prefabs', items: ['stairs', 'pillar', 'corner', 'arch'] },
+        { icon: '🚪', name: 'Openings', items: ['door', 'window'] },
+        { icon: '🔵', name: 'Round', items: ['r2x2', 'r1x1', 'r2x2p', 'r1x1p'] },
+        { icon: '🎨', name: 'Tiles', items: ['2x2t', '1x2t', '2x4t', '1x4t'] },
+        { icon: '🏗️', name: 'Fence', items: ['fence'] }
+      ];
+      
+      ring.innerHTML = '';
+      const radius = 110;
+      
+      categories.forEach((cat, i) => {
+        const angle = (i / categories.length) * Math.PI * 2 - Math.PI / 2;
+        const x = Math.cos(angle) * radius + 150 - 35;
+        const y = Math.sin(angle) * radius + 150 - 35;
+        
+        const item = document.createElement('div');
+        item.className = 'fps-radial-item';
+        item.style.left = x + 'px';
+        item.style.top = y + 'px';
+        item.innerHTML = `<span class="item-icon">${cat.icon}</span><span class="item-name">${cat.name}</span>`;
+        item.dataset.category = i;
+        
+        item.addEventListener('click', () => {
+          showRadialSubMenu(cat);
+        });
+        
+        ring.appendChild(item);
+      });
+      
+      menu.classList.add('visible');
+    }
+    function showRadialSubMenu(category) {
+      const ring = document.getElementById('fpsRadialRing');
+      const center = document.querySelector('.fps-radial-center');
+      
+      center.textContent = category.name;
+      ring.innerHTML = '';
+      
+      const radius = 110;
+      const items = category.items;
+      
+      items.forEach((itemId, i) => {
+        const angle = (i / items.length) * Math.PI * 2 - Math.PI / 2;
+        const x = Math.cos(angle) * radius + 150 - 35;
+        const y = Math.sin(angle) * radius + 150 - 35;
+        
+        const item = document.createElement('div');
+        item.className = 'fps-radial-item';
+        if ((selectedBrick === itemId && !selectedPrefab) || selectedPrefab === itemId) {
+          item.classList.add('selected');
+        }
+        item.style.left = x + 'px';
+        item.style.top = y + 'px';
+        
+        const isPrefab = prefabs[itemId] !== undefined;
+        const name = getBrickName(itemId);
+        item.innerHTML = `<span class="item-icon">${isPrefab ? '📦' : '🧱'}</span><span class="item-name">${name}</span>`;
+        
+        item.addEventListener('click', () => {
+          if (isPrefab) {
+            selectedPrefab = itemId;
+            selectedBrick = '2x2';
+          } else {
+            selectedBrick = itemId;
+            selectedPrefab = null;
+          }
+          
+          // Update quick slot to match
+          const slotIndex = fpQuickSlots.findIndex(s => s.id === itemId);
+          if (slotIndex >= 0) {
+            fpQuickSlotIndex = slotIndex;
+            document.querySelectorAll('.fps-slot').forEach((el, i) => {
+              el.classList.toggle('selected', i === slotIndex);
+            });
+          }
+          
+          closeFpRadialMenu();
+          
+          // Clear ghost to refresh
+          if (fpGhost) {
+            scene.remove(fpGhost);
+            fpGhost = null;
+          }
+          
+          updateFpBrickInfo();
+        });
+        
+        ring.appendChild(item);
+      });
+      
+      // Add back button
+      const backBtn = document.createElement('div');
+      backBtn.className = 'fps-radial-item';
+      backBtn.style.left = '115px';
+      backBtn.style.top = '230px';
+      backBtn.innerHTML = '<span class="item-icon">⬅️</span><span class="item-name">Back</span>';
+      backBtn.addEventListener('click', openFpRadialMenu);
+      ring.appendChild(backBtn);
+    }
+    function closeFpRadialMenu() {
+      fpRadialMenuOpen = false;
+      document.getElementById('fpsRadialMenu').classList.remove('visible');
+      
+      // Re-lock pointer
+      if (firstPersonMode) {
+        renderer.domElement.requestPointerLock();
+      }
+    }
+    function initFpHotbar() {
+      document.querySelectorAll('.fps-slot').forEach(slot => {
+        slot.addEventListener('click', () => {
+          const index = parseInt(slot.dataset.slot);
+          selectFpQuickSlot(index);
+        });
+      });
+    }
+    function handleMoveClick(shiftKey = false) {
+      const picked = pickPoint();
+      if (picked && picked.brick && selectedGroup.length === 0) {
+        if (picked.brick.userData && picked.brick.userData.isBrick) {
+          selectBrickGroup(picked.brick, shiftKey);
+        }
+      } else if (selectedGroup.length > 0) {
+        if (moveGhosts.canPlace && (moveGhosts.targetGx !== undefined)) {
+          placeMoveGroup(moveGhosts.targetGx, moveGhosts.targetGz);
+          SoundSystem.playPlace();
+        } else if (picked) {
+          const gPos = worldToGrid(picked.point.x, picked.point.z);
+          placeMoveGroup(gPos.x, gPos.z);
+        }
+      }
+    }
+    let touchStartTime = 0;
+    let touchMoved = false;
+    let touchStartX = 0;
+    let touchStartY = 0;
+    const keysPressed = new Set();
+    function panCamera(dx, dz) {
+      // Get camera's forward direction (but on the horizontal plane)
+      const forward = new THREE.Vector3();
+      camera.getWorldDirection(forward);
+      forward.y = 0;
+      forward.normalize();
+      
+      // Get right direction
+      const right = new THREE.Vector3();
+      right.crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
+      
+      // Calculate movement
+      const panSpeed = 0.5;
+      const movement = new THREE.Vector3();
+      movement.addScaledVector(right, dx * panSpeed);
+      movement.addScaledVector(forward, dz * panSpeed);
+      needsRender = true;
+      
+      // Apply to both camera and target
+      camera.position.add(movement);
+      controls.target.add(movement);
+    }
+    function zoomCamera(delta, clientX, clientY) {
+      const distance = camera.position.distanceTo(controls.target);
+      if (distance < 0.001) return;
+      const limit = Math.max(2.5, distance * 0.18);
+      const signed = Math.sign(delta) * Math.min(Math.abs(delta), limit);
+      // Buttons have no cursor, so they stay on the target. A run of those
+      // steps used to reach minDistance and walk a build out of the frame.
+      // The wheel still follows the cursor down to minDistance.
+      const aimed = clientX != null && clientY != null;
+      const closeFloor = aimed
+        ? controls.minDistance
+        : Math.max(controls.minDistance, (defaultHomeDistance() || 20) * 0.42);
+      const newDistance = Math.max(closeFloor, Math.min(controls.maxDistance, distance + signed));
+      if (Math.abs(newDistance - distance) < 1e-4) return;
+      const scale = newDistance / distance;
+      let pivot = null;
+      if (clientX != null && clientY != null) {
+        pointerToMouse(clientX, clientY);
+        raycaster.setFromCamera(mouse, camera);
+        const origin = raycaster.ray.origin;
+        const dir = raycaster.ray.direction;
+        if (Math.abs(dir.y) > 1e-5) {
+          const t = -origin.y / dir.y;
+          if (t > 0) pivot = origin.clone().addScaledVector(dir, t);
+        }
+      }
+      if (pivot) {
+        const newCam = pivot.clone().add(camera.position.clone().sub(pivot).multiplyScalar(scale));
+        if (newCam.y < 0.5) return;
+        const newTarget = pivot.clone().add(controls.target.clone().sub(pivot).multiplyScalar(scale));
+        camera.position.copy(newCam);
+        controls.target.copy(newTarget);
+        controls.update();
+        needsRender = true;
+        return;
+      }
+      const direction = new THREE.Vector3().subVectors(camera.position, controls.target).normalize();
+      const newPos = controls.target.clone().addScaledVector(direction, newDistance);
+      if (newPos.y >= 0.5) {
+        camera.position.copy(newPos);
+        needsRender = true;
+      }
+    }
+    function isTextField(el) {
+      if (!el || !el.tagName) return false;
+      const tag = el.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+      return !!el.isContentEditable;
+    }
+    function typingInField(e) {
+      if (isTextField(e.target) || isTextField(document.activeElement)) return true;
+      if (e.composedPath) {
+        const path = e.composedPath();
+        for (let i = 0; i < path.length && i < 5; i++) {
+          if (isTextField(path[i])) return true;
+        }
+      }
+      return false;
+    }
+    function focusFieldNow(el) {
+      if (!isTextField(el) || el.disabled) return;
+      if (document.activeElement === el) return;
+      try { el.focus({ preventScroll: true }); }
+      catch (err) { el.focus(); }
+    }
+    function clearToolMode(id, className) {
+      const el = document.getElementById(id);
+      if (el && className) el.classList.remove(className);
+    }
+    function returnToPlaceMode() {
+      if (fpRadialMenuOpen) {
+        fpRadialMenuOpen = false;
+        const menu = document.getElementById('fpsRadialMenu');
+        if (menu) menu.classList.remove('visible');
+      }
+      if (firstPersonMode) exitFirstPersonMode();
+      deleteMode = false;
+      dropperMode = false;
+      paintMode = false;
+      facePaintMode = false;
+      floorMode = false;
+      wallMode = false;
+      moveMode = false;
+      clearToolMode('deleteBtn', 'delete-active');
+      clearToolMode('hudDeleteBtn', 'delete-active');
+      clearToolMode('dropperBtn', 'dropper-active');
+      clearToolMode('paintBtn', 'paint-active');
+      clearToolMode('facePaintBtn', 'facepaint-active');
+      clearToolMode('floorBtn', 'floor-active');
+      clearToolMode('wallBtn', 'wall-active');
+      clearToolMode('moveBtn', 'move-active');
+      const moveInd = document.getElementById('moveModeIndicator');
+      if (moveInd) moveInd.classList.remove('visible');
+      document.body.classList.remove('delete-mode', 'dropper-mode', 'paint-mode', 'facepaint-mode');
+      if (floorDragStart) cancelFloorDrag();
+      if (wallDragStart) cancelWallDrag();
+      clearMoveSelection();
+      updateBuildToolPopup();
+      removeGhost();
+      removeWallModeGhost();
+      needsRender = true;
+    }
+    let lastEscapeTime = 0;
+    let zoomInterval = null;
+    let sidebarCollapsed = false;
+    let trayDownX = 0;
+    let trayDownY = 0;
+    let trayDownSeen = false;
+    function filterPrefabs(query) {
+      query = query.toLowerCase().trim();
+      
+      // Get the prefabs section (parent of the search input)
+      const prefabsSection = document.getElementById('prefabSearch').closest('.section-content');
+      if (!prefabsSection) return;
+      
+      // Get all prefab buttons in the prefabs section
+      prefabsSection.querySelectorAll('.prefab-btn').forEach(btn => {
+        const name = btn.textContent.toLowerCase();
+        const prefabId = btn.dataset.prefab?.toLowerCase() || '';
+        const matches = query === '' || name.includes(query) || prefabId.includes(query);
+        btn.style.display = matches ? '' : 'none';
+      });
+      
+      // Show/hide subsections based on whether they have visible buttons
+      prefabsSection.querySelectorAll('.subsection').forEach(subsection => {
+        const hasVisible = Array.from(subsection.querySelectorAll('.prefab-btn')).some(btn => btn.style.display !== 'none');
+        
+        if (query !== '') {
+          // When searching, expand subsections with matches and hide empty ones
+          subsection.style.display = hasVisible ? '' : 'none';
+          if (hasVisible) {
+            subsection.classList.remove('collapsed');
+          }
+        } else {
+          // When search cleared, show all subsections
+          subsection.style.display = '';
+        }
+      });
+    }
+    function updateMirrorPreviewText() {
+      let text = '';
+      if (mirrorAxis === 'x') text = `Mirror left ↔ right at X=${mirrorOffset}`;
+      else if (mirrorAxis === 'z') text = `Mirror front ↔ back at Z=${mirrorOffset}`;
+      else text = `Mirror all 4 ways at (${mirrorOffset}, ${mirrorOffset})`;
+      document.getElementById('mirrorPreviewText').textContent = text;
+      document.getElementById('mirrorPopupInfo').textContent = text;
+    }
+    function makeDraggable(popup, handle) {
+      let isDragging = false;
+      let startX, startY, initialLeft, initialTop;
+      
+      handle.addEventListener('mousedown', (e) => {
+        if (e.target.tagName === 'BUTTON') return; // Don't drag if clicking a button
+        isDragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        const rect = popup.getBoundingClientRect();
+        initialLeft = rect.left;
+        initialTop = rect.top;
+        handle.style.cursor = 'grabbing';
+        e.preventDefault();
+      });
+      
+      document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        popup.style.left = (initialLeft + dx) + 'px';
+        popup.style.top = (initialTop + dy) + 'px';
+      });
+      
+      document.addEventListener('mouseup', () => {
+        if (isDragging) {
+          isDragging = false;
+          handle.style.cursor = 'grab';
+        }
+      });
+    }
+    function showFloating(el) {
+      if (!el) return;
+      el.classList.remove('brix-park');
+      el.classList.remove('brix-cold');
+    }
+    function updateBuildToolPopup() {
+      const buildToolPopup = document.getElementById('buildToolPopup');
+      if (!buildToolPopup) return;
+      const isFloor = floorMode;
+      const isWall = wallMode;
+      
+      buildToolPopup.classList.toggle('visible', isFloor || isWall);
+      if (isFloor || isWall) showFloating(buildToolPopup);
+      buildToolPopup.classList.toggle('floor-mode', isFloor);
+      
+      document.getElementById('buildModeFloor').classList.toggle('active', isFloor);
+      document.getElementById('buildModeWall').classList.toggle('active', isWall);
+      
+      document.getElementById('buildToolTitle').textContent = isFloor ? '🟫 Floor Tool' : '🧱 Wall Tool';
+      
+      // Show/hide relevant controls
+      document.getElementById('buildTypeRow').style.display = isFloor ? 'flex' : 'none';
+      document.getElementById('buildShapeRow').style.display = isWall ? 'flex' : 'none';
+      document.getElementById('buildHeightRow').style.display = isWall ? 'flex' : 'none';
+      document.getElementById('buildDepthRow').style.display = isWall ? 'flex' : 'none';
+      
+      // Update shape buttons to match current mode
+      document.getElementById('buildShapeLine').classList.toggle('active', !wallBoxMode);
+      document.getElementById('buildShapeBox').classList.toggle('active', wallBoxMode);
+      
+      const wallInfoText = wallBoxMode ? 'Click & drag to draw 4-sided box' : 'Click & drag to draw wall line';
+      document.getElementById('buildToolInfo').textContent = isFloor 
+        ? 'Click & drag to draw floor area' 
+        : wallInfoText;
+        
+      // Update values
+      document.getElementById('buildHeightValue').textContent = wallHeight;
+      document.getElementById('buildDepthValue').textContent = wallDepth;
+    }
+    function updatePhotoGrid() {
+      const container = document.getElementById('uploadedPhotos');
+      if (uploadedTextures.length === 0) {
+        container.innerHTML = '<div class="no-photos-hint">No photos uploaded yet</div>';
+        return;
+      }
+      
+      container.innerHTML = '';
+      uploadedTextures.forEach((photo, index) => {
+        const img = document.createElement('img');
+        img.className = 'photo-thumb';
+        img.src = photo.dataUrl;
+        img.title = photo.name;
+        img.dataset.index = index;
+        if (selectedTexture === index) img.classList.add('selected');
+        
+        img.addEventListener('click', () => {
+          if (selectedTexture === index) {
+            selectedTexture = null;
+            img.classList.remove('selected');
+            toast('Photo deselected');
+          } else {
+            document.querySelectorAll('.photo-thumb').forEach(t => t.classList.remove('selected'));
+            selectedTexture = index;
+            img.classList.add('selected');
+            toast(`📷 Photo selected: ${photo.name}`);
+          }
+          updateGhost();
+        });
+        
+        container.appendChild(img);
+      });
+    }
+    function clearMoveSelection() {
+      // Reset any highlighted bricks
+      for (const brick of selectedGroup) {
+        if (brick.traverse) {
+          brick.traverse(obj => {
+            if (obj.isMesh && obj.material && obj.userData.originalColor !== undefined) {
+              obj.material.color.setHex(obj.userData.originalColor);
+              obj.material.emissive.setHex(0x000000);
+            }
+          });
+        }
+      }
+      selectedGroup = [];
+      
+      // Remove move ghosts
+      for (const mg of moveGhosts) {
+        scene.remove(mg);
+      }
+      moveGhosts = [];
+      moveOffset = {x: 0, y: 0, z: 0};
+      
+      document.getElementById('moveModeIndicator').textContent = '✋ MOVE MODE - Click brick to select group';
+    }
+    function createMoveGhosts() {
+      // Clear existing ghosts
+      for (const mg of moveGhosts) {
+        scene.remove(mg);
+      }
+      moveGhosts = [];
+      
+      // Create a semi-transparent ghost for each selected brick
+      for (const brick of selectedGroup) {
+        const brickType = brick.userData.type || brick.userData.brickType;
+        const color = brick.userData.color;
+        const rot = brick.userData.rotation || 0;
+        
+        // Clone the brick as a ghost
+        const ghostMat = new THREE.MeshStandardMaterial({
+          color: softGhostColor(true),
+          transparent: true,
+          opacity: 0.45,
+          depthWrite: false
+        });
+        
+        const ghost = brick.clone();
+        ghost.traverse(obj => {
+          if (obj.isMesh) {
+            obj.material = ghostMat.clone();
+          }
+        });
+        
+        ghost.userData.isMoveGhost = true;
+        ghost.userData.originalBrick = brick;
+        ghost.userData.originalGrid = {...brick.userData.grid};
+        
+        scene.add(ghost);
+        moveGhosts.push(ghost);
+      }
+    }
+    function updateMoveGhosts(targetGx, targetGz) {
+      if (selectedGroup.length === 0 || moveGhosts.length === 0) return;
+      
+      // Calculate offset from first brick
+      const firstBrick = selectedGroup[0];
+      const firstGrid = firstBrick.userData.grid;
+      if (!firstGrid) return;
+      
+      const offsetX = targetGx - firstGrid.gx;
+      const offsetZ = targetGz - firstGrid.gz;
+      
+      // Check if all bricks can be placed at new positions
+      let canPlaceAll = true;
+      const tempRemovals = [];
+      
+      // Temporarily remove all selected bricks from grid
+      for (const brick of selectedGroup) {
+        removeFromGrid(brick);
+        tempRemovals.push(brick);
+      }
+      
+      // Check each position
+      for (let i = 0; i < selectedGroup.length; i++) {
+        const brick = selectedGroup[i];
+        const ghost = moveGhosts[i];
+        const g = brick.userData.grid;
+        
+        const newGx = g.gx + offsetX;
+        const newGz = g.gz + offsetZ;
+        
+        // Update ghost position
+        const pos = new THREE.Vector3(
+          newGx * STUD + (g.w * STUD) / 2,
+          brick.position.y,
+          newGz * STUD + (g.d * STUD) / 2
+        );
+        ghost.position.copy(pos);
+        
+        // Check if this position is valid
+        const canPlaceHere = canPlace(newGx, newGz, g.w, g.d, g.gy, g.hp, false);
+        if (!canPlaceHere) canPlaceAll = false;
+      }
+      
+      // Restore all selected bricks to grid
+      for (const brick of tempRemovals) {
+        const g = brick.userData.grid;
+        addToGrid(g.gx, g.gz, g.w, g.d, g.gy, g.hp, brick);
+      }
+      
+      // Update ghost colors based on validity
+      const ghostColor = canPlaceAll ? 0x00ff00 : 0xff0000;
+      for (const ghost of moveGhosts) {
+        ghost.traverse(obj => {
+          if (obj.isMesh && obj.material) {
+            obj.material.color.setHex(ghostColor);
+          }
+        });
+      }
+      
+      // Store for placement check
+      moveGhosts.canPlace = canPlaceAll;
+      moveGhosts.targetGx = targetGx;
+      moveGhosts.targetGz = targetGz;
+    }
+    function findConnectedBricks(startBrick) {
+      // BFS to find all connected bricks
+      const connected = new Set();
+      const queue = [startBrick];
+      connected.add(startBrick);
+      
+      while (queue.length > 0) {
+        const current = queue.shift();
+        const currentGrid = current.userData.grid;
+        if (!currentGrid) continue;
+        
+        // Check all adjacent positions for connected bricks
+        for (const brick of bricks) {
+          if (connected.has(brick)) continue;
+          const brickGrid = brick.userData.grid;
+          if (!brickGrid) continue;
+          
+          // Check if bricks are adjacent (sharing a face or edge)
+          const touching = areBricksTouching(currentGrid, brickGrid);
+          if (touching) {
+            connected.add(brick);
+            queue.push(brick);
+          }
+        }
+      }
+      
+      return Array.from(connected);
+    }
+    function areBricksTouching(g1, g2) {
+      // Check if two brick grid positions are adjacent
+      // g1 and g2 have: gx, gz, w, d, gy, hp
+      
+      // Check vertical adjacency (stacked)
+      const g1Top = g1.gy + g1.hp;
+      const g2Top = g2.gy + g2.hp;
+      
+      // Check if they overlap in X and Z
+      const overlapX = !(g1.gx + g1.w <= g2.gx || g2.gx + g2.w <= g1.gx);
+      const overlapZ = !(g1.gz + g1.d <= g2.gz || g2.gz + g2.d <= g1.gz);
+      
+      if (overlapX && overlapZ) {
+        // They overlap horizontally, check if vertically adjacent
+        if (g1Top === g2.gy || g2Top === g1.gy) {
+          return true;
+        }
+      }
+      
+      // Check side adjacency (same height level)
+      if (g1.gy < g2Top && g2.gy < g1Top) { // Overlapping in Y
+        // Adjacent in X?
+        if ((g1.gx + g1.w === g2.gx || g2.gx + g2.w === g1.gx) && overlapZ) {
+          return true;
+        }
+        // Adjacent in Z?
+        if ((g1.gz + g1.d === g2.gz || g2.gz + g2.d === g1.gz) && overlapX) {
+          return true;
+        }
+      }
+      
+      return false;
+    }
+    function selectBrickGroup(clickedBrick, singleBrickOnly = false) {
+      // Can't move instanced bricks (would need to recreate them)
+      if (clickedBrick.isInstancedBrick) {
+        toast('⚠️ Cannot move instanced bricks - use delete and recreate', 'error');
+        return;
+      }
+      
+      clearMoveSelection();
+      
+      if (singleBrickOnly) {
+        // Select just this one brick
+        selectedGroup = [clickedBrick];
+      } else {
+        // Find all connected bricks (excluding instanced ones)
+        selectedGroup = findConnectedBricks(clickedBrick).filter(b => !b.isInstancedBrick);
+      }
+      
+      if (selectedGroup.length === 0) {
+        toast('No moveable bricks found');
+        return;
+      }
+      
+      // Highlight selected bricks
+      for (const brick of selectedGroup) {
+        if (brick.traverse) {
+          brick.traverse(obj => {
+            if (obj.isMesh && obj.material) {
+              obj.userData.originalColor = obj.material.color.getHex();
+              obj.material.emissive.setHex(0x00ffff);
+              obj.material.emissiveIntensity = 0.3;
+            }
+          });
+        }
+      }
+      
+      // Create ghost previews
+      createMoveGhosts();
+      
+      const modeText = singleBrickOnly ? '1 brick' : `${selectedGroup.length} bricks`;
+      document.getElementById('moveModeIndicator').textContent = 
+        `✋ ${modeText} selected - Click to place, ESC to cancel`;
+      
+      toast(`Selected ${modeText}${singleBrickOnly ? '' : ' (hold Shift for single brick)'}`);
+    }
+    function placeMoveGroup(targetGx, targetGz) {
+      if (selectedGroup.length === 0) return;
+      
+      // Calculate offset from first brick
+      const firstBrick = selectedGroup[0];
+      const firstGrid = firstBrick.userData.grid;
+      if (!firstGrid) return;
+      
+      const offsetX = targetGx - firstGrid.gx;
+      const offsetZ = targetGz - firstGrid.gz;
+      
+      // Check if all bricks can be placed at new positions
+      let canPlaceAll = true;
+      const newPositions = [];
+      
+      for (const brick of selectedGroup) {
+        const g = brick.userData.grid;
+        const newGx = g.gx + offsetX;
+        const newGz = g.gz + offsetZ;
+        
+        // Temporarily remove from grid to check placement
+        removeFromGrid(brick);
+        
+        const canPlaceHere = canPlace(newGx, newGz, g.w, g.d, g.gy, g.hp, false);
+        if (!canPlaceHere) canPlaceAll = false;
+        
+        newPositions.push({brick, newGx, newGz, oldGx: g.gx, oldGz: g.gz, g});
+      }
+      
+      if (canPlaceAll && (offsetX !== 0 || offsetZ !== 0)) {
+        // Save move action with old and new positions
+        const moveData = newPositions.map(np => ({
+          type: np.brick.userData.type || np.brick.userData.brickType,
+          color: np.brick.userData.color,
+          rot: np.brick.userData.rot,
+          pitch: np.brick.userData.pitch || 0,
+          roll: np.brick.userData.roll || 0,
+          transparent: np.brick.userData.transparent || false,
+          oldGrid: { x: np.oldGx, z: np.oldGz, y: np.g.gy },
+          newGrid: { x: np.newGx, z: np.newGz, y: np.g.gy }
+        }));
+        
+        // For move, we'll use fullState since move is complex
+        saveUndo();
+        
+        // Move all bricks
+        for (const np of newPositions) {
+          const pos = new THREE.Vector3(
+            np.newGx * STUD + (np.g.w * STUD) / 2,
+            np.brick.position.y,
+            np.newGz * STUD + (np.g.d * STUD) / 2
+          );
+          np.brick.position.x = pos.x;
+          np.brick.position.z = pos.z;
+          np.g.gx = np.newGx;
+          np.g.gz = np.newGz;
+          addToGrid(np.newGx, np.newGz, np.g.w, np.g.d, np.g.gy, np.g.hp, np.brick);
+        }
+        
+        toast(`✅ Moved ${selectedGroup.length} bricks`, 'success');
+        clearMoveSelection();
+      } else {
+        // Restore original positions in grid
+        for (const np of newPositions) {
+          addToGrid(np.oldGx, np.oldGz, np.g.w, np.g.d, np.g.gy, np.g.hp, np.brick);
+        }
+        
+        if (offsetX === 0 && offsetZ === 0) {
+          clearMoveSelection();
+        } else {
+          toast('⚠️ Cannot place here - space occupied', 'error');
+        }
+      }
+    }
+    let hudDeleteAt = 0;
+    function onHudDelete(event) {
+      if (event.button != null && event.button > 0) return;
+      const now = performance.now();
+      if (now - hudDeleteAt < 400) return;
+      hudDeleteAt = now;
+      const turningOn = !deleteMode;
+      setDeleteMode(turningOn);
+      if (!turningOn) {
+        toast('Delete OFF');
+        return;
+      }
+      const before = bricks.length;
+      if (event.clientX != null) pointerToMouse(event.clientX, event.clientY);
+      if (before) deleteBrick();
+      if (bricks.length === before && before) deleteNewestBrick();
+      toast(bricks.length < before ? '🗑️ Deleted' : '🗑️ Delete ON');
+    }
+    let savePressAt = 0;
+    function onSavePress(event) {
+      if (event && event.button != null && event.button > 0) return;
+      const now = performance.now();
+      if (now - savePressAt < 400) return;
+      savePressAt = now;
+      saveProject();
+    }
+    let mobileTrayUserExpanded = false;
+    function isPhoneChrome() { return window.innerWidth <= 768; }
+    function applyMobileTray() {
+      const mobileControlsPanel = document.getElementById('controls');
+      const panelToggle = document.getElementById('panelToggle');
+      if (!mobileControlsPanel) return;
+      if (!isPhoneChrome()) {
+        mobileControlsPanel.classList.remove('collapsed-mobile', 'tray-open');
+        document.body.classList.remove('phone-tray-open');
+        mobileTrayUserExpanded = false;
+        return;
+      }
+      mobileControlsPanel.style.maxHeight = '';
+      if (window.innerWidth <= 430) {
+        mobileControlsPanel.classList.remove('collapsed-mobile');
+        mobileControlsPanel.classList.toggle('tray-open', mobileTrayUserExpanded);
+      } else {
+        mobileControlsPanel.classList.remove('tray-open');
+        mobileControlsPanel.classList.toggle('collapsed-mobile', !mobileTrayUserExpanded);
+      }
+      document.body.classList.toggle('phone-tray-open', window.innerWidth <= 430 && mobileTrayUserExpanded);
+      if (document.body.classList.contains('phone-tray-open')) {
+        removeGhost();
+        removeWallModeGhost();
+        needsRender = true;
+      }
+      if (panelToggle) panelToggle.textContent = mobileTrayUserExpanded ? '▼ Hide tools' : '▲ Bricks & tools';
+    }
+    function bindInputEvents1() {
       // Mouse events. Hover work runs once per frame from animate(), not on every event.
       renderer.domElement.addEventListener('mousemove', e => {
         lastPointerMs = performance.now();
@@ -9458,13 +10530,6 @@
         }
       });
       
-      let suppressClickUntil = 0;
-      let pointerDownX = 0;
-      let pointerDownY = 0;
-      let pointerDownSeen = false;
-      let orbitPointerX = 0;
-      let orbitPointerY = 0;
-      let orbitPointerDown = false;
       renderer.domElement.addEventListener('pointerdown', (e) => {
         orbitPointerX = e.clientX;
         orbitPointerY = e.clientY;
@@ -9531,7 +10596,14 @@
             }
           }
           
-          if (deleteMode) deleteBrick();
+          if (deleteMode) {
+            const picked = pickPoint();
+            if (picked && picked.brick) deleteBrick();
+            else {
+              setDeleteMode(false);
+              placeBrick();
+            }
+          }
           else if (dropperMode) pickColor();
           else if (paintMode) paintBrick();
           else if (facePaintMode) facePaintBrick();
@@ -9542,6 +10614,8 @@
           else placeBrick();
         }
       });
+    }
+    function bindInputEvents2() {
       
       // Right-click to delete in walk mode - use mousedown for reliability in pointer lock
       // Left-click starts showing ghost, release places brick
@@ -9636,205 +10710,22 @@
         ticks = Math.max(-1, Math.min(1, ticks / 100));
         if (!ticks) return;
         const dist = camera.position.distanceTo(controls.target);
-        const step = Math.min(1.5, Math.max(0.4, dist * 0.045));
-        zoomCamera(Math.sign(ticks) * step * Math.min(1, Math.abs(ticks)));
+        const step = Math.max(0.8, dist * 0.1);
+        zoomCamera(Math.sign(ticks) * step * Math.min(1, Math.abs(ticks)), e.clientX, e.clientY);
       }, { passive: false, capture: true });
       
       // Select a quick slot
-      function selectFpQuickSlot(index) {
-        if (index < 0 || index >= fpQuickSlots.length) return;
-        
-        fpQuickSlotIndex = index;
-        const slot = fpQuickSlots[index];
-        
-        if (slot.type === 'brick') {
-          selectedBrick = slot.id;
-          selectedPrefab = null;
-        } else if (slot.type === 'prefab') {
-          selectedPrefab = slot.id;
-        }
-        
-        // Update hotbar UI
-        document.querySelectorAll('.fps-slot').forEach((el, i) => {
-          el.classList.toggle('selected', i === index);
-        });
-        
-        // Clear all ghosts to refresh
-        if (fpGhost) {
-          scene.remove(fpGhost);
-          fpGhost = null;
-        }
-        fpPrefabGhosts.forEach(g => scene.remove(g));
-        fpPrefabGhosts = [];
-        
-        updateFpBrickInfo();
-      }
       
       // Toggle radial menu
-      function toggleFpRadialMenu() {
-        if (fpRadialMenuOpen) {
-          closeFpRadialMenu();
-        } else {
-          openFpRadialMenu();
-        }
-      }
       
       // Open radial menu
-      function openFpRadialMenu() {
-        fpRadialMenuOpen = true;
-        
-        // Exit pointer lock temporarily
-        if (document.pointerLockElement) {
-          document.exitPointerLock();
-        }
-        
-        const menu = document.getElementById('fpsRadialMenu');
-        const ring = document.getElementById('fpsRadialRing');
-        
-        // Build radial menu items
-        const categories = [
-          { icon: '🧱', name: 'Bricks', items: ['2x4', '2x2', '1x2', '1x4', '2x3'] },
-          { icon: '📦', name: 'Plates', items: ['2x4p', '2x2p', '1x2p', '1x4p'] },
-          { icon: '📐', name: 'Slopes', items: ['slope2', 'slope4', 'slope1x2', 'cslope2', 'cslope3', 'icslope2'] },
-          { icon: '🪜', name: 'Prefabs', items: ['stairs', 'pillar', 'corner', 'arch'] },
-          { icon: '🚪', name: 'Openings', items: ['door', 'window'] },
-          { icon: '🔵', name: 'Round', items: ['r2x2', 'r1x1', 'r2x2p', 'r1x1p'] },
-          { icon: '🎨', name: 'Tiles', items: ['2x2t', '1x2t', '2x4t', '1x4t'] },
-          { icon: '🏗️', name: 'Fence', items: ['fence'] }
-        ];
-        
-        ring.innerHTML = '';
-        const radius = 110;
-        
-        categories.forEach((cat, i) => {
-          const angle = (i / categories.length) * Math.PI * 2 - Math.PI / 2;
-          const x = Math.cos(angle) * radius + 150 - 35;
-          const y = Math.sin(angle) * radius + 150 - 35;
-          
-          const item = document.createElement('div');
-          item.className = 'fps-radial-item';
-          item.style.left = x + 'px';
-          item.style.top = y + 'px';
-          item.innerHTML = `<span class="item-icon">${cat.icon}</span><span class="item-name">${cat.name}</span>`;
-          item.dataset.category = i;
-          
-          item.addEventListener('click', () => {
-            showRadialSubMenu(cat);
-          });
-          
-          ring.appendChild(item);
-        });
-        
-        menu.classList.add('visible');
-      }
       
       // Show submenu for a category
-      function showRadialSubMenu(category) {
-        const ring = document.getElementById('fpsRadialRing');
-        const center = document.querySelector('.fps-radial-center');
-        
-        center.textContent = category.name;
-        ring.innerHTML = '';
-        
-        const radius = 110;
-        const items = category.items;
-        
-        items.forEach((itemId, i) => {
-          const angle = (i / items.length) * Math.PI * 2 - Math.PI / 2;
-          const x = Math.cos(angle) * radius + 150 - 35;
-          const y = Math.sin(angle) * radius + 150 - 35;
-          
-          const item = document.createElement('div');
-          item.className = 'fps-radial-item';
-          if ((selectedBrick === itemId && !selectedPrefab) || selectedPrefab === itemId) {
-            item.classList.add('selected');
-          }
-          item.style.left = x + 'px';
-          item.style.top = y + 'px';
-          
-          const isPrefab = prefabs[itemId] !== undefined;
-          const name = getBrickName(itemId);
-          item.innerHTML = `<span class="item-icon">${isPrefab ? '📦' : '🧱'}</span><span class="item-name">${name}</span>`;
-          
-          item.addEventListener('click', () => {
-            if (isPrefab) {
-              selectedPrefab = itemId;
-              selectedBrick = '2x2';
-            } else {
-              selectedBrick = itemId;
-              selectedPrefab = null;
-            }
-            
-            // Update quick slot to match
-            const slotIndex = fpQuickSlots.findIndex(s => s.id === itemId);
-            if (slotIndex >= 0) {
-              fpQuickSlotIndex = slotIndex;
-              document.querySelectorAll('.fps-slot').forEach((el, i) => {
-                el.classList.toggle('selected', i === slotIndex);
-              });
-            }
-            
-            closeFpRadialMenu();
-            
-            // Clear ghost to refresh
-            if (fpGhost) {
-              scene.remove(fpGhost);
-              fpGhost = null;
-            }
-            
-            updateFpBrickInfo();
-          });
-          
-          ring.appendChild(item);
-        });
-        
-        // Add back button
-        const backBtn = document.createElement('div');
-        backBtn.className = 'fps-radial-item';
-        backBtn.style.left = '115px';
-        backBtn.style.top = '230px';
-        backBtn.innerHTML = '<span class="item-icon">⬅️</span><span class="item-name">Back</span>';
-        backBtn.addEventListener('click', openFpRadialMenu);
-        ring.appendChild(backBtn);
-      }
       
       // Close radial menu
-      function closeFpRadialMenu() {
-        fpRadialMenuOpen = false;
-        document.getElementById('fpsRadialMenu').classList.remove('visible');
-        
-        // Re-lock pointer
-        if (firstPersonMode) {
-          renderer.domElement.requestPointerLock();
-        }
-      }
       
       // Initialize hotbar click handlers
-      function initFpHotbar() {
-        document.querySelectorAll('.fps-slot').forEach(slot => {
-          slot.addEventListener('click', () => {
-            const index = parseInt(slot.dataset.slot);
-            selectFpQuickSlot(index);
-          });
-        });
-      }
       
-      function handleMoveClick(shiftKey = false) {
-        const picked = pickPoint();
-        if (picked && picked.brick && selectedGroup.length === 0) {
-          if (picked.brick.userData && picked.brick.userData.isBrick) {
-            selectBrickGroup(picked.brick, shiftKey);
-          }
-        } else if (selectedGroup.length > 0) {
-          if (moveGhosts.canPlace && (moveGhosts.targetGx !== undefined)) {
-            placeMoveGroup(moveGhosts.targetGx, moveGhosts.targetGz);
-            SoundSystem.playPlace();
-          } else if (picked) {
-            const gPos = worldToGrid(picked.point.x, picked.point.z);
-            placeMoveGroup(gPos.x, gPos.z);
-          }
-        }
-      }
       
       renderer.domElement.addEventListener('contextmenu', e => { 
         e.preventDefault(); 
@@ -9842,10 +10733,6 @@
       });
       
       // Touch events
-      let touchStartTime = 0;
-      let touchMoved = false;
-      let touchStartX = 0;
-      let touchStartY = 0;
       
       renderer.domElement.addEventListener('touchstart', e => {
         touchStartTime = Date.now();
@@ -9884,6 +10771,8 @@
         document.getElementById('touchIndicator').classList.remove('active');
       }, {passive: true});
       
+    }
+    function bindInputEvents3() {
       renderer.domElement.addEventListener('touchend', e => {
         document.getElementById('touchIndicator').classList.remove('active');
         
@@ -9896,7 +10785,14 @@
           if (lift) pointerToMouse(lift.clientX, lift.clientY);
           pointerDirty = false;
           updateGhost({ forPlace: true });
-          if (deleteMode) deleteBrick();
+          if (deleteMode) {
+            const picked = pickPoint();
+            if (picked && picked.brick) deleteBrick();
+            else {
+              setDeleteMode(false);
+              placeBrick();
+            }
+          }
           else if (dropperMode) pickColor();
           else if (paintMode) paintBrick();
           else if (facePaintMode) facePaintBrick();
@@ -9915,76 +10811,17 @@
       });
       
       // Track which keys are held for smooth panning
-      const keysPressed = new Set();
       
       // Camera pan function
-      function panCamera(dx, dz) {
-        // Get camera's forward direction (but on the horizontal plane)
-        const forward = new THREE.Vector3();
-        camera.getWorldDirection(forward);
-        forward.y = 0;
-        forward.normalize();
-        
-        // Get right direction
-        const right = new THREE.Vector3();
-        right.crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
-        
-        // Calculate movement
-        const panSpeed = 0.5;
-        const movement = new THREE.Vector3();
-        movement.addScaledVector(right, dx * panSpeed);
-        movement.addScaledVector(forward, dz * panSpeed);
-        needsRender = true;
-        
-        // Apply to both camera and target
-        camera.position.add(movement);
-        controls.target.add(movement);
-      }
       
-      // Zoom function
-      function zoomCamera(delta) {
-        const direction = new THREE.Vector3();
-        direction.subVectors(camera.position, controls.target).normalize();
-        
-        const distance = camera.position.distanceTo(controls.target);
-        // One call moves at most 6% or 2.5 units, so a button hold stays smooth.
-        const limit = Math.min(2.5, Math.max(0.35, distance * 0.06));
-        const signed = Math.sign(delta) * Math.min(Math.abs(delta), limit);
-        const newDistance = Math.max(controls.minDistance, Math.min(controls.maxDistance, distance + signed));
-        
-        const newPos = controls.target.clone().addScaledVector(direction, newDistance);
-        
-        // Only apply if camera stays above ground
-        if (newPos.y >= 0.5) {
-          camera.position.copy(newPos);
-          needsRender = true;
-        }
-      }
+      // Negative delta moves closer. A wheel call passes the cursor and scales
+      // the camera and the orbit target around the ground point under it, so
+      // that brick stays on the same pixel. Buttons omit the cursor and stay
+      // on the target. The cap is wide enough for one click at the far phone
+      // pose; a hold still passes ±2 and is not clipped down to the click.
       
-      function isTextField(el) {
-        if (!el || !el.tagName) return false;
-        const tag = el.tagName;
-        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
-        return !!el.isContentEditable;
-      }
 
-      function typingInField(e) {
-        if (isTextField(e.target) || isTextField(document.activeElement)) return true;
-        if (e.composedPath) {
-          const path = e.composedPath();
-          for (let i = 0; i < path.length && i < 5; i++) {
-            if (isTextField(path[i])) return true;
-          }
-        }
-        return false;
-      }
 
-      function focusFieldNow(el) {
-        if (!isTextField(el) || el.disabled) return;
-        if (document.activeElement === el) return;
-        try { el.focus({ preventScroll: true }); }
-        catch (err) { el.focus(); }
-      }
 
       // Focus moves in pointerdown, before a keydown can hit a hotkey.
       document.addEventListener('pointerdown', (e) => {
@@ -9994,41 +10831,19 @@
         if (field) focusFieldNow(field);
       }, true);
 
-      function clearToolMode(id, className) {
-        const el = document.getElementById(id);
-        if (el && className) el.classList.remove(className);
+      const projectNameField = document.getElementById('projectName');
+      if (projectNameField) {
+        projectNameField.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') return;
+          e.stopPropagation();
+        });
       }
 
-      function returnToPlaceMode() {
-        if (fpRadialMenuOpen) {
-          fpRadialMenuOpen = false;
-          const menu = document.getElementById('fpsRadialMenu');
-          if (menu) menu.classList.remove('visible');
-        }
-        if (firstPersonMode) exitFirstPersonMode();
-        deleteMode = false;
-        dropperMode = false;
-        paintMode = false;
-        facePaintMode = false;
-        floorMode = false;
-        wallMode = false;
-        clearToolMode('deleteBtn', 'delete-active');
-        clearToolMode('hudDeleteBtn', 'delete-active');
-        clearToolMode('dropperBtn', 'dropper-active');
-        clearToolMode('paintBtn', 'paint-active');
-        clearToolMode('facePaintBtn', 'facepaint-active');
-        clearToolMode('floorBtn', 'floor-active');
-        clearToolMode('wallBtn', 'wall-active');
-        document.body.classList.remove('delete-mode', 'dropper-mode', 'paint-mode', 'facepaint-mode');
-        if (floorDragStart) cancelFloorDrag();
-        if (wallDragStart) cancelWallDrag();
-        removeGhost();
-        removeWallModeGhost();
-        needsRender = true;
-      }
 
-      // Keyboard
-      document.addEventListener('keydown', e => {
+
+      // Keyboard. A named function stays uncompiled until the first key,
+      // so boot does not pay for this handler in one turn.
+      function onBuilderKeyDown(e) {
         if (e.key === 'Escape') {
           const mirrorPop = document.getElementById('mirrorPopup');
           const mirrorOpen = mirrorOn || (mirrorPop && mirrorPop.classList.contains('visible'));
@@ -10049,15 +10864,21 @@
         if (e.key === 'Escape') {
           const loadConfirm = document.getElementById('loadConfirm');
           const namePrompt = document.getElementById('namePrompt');
+          const confirmUp = (loadConfirm && loadConfirm.style.display === 'flex')
+            || (namePrompt && namePrompt.style.display === 'flex');
+          if (confirmUp) return;
           const tutorial = document.getElementById('tutorialModal');
+          if (tutorial && tutorial.classList.contains('visible')) tutorial.classList.remove('visible');
           const keybind = document.getElementById('keybindModal');
+          if (keybind && keybind.classList.contains('visible')) keybind.classList.remove('visible');
           const phoneTut = document.getElementById('phoneTutorial');
-          const modalUp = (loadConfirm && loadConfirm.style.display === 'flex')
-            || (namePrompt && namePrompt.style.display === 'flex')
-            || (tutorial && tutorial.classList.contains('visible'))
-            || (keybind && keybind.classList.contains('visible'))
-            || (phoneTut && !phoneTut.hidden);
-          if (modalUp) return;
+          if (phoneTut && !phoneTut.hidden) {
+            phoneTut.hidden = true;
+            const box = document.getElementById('phoneTutorialDontShow');
+            if (box && box.checked) {
+              try { localStorage.setItem('brickBuilderTutorialDismissed', 'true'); } catch (err) {}
+            }
+          }
           const gallery = document.getElementById('galleryModal');
           if (gallery && gallery.style.display === 'flex') {
             closeGallery();
@@ -10319,6 +11140,7 @@
             document.getElementById('mirrorBtn').classList.toggle('active', mirrorOn);
             document.getElementById('mirrorSettings').classList.toggle('visible', mirrorOn);
             document.getElementById('mirrorPopup').classList.toggle('visible', mirrorOn);
+            if (mirrorOn) showFloating(document.getElementById('mirrorPopup'));
             updateMirrorLines();
             updateGhost();
             toast(mirrorOn ? '🔀 Mirror ON' : 'Mirror OFF');
@@ -10395,7 +11217,10 @@
             updateGhost();
             break;
         }
-      });
+      }
+      document.addEventListener('keydown', onBuilderKeyDown);
+    }
+    function bindInputEvents4() {
       
       // Global mouseup to catch drag releases outside canvas
       document.addEventListener('mouseup', e => {
@@ -10440,7 +11265,6 @@
       });
       
       // Failsafe: Double-tap Escape always exits walk mode completely
-      let lastEscapeTime = 0;
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && firstPersonMode) {
           const now = Date.now();
@@ -10454,11 +11278,16 @@
       }, true); // Capture phase to run before other handlers
       
       // Zoom button listeners
-      document.getElementById('zoomInBtn').addEventListener('click', () => zoomCamera(-5));
-      document.getElementById('zoomOutBtn').addEventListener('click', () => zoomCamera(5));
+      document.getElementById('zoomInBtn').addEventListener('click', () => {
+        const dist = camera.position.distanceTo(controls.target);
+        zoomCamera(-Math.max(5, dist * 0.12));
+      });
+      document.getElementById('zoomOutBtn').addEventListener('click', () => {
+        const dist = camera.position.distanceTo(controls.target);
+        zoomCamera(Math.max(5, dist * 0.12));
+      });
       
       // Hold-to-zoom for buttons
-      let zoomInterval = null;
       document.getElementById('zoomInBtn').addEventListener('mousedown', () => {
         zoomInterval = setInterval(() => zoomCamera(-2), 50);
       });
@@ -10470,7 +11299,6 @@
       });
       
       // Sidebar toggle
-      let sidebarCollapsed = false;
       const sidebarToggle = document.getElementById('sidebarToggle');
       const controlsPanel = document.getElementById('controls');
       
@@ -10492,11 +11320,26 @@
         }
       }
       
-      // Section collapse toggle
+      // A drag that scrolls the phone sheet ends on the title under the finger.
+      // Toggle on pointerup only when the finger stayed within 18px.
+      const trayScrollEl = document.querySelector('.tray-scroll');
+      if (trayScrollEl) {
+        trayScrollEl.addEventListener('pointerdown', (e) => {
+          trayDownX = e.clientX;
+          trayDownY = e.clientY;
+          trayDownSeen = true;
+        }, true);
+      }
       document.querySelectorAll('.section-title').forEach(title => {
-        title.addEventListener('click', () => {
-          const section = title.parentElement;
-          section.classList.toggle('collapsed');
+        let lastToggle = 0;
+        title.addEventListener('pointerup', (e) => {
+          if (e.pointerType === 'mouse' && e.button !== 0) return;
+          // A scroll ends on a title. Only a finger that stayed put opens it.
+          if (!trayDownSeen || Math.hypot(e.clientX - trayDownX, e.clientY - trayDownY) > 18) return;
+          const now = performance.now();
+          if (now - lastToggle < 350) return;
+          lastToggle = now;
+          title.parentElement.classList.toggle('collapsed');
         });
       });
       
@@ -10520,12 +11363,15 @@
           updateGhost();
         });
       });
+    }
+    function bindInputEvents5() {
       document.querySelectorAll('.brick-btn').forEach(b => {
         b.classList.toggle('selected', b.dataset.brick === selectedBrick);
       });
       if (typeof updateUI === 'function') updateUI();
       
       document.getElementById('colorPicker').addEventListener('input', e => {
+        setDeleteMode(false);
         selectedColor = parseInt(e.target.value.slice(1), 16);
         document.querySelectorAll('.color-preset').forEach(p => p.classList.remove('selected'));
         updateGhost();
@@ -10535,6 +11381,7 @@
       
       document.querySelectorAll('.color-preset').forEach(p => {
         p.addEventListener('click', () => {
+          setDeleteMode(false);
           selectedColor = parseInt(p.dataset.color.slice(1), 16);
           isTransparent = p.dataset.trans === 'true';
           document.getElementById('colorPicker').value = p.dataset.color;
@@ -10598,37 +11445,6 @@
         }
       });
       
-      function filterPrefabs(query) {
-        query = query.toLowerCase().trim();
-        
-        // Get the prefabs section (parent of the search input)
-        const prefabsSection = document.getElementById('prefabSearch').closest('.section-content');
-        if (!prefabsSection) return;
-        
-        // Get all prefab buttons in the prefabs section
-        prefabsSection.querySelectorAll('.prefab-btn').forEach(btn => {
-          const name = btn.textContent.toLowerCase();
-          const prefabId = btn.dataset.prefab?.toLowerCase() || '';
-          const matches = query === '' || name.includes(query) || prefabId.includes(query);
-          btn.style.display = matches ? '' : 'none';
-        });
-        
-        // Show/hide subsections based on whether they have visible buttons
-        prefabsSection.querySelectorAll('.subsection').forEach(subsection => {
-          const hasVisible = Array.from(subsection.querySelectorAll('.prefab-btn')).some(btn => btn.style.display !== 'none');
-          
-          if (query !== '') {
-            // When searching, expand subsections with matches and hide empty ones
-            subsection.style.display = hasVisible ? '' : 'none';
-            if (hasVisible) {
-              subsection.classList.remove('collapsed');
-            }
-          } else {
-            // When search cleared, show all subsections
-            subsection.style.display = '';
-          }
-        });
-      }
       
       document.getElementById('deleteBtn').addEventListener('click', () => {
         setDeleteMode(!deleteMode);
@@ -10673,6 +11489,8 @@
         updateGhost();
         toast(facePaintMode ? '🖌️ Face Paint ON - Click brick sides to paint' : 'Face Paint OFF');
       });
+    }
+    function bindInputEvents6() {
       
       document.getElementById('floorBtn').addEventListener('click', () => {
         floorMode = !floorMode; deleteMode = false; dropperMode = false; paintMode = false; facePaintMode = false; wallMode = false;
@@ -10717,6 +11535,7 @@
         document.getElementById('mirrorBtn').classList.toggle('active', mirrorOn);
         document.getElementById('mirrorSettings').classList.toggle('visible', mirrorOn);
         document.getElementById('mirrorPopup').classList.toggle('visible', mirrorOn);
+        if (mirrorOn) showFloating(document.getElementById('mirrorPopup'));
         updateMirrorLines();
         updateGhost();
         toast(mirrorOn ? '🔀 Mirror ON' : 'Mirror OFF');
@@ -10781,6 +11600,8 @@
           updateGhost();
         });
       });
+    }
+    function bindInputEvents7() {
       
       document.getElementById('mirrorOffsetDown').addEventListener('click', () => {
         mirrorOffset -= 1;
@@ -10800,47 +11621,8 @@
         updateGhost();
       });
       
-      function updateMirrorPreviewText() {
-        let text = '';
-        if (mirrorAxis === 'x') text = `Mirror left ↔ right at X=${mirrorOffset}`;
-        else if (mirrorAxis === 'z') text = `Mirror front ↔ back at Z=${mirrorOffset}`;
-        else text = `Mirror all 4 ways at (${mirrorOffset}, ${mirrorOffset})`;
-        document.getElementById('mirrorPreviewText').textContent = text;
-        document.getElementById('mirrorPopupInfo').textContent = text;
-      }
       
       // ==================== DRAGGABLE POPUPS ====================
-      function makeDraggable(popup, handle) {
-        let isDragging = false;
-        let startX, startY, initialLeft, initialTop;
-        
-        handle.addEventListener('mousedown', (e) => {
-          if (e.target.tagName === 'BUTTON') return; // Don't drag if clicking a button
-          isDragging = true;
-          startX = e.clientX;
-          startY = e.clientY;
-          const rect = popup.getBoundingClientRect();
-          initialLeft = rect.left;
-          initialTop = rect.top;
-          handle.style.cursor = 'grabbing';
-          e.preventDefault();
-        });
-        
-        document.addEventListener('mousemove', (e) => {
-          if (!isDragging) return;
-          const dx = e.clientX - startX;
-          const dy = e.clientY - startY;
-          popup.style.left = (initialLeft + dx) + 'px';
-          popup.style.top = (initialTop + dy) + 'px';
-        });
-        
-        document.addEventListener('mouseup', () => {
-          if (isDragging) {
-            isDragging = false;
-            handle.style.cursor = 'grab';
-          }
-        });
-      }
       
       // Make mirror popup draggable
       makeDraggable(
@@ -10857,37 +11639,7 @@
       // ==================== BUILD TOOL POPUP ====================
       const buildToolPopup = document.getElementById('buildToolPopup');
       
-      function updateBuildToolPopup() {
-        const isFloor = floorMode;
-        const isWall = wallMode;
-        
-        buildToolPopup.classList.toggle('visible', isFloor || isWall);
-        buildToolPopup.classList.toggle('floor-mode', isFloor);
-        
-        document.getElementById('buildModeFloor').classList.toggle('active', isFloor);
-        document.getElementById('buildModeWall').classList.toggle('active', isWall);
-        
-        document.getElementById('buildToolTitle').textContent = isFloor ? '🟫 Floor Tool' : '🧱 Wall Tool';
-        
-        // Show/hide relevant controls
-        document.getElementById('buildTypeRow').style.display = isFloor ? 'flex' : 'none';
-        document.getElementById('buildShapeRow').style.display = isWall ? 'flex' : 'none';
-        document.getElementById('buildHeightRow').style.display = isWall ? 'flex' : 'none';
-        document.getElementById('buildDepthRow').style.display = isWall ? 'flex' : 'none';
-        
-        // Update shape buttons to match current mode
-        document.getElementById('buildShapeLine').classList.toggle('active', !wallBoxMode);
-        document.getElementById('buildShapeBox').classList.toggle('active', wallBoxMode);
-        
-        const wallInfoText = wallBoxMode ? 'Click & drag to draw 4-sided box' : 'Click & drag to draw wall line';
-        document.getElementById('buildToolInfo').textContent = isFloor 
-          ? 'Click & drag to draw floor area' 
-          : wallInfoText;
-          
-        // Update values
-        document.getElementById('buildHeightValue').textContent = wallHeight;
-        document.getElementById('buildDepthValue').textContent = wallDepth;
-      }
+
       
       // Build tool popup close
       document.getElementById('buildToolPopupClose').addEventListener('click', () => {
@@ -10980,6 +11732,8 @@
           if (wallDragStart) updateWallGhost();
         }
       });
+    }
+    function bindInputEvents8() {
       
       // Wall depth controls in popup
       document.getElementById('buildDepthDown').addEventListener('click', () => {
@@ -11034,39 +11788,6 @@
         e.target.value = '';
       });
       
-      function updatePhotoGrid() {
-        const container = document.getElementById('uploadedPhotos');
-        if (uploadedTextures.length === 0) {
-          container.innerHTML = '<div class="no-photos-hint">No photos uploaded yet</div>';
-          return;
-        }
-        
-        container.innerHTML = '';
-        uploadedTextures.forEach((photo, index) => {
-          const img = document.createElement('img');
-          img.className = 'photo-thumb';
-          img.src = photo.dataUrl;
-          img.title = photo.name;
-          img.dataset.index = index;
-          if (selectedTexture === index) img.classList.add('selected');
-          
-          img.addEventListener('click', () => {
-            if (selectedTexture === index) {
-              selectedTexture = null;
-              img.classList.remove('selected');
-              toast('Photo deselected');
-            } else {
-              document.querySelectorAll('.photo-thumb').forEach(t => t.classList.remove('selected'));
-              selectedTexture = index;
-              img.classList.add('selected');
-              toast(`📷 Photo selected: ${photo.name}`);
-            }
-            updateGhost();
-          });
-          
-          container.appendChild(img);
-        });
-      }
       
       // ==================== MOVE MODE ====================
       document.getElementById('moveBtn').addEventListener('click', () => {
@@ -11088,314 +11809,12 @@
         toast(moveMode ? '✋ Move mode ON - click a brick to select group' : 'Move mode OFF');
       });
       
-      function clearMoveSelection() {
-        // Reset any highlighted bricks
-        for (const brick of selectedGroup) {
-          if (brick.traverse) {
-            brick.traverse(obj => {
-              if (obj.isMesh && obj.material && obj.userData.originalColor !== undefined) {
-                obj.material.color.setHex(obj.userData.originalColor);
-                obj.material.emissive.setHex(0x000000);
-              }
-            });
-          }
-        }
-        selectedGroup = [];
-        
-        // Remove move ghosts
-        for (const mg of moveGhosts) {
-          scene.remove(mg);
-        }
-        moveGhosts = [];
-        moveOffset = {x: 0, y: 0, z: 0};
-        
-        document.getElementById('moveModeIndicator').textContent = '✋ MOVE MODE - Click brick to select group';
-      }
       
-      function createMoveGhosts() {
-        // Clear existing ghosts
-        for (const mg of moveGhosts) {
-          scene.remove(mg);
-        }
-        moveGhosts = [];
-        
-        // Create a semi-transparent ghost for each selected brick
-        for (const brick of selectedGroup) {
-          const brickType = brick.userData.type || brick.userData.brickType;
-          const color = brick.userData.color;
-          const rot = brick.userData.rotation || 0;
-          
-          // Clone the brick as a ghost
-          const ghostMat = new THREE.MeshStandardMaterial({
-            color: softGhostColor(true),
-            transparent: true,
-            opacity: 0.45,
-            depthWrite: false
-          });
-          
-          const ghost = brick.clone();
-          ghost.traverse(obj => {
-            if (obj.isMesh) {
-              obj.material = ghostMat.clone();
-            }
-          });
-          
-          ghost.userData.isMoveGhost = true;
-          ghost.userData.originalBrick = brick;
-          ghost.userData.originalGrid = {...brick.userData.grid};
-          
-          scene.add(ghost);
-          moveGhosts.push(ghost);
-        }
-      }
       
-      function updateMoveGhosts(targetGx, targetGz) {
-        if (selectedGroup.length === 0 || moveGhosts.length === 0) return;
-        
-        // Calculate offset from first brick
-        const firstBrick = selectedGroup[0];
-        const firstGrid = firstBrick.userData.grid;
-        if (!firstGrid) return;
-        
-        const offsetX = targetGx - firstGrid.gx;
-        const offsetZ = targetGz - firstGrid.gz;
-        
-        // Check if all bricks can be placed at new positions
-        let canPlaceAll = true;
-        const tempRemovals = [];
-        
-        // Temporarily remove all selected bricks from grid
-        for (const brick of selectedGroup) {
-          removeFromGrid(brick);
-          tempRemovals.push(brick);
-        }
-        
-        // Check each position
-        for (let i = 0; i < selectedGroup.length; i++) {
-          const brick = selectedGroup[i];
-          const ghost = moveGhosts[i];
-          const g = brick.userData.grid;
-          
-          const newGx = g.gx + offsetX;
-          const newGz = g.gz + offsetZ;
-          
-          // Update ghost position
-          const pos = new THREE.Vector3(
-            newGx * STUD + (g.w * STUD) / 2,
-            brick.position.y,
-            newGz * STUD + (g.d * STUD) / 2
-          );
-          ghost.position.copy(pos);
-          
-          // Check if this position is valid
-          const canPlaceHere = canPlace(newGx, newGz, g.w, g.d, g.gy, g.hp, false);
-          if (!canPlaceHere) canPlaceAll = false;
-        }
-        
-        // Restore all selected bricks to grid
-        for (const brick of tempRemovals) {
-          const g = brick.userData.grid;
-          addToGrid(g.gx, g.gz, g.w, g.d, g.gy, g.hp, brick);
-        }
-        
-        // Update ghost colors based on validity
-        const ghostColor = canPlaceAll ? 0x00ff00 : 0xff0000;
-        for (const ghost of moveGhosts) {
-          ghost.traverse(obj => {
-            if (obj.isMesh && obj.material) {
-              obj.material.color.setHex(ghostColor);
-            }
-          });
-        }
-        
-        // Store for placement check
-        moveGhosts.canPlace = canPlaceAll;
-        moveGhosts.targetGx = targetGx;
-        moveGhosts.targetGz = targetGz;
-      }
       
-      function findConnectedBricks(startBrick) {
-        // BFS to find all connected bricks
-        const connected = new Set();
-        const queue = [startBrick];
-        connected.add(startBrick);
-        
-        while (queue.length > 0) {
-          const current = queue.shift();
-          const currentGrid = current.userData.grid;
-          if (!currentGrid) continue;
-          
-          // Check all adjacent positions for connected bricks
-          for (const brick of bricks) {
-            if (connected.has(brick)) continue;
-            const brickGrid = brick.userData.grid;
-            if (!brickGrid) continue;
-            
-            // Check if bricks are adjacent (sharing a face or edge)
-            const touching = areBricksTouching(currentGrid, brickGrid);
-            if (touching) {
-              connected.add(brick);
-              queue.push(brick);
-            }
-          }
-        }
-        
-        return Array.from(connected);
-      }
       
-      function areBricksTouching(g1, g2) {
-        // Check if two brick grid positions are adjacent
-        // g1 and g2 have: gx, gz, w, d, gy, hp
-        
-        // Check vertical adjacency (stacked)
-        const g1Top = g1.gy + g1.hp;
-        const g2Top = g2.gy + g2.hp;
-        
-        // Check if they overlap in X and Z
-        const overlapX = !(g1.gx + g1.w <= g2.gx || g2.gx + g2.w <= g1.gx);
-        const overlapZ = !(g1.gz + g1.d <= g2.gz || g2.gz + g2.d <= g1.gz);
-        
-        if (overlapX && overlapZ) {
-          // They overlap horizontally, check if vertically adjacent
-          if (g1Top === g2.gy || g2Top === g1.gy) {
-            return true;
-          }
-        }
-        
-        // Check side adjacency (same height level)
-        if (g1.gy < g2Top && g2.gy < g1Top) { // Overlapping in Y
-          // Adjacent in X?
-          if ((g1.gx + g1.w === g2.gx || g2.gx + g2.w === g1.gx) && overlapZ) {
-            return true;
-          }
-          // Adjacent in Z?
-          if ((g1.gz + g1.d === g2.gz || g2.gz + g2.d === g1.gz) && overlapX) {
-            return true;
-          }
-        }
-        
-        return false;
-      }
       
-      function selectBrickGroup(clickedBrick, singleBrickOnly = false) {
-        // Can't move instanced bricks (would need to recreate them)
-        if (clickedBrick.isInstancedBrick) {
-          toast('⚠️ Cannot move instanced bricks - use delete and recreate', 'error');
-          return;
-        }
-        
-        clearMoveSelection();
-        
-        if (singleBrickOnly) {
-          // Select just this one brick
-          selectedGroup = [clickedBrick];
-        } else {
-          // Find all connected bricks (excluding instanced ones)
-          selectedGroup = findConnectedBricks(clickedBrick).filter(b => !b.isInstancedBrick);
-        }
-        
-        if (selectedGroup.length === 0) {
-          toast('No moveable bricks found');
-          return;
-        }
-        
-        // Highlight selected bricks
-        for (const brick of selectedGroup) {
-          if (brick.traverse) {
-            brick.traverse(obj => {
-              if (obj.isMesh && obj.material) {
-                obj.userData.originalColor = obj.material.color.getHex();
-                obj.material.emissive.setHex(0x00ffff);
-                obj.material.emissiveIntensity = 0.3;
-              }
-            });
-          }
-        }
-        
-        // Create ghost previews
-        createMoveGhosts();
-        
-        const modeText = singleBrickOnly ? '1 brick' : `${selectedGroup.length} bricks`;
-        document.getElementById('moveModeIndicator').textContent = 
-          `✋ ${modeText} selected - Click to place, ESC to cancel`;
-        
-        toast(`Selected ${modeText}${singleBrickOnly ? '' : ' (hold Shift for single brick)'}`);
-      }
       
-      function placeMoveGroup(targetGx, targetGz) {
-        if (selectedGroup.length === 0) return;
-        
-        // Calculate offset from first brick
-        const firstBrick = selectedGroup[0];
-        const firstGrid = firstBrick.userData.grid;
-        if (!firstGrid) return;
-        
-        const offsetX = targetGx - firstGrid.gx;
-        const offsetZ = targetGz - firstGrid.gz;
-        
-        // Check if all bricks can be placed at new positions
-        let canPlaceAll = true;
-        const newPositions = [];
-        
-        for (const brick of selectedGroup) {
-          const g = brick.userData.grid;
-          const newGx = g.gx + offsetX;
-          const newGz = g.gz + offsetZ;
-          
-          // Temporarily remove from grid to check placement
-          removeFromGrid(brick);
-          
-          const canPlaceHere = canPlace(newGx, newGz, g.w, g.d, g.gy, g.hp, false);
-          if (!canPlaceHere) canPlaceAll = false;
-          
-          newPositions.push({brick, newGx, newGz, oldGx: g.gx, oldGz: g.gz, g});
-        }
-        
-        if (canPlaceAll && (offsetX !== 0 || offsetZ !== 0)) {
-          // Save move action with old and new positions
-          const moveData = newPositions.map(np => ({
-            type: np.brick.userData.type || np.brick.userData.brickType,
-            color: np.brick.userData.color,
-            rot: np.brick.userData.rot,
-            pitch: np.brick.userData.pitch || 0,
-            roll: np.brick.userData.roll || 0,
-            transparent: np.brick.userData.transparent || false,
-            oldGrid: { x: np.oldGx, z: np.oldGz, y: np.g.gy },
-            newGrid: { x: np.newGx, z: np.newGz, y: np.g.gy }
-          }));
-          
-          // For move, we'll use fullState since move is complex
-          saveUndo();
-          
-          // Move all bricks
-          for (const np of newPositions) {
-            const pos = new THREE.Vector3(
-              np.newGx * STUD + (np.g.w * STUD) / 2,
-              np.brick.position.y,
-              np.newGz * STUD + (np.g.d * STUD) / 2
-            );
-            np.brick.position.x = pos.x;
-            np.brick.position.z = pos.z;
-            np.g.gx = np.newGx;
-            np.g.gz = np.newGz;
-            addToGrid(np.newGx, np.newGz, np.g.w, np.g.d, np.g.gy, np.g.hp, np.brick);
-          }
-          
-          toast(`✅ Moved ${selectedGroup.length} bricks`, 'success');
-          clearMoveSelection();
-        } else {
-          // Restore original positions in grid
-          for (const np of newPositions) {
-            addToGrid(np.oldGx, np.oldGz, np.g.w, np.g.d, np.g.gy, np.g.hp, np.brick);
-          }
-          
-          if (offsetX === 0 && offsetZ === 0) {
-            clearMoveSelection();
-          } else {
-            toast('⚠️ Cannot place here - space occupied', 'error');
-          }
-        }
-      }
       
       // Custom block creator
       document.getElementById('createCustomBtn').addEventListener('click', () => {
@@ -11441,27 +11860,11 @@
         updateGhost();
         needsRender = true;
       });
-      let hudDeleteAt = 0;
-      function onHudDelete(event) {
-        if (event.button != null && event.button > 0) return;
-        const now = performance.now();
-        if (now - hudDeleteAt < 400) return;
-        hudDeleteAt = now;
-        const turningOn = !deleteMode;
-        setDeleteMode(turningOn);
-        if (!turningOn) {
-          toast('Delete OFF');
-          return;
-        }
-        const before = bricks.length;
-        if (event.clientX != null) pointerToMouse(event.clientX, event.clientY);
-        if (before) deleteBrick();
-        if (bricks.length === before && before) deleteNewestBrick();
-        toast(bricks.length < before ? '🗑️ Deleted' : '🗑️ Delete ON');
-      }
       const hudDeleteBtn = document.getElementById('hudDeleteBtn');
       hudDeleteBtn.addEventListener('pointerdown', onHudDelete);
-      hudDeleteBtn.addEventListener('click', onHudDelete);
+    }
+    function bindInputEvents9() {
+      document.getElementById('hudDeleteBtn').addEventListener('click', onHudDelete);
       document.getElementById('hudColorBtn').addEventListener('click', () => {
         // Open the color section in the sidebar
         const colorSection = document.querySelector('.section[data-section="color"]') || document.getElementById('colorSection');
@@ -11484,14 +11887,6 @@
       // Project management buttons
       document.getElementById('newProjectBtn').addEventListener('click', newProject);
       refreshProjectList();
-      let savePressAt = 0;
-      function onSavePress(event) {
-        if (event && event.button != null && event.button > 0) return;
-        const now = performance.now();
-        if (now - savePressAt < 400) return;
-        savePressAt = now;
-        saveProject();
-      }
       const saveProjectBtn = document.getElementById('saveProjectBtn');
       saveProjectBtn.addEventListener('pointerdown', onSavePress);
       saveProjectBtn.addEventListener('click', onSavePress);
@@ -11541,6 +11936,7 @@
           tab.classList.add('active');
           document.querySelector(`.gallery-panel[data-panel="${tab.dataset.tab}"]`).classList.add('active');
           
+          if (tab.dataset.tab === 'share') fillShareBox();
           if (tab.dataset.tab === 'share' || tab.dataset.tab === 'screenshot') {
             capturePreview(tab.dataset.tab === 'screenshot' ? 'screenshotCanvas' : 'sharePreviewCanvas');
           }
@@ -11578,6 +11974,8 @@
           SoundSystem.playJump();
         }
       });
+    }
+    function bindInputEvents10() {
       
       // Initialize FPS hotbar
       initFpHotbar();
@@ -11619,32 +12017,6 @@
       // Mobile panel toggle — start collapsed so the canvas is the play surface
       const panelToggle = document.getElementById('panelToggle');
       const mobileControlsPanel = document.getElementById('controls');
-      let mobileTrayUserExpanded = false;
-      function isPhoneChrome() { return window.innerWidth <= 768; }
-      function applyMobileTray() {
-        if (!mobileControlsPanel) return;
-        if (!isPhoneChrome()) {
-          mobileControlsPanel.classList.remove('collapsed-mobile', 'tray-open');
-          document.body.classList.remove('phone-tray-open');
-          mobileTrayUserExpanded = false;
-          return;
-        }
-        mobileControlsPanel.style.maxHeight = '';
-        if (window.innerWidth <= 430) {
-          mobileControlsPanel.classList.remove('collapsed-mobile');
-          mobileControlsPanel.classList.toggle('tray-open', mobileTrayUserExpanded);
-        } else {
-          mobileControlsPanel.classList.remove('tray-open');
-          mobileControlsPanel.classList.toggle('collapsed-mobile', !mobileTrayUserExpanded);
-        }
-        document.body.classList.toggle('phone-tray-open', window.innerWidth <= 430 && mobileTrayUserExpanded);
-        if (document.body.classList.contains('phone-tray-open')) {
-          removeGhost();
-          removeWallModeGhost();
-          needsRender = true;
-        }
-        if (panelToggle) panelToggle.textContent = mobileTrayUserExpanded ? '▼ Hide tools' : '▲ Bricks & tools';
-      }
       applyMobileTray();
       window.addEventListener('resize', applyMobileTray);
       if (panelToggle) panelToggle.addEventListener('click', () => {
@@ -11658,6 +12030,29 @@
         phoneViewBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
         phoneViewBtn.textContent = open ? 'Close' : 'View';
       });
+    }
+    async function setupEvents() {
+      await yieldTick();
+      bindInputEvents1();
+      await yieldTick();
+      bindInputEvents2();
+      await yieldTick();
+      bindInputEvents3();
+      await yieldTick();
+      bindInputEvents4();
+      await yieldTick();
+      bindInputEvents5();
+      await yieldTick();
+      bindInputEvents6();
+      await yieldTick();
+      bindInputEvents7();
+      await yieldTick();
+      bindInputEvents8();
+      await yieldTick();
+      bindInputEvents9();
+      await yieldTick();
+      bindInputEvents10();
+      await yieldTick();
     }
     
     // ==================== FULLSCREEN MODE ====================
@@ -11902,10 +12297,42 @@
         gradeOut.texture.colorSpace = THREE.LinearSRGBColorSpace;
       }
     }
+    function redSpan(buf, w, h) {
+      let n = 0;
+      let minX = w;
+      let maxX = 0;
+      let minY = h;
+      let maxY = 0;
+      for (let y = 0; y < h; y++) {
+        const row = y * w * 4;
+        for (let x = 0; x < w; x++) {
+          const i = row + x * 4;
+          const r = buf[i];
+          const g = buf[i + 1];
+          const b = buf[i + 2];
+          if (!(r > 140 && r > g + 28 && r > b + 28)) continue;
+          n++;
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
+      }
+      if (n < 8) return { n, extent: 0, margin: 0 };
+      const bw = maxX - minX + 1;
+      const bh = maxY - minY + 1;
+      return {
+        n,
+        extent: Math.max(bw / w, bh / h),
+        margin: Math.min(minX / w, minY / h, (w - 1 - maxX) / w, (h - 1 - maxY) / h)
+      };
+    }
+
     function renderSceneToCanvas(canvas2d) {
       const w = canvas2d.width | 0;
       const h = canvas2d.height | 0;
-      if (w < 1 || h < 1) return;
+      if (w < 1 || h < 1) return { n: 0, extent: 0, margin: 0 };
+      let thumbRead = { n: 0, extent: 0, margin: 0 };
       ensureGrade(w, h);
       const prevTarget = renderer.getRenderTarget();
       // The opening reveal hides new meshes until scenery settles. A share
@@ -11938,10 +12365,12 @@
           img.data.set(buf.subarray((h - 1 - y) * row, (h - y) * row), y * row);
         }
         canvas2d.getContext('2d').putImageData(img, 0, 0);
+        thumbRead = redSpan(buf, w, h);
       } finally {
         for (let i = 0; i < revived.length; i++) revived[i].visible = false;
         renderer.setRenderTarget(prevTarget);
       }
+      return thumbRead;
     }
 
     function withFramedBuild(destW, destH, draw) {
@@ -11976,8 +12405,15 @@
         const thumbCanvas = document.createElement('canvas');
         thumbCanvas.width = 200;
         thumbCanvas.height = 150;
-        withFramedBuild(200, 150, () => renderSceneToCanvas(thumbCanvas));
-        url = thumbCanvas.toDataURL('image/jpeg', 0.92);
+        captureFrame = null;
+        withFramedBuild(200, 150, () => {
+          if (captureFrame) {
+            thumbCanvas.getContext('2d').drawImage(captureFrame, 0, 0, thumbCanvas.width, thumbCanvas.height);
+          } else {
+            renderSceneToCanvas(thumbCanvas);
+          }
+        });
+        url = thumbCanvas.toDataURL('image/png');
       } catch (e) {
         url = '';
       }
@@ -12151,8 +12587,8 @@
       toast(`📂 Loaded "${build.name}"`, 'success');
     }
     
-    function deleteGalleryBuild(index) {
-      if (!confirm('Delete this build from gallery?')) return;
+    async function deleteGalleryBuild(index) {
+      if (!(await confirmLoad('Delete this build from gallery?', { mode: 'delete' }))) return;
       const build = galleryBuilds[index];
       if (build && build.name) {
         try { localStorage.removeItem(projectStorageKey(build.name)); } catch (e) {}
@@ -12218,8 +12654,8 @@
       toast('💾 .brick file downloaded!', 'success');
     }
     
-    function loadFromCode() {
-      const raw = prompt('Paste build code:');
+    async function loadFromCode() {
+      const raw = await promptName('Paste build code:', '');
       if (!raw) return;
       const code = String(raw).trim();
 
@@ -13575,7 +14011,12 @@
       const phoneCard = document.getElementById('phoneTutorial');
       const phoneOk = document.getElementById('phoneTutorialOk');
       function dismissPhoneTutorial() {
-        if (phoneCard) phoneCard.hidden = true;
+        if (phoneCard) {
+          phoneCard.hidden = true;
+          // Splash and the boot card can both try to show this. A Got it
+          // that lands first must stay dismissed.
+          phoneCard.dataset.closed = '1';
+        }
         const box = document.getElementById('phoneTutorialDontShow');
         if (box && box.checked) localStorage.setItem('brickBuilderTutorialDismissed', 'true');
         if (!bricks.length && !shareTokenFromLocation()) showStarterBar();
@@ -13617,7 +14058,10 @@
       }
       if (!tutorialDismissed && !openingShare) {
         if (phoneChrome && phoneCard) {
-          whenSplashHides(() => { phoneCard.hidden = false; });
+          whenSplashHides(() => {
+            if (phoneCard.dataset.closed === '1') return;
+            phoneCard.hidden = false;
+          });
         } else if (!phoneChrome) {
           whenLoaded(() => { modal.classList.add('visible'); });
         }

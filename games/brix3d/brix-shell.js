@@ -3,11 +3,31 @@
     // Park it in a hidden holder (no layout), start the module, then thaw
     // one section per turn so no layout task stays on the main thread.
     (function () {
+      // The card is in the first HTML and becomes visible before the game
+      // module binds keys. Escape has to work in that gap, and a later boot
+      // must not open the card again.
+      function dismissPhoneCard() {
+        var card = document.getElementById('phoneTutorial');
+        if (!card || card.hidden) return;
+        card.hidden = true;
+        card.dataset.closed = '1';
+        var box = document.getElementById('phoneTutorialDontShow');
+        if (box && box.checked) {
+          try { localStorage.setItem('brickBuilderTutorialDismissed', 'true'); } catch (err) {}
+        }
+        var bar = document.getElementById('starterBar');
+        if (bar) bar.classList.remove('hidden');
+      }
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') dismissPhoneCard();
+      });
+      var phoneOk = document.getElementById('phoneTutorialOk');
+      if (phoneOk) phoneOk.addEventListener('click', dismissPhoneCard);
       // Show the real phone tutorial on its own turn. Doing it inside the
       // parser task fused the card's layout into a 20ms+ main-thread task.
       setTimeout(function () {
         var card = document.getElementById('phoneTutorial');
-        if (!card) return;
+        if (!card || card.dataset.closed === '1') return;
         var share = /(?:^#|[?&#])b=/.test(location.hash + location.search);
         var dismissed = false;
         try { dismissed = localStorage.getItem('brickBuilderTutorialDismissed') === 'true'; } catch (e) {}

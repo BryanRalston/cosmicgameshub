@@ -73,39 +73,64 @@
     @keyframes load { from { transform: scaleX(0); } to { transform: scaleX(1); } }
     @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
     @keyframes bounce { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-15px) scale(1.05); } }
-    .brix-cold { content-visibility: hidden; contain-intrinsic-size: 1px 40px; }
-    .brix-park { display: none !important; }
-    /* ID rules at 430px also set display !important. One class loses to them,
-       and the whole chrome then lays out in a single task. */
-    #brixHold .brix-park { display: none !important; }
-    #fps { min-width: 74px; min-height: 28px; box-sizing: border-box; }
-    #qualityBar, #stats, #brixBack { box-sizing: border-box; }
-    @media (max-width: 430px) {
-      #fps.brix-cold { contain-intrinsic-size: 74px 28px; }
-      #qualityBar { min-width: 176px; min-height: 34px; }
-      #qualityBar.brix-cold { contain-intrinsic-size: 176px 34px; }
-      #stats { min-width: 168px; min-height: 46px; }
-      #stats.brix-cold { contain-intrinsic-size: 168px 46px; }
-      #brixBack { min-width: 79px; min-height: 44px; }
-      #brixBack.brix-cold { contain-intrinsic-size: 79px 44px; }
-    }
-    @media (min-width: 431px) {
-      #fps.brix-cold { contain-intrinsic-size: 74px 26px; }
-      #qualityBar { min-width: 180px; min-height: 32px; }
-      #qualityBar.brix-cold { contain-intrinsic-size: 180px 32px; }
-      #stats { min-width: 220px; min-height: 64px; }
-      #stats.brix-cold { contain-intrinsic-size: 220px 64px; }
-    }
-    /* Opaque panels already. Blur forces a full-document layout on every reveal. */
-    #brixHold, #brixHold * { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
-    .quick-icon { width: 18px; height: 18px; display: block; }
-    .quick-slash { display: none; }
-    #soundToggle.is-muted .quick-slash { display: block; }
-    @media (max-width: 430px) {
-      #controls:not(.tray-open) .tray-scroll { display: none !important; }
-    }
   </style>
-  <link rel="stylesheet" href="/games/brix3d/brix3d.d5a68c88b4.css">
+  <!-- brix-sheets -->
+  <link rel="stylesheet" href="/games/brix3d/brix3d-s00.31eb223246.css" media="print" data-brix>
+  <link rel="stylesheet" href="/games/brix3d/brix3d-s01.cc50521efc.css" media="print" data-brix>
+  <link rel="stylesheet" href="/games/brix3d/brix3d-s02.a51617b797.css" media="print" data-brix>
+  <link rel="stylesheet" href="/games/brix3d/brix3d-s03.4b057ba7ee.css" media="print" data-brix>
+  <link rel="stylesheet" href="/games/brix3d/brix3d-s04.cd13e8b668.css" media="print" data-brix>
+  <link rel="stylesheet" href="/games/brix3d/brix3d-s05.615107af05.css" media="print" data-brix>
+  <link rel="stylesheet" href="/games/brix3d/brix3d-s06.19812a362f.css" media="print" data-brix>
+  <link rel="stylesheet" href="/games/brix3d/brix3d-s07.35e13a60d9.css" media="print" data-brix>
+  <link rel="stylesheet" href="/games/brix3d/brix3d-s08.7c785d18eb.css" media="print" data-brix>
+  <link rel="stylesheet" href="/games/brix3d/brix3d-s09.c3c101dee9.css" media="print" data-brix>
+  <!-- /brix-sheets -->
+  <script>
+    setTimeout(function start() {
+      if (!document.body) { setTimeout(start, 0); return; }
+      var nodes = document.querySelectorAll('link[data-brix]');
+      var pending = nodes.length;
+      var started = false;
+      var i = 0;
+      function boot() {
+        var s = document.createElement('script');
+        s.src = '/games/brix3d/brix-shell.js';
+        s.onload = function () {
+          setTimeout(function () {
+            var m = document.createElement('script');
+            m.src = '/games/brix3d/brix-mount.js';
+            document.body.appendChild(m);
+          }, 0);
+        };
+        document.body.appendChild(s);
+      }
+      // One sheet per turn, flushed while the document is still the loading
+      // screen. A single apply, or a lazy flush after the late UI arrives,
+      // is one layout node late enough to wreck Speed Index.
+      function step() {
+        if (i >= nodes.length) { boot(); return; }
+        nodes[i].media = 'all';
+        i++;
+        void document.body.offsetHeight;
+        setTimeout(step, 0);
+      }
+      function ready() {
+        if (--pending !== 0) return;
+        if (started) return;
+        started = true;
+        setTimeout(step, 0);
+      }
+      for (var n = 0; n < nodes.length; n++) {
+        if (nodes[n].sheet) ready();
+        else {
+          nodes[n].addEventListener('load', ready);
+          nodes[n].addEventListener('error', ready);
+        }
+      }
+      if (!nodes.length) boot();
+    }, 0);
+  </script>
   <meta property="og:image" content="https://www.cosmicgameshub.com/images/game-brix3d-og.jpg">
   <meta property="og:image:width" content="1280">
   <meta property="og:image:height" content="720">
@@ -178,8 +203,7 @@
     </div>
   </div>
 
-  <script src="/games/brix3d/brix-shell.js" defer></script>
-  <script src="/games/brix3d/brix-mount.js" defer></script>
+
   <script>
     (function () {
       document.addEventListener('click', function (event) {

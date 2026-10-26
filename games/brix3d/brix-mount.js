@@ -1,4 +1,15 @@
     (function () {
+      document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape') return;
+        var card = document.getElementById('phoneTutorial');
+        if (!card || card.hidden) return;
+        card.hidden = true;
+        card.dataset.closed = '1';
+        var box = document.getElementById('phoneTutorialDontShow');
+        if (box && box.checked) {
+          try { localStorage.setItem('brickBuilderTutorialDismissed', 'true'); } catch (err) {}
+        }
+      });
       var parseLate = window.__brixParseLate;
       var thawQueue = [];
       var thawOn = false;
@@ -141,7 +152,18 @@
             var t = recs[i].target;
             if (!t || t.nodeType !== 1) continue;
             if (t.id === 'fullscreenHint' && t.classList.contains('visible')) releaseCold(t);
-            if (t.id === 'controls' && t.classList.contains('tray-open')) releaseCold(t.querySelector('.tray-scroll') || t);
+            if (t.id === 'controls' && t.classList.contains('tray-open')) {
+              var scroll = t.querySelector('.tray-scroll') || t;
+              // Section shells first. Brick buttons stay cold so the name
+              // list does not lay out in this turn. A title that is still
+              // content-visibility:hidden cannot be tapped.
+              var sections = scroll.querySelectorAll('.section');
+              for (var s = 0; s < sections.length; s++) {
+                sections[s].classList.remove('brix-park');
+                sections[s].classList.remove('brix-cold');
+              }
+              releaseCold(scroll);
+            }
             if ((t.id === 'tutorialModal' || t.id === 'keybindModal') && t.classList.contains('visible')) releaseCold(t);
             if (t.classList && t.classList.contains('modal-overlay') && t.style.display && t.style.display !== 'none') releaseCold(t);
             if (t.id === 'phoneTutorial' && !t.hidden) releaseCold(t);
@@ -206,7 +228,7 @@
                 try { dismissed = localStorage.getItem('brickBuilderTutorialDismissed') === 'true'; } catch (e) {}
                 if (!dismissed) {
                   var card = hold.querySelector('#phoneTutorial');
-                  if (card) {
+                  if (card && card.dataset.closed !== '1') {
                     card.hidden = false;
                     card.classList.remove('brix-park');
                     card.classList.remove('brix-cold');

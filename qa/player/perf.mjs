@@ -247,7 +247,7 @@ while (Date.now() < end) {
   return child;
 }
 
-function raiseChrome(port) {
+function raiseScript(port) {
   const file = join(tmpdir(), 'brix-raise-chrome.ps1');
   writeFileSync(file, `
 Add-Type -TypeDefinition @'
@@ -259,18 +259,73 @@ public class WinF {
   [DllImport("user32.dll")] public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
 }
 '@
-$procs = Get-CimInstance Win32_Process -Filter "Name = 'chrome.exe'" | Where-Object { $_.CommandLine -match 'remote-debugging-port=${port}' }
-foreach ($c in $procs) {
-  $p = Get-Process -Id $c.ProcessId -ErrorAction SilentlyContinue
-  if ($p -and $p.MainWindowHandle -ne 0) {
-    [WinF]::ShowWindow($p.MainWindowHandle, 9) | Out-Null
-    [WinF]::keybd_event(0x12, 0, 0, [UIntPtr]::Zero)
-    [WinF]::SetForegroundWindow($p.MainWindowHandle) | Out-Null
-    [WinF]::keybd_event(0x12, 0, 2, [UIntPtr]::Zero)
+function Raise-BrixChrome {
+  $procs = Get-CimInstance Win32_Process -Filter "Name = 'chrome.exe'" | Where-Object { $_.CommandLine -match 'remote-debugging-port=${port}' }
+  foreach ($c in $procs) {
+    $p = Get-Process -Id $c.ProcessId -ErrorAction SilentlyContinue
+    if ($p -and $p.MainWindowHandle -ne 0) {
+      [WinF]::ShowWindow($p.MainWindowHandle, 9) | Out-Null
+      [WinF]::keybd_event(0x12, 0, 0, [UIntPtr]::Zero)
+      [WinF]::SetForegroundWindow($p.MainWindowHandle) | Out-Null
+      [WinF]::keybd_event(0x12, 0, 2, [UIntPtr]::Zero)
+    }
   }
 }
+if ($args.Count -gt 0 -and $args[0] -eq 'once') { Raise-BrixChrome }
 `);
-  spawnSync('powershell', ['-NoProfile', '-File', file], { stdio: 'ignore' });
+  return file;
+}
+
+function raiseChromeWin(port) {
+  spawnSync('powershell', ['-NoProfile', '-File', raiseScript(port), 'once'], { stdio: 'ignore' });
+}
+
+async function raiseChrome(port) {
+  raiseChromeWin(port);
+  let list = [];
+  try { list = await (await fetch('http://127.0.0.1:' + port + '/json/list')).json(); } catch { return; }
+  const page = list.find((t) => t.type === 'page' && t.webSocketDebuggerUrl);
+  if (!page) return;
+  const ws = new WebSocket(page.webSocketDebuggerUrl);
+  const opened = await new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(false), 2000);
+    ws.addEventListener('open', () => { clearTimeout(timer); resolve(true); });
+    ws.addEventListener('error', () => { clearTimeout(timer); resolve(false); });
+  });
+  if (!opened) return;
+  let id = 0;
+  const pending = new Map();
+  ws.addEventListener('message', (ev) => {
+    const msg = JSON.parse(ev.data);
+    if (msg.id && pending.has(msg.id)) {
+      const p = pending.get(msg.id);
+      pending.delete(msg.id);
+      if (msg.error) p.reject(new Error(msg.error.message));
+      else p.resolve(msg.result);
+    }
+  });
+  const send = (method, params = {}) => new Promise((resolve, reject) => {
+    const n = ++id;
+    const t = setTimeout(() => reject(new Error('timeout ' + method)), 4000);
+    pending.set(n, {
+      resolve: (v) => { clearTimeout(t); resolve(v); },
+      reject: (e) => { clearTimeout(t); reject(e); }
+    });
+    ws.send(JSON.stringify({ id: n, method, params }));
+  });
+  try {
+    const win = await send('Browser.getWindowForTarget');
+    if (win && win.windowId) {
+      await send('Browser.setWindowBounds', { windowId: win.windowId, bounds: { windowState: 'normal' } });
+      await send('Browser.setWindowBounds', {
+        windowId: win.windowId,
+        bounds: { left: 10, top: 10, width: 1440, height: 900, windowState: 'normal' }
+      });
+    }
+    await send('Page.bringToFront');
+  } catch { /* the Win32 raise still runs */ }
+  ws.close();
+  raiseChromeWin(port);
 }
 
 export async function measureLighthouse(base, port, outDir) {
@@ -280,7 +335,7 @@ export async function measureLighthouse(base, port, outDir) {
   const rows = [];
   try {
     for (let i = 1; i <= 3; i++) {
-      raiseChrome(port);
+      await raiseChrome(port);
       await blankBrixTabs(port);
       await sleep(8000);
       const out = join(outDir, 'lh-' + i + '.json');
@@ -296,7 +351,19 @@ export async function measureLighthouse(base, port, outDir) {
         '--output-path=' + out,
         '--quiet'
       ];
-      const r = spawnSync('npx', args, { stdio: 'inherit', shell: true, timeout: 180000 });
+      // spawnSync would freeze this process, and the page is served from it.
+      // A stuck document never paints, which Lighthouse reports as NO_FCP.
+      const r = await new Promise((resolve) => {
+        const child = spawn('npx', args, { stdio: 'inherit', shell: true });
+        const timer = setTimeout(() => {
+          child.kill();
+          resolve({ status: 124 });
+        }, 180000);
+        child.on('exit', (status) => {
+          clearTimeout(timer);
+          resolve({ status });
+        });
+      });
       const fs = await import('node:fs');
       if (!fs.existsSync(out)) throw new Error('lighthouse run ' + i + ' status ' + r.status + ' wrote no report');
       const j = JSON.parse(fs.readFileSync(out, 'utf8'));
