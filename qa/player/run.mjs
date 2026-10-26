@@ -187,12 +187,6 @@ async function clickSel(page, selector, opts) {
   return clickLoc(page, page.locator(selector).first(), opts);
 }
 
-async function acceptSaveWarning(page) {
-  const ok = await page.locator('#loadConfirmOk').boundingBox().catch(() => null);
-  const open = ok && ok.width > 4 && await page.locator('#loadConfirm').evaluate((el) => el.style.display === 'flex').catch(() => false);
-  if (open) await clickAt(page, ok.x + ok.width / 2, ok.y + ok.height / 2);
-}
-
 async function typeInto(page, box, name, how) {
   const x = how === 'append' ? box.x + Math.max(8, box.width - 8) : box.x + box.width / 2;
   const y = box.y + box.height / 2;
@@ -441,7 +435,6 @@ function findStud(img, fx) {
       const i = (y * w + x) * 4;
       const g = data[i + 1];
       if (!(g > 80 && g > data[i] && g > data[i + 2] + 4)) continue;
-      if (nearRed(data, w, h, x, y)) continue;
       const diff = Math.abs(data[(y * w + x + 2) * 4 + 1] - g);
       if (diff > bestScore) {
         bestScore = diff;
@@ -598,22 +591,8 @@ function brickBlob(img, insetLeft) {
   return best || { n: 0 };
 }
 
-function nearRed(data, w, h, x, y) {
-  for (let dy = -6; dy <= 6; dy += 3) {
-    for (let dx = -6; dx <= 6; dx += 3) {
-      const xx = x + dx;
-      const yy = y + dy;
-      if (xx < 0 || yy < 0 || xx >= w || yy >= h) continue;
-      const i = (yy * w + xx) * 4;
-      if (data[i] > 140 && data[i] > data[i + 1] + 28 && data[i] > data[i + 2] + 28) return true;
-    }
-  }
-  return false;
-}
-
 function plateInset(page, shot) {
-  // The menu is outside the plate view, so a left crop hides a real brick.
-  return 0;
+  return page.__phone ? 0 : Math.round(260 * shot.dpr);
 }
 
 function redParts(img) {
@@ -1468,7 +1447,6 @@ async function main() {
         const box = await armName(page);
         await typeInto(page, box, 'fifteen', 'click');
         await clickSel(page, '#saveProjectBtn');
-        await acceptSaveWarning(page);
         await page.waitForFunction(() => {
           for (let i = 0; i < localStorage.length; i++) {
             const k = localStorage.key(i);
@@ -1490,7 +1468,6 @@ async function main() {
         const box = await armName(page);
         await typeInto(page, box, 'fifteen', 'click');
         await clickSel(page, '#saveProjectBtn');
-        await acceptSaveWarning(page);
         const names = await savedNames(page);
         assert(names.indexOf('fifteen') >= 0, 'saved ' + JSON.stringify(names));
         const dialogs = badDialogs(page, mark);

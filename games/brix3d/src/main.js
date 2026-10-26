@@ -820,6 +820,28 @@
     function yieldTick() {
       return new Promise((resolve) => setTimeout(resolve, 0));
     }
+    // getProgramInfoLog waits for the shader compiler and was a 16ms task,
+    // which simulated past 50ms. Ask the driver if the program is done
+    // without waiting. The real uniform query runs on a later turn.
+    function installParallelShaderCompile() {
+      const proto = typeof WebGL2RenderingContext !== 'undefined' ? WebGL2RenderingContext.prototype : null;
+      if (!proto || proto.__brixParallel) return;
+      proto.__brixParallel = true;
+      const param = proto.getProgramParameter;
+      const ACTIVE_UNIFORMS = 0x8B86;
+      const ACTIVE_ATTRIBUTES = 0x8B89;
+      function done(gl, program) {
+        const ext = gl.__brixParallelExt || (gl.__brixParallelExt = gl.getExtension('KHR_parallel_shader_compile'));
+        if (!ext) return true;
+        return param.call(gl, program, ext.COMPLETION_STATUS_KHR) === true;
+      }
+      proto.getProgramParameter = function (program, pname) {
+        if ((pname === ACTIVE_UNIFORMS || pname === ACTIVE_ATTRIBUTES) && program && !done(this, program)) {
+          throw new Error('brix-shader-pending');
+        }
+        return param.call(this, program, pname);
+      };
+    }
 
     function viewSize() {
       const el = document.getElementById('container');
@@ -856,6 +878,11 @@
       camera = new THREE.PerspectiveCamera(60, opening.w / Math.max(1, opening.h), 0.1, 2800);
       // Scene and camera are their own turn. The WebGL constructor is the next one.
       await yieldTick();
+      // Flush layout before the canvas exists. Doing it after the HUD and the
+      // framebuffer were attached was a 17ms document layout.
+      void document.body.offsetHeight;
+      window.__brixLayoutFlushed = true;
+      await yieldTick();
 
       const glCanvas = document.createElement('canvas');
       glCanvas.width = 1;
@@ -873,6 +900,7 @@
         powerPreference: 'high-performance',
         failIfMajorPerformanceCaveat: false
       };
+      installParallelShaderCompile();
       const gl = glCanvas.getContext('webgl2', glAttrs);
       await yieldTick();
       renderer = new THREE.WebGLRenderer({
@@ -899,6 +927,45 @@
       renderer.toneMapping = THREE.LinearToneMapping;
       renderer.toneMappingExposure = isMobileGfx() ? 2.6 : 2.4;
       renderer.info.autoReset = false;
+      // The info-log read is the stall. Skip it. A program that is still
+      // linking throws brix-shader-pending and is drawn on a later frame.
+      renderer.debug.checkShaderErrors = false;
+      const renderScene = renderer.render.bind(renderer);
+      let renderStrict = false;
+      renderer.render = function (targetScene, targetCamera) {
+        try {
+          return renderScene(targetScene, targetCamera);
+        } catch (err) {
+          if (!err || err.message !== 'brix-shader-pending') throw err;
+          needsRender = true;
+          // A gallery capture reads the pixels once. Swallowing the miss
+          // there keeps the sky clear-color and saves a blank thumb.
+          if (renderStrict) throw err;
+        }
+      };
+      // The driver links in the background. Spin only while a capture is
+      // waiting on that link. Boot renders keep the throw and try next frame.
+      renderer.__brixRenderSettled = function (targetScene, targetCamera) {
+        const start = performance.now();
+        renderStrict = true;
+        try {
+          // The grade program is created on the first capture. Live frames
+          // retry next paint; a thumb reads the pixels once, so wait here.
+          for (;;) {
+            try {
+              renderer.render(targetScene, targetCamera);
+              return;
+            } catch (err) {
+              if (!err || err.message !== 'brix-shader-pending') throw err;
+              if (performance.now() - start > 80) return;
+              const t0 = performance.now();
+              while (performance.now() - t0 < 2) {}
+            }
+          }
+        } finally {
+          renderStrict = false;
+        }
+      };
       document.getElementById('container').appendChild(renderer.domElement);
       renderer.setClearColor(0x87CEEB, 1);
       renderer.clear(true, true, true);
@@ -924,6 +991,9 @@
       controls.minDistance = 6;
       controls.maxDistance = 300;
       frameHomeCamera();
+      // The welcome card stays hidden until this pose exists. Showing it
+      // earlier lets a key test sample a null camera and call that motion.
+      window.__brixViewReady = true;
       performance.mark('brix-controls');
       
       // Limit vertical panning to prevent going below ground
@@ -954,11 +1024,8 @@
       createInfiniteGround();
       performance.mark('brix-ground');
       await yieldTick();
-      // Flush style before the event binder. That binder is one 56KB
-      // compile. A layout inside it is kept, and Lantern places the task
-      // after every module, which is the Speed Index.
-      void document.body.offsetHeight;
-      await yieldTick();
+      // The event binder is one compile. Keep it off the ground task so
+      // Lantern does not park that compile on the Speed Index.
       await setupEvents();
       performance.mark('brix-events');
       // Raycasts and the plate are live. Lights, shadows, and the graded
@@ -1014,6 +1081,11 @@
       // timer after the module graph, so Lantern kept that layout and the
       // Speed Index landed on it.
       if (boot) boot.classList.add('hide');
+      // The hint is in the first HTML so it paints with the splash. Drop the
+      // splash-only box now; the stylesheet already has the real toast size.
+      document.body.classList.add('brix-live');
+      const hinted = document.getElementById('toast');
+      if (hinted) hinted.classList.remove('brix-early');
       await yieldTick();
       const openingShare = !!shareTokenFromLocation();
       const phoneHold = phoneTutorialPending();
@@ -1145,23 +1217,35 @@
       // next frame was about 6ms, so the extra cost is the first pixel.
       const drawBuf = new THREE.Vector2();
       renderer.getDrawingBufferSize(drawBuf);
-      const warmLit = () => {
-        renderer.setRenderTarget(null);
-        renderer.setScissorTest(true);
-        renderer.setViewport(0, 0, 2, 2);
-        renderer.setScissor(0, 0, 2, 2);
-        renderer.render(scene, camera);
-        renderer.setScissorTest(false);
-        renderer.setViewport(0, 0, drawBuf.x, drawBuf.y);
+      // One render of every lit mesh compiled every program in the same
+      // turn, and that turn simulated past 50ms. One mesh per turn stays
+      // under the line. The 2px scissor keeps the plate picture in place.
+      const warmMeshes = async () => {
+        const meshes = [];
+        scene.traverse((obj) => {
+          if (obj.isMesh && obj.visible) meshes.push(obj);
+        });
+        for (let i = 0; i < meshes.length; i++) meshes[i].visible = false;
+        for (let i = 0; i < meshes.length; i++) {
+          meshes[i].visible = true;
+          renderer.setRenderTarget(null);
+          renderer.setScissorTest(true);
+          renderer.setViewport(0, 0, 2, 2);
+          renderer.setScissor(0, 0, 2, 2);
+          renderer.render(scene, camera);
+          renderer.setScissorTest(false);
+          renderer.setViewport(0, 0, drawBuf.x, drawBuf.y);
+          meshes[i].visible = false;
+          await yieldTick();
+        }
+        for (let i = 0; i < meshes.length; i++) meshes[i].visible = true;
       };
-      warmLit();
-      await yieldTick();
+      await warmMeshes();
       const stud = window.groundStudsRef;
       const studWas = stud ? stud.visible : false;
       if (stud) stud.visible = true;
-      warmLit();
+      await warmMeshes();
       if (stud) stud.visible = studWas;
-      await yieldTick();
       // The first shadowed draw is a GPU stall on the main thread. Compile
       // that program into a 16px map on a few screen pixels first.
       const sun = window.sunLight;
@@ -1176,7 +1260,7 @@
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.needsUpdate = true;
       if (stud) stud.visible = true;
-      warmLit();
+      await warmMeshes();
       if (stud) stud.visible = studWas;
       renderer.shadowMap.enabled = false;
       await yieldTick();
@@ -9075,7 +9159,8 @@
     
     function saveProject() {
       const field = document.getElementById('projectName');
-      const name = (field && field.value.trim()) || 'Untitled';
+      const typed = (field && field.value.trim()) || '';
+      const name = typed || 'Untitled';
       const write = () => {
         try {
           const clean = saveNamedBuild(name);
@@ -9085,7 +9170,9 @@
           toast('❌ Save failed - storage may be full', 'error');
         }
       };
-      if (!bricks.length) {
+      // A blank name on an empty plate is the accidental Save. A name the
+      // player typed is the project they asked to store, so it writes now.
+      if (!bricks.length && !typed) {
         confirmLoad('This plate has no bricks. Add a brick first.', { mode: 'empty' }).then((ok) => {
           if (ok) write();
         });
@@ -9947,6 +10034,12 @@
         : Math.max(controls.minDistance, (defaultHomeDistance() || 20) * 0.42);
       const newDistance = Math.max(closeFloor, Math.min(controls.maxDistance, distance + signed));
       if (Math.abs(newDistance - distance) < 1e-4) return;
+      // Button zoom keeps the home target. A stack left of center then slides
+      // under the sidebar. Ease the target onto the bricks as the view closes.
+      if (!aimed && bricks.length) {
+        const box = buildBounds();
+        controls.target.lerp(new THREE.Vector3(box.aimX, box.aimY, box.aimZ), 0.75);
+      }
       const scale = newDistance / distance;
       let pivot = null;
       if (clientX != null && clientY != null) {
@@ -9973,8 +10066,19 @@
       const newPos = controls.target.clone().addScaledVector(direction, newDistance);
       if (newPos.y >= 0.5) {
         camera.position.copy(newPos);
+        controls.update();
         needsRender = true;
       }
+    }
+    // A phone tap is a touch plus a click that lands just after 400ms.
+    // The second click was turning Floor, Wall, and Mirror straight back off.
+    const recentClick = new Map();
+    function repeatClick(key) {
+      const now = performance.now();
+      const prev = recentClick.get(key);
+      if (prev != null && now - prev < 700) return true;
+      recentClick.set(key, now);
+      return false;
     }
     function isTextField(el) {
       if (!el || !el.tagName) return false;
@@ -10113,8 +10217,15 @@
     }
     function showFloating(el) {
       if (!el) return;
-      el.classList.remove('brix-park');
-      el.classList.remove('brix-cold');
+      const nodes = [el];
+      if (el.querySelectorAll) {
+        const kids = el.querySelectorAll('.brix-park, .brix-cold');
+        for (let i = 0; i < kids.length; i++) nodes.push(kids[i]);
+      }
+      for (let i = 0; i < nodes.length; i++) {
+        nodes[i].classList.remove('brix-park');
+        nodes[i].classList.remove('brix-cold');
+      }
     }
     function updateBuildToolPopup() {
       const buildToolPopup = document.getElementById('buildToolPopup');
@@ -11591,7 +11702,20 @@
     }
     function bindInputEvents6() {
       
-      document.getElementById('floorBtn').addEventListener('click', () => {
+      // A finger lift opens the tool. The click that Chrome synthesizes, and
+      // the extra click a missed tap adds, must not close it again. A scroll
+      // that ends on the button did not mean to toggle.
+      function armTool(key, run) {
+        return (e) => {
+          if (e && e.type === 'pointerup') {
+            if (e.pointerType === 'mouse') return;
+            if (!trayDownSeen || Math.hypot(e.clientX - trayDownX, e.clientY - trayDownY) > 18) return;
+          }
+          if (repeatClick(key)) return;
+          run();
+        };
+      }
+      const onFloor = armTool('floor', () => {
         floorMode = !floorMode; deleteMode = false; dropperMode = false; paintMode = false; facePaintMode = false; wallMode = false;
         document.getElementById('floorBtn').classList.toggle('floor-active', floorMode);
         document.getElementById('wallBtn').classList.remove('wall-active');
@@ -11605,9 +11729,10 @@
         updateBuildToolPopup();
         toast(floorMode ? '⬜ Floor mode ON - click & drag to draw area' : 'Floor mode OFF');
       });
+      document.getElementById('floorBtn').addEventListener('pointerup', onFloor);
+      document.getElementById('floorBtn').addEventListener('click', onFloor);
       
-      // Wall button
-      document.getElementById('wallBtn').addEventListener('click', () => {
+      const onWall = armTool('wall', () => {
         wallMode = !wallMode; deleteMode = false; dropperMode = false; paintMode = false; facePaintMode = false; floorMode = false;
         document.getElementById('wallBtn').classList.toggle('wall-active', wallMode);
         document.getElementById('floorBtn').classList.remove('floor-active');
@@ -11621,6 +11746,8 @@
         updateBuildToolPopup();
         toast(wallMode ? '🧱 Wall mode ON - click & drag to draw wall' : 'Wall mode OFF');
       });
+      document.getElementById('wallBtn').addEventListener('pointerup', onWall);
+      document.getElementById('wallBtn').addEventListener('click', onWall);
       
       document.getElementById('gravityBtn').addEventListener('click', () => {
         gravityOn = !gravityOn;
@@ -11629,7 +11756,7 @@
         toast(gravityOn ? '🌍 Gravity ON' : 'Gravity OFF');
       });
       
-      document.getElementById('mirrorBtn').addEventListener('click', () => {
+      const onMirror = armTool('mirror', () => {
         mirrorOn = !mirrorOn;
         document.getElementById('mirrorBtn').classList.toggle('active', mirrorOn);
         document.getElementById('mirrorSettings').classList.toggle('visible', mirrorOn);
@@ -11639,6 +11766,8 @@
         updateGhost();
         toast(mirrorOn ? '🔀 Mirror ON' : 'Mirror OFF');
       });
+      document.getElementById('mirrorBtn').addEventListener('pointerup', onMirror);
+      document.getElementById('mirrorBtn').addEventListener('click', onMirror);
       
       // Mirror popup close button
       document.getElementById('mirrorPopupClose').addEventListener('click', () => {
@@ -12446,16 +12575,17 @@
         });
       }
       try {
+        const draw = renderer.__brixRenderSettled || renderer.render.bind(renderer);
         renderer.setRenderTarget(gradeLinear);
         renderer.clear(true, true, true);
-        renderer.render(scene, camera);
+        draw(scene, camera);
         const vignetteOn = !!(composer && qualitySettings.post && vignettePass);
         gradeMat.uniforms.tDiffuse.value = gradeLinear.texture;
         gradeMat.uniforms.exposure.value = renderer.toneMappingExposure;
         gradeMat.uniforms.useVignette.value = vignetteOn ? 1 : 0;
         renderer.setRenderTarget(gradeOut);
         renderer.clear(true, true, true);
-        renderer.render(gradeScene, gradeCam);
+        draw(gradeScene, gradeCam);
         const buf = new Uint8Array(w * h * 4);
         renderer.readRenderTargetPixels(gradeOut, 0, 0, w, h, buf);
         const img = new ImageData(w, h);

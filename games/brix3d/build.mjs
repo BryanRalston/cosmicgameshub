@@ -176,7 +176,8 @@ if (cssName !== cssFiles[0]) {
 const cssText = cssBuf.toString('utf8');
 // Cut only after a top-level rule. A cut inside @media (max-width: 430px)
 // copied the phone tray onto the desktop and pushed the name field off screen.
-// Each part stays near 10KB so a slow sample still simulates under 50ms.
+// Each part stays near 4.5KB. A 10KB sheet still simulated past 50ms on the
+// cold first paint, and that task is the whole TBT miss.
 function splitStylesheet(text, budget) {
   const parts = [];
   let depth = 0;
@@ -203,7 +204,7 @@ function splitStylesheet(text, budget) {
   if (tail.trim()) parts.push(tail);
   return parts;
 }
-const cssParts = splitStylesheet(cssText, 10000);
+const cssParts = splitStylesheet(cssText, 4500);
 const cssPartNames = cssParts.map((part, i) => {
   const name = `brix3d-s${String(i).padStart(2, '0')}.${createHash('sha256').update(part).digest('hex').slice(0, 10)}.css`;
   writeFileSync(join(root, name), part);
@@ -215,7 +216,7 @@ for (const stale of readdirSync(root)) {
 }
 if (!/<!-- brix-sheets -->[\s\S]*?<!-- \/brix-sheets -->/.test(html)) throw new Error('sheet list missing');
 const nl = html.includes('\r\n') ? '\r\n' : '\n';
-const sheetTags = cssPartNames.map((name) => `  <link rel="stylesheet" href="/games/brix3d/${name}" media="print" data-brix>`).join(nl);
+const sheetTags = cssPartNames.map((name) => `  <link rel="preload" href="/games/brix3d/${name}" as="style" data-brix>`).join(nl);
 html = html.replace(
   /<!-- brix-sheets -->[\s\S]*?<!-- \/brix-sheets -->/,
   '<!-- brix-sheets -->' + nl + sheetTags + nl + '  <!-- /brix-sheets -->'

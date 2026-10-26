@@ -27,7 +27,21 @@
         if (boot) bootLeft++;
         thawQueue.push(el);
       }
+      var thawWait = false;
       function pumpThaw() {
+        // The first full-document layout has to stay under the long-task
+        // line. HUD nodes stay display:none until that flush has finished.
+        if (!window.__brixLayoutFlushed) {
+          if (thawWait) return;
+          thawWait = true;
+          function wait() {
+            if (!window.__brixLayoutFlushed) { requestAnimationFrame(wait); return; }
+            thawWait = false;
+            pumpThaw();
+          }
+          requestAnimationFrame(wait);
+          return;
+        }
         if (thawOn) return;
         thawOn = true;
         function step() {
@@ -55,23 +69,46 @@
         setTimeout(step, 0);
       }
       var catalogQueue = [];
+      var hotQueue = [];
       // Runs after the place stamp. The sidebar shell is first so its
       // children stay display:none, then a few buttons per frame.
       window.__brixStartChrome = function () {
-        pumpThaw();
-        if (!catalogQueue.length) return;
-        function step() {
-          var n = 0;
-          while (catalogQueue.length && n < 8) {
-            var el = catalogQueue.shift();
-            el.classList.remove('brix-park');
-            el.classList.remove('brix-cold');
-            n++;
+        // The name field has a box while the loading screen is still the
+        // top hit. A click then types into the loader, and Save never sees
+        // the name. Thaw the sidebar once that screen stops taking hits.
+        function go() {
+          var boot = document.getElementById('loadingScreen');
+          if (boot && !boot.classList.contains('hide') && boot.style.display !== 'none') {
+            setTimeout(go, 0);
+            return;
           }
-          if (catalogQueue.length) requestAnimationFrame(function () { setTimeout(step, 0); });
-          else if (window.innerWidth > 430) window.brixTrayReady = true;
+          if (hotQueue.length) {
+            var shell = catalogQueue.shift();
+            catalogQueue = hotQueue.concat(catalogQueue);
+            hotQueue = [];
+            if (shell) catalogQueue.unshift(shell);
+          }
+          pumpThaw();
+          if (!catalogQueue.length) return;
+          function step() {
+            var n = 0;
+            var t0 = performance.now();
+            // One node was too slow: Tools was still display:none when a
+            // player scrolled to it. A few cheap nodes fit under the
+            // long-task line. A single expensive node still gets its own turn.
+            while (catalogQueue.length && n < 12) {
+              if (n && performance.now() - t0 >= 5) break;
+              var el = catalogQueue.shift();
+              el.classList.remove('brix-park');
+              el.classList.remove('brix-cold');
+              n++;
+            }
+            if (catalogQueue.length) requestAnimationFrame(function () { setTimeout(step, 0); });
+            else if (window.innerWidth > 430) window.brixTrayReady = true;
+          }
+          requestAnimationFrame(function () { setTimeout(step, 0); });
         }
-        requestAnimationFrame(function () { setTimeout(step, 0); });
+        go();
       };
       function releaseCold(el) {
         if (!el || el.nodeType !== 1) return;
@@ -107,6 +144,16 @@
           var el = top[i];
           if (el.id === 'container') continue;
           if (el.hidden || el.classList.contains('hidden')) continue;
+          if (el.id === 'tutorialModal' || el.id === 'keybindModal') {
+            el.classList.add('brix-park');
+            arm(el);
+            var heavy = el.querySelectorAll('.tutorial-header, .tutorial-page, #keybindList');
+            for (var h = 0; h < heavy.length; h++) {
+              heavy[h].classList.add('brix-park');
+              heavy[h].classList.add('brix-cold');
+            }
+            continue;
+          }
           if (el.id === 'controls') {
             var scroll = el.querySelector('.tray-scroll');
             if (phone && scroll) {
@@ -129,7 +176,11 @@
               catalogQueue.unshift(el);
               parkList(innerList, function (node) {
                 node.classList.add('brix-park');
-                catalogQueue.push(node);
+                var id = node.id || '';
+                var cls = node.classList;
+                var hot = cls.contains('section') || cls.contains('section-title') || cls.contains('section-content') || cls.contains('tool-btn') || cls.contains('tool-grid') || cls.contains('color-preset') || cls.contains('color-presets') || cls.contains('project-btn') || id === 'deleteBtn' || id === 'projectName' || id === 'saveProjectBtn';
+                if (hot) hotQueue.push(node);
+                else catalogQueue.push(node);
               });
             }
             continue;
@@ -164,7 +215,27 @@
               }
               releaseCold(scroll);
             }
-            if ((t.id === 'tutorialModal' || t.id === 'keybindModal') && t.classList.contains('visible')) releaseCold(t);
+            if (t.id === 'tutorialModal' && t.dataset.closed === '1' && t.classList.contains('visible')) {
+              // Skip already ran. A late boot timer must not cover the plate again.
+              t.classList.remove('visible');
+              continue;
+            }
+            if ((t.id === 'tutorialModal' || t.id === 'keybindModal') && t.classList.contains('visible')) {
+              // One card used to lay out in a single 30ms turn. That simulated
+              // past 50ms. The shell shows first. Each block follows on its own turn.
+              if (!t.__brixSplit) {
+                t.__brixSplit = true;
+                var bits = t.querySelectorAll('.tutorial-header, .tutorial-page.active > *, #keybindList');
+                for (var b = 0; b < bits.length; b++) {
+                  bits[b].classList.add('brix-park');
+                  bits[b].classList.add('brix-cold');
+                }
+                t.classList.remove('brix-park');
+                t.classList.remove('brix-cold');
+                for (var b2 = 0; b2 < bits.length; b2++) enqueue(bits[b2], false);
+                pumpThaw();
+              }
+            }
             if (t.classList && t.classList.contains('modal-overlay') && t.style.display && t.style.display !== 'none') releaseCold(t);
             if (t.id === 'phoneTutorial' && !t.hidden) releaseCold(t);
             if (t.id === 'starterBar' && !t.classList.contains('hidden')) releaseCold(t);
@@ -190,6 +261,25 @@
         var hold = document.createElement('div');
         hold.id = 'brixHold';
         hold.style.display = 'none';
+        // A full-document layout is about 16ms no matter how few nodes
+        // changed, and that simulates past 50ms. Layout containment keeps
+        // a HUD or tutorial reveal inside this box. The box fills the
+        // viewport, so fixed bars stay where they were. position:fixed
+        // made getBoundingClientRect ignore a 90% page scale, and the
+        // ghost then sat off the cursor.
+        hold.style.contain = 'layout';
+        hold.style.width = '100%';
+        hold.style.height = '100vh';
+        hold.style.height = '100dvh';
+        hold.style.pointerEvents = 'none';
+        // pointer-events inherits. The hold stays none so a gap falls
+        // through, but the canvas and the bars were dead too: Skip never
+        // received the click, the welcome card stayed over the plate, and
+        // a tap on the studs never reached the canvas. These roots opt in.
+        // Decorative hints keep their own pointer-events:none.
+        var hit = document.createElement('style');
+        hit.textContent = '#container,#controls,#tutorialModal,#keybindModal,#buildHud,#quickBar,#starterBar,#dailyPrompt,#stats,#qualityBar,#fps,#info,#galleryModal,#loadConfirm,#namePrompt,#mirrorPopup,#buildToolPopup,#brixBack,#phoneViewBtn,#sidebarToggle,#fullscreenHint,#fpsModeUI,.zoom-controls,.rotation-ind,.brix-more,#toast,.pan-hint{pointer-events:auto}';
+        document.head.appendChild(hit);
         document.body.appendChild(hold);
         fetch('/games/brix3d/brix-late.html', { cache: 'no-store' }).then(function (res) {
           if (!res.ok) throw new Error('late ui ' + res.status);
@@ -213,6 +303,25 @@
           }
           watchShows(hold);
           markCold(hold);
+          // Skip has to close the card even when it lands before the game
+          // module binds its own listener. A later show must not undo that.
+          hold.addEventListener('click', function (e) {
+            var n = e.target;
+            if (!n || !n.closest || !n.closest('#tutorialSkip')) return;
+            var modal = document.getElementById('tutorialModal');
+            if (!modal) return;
+            modal.dataset.closed = '1';
+            modal.classList.remove('visible');
+          }, true);
+          // The game binds Escape only after its module evaluates. A player
+          // can close the card in that gap. One Escape has to win.
+          document.addEventListener('keydown', function (e) {
+            if (e.key !== 'Escape') return;
+            var modal = document.getElementById('tutorialModal');
+            if (!modal || !modal.classList.contains('visible')) return;
+            modal.dataset.closed = '1';
+            modal.classList.remove('visible');
+          }, true);
           setTimeout(function () {
             hold.style.display = '';
             window.__brixUiShown = true;
@@ -223,6 +332,27 @@
             // the part files. A fetch that finishes before this paint is
             // simulated as render-blocking for the whole graph.
             setTimeout(function () {
+              // The name field thaws with the sidebar, after this turn. The
+              // card has to be up first, with Skip in this same turn, or a
+              // player who types and then hits Save clicks the card instead.
+              // Desktop waits until the orbit pose exists. A card shown
+              // before that reads as the camera moving under the modal.
+              function showDeskTutorial() {
+                if (window.innerWidth <= 768) return;
+                if (/(?:^#|[?&#])b=/.test(location.hash + location.search)) return;
+                var deskDismissed = false;
+                try { deskDismissed = localStorage.getItem('brickBuilderTutorialDismissed') === 'true'; } catch (e2) {}
+                if (deskDismissed) return;
+                if (!window.__brixViewReady) {
+                  setTimeout(showDeskTutorial, 32);
+                  return;
+                }
+                var deskModal = document.getElementById('tutorialModal');
+                if (!deskModal || deskModal.dataset.closed === '1') return;
+                if (!deskModal.classList.contains('visible')) deskModal.classList.add('visible');
+                if (window.controls) window.controls.enabled = false;
+              }
+              showDeskTutorial();
               if (window.innerWidth <= 768 && !/(?:^#|[?&#])b=/.test(location.hash + location.search)) {
                 var dismissed = false;
                 try { dismissed = localStorage.getItem('brickBuilderTutorialDismissed') === 'true'; } catch (e) {}

@@ -73,25 +73,58 @@
     @keyframes load { from { transform: scaleX(0); } to { transform: scaleX(1); } }
     @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
     @keyframes bounce { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-15px) scale(1.05); } }
+    /* Painted with the splash, before any sliced sheet. Same box the phone
+       toast keeps, so this text stays the largest paint. */
+    #toast.brix-early {
+      position: fixed;
+      top: 48px;
+      left: 8px;
+      right: 8px;
+      z-index: 10001;
+      box-sizing: border-box;
+      margin: 0;
+      padding: 12px 24px;
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 1.35;
+      text-align: center;
+      color: #fff;
+      background: #16a34a;
+      border-radius: 12px;
+      opacity: 1;
+      transform: none;
+    }
   </style>
   <!-- brix-sheets -->
-  <link rel="stylesheet" href="/games/brix3d/brix3d-s00.0b2ffa5229.css" media="print" data-brix>
-  <link rel="stylesheet" href="/games/brix3d/brix3d-s01.2bf2cbbe98.css" media="print" data-brix>
-  <link rel="stylesheet" href="/games/brix3d/brix3d-s02.2a6200fdb0.css" media="print" data-brix>
-  <link rel="stylesheet" href="/games/brix3d/brix3d-s03.ff5b6ca153.css" media="print" data-brix>
-  <link rel="stylesheet" href="/games/brix3d/brix3d-s04.bb07e1c1b3.css" media="print" data-brix>
-  <link rel="stylesheet" href="/games/brix3d/brix3d-s05.0ce6814cf3.css" media="print" data-brix>
-  <link rel="stylesheet" href="/games/brix3d/brix3d-s06.19812a362f.css" media="print" data-brix>
-  <link rel="stylesheet" href="/games/brix3d/brix3d-s07.af4526bcc6.css" media="print" data-brix>
-  <link rel="stylesheet" href="/games/brix3d/brix3d-s08.7c785d18eb.css" media="print" data-brix>
-  <link rel="stylesheet" href="/games/brix3d/brix3d-s09.5a7363daa0.css" media="print" data-brix>
+  <link rel="preload" href="/games/brix3d/brix3d-s00.74aa21305c.css" as="style" data-brix>
+  <link rel="preload" href="/games/brix3d/brix3d-s01.6c09f427c5.css" as="style" data-brix>
+  <link rel="preload" href="/games/brix3d/brix3d-s02.9c0b11d89c.css" as="style" data-brix>
+  <link rel="preload" href="/games/brix3d/brix3d-s03.eb6be5610c.css" as="style" data-brix>
+  <link rel="preload" href="/games/brix3d/brix3d-s04.a7ae12d2b8.css" as="style" data-brix>
+  <link rel="preload" href="/games/brix3d/brix3d-s05.297b2d8fca.css" as="style" data-brix>
+  <link rel="preload" href="/games/brix3d/brix3d-s06.130537a56b.css" as="style" data-brix>
+  <link rel="preload" href="/games/brix3d/brix3d-s07.8a3af5c887.css" as="style" data-brix>
+  <link rel="preload" href="/games/brix3d/brix3d-s08.a938ae2738.css" as="style" data-brix>
+  <link rel="preload" href="/games/brix3d/brix3d-s09.dfa0c9ea5d.css" as="style" data-brix>
+  <link rel="preload" href="/games/brix3d/brix3d-s10.2deea5502a.css" as="style" data-brix>
+  <link rel="preload" href="/games/brix3d/brix3d-s11.5815d7c3b9.css" as="style" data-brix>
+  <link rel="preload" href="/games/brix3d/brix3d-s12.c08da42935.css" as="style" data-brix>
+  <link rel="preload" href="/games/brix3d/brix3d-s13.74f51ca606.css" as="style" data-brix>
+  <link rel="preload" href="/games/brix3d/brix3d-s14.6b02a4341a.css" as="style" data-brix>
+  <link rel="preload" href="/games/brix3d/brix3d-s15.5936553273.css" as="style" data-brix>
+  <link rel="preload" href="/games/brix3d/brix3d-s16.17c8b37d3e.css" as="style" data-brix>
+  <link rel="preload" href="/games/brix3d/brix3d-s17.b2a9b31a0a.css" as="style" data-brix>
+  <link rel="preload" href="/games/brix3d/brix3d-s18.db9121b80f.css" as="style" data-brix>
+  <link rel="preload" href="/games/brix3d/brix3d-s19.29c83a4529.css" as="style" data-brix>
+  <link rel="preload" href="/games/brix3d/brix3d-s20.7a24cd5e5d.css" as="style" data-brix>
+  <link rel="preload" href="/games/brix3d/brix3d-s21.dcb8121881.css" as="style" data-brix>
+  <link rel="preload" href="/games/brix3d/brix3d-s22.44d5c7bbb3.css" as="style" data-brix>
+  <link rel="preload" href="/games/brix3d/brix3d-s23.faefa512dd.css" as="style" data-brix>
   <!-- /brix-sheets -->
   <script>
     setTimeout(function start() {
       if (!document.body) { setTimeout(start, 0); return; }
       var nodes = document.querySelectorAll('link[data-brix]');
-      var pending = nodes.length;
-      var started = false;
       var i = 0;
       function boot() {
         var s = document.createElement('script');
@@ -105,30 +138,23 @@
         };
         document.body.appendChild(s);
       }
-      // One sheet per turn, flushed while the document is still the loading
-      // screen. A single apply, or a lazy flush after the late UI arrives,
-      // is one layout node late enough to wreck Speed Index.
+      // Preloads download together. Each sheet is parsed and laid out on its
+      // own turn. Applying every sheet in the first paint was the long task.
       function step() {
         if (i >= nodes.length) { boot(); return; }
-        nodes[i].media = 'all';
-        i++;
-        void document.body.offsetHeight;
-        setTimeout(step, 0);
-      }
-      function ready() {
-        if (--pending !== 0) return;
-        if (started) return;
-        started = true;
-        setTimeout(step, 0);
-      }
-      for (var n = 0; n < nodes.length; n++) {
-        if (nodes[n].sheet) ready();
-        else {
-          nodes[n].addEventListener('load', ready);
-          nodes[n].addEventListener('error', ready);
+        var preload = nodes[i++];
+        var link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = preload.getAttribute('href');
+        function next() {
+          void document.body.offsetHeight;
+          setTimeout(step, 0);
         }
+        link.onload = next;
+        link.onerror = next;
+        document.head.appendChild(link);
       }
-      if (!nodes.length) boot();
+      setTimeout(step, 0);
     }, 0);
   </script>
   <meta property="og:image" content="https://www.cosmicgameshub.com/images/game-brix3d-og.jpg">
@@ -190,6 +216,7 @@
     <div class="loading-subtitle">3D Brick Builder</div>
     <div class="loading-bar"><div class="loading-progress"></div></div>
   </div>
+  <div class="toast show success brix-early" id="toast">Tap a starter, or tap the plate. The ghost is your 2×2.</div>
   <div id="phoneTutorial" class="phone-tutorial" hidden>
     <div class="phone-tutorial-card">
       <h2>BRIX 3D</h2>

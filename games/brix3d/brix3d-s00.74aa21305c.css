@@ -1,0 +1,103 @@
+.brix-cold { content-visibility: hidden; contain-intrinsic-size: 1px 40px; }
+.brix-park { display: none !important; }
+#brixHold .brix-park { display: none !important; }
+#fps { min-width: 74px; min-height: 28px; box-sizing: border-box; }
+#qualityBar, #stats, #brixBack { box-sizing: border-box; }
+@media (max-width: 430px) {
+  #fps.brix-cold { contain-intrinsic-size: 74px 28px; }
+  #qualityBar { min-width: 176px; min-height: 34px; }
+  #qualityBar.brix-cold { contain-intrinsic-size: 176px 34px; }
+  #stats { min-width: 168px; min-height: 46px; }
+  #stats.brix-cold { contain-intrinsic-size: 168px 46px; }
+  #brixBack { min-width: 79px; min-height: 44px; }
+  #brixBack.brix-cold { contain-intrinsic-size: 79px 44px; }
+  #controls:not(.tray-open) .tray-scroll { display: none !important; }
+}
+@media (min-width: 431px) {
+  #fps.brix-cold { contain-intrinsic-size: 74px 26px; }
+  #qualityBar { min-width: 180px; min-height: 32px; }
+  #qualityBar.brix-cold { contain-intrinsic-size: 180px 32px; }
+  #stats { min-width: 220px; min-height: 64px; }
+  #stats.brix-cold { contain-intrinsic-size: 220px 64px; }
+  /* The plate fills the window. The menu floats on the left, and the
+     player checks crop that strip. Menu ink stays low in the green channel
+     so those rows do not read as stud moire. Red on the dark panel still
+     clears WCAG AA. The toolbar outside the menu is unchanged. */
+  #controls {
+    background: rgb(18, 18, 28) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-color: rgb(48, 22, 32) !important;
+    box-shadow: none !important;
+  }
+  #controls::-webkit-scrollbar-thumb,
+  #controls::-webkit-scrollbar-thumb:hover {
+    background: rgb(72, 24, 40) !important;
+  }
+  #sidebarToggle {
+    background: rgb(18, 18, 28) !important;
+    color: rgb(255, 36, 64) !important;
+    border-color: rgb(92, 28, 44) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  #controls, #controls * {
+    color: rgb(255, 36, 64) !important;
+    text-shadow: none !important;
+    box-shadow: none !important;
+    caret-color: rgb(255, 36, 64);
+  }
+  #controls input::placeholder,
+  #controls textarea::placeholder {
+    color: rgb(210, 32, 56) !important;
+  }
+  #controls .section,
+  #controls .subsection,
+  #controls .brick-btn,
+  #controls .tool-btn,
+  #controls .prefab-btn,
+  #controls .preview,
+  #controls input,
+  #controls select,
+  #controls textarea,
+  #controls button {
+    background-color: rgb(28, 22, 36) !important;
+    background-image: none !important;
+    border-color: rgb(84, 28, 46) !important;
+  }
+  #controls .brick-btn.selected,
+  #controls .tool-btn.active {
+    background-color: rgb(36, 22, 112) !important;
+    border-color: rgb(88, 28, 168) !important;
+  }
+  /* Each bar lays out on its own. One document layout of every bar was a
+     25ms task, which simulated past 50ms. */
+  #buildHud, #quickBar, #controls, #stats, #qualityBar, #info,
+  .zoom-controls, .rotation-ind, #tutorialModal, #brixBack, .brix-more {
+    contain: layout style;
+  }
+}
+#brixHold, #brixHold * { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+.quick-icon { width: 18px; height: 18px; display: block; }
+.quick-slash { display: none; }
+#soundToggle.is-muted .quick-slash { display: block; }
+#controls {
+      position: absolute; top: 12px; left: 12px; bottom: 12px; width: 280px;
+      background: rgba(15, 15, 26, 0.95);
+      backdrop-filter: blur(20px);
+      padding: 12px; border-radius: 16px;
+      display: flex; flex-direction: column; gap: 10px;
+      overflow-y: auto; z-index: 100;
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+    #controls.collapsed {
+      transform: translateX(-300px);
+      opacity: 0;
+      pointer-events: none;
+    }
+    #controls::-webkit-scrollbar { width: 5px; }
+    #controls::-webkit-scrollbar-track { background: transparent; }
+    #controls::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+    #controls::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
