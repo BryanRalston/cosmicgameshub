@@ -1107,6 +1107,10 @@
       // turn with the first full render and tripped the long-task line.
       await yieldTick();
 
+      // The tip has to be on screen before the loader hides. A player who
+      // skips the tutorial dismisses it in that same moment; showing it
+      // later leaves the pill on the plate, and its edge reads as ground.
+      initDailyPrompt();
       const boot = document.getElementById('loadingScreen');
       // visibility:hidden is enough. A follow-up display:none was its own
       // timer after the module graph, so Lantern kept that layout and the
@@ -1142,8 +1146,6 @@
       }
       await yieldTick();
       tryLoadShareFromLocation();
-      await yieldTick();
-      initDailyPrompt();
       await yieldTick();
       if (bricks.length || openingShare) hideStarterBar();
       await yieldTick();
@@ -1942,7 +1944,7 @@
       // fragment cost that dropped the 520-brick view under 60 FPS, and the
       // bright env fill washed a lone 1x1 into the studs.
       const baseGeo = new THREE.BoxGeometry(baseplateWorldSize, PLATE_H * 0.5, baseplateWorldSize);
-      const baseMat = new THREE.MeshLambertMaterial({ color: 0x36a844 });
+      const baseMat = new THREE.MeshLambertMaterial({ color: 0x2f8f3c });
       const baseplate = new THREE.Mesh(baseGeo, baseMat);
       baseplate.position.set(baseplateWorldSize / 2, -PLATE_H * 0.25, baseplateWorldSize / 2);
       baseplate.receiveShadow = true;
@@ -1975,8 +1977,15 @@
             float far = 1.0 - smoothstep(4.0, 18.0, cellPx);
             float aa = clamp(max(pixel * mix(0.75, 3.2, far), 0.0012), 0.0012, 0.2);
             float disk = 1.0 - smoothstep(rad - aa, rad + aa, dist);
-            float fade = smoothstep(1.6, 3.2, cellPx);
+            // Disks and the stud green both dissolve while a cell is still
+            // many pixels tall. A 2px window turned into a one-pixel shelf
+            // where the pattern started.
+            float fade = smoothstep(3.0, 16.0, cellPx);
             diffuseColor.rgb *= mix(vec3(${studGap}), vec3(1.0), disk * fade);
+            float edgeStud = min(min(vMapUv.x, vMapUv.y), min(${BASEPLATE_SIZE}.0 - vMapUv.x, ${BASEPLATE_SIZE}.0 - vMapUv.y));
+            float edgeFade = smoothstep(0.0, 8.0, edgeStud);
+            float farMix = smoothstep(3.0, 16.0, cellPx);
+            diffuseColor.rgb = mix(vec3(0.1843, 0.5608, 0.2353), diffuseColor.rgb, edgeFade * farMix);
           }
           `
         );
@@ -1990,7 +1999,7 @@
       baseplate.castShadow = false;
       
       // Dark rim so the plate edge reads against the grass.
-      const rimMat = new THREE.MeshLambertMaterial({ color: 0x1c5c28 });
+      const rimMat = new THREE.MeshLambertMaterial({ color: 0x2f8f3c });
       rimMat.polygonOffset = true;
       rimMat.polygonOffsetFactor = 1;
       rimMat.polygonOffsetUnits = 1;
@@ -8782,7 +8791,9 @@
       applyShadowLod();
       document.getElementById('colorCount').textContent = colors.size;
       const hudCount = document.getElementById('hudBrickCount');
-      if (hudCount) hudCount.textContent = bricks.length;
+      if (hudCount) hudCount.textContent = String(bricks.length);
+      const hudWord = document.getElementById('hudBrickWord');
+      if (hudWord) hudWord.textContent = bricks.length === 1 ? 'brick' : 'bricks';
     }
     
     function updateUI() {
@@ -9217,8 +9228,8 @@
         const raw = localStorage.getItem(projectStorageKey(name));
         if (raw) storedName = JSON.parse(raw).name || '';
       } catch (e) { /* a bad entry must not block the save */ }
-      if (storedName && storedName !== name) {
-        confirmLoad('Saving will replace a different project named ' + storedName + '.', { mode: 'replace' }).then((ok) => {
+      if (storedName) {
+        confirmLoad('Saving will replace the saved project "' + storedName + '".', { mode: 'replace' }).then((ok) => {
           if (ok) write();
         });
         return;
@@ -9352,7 +9363,7 @@
         item.className = 'saved-project-item';
         item.innerHTML = `
           <span class="saved-project-name" title="Click to load">${escHtml(p.name)}</span>
-          <span class="saved-project-date">${p.brickCount} bricks • ${date}</span>
+          <span class="saved-project-date">${p.brickCount === 1 ? '1 brick' : p.brickCount + ' bricks'} • ${date}</span>
           <button class="saved-project-delete" title="Delete">🗑️</button>
         `;
         item.querySelector('.saved-project-name').onclick = () => loadProject(p.key);
@@ -9539,27 +9550,33 @@
       };
       const framePenalty = (m) => {
         if (!m || m.n < 8) return 50;
-        let p = Math.abs(m.extent - 0.68);
-        if (m.extent < 0.6 || m.extent > 0.74) p += 2;
-        if (m.n < 200) p += 1.5;
-        if (m.margin < 0.02) p += 1.5;
+        let p = Math.abs(m.extent - 0.62);
+        if (m.extent < 0.4 || m.extent > 0.75) p += 4;
+        if (m.n < 150) p += 8;
+        if (m.margin < 0.02) p += 10;
         return p;
       };
-      // redFrame paints `scratch` and the next sample overwrites it.
-      // Keep a copy of the best sample. A later render, after OrbitControls
-      // runs, is the far speck shot.
       const kept = document.createElement('canvas');
       kept.width = scratch.width;
       kept.height = scratch.height;
       const keep = () => kept.getContext('2d').drawImage(scratch, 0, 0);
       let stats = redFrame(dist);
       keep();
-      if (stats.n >= 8 && framePenalty(stats) > 0.08) {
-        let lo = 3;
-        let hi = Math.max(dist * 2.4, dist + 10, 36);
-        let bestDist = dist;
+      const already =
+        stats.n >= 150 &&
+        stats.extent >= 0.4 && stats.extent <= 0.75 &&
+        stats.margin >= 0.03;
+      // A tight build already fills the card, so leave it. A clipped wide
+      // shot only backs up a little. Searching far away turns the bricks
+      // into specks, and a closer shot cuts the near one off the card.
+      if (!already && stats.n >= 8) {
+        const seed = dist;
+        const clipped = stats.margin < 0.03;
+        lo = clipped ? seed : Math.max(3, seed * 0.5);
+        hi = clipped ? seed * 1.4 : seed;
+        let bestDist = seed;
         let bestPenalty = framePenalty(stats);
-        for (let i = 0; i < 7; i++) {
+        for (let i = 0; i < 8; i++) {
           const mid = (lo + hi) * 0.5;
           const m = redFrame(mid);
           const p = framePenalty(m);
@@ -9568,8 +9585,8 @@
             bestDist = mid;
             keep();
           }
-          if (m.n < 80 || m.extent < 0.66) hi = mid;
-          else lo = mid;
+          if (m.margin < 0.022 || m.extent > 0.74) lo = mid;
+          else hi = mid;
         }
         dist = bestDist;
       }
@@ -10055,7 +10072,12 @@
     function zoomCamera(delta, clientX, clientY) {
       const distance = camera.position.distanceTo(controls.target);
       if (distance < 0.001) return;
-      const limit = Math.max(2.5, distance * 0.18);
+      // A phone brick is about 30 px. Eighteen percent of that is a 4 px
+      // step, which a 1 px measurement swing hides. Narrow views may take
+      // a larger step. The wheel still sends a smaller delta, and desktop
+      // buttons stay on the 0.18 cap.
+      const narrow = window.innerWidth <= 768;
+      const limit = Math.max(2.5, distance * (narrow ? 0.42 : 0.18));
       const signed = Math.sign(delta) * Math.min(Math.abs(delta), limit);
       // Buttons have no cursor, so they stay on the target. A run of those
       // steps used to reach minDistance and walk a build out of the frame.
@@ -10070,7 +10092,9 @@
       if (Math.abs(newDistance - distance) < 1e-4) return;
       // Button zoom keeps the home target. A stack left of center then slides
       // under the sidebar. Ease the target onto the bricks as the view closes.
-      if (!aimed && bricks.length) {
+      // On a phone that lerp spends the step recentering, so the brick barely
+      // grows. A narrow view dollies along the ray it already has.
+      if (!aimed && bricks.length && window.innerWidth > 768) {
         const box = buildBounds();
         controls.target.lerp(new THREE.Vector3(box.aimX, box.aimY, box.aimZ), 0.75);
       }
@@ -10642,11 +10666,8 @@
         toast('Delete OFF');
         return;
       }
-      const before = bricks.length;
-      if (event.clientX != null) pointerToMouse(event.clientX, event.clientY);
-      if (before) deleteBrick();
-      if (bricks.length === before && before) deleteNewestBrick();
-      toast(bricks.length < before ? '🗑️ Deleted' : '🗑️ Delete ON');
+      // Arming is only the mode. A brick leaves on a later plate click.
+      toast('🗑️ Delete ON');
     }
     let savePressAt = 0;
     function onSavePress(event) {
@@ -10677,6 +10698,25 @@
         mobileControlsPanel.classList.toggle('collapsed-mobile', !mobileTrayUserExpanded);
       }
       document.body.classList.toggle('phone-tray-open', window.innerWidth <= 430 && mobileTrayUserExpanded);
+      const savedList = document.getElementById('savedProjectsList');
+      if (savedList) {
+        const trayOpen = document.body.classList.contains('phone-tray-open');
+        if (!trayOpen) savedList.style.pointerEvents = '';
+        else {
+          // Rows stay inert until the sheet has landed, so a tap aimed at
+          // the name field cannot load a build that is sliding through.
+          savedList.style.pointerEvents = 'none';
+          const panel = document.getElementById('controls');
+          let settled = false;
+          const unlock = () => {
+            if (settled) return;
+            settled = true;
+            savedList.style.pointerEvents = '';
+          };
+          if (panel) panel.addEventListener('transitionend', unlock, { once: true });
+          requestAnimationFrame(() => requestAnimationFrame(unlock));
+        }
+      }
       if (document.body.classList.contains('phone-tray-open')) {
         removeGhost();
         removeWallModeGhost();
@@ -11438,12 +11478,41 @@
 
       // Focus moves in pointerdown, before a keydown can hit a hotkey.
       // A modal also freezes orbit before the canvas sees the same press.
+      let fieldArm = null;
+      let fieldArmAt = 0;
       document.addEventListener('pointerdown', (e) => {
         if (controls) controls.enabled = !overlayBlocksPlay();
         const t = e.target;
         if (!t || !t.closest) return;
         const field = t.closest('input, textarea, select, [contenteditable="true"]');
-        if (field) focusFieldNow(field);
+        if (field) {
+          fieldArm = field;
+          fieldArmAt = performance.now();
+          focusFieldNow(field);
+        } else fieldArm = null;
+      }, true);
+      // A key can be queued before focus moves. Capture runs first, puts the
+      // character in the field that was just pressed, and stops the hotkey.
+      document.addEventListener('keydown', (e) => {
+        if (!fieldArm || performance.now() - fieldArmAt > 1500) return;
+        if (e.key === 'Escape' || e.ctrlKey || e.metaKey || e.altKey) return;
+        focusFieldNow(fieldArm);
+        // focus() does not retarget this event. If it is already on the
+        // field, the browser inserts the character. Otherwise we do.
+        if (e.target === fieldArm) return;
+        if (e.key === 'Backspace') {
+          e.preventDefault();
+          e.stopPropagation();
+          fieldArm.value = (fieldArm.value || '').slice(0, -1);
+          return;
+        }
+        if (e.key.length !== 1) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const max = fieldArm.maxLength > 0 ? fieldArm.maxLength : 1000000;
+        if ((fieldArm.value || '').length >= max) return;
+        fieldArm.value += e.key;
+        try { fieldArm.setSelectionRange(fieldArm.value.length, fieldArm.value.length); } catch (err) { /* type=number has no caret */ }
       }, true);
 
       const projectNameField = document.getElementById('projectName');
@@ -11520,11 +11589,13 @@
       // Zoom button listeners
       document.getElementById('zoomInBtn').addEventListener('click', () => {
         const dist = camera.position.distanceTo(controls.target);
-        zoomCamera(-Math.max(5, dist * 0.18));
+        const frac = window.innerWidth <= 768 ? 0.4 : 0.18;
+        zoomCamera(-Math.max(5, dist * frac));
       });
       document.getElementById('zoomOutBtn').addEventListener('click', () => {
         const dist = camera.position.distanceTo(controls.target);
-        zoomCamera(Math.max(5, dist * 0.18));
+        const frac = window.innerWidth <= 768 ? 0.4 : 0.18;
+        zoomCamera(Math.max(5, dist * frac));
       });
       
       // Hold-to-zoom for buttons
@@ -12691,9 +12762,17 @@
       data.name = clean;
       localStorage.setItem(projectStorageKey(clean), JSON.stringify(data));
       mergeSavedBuilds();
-      rememberGalleryBuild(clean, data, captureGalleryThumb());
+      rememberGalleryBuild(clean, data, '');
       hasUnsavedChanges = false;
       refreshProjectList();
+      touchGalleryMeta();
+      paintGalleryGrid();
+      const thumb = captureGalleryThumb();
+      if (thumb) {
+        rememberGalleryBuild(clean, data, thumb);
+        touchGalleryMeta();
+        paintGalleryGrid();
+      }
       return clean;
     }
 
@@ -12702,7 +12781,28 @@
       paintGalleryGrid();
     }
     
+    function brickWord(n) {
+      return (n | 0) === 1 ? 'brick' : 'bricks';
+    }
+
+    function touchGalleryMeta() {
+      const grid = document.getElementById('galleryGrid');
+      if (!grid || !galleryBuilds) return;
+      grid.querySelectorAll('.gallery-item').forEach((card) => {
+        const nameEl = card.querySelector('.gallery-item-name');
+        const meta = card.querySelector('.gallery-item-meta');
+        if (!nameEl || !meta) return;
+        const build = galleryBuilds.find((b) => b && b.name === nameEl.textContent);
+        if (!build) return;
+        const n = build.brickCount || 0;
+        const prev = meta.textContent || '';
+        const date = prev.indexOf('•') >= 0 ? prev.slice(prev.indexOf('•') + 1).trim() : (build.date || '');
+        meta.textContent = n + ' ' + brickWord(n) + (date ? ' • ' + date : '');
+      });
+    }
+
     function paintGalleryGrid() {
+      touchGalleryMeta();
       return import('./gallery-lazy.js').then((mod) => {
         mod.renderGalleryGrid(document.getElementById('galleryGrid'), galleryBuilds, escHtml);
       });

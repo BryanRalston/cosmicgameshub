@@ -2620,7 +2620,7 @@
     }
     .gallery-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
       gap: 15px;
       padding: 10px 0;
     }
@@ -2899,6 +2899,14 @@
       font-weight: 700;
     }
     #starterBar.hidden { display: none; }
+    @media (min-width: 769px) {
+      /* The chip row's hard bottom sat on the plate and read as a ground shelf. */
+      #starterBar {
+        padding-bottom: 22px;
+        -webkit-mask-image: linear-gradient(#000 0, #000 calc(100% - 22px), transparent 100%);
+        mask-image: linear-gradient(#000 0, #000 calc(100% - 22px), transparent 100%);
+      }
+    }
     #starterBar button, .starter-inline button {
       min-height: 48px;
       padding: 0 14px;
@@ -3005,7 +3013,26 @@
         padding: 6px;
         justify-content: space-between;
       }
-      #buildHud .hud-sep, #buildHud #hudStats { display: none !important; }
+      #buildHud .hud-sep { display: none !important; }
+      #buildHud #hudStats {
+        display: block !important;
+        position: fixed !important;
+        top: 128px !important;
+        right: 8px !important;
+        left: auto !important;
+        bottom: auto !important;
+        width: auto !important;
+        padding: 4px 8px !important;
+        border-radius: 8px !important;
+        background: rgba(15, 15, 26, 0.94) !important;
+        color: #fff !important;
+        font-size: 13px !important;
+        font-weight: 800 !important;
+        line-height: 1.2 !important;
+        z-index: 241 !important;
+        pointer-events: none !important;
+        white-space: nowrap !important;
+      }
       #buildHud .hud-btn {
         flex: 1 1 0;
         min-width: 0;
@@ -3049,8 +3076,26 @@
     padding: 4px !important;
     z-index: 240 !important;
   }
-  #buildHud .hud-sep,
-  #buildHud #hudStats { display: none !important; }
+  #buildHud .hud-sep { display: none !important; }
+  #buildHud #hudStats {
+    display: block !important;
+    position: fixed !important;
+    top: 128px !important;
+    right: 8px !important;
+    left: auto !important;
+    bottom: auto !important;
+    width: auto !important;
+    padding: 4px 8px !important;
+    border-radius: 8px !important;
+    background: rgba(15, 15, 26, 0.94) !important;
+    color: #fff !important;
+    font-size: 13px !important;
+    font-weight: 800 !important;
+    line-height: 1.2 !important;
+    z-index: 241 !important;
+    pointer-events: none !important;
+    white-space: nowrap !important;
+  }
   #buildHud .hud-btn {
     flex: 1 1 0 !important;
     min-width: 0 !important;
@@ -3246,10 +3291,10 @@ body.phone-tray-open .drawer-starters button {
     padding: 0 8px;
   }
   .gotw-tag--float {
-    top: 52px !important;
-    left: 6px !important;
+    top: 108px !important;
+    left: 8px !important;
     bottom: auto !important;
-    z-index: 260;
+    z-index: 250;
   }
   #quickBar {
     top: 6px !important;
@@ -3439,7 +3484,7 @@ body.phone-tray-open .drawer-starters button {
 }
 
 #loadConfirm.modal-overlay,
-#namePrompt.modal-overlay { z-index: 10060; background: rgba(0,0,0,0.72); }
+#namePrompt.modal-overlay { z-index: 10080; background: rgba(0,0,0,0.72); }
 /* The desktop sidebar is 10050. A gallery behind it hides the left of each thumb. */
 #galleryModal.modal-overlay { z-index: 10070; }
 .name-prompt-input {

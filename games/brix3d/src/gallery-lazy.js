@@ -13,13 +13,14 @@ export function renderGalleryGrid(grid, galleryBuilds, escHtml) {
       : '<div class="gallery-thumb-fallback">No preview</div>';
     const name = escHtml(build.name);
     const count = escHtml(String(build.brickCount));
+    const word = Number(build.brickCount) === 1 ? 'brick' : 'bricks';
     const date = escHtml(build.date || '');
     return `
         <div class="gallery-item" data-index="${i}">
           ${thumb}
           <div class="gallery-item-info">
             <div class="gallery-item-name">${name}</div>
-            <div class="gallery-item-meta">${count} bricks • ${date}</div>
+            <div class="gallery-item-meta">${count} ${word} • ${date}</div>
           </div>
           <div class="gallery-item-actions">
             <button onclick="loadGalleryBuild(${i})">📂 Load</button>

@@ -9,7 +9,7 @@ import { decodePng, hueOf } from './png.mjs';
 import { measureFps, measureLighthouse } from './perf.mjs';
 
 const here = fileURLToPath(new URL('.', import.meta.url));
-const repo = normalize(join(here, '..', '..'));
+const repo = normalize(process.env.BRIX_PLAYER_ROOT || join(here, '..', '..'));
 const shots = join(here, 'shots');
 const PORT = 8772;
 const SMOKE = process.argv.includes('smoke');
@@ -44,6 +44,7 @@ async function check(id, name, fn) {
 }
 
 function startServer() {
+  if (process.env.BRIX_PLAYER_ROOT) console.log('player root', repo);
   const server = createServer((req, res) => {
     const url = new URL(req.url, 'http://127.0.0.1');
     let path = decodeURIComponent(url.pathname);
@@ -987,6 +988,60 @@ function horizonSeam(img) {
     }
   }
   return { vertical, horizontal };
+}
+
+// A hard plate edge is a shelf: ground color jumps, then holds.
+// Studs oscillate, so a row of flickers does not count. Sky-on-green
+// is horizonSeam's job and is not counted here.
+function shelfSteps(img, y0, y1, x0, x1, vertical) {
+  const w = img.width;
+  const h = img.height;
+  const data = img.data;
+  const groundAt = (x, y) => {
+    if (x < 0 || y < 0 || x >= w || y >= h) return false;
+    const i = (y * w + x) * 4;
+    const g = data[i + 1];
+    const b = data[i + 2];
+    return g > 45 && g + 8 > data[i] && g > b + 4;
+  };
+  const greenAt = (x, y) => {
+    const i = (y * w + x) * 4;
+    return data[i + 1];
+  };
+  let worst = 0;
+  let at = -1;
+  if (!vertical) {
+    const yStart = Math.max(0, y0);
+    const yEnd = Math.min(h - 8, y1);
+    const xStart = Math.max(0, x0);
+    const xEnd = Math.min(w - 1, x1);
+    for (let y = yStart; y < yEnd; y++) {
+      let n = 0;
+      for (let x = xStart; x < xEnd; x += 2) {
+        if (!groundAt(x, y) || !groundAt(x, y + 2) || !groundAt(x, y + 6)) continue;
+        const dg = Math.abs(greenAt(x, y) - greenAt(x, y + 2));
+        const hold = Math.abs(greenAt(x, y + 2) - greenAt(x, y + 6));
+        if (dg > 18 && hold < 12) n++;
+      }
+      if (n > worst) { worst = n; at = y; }
+    }
+    return { worst, at };
+  }
+  const xStart = Math.max(0, x0);
+  const xEnd = Math.min(w - 8, x1);
+  const yStart = Math.max(0, y0);
+  const yEnd = Math.min(h - 1, y1);
+  for (let x = xStart; x < xEnd; x++) {
+    let n = 0;
+    for (let y = yStart; y < yEnd; y += 2) {
+      if (!groundAt(x, y) || !groundAt(x + 2, y) || !groundAt(x + 6, y)) continue;
+      const dg = Math.abs(greenAt(x, y) - greenAt(x + 2, y));
+      const hold = Math.abs(greenAt(x + 2, y) - greenAt(x + 6, y));
+      if (dg > 18 && hold < 12) n++;
+    }
+    if (n > worst) { worst = n; at = x; }
+  }
+  return { worst, at };
 }
 
 function skyFraction(img) {
@@ -2564,6 +2619,370 @@ async function main() {
         assert(warning, 'no warning before an empty save');
         assert(JSON.stringify(after) === JSON.stringify(before), 'wrote ' + after.join(',') + ' before confirm');
         return warning;
+      } finally { await context.close(); }
+    });
+
+    await check('R19a-arm-delete', 'the first toolbar Delete arms delete and does not remove a brick', async () => {
+      const lines = [];
+      for (const phone of [false, true]) {
+        const { page, context } = await openPage(browser, phone, 'r19a' + (phone ? 'p' : 'd'));
+        try {
+          await ready(page);
+          await clickStud(page, 0.55, false);
+          const before = await brickCount(page);
+          assert(before >= 1, (phone ? 'phone' : 'desktop') + ' place failed');
+          await clickSel(page, '#hudDeleteBtn');
+          const after = await brickCount(page);
+          const armed = await page.evaluate(() => document.body.classList.contains('delete-mode'));
+          assert(after === before, (phone ? 'phone' : 'desktop') + ' delete removed a brick ' + before + '->' + after);
+          assert(armed, (phone ? 'phone' : 'desktop') + ' delete did not arm');
+          lines.push((phone ? 'phone' : 'desktop') + ' kept ' + after);
+        } finally { await context.close(); }
+      }
+      return lines.join(' | ');
+    });
+
+    await check('R19b-name-leak', 'twenty rapid click-then-type trials leak no key and keep every character', async () => {
+      const { page, context } = await openPage(browser, false, 'r19b');
+      try {
+        await ready(page);
+        const leaks = [];
+        for (let trial = 1; trial <= 20; trial++) {
+          const blur = await page.locator('#heightStat').boundingBox();
+          assert(blur && blur.width > 2, 'no blur target');
+          await page.mouse.click(blur.x + blur.width / 2, blur.y + blur.height / 2);
+          const field = await page.locator('#projectName').boundingBox();
+          assert(field && field.width > 8, 'name field missing');
+          const x = field.x + Math.min(28, field.width / 2);
+          const y = field.y + field.height / 2;
+          await page.mouse.click(x, y);
+          await page.keyboard.press('Control+A');
+          await page.keyboard.press('Backspace');
+          await page.mouse.click(blur.x + blur.width / 2, blur.y + blur.height / 2);
+          const before = await hotState(page);
+          await page.mouse.move(x, y);
+          await page.mouse.down();
+          const typed = page.keyboard.type('fifteen', { delay: 0 });
+          await page.mouse.up();
+          await typed;
+          const after = await hotState(page);
+          const dropped = after.value !== 'fifteen';
+          const hot = after.floor !== before.floor || after.tool || after.del || after.wall || after.move;
+          if (dropped || hot) {
+            leaks.push(trial + ' "' + after.value + '"' + (after.floor ? ' floor' : '') + (after.tool ? ' tool' : ''));
+            if (after.tool || after.floor) await page.keyboard.press('Escape');
+          }
+        }
+        assert(leaks.length === 0, leaks.length + '/20 leaked ' + leaks.slice(0, 6).join('; '));
+        return '0/20';
+      } finally { await context.close(); }
+    });
+
+    await check('R19c-overwrite', 'saving an existing name asks before it writes', async () => {
+      const { page, context } = await openPage(browser, false, 'r19c');
+      try {
+        await ready(page);
+        await clickStud(page, 0.5, false);
+        const field = await page.locator('#projectName').boundingBox();
+        await typeInto(page, field, 'cabin', 'click');
+        await clickSel(page, '#saveProjectBtn');
+        const firstConfirm = await page.locator('#loadConfirm').evaluate((el) => el.style.display === 'flex').catch(() => false);
+        assert(!firstConfirm, 'first save asked');
+        await page.waitForFunction(() => {
+          const raw = localStorage.getItem('brickProject_cabin');
+          if (!raw) return false;
+          try { return JSON.parse(raw).bricks.length === 1; } catch { return false; }
+        }, null, { timeout: 4000 });
+        await clickStud(page, 0.62, false);
+        const before = await projectRaw(page, 'brickProject_cabin');
+        await clickSel(page, '#saveProjectBtn');
+        let confirm = false;
+        const t0 = Date.now();
+        while (Date.now() - t0 < 1000) {
+          confirm = await page.locator('#loadConfirm').evaluate((el) => el.style.display === 'flex').catch(() => false);
+          if (confirm) break;
+        }
+        const after = await projectRaw(page, 'brickProject_cabin');
+        assert(confirm, 'second save of cabin did not ask');
+        assert(after === before, 'second save wrote before confirm');
+        return 'asked, kept 1';
+      } finally { await context.close(); }
+    });
+
+    await check('R19d-new-name', 'after New a typed name is what gets saved', async () => {
+      const { page, context } = await openPage(browser, false, 'r19d');
+      try {
+        await ready(page);
+        await clickStud(page, 0.48, false);
+        await clickSel(page, '#newProjectBtn');
+        await page.locator('#loadConfirmOk').waitFor({ state: 'visible', timeout: 4000 });
+        await clickSel(page, '#loadConfirmOk');
+        await page.waitForFunction(() => {
+          const t = document.getElementById('brickCount');
+          return (parseInt(t && t.textContent, 10) || 0) === 0;
+        }, null, { timeout: 4000 });
+        await clickStud(page, 0.52, false);
+        const field = await page.locator('#projectName').boundingBox();
+        assert(field && field.width > 8, 'name field missing after New');
+        const x = field.x + Math.min(28, field.width / 2);
+        const y = field.y + field.height / 2;
+        await page.mouse.move(x, y);
+        await page.mouse.down();
+        const typed = page.keyboard.type('g1build', { delay: 0 });
+        await page.mouse.up();
+        await typed;
+        const state = await hotState(page);
+        assert(state.value === 'g1build', 'typed "' + state.value + '"' + (state.tool ? ' tool' : ''));
+        await clickSel(page, '#saveProjectBtn');
+        await page.waitForFunction(() => {
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (!k || !k.startsWith('brickProject_')) continue;
+            try { if (JSON.parse(localStorage.getItem(k)).name === 'g1build') return true; } catch { /* skip */ }
+          }
+          return false;
+        }, null, { timeout: 4000 });
+        const names = await savedNames(page);
+        assert(names.indexOf('Untitled') < 0, 'saved ' + names.join(','));
+        const shown = await page.locator('#projectName').inputValue();
+        assert(shown === 'g1build', 'field became "' + shown + '"');
+        return 'saved g1build';
+      } finally { await context.close(); }
+    });
+
+    await check('R19e-gallery-now', 'Save Current Build refreshes the gallery card immediately', async () => {
+      const { page, context } = await openPage(browser, false, 'r19e');
+      try {
+        await ready(page);
+        await page.evaluate(() => localStorage.clear());
+        await page.reload({ waitUntil: 'domcontentloaded' });
+        await ready(page);
+        for (const fx of [0.42, 0.55, 0.66]) await clickStud(page, fx, false);
+        const field = await page.locator('#projectName').boundingBox();
+        await typeInto(page, field, 'grow', 'click');
+        await clickSel(page, '#saveProjectBtn');
+        await page.waitForFunction(() => localStorage.getItem('brickProject_grow'), null, { timeout: 4000 });
+        await clickSel(page, '#galleryBtn');
+        await page.locator('#galleryGrid .gallery-item-meta').first().waitFor({ state: 'visible', timeout: 8000 });
+        await page.keyboard.press('Escape');
+        await clickStud(page, 0.48, true);
+        await clickStud(page, 0.7, false);
+        const expectCount = await brickCount(page);
+        await clickSel(page, '#galleryBtn');
+        await page.locator('#gallerySaveNew').waitFor({ state: 'visible', timeout: 8000 });
+        await clickSel(page, '#gallerySaveNew');
+        await page.locator('#namePromptOk').waitFor({ state: 'visible', timeout: 4000 });
+        await clickSel(page, '#namePromptOk');
+        const t0 = Date.now();
+        let meta = '';
+        while (Date.now() - t0 < 1200) {
+          meta = await page.locator('#galleryGrid .gallery-item-meta').first().innerText().catch(() => '');
+          if (meta.indexOf(String(expectCount) + ' brick') >= 0) break;
+        }
+        assert(meta.indexOf(String(expectCount) + ' brick') >= 0, 'card still "' + meta + '" after ' + expectCount + ' bricks');
+        return meta;
+      } finally { await context.close(); }
+    });
+
+    await check('R19f-thumb-spread', 'gallery thumbs for 3-spread and 6-spread bricks are framed to the bricks', async () => {
+      const { page, context } = await openPage(browser, false, 'r19f');
+      try {
+        await ready(page);
+        const layouts = {
+          three: [[0.36, 0.42], [0.64, 0.46], [0.5, 0.68]],
+          six: [[0.32, 0.4], [0.5, 0.38], [0.68, 0.42], [0.36, 0.62], [0.55, 0.58], [0.7, 0.66]]
+        };
+        const lines = [];
+        for (const kind of ['three', 'six']) {
+          await page.evaluate(() => localStorage.clear());
+          await page.reload({ waitUntil: 'domcontentloaded' });
+          await ready(page);
+          for (const pair of layouts[kind]) {
+            const shot = await grabCanvas(page);
+            const pt = findStudNear(shot.img, pair[0], pair[1]) || findStud(shot.img, pair[0]);
+            assert(pt, kind + ' stud missing');
+            await placeAt(page, shot.clip.x + pt.x / shot.dpr, shot.clip.y + pt.y / shot.dpr);
+          }
+          const field = await page.locator('#projectName').boundingBox();
+          await typeInto(page, field, kind, 'click');
+          await clickSel(page, '#saveProjectBtn');
+          await page.waitForFunction((n) => localStorage.getItem('brickProject_' + n), kind, { timeout: 8000 });
+          await clickSel(page, '#galleryBtn');
+          await page.locator('#galleryGrid img').first().waitFor({ state: 'visible', timeout: 8000 });
+          const buf = await page.locator('#galleryGrid img').first().screenshot();
+          writeFileSync(join(shots, 'r19-thumb-' + kind + '.png'), buf);
+          const thumb = decodePng(buf);
+          const stats = thumbStats(thumb);
+          assert(stats.n >= 150, kind + ' red pixels ' + stats.n + ' (speck or empty)');
+          assert(stats.extent >= 0.4 && stats.extent <= 0.75, kind + ' fill ' + (stats.extent * 100).toFixed(1) + '% outside 40-75');
+          assert(stats.margin >= 0.02, kind + ' cropped, margin ' + stats.margin.toFixed(3));
+          const side = largestRedSide(thumb);
+          const share = side / Math.min(thumb.width, thumb.height);
+          assert(share >= 0.12, kind + ' brick is a speck, ' + (share * 100).toFixed(1) + '% of the thumb');
+          lines.push(kind + ' fill ' + (stats.extent * 100).toFixed(1) + '% brick ' + (share * 100).toFixed(1) + '%');
+          await page.keyboard.press('Escape');
+        }
+        return lines.join(' | ');
+      } finally { await context.close(); }
+    });
+
+    await check('R19g-ground-band', 'no hard plate edge on the desktop top or right, or on the phone horizon', async () => {
+      const lines = [];
+      const desk = await openPage(browser, false, 'r19g-d');
+      try {
+        await ready(desk.page);
+        const shot = await grabCanvas(desk.page, 'r19-ground-desk.png');
+        const img = shot.img;
+        const top = shelfSteps(img, Math.floor(img.height * 0.06), Math.floor(img.height * 0.42), Math.floor(img.width * 0.24), img.width - 8, false);
+        const right = shelfSteps(img, Math.floor(img.height * 0.08), Math.floor(img.height * 0.72), Math.floor(img.width * 0.72), img.width - 8, true);
+        assert(top.worst < 70, 'desktop top edge y ' + top.at + ' sharp ' + top.worst);
+        assert(right.worst < 50, 'desktop right edge x ' + right.at + ' sharp ' + right.worst);
+        lines.push('desk top ' + top.worst + ' right ' + right.worst);
+      } finally { await desk.context.close(); }
+      const phone = await openPage(browser, true, 'r19g-p');
+      try {
+        await ready(phone.page);
+        const shot = await grabCanvas(phone.page, 'r19-ground-phone.png');
+        const img = shot.img;
+        const y0 = Math.floor(img.height * (280 / 844));
+        const y1 = Math.floor(img.height * (320 / 844));
+        const band = shelfSteps(img, y0, y1, 8, img.width - 8, false);
+        assert(band.worst < 40, 'phone horizon y ' + band.at + ' sharp ' + band.worst);
+        lines.push('phone ' + band.worst + ' @ ' + band.at);
+      } finally { await phone.context.close(); }
+      return lines.join(' | ');
+    });
+
+    await check('R19h-tutorial-body', 'every desktop tutorial page shows its body text', async () => {
+      const { page, context } = await openPage(browser, false, 'r19h');
+      try {
+        await page.waitForFunction(() => {
+          const modal = document.getElementById('tutorialModal');
+          return modal && modal.classList.contains('visible');
+        }, null, { timeout: 20000 });
+        const bodyOf = () => page.locator('.tutorial-page.active').evaluate((el) => {
+          const s = getComputedStyle(el);
+          const r = el.getBoundingClientRect();
+          const parked = el.classList.contains('brix-park') || el.classList.contains('brix-cold') || s.display === 'none' || s.contentVisibility === 'hidden';
+          return { text: (el.innerText || '').replace(/\s+/g, ' ').trim(), h: r.height, parked };
+        });
+        const lines = [];
+        for (let n = 1; n <= 3; n++) {
+          let body = { text: '', h: 0, parked: true };
+          const t0 = Date.now();
+          while (Date.now() - t0 < 2500) {
+            body = await bodyOf();
+            if (!body.parked && body.h > 40 && body.text.length > 24) break;
+          }
+          assert(!body.parked && body.h > 40 && body.text.length > 24, 'page ' + n + ' body "' + body.text.slice(0, 40) + '" h ' + body.h);
+          lines.push(n + ' ' + body.text.slice(0, 24));
+          if (n < 3) await clickSel(page, '#tutorialNext');
+        }
+        return lines.join(' | ');
+      } finally { await context.close(); }
+    });
+
+    await check('R19i-phone-frame', 'the phone shows the brick count, a starter, bricks at least 25 px, and 15-30% sky', async () => {
+      const { page, context } = await openPage(browser, true, 'r19i');
+      try {
+        await ready(page);
+        const counter = await page.locator('#hudBrickCount').boundingBox().catch(() => null);
+        const counterText = await page.locator('#hudStats').innerText().catch(() => '');
+        assert(counter && counter.width > 6 && counter.height > 8 && counter.y > 0 && counter.y < 844, 'brick counter hidden');
+        const starters = await page.locator('#starterBar').boundingBox();
+        assert(starters && starters.width > 40 && starters.y > 0 && starters.y < 844, 'starter build hidden');
+        const home = await grabCanvas(page, 'r19-phone-home.png');
+        const sky = skyFraction(home.img);
+        await clickStud(page, 0.55, false);
+        const shot = await grabCanvas(page, 'r19-phone-brick.png');
+        const blob = brickBlob(shot.img, plateInset(page, shot));
+        assert(blob.n > 8, 'no brick');
+        const px = Math.max(blob.w, blob.h) / shot.dpr;
+        assert(px >= 25, 'brick ' + px.toFixed(1) + ' px');
+        assert(sky >= 0.15 && sky <= 0.3, 'sky ' + (sky * 100).toFixed(1) + '%');
+        return 'counter "' + counterText.trim() + '" brick ' + px.toFixed(1) + ' sky ' + (sky * 100).toFixed(1) + '%';
+      } finally { await context.close(); }
+    });
+
+    await check('R19j-drawer-hit', 'a name tap while the drawer opens does not hit a saved build', async () => {
+      const { page, context } = await openPage(browser, true, 'r19j');
+      try {
+        const seed = (name, gx) => JSON.stringify({
+          name,
+          bricks: [{ type: '2x2', color: '#ff2200', rot: 0, grid: { gx, gz: 4, gy: 0, w: 2, d: 2, hp: 3 } }]
+        });
+        await page.evaluate(([one, untitled]) => {
+          localStorage.setItem('brickProject_one', one);
+          localStorage.setItem('brickProject_untitled', untitled);
+        }, [seed('one', 4), seed('Untitled', 12)]);
+        await page.reload({ waitUntil: 'domcontentloaded' });
+        await ready(page);
+        await clickSel(page, '#panelToggle');
+        const openField = await page.locator('#projectName').boundingBox();
+        assert(openField && openField.width > 8 && openField.y > 0 && openField.y < 820, 'name field not in the open drawer');
+        const tx = openField.x + openField.width / 2;
+        const ty = openField.y + openField.height / 2;
+        await clickSel(page, '#panelToggle');
+        const handle = await page.locator('#panelToggle').boundingBox();
+        await page.touchscreen.tap(handle.x + handle.width / 2, handle.y + handle.height / 2);
+        await page.touchscreen.tap(tx, ty);
+        const confirm = await page.locator('#loadConfirm').evaluate((el) => el.style.display === 'flex').catch(() => false);
+        assert(!confirm, 'name tap opened Load confirm');
+        await page.keyboard.type('named', { delay: 0 });
+        const value = await page.locator('#projectName').inputValue();
+        assert(value.indexOf('named') >= 0, 'typed "' + value + '"');
+        return 'named';
+      } finally { await context.close(); }
+    });
+
+    await check('R19k-one-brick', 'one saved brick reads 1 brick', async () => {
+      const { page, context } = await openPage(browser, false, 'r19k');
+      try {
+        await ready(page);
+        await clickStud(page, 0.5, false);
+        const field = await page.locator('#projectName').boundingBox();
+        await typeInto(page, field, 'solo', 'click');
+        await clickSel(page, '#saveProjectBtn');
+        await page.waitForFunction(() => {
+          const list = document.getElementById('savedProjectsList');
+          return list && list.innerText.indexOf('solo') >= 0;
+        }, null, { timeout: 4000 });
+        const list = await page.locator('#savedProjectsList').innerText();
+        const hud = await page.locator('#hudStats').innerText();
+        assert(list.indexOf('1 brick') >= 0 && list.indexOf('1 bricks') < 0, 'list "' + list.replace(/\s+/g, ' ') + '"');
+        assert(hud.indexOf('1 brick') >= 0 && hud.indexOf('1 bricks') < 0, 'hud "' + hud.replace(/\s+/g, ' ') + '"');
+        await clickSel(page, '#galleryBtn');
+        await page.locator('#galleryGrid .gallery-item-meta').first().waitFor({ state: 'visible', timeout: 8000 });
+        const meta = await page.locator('#galleryGrid .gallery-item-meta').first().innerText();
+        assert(meta.indexOf('1 brick') >= 0 && meta.indexOf('1 bricks') < 0, 'gallery "' + meta + '"');
+        return '1 brick';
+      } finally { await context.close(); }
+    });
+
+    await check('R19l-overlaps', 'the week badge misses the hint and the float misses zoom minus', async () => {
+      const { page, context } = await openPage(browser, true, 'r19l');
+      try {
+        await ready(page);
+        await page.waitForFunction(() => document.querySelector('.gotw-tag'), null, { timeout: 8000 });
+        const toast = await page.locator('#toast').boundingBox();
+        const badge = await page.locator('.gotw-tag').boundingBox();
+        assert(toast && toast.height > 8, 'hint hidden');
+        assert(badge && !overlaps(badge, toast), 'week badge overlaps the hint');
+        await clickSel(page, '#panelToggle');
+        const minus = await page.locator('#zoomOutBtn').boundingBox();
+        const floats = ['.brix-more', '.brix-more__toggle', '#phoneViewBtn', '.gotw-tag', '#panelToggle'];
+        for (const sel of floats) {
+          const box = await page.locator(sel).boundingBox().catch(() => null);
+          assert(!box || !overlaps(box, minus), sel + ' overlaps zoom minus');
+        }
+        const hit = await page.evaluate(() => {
+          const el = document.getElementById('zoomOutBtn');
+          const r = el.getBoundingClientRect();
+          const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+          return top ? (top.id || top.className || top.tagName) : 'none';
+        });
+        assert(/zoomOutBtn|zoom-btn/.test(String(hit)), 'zoom minus hit ' + hit);
+        return 'clear, hit ' + hit;
       } finally { await context.close(); }
     });
 

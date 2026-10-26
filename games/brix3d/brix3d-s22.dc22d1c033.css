@@ -16,10 +16,10 @@
     padding: 0 8px;
   }
   .gotw-tag--float {
-    top: 52px !important;
-    left: 6px !important;
+    top: 108px !important;
+    left: 8px !important;
     bottom: auto !important;
-    z-index: 260;
+    z-index: 250;
   }
   #quickBar {
     top: 6px !important;

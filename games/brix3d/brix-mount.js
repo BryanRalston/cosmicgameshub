@@ -225,7 +225,12 @@
               // past 50ms. The shell shows first. Each block follows on its own turn.
               if (!t.__brixSplit) {
                 t.__brixSplit = true;
-                var bits = t.querySelectorAll('.tutorial-header, .tutorial-page.active > *, #keybindList');
+                var pages = t.querySelectorAll('.tutorial-page');
+                for (var p = 0; p < pages.length; p++) {
+                  pages[p].classList.remove('brix-park');
+                  pages[p].classList.remove('brix-cold');
+                }
+                var bits = t.querySelectorAll('.tutorial-header, .tutorial-page > *, #keybindList');
                 for (var b = 0; b < bits.length; b++) {
                   bits[b].classList.add('brix-park');
                   bits[b].classList.add('brix-cold');
@@ -256,7 +261,7 @@
         }).catch(function (err) { console.error(err); });
         var s = document.createElement('script');
         s.type = 'module';
-        s.src = '/games/brix3d/brix3d.B7TJPEGQ.js';
+        s.src = '/games/brix3d/brix3d.HJXMTZ2L.js';
         document.body.appendChild(s);
         var hold = document.createElement('div');
         hold.id = 'brixHold';

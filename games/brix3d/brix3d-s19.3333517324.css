@@ -65,7 +65,26 @@
         padding: 6px;
         justify-content: space-between;
       }
-      #buildHud .hud-sep, #buildHud #hudStats { display: none !important; }
+      #buildHud .hud-sep { display: none !important; }
+      #buildHud #hudStats {
+        display: block !important;
+        position: fixed !important;
+        top: 128px !important;
+        right: 8px !important;
+        left: auto !important;
+        bottom: auto !important;
+        width: auto !important;
+        padding: 4px 8px !important;
+        border-radius: 8px !important;
+        background: rgba(15, 15, 26, 0.94) !important;
+        color: #fff !important;
+        font-size: 13px !important;
+        font-weight: 800 !important;
+        line-height: 1.2 !important;
+        z-index: 241 !important;
+        pointer-events: none !important;
+        white-space: nowrap !important;
+      }
       #buildHud .hud-btn {
         flex: 1 1 0;
         min-width: 0;

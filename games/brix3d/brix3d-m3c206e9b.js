@@ -1,1 +1,0 @@
-import{__brixScope as t}from"./brix3d-m3b79cb7a.js";t.sphereFitDistance=function(a){const n=.5*Math.hypot(a.spanX,a.spanY,a.spanZ),h=Math.max(t.camera.aspect||1,.3),s=t.camera.fov*Math.PI/180,c=2*Math.atan(Math.tan(s/2)*h),i=Math.min(s,c),o=Math.atan(Math.tan(i/2)*.8),e=n/Math.max(.05,Math.sin(o));return Math.max(e,n+.45)};
