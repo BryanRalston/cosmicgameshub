@@ -1123,7 +1123,15 @@
       // The splash hint is green so the first paint has a text box. A green
       // bar left across the sky is a hard edge, so the playing hint is the
       // dark toast and only when the phone card is not already explaining it.
-      if (hinted) hinted.classList.remove('brix-early', 'show', 'success');
+      // The stylesheet fades opacity over 0.25s. Hiding the node in the
+      // middle of that fade left the white splash text on the plate.
+      if (hinted) {
+        hinted.style.transition = 'none';
+        hinted.classList.remove('brix-early', 'show', 'success');
+        hinted.textContent = '';
+        void hinted.offsetHeight;
+        hinted.style.transition = '';
+      }
       await yieldTick();
       const openingShare = !!shareTokenFromLocation();
       const phoneHold = phoneTutorialPending();
@@ -1141,7 +1149,7 @@
         if (window.innerWidth <= 768) {
           toast('Tap a starter, or tap the plate. The ghost is your 2×2.', '', true);
         } else if (!dailyTipWillShow()) {
-          toast('Plate is ready. Tap a starter or place your first brick.', 'success', true);
+          toast('Plate is ready. Tap a starter or place your first brick.', '', true);
         }
       }
       await yieldTick();
