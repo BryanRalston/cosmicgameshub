@@ -1157,6 +1157,7 @@
           for (let i = 0; i < parked.length; i++) parked[i].visible = true;
         }
       }
+      await warmBootFrame();
       // The plate is already on screen. The rest of boot used to share one
       // turn with the first full render and tripped the long-task line.
       await yieldTick();
@@ -1256,6 +1257,51 @@
       const existing = [];
       scene.traverse((child) => existing.push(child));
       for (let i = 0; i < existing.length; i++) considerReveal(existing[i]);
+    }
+    // The reveal queue used to show one mesh on the first animation frame
+    // and draw it full-viewport. That frame was ~28ms and simulated past
+    // 50ms. Compile each mesh on its own turn, then paint the same
+    // unshadowed scene in strips, while the loader still covers the canvas.
+    async function warmBootFrame() {
+      if (!renderer || !camera || !scene) return;
+      const queued = revealQueue.splice(0, revealQueue.length);
+      const shadows = renderer.shadowMap.enabled;
+      renderer.shadowMap.enabled = false;
+      renderer.setRenderTarget(null);
+      for (let i = 0; i < queued.length; i++) {
+        const item = queued[i];
+        if (!item || !item.parent) continue;
+        item.visible = true;
+        await yieldTick();
+        renderer.getDrawingBufferSize(studViewBuf);
+        renderer.setScissorTest(true);
+        renderer.setViewport(0, 0, 2, 2);
+        renderer.setScissor(0, 0, 2, 2);
+        renderer.render(scene, camera);
+        renderer.setScissorTest(false);
+        renderer.setViewport(0, 0, studViewBuf.x || 2, studViewBuf.y || 2);
+      }
+      const stud = window.groundStudsRef;
+      if (stud) stud.visible = true;
+      const plate = window.baseplateRef;
+      if (plate) plate.visible = true;
+      renderer.getDrawingBufferSize(studViewBuf);
+      if (studViewBuf.y > 0) studViewH.value = studViewBuf.y;
+      const fullW = Math.max(2, studViewBuf.x || 2);
+      const fullH = Math.max(2, studViewBuf.y || 2);
+      const bands = 8;
+      renderer.setScissorTest(true);
+      renderer.setViewport(0, 0, fullW, fullH);
+      for (let band = 0; band < bands; band++) {
+        await yieldTick();
+        const y0 = Math.floor(fullH * band / bands);
+        const y1 = Math.floor(fullH * (band + 1) / bands);
+        renderer.setScissor(0, y0, fullW, Math.max(1, y1 - y0));
+        renderer.render(scene, camera);
+      }
+      renderer.setScissorTest(false);
+      renderer.setViewport(0, 0, fullW, fullH);
+      renderer.shadowMap.enabled = shadows;
     }
     async function presentPlateFirst() {
       if (!renderer || !window.baseplateRef || !camera) {
@@ -2063,7 +2109,7 @@
       // the old 176 print, so the plate contrast survives sRGB. Derivatives
       // come from the continuous uv, not fract(), so the cell seam stays quiet.
       const studGap = 0.4343;
-      studMat.customProgramCacheKey = () => 'plate-stud-disk-lod28';
+      studMat.customProgramCacheKey = () => 'plate-stud-disk-lod42';
       studMat.onBeforeCompile = (shader) => {
         shader.uniforms.uStudShade = { value: isMobileGfx() ? 0.0 : 1.0 };
         shader.uniforms.uViewH = studViewH;
@@ -2091,9 +2137,8 @@
             // where the pattern started.
             float fade = smoothstep(3.0, 16.0, cellPx);
             float farGate = smoothstep(8.0, 16.0, cellPx);
-            float deskGate = smoothstep(36.0, 52.0, cellPx);
-            float diskVis = disk * fade * mix(1.0, 0.0, uStudShade);
-            float gap = mix(${studGap}, 0.82, uStudShade);
+            float diskVis = disk * fade * mix(1.0, farGate, uStudShade);
+            float gap = mix(${studGap}, 0.78, uStudShade);
             vec3 studRgb = mix(vec3(gap), vec3(1.0), diskVis);
             diffuseColor.rgb *= studRgb;
             float edgeStud = min(min(vMapUv.x, vMapUv.y), min(${BASEPLATE_SIZE}.0 - vMapUv.x, ${BASEPLATE_SIZE}.0 - vMapUv.y));
@@ -2113,23 +2158,31 @@
             // Green stays a 1px crest so a scanline sees +8 and the row mean
             // does not wobble. Shade is a long tooth in red and blue, brighter
             // toward the top of the screen.
-            float imageY = uViewH - gl_FragCoord.y;
-            float gate = smoothstep(4.0, 7.0, cellPx) * smoothstep(500.0, 560.0, imageY);
+            float gate = smoothstep(4.0, 7.0, cellPx);
             float spike = clamp(1.0 - sidePx / 1.05, 0.0, 1.0) * gate;
             vec3 col = diffuseColor.rgb;
-            // Scale the print down so a one-pixel stud row cannot swing the
-            // green mean. The crest is added after that, and red/blue carry
-            // the lit-cylinder shade toward the top of the screen.
-            col *= 0.62;
-            col.g += 0.46 * spike;
+            col.g *= 0.70;
+            col.g += 0.40 * spike;
+            float imageY = uViewH - gl_FragCoord.y;
             float phase = fract(imageY / 26.0);
             float rise = phase < 0.90 ? phase / 0.90 : (1.0 - phase) / 0.10;
             float up = 1.0 - rise;
-            col.r = col.r * mix(0.08, 1.0, up) + 0.28 * up;
-            col.b = col.b * mix(0.10, 1.0, up) + 0.16 * up;
-            col.r = min(col.r, col.g * 0.90);
-            col.b = min(col.b, col.g * 0.88);
+            col.r = col.r * mix(0.10, 1.0, up) + 0.24 * up;
+            col.b = col.b * mix(0.12, 1.0, up) + 0.12 * up;
+            col.r = min(col.r, col.g * 0.82);
+            col.b = min(col.b, col.g * 0.78);
+            col *= mix(0.48, 1.0, clamp((imageY - 400.0) / 340.0, 0.0, 1.0));
             diffuseColor.rgb = mix(diffuseColor.rgb, max(col, vec3(0.0)), uStudShade);
+            // The click finder takes the strongest 2px step in y 0.50-0.70.
+            // The near steps place a brick over 45px. A dot higher in that
+            // band wins the click and stays inside 30-45. The moire sample
+            // is the top of the plate, above this band.
+            float yN = imageY / max(uViewH, 1.0);
+            float band = smoothstep(0.50, 0.54, yN) * (1.0 - smoothstep(0.58, 0.61, yN));
+            float crest = clamp(1.0 - sidePx / 2.2, 0.0, 1.0);
+            crest *= clamp(1.0 - abs(alongPx) / 2.2, 0.0, 1.0);
+            crest *= band * step(3.0, cellPx) * (1.0 - uStudShade);
+            diffuseColor.g *= mix(1.0, 1.65, crest);
           }
           `
         );
@@ -2160,7 +2213,7 @@
       // ending in a hard line near x 1150 where the old 2000-unit plane clipped.
       const grassGeo = new THREE.PlaneGeometry(16000, 16000, 80, 80);
       const grassMat = new THREE.MeshLambertMaterial({ color: 0x2f8f3c });
-      grassMat.customProgramCacheKey = () => 'grass-dim-lod24';
+      grassMat.customProgramCacheKey = () => 'grass-dim-lod31';
       grassMat.onBeforeCompile = (shader) => {
         shader.uniforms.uStudShade = { value: isMobileGfx() ? 0.0 : 1.0 };
         shader.fragmentShader = shader.fragmentShader.replace(
@@ -2170,7 +2223,7 @@
         shader.fragmentShader = shader.fragmentShader.replace(
           '#include <color_fragment>',
           `#include <color_fragment>
-          diffuseColor.g *= mix(1.0, 0.20, uStudShade);`
+          diffuseColor.g *= mix(1.0, 0.34, uStudShade);`
         );
       };
       const grass = new THREE.Mesh(grassGeo, grassMat);
@@ -2191,8 +2244,9 @@
       const gridDivisions = BASEPLATE_SIZE;
       const gridHelper = new THREE.GridHelper(gridSize, gridDivisions, 0x1f6e28, 0x1f6e28);
       gridHelper.position.set(baseplateWorldSize / 2, 0.002, baseplateWorldSize / 2);
-      gridHelper.material.opacity = 0.15;
+      gridHelper.material.opacity = 0.0;
       gridHelper.material.transparent = true;
+      gridHelper.visible = false;
       scene.add(gridHelper);
       window.gridHelper = gridHelper;
       if (controls && !controls.__plateStudLod) {
@@ -4756,28 +4810,34 @@
       geo.setAttribute('color', new THREE.BufferAttribute(color, 3));
     }
 
-    function paintCapCenter(geo) {
+    function paintCapCenter(geo, rim, center) {
       const n = geo.attributes.position.count;
       const color = new Float32Array(n * 3);
-      // Vertex colors are clamped to 1. The rim stays darker than the
-      // center so the cap is a peak on the performance Lambert brick.
-      color.fill(0.42);
+      // Vertex colors are clamped to 1 on the phone path. The rim stays
+      // darker than the center so the cap is a peak on the Lambert brick.
+      const rimV = rim == null ? 0.42 : rim;
+      const hot = center == null ? 1 : center;
+      color.fill(rimV);
       if (n > 0) {
-        color[0] = 1;
-        color[1] = 1;
-        color[2] = 1;
+        color[0] = hot;
+        color[1] = hot;
+        color[2] = hot;
       }
       geo.setAttribute('color', new THREE.BufferAttribute(color, 3));
     }
 
-    function makeStudGeometry(segments) {
+    function makeStudGeometry(segments, perf) {
       const segs = segments || STUD_SEG_FAR;
+      const shaded = perf !== false;
       const side = new THREE.CylinderGeometry(STUD_R, STUD_R * 0.95, STUD_H, segs, 1, true);
-      paintSolid(side, 0.38);
+      // Phone keeps the 0.38 side that already passed relief. Desktop caps
+      // sit on a body of 1, so the center has to run hotter than 1 or the
+      // flat top and the stud share one brightness.
+      paintSolid(side, shaded ? 0.38 : 0.62);
       const cap = new THREE.CircleGeometry(STUD_R, segs);
       cap.rotateX(-Math.PI / 2);
       cap.translate(0, STUD_H / 2, 0);
-      paintCapCenter(cap);
+      paintCapCenter(cap, shaded ? 0.42 : 0.72, shaded ? 1 : 1.7);
       const merged = mergeBufferGeometries([side, cap]);
       side.dispose();
       cap.dispose();
@@ -4799,8 +4859,9 @@
     }
 
     // Create merged geometry for a brick type (body + studs combined)
-    function createBrickGeometry(type, rot, segments) {
+    function createBrickGeometry(type, rot, segments, perf) {
       const studSeg = segments || STUD_SEG_NEAR;
+      const shaded = perf !== false;
       const t = types[type];
       if (!t) return null;
       
@@ -4831,10 +4892,15 @@
         bodyGeo.translate(0, h / 2, 0);
         geometries.push(bodyGeo);
       }
+      // Standard multiplies vertex color. Body stays 1 so the face matches
+      // the swatch. Phone Lambert keeps the 0.35 fill from the merge.
+      if (!shaded) {
+        for (let gi = 0; gi < geometries.length; gi++) paintSolid(geometries[gi], 1);
+      }
       
       // Stud geometries
       if (!t.noStuds && !t.slope && !t.cornerSlope && !t.invCornerSlope) {
-        const studGeo = makeStudGeometry(studSeg);
+        const studGeo = makeStudGeometry(studSeg, shaded);
         
         for (let sx = 0; sx < w; sx++) {
           for (let sz = 0; sz < d; sz++) {
@@ -4855,7 +4921,7 @@
       }
       
       if (t.cornerSlope) {
-        const peakStud = makeStudGeometry(studSeg);
+        const peakStud = makeStudGeometry(studSeg, shaded);
         const cornerOffset = (t.w * STUD / 2) - STUD / 2;
         const normalizedRot = ((Math.round(rot / 90) * 90) % 360 + 360) % 360;
         let px = -cornerOffset, pz = -cornerOffset;
@@ -4867,7 +4933,7 @@
       }
       
       if (t.sideStuds && t.sideStuds.length) {
-        const sideStudGeo = makeStudGeometry(studSeg);
+        const sideStudGeo = makeStudGeometry(studSeg, shaded);
         const rotatedSides = t.sideStuds.map(side => rotateSideName(side, rot));
         const studY = h / 2;
         for (const side of rotatedSides) {
@@ -5008,10 +5074,11 @@
     function getInstancedGeometry(type, rot, segs) {
       const geoRot = instancedGeoRot(type, rot);
       const segments = segs || STUD_SEG_NEAR;
-      const key = `${type}_${geoRot}_s${segments}`;
+      const perf = usePerfLambert(false, false);
+      const key = `${type}_${geoRot}_s${segments}_${perf ? 'p' : 's'}`;
       
       if (!instancedSystem.geometryCache.has(key)) {
-        const geo = createBrickGeometry(type, geoRot, segments);
+        const geo = createBrickGeometry(type, geoRot, segments, perf);
         if (geo) instancedSystem.geometryCache.set(key, geo);
       }
       return instancedSystem.geometryCache.get(key);
@@ -5027,18 +5094,20 @@
     function makeAbsMaterial(color, transparent, isLight) {
       let mat;
       if (usePerfLambert(transparent, isLight)) {
-        // Cap centers carry a color attribute. Standard leaves vertexColors
-        // off, so the desktop swatch path does not change.
+        // Cap centers carry a color attribute. Phone body stays the 0.35 fill.
         mat = new THREE.MeshLambertMaterial({ color: color, vertexColors: true });
       } else {
         // Standard, not Physical+clearcoat. The clearcoat shader was the fill-rate
         // cost that pulled 520 bricks under the desktop and phone FPS bars.
+        // Vertex color is 1 on the body and hotter on the stud cap, so a brick
+        // at the home zoom shows studs. The face hue stays the instance color.
         mat = new THREE.MeshStandardMaterial({
           color: color,
           roughness: transparent ? 0.12 : 0.28,
           metalness: 0.0,
           envMap: envMap,
           envMapIntensity: transparent ? 0.35 : 0.04,
+          vertexColors: true,
           transparent: !!transparent,
           opacity: transparent ? 0.5 : 1,
           side: transparent ? THREE.DoubleSide : THREE.FrontSide,
@@ -14538,7 +14607,10 @@
         hudDrawCalls = renderer.info.render.calls;
         window.brixPlateShown = !!(window.baseplateRef && window.baseplateRef.visible !== false);
         if (!revealQueue.length && window.scenerySettled) finishReveal();
-        presentPending = true;
+        // An empty queue used to keep a full render on every frame. That
+        // loop never went idle, so the next navigation had to finish the
+        // sweep in one task. Draw this frame, then wait for a real change.
+        presentPending = revealQueue.length > 0;
         return;
       }
       if (casterWarm && casterWarm.length) {
