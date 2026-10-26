@@ -1,0 +1,158 @@
+
+    .custom-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .custom-row label {
+      font-size: 11px;
+      color: rgba(255,255,255,0.6);
+      min-width: 40px;
+    }
+    .custom-row input[type="number"] {
+      width: 50px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 4px;
+      padding: 4px 6px;
+      color: white;
+      font-size: 12px;
+      text-align: center;
+    }
+    .custom-row input[type="number"]:focus {
+      outline: none;
+      border-color: #4ade80;
+    }
+    .custom-row select {
+      flex: 1;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 4px;
+      padding: 4px 8px;
+      color: white;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .custom-row select:focus {
+      outline: none;
+      border-color: #4ade80;
+    }
+    .custom-row select option {
+      background: #1a1a2e;
+      color: white;
+    }
+    .custom-create-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #4ade80, #22c55e);
+      border: none;
+      border-radius: 6px;
+      padding: 8px;
+      color: white;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .custom-create-btn:hover {
+      transform: scale(1.02);
+      box-shadow: 0 4px 12px rgba(74, 222, 128, 0.3);
+    }
+    .custom-hint {
+      margin-top: 6px;
+      font-size: 9px;
+      color: rgba(255,255,255,0.35);
+      text-align: center;
+    }
+    
+    /* Transparent Colors */
+    .trans-section {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+    .trans-label {
+      font-size: 15px;
+      font-weight: 800;
+      color: rgba(255,255,255,0.92);
+      margin-bottom: 6px;
+    }
+    .trans-colors {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .color-preset.trans {
+      position: relative;
+      background-image: 
+        linear-gradient(45deg, #333 25%, transparent 25%),
+        linear-gradient(-45deg, #333 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #333 75%),
+        linear-gradient(-45deg, transparent 75%, #333 75%);
+      background-size: 8px 8px;
+      background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
+    }
+    .color-preset.trans::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 4px;
+    }
+    .color-preset.trans[data-color="#e53935"]::after { background: rgba(229,57,53,0.5); }
+    .color-preset.trans[data-color="#1e88e5"]::after { background: rgba(30,136,229,0.5); }
+    .color-preset.trans[data-color="#fdd835"]::after { background: rgba(253,216,53,0.5); }
+    .color-preset.trans[data-color="#43a047"]::after { background: rgba(67,160,71,0.5); }
+    .color-preset.trans[data-color="#00bcd4"]::after { background: rgba(0,188,212,0.5); }
+    .color-preset.trans[data-color="#8e24aa"]::after { background: rgba(142,36,170,0.5); }
+    .color-preset.trans[data-color="#ffffff"]::after { background: rgba(255,255,255,0.5); }
+    .color-preset.trans[data-color="#212121"]::after { background: rgba(33,33,33,0.5); }
+    
+    /* Prefabs */
+    .prefab-search {
+      width: 100%;
+      padding: 8px 12px;
+      margin-bottom: 10px;
+      border: 1px solid #444;
+      border-radius: 6px;
+      background: #1a1a2e;
+      color: #fff;
+      font-size: 13px;
+      outline: none;
+    }
+    .prefab-search:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+    }
+    .prefab-search::placeholder {
+      color: #666;
+    }
+    .prefab-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 4px;
+    }
+    .prefab-btn {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.8);
+      padding: 8px 6px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 10px;
+      transition: all 0.15s ease;
+      text-align: left;
+    }
+    .prefab-btn:hover {
+      background: rgba(255,255,255,0.12);
+      border-color: rgba(255,255,255,0.2);
+      transform: translateY(-1px);
+    }
+    .prefab-btn:active {
+      transform: scale(0.98);
+    }
+    .prefab-btn.selected {
+      background: linear-gradient(135deg, #00bcd4, #0097a7);
+      border-color: #00bcd4;
+      color: white;
+      box-shadow: 0 2px 8px rgba(0, 188, 212, 0.4);
+    }

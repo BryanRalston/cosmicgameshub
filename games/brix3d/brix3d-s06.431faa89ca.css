@@ -1,0 +1,168 @@
+
+    
+    /* Floor preview rectangle */
+    .floor-preview-info {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(16, 185, 129, 0.9);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 500;
+      pointer-events: none;
+      z-index: 1000;
+      display: none;
+    }
+    .floor-preview-info.visible {
+      display: block;
+    }
+    
+    /* Floating Wall/Floor Tool Popup */
+    .build-tool-popup {
+      position: fixed;
+      top: 120px;
+      left: calc(50% - 350px);
+      background: rgba(15, 15, 26, 0.98);
+      backdrop-filter: blur(12px);
+      border-radius: 12px;
+      border: 1px solid rgba(249, 115, 22, 0.3);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      z-index: 2000;
+      min-width: 200px;
+      display: none;
+      cursor: default;
+      user-select: none;
+    }
+    .build-tool-popup.visible {
+      display: block;
+      min-height: 44px;
+    }
+    .build-tool-popup.floor-mode {
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+    .build-tool-popup-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(249, 115, 22, 0.2);
+      background: linear-gradient(135deg, rgba(249, 115, 22, 0.15), rgba(234, 88, 12, 0.15));
+      border-radius: 12px 12px 0 0;
+      cursor: grab;
+    }
+    .build-tool-popup.floor-mode .build-tool-popup-header {
+      border-color: rgba(16, 185, 129, 0.2);
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.15));
+    }
+    .build-tool-popup-header:active {
+      cursor: grabbing;
+    }
+    .build-tool-popup-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #f97316;
+    }
+    .build-tool-popup.floor-mode .build-tool-popup-title {
+      color: #10b981;
+    }
+    .build-tool-popup-close {
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: rgba(255, 255, 255, 0.6);
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+    .build-tool-popup-close:hover {
+      background: rgba(255, 100, 100, 0.3);
+      color: white;
+    }
+    .build-tool-popup-content {
+      padding: 12px 14px;
+    }
+    .build-tool-popup-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .build-tool-popup-row:last-child {
+      margin-bottom: 0;
+    }
+    .build-tool-popup-label {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.7);
+      font-weight: 500;
+    }
+    .build-tool-popup-control {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 4px 8px;
+      border-radius: 6px;
+    }
+    .build-tool-popup-btn {
+      width: 26px;
+      height: 26px;
+      border: 1px solid rgba(249, 115, 22, 0.3);
+      background: rgba(249, 115, 22, 0.1);
+      color: #f97316;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+    .build-tool-popup.floor-mode .build-tool-popup-btn {
+      border-color: rgba(16, 185, 129, 0.3);
+      background: rgba(16, 185, 129, 0.1);
+      color: #10b981;
+    }
+    .build-tool-popup-btn:hover {
+      background: rgba(249, 115, 22, 0.3);
+      transform: scale(1.05);
+    }
+    .build-tool-popup.floor-mode .build-tool-popup-btn:hover {
+      background: rgba(16, 185, 129, 0.3);
+    }
+    .build-tool-popup-value {
+      min-width: 24px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: #f97316;
+    }
+    .build-tool-popup.floor-mode .build-tool-popup-value {
+      color: #10b981;
+    }
+    .build-tool-popup-mode-btns {
+      display: flex;
+      gap: 6px;
+    }
+    .build-tool-mode-btn {
+      padding: 6px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.05);
+      color: rgba(255, 255, 255, 0.7);
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 500;
+      transition: all 0.15s ease;
+    }
+    .build-tool-mode-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }

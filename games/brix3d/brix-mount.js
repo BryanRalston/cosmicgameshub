@@ -294,7 +294,7 @@
         // a tap on the studs never reached the canvas. These roots opt in.
         // Decorative hints keep their own pointer-events:none.
         var hit = document.createElement('style');
-        hit.textContent = '#container,#controls,#tutorialModal,#keybindModal,#buildHud,#quickBar,#starterBar,#dailyPrompt,#stats,#qualityBar,#fps,#info,#galleryModal,#loadConfirm,#namePrompt,#mirrorPopup,#buildToolPopup,#brixBack,#phoneViewBtn,#sidebarToggle,#fullscreenHint,#fpsModeUI,.zoom-controls,.rotation-ind,.brix-more,#toast,.pan-hint{pointer-events:auto}';
+        hit.textContent = '#container,#controls,#tutorialModal,#keybindModal,#buildHud,#quickBar,#starterBar,#dailyPrompt,#stats,#qualityBar,#fps,#info,#galleryModal,#loadConfirm,#namePrompt,#mirrorPopup,#buildToolPopup,#brixBack,#phoneViewBtn,#sidebarToggle,#fullscreenHint,#fpsModeUI,.zoom-controls,.rotation-ind,.brix-more,#moveModeIndicator,#deleteModeBanner,.pan-hint{pointer-events:auto}';
         document.head.appendChild(hit);
         document.body.appendChild(hold);
         fetch('/games/brix3d/brix-late.html', { cache: 'no-store' }).then(function (res) {

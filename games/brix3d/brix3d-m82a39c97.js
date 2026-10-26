@@ -1,1 +1,0 @@
-import{__brixScope as a}from"./brix3d-m3b79cb7a.js";a.createDesertVegetation=function(s,i){i.forEach(t=>{for(let o=0;o<t.count;o++){const n=Math.random()*Math.PI*2,r=t.minDist+Math.random()*(t.maxDist-t.minDist),e=a.createCactus(t.type);e.position.set(s+Math.cos(n)*r,0,s+Math.sin(n)*r),e.rotation.y=Math.random()*Math.PI*2,a.scene.add(e),window.sceneryObjects.trees.push(e)}})};

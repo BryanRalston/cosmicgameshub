@@ -1,0 +1,166 @@
+
+    .build-tool-mode-btn.active {
+      background: linear-gradient(135deg, #f97316, #ea580c);
+      border-color: #f97316;
+      color: white;
+    }
+    .build-tool-popup.floor-mode .build-tool-mode-btn.active {
+      background: linear-gradient(135deg, #10b981, #059669);
+      border-color: #10b981;
+    }
+    .build-tool-popup-info {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.4);
+      text-align: center;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Floating Mirror Popup */
+    .mirror-popup {
+      position: fixed;
+      top: 120px;
+      left: calc(50% + 200px);
+      background: rgba(15, 15, 26, 0.98);
+      backdrop-filter: blur(12px);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 0, 255, 0.3);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      z-index: 2000;
+      min-width: 240px;
+      display: none;
+      cursor: default;
+      user-select: none;
+    }
+    .mirror-popup.visible {
+      display: block;
+    }
+    .mirror-popup-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(255, 0, 255, 0.2);
+      background: linear-gradient(135deg, rgba(255, 0, 255, 0.15), rgba(136, 85, 255, 0.15));
+      border-radius: 12px 12px 0 0;
+      cursor: grab;
+    }
+    .mirror-popup-header:active {
+      cursor: grabbing;
+    }
+    .mirror-popup-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #ff55ff;
+    }
+    .mirror-popup-close {
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: rgba(255, 255, 255, 0.6);
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+    .mirror-popup-close:hover {
+      background: rgba(255, 100, 100, 0.3);
+      color: white;
+    }
+    .mirror-popup-content {
+      padding: 16px;
+    }
+    .mirror-popup-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .mirror-popup-label {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.7);
+      font-weight: 500;
+    }
+    .mirror-popup-btns {
+      display: flex;
+      gap: 6px;
+    }
+    .mirror-popup-btn {
+      padding: 8px 14px;
+      border: 1px solid rgba(255, 0, 255, 0.3);
+      background: rgba(255, 0, 255, 0.1);
+      color: rgba(255, 255, 255, 0.8);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      transition: all 0.15s ease;
+    }
+    .mirror-popup-btn:hover {
+      background: rgba(255, 0, 255, 0.2);
+      border-color: rgba(255, 0, 255, 0.5);
+    }
+    .mirror-popup-btn.active {
+      background: linear-gradient(135deg, #ff00ff, #8855ff);
+      border-color: #ff55ff;
+      color: white;
+      box-shadow: 0 2px 12px rgba(255, 0, 255, 0.4);
+    }
+    .mirror-popup-offset {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 4px 8px;
+      border-radius: 8px;
+    }
+    .mirror-popup-offset-btn {
+      width: 32px;
+      height: 32px;
+      border: 1px solid rgba(255, 0, 255, 0.3);
+      background: rgba(255, 0, 255, 0.1);
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 18px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+    .mirror-popup-offset-btn:hover {
+      background: rgba(255, 0, 255, 0.3);
+      transform: scale(1.05);
+    }
+    .mirror-popup-offset-btn:active {
+      transform: scale(0.95);
+    }
+    .mirror-popup-offset-value {
+      min-width: 40px;
+      text-align: center;
+      font-size: 16px;
+      font-weight: 700;
+      color: #ff55ff;
+    }
+    .mirror-popup-info {
+      text-align: center;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.5);
+      padding-top: 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      margin-top: 4px;
+    }
+    
+    /* Custom Block Creator */
+    .custom-block-creator {
+      background: rgba(255,255,255,0.03);
+      border-radius: 8px;
+      padding: 10px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }

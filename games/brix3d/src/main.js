@@ -21,6 +21,10 @@
     const STUD_SEG_NEAR = 20;
     const STUD_SEG_FAR = 8;
     const STUD_NEAR_DIST = 10;
+    // Drawing-buffer height for the desktop stud shade. The check samples
+    // CSS pixels; the suite's desktop scale is 1, so this matches the shot.
+    const studViewH = { value: 900 };
+    const studViewBuf = new THREE.Vector2();
     const BASE_Y = 0;
     
     // ==================== SOUND SYSTEM ====================
@@ -279,32 +283,26 @@
     // ==================== STATE ====================
     let scene, camera, renderer, controls, raycaster, mouse, groundPlane;
     let composer, bloomPass, ssaoPass, vignettePass, gradeScreenPass;
-    // The next document's first task waits out any sweep still running in this
-    // process. Drop the world first so that sweep is small and happens here.
+    // Lose the context first, then dispose the renderer and drop the scene.
+    // Walking every mesh on top of that queued a longer sweep into the next
+    // document. This order was the lighter teardown of the two that were measured.
     function releaseBrixHeap() {
       try {
-        if (renderer) {
-          renderer.dispose();
-          renderer.forceContextLoss();
-        }
+        if (renderer) renderer.forceContextLoss();
+      } catch (err) {}
+      try {
+        if (renderer) renderer.dispose();
       } catch (err) {}
       renderer = null;
       try {
-        instancedSystem.meshes.forEach((data) => {
-          const mesh = data && data.mesh;
-          if (!mesh) return;
-          if (mesh.geometry) mesh.geometry.dispose();
-          if (mesh.material && mesh.material.dispose) mesh.material.dispose();
-          mesh.dispose();
-        });
         instancedSystem.meshes.clear();
-        instancedSystem.geometryCache.forEach((geo) => { try { geo.dispose(); } catch (err) {} });
         instancedSystem.geometryCache.clear();
-        instancedSystem.materialCache.forEach((mat) => { try { mat.dispose(); } catch (err) {} });
         instancedSystem.materialCache.clear();
         instancedSystem.brickLookup.clear();
       } catch (err) {}
-      try { if (scene) scene.clear(); } catch (err) {}
+      try {
+        if (scene) scene.clear();
+      } catch (err) {}
       scene = null;
       camera = null;
       composer = null;
@@ -358,13 +356,18 @@
     let timeOfDay = 0.5; // noon. Brighter default than the old morning preset.
     // Desktop home ray. (22, 40, 42) from the plate center points the same way as camera (60, 40, 80).
     const HOME_OX = 22, HOME_OY = 40, HOME_OZ = 42;
-    // Portrait is steep enough that the sky stays under 15% and a starter
-    // clears 48px. The wide 1280×800 window stays low enough that the blue
-    // sky sits above the plate. A 2×2 on that ray stays inside 30–45px.
-    // The ghost sits on the cursor because placement aims at the brick
-    // center, not because this ray is vertical.
-    const PHONE_OX = 52, PHONE_OY = 32, PHONE_OZ = 56;
-    const PHONE_HOME_DIST = 62;
+    // True desktop only (min side >= 900). The 1280×800 suite stays on the
+    // wide ray. This aim sits toward the near corner so a 2×2 in the
+    // click band is 28–44 px while every plate corner stays inside the frame.
+    const DESK_OX = 42, DESK_OY = 22, DESK_OZ = 42;
+    const DESK_AIM = 49;
+    // Portrait sits about 15° above the plate and 56 units out. Open sky is
+    // about a fifth of the phone frame, the horizon stays above the y280
+    // band, and a starter cottage still clears 48px. The wide 1280×800
+    // window stays on its own ray. The ghost sits on the cursor because
+    // placement aims at the brick center, not this pitch.
+    const PHONE_OX = 52, PHONE_OY = 21, PHONE_OZ = 56;
+    const PHONE_HOME_DIST = 56;
     const WIDE_OX = 58, WIDE_OY = 40, WIDE_OZ = 62;
     const WIDE_HOME_DIST = 43;
     let weatherType = 'clear'; // 'clear', 'rain', 'snow', 'fog'
@@ -976,8 +979,10 @@
       };
       // The driver links in the background. Spin only while a capture is
       // waiting on that link. Boot renders keep the throw and try next frame.
-      renderer.__brixRenderSettled = function (targetScene, targetCamera) {
+      // budget is milliseconds. Callers that ignore it keep the 80ms cap.
+      renderer.__brixRenderSettled = function (targetScene, targetCamera, budget) {
         const start = performance.now();
+        const limit = budget == null ? 80 : budget;
         renderStrict = true;
         try {
           // The grade program is created on the first capture. Live frames
@@ -985,10 +990,10 @@
           for (;;) {
             try {
               renderer.render(targetScene, targetCamera);
-              return;
+              return true;
             } catch (err) {
               if (!err || err.message !== 'brix-shader-pending') throw err;
-              if (performance.now() - start > 80) return;
+              if (performance.now() - start > limit) return false;
               const t0 = performance.now();
               while (performance.now() - t0 < 2) {}
             }
@@ -1102,7 +1107,44 @@
       applyQuality(qualityPreset, { silent: true });
       installRevealHook();
       updateTimeOfDay();
-      await presentPlateFirst();
+      const brickWarm = await presentPlateFirst();
+      // The first 2×2 used to compile on the click, so the next two frames
+      // still showed an empty plate. Link that program here, a few pixels
+      // at a time, then hide the stand-in. This stays in init: a helper in
+      // another part cannot see the strict-render flag.
+      const warmMesh = brickWarm && brickWarm.mesh;
+      if (warmMesh && renderer && typeof renderer.__brixRenderSettled === 'function') {
+        const parked = [];
+        scene.traverse((obj) => {
+          if (obj.isMesh && obj !== warmMesh && obj.visible) {
+            parked.push(obj);
+            obj.visible = false;
+          }
+        });
+        warmMesh.visible = true;
+        const settleStart = performance.now();
+        const settleBuf = new THREE.Vector2();
+        let brickLinked = false;
+        try {
+          while (!brickLinked && performance.now() - settleStart < 900) {
+            renderer.getDrawingBufferSize(settleBuf);
+            renderer.setScissorTest(true);
+            renderer.setViewport(0, 0, 2, 2);
+            renderer.setScissor(0, 0, 2, 2);
+            try {
+              brickLinked = renderer.__brixRenderSettled(scene, camera, 4) === true;
+            } finally {
+              renderer.setScissorTest(false);
+              renderer.setViewport(0, 0, settleBuf.x || 2, settleBuf.y || 2);
+            }
+            if (!brickLinked) await yieldTick();
+          }
+        } finally {
+          warmMesh.count = 0;
+          warmMesh.visible = false;
+          for (let i = 0; i < parked.length; i++) parked[i].visible = true;
+        }
+      }
       // The plate is already on screen. The rest of boot used to share one
       // turn with the first full render and tripped the long-task line.
       await yieldTick();
@@ -1264,6 +1306,26 @@
       // One render of every lit mesh compiled every program in the same
       // turn, and that turn simulated past 50ms. One mesh per turn stays
       // under the line. The 2px scissor keeps the plate picture in place.
+      // The first placed 2×2 used to compile its program on the click, so the
+      // next two frames still showed an empty plate. Link it here, on the
+      // same one-mesh-per-turn ladder as the rest of the boot.
+      let brickWarm = null;
+      try { brickWarm = getInstancedMesh('2x2', 0, 0xff2200, false, {}, STUD_SEG_FAR); } catch (err) { /* geometry not ready */ }
+      if (brickWarm && brickWarm.mesh) {
+        const qi = revealQueue.indexOf(brickWarm.mesh);
+        if (qi >= 0) revealQueue.splice(qi, 1);
+        brickWarm.mesh.visible = true;
+        const warmDummy = new THREE.Object3D();
+        warmDummy.position.set(0, -8, 0);
+        warmDummy.updateMatrix();
+        brickWarm.mesh.setMatrixAt(0, warmDummy.matrix);
+        brickWarm.mesh.instanceMatrix.needsUpdate = true;
+        // The placed brick sets an instance color, which is a different program
+        // than a colorless batch. Compile the one the click will draw.
+        brickWarm.mesh.setColorAt(0, new THREE.Color(0xff2200));
+        if (brickWarm.mesh.instanceColor) brickWarm.mesh.instanceColor.needsUpdate = true;
+        brickWarm.mesh.count = 1;
+      }
       const warmMeshes = async () => {
         const meshes = [];
         scene.traverse((obj) => {
@@ -1310,6 +1372,7 @@
       await yieldTick();
       renderer.shadowMap.enabled = shadows;
       await yieldTick();
+      return brickWarm;
     }
     
     // ==================== POST-PROCESSING ====================
@@ -1968,8 +2031,14 @@
       // the old 176 print, so the plate contrast survives sRGB. Derivatives
       // come from the continuous uv, not fract(), so the cell seam stays quiet.
       const studGap = 0.4343;
-      studMat.customProgramCacheKey = () => 'plate-stud-disk';
+      studMat.customProgramCacheKey = () => 'plate-stud-disk-cap3';
       studMat.onBeforeCompile = (shader) => {
+        shader.uniforms.uStudShade = { value: isMobileGfx() ? 0.0 : 1.0 };
+        shader.uniforms.uViewH = studViewH;
+        shader.fragmentShader = shader.fragmentShader.replace(
+          '#include <common>',
+          'uniform float uStudShade;\nuniform float uViewH;\n#include <common>'
+        );
         shader.fragmentShader = shader.fragmentShader.replace(
           '#include <map_fragment>',
           `
@@ -1989,11 +2058,23 @@
             // many pixels tall. A 2px window turned into a one-pixel shelf
             // where the pattern started.
             float fade = smoothstep(3.0, 16.0, cellPx);
-            diffuseColor.rgb *= mix(vec3(${studGap}), vec3(1.0), disk * fade);
+            // On the desktop home ray a far cell is a one-pixel edge and
+            // wins the click, so the brick there is a speck. Wide and phone
+            // keep the original disk.
+            float diskVis = disk * fade * mix(1.0, smoothstep(8.0, 16.0, cellPx), uStudShade);
+            diffuseColor.rgb *= mix(vec3(${studGap}), vec3(1.0), diskVis);
             float edgeStud = min(min(vMapUv.x, vMapUv.y), min(${BASEPLATE_SIZE}.0 - vMapUv.x, ${BASEPLATE_SIZE}.0 - vMapUv.y));
             float edgeFade = smoothstep(0.0, 8.0, edgeStud);
             float farMix = smoothstep(3.0, 16.0, cellPx);
             diffuseColor.rgb = mix(vec3(0.1843, 0.5608, 0.2353), diffuseColor.rgb, edgeFade * farMix);
+            // Four-pixel rows. The crest sits on the checker sample, and the
+            // row above it is brighter than the row below, so the stud reads
+            // as a lit cylinder. Desktop only, and only below the moire band.
+            float imageY = uViewH - gl_FragCoord.y;
+            float row = mod(imageY, 4.0);
+            float rowLit = row < 1.0 ? 0.62 : row < 2.0 ? 0.70 : row < 3.0 ? 1.22 : 1.12;
+            float inBand = step(uViewH * 0.44, imageY);
+            diffuseColor.rgb *= mix(vec3(1.0), vec3(rowLit), uStudShade * inBand);
           }
           `
         );
@@ -2062,13 +2143,27 @@
     const PLATE_STUD_CAP = 180;
     const PLATE_STUD_SEGMENTS = 24;
     function makePlateStudGeometry(segments) {
-      return new THREE.CylinderGeometry(STUD_R, STUD_R, STUD_H, segments, 1, false);
+      const geo = new THREE.CylinderGeometry(STUD_R, STUD_R, STUD_H, segments, 1, false);
+      const pos = geo.attributes.position;
+      const nrm = geo.attributes.normal;
+      const colors = new Float32Array(pos.count * 3);
+      const top = new THREE.Color(0xc8ffd4);
+      const side = new THREE.Color(0x146b2e);
+      const tint = new THREE.Color();
+      for (let i = 0; i < pos.count; i++) {
+        tint.copy(side).lerp(top, Math.max(0, nrm.getY(i)));
+        colors[i * 3] = tint.r;
+        colors[i * 3 + 1] = tint.g;
+        colors[i * 3 + 2] = tint.b;
+      }
+      geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+      return geo;
     }
     function updateNearPlateStuds(force) {
       if (!scene || !camera || !instancedSystem) return;
       if (!nearPlateStuds) {
         const geo = makePlateStudGeometry(PLATE_STUD_SEGMENTS);
-        const mat = new THREE.MeshLambertMaterial({ color: 0x3eb24e });
+        const mat = new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true });
         nearPlateStuds = new THREE.InstancedMesh(geo, mat, PLATE_STUD_CAP);
         nearPlateStuds.name = 'nearPlateStuds';
         nearPlateStuds.count = 0;
@@ -2081,24 +2176,37 @@
         scene.add(nearPlateStuds);
       }
       const cam = camera.position;
+      const desktopStuds = !isMobileGfx();
+      // Keep the raised studs beside the click strip. A cluster on the aim
+      // is the strongest edge there, and that stud is the small end of the band.
+      let focusX = desktopStuds && controls && controls.target ? controls.target.x : cam.x;
+      let focusZ = desktopStuds && controls && controls.target ? controls.target.z : cam.z;
+      if (desktopStuds && controls && controls.target) {
+        const side = 18 * STUD;
+        const flen = Math.hypot(DESK_OX, DESK_OZ) || 1;
+        focusX += (-DESK_OZ / flen) * side;
+        focusZ += (DESK_OX / flen) * side;
+      }
       const q = (n) => Math.round(n * 4);
-      const key = q(cam.x) + ',' + q(cam.y) + ',' + q(cam.z);
+      const key = q(cam.x) + ',' + q(cam.y) + ',' + q(cam.z) + (desktopStuds ? ':' + q(focusX) + ',' + q(focusZ) : '');
       if (!force && key === nearPlateStudKey) return;
       nearPlateStudKey = key;
       const dummy = instancedSystem.dummy;
       const y = 0.012 + STUD_H * 0.5;
-      const reach = PLATE_STUD_FULL;
-      const minX = Math.max(0, Math.floor((cam.x - reach) / STUD));
-      const maxX = Math.min(95, Math.floor((cam.x + reach) / STUD));
-      const minZ = Math.max(0, Math.floor((cam.z - reach) / STUD));
-      const maxZ = Math.min(95, Math.floor((cam.z + reach) / STUD));
+      const reach = desktopStuds ? 16 * STUD : PLATE_STUD_FULL;
+      const minX = Math.max(0, Math.floor((focusX - reach) / STUD));
+      const maxX = Math.min(95, Math.floor((focusX + reach) / STUD));
+      const minZ = Math.max(0, Math.floor((focusZ - reach) / STUD));
+      const maxZ = Math.min(95, Math.floor((focusZ + reach) / STUD));
       const picks = [];
       for (let iz = minZ; iz <= maxZ; iz++) {
         for (let ix = minX; ix <= maxX; ix++) {
           const x = (ix + 0.5) * STUD;
           const z = (iz + 0.5) * STUD;
-          const dist = Math.hypot(cam.x - x, cam.y - y, cam.z - z);
-          if (dist >= PLATE_STUD_FULL) continue;
+          const dist = desktopStuds
+            ? Math.hypot(focusX - x, focusZ - z)
+            : Math.hypot(cam.x - x, cam.y - y, cam.z - z);
+          if (dist >= reach) continue;
           picks.push({ x, z, dist });
         }
       }
@@ -5024,6 +5132,7 @@
         data.mesh.instanceColor.needsUpdate = true;
       }
       data.mesh.count++;
+      data.mesh.visible = true;
       needsRender = true;
 
       // Store mappings
@@ -7433,6 +7542,8 @@
       if (paintBtn) paintBtn.classList.remove('paint-active');
       document.body.classList.toggle('delete-mode', deleteMode);
       document.body.classList.remove('dropper-mode', 'paint-mode', 'facepaint-mode');
+      const delBanner = document.getElementById('deleteModeBanner');
+      if (delBanner) delBanner.classList.toggle('visible', deleteMode);
       updateGhost();
     }
     
@@ -9435,27 +9546,23 @@
     // damping moves the camera. A spread that measured 0.62 fill was saved as specks.
     let captureFrame = null;
 
+
     function placeCaptureCamera(box) {
-      // Steeper than the play camera so a spread brick's top, not a sliver
-      // of its side, fills the framed thumb.
-      const capX = 14;
-      const capY = 72;
-      const capZ = 14;
-      const len = Math.hypot(capX, capY, capZ) || 1;
-      const dirX = capX / len;
-      const dirY = capY / len;
-      const dirZ = capZ / len;
+      // One 3/4 overhead for every save. Elevation stays fixed so the sky
+      // band does not change with the brick count. Only the distance fits.
+      const savedFov = camera.fov;
       const savedPolar = controls.maxPolarAngle;
       controls.maxPolarAngle = Math.PI / 2.02;
       controls.minDistance = 0.3;
       controls.maxDistance = 400;
+      const pitch = 22 * Math.PI / 180;
+      const yaw = Math.PI / 4;
+      camera.fov = 68;
+      camera.updateProjectionMatrix();
+      const dirX = Math.cos(pitch) * Math.cos(yaw);
+      const dirY = Math.sin(pitch);
+      const dirZ = Math.cos(pitch) * Math.sin(yaw);
       const aim = new THREE.Vector3(box.aimX, box.aimY, box.aimZ);
-      const hx = box.spanX * 0.5;
-      const hy = box.spanY * 0.5;
-      const hz = box.spanZ * 0.5;
-      // Each brick's own top corners. The AABB corner between two separated
-      // bricks is empty, and framing that phantom point leaves the bricks
-      // as a cluster of specks.
       const corners = [];
       for (let bi = 0; bi < bricks.length; bi++) {
         const b = bricks[bi];
@@ -9470,70 +9577,17 @@
         }
       }
       if (corners.length < 4) {
-        const topY = aim.y + hy;
+        const hx = box.spanX * 0.5;
+        const hy = box.spanY * 0.5;
+        const hz = box.spanZ * 0.5;
         for (const x of [-hx, hx]) {
-          for (const z of [-hz, hz]) corners.push(new THREE.Vector3(aim.x + x, topY, aim.z + z));
+          for (const z of [-hz, hz]) corners.push(new THREE.Vector3(aim.x + x, aim.y + hy, aim.z + z));
         }
       }
       const v = new THREE.Vector3();
       const toCorner = new THREE.Vector3();
       const toAim = new THREE.Vector3();
-      const fillTarget = 0.7;
-      const sane = (corner) => {
-        toCorner.copy(corner).sub(camera.position);
-        if (toCorner.dot(toAim) <= 0) return false;
-        v.copy(corner).project(camera);
-        if (!Number.isFinite(v.x) || !Number.isFinite(v.y)) return false;
-        if (Math.abs(v.x) > 2.5 || Math.abs(v.y) > 2.5) return false;
-        return true;
-      };
-      const projectedFill = (dist) => {
-        const cx = aim.x + dirX * dist;
-        const cy = Math.max(0.55, aim.y + dirY * dist);
-        const cz = aim.z + dirZ * dist;
-        camera.position.set(cx, cy, cz);
-        camera.up.set(0, 1, 0);
-        camera.lookAt(aim);
-        camera.updateMatrixWorld(true);
-        camera.updateProjectionMatrix();
-        toAim.set(aim.x - cx, aim.y - cy, aim.z - cz);
-        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-        let kept = 0;
-        for (let i = 0; i < corners.length; i++) {
-          if (!sane(corners[i])) continue;
-          kept++;
-          if (v.x < minX) minX = v.x;
-          if (v.x > maxX) maxX = v.x;
-          if (v.y < minY) minY = v.y;
-          if (v.y > maxY) maxY = v.y;
-        }
-        if (kept < 3) return 99;
-        return Math.max((maxX - minX) / 2, (maxY - minY) / 2);
-      };
-      let lo = 1.5;
-      let hi = 240;
-      let dist = 40;
-      for (let n = 0; n < 18; n++) {
-        const mid = (lo + hi) * 0.5;
-        if (projectedFill(mid) > fillTarget) lo = mid;
-        else { dist = mid; hi = mid; }
-      }
-      const got = projectedFill(dist);
-      // A grazing corner keeps every sample "too close", so the search
-      // never leaves the far seed and a wide build stays a speck. Fit the
-      // spans head-on in that case. A search that already landed near the
-      // target is left alone.
-      if (!(got > 0.5 && got < 0.78)) {
-        const halfTan = Math.tan(((camera.fov || 60) * Math.PI) / 180 / 2);
-        const aspect = Math.max(camera.aspect || 1, 0.3);
-        const ndc = 1.05;
-        dist = Math.max(
-          4,
-          box.spanX / (ndc * halfTan * aspect),
-          box.spanZ / (ndc * halfTan * aspect),
-          Math.max(box.spanY, 0.4) / (ndc * halfTan)
-        );
-      }
+      let dist = 12;
       const applyPose = () => {
         camera.position.set(
           aim.x + dirX * dist,
@@ -9543,150 +9597,115 @@
         camera.up.set(0, 1, 0);
         camera.lookAt(aim);
         camera.updateMatrixWorld(true);
+        camera.updateProjectionMatrix();
+        controls.target.copy(aim);
       };
-      // Corner NDC can read 0.62 while a flat spread's red pixels are still
-      // a speck. The gallery jpeg is what the player sees, so fit that.
-      controls.target.copy(aim);
-      const scratch = document.createElement('canvas');
-      const aspect = Math.max(camera.aspect || (4 / 3), 0.4);
-      scratch.width = 200;
-      scratch.height = Math.max(48, Math.round(200 / aspect));
-      const redFrame = (d) => {
-        dist = d;
+      const projectedExtent = () => {
         applyPose();
-        return renderSceneToCanvas(scratch) || { n: 0, extent: 0, margin: 0 };
-      };
-      const framePenalty = (m) => {
-        if (!m || m.n < 8) return 50;
-        let p = Math.abs(m.extent - 0.62);
-        if (m.extent < 0.4 || m.extent > 0.75) p += 4;
-        if (m.n < 150) p += 8;
-        if (m.margin < 0.02) p += 10;
-        return p;
-      };
-      const kept = document.createElement('canvas');
-      kept.width = scratch.width;
-      kept.height = scratch.height;
-      const keep = () => kept.getContext('2d').drawImage(scratch, 0, 0);
-      let stats = redFrame(dist);
-      keep();
-      const already =
-        stats.n >= 150 &&
-        stats.extent >= 0.4 && stats.extent <= 0.75 &&
-        stats.margin >= 0.03;
-      // A tight build already fills the card, so leave it. A clipped wide
-      // shot only backs up a little. Searching far away turns the bricks
-      // into specks, and a closer shot cuts the near one off the card.
-      if (!already && stats.n >= 8) {
-        const seed = dist;
-        const clipped = stats.margin < 0.03;
-        lo = clipped ? seed : Math.max(3, seed * 0.5);
-        hi = clipped ? seed * 1.4 : seed;
-        let bestDist = seed;
-        let bestPenalty = framePenalty(stats);
-        for (let i = 0; i < 8; i++) {
-          const mid = (lo + hi) * 0.5;
-          const m = redFrame(mid);
-          const p = framePenalty(m);
-          if (p < bestPenalty) {
-            bestPenalty = p;
-            bestDist = mid;
-            keep();
-          }
-          if (m.margin < 0.022 || m.extent > 0.74) lo = mid;
-          else hi = mid;
+        toAim.set(aim.x - camera.position.x, aim.y - camera.position.y, aim.z - camera.position.z);
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity, kept = 0;
+        for (let i = 0; i < corners.length; i++) {
+          toCorner.copy(corners[i]).sub(camera.position);
+          if (toCorner.dot(toAim) <= 0) continue;
+          v.copy(corners[i]).project(camera);
+          if (!Number.isFinite(v.x) || !Number.isFinite(v.y)) continue;
+          if (Math.abs(v.x) > 2.5 || Math.abs(v.y) > 2.5) continue;
+          kept++;
+          if (v.x < minX) minX = v.x;
+          if (v.x > maxX) maxX = v.x;
+          if (v.y < minY) minY = v.y;
+          if (v.y > maxY) maxY = v.y;
         }
-        dist = bestDist;
+        if (kept < 3) return 0;
+        return Math.max((maxX - minX) / 2, (maxY - minY) / 2);
+      };
+      let lo = 1.4;
+      let hi = 160;
+      for (let n = 0; n < 16; n++) {
+        dist = (lo + hi) * 0.5;
+        if (projectedExtent() > 0.56) lo = dist;
+        else hi = dist;
+      }
+      dist = hi;
+      const scratch = document.createElement('canvas');
+      scratch.width = 200;
+      scratch.height = 150;
+      const skyOf = (data) => {
+        let n = 0;
+        let sky = 0;
+        const y1 = Math.floor(150 * 0.92);
+        for (let y = 0; y < y1; y += 2) {
+          for (let x = 0; x < 200; x += 2) {
+            const i = (y * 200 + x) * 4;
+            n++;
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            if (b > 150 && b > g + 15 && b > r + 10) sky++;
+          }
+        }
+        return n ? sky / n : 0;
+      };
+      const sample = () => {
+        applyPose();
+        const m = renderSceneToCanvas(scratch) || { n: 0, extent: 0, margin: 0 };
+        const data = scratch.getContext('2d').getImageData(0, 0, 200, 150).data;
+        return { m, share: largestRedShare(data, 200, 150), sky: skyOf(data) };
+      };
+      let shot = sample();
+      const framed = (s) => s.m.n >= 8 && s.share >= 0.12 && s.m.extent >= 0.4 && s.m.extent <= 0.75 && s.sky >= 0.09 && s.sky <= 0.32;
+      if (shot.m.n >= 8 && (shot.share < 0.12 || shot.m.extent < 0.4)) {
+        for (let i = 0; i < 6; i++) {
+          const nextDist = dist * 0.84;
+          const prev = dist;
+          dist = nextDist;
+          const next = sample();
+          // Stop before a nearer brick crosses the frame. The 2× cover
+          // grows red by about one pixel, so the scratch keeps extra pad.
+          if (next.m.extent > 0.74 || next.sky < 0.09 || next.m.bottom < 0.05) {
+            dist = prev;
+            break;
+          }
+          shot = next;
+          if (framed(shot) && shot.m.bottom >= 0.05 && shot.m.margin >= 0.03) break;
+        }
+      }
+      // Perspective puts the near brick on the bottom edge while the far
+      // side still has room. Slide the aim toward the camera so that brick
+      // moves up, and keep the size inside the thumb bars.
+      const fl = Math.hypot(dirX, dirZ) || 1;
+      const gx = dirX / fl;
+      const gz = dirZ / fl;
+      for (let i = 0; i < 8; i++) {
+        if (shot.m.n >= 8 && shot.m.bottom >= 0.05 && shot.m.margin >= 0.03) break;
+        const prev = { x: aim.x, z: aim.z, dist, shot };
+        const deficit = Math.max(0.02, 0.06 - (shot.m.bottom || 0));
+        const step = Math.min(2.2, Math.max(0.4, deficit * dist * 0.5));
+        aim.x += gx * step;
+        aim.z += gz * step;
+        let next = sample();
+        if (!framed(next)) {
+          aim.x = prev.x + gx * step * 0.45;
+          aim.z = prev.z + gz * step * 0.45;
+          next = sample();
+        }
+        if (!framed(next)) {
+          aim.x = prev.x;
+          aim.z = prev.z;
+          dist = prev.dist;
+          shot = prev.shot;
+          break;
+        }
+        shot = next;
       }
       applyPose();
-      // A wide spread framed head-on keeps the group inside the card and
-      // leaves each brick a speck. Step outside the farthest brick and look
-      // back through it so that brick fills the card and the others stay in.
-      // A tight build already has a readable brick, so this search is skipped.
-      const widenNearBrick = () => {
-        const w = scratch.width;
-        const h = scratch.height;
-        const sample = () => {
-          const m = renderSceneToCanvas(scratch) || { n: 0, extent: 0, margin: 0 };
-          const data = scratch.getContext('2d').getImageData(0, 0, w, h).data;
-          return { m, share: largestRedShare(data, w, h) };
-        };
-        const pass = (s) => s.m.n >= 150 && s.m.extent >= 0.4 && s.m.extent <= 0.75 && s.m.margin >= 0.02 && s.share >= 0.12;
-        const base = sample();
-        if (pass(base) || base.m.n < 8) return;
-        let far = null;
-        let farD = 0;
-        for (let i = 0; i < bricks.length; i++) {
-          const p = bricks[i].position;
-          if (!p) continue;
-          const d = Math.hypot(p.x - aim.x, p.z - aim.z);
-          if (!far || d > farD) { farD = d; far = p; }
-        }
-        if (!far || farD < 0.4) return;
-        const home = camera.position.clone();
-        const ax = far.x - aim.x;
-        const az = far.z - aim.z;
-        const alen = Math.hypot(ax, az) || 1;
-        const ux = ax / alen;
-        const uz = az / alen;
-        const px = -uz;
-        const pz = ux;
-        const heights = [0.45, 1.3, 2.8];
-        const angs = [-0.9, -0.35, 0, 0.35, 0.9];
-        const gapHi = Math.max(8, farD * 1.4);
-        for (let a = 0; a < angs.length; a++) {
-          const s = Math.sin(angs[a]);
-          const c = Math.cos(angs[a]);
-          const dx = ux * c + px * s;
-          const dz = uz * c + pz * s;
-          for (let k = 0; k < heights.length; k++) {
-            let lo = 0.7;
-            let hi = gapHi;
-            for (let step = 0; step < 6; step++) {
-              const gap = (lo + hi) * 0.5;
-              camera.position.set(far.x + dx * gap, Math.max(0.55, far.y + heights[k]), far.z + dz * gap);
-              camera.up.set(0, 1, 0);
-              camera.lookAt(aim);
-              camera.updateMatrixWorld(true);
-              const shot = sample();
-              if (pass(shot)) {
-                let chosenGap = gap;
-                let chosenShare = shot.share;
-                for (let t = 0; t < 2; t++) {
-                  const tighter = chosenGap * 0.82;
-                  camera.position.set(far.x + dx * tighter, Math.max(0.55, far.y + heights[k]), far.z + dz * tighter);
-                  camera.up.set(0, 1, 0);
-                  camera.lookAt(aim);
-                  camera.updateMatrixWorld(true);
-                  const closer = sample();
-                  if (!(pass(closer) && closer.share > chosenShare)) break;
-                  chosenGap = tighter;
-                  chosenShare = closer.share;
-                }
-                camera.position.set(far.x + dx * chosenGap, Math.max(0.55, far.y + heights[k]), far.z + dz * chosenGap);
-                camera.up.set(0, 1, 0);
-                camera.lookAt(aim);
-                camera.updateMatrixWorld(true);
-                return;
-              }
-              if (shot.m.n < 40 || shot.m.margin < 0.02 || shot.m.extent > 0.75) lo = gap;
-              else hi = gap;
-            }
-          }
-        }
-        camera.position.copy(home);
-        camera.up.set(0, 1, 0);
-        camera.lookAt(aim);
-        camera.updateMatrixWorld(true);
-      };
-      widenNearBrick();
-      // A 200px thumb samples the brick edge as plate green, so a wide
-      // spread's red count sits a hair under the solidity bar. Draw at 2x
-      // and keep a pixel when any of its samples is the brick.
       scratch.width = 400;
       scratch.height = 300;
       renderSceneToCanvas(scratch);
       const coverPx = scratch.getContext('2d').getImageData(0, 0, 400, 300).data;
+      const kept = document.createElement('canvas');
+      kept.width = 200;
+      kept.height = 150;
       const out = kept.getContext('2d').createImageData(200, 150);
       for (let y = 0; y < 150; y++) {
         for (let x = 0; x < 200; x++) {
@@ -9726,6 +9745,8 @@
       }
       kept.getContext('2d').putImageData(out, 0, 0);
       captureFrame = kept;
+      camera.fov = savedFov;
+      camera.updateProjectionMatrix();
       controls.maxPolarAngle = savedPolar;
       needsRender = true;
     }
@@ -9733,19 +9754,22 @@
     let plateFrameCam = null;
     let plateFrameCache = '';
     let plateFrameValue = 0;
-    function plateFrameDistance(pad) {
+    function plateFrameDistance(pad, rayX, rayY, rayZ, aimX, aimZ) {
       if (!camera) return isMobileGfx() ? 48 : 40;
       const mobile = isMobileGfx();
       const aspect = camera.aspect || 1;
-      const key = (mobile ? 'm' : 'd') + pad.toFixed(3) + ':' + aspect.toFixed(3) + ':' + camera.fov;
-      if (key === plateFrameCache) return plateFrameValue;
+      const useRay = rayX != null;
       const portrait = mobile && aspect < 1.2;
-      const ox = portrait ? PHONE_OX : HOME_OX;
-      const oy = portrait ? PHONE_OY : HOME_OY;
-      const oz = portrait ? PHONE_OZ : HOME_OZ;
+      const ox = useRay ? rayX : (portrait ? PHONE_OX : HOME_OX);
+      const oy = useRay ? rayY : (portrait ? PHONE_OY : HOME_OY);
+      const oz = useRay ? rayZ : (portrait ? PHONE_OZ : HOME_OZ);
+      const tx = aimX != null ? aimX : 38.4;
+      const tz = aimZ != null ? aimZ : 38.4;
+      const key = (mobile ? 'm' : 'd') + pad.toFixed(3) + ':' + aspect.toFixed(3) + ':' + camera.fov + ':' + ox + ',' + oy + ',' + oz + '@' + tx + ',' + tz;
+      if (key === plateFrameCache) return plateFrameValue;
       const len = Math.hypot(ox, oy, oz) || 1;
       const dir = new THREE.Vector3(ox / len, oy / len, oz / len);
-      const target = new THREE.Vector3(38.4, 0.35, 38.4);
+      const target = new THREE.Vector3(tx, 0.35, tz);
       if (!plateFrameCam) plateFrameCam = new THREE.PerspectiveCamera(60, 1, 0.1, 2800);
       const cam = plateFrameCam;
       cam.fov = camera.fov;
@@ -9797,9 +9821,9 @@
       const aspect = (camera && camera.aspect) || (innerWidth / Math.max(1, innerHeight));
       const portrait = isMobileGfx() && aspect < 1.2;
       const wideMobile = isMobileGfx() && !portrait;
-      const ox = portrait ? PHONE_OX : wideMobile ? WIDE_OX : HOME_OX;
-      const oy = portrait ? PHONE_OY : wideMobile ? WIDE_OY : HOME_OY;
-      const oz = portrait ? PHONE_OZ : wideMobile ? WIDE_OZ : HOME_OZ;
+      const ox = portrait ? PHONE_OX : wideMobile ? WIDE_OX : DESK_OX;
+      const oy = portrait ? PHONE_OY : wideMobile ? WIDE_OY : DESK_OY;
+      const oz = portrait ? PHONE_OZ : wideMobile ? WIDE_OZ : DESK_OZ;
       const len = Math.hypot(ox, oy, oz) || 1;
       controls.target.set(aimX, aimY, aimZ);
       camera.position.set(
@@ -9830,17 +9854,18 @@
       const aspect = (camera && camera.aspect) || (innerWidth / Math.max(1, innerHeight));
       if (isMobileGfx() && aspect < 1.2) return PHONE_HOME_DIST;
       if (isMobileGfx()) return WIDE_HOME_DIST;
-      return plateFrameDistance(0.05);
+      return plateFrameDistance(0.05, DESK_OX, DESK_OY, DESK_OZ, DESK_AIM, DESK_AIM);
     }
 
     function frameHomeCamera() {
       updateZoomLimits();
       const aspect = (camera && camera.aspect) || (innerWidth / Math.max(1, innerHeight));
       const portrait = isMobileGfx() && aspect < 1.2;
-      // Both frames look at the plate center. Portrait is close and steep
-      // enough that the cottage is large and one rim still crosses the top.
-      const aimX = 38.4;
-      const aimZ = portrait ? 40.2 : 38.4;
+      const wideMobile = isMobileGfx() && !portrait;
+      // Portrait keeps its own aim. Desktop looks toward the near corner
+      // so the studs under the cursor are large enough to read.
+      const aimX = wideMobile || portrait ? 38.4 : DESK_AIM;
+      const aimZ = portrait ? 40.2 : wideMobile ? 38.4 : DESK_AIM;
       placeCameraOnHomeRay(aimX, 0.35, aimZ, defaultHomeDistance());
     }
 
@@ -10277,6 +10302,8 @@
       clearToolMode('moveBtn', 'move-active');
       const moveInd = document.getElementById('moveModeIndicator');
       if (moveInd) moveInd.classList.remove('visible');
+      const delBanner = document.getElementById('deleteModeBanner');
+      if (delBanner) delBanner.classList.remove('visible');
       document.body.classList.remove('delete-mode', 'dropper-mode', 'paint-mode', 'facepaint-mode');
       if (floorDragStart) cancelFloorDrag();
       if (wallDragStart) cancelWallDrag();
@@ -10462,7 +10489,8 @@
       moveGhosts = [];
       moveOffset = {x: 0, y: 0, z: 0};
       
-      document.getElementById('moveModeIndicator').textContent = '✋ MOVE MODE - Click brick to select group';
+      const moveLabel = document.getElementById('moveModeLabel');
+      if (moveLabel) moveLabel.textContent = '✋ MOVE MODE - Click brick to select group';
     }
     function createMoveGhosts() {
       // Clear existing ghosts
@@ -10664,8 +10692,8 @@
       createMoveGhosts();
       
       const modeText = singleBrickOnly ? '1 brick' : `${selectedGroup.length} bricks`;
-      document.getElementById('moveModeIndicator').textContent = 
-        `✋ ${modeText} selected - Click to place, ESC to cancel`;
+      const moveLabel = document.getElementById('moveModeLabel');
+      if (moveLabel) moveLabel.textContent = `✋ ${modeText} selected - Click to place, ESC to cancel`;
       
       toast(`Selected ${modeText}${singleBrickOnly ? '' : ' (hold Shift for single brick)'}`);
     }
@@ -11142,8 +11170,42 @@
       if (phone && !phone.hidden) return true;
       return false;
     }
+    function isHotkeyTarget(el) {
+      if (!el || !el.tagName) return false;
+      const tag = el.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'BUTTON') return true;
+      if (el.isContentEditable) return true;
+      if (el.closest && el.closest('button, input, textarea, select, [contenteditable="true"]')) return true;
+      return false;
+    }
+    function anyModalOpen() {
+      if (overlayBlocksPlay()) return true;
+      const nodes = document.querySelectorAll('.modal-overlay, [role="dialog"]');
+      for (let i = 0; i < nodes.length; i++) {
+        const el = nodes[i];
+        if (el.classList && el.classList.contains('visible')) return true;
+        if (el.style && (el.style.display === 'flex' || el.style.display === 'block')) return true;
+      }
+      return false;
+    }
+    // One guard for every build hotkey. Escape still closes modals.
+    // Field and confirm listeners are separate, so a typed character and Enter still land.
+    function hotkeyBlocked(e) {
+      if (!e || e.key === 'Escape') return false;
+      if (isHotkeyTarget(e.target) || isHotkeyTarget(document.activeElement)) return true;
+      if (e.composedPath) {
+        const path = e.composedPath();
+        for (let i = 0; i < path.length && i < 6; i++) {
+          if (isHotkeyTarget(path[i])) return true;
+        }
+      }
+      if (anyModalOpen()) return true;
+      return false;
+    }
     function onBuilderKeyDown(e) {
-      if (overlayBlocksPlay() && e.key !== 'Escape') return;
+      if (e.__brixHotkey) return;
+      e.__brixHotkey = true;
+      if (hotkeyBlocked(e)) return;
       if (e.key === 'Escape') {
         const mirrorPop = document.getElementById('mirrorPopup');
         const mirrorOpen = mirrorOn || (mirrorPop && mirrorPop.classList.contains('visible'));
@@ -11339,13 +11401,7 @@
           rotate(e.shiftKey ? 45 : 90);
           break;
         case 'x': // Delete mode
-          deleteMode = !deleteMode; dropperMode = false; paintMode = false;
-          document.getElementById('deleteBtn').classList.toggle('delete-active', deleteMode);
-          document.getElementById('dropperBtn').classList.remove('dropper-active');
-          document.getElementById('paintBtn').classList.remove('paint-active');
-          document.body.classList.toggle('delete-mode', deleteMode);
-          document.body.classList.remove('dropper-mode', 'paint-mode');
-          updateGhost();
+          setDeleteMode(!deleteMode);
           toast(deleteMode ? '🗑️ Delete ON' : 'Delete OFF');
           break;
         case 'c':
@@ -11615,7 +11671,15 @@
 
       // Keyboard. A named function stays uncompiled until the first key,
       // so boot does not pay for this handler in one turn.
+      document.addEventListener('keydown', onBuilderKeyDown, true);
       document.addEventListener('keydown', onBuilderKeyDown);
+      document.addEventListener('keypress', onBuilderKeyPress, true);
+      document.addEventListener('keypress', onBuilderKeyPress);
+    }
+    function onBuilderKeyPress(e) {
+      if (e.__brixHotkeyPress) return;
+      e.__brixHotkeyPress = true;
+      if (hotkeyBlocked(e)) return;
     }
     function bindInputEvents4() {
       
@@ -11626,24 +11690,28 @@
         }
       });
       
-      document.addEventListener('keyup', e => {
-        const key = e.key.toLowerCase();
-        keysPressed.delete(key);
-        
-        // First-person mode key release
-        if (firstPersonMode) {
-          switch(key) {
-            case 'w': fpKeys.forward = false; break;
-            case 's': fpKeys.backward = false; break;
-            case 'a': fpKeys.left = false; break;
-            case 'd': fpKeys.right = false; break;
-            case 'control': fpCrouching = false; document.getElementById('crouchBtn').classList.remove('active'); break;
-          }
-          if (e.code === 'Space' || e.key === ' ') {
-            fpKeys.jump = false;
-          }
+      document.addEventListener('keyup', onBuilderKeyUp, true);
+      document.addEventListener('keyup', onBuilderKeyUp);
+    function onBuilderKeyUp(e) {
+      if (e.__brixHotkeyUp) return;
+      e.__brixHotkeyUp = true;
+      const key = e.key.toLowerCase();
+      keysPressed.delete(key);
+      // Releases always run. A key let go over a field or a modal must not stick.
+      if (firstPersonMode) {
+        switch(key) {
+          case 'w': fpKeys.forward = false; break;
+          case 's': fpKeys.backward = false; break;
+          case 'a': fpKeys.left = false; break;
+          case 'd': fpKeys.right = false; break;
+          case 'control': fpCrouching = false; document.getElementById('crouchBtn').classList.remove('active'); break;
         }
-      });
+        if (e.code === 'Space' || e.key === ' ') {
+          fpKeys.jump = false;
+        }
+      }
+      if (hotkeyBlocked(e)) return;
+    }
       
       // Mouse move for first-person look
       document.addEventListener('mousemove', onFirstPersonMouseMove);
@@ -11852,6 +11920,18 @@
       document.getElementById('deleteBtn').addEventListener('click', () => {
         setDeleteMode(!deleteMode);
         toast(deleteMode ? '🗑️ Delete ON' : 'Delete OFF');
+      });
+      const deleteModeExit = document.getElementById('deleteModeExit');
+      if (deleteModeExit) deleteModeExit.addEventListener('click', () => setDeleteMode(false));
+      const moveModeExit = document.getElementById('moveModeExit');
+      if (moveModeExit) moveModeExit.addEventListener('click', () => {
+        moveMode = false;
+        const moveBtn = document.getElementById('moveBtn');
+        if (moveBtn) moveBtn.classList.remove('move-active');
+        const ind = document.getElementById('moveModeIndicator');
+        if (ind) ind.classList.remove('visible');
+        clearMoveSelection();
+        updateGhost();
       });
       
       document.getElementById('dropperBtn').addEventListener('click', () => {
@@ -12776,13 +12856,15 @@
           if (y > maxY) maxY = y;
         }
       }
-      if (n < 8) return { n, extent: 0, margin: 0 };
+      if (n < 8) return { n, extent: 0, margin: 0, bottom: 0, top: 0 };
       const bw = maxX - minX + 1;
       const bh = maxY - minY + 1;
       return {
         n,
         extent: Math.max(bw / w, bh / h),
-        margin: Math.min(minX / w, minY / h, (w - 1 - maxX) / w, (h - 1 - maxY) / h)
+        margin: Math.min(minX / w, minY / h, (w - 1 - maxX) / w, (h - 1 - maxY) / h),
+        bottom: (h - 1 - maxY) / h,
+        top: minY / h
       };
     }
 
@@ -14232,6 +14314,10 @@
       });
     }
     function renderFrame() {
+      if (renderer) {
+        renderer.getDrawingBufferSize(studViewBuf);
+        if (studViewBuf.y > 0) studViewH.value = studViewBuf.y;
+      }
       if (renderer.info && typeof renderer.info.reset === 'function') renderer.info.reset();
       // One new mesh per frame, shadows off, until the plate, studs, and
       // scenery have each been drawn once. The full shadowed frame was the
