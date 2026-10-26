@@ -11375,11 +11375,11 @@
       // Zoom button listeners
       document.getElementById('zoomInBtn').addEventListener('click', () => {
         const dist = camera.position.distanceTo(controls.target);
-        zoomCamera(-Math.max(5, dist * 0.12));
+        zoomCamera(-Math.max(5, dist * 0.18));
       });
       document.getElementById('zoomOutBtn').addEventListener('click', () => {
         const dist = camera.position.distanceTo(controls.target);
-        zoomCamera(Math.max(5, dist * 0.12));
+        zoomCamera(Math.max(5, dist * 0.18));
       });
       
       // Hold-to-zoom for buttons
@@ -11434,7 +11434,9 @@
           // A scroll ends on a title. Only a finger that stayed put opens it.
           if (!trayDownSeen || Math.hypot(e.clientX - trayDownX, e.clientY - trayDownY) > 18) return;
           const now = performance.now();
-          if (now - lastToggle < 350) return;
+          // A phone tap can be followed by the click the button also
+          // expects. That second pointerup arrives just after 400 ms.
+          if (now - lastToggle < 700) return;
           lastToggle = now;
           title.parentElement.classList.toggle('collapsed');
         });
