@@ -1,10 +1,4 @@
 
-    .subsection-title::after {
-      content: '▾';
-      margin-left: auto;
-      font-size: 10px;
-      transition: transform 0.2s ease;
-    }
     .subsection.collapsed .subsection-title::after {
       transform: rotate(-90deg);
     }

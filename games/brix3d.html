@@ -75,9 +75,40 @@
       opacity: 1;
       transform: none;
     }
+    /* These boxes are measured before the sliced sheets finish. Without
+       them the phone popup sits at left:calc(50% - 350px) and a cold
+       section title reports 0px. */
+    .brix-park { display: none !important; }
+    .section-title {
+      display: flex;
+      align-items: center;
+      min-height: 18px;
+      font-size: 13px;
+      line-height: 1.2;
+      font-weight: 700;
+    }
+    #controls.tray-open .tray-scroll {
+      display: flex !important;
+      content-visibility: visible;
+    }
+    #controls.tray-open .section,
+    #controls.tray-open .section-title { content-visibility: visible; }
+    .move-mode-indicator.visible { display: flex; align-items: center; gap: 10px; }
+    .move-mode-indicator button { min-width: 44px; min-height: 28px; }
+    @media (max-width: 430px) {
+      .build-tool-popup,
+      .mirror-popup {
+        left: 8px !important;
+        right: 8px !important;
+        top: 64px !important;
+        width: auto !important;
+        max-width: calc(100vw - 16px) !important;
+        min-height: 44px;
+      }
+    }
   </style>
   <!-- brix-sheets -->
-  <script type="application/json" id="brix-sheets">["brix3d-s00.1203d2d84e.css","brix3d-s01.1ae53ec8b4.css","brix3d-s02.b1e834eaea.css","brix3d-s03.b4b0d6bd6d.css","brix3d-s04.1ef212b6b4.css","brix3d-s05.19d698ff23.css","brix3d-s06.7907eab243.css","brix3d-s07.b8ffd2e17a.css","brix3d-s08.63c66a2bdb.css","brix3d-s09.c55fd8aff8.css","brix3d-s10.b5c7fe31d4.css","brix3d-s11.37afb1315b.css","brix3d-s12.44ffbbe78d.css","brix3d-s13.4af45916cb.css","brix3d-s14.6b02a4341a.css","brix3d-s15.5936553273.css","brix3d-s16.dd2f427d00.css","brix3d-s17.7f69e37818.css","brix3d-s18.f290d6283c.css","brix3d-s19.3333517324.css","brix3d-s20.2fb7aa8ee1.css","brix3d-s21.dcb8121881.css","brix3d-s22.e3e7216df2.css","brix3d-s23.cec43714ad.css"]</script>
+  <script type="application/json" id="brix-sheets">["brix3d-s00.1203d2d84e.css","brix3d-s01.e26fd8faac.css","brix3d-s02.f1c64dc195.css","brix3d-s03.b4b0d6bd6d.css","brix3d-s04.1ef212b6b4.css","brix3d-s05.19d698ff23.css","brix3d-s06.7907eab243.css","brix3d-s07.b8ffd2e17a.css","brix3d-s08.63c66a2bdb.css","brix3d-s09.c55fd8aff8.css","brix3d-s10.b5c7fe31d4.css","brix3d-s11.37afb1315b.css","brix3d-s12.44ffbbe78d.css","brix3d-s13.4af45916cb.css","brix3d-s14.6b02a4341a.css","brix3d-s15.5936553273.css","brix3d-s16.dd2f427d00.css","brix3d-s17.7f69e37818.css","brix3d-s18.f290d6283c.css","brix3d-s19.3333517324.css","brix3d-s20.2fb7aa8ee1.css","brix3d-s21.dcb8121881.css","brix3d-s22.e3e7216df2.css","brix3d-s23.cec43714ad.css"]</script>
   <!-- /brix-sheets -->
   <meta property="og:image" content="https://www.cosmicgameshub.com/images/game-brix3d-og.jpg">
   <meta property="og:image:width" content="1280">

@@ -279,7 +279,11 @@
         return this.enabled;
       }
     };
-    
+
+    // Defining the rest of the module in this same turn was an 8ms task,
+    // which simulates past 50ms once the GPU is already warm.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
     // ==================== STATE ====================
     let scene, camera, renderer, controls, raycaster, mouse, groundPlane;
     let composer, bloomPass, ssaoPass, vignettePass, gradeScreenPass;
@@ -874,6 +878,7 @@
       if (!proto || proto.__brixParallel) return;
       proto.__brixParallel = true;
       const param = proto.getProgramParameter;
+      proto.__brixOrigGetProgramParameter = param;
       const ACTIVE_UNIFORMS = 0x8B86;
       const ACTIVE_ATTRIBUTES = 0x8B89;
       function done(gl, program) {
@@ -883,10 +888,41 @@
       }
       proto.getProgramParameter = function (program, pname) {
         if ((pname === ACTIVE_UNIFORMS || pname === ACTIVE_ATTRIBUTES) && program && !done(this, program)) {
+          const list = this.__brixPending || (this.__brixPending = []);
+          if (list.indexOf(program) < 0) list.push(program);
           throw new Error('brix-shader-pending');
         }
         return param.call(this, program, pname);
       };
+    }
+
+    // The 2px warm returns before the driver finishes linking. The next
+    // full strip then waits on that link and simulates past 50ms. Poll the
+    // completion bit across short turns so the wait is not one long task.
+    async function settlePendingShaders() {
+      const gl = renderer && renderer.getContext && renderer.getContext();
+      const proto = typeof WebGL2RenderingContext !== 'undefined' ? WebGL2RenderingContext.prototype : null;
+      const orig = proto && proto.__brixOrigGetProgramParameter;
+      if (!gl || !orig) return;
+      const ext = gl.__brixParallelExt || (gl.__brixParallelExt = gl.getExtension('KHR_parallel_shader_compile'));
+      const list = gl.__brixPending;
+      if (!ext || !list || !list.length) return;
+      for (let n = 0; n < 24; n++) {
+        let pending = false;
+        for (let i = list.length - 1; i >= 0; i--) {
+          let ready = true;
+          try {
+            ready = orig.call(gl, list[i], ext.COMPLETION_STATUS_KHR) === true;
+          } catch (err) {
+            list.splice(i, 1);
+            continue;
+          }
+          if (ready) list.splice(i, 1);
+          else pending = true;
+        }
+        if (!pending) return;
+        await new Promise((resolve) => setTimeout(resolve, 16));
+      }
     }
 
     function viewSize() {
@@ -1399,6 +1435,7 @@
       const warmBuf = new THREE.Vector2();
       renderer.getDrawingBufferSize(warmBuf);
       renderer.setViewport(0, 0, warmBuf.x, warmBuf.y);
+      await settlePendingShaders();
       await yieldTick();
       // One full-canvas draw of the plate was a 38ms GPU stall. Bands keep
       // each present under the simulated 50ms line.
@@ -1430,6 +1467,8 @@
       // same one-mesh-per-turn ladder as the rest of the boot.
       // Geometry, the instanced buffer, and the instance color each simulated
       // past 50ms when they shared a turn. One of those per turn stays under.
+      await yieldTick();
+      try { window.__brixWarmStud = makeStudGeometry(STUD_SEG_FAR, true); } catch (err) { /* geometry not ready */ }
       await yieldTick();
       try { getInstancedGeometry('2x2', 0, STUD_SEG_FAR); } catch (err) { /* geometry not ready */ }
       await yieldTick();
@@ -1481,6 +1520,7 @@
       // The 2px draw returns before the driver finishes the program. The
       // next full strip then syncs that compile and simulates past 50ms.
       await new Promise((resolve) => setTimeout(resolve, 40));
+      await settlePendingShaders();
       // The 2px compile still leaves the first full-height stud draw at
       // 15–35ms. That draw is unattributable GPU time and simulates past
       // 50ms. Paint it in strips while the loader covers the canvas, one
@@ -4911,7 +4951,8 @@
       const indices = [];
       // A flat hot disk is one brightness, so the 2px grid scores a ridge.
       // The center stands above the inner ring. Colors stay rim 0.42 and center 1.
-      const crown = STUD_R * 0.55;
+      // A taller crown clips the lit red face toward yellow on the 1280 swatch.
+      const crown = STUD_R * 0.42;
       const push = (x, z, col, lift) => {
         positions.push(x, y + lift, z);
         colors.push(col, col, col);
@@ -5035,7 +5076,8 @@
       
       // Stud geometries
       if (!t.noStuds && !t.slope && !t.cornerSlope && !t.invCornerSlope) {
-        const studGeo = makeStudGeometry(studSeg, shaded);
+        const studGeo = window.__brixWarmStud || makeStudGeometry(studSeg, shaded);
+        window.__brixWarmStud = null;
         
         for (let sx = 0; sx < w; sx++) {
           for (let sz = 0; sz < d; sz++) {

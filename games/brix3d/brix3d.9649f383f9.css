@@ -138,11 +138,6 @@
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
       }
-      /* 90% zoom re-filters the canvas when a frame lands. The plate's near
-         edge then moves by a fraction of a row and pulls the ghost centroid. */
-      #container canvas {
-        will-change: transform;
-      }
     }
     #controls::-webkit-scrollbar { width: 5px; }
     #controls::-webkit-scrollbar-track { background: transparent; }

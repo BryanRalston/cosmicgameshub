@@ -165,7 +165,10 @@
               var deep = scroll.querySelectorAll('.section, .subsection, .brick-btn');
               var deepList = [];
               for (var d = 0; d < deep.length; d++) deepList.push(deep[d]);
-              parkList(deepList, arm);
+              parkList(deepList, function (node) {
+                if (el.classList.contains('tray-open')) return;
+                arm(node);
+              });
             } else {
               // Every descendant stays display:none. Revealing the shell
               // while labels were still visible was a 30ms text layout.
@@ -205,14 +208,19 @@
             if (t.id === 'fullscreenHint' && t.classList.contains('visible')) releaseCold(t);
             if (t.id === 'controls' && t.classList.contains('tray-open')) {
               var scroll = t.querySelector('.tray-scroll') || t;
-              // Section shells first. Brick buttons stay cold so the name
-              // list does not lay out in this turn. A title that is still
-              // content-visibility:hidden cannot be tapped.
-              var sections = scroll.querySelectorAll('.section');
-              for (var s = 0; s < sections.length; s++) {
-                sections[s].classList.remove('brix-park');
-                sections[s].classList.remove('brix-cold');
+              // The scroll box and each title drop content-visibility in
+              // this same turn. A later thaw left the title at 0px, and
+              // the player check could not tap it. Brick buttons stay
+              // cold so the name list does not lay out here.
+              function showNow(node) {
+                if (!node || !node.classList) return;
+                if (node.classList.contains('brix-park')) node.classList.remove('brix-park');
+                if (node.classList.contains('brix-cold')) node.classList.remove('brix-cold');
               }
+              showNow(t);
+              showNow(scroll);
+              var titles = scroll.querySelectorAll('.section, .section-title');
+              for (var s = 0; s < titles.length; s++) showNow(titles[s]);
               releaseCold(scroll);
             }
             if (t.id === 'tutorialModal' && t.dataset.closed === '1' && t.classList.contains('visible')) {

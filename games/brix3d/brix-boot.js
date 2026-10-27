@@ -40,9 +40,13 @@ function stepSheets() {
   document.head.appendChild(link);
 }
 var preloadAt = 0;
+var sheetsStarted = false;
 setTimeout(function preloadSome() {
   // One turn used to append every sheet. On a busy browser that turn
   // simulated just past 50ms, so the preloads yield every few links.
+  // Stylesheets start after the first batch is queued, on their own turn,
+  // so a cold parse is not added to the preload turn. Critical popup and
+  // title rules are already in the document style and do not wait here.
   var end = Math.min(preloadAt + 6, names.length);
   for (; preloadAt < end; preloadAt++) {
     var preload = document.createElement('link');
@@ -51,8 +55,11 @@ setTimeout(function preloadSome() {
     preload.href = '/games/brix3d/' + names[preloadAt];
     document.head.appendChild(preload);
   }
+  if (!sheetsStarted) {
+    sheetsStarted = true;
+    setTimeout(stepSheets, 0);
+  }
   if (preloadAt < names.length) setTimeout(preloadSome, 0);
-  else setTimeout(stepSheets, 0);
 }, 0);
 }, 0);
 setTimeout(function () {
