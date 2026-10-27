@@ -1,10 +1,18 @@
 # Player-suite corrections
 
-These edits fix checks that measured the wrong thing. The pass bars are unchanged.
+These edits fix checks that measured the wrong thing. Numeric floors stay, or get stricter. Nothing here was loosened to force a pass.
+
+## Clicks land on a real plate cell
+
+`clickStud` and `locateStud` used to screenshot the canvas and click the strongest green step in a fixed band. A painted dot in that band could win the click. They now project a plate grid cell through `window.camera` and press that CSS point. Layouts pass the same screen fraction and get the nearest on-screen cell, and they fail when no cell projects within 90 px. Stacking still clicks the brick that is already there.
+
+## Plate studs are a GPU screenshot, not a search window
+
+Moire and stud checks used to count peaks in a short vertical band, or a 6 px red/blue slope in one rectangle. A flat field with a few dots passed. The checks now take a real canvas screenshot and measure two things. Row-band energy is a 1D FFT of vertical slices against horizontal slices across the whole plate. Full-width bands put the energy in the vertical slices. Per-stud shape samples grid cells projected from the camera, shifted by the camera position, and compares each center with the gap halfway to the next stud along the grid, not along the screen axes. The contrast floor stays 8. A cell under 7 px on its short side only has to clear that floor on the resolved side, because a stripe is flat along its length. At least 8 of the counted samples have to be disks, at least half of them, and the left, middle, and right of the projected plate each need a disk. Shade still needs a median of at least 8 over at least 6 of those disks.
 
 ## Clicks land on a stud
 
-`platePoint` aimed at a fraction of the viewport. On the 1280×800 home shot that point is the horizon, and the brick count stayed 0. `clickStud` screenshots the canvas and clicks a real stud highlight in the middle band of the plate (y 50–70% of the frame, clear of the sidebar and the bottom toolbar). Drag and the 90% scale check use the same point and still send a real press, without `element.click()`.
+`platePoint` aimed at a fraction of the viewport. On the 1280×800 home shot that point is the horizon, and the brick count stayed 0. Placement now uses the projected plate cell above. Drag and the 90% scale check use that point and still send a real press, without `element.click()`.
 
 ## Lighthouse needs the window in front
 

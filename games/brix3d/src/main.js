@@ -24,14 +24,7 @@
     const STUD_SEG_NEAR = 20;
     const STUD_SEG_FAR = 8;
     const STUD_NEAR_DIST = 10;
-    // Drawing-buffer height for the desktop stud shade. The check samples
-    // CSS pixels; the suite's desktop scale is 1, so this matches the shot.
-    const studViewH = { value: 900 };
-    const studViewW = { value: 1600 };
     const studViewBuf = new THREE.Vector2();
-    // 1 on a portrait phone. The plate shader reads this so the wide window
-    // keeps the 0.562 stud gate.
-    const studPortrait = { value: 0 };
     const BASE_Y = 0;
     
     // ==================== SOUND SYSTEM ====================
@@ -957,9 +950,6 @@
       camera.updateProjectionMatrix();
       renderer.setPixelRatio(dpr);
       renderer.setSize(w, h);
-      renderer.getDrawingBufferSize(studViewBuf);
-      if (studViewBuf.x > 0) studViewW.value = studViewBuf.x;
-      if (studViewBuf.y > 0) studViewH.value = studViewBuf.y;
       if (composer) composer.setSize(w, h);
       if (ssaoPass) ssaoPass.setSize(w, h);
       markDirty();
@@ -1018,9 +1008,6 @@
       renderer.setPixelRatio(qualityDpr());
       const plateView = viewSize();
       renderer.setSize(plateView.w, plateView.h);
-      renderer.getDrawingBufferSize(studViewBuf);
-      if (studViewBuf.x > 0) studViewW.value = studViewBuf.x;
-      if (studViewBuf.y > 0) studViewH.value = studViewBuf.y;
       // Shadows stay off until the place stamp. The first setSize then
       // does not allocate the shadow map.
       renderer.shadowMap.enabled = false;
@@ -1397,8 +1384,6 @@
       const plate = window.baseplateRef;
       if (plate) plate.visible = true;
       renderer.getDrawingBufferSize(studViewBuf);
-      if (studViewBuf.y > 0) studViewH.value = studViewBuf.y;
-      if (studViewBuf.x > 0) studViewW.value = studViewBuf.x;
       const fullW = Math.max(2, studViewBuf.x || 2);
       const fullH = Math.max(2, studViewBuf.y || 2);
       const bands = 8;
@@ -2197,18 +2182,50 @@
     const MAX_STUDS = 10000; // For baseplate studs only
     
     function makeBaseplateStudTextures(repeat) {
-      // The map only carries the cell repeat into vMapUv. The disk itself is
-      // drawn in the shader, so boot does not fill a mip pyramid and the
-      // edge stays about one pixel instead of a filtered halo.
-      const map = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1);
+      // One stud cell. The GPU mip chain and anisotropy filter it. The gap
+      // multiplier is the linear decode of the old 176 field print.
+      const size = 128;
+      const gapLin = 0.4343;
+      const rad = STUD_R / STUD;
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      const pixels = ctx.createImageData(size, size);
+      const encode = (c) => {
+        const s = c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(Math.max(c, 0), 1 / 2.4) - 0.055;
+        return Math.max(0, Math.min(255, Math.round(s * 255)));
+      };
+      let sum = 0;
+      const n = size * size;
+      const aa = 1.5 / size;
+      for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+          const u = (x + 0.5) / size - 0.5;
+          const v = (y + 0.5) / size - 0.5;
+          const dist = Math.hypot(u, v);
+          const disk = 1 - Math.min(1, Math.max(0, (dist - (rad - aa)) / (aa * 2)));
+          const lin = gapLin + (1 - gapLin) * disk;
+          sum += lin;
+          const byte = encode(lin);
+          const i = (y * size + x) * 4;
+          pixels.data[i] = byte;
+          pixels.data[i + 1] = byte;
+          pixels.data[i + 2] = byte;
+          pixels.data[i + 3] = 255;
+        }
+      }
+      ctx.putImageData(pixels, 0, 0);
+      const map = new THREE.CanvasTexture(canvas);
       map.colorSpace = THREE.SRGBColorSpace;
       map.wrapS = map.wrapT = THREE.RepeatWrapping;
       map.repeat.set(repeat, repeat);
       map.magFilter = THREE.LinearFilter;
-      map.minFilter = THREE.LinearFilter;
-      map.generateMipmaps = false;
+      map.minFilter = THREE.LinearMipmapLinearFilter;
+      map.generateMipmaps = true;
+      map.anisotropy = renderer.capabilities.getMaxAnisotropy();
       map.needsUpdate = true;
-      return { map };
+      return { map, mean: sum / n };
     }
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -2234,149 +2251,22 @@
         color: 0x3eb24e,
         map: studTex.map
       });
-      // Same radius as the raised cylinder. The gap is the linear decode of
-      // the old 176 print, so the plate contrast survives sRGB. Derivatives
-      // come from the continuous uv, not fract(), so the cell seam stays quiet.
-      const studGap = 0.4343;
-      // Three copies the uniform at compile time, so a later .value write
-      // left x fractions on the 1600 default. The key bakes the buffer size
-      // the program was built with, and a size change compiles again.
-      studMat.customProgramCacheKey = () => {
-        const w = Math.max(1, Math.round(studViewW.value));
-        const h = Math.max(1, Math.round(studViewH.value));
-        const p = (isMobileGfx() && w / h < 1.2) ? 1 : 0;
-        return 'plate-stud-disk-lod68-' + w + 'x' + h + '-' + p;
-      };
+      // When a cell is only a couple of pixels on its short screen axis, the
+      // mip average replaces the disk so the far plate stays flat.
+      const studMean = studTex.mean.toFixed(4);
       studMat.onBeforeCompile = (shader) => {
-        const bakeW = Math.max(1, Math.round(studViewW.value));
-        const bakeH = Math.max(1, Math.round(studViewH.value));
-        const bakeP = (isMobileGfx() && bakeW / bakeH < 1.2) ? 1 : 0;
-        shader.uniforms.uStudShade = { value: isMobileGfx() ? 0.0 : 1.0 };
-        shader.uniforms.uViewH = studViewH;
-        shader.uniforms.uPortrait = studPortrait;
-        shader.fragmentShader = shader.fragmentShader.replace(
-          '#include <common>',
-          'uniform float uStudShade;\nuniform float uViewH;\nuniform float uPortrait;\nconst float uBakeW = ' + bakeW.toFixed(1) + ';\nconst float uBakeH = ' + bakeH.toFixed(1) + ';\nconst float uBakeP = ' + bakeP.toFixed(1) + ';\n#include <common>'
-        );
         shader.fragmentShader = shader.fragmentShader.replace(
           '#include <map_fragment>',
-          `
-          {
-            vec2 uvCell = fract(vMapUv);
-            float dist = length(uvCell - 0.5);
-            float rad = ${STUD_R / STUD};
-            // fwidth of the repeated uv. A clamped 0.0045 edge stayed sharp
-            // when a cell was smaller than a pixel and the horizon rang.
-            float pixel = max(fwidth(vMapUv).x, fwidth(vMapUv).y);
-            float cellPx = 1.0 / max(pixel, 0.0001);
-            // Far disks beat into row-sized bands. Soften only that band.
-            float far = 1.0 - smoothstep(4.0, 18.0, cellPx);
-            float aa = clamp(max(pixel * mix(0.75, 3.2, far), 0.0012), 0.0012, 0.2);
-            float disk = 1.0 - smoothstep(rad - aa, rad + aa, dist);
-            // Disks and the stud green both dissolve while a cell is still
-            // many pixels tall. A 2px window turned into a one-pixel shelf
-            // where the pattern started.
-            float fade = smoothstep(3.0, 16.0, cellPx);
-            float farGate = smoothstep(8.0, 16.0, cellPx);
-            float imageY = uViewH - gl_FragCoord.y;
-            float yN = imageY / max(uViewH, 1.0);
-            // The far band of the home camera aliases into green-grey stripes.
-            // 1280 and the phone share uStudShade 0. Hold their disks off
-            // through the far-plate column (y 0.56) and fully on by the phone
-            // plate row near 0.60. The 1440 window already passed with the
-            // fade finished by y 0.49, so its stud rows are not re-ramped.
-            // Wide 800 and desktop 900 stay on this step. Portrait is the
-            // 844-tall buffer, or the flag set from the home camera.
-            float portrait = max(uPortrait, step(820.0, uViewH) * (1.0 - step(890.0, uViewH)));
-            float farOff = step(0.562, yN);
-            float nearOn = smoothstep(0.40, 0.49, yN);
-            float nearBand = mix(farOff, nearOn, uStudShade);
-            float diskVis = disk * fade * mix(1.0, farGate, uStudShade);
-            diskVis *= nearBand;
-            // 1440 and the phone keep the stud field. A 1920 plate turns
-            // that field into full-width bands, so those studs go flat and
-            // one screen-space edge (below) takes the click.
-            float wideDesk = step(1700.0, uBakeW);
-            float gap = mix(${studGap}, 0.78, uStudShade);
-            float diskLift = diskVis * (1.0 - wideDesk);
-            vec3 studRgb = mix(vec3(gap), vec3(1.0), diskLift);
-            diffuseColor.rgb *= studRgb;
-            float edgeStud = min(min(vMapUv.x, vMapUv.y), min(${BASEPLATE_SIZE}.0 - vMapUv.x, ${BASEPLATE_SIZE}.0 - vMapUv.y));
-            float edgeFade = smoothstep(0.0, 8.0, edgeStud);
-            float farMix = smoothstep(3.0, 16.0, cellPx);
-            diffuseColor.rgb = mix(vec3(0.1843, 0.5608, 0.2353), diffuseColor.rgb, edgeFade * farMix);
-            // Derivatives stay outside any branch. A stud here is about 8px,
-            // so the disk cap is flat at +/-2px and the fade above has already
-            // crushed a pre-mix spike. The crest is drawn after that fade.
-            vec2 screenUp = dFdy(vMapUv);
-            float upLen = max(length(screenUp), 0.0001);
-            vec2 upN = screenUp / upLen;
-            vec2 sideN = vec2(-upN.y, upN.x);
-            float alongPx = dot(uvCell - vec2(0.5), upN) / upLen;
-            float sideDen = max(abs(dot(dFdx(vMapUv), sideN)), 1.0 / max(cellPx, 1.0));
-            float sidePx = abs(dot(uvCell - vec2(0.5), sideN)) / sideDen;
-            // A wide crest turns each stud row into a full-width stripe.
-            // One pixel of extra green is enough for the side thirds and
-            // stays under the row-mean bar. The shade slope is red and blue
-            // only, over the whole near plate, so the 6px sample has a median.
-            float spikeGate = step(4.0, cellPx) * nearBand * uStudShade * (1.0 - wideDesk);
-            float spike = clamp(1.0 - sidePx / 0.32, 0.0, 1.0);
-            diffuseColor.g = min(1.0, diffuseColor.g + 0.28 * spike * spikeGate);
-            float shadeGate = smoothstep(0.36, 0.42, yN) * uStudShade * (1.0 - wideDesk);
-            float phase = fract(imageY / 22.0);
-            float rise = phase < 0.84 ? phase / 0.84 : (1.0 - phase) / 0.16;
-            float up = 1.0 - rise;
-            float encoded = mix(0.05, 0.46, up);
-            float target = encoded <= 0.04045 ? encoded / 12.92 : pow((encoded + 0.055) / 1.055, 2.4);
-            diffuseColor.r = mix(diffuseColor.r, min(diffuseColor.g * 0.82, target), shadeGate);
-            diffuseColor.b = mix(diffuseColor.b, min(diffuseColor.g * 0.78, target * 0.85), shadeGate);
-            // The click finder takes the strongest 2px step in y 0.50-0.70.
-            // The near steps place a brick over 45px. A dot higher in that
-            // band wins the click and stays inside 30-45. The moire sample
-            // is the top of the plate, above this band.
-            float band = smoothstep(0.50, 0.54, yN) * (1.0 - smoothstep(0.58, 0.61, yN));
-            float crest = clamp(1.0 - sidePx / 2.2, 0.0, 1.0);
-            crest *= clamp(1.0 - abs(alongPx) / 2.2, 0.0, 1.0);
-            crest *= band * step(3.0, cellPx) * (1.0 - uStudShade);
-            diffuseColor.g *= mix(1.0, 1.65, crest);
-            // Portrait only. One row of soft studs in the flat middle,
-            // below the moire sample and above the click finder, so the
-            // ground is not a blank field. Wide and desktop skip it.
-            float midRow = smoothstep(0.448, 0.458, yN) * (1.0 - smoothstep(0.474, 0.486, yN));
-            float midDot = 1.0 - smoothstep(0.20, 0.46, dist);
-            diffuseColor.rgb *= mix(1.0, 0.38, midRow * midDot * portrait * (1.0 - uStudShade));
-            // Screen position from the baked buffer. uViewH stays on the
-            // stud bands above.
-            float yS = (uBakeH - gl_FragCoord.y) / max(uBakeH, 1.0);
-            float xS = gl_FragCoord.x / max(uBakeW, 1.0);
-            // 1920 fx 0.55 searches x 0.486-0.569, y 0.50-0.70. One dot
-            // there is a 2px step. A field of dots is a stripe on every row.
-            float deskDx = (xS - 0.525) * uBakeW;
-            float deskDy = (yS - 0.60) * uBakeH;
-            float deskRad = length(vec2(deskDx, deskDy));
-            float deskCore = wideDesk * (1.0 - smoothstep(3.0, 8.0, deskRad));
-            float deskRing = wideDesk * smoothstep(5.0, 9.0, deskRad) * (1.0 - smoothstep(12.0, 18.0, deskRad));
-            diffuseColor.rgb *= mix(1.0, 0.20, deskRing);
-            diffuseColor.g = mix(diffuseColor.g, 1.0, deskCore);
-            // 1440 fx 0.55. The crest's nearest step placed a 46px brick.
-            // One dot higher in the search window wins the click.
-            float nearDot = (1.0 - wideDesk) * uStudShade;
-            float nearDx = (xS - 0.52) * uBakeW;
-            float nearDy = (yS - 0.57) * uBakeH;
-            float nearRad = length(vec2(nearDx, nearDy));
-            diffuseColor.g = mix(diffuseColor.g, 1.0, nearDot * (1.0 - smoothstep(1.5, 3.5, nearRad)));
-            // A 4px dot is easy for the 3px stud scan to skip, so fx 0.62
-            // placed on a stud under the side controls. A short bar at the
-            // 40px row is wide enough to hit and stays left of that column.
-            float stripe = step(0.5, fract(gl_FragCoord.x * 0.25));
-            float phoneOn = uBakeP * (1.0 - uStudShade);
-            float phoneY = smoothstep(0.532, 0.542, yS) * (1.0 - smoothstep(0.552, 0.562, yS));
-            float phoneX = smoothstep(0.40, 0.43, xS) * (1.0 - smoothstep(0.50, 0.53, xS));
-            float phoneMark = phoneOn * phoneY * phoneX;
-            diffuseColor.rgb *= mix(1.0, 0.08, phoneMark * (1.0 - stripe));
-            diffuseColor.g = mix(diffuseColor.g, 1.0, phoneMark * stripe);
-          }
-          `
+          `#ifdef USE_MAP
+            vec4 sampledDiffuseColor = texture2D( map, vMapUv );
+            #ifdef DECODE_VIDEO_TEXTURE
+              sampledDiffuseColor = vec4( mix( pow( sampledDiffuseColor.rgb * 0.9478672986 + vec3( 0.0521327014 ), vec3( 2.4 ) ), sampledDiffuseColor.rgb * 0.0773993808, vec3( lessThanEqual( sampledDiffuseColor.rgb, vec3( 0.04045 ) ) ) ), sampledDiffuseColor.w );
+            #endif
+            float cellMinor = 1.0 / max(min(fwidth(vMapUv.x), fwidth(vMapUv.y)), 0.0001);
+            float keep = smoothstep(1.25, 3.5, cellMinor);
+            sampledDiffuseColor.rgb = mix(vec3(${studMean}), sampledDiffuseColor.rgb, keep);
+            diffuseColor *= sampledDiffuseColor;
+          #endif`
         );
       };
       groundStuds = new THREE.Mesh(new THREE.PlaneGeometry(baseplateWorldSize, baseplateWorldSize), studMat);
@@ -2405,19 +2295,6 @@
       // ending in a hard line near x 1150 where the old 2000-unit plane clipped.
       const grassGeo = new THREE.PlaneGeometry(16000, 16000, 80, 80);
       const grassMat = new THREE.MeshLambertMaterial({ color: 0x2f8f3c });
-      grassMat.customProgramCacheKey = () => 'grass-dim-lod31';
-      grassMat.onBeforeCompile = (shader) => {
-        shader.uniforms.uStudShade = { value: isMobileGfx() ? 0.0 : 1.0 };
-        shader.fragmentShader = shader.fragmentShader.replace(
-          '#include <common>',
-          'uniform float uStudShade;\n#include <common>'
-        );
-        shader.fragmentShader = shader.fragmentShader.replace(
-          '#include <color_fragment>',
-          `#include <color_fragment>
-          diffuseColor.g *= mix(1.0, 0.34, uStudShade);`
-        );
-      };
       const grass = new THREE.Mesh(grassGeo, grassMat);
       grass.rotation.x = -Math.PI / 2;
       grass.position.set(baseplateWorldSize / 2, -0.02, baseplateWorldSize / 2);
@@ -2450,9 +2327,9 @@
 
     let nearPlateStuds = null;
     let nearPlateStudKey = '';
-    // Full-size cylinders only. A height fade left a thin puck on the printed
-    // disk, and that puck read as a ring. The home camera and the share
-    // camera sit past this distance, so those views stay the printed plate.
+    // Phone home sits past this distance, so that view is the printed texture.
+    // A height-only fade left a thin puck on the print, so the outer caps
+    // shrink on every axis instead.
     const PLATE_STUD_FULL = 3.15;
     const PLATE_STUD_CAP = 180;
     const PLATE_STUD_SEGMENTS = 24;
@@ -2491,27 +2368,13 @@
       }
       const cam = camera.position;
       const desktopStuds = !isMobileGfx();
-      // A wide plate's raised studs sit in the stripe sample and print a
-      // row of peaks. The screen mark is the click there. 1440 still
-      // draws the cylinders.
-      if (studViewW.value >= 1700) {
-        if (nearPlateStuds.count !== 0) {
-          nearPlateStuds.count = 0;
-          nearPlateStuds.instanceMatrix.needsUpdate = true;
-          markDirty();
-        }
-        nearPlateStudKey = 'wide';
-        return;
-      }
-      // Keep the raised studs beside the click strip. A cluster on the aim
-      // is the strongest edge there, and that stud is the small end of the band.
-      let focusX = desktopStuds && controls && controls.target ? controls.target.x : cam.x;
-      let focusZ = desktopStuds && controls && controls.target ? controls.target.z : cam.z;
+      // Raised cylinders follow the look-at point. The printed texture covers
+      // the rest of the plate, and the outer cylinders shrink into it.
+      let focusX = cam.x;
+      let focusZ = cam.z;
       if (desktopStuds && controls && controls.target) {
-        const side = 18 * STUD;
-        const flen = Math.hypot(DESK_OX, DESK_OZ) || 1;
-        focusX += (-DESK_OZ / flen) * side;
-        focusZ += (DESK_OX / flen) * side;
+        focusX = controls.target.x;
+        focusZ = controls.target.z;
       }
       const q = (n) => Math.round(n * 4);
       const key = q(cam.x) + ',' + q(cam.y) + ',' + q(cam.z) + (desktopStuds ? ':' + q(focusX) + ',' + q(focusZ) : '');
@@ -2520,6 +2383,9 @@
       const dummy = instancedSystem.dummy;
       const y = 0.012 + STUD_H * 0.5;
       const reach = desktopStuds ? 16 * STUD : PLATE_STUD_FULL;
+      const fov = (camera.fov || 60) * Math.PI / 180;
+      const cssH = (renderer && renderer.domElement && renderer.domElement.clientHeight) || 900;
+      const focal = (cssH * 0.5) / Math.max(0.2, Math.tan(fov * 0.5));
       const minX = Math.max(0, Math.floor((focusX - reach) / STUD));
       const maxX = Math.min(95, Math.floor((focusX + reach) / STUD));
       const minZ = Math.max(0, Math.floor((focusZ - reach) / STUD));
@@ -2533,17 +2399,23 @@
             ? Math.hypot(focusX - x, focusZ - z)
             : Math.hypot(cam.x - x, cam.y - y, cam.z - z);
           if (dist >= reach) continue;
-          picks.push({ x, z, dist });
+          const distCam = Math.hypot(cam.x - x, cam.y - y, cam.z - z);
+          const px = STUD_H / Math.max(distCam, 0.05) * focal;
+          // A cap under about 5 px smears into the printed stud. Fade it in
+          // as the camera gets close enough for the cylinder to read.
+          if (px < 5) continue;
+          picks.push({ x, z, dist, px });
         }
       }
       picks.sort((a, b) => a.dist - b.dist);
       const n = Math.min(PLATE_STUD_CAP, picks.length);
       for (let i = 0; i < n; i++) {
         const p = picks[i];
+        const s = Math.min(1, Math.max(0.2, (p.px - 5) / 8));
         // Bury the base in the plate so the cap edge does not draw a ring.
         dummy.position.set(p.x, 0.012 - 0.02 + y, p.z);
         dummy.rotation.set(0, 0, 0);
-        dummy.scale.set(1, 1, 1);
+        dummy.scale.set(s, s, s);
         dummy.updateMatrix();
         nearPlateStuds.setMatrixAt(i, dummy.matrix);
       }
@@ -15648,13 +15520,6 @@
       });
     }
     function renderFrame() {
-      if (renderer) {
-        renderer.getDrawingBufferSize(studViewBuf);
-        if (studViewBuf.y > 0) studViewH.value = studViewBuf.y;
-      if (studViewBuf.x > 0) studViewW.value = studViewBuf.x;
-        const studAspect = (camera && camera.aspect) || innerWidth / Math.max(1, innerHeight);
-        studPortrait.value = (isMobileGfx() && studAspect < 1.2) ? 1 : 0;
-      }
       if (renderer.info && typeof renderer.info.reset === 'function') renderer.info.reset();
       // One new mesh per frame, shadows off, until the plate, studs, and
       // scenery have each been drawn once. The full shadowed frame was the

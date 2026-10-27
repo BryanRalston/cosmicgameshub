@@ -422,50 +422,71 @@ async function brickCount(page) {
   return parseInt(t || '0', 10) || 0;
 }
 
-function findStud(img, fx) {
-  const w = img.width;
-  const h = img.height;
-  const data = img.data;
-  const y0 = Math.floor(h * 0.5);
-  const y1 = Math.floor(h * 0.7);
-  const xMid = Math.floor(w * (0.22 + fx * 0.56));
-  let best = null;
-  let bestScore = 0;
-  for (let y = y0; y < y1; y += 3) {
-    for (let x = Math.max(2, xMid - 80); x < Math.min(w - 2, xMid + 80); x += 3) {
-      const i = (y * w + x) * 4;
-      const g = data[i + 1];
-      if (!(g > 80 && g > data[i] && g > data[i + 2] + 4)) continue;
-      const diff = Math.abs(data[(y * w + x + 2) * 4 + 1] - g);
-      if (diff > bestScore) {
-        bestScore = diff;
-        best = { x, y };
+async function projectPlateCell(page, fx, fy) {
+  return page.evaluate(({ fx, fy }) => {
+    const cam = window.camera;
+    const THREE = window.THREE;
+    const canvas = document.querySelector('#container canvas');
+    if (!cam || !THREE || !canvas) return null;
+    cam.updateMatrixWorld();
+    const STUD = 0.8;
+    const N = 96;
+    const rect = canvas.getBoundingClientRect();
+    const world = new THREE.Vector3();
+    const ndc = new THREE.Vector3();
+    const wantX = rect.left + fx * rect.width;
+    const wantY = rect.top + fy * rect.height;
+    let best = null;
+    let bestD = Infinity;
+    for (let gz = 0; gz < N; gz++) {
+      for (let gx = 0; gx < N; gx++) {
+        world.set((gx + 0.5) * STUD, 0.2, (gz + 0.5) * STUD);
+        ndc.copy(world).applyMatrix4(cam.matrixWorldInverse);
+        if (ndc.z > -0.05) continue;
+        ndc.copy(world).project(cam);
+        if (!Number.isFinite(ndc.x) || !Number.isFinite(ndc.y) || ndc.z < -1 || ndc.z > 1) continue;
+        const nx = ndc.x * 0.5 + 0.5;
+        const ny = -ndc.y * 0.5 + 0.5;
+        const sx = rect.left + nx * rect.width;
+        const sy = rect.top + ny * rect.height;
+        if (sx < rect.left + 2 || sy < rect.top + 2 || sx > rect.right - 2 || sy > rect.bottom - 2) continue;
+        const d = (sx - wantX) * (sx - wantX) + (sy - wantY) * (sy - wantY);
+        if (d < bestD) {
+          bestD = d;
+          best = { x: sx, y: sy, gx, gz };
+        }
       }
     }
-  }
-  return bestScore > 12 ? best : null;
+    if (!best || bestD > 90 * 90) return null;
+    return best;
+  }, { fx: fx == null ? 0.5 : fx, fy: fy == null ? 0.62 : fy });
+}
+
+async function placeProjected(page, fx, fy) {
+  const hit = await projectPlateCell(page, fx, fy);
+  if (!hit) throw new Error('no plate cell at ' + fx + ',' + fy);
+  await placeAt(page, hit.x, hit.y);
+  return hit;
 }
 
 async function clickStud(page, fx, stack) {
-  const shot = await grabCanvas(page);
-  let pt = null;
   if (stack) {
+    const shot = await grabCanvas(page);
     const blob = brickBlob(shot.img, plateInset(page, shot));
-    if (blob.n > 12) pt = { x: blob.cx, y: blob.cy };
+    if (blob.n > 12) {
+      const x = shot.clip.x + blob.cx / shot.dpr;
+      const y = shot.clip.y + blob.cy / shot.dpr;
+      await placeAt(page, x, y);
+      return { x, y };
+    }
   }
-  if (!pt) pt = findStud(shot.img, fx);
-  if (!pt) throw new Error('no stud in view at ' + fx);
-  const x = shot.clip.x + pt.x / shot.dpr;
-  const y = shot.clip.y + pt.y / shot.dpr;
-  await placeAt(page, x, y);
-  return { x, y };
+  return placeProjected(page, fx, 0.62);
 }
 
 async function locateStud(page, fx) {
-  const shot = await grabCanvas(page);
-  const pt = findStud(shot.img, fx);
-  if (!pt) throw new Error('no stud in view at ' + fx);
-  return { x: shot.clip.x + pt.x / shot.dpr, y: shot.clip.y + pt.y / shot.dpr };
+  const hit = await projectPlateCell(page, fx, 0.62);
+  if (!hit) throw new Error('no plate cell in view at ' + fx);
+  return { x: hit.x, y: hit.y };
 }
 
 async function waitGrown(page, before, ms) {
@@ -742,41 +763,282 @@ function plateEdgeRows(img, insetLeft) {
   return evidence;
 }
 
-function moirePeaks(img) {
+function isPlateGreen(r, g, b) {
+  return g > 55 && g > r + 6 && g > b + 6;
+}
+
+function fftAc(values) {
+  const n = values.length;
+  if (n < 16) return { ac: 0, band: 0 };
+  let mean = 0;
+  for (let i = 0; i < n; i++) mean += values[i];
+  mean /= n;
+  const k0 = Math.max(1, Math.floor(n / 48));
+  const k1 = Math.min(Math.floor(n / 2), Math.ceil(n / 6));
+  let ac = 0;
+  let band = 0;
+  for (let k = 1; k <= Math.floor(n / 2); k++) {
+    let re = 0;
+    let im = 0;
+    const ang = -2 * Math.PI * k / n;
+    for (let i = 0; i < n; i++) {
+      const w = values[i] - mean;
+      re += w * Math.cos(ang * i);
+      im += w * Math.sin(ang * i);
+    }
+    const power = re * re + im * im;
+    ac += power;
+    if (k >= k0 && k <= k1) band += power;
+  }
+  return { ac, band };
+}
+
+function wholePlateBands(img) {
   const { width, height, data } = img;
-  let y0 = 0;
-  for (let y = 0; y < height; y++) {
-    let g = 0;
-    for (let x = 0; x < width; x += 4) {
-      const i = (y * width + x) * 4;
-      if (data[i + 1] > data[i] + 8 && data[i + 1] > data[i + 2] + 8) g++;
-    }
-    if (g > width / 10) { y0 = y; break; }
-  }
-  const y1 = Math.min(height - 1, y0 + Math.floor(height * 0.22));
+  const lumAt = (x, y) => {
+    const i = (y * width + x) * 4;
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    if (!isPlateGreen(r, g, b)) return null;
+    return r * 0.3 + g * 0.5 + b * 0.2;
+  };
+  let top = -1;
+  let bot = -1;
   const means = [];
-  for (let y = y0; y <= y1; y++) {
-    let s = 0;
+  const vars = [];
+  for (let y = 0; y < height; y++) {
     let n = 0;
+    let s = 0;
+    let s2 = 0;
     for (let x = 0; x < width; x += 2) {
-      s += data[(y * width + x) * 4 + 1];
+      const lum = lumAt(x, y);
+      if (lum == null) continue;
       n++;
+      s += lum;
+      s2 += lum * lum;
     }
-    means.push(s / n);
+    if (n <= width / 16) continue;
+    const mean = s / n;
+    means.push(mean);
+    vars.push(Math.max(0, s2 / n - mean * mean));
+    if (top < 0) top = y;
+    bot = y;
   }
-  let peaks = 0;
-  let prevSign = 0;
-  let prev = means[0] || 0;
-  for (let i = 1; i < means.length; i++) {
-    const d = means[i] - means[i - 1];
-    const sign = d > 1.2 ? 1 : d < -1.2 ? -1 : 0;
-    if (sign && prevSign && sign !== prevSign && Math.abs(means[i] - prev) > 5) {
-      peaks++;
-      prev = means[i];
+  let flatPeaks = 0;
+  if (means.length >= 8) {
+    let prevSign = 0;
+    let prev = means[0];
+    for (let i = 1; i < means.length; i++) {
+      const d = means[i] - means[i - 1];
+      const sign = d > 1.2 ? 1 : d < -1.2 ? -1 : 0;
+      if (sign && prevSign && sign !== prevSign && Math.abs(means[i] - prev) > 5) {
+        if (vars[i] < 12 && vars[i - 1] < 12) flatPeaks++;
+        prev = means[i];
+      }
+      if (sign) prevSign = sign;
     }
-    if (sign) prevSign = sign;
   }
-  return peaks;
+  const ySignals = [];
+  const xSignals = [];
+  if (top >= 0 && bot - top >= 24) {
+    const yStep = Math.max(1, Math.floor((bot - top) / 180));
+    for (let col = 0; col < 8; col++) {
+      const x = Math.floor(width * (0.16 + col * 0.09));
+      const column = [];
+      for (let y = top; y <= bot; y += yStep) {
+        const lum = lumAt(Math.min(width - 1, x), Math.min(height - 1, y));
+        column.push(lum == null ? 0 : lum);
+      }
+      if (column.length >= 16) ySignals.push(fftAc(column));
+    }
+    const x0 = Math.floor(width * 0.08);
+    const x1 = Math.floor(width * 0.92);
+    const xStep = Math.max(1, Math.floor((x1 - x0) / 180));
+    for (let row = 0; row < 8; row++) {
+      const y = Math.floor(top + (bot - top) * (0.12 + row * 0.1));
+      const across = [];
+      for (let x = x0; x <= x1; x += xStep) {
+        const lum = lumAt(Math.min(width - 1, x), Math.min(height - 1, y));
+        across.push(lum == null ? 0 : lum);
+      }
+      if (across.length >= 16) xSignals.push(fftAc(across));
+    }
+  }
+  const sumBand = (list) => list.reduce((s, item) => s + item.band, 0);
+  const yBand = sumBand(ySignals);
+  const xBand = sumBand(xSignals);
+  const band = (yBand + xBand) > 0 ? yBand / (yBand + xBand) : 0;
+  return { rows: means.length, peaks: flatPeaks, band };
+}
+
+function moirePeaks(img) {
+  return wholePlateBands(img).peaks;
+}
+
+async function plateStudField(page, shot) {
+  const img = shot.img;
+  const cells = await page.evaluate(() => {
+    const cam = window.camera;
+    const THREE = window.THREE;
+    const canvas = document.querySelector('#container canvas');
+    if (!cam || !THREE || !canvas) return { cells: [], plateMin: 0, plateMax: 0 };
+    cam.updateMatrixWorld();
+    const STUD = 0.8;
+    const N = 96;
+    const rect = canvas.getBoundingClientRect();
+    const world = new THREE.Vector3();
+    const ndc = new THREE.Vector3();
+    const salt = Math.abs(Math.round(cam.position.x * 4) + Math.round(cam.position.z * 7) + Math.round(cam.position.y)) % 3;
+    const hits = [];
+    let plateMin = 1;
+    let plateMax = 0;
+    const origin = 2 + salt;
+    for (let gz = origin; gz < N - 2; gz += 4) {
+      for (let gx = origin; gx < N - 2; gx += 4) {
+        world.set((gx + 0.5) * STUD, 0.08, (gz + 0.5) * STUD);
+        ndc.copy(world).applyMatrix4(cam.matrixWorldInverse);
+        if (ndc.z > -0.2) continue;
+        ndc.copy(world).project(cam);
+        if (!Number.isFinite(ndc.x) || ndc.z < -1 || ndc.z > 1) continue;
+        const nx = ndc.x * 0.5 + 0.5;
+        const ny = -ndc.y * 0.5 + 0.5;
+        if (nx < 0.02 || nx > 0.98 || ny < 0.02 || ny > 0.98) continue;
+        if (nx < plateMin) plateMin = nx;
+        if (nx > plateMax) plateMax = nx;
+        if (nx < 0.08 || nx > 0.92 || ny < 0.08 || ny > 0.92) continue;
+        const right = new THREE.Vector3((gx + 1.5) * STUD, 0.08, (gz + 0.5) * STUD).project(cam);
+        const down = new THREE.Vector3((gx + 0.5) * STUD, 0.08, (gz + 1.5) * STUD).project(cam);
+        const rx = (right.x * 0.5 + 0.5 - nx) * rect.width;
+        const ry = (-right.y * 0.5 + 0.5 - ny) * rect.height;
+        const zx = (down.x * 0.5 + 0.5 - nx) * rect.width;
+        const zy = (-down.y * 0.5 + 0.5 - ny) * rect.height;
+        const pitchX = Math.hypot(rx, ry);
+        const pitchY = Math.hypot(zx, zy);
+        if (pitchX < 5 || pitchY < 4) continue;
+        // Halfway to the next stud is the gap between disks. Screen axes are
+        // diagonal to the grid at the home camera, so a horizontal step misses it.
+        hits.push({ nx, ny, pitchX, pitchY, gx: rx * 0.5, gy: ry * 0.5, zx: zx * 0.5, zy: zy * 0.5 });
+      }
+    }
+    const span = Math.max(0.001, plateMax - plateMin);
+    const buckets = [[], [], []];
+    for (let i = 0; i < hits.length; i++) {
+      const side = Math.min(2, Math.max(0, Math.floor(((hits[i].nx - plateMin) / span) * 3)));
+      buckets[side].push(hits[i]);
+    }
+    const picked = [];
+    for (let b = 0; b < 3; b++) {
+      const bucket = buckets[b];
+      const n = Math.min(6, bucket.length);
+      if (bucket.length <= 6) {
+        for (let i = 0; i < bucket.length; i++) picked.push(bucket[i]);
+        continue;
+      }
+      const step = bucket.length / n;
+      for (let i = 0; i < n; i++) picked.push(bucket[Math.min(bucket.length - 1, Math.floor((i + 0.5) * step))]);
+    }
+    return { cells: picked, plateMin, plateMax };
+  });
+  const plateMin = cells.plateMin;
+  const plateMax = cells.plateMax;
+  const samples = cells.cells || [];
+  const bands = wholePlateBands(img);
+  const lum = (x, y) => {
+    if (x < 0 || y < 0 || x >= img.width || y >= img.height) return null;
+    const i = (y * img.width + x) * 4;
+    const r = img.data[i];
+    const g = img.data[i + 1];
+    const b = img.data[i + 2];
+    if (!isPlateGreen(r, g, b)) return null;
+    return r * 0.3 + g * 0.5 + b * 0.2;
+  };
+  const shades = [];
+  let disks = 0;
+  for (let i = 0; i < samples.length; i++) {
+    const cell = samples[i];
+    const x = Math.round(cell.nx * img.width);
+    const y = Math.round(cell.ny * img.height);
+    const s = shot.dpr;
+    const at = (ox, oy) => lum(Math.round(x + ox * s), Math.round(y + oy * s));
+    const c = lum(x, y);
+    const left = at(-cell.gx, -cell.gy);
+    const right = at(cell.gx, cell.gy);
+    const up = at(-cell.zx, -cell.zy);
+    const down = at(cell.zx, cell.zy);
+    const axis = (a, b) => {
+      if (c == null) return null;
+      const vals = [];
+      if (a != null) vals.push(c - a);
+      if (b != null) vals.push(c - b);
+      if (!vals.length) return null;
+      return Math.min.apply(null, vals);
+    };
+    const hx = axis(left, right);
+    const vy = axis(up, down);
+    if (hx == null || vy == null) {
+      samples[i].skip = true;
+      continue;
+    }
+    // A cell under about 7 px on its short axis cannot show a gap on both
+    // axes. It still has to be brighter than the gap along the resolved axis,
+    // which a full-width stripe is not.
+    const shortPitch = Math.min(cell.pitchX, cell.pitchY);
+    const longC = cell.pitchX >= cell.pitchY ? hx : vy;
+    const disk = shortPitch >= 7 ? (hx >= 8 && vy >= 8) : longC >= 8;
+    samples[i].disk = disk;
+    if (disk) {
+      disks++;
+      shades.push(shortPitch >= 7 ? Math.min(hx, vy) : longC);
+    }
+  }
+  shades.sort((a, b) => a - b);
+  const shade = shades.length ? shades[Math.floor(shades.length / 2)] : 0;
+  const spanNx = Math.max(0.001, plateMax - plateMin);
+  const sides = [
+    { samples: 0, disks: 0 },
+    { samples: 0, disks: 0 },
+    { samples: 0, disks: 0 }
+  ];
+  let counted = 0;
+  for (let i = 0; i < samples.length; i++) {
+    if (samples[i].skip) continue;
+    counted++;
+    const side = Math.min(2, Math.max(0, Math.floor(((samples[i].nx - plateMin) / spanNx) * 3)));
+    sides[side].samples++;
+    if (samples[i].disk) sides[side].disks++;
+  }
+  return {
+    samples: counted,
+    disks,
+    shade,
+    shadeN: shades.length,
+    band: bands.band,
+    peaks: bands.peaks,
+    rows: bands.rows,
+    sides
+  };
+}
+
+function studFieldProblems(field) {
+  const problems = [];
+  if (!field || field.samples < 8) {
+    problems.push('plate samples ' + (field ? field.samples : 0));
+    return problems;
+  }
+  if (field.disks < 8 || field.disks * 2 < field.samples) problems.push('stud disks ' + field.disks + '/' + field.samples);
+  if (!(field.band <= 0.68)) problems.push('row-band energy ' + field.band.toFixed(2));
+  if (!(field.shade >= 8 && field.shadeN >= 6)) problems.push('stud shade ' + field.shade.toFixed(1) + ' n ' + field.shadeN);
+  const sideNames = ['left', 'mid', 'right'];
+  for (let i = 0; i < 3; i++) {
+    const side = field.sides && field.sides[i];
+    const disksOnSide = side ? side.disks : 0;
+    const samplesOnSide = side ? side.samples : 0;
+    if (samplesOnSide < 1 || disksOnSide < 1 || disksOnSide * 2 < samplesOnSide) {
+      problems.push(sideNames[i] + ' studs ' + disksOnSide + '/' + samplesOnSide);
+    }
+  }
+  return problems;
 }
 
 function stripeScore(img) {
@@ -873,76 +1135,12 @@ function plateFraction(img) {
   return n ? plate / n : 0;
 }
 
-function studShade(img) {
-  const { width, height, data } = img;
-  const y0 = Math.floor(height * 0.38);
-  const y1 = Math.floor(height * 0.72);
-  const x0 = Math.floor(width * 0.38);
-  const x1 = Math.floor(width * 0.78);
-  const diffs = [];
-  const lum = (p) => {
-    const k = p * 4;
-    return data[k] * 0.3 + data[k + 1] * 0.5 + data[k + 2] * 0.2;
-  };
-  for (let y = y0; y < y1; y += 4) {
-    for (let x = x0; x < x1; x += 4) {
-      const i = (y * width + x) * 4;
-      const g = data[i + 1];
-      if (g < 100 || g < data[i] + 8 || g < data[i + 2] + 8) continue;
-      let peak = true;
-      const around = [[2, 0], [-2, 0], [0, 2], [0, -2]];
-      for (let k = 0; k < around.length; k++) {
-        const xx = x + around[k][0];
-        const yy = y + around[k][1];
-        if (xx < 1 || yy < 1 || xx >= width - 1 || yy >= height - 1) { peak = false; break; }
-        const j = (yy * width + xx) * 4;
-        if (data[j + 1] > g + 1) { peak = false; break; }
-      }
-      if (!peak || y < 4 || y + 3 >= height) continue;
-      diffs.push(lum((y - 3) * width + x) - lum((y + 3) * width + x));
-    }
-  }
-  if (diffs.length < 6) return { n: diffs.length, shade: 0 };
-  diffs.sort((a, b) => a - b);
-  return { n: diffs.length, shade: diffs[Math.floor(diffs.length / 2)] };
-}
-
-function signPeaks(means) {
-  let peaks = 0;
-  let prevSign = 0;
-  let prev = means[0] || 0;
-  for (let i = 1; i < means.length; i++) {
-    const d = means[i] - means[i - 1];
-    const sign = d > 1.2 ? 1 : d < -1.2 ? -1 : 0;
-    if (sign && prevSign && sign !== prevSign && Math.abs(means[i] - prev) > 5) {
-      peaks++;
-      prev = means[i];
-    }
-    if (sign) prevSign = sign;
-  }
-  return peaks;
-}
-
 function plateBand(img) {
   const { width, height, data } = img;
-  const y0 = Math.floor(height * 0.5);
-  const y1 = Math.floor(height * 0.88);
-  const x0 = Math.floor(width * 0.12);
-  const x1 = Math.floor(width * 0.88);
-  const means = [];
-  for (let y = y0; y < y1; y++) {
-    let s = 0;
-    let n = 0;
-    for (let x = x0; x < x1; x += 2) {
-      const i = (y * width + x) * 4;
-      const g = data[i + 1];
-      if (g > 60 && g > data[i] + 6 && g > data[i + 2] + 6) {
-        s += g;
-        n++;
-      }
-    }
-    if (n > (x1 - x0) / 8) means.push(s / n);
-  }
+  const span = plateSpan(img);
+  const y0 = span.top >= 0 ? span.top : Math.floor(height * 0.5);
+  const y1 = span.bot >= 0 ? span.bot : Math.floor(height * 0.88);
+  const whole = wholePlateBands(img);
   function xPeaks(xa, xb, y) {
     let n = 0;
     let prev = 0;
@@ -962,11 +1160,15 @@ function plateBand(img) {
   for (const fx of [0.14, 0.4, 0.66]) {
     const xa = Math.floor(width * fx);
     const xb = Math.floor(width * (fx + 0.2));
-    let best = 0;
-    for (const fy of [0.62, 0.74]) best = Math.max(best, xPeaks(xa, xb, Math.floor(height * fy)));
-    thirds.push(best);
+    const scores = [];
+    for (let k = 1; k <= 5; k++) {
+      const y = Math.floor(y0 + (y1 - y0) * (k / 6));
+      scores.push(xPeaks(xa, xb, y));
+    }
+    scores.sort((a, b) => a - b);
+    thirds.push(scores[Math.floor(scores.length / 2)]);
   }
-  return { peaks: signPeaks(means), rows: means.length, thirds };
+  return { peaks: whole.peaks, rows: whole.rows, thirds, band: whole.band };
 }
 
 function brickRelief(img, blob) {
@@ -1135,29 +1337,6 @@ function mapPointer(space, shot, ix, iy) {
     x: originX + ix / dpr / pageScale,
     y: originY + iy / dpr / pageScale
   };
-}
-
-function findStudNear(img, fx, fy) {
-  const w = img.width;
-  const h = img.height;
-  const data = img.data;
-  const xMid = Math.floor(w * fx);
-  const yMid = Math.floor(h * fy);
-  let best = null;
-  let bestScore = 0;
-  for (let y = Math.max(2, yMid - 56); y < Math.min(h - 2, yMid + 56); y += 2) {
-    for (let x = Math.max(2, xMid - 56); x < Math.min(w - 2, xMid + 56); x += 2) {
-      const i = (y * w + x) * 4;
-      const g = data[i + 1];
-      if (!(g > 80 && g > data[i] && g > data[i + 2] + 4)) continue;
-      const diff = Math.abs(data[(y * w + x + 2) * 4 + 1] - g);
-      if (diff > bestScore) {
-        bestScore = diff;
-        best = { x, y };
-      }
-    }
-  }
-  return bestScore > 12 ? best : null;
 }
 
 function pixelShift(before, after) {
@@ -2182,6 +2361,8 @@ async function main() {
         const peaks = moirePeaks(shot.img);
         writeFileSync(join(shots, 'moire-phone.txt'), String(peaks));
         if (peaks >= 5) hits.push('phone moire peaks ' + peaks);
+        const field = await plateStudField(phone.page, shot);
+        for (const problem of studFieldProblems(field)) hits.push('phone ' + problem);
       } finally { await phone.context.close(); }
       assert(hits.length === 0, hits.join('; '));
       return 'no hard edge';
@@ -2193,8 +2374,11 @@ async function main() {
         await ready(page);
         const shot = await grabCanvas(page, 'moire-desktop.png');
         const peaks = moirePeaks(shot.img);
-        assert(peaks < 5, 'moire peaks ' + peaks);
-        return 'peaks ' + peaks;
+        const field = await plateStudField(page, shot);
+        const problems = studFieldProblems(field);
+        if (!(peaks < 5)) problems.push('moire peaks ' + peaks);
+        assert(problems.length === 0, problems.join('; '));
+        return 'peaks ' + peaks + ' disks ' + field.disks + '/' + field.samples + ' band ' + field.band.toFixed(2);
       } finally { await context.close(); }
     });
 
@@ -2740,12 +2924,11 @@ async function main() {
         assert(named.value === 'three', 'setup name "' + named.value + '"');
         const field = await page.locator('#projectName').boundingBox();
         assert(field && field.width > 8, 'name field missing');
-        const studShot = await grabCanvas(page);
-        const stud = findStud(studShot.img, 0.55);
-        assert(stud, 'no stud');
+        const stud = await projectPlateCell(page, 0.55, 0.62);
+        assert(stud, 'no plate cell');
         const before = await hotState(page);
         const pose = await camPose(page);
-        await clickAt(page, studShot.clip.x + stud.x / studShot.dpr, studShot.clip.y + stud.y / studShot.dpr);
+        await clickAt(page, stud.x, stud.y);
         await clickAt(page, field.x + field.width - 12, field.y + field.height / 2);
         await page.keyboard.type('six', { delay: 40 });
         const after = await hotState(page);
@@ -2783,16 +2966,15 @@ async function main() {
           await ready(page);
           const cdp = await page.context().newCDPSession(page);
           await cdp.send('Emulation.setPageScaleFactor', { pageScaleFactor: scale });
-          const shot0 = await grabCanvas(page);
-          const rawStud = findStud(shot0.img, 0.58) || findStudNear(shot0.img, 0.58, 0.6);
-          assert(rawStud, 'no stud at scale ' + scale);
+          const rawStud = await projectPlateCell(page, 0.58, 0.6);
+          assert(rawStud, 'no plate cell at scale ' + scale);
           const space = await pointerSpace(page);
-          const aim = mapPointer(space, shot0, rawStud.x, rawStud.y);
+          const aim = { x: rawStud.x, y: rawStud.y };
           const before = await grabCanvas(page);
           await cdpMove(page, aim.x, aim.y);
           const hovered0 = await grabCanvas(page);
           const ghost0 = pixelShift(before.img, hovered0.img);
-          assert(ghost0.n > 12, 'no ghost at ' + scale + ' changed ' + ghost0.n + ' dpr ' + space.dpr + '/' + shot0.dpr + (ghost0.size ? ' ' + ghost0.size : ''));
+          assert(ghost0.n > 12, 'no ghost at ' + scale + ' changed ' + ghost0.n + ' dpr ' + space.dpr + '/' + before.dpr + (ghost0.size ? ' ' + ghost0.size : ''));
           const center = mapPointer(space, hovered0, ghost0.cx, ghost0.cy);
           await cdpMove(page, center.x, center.y);
           const hovered = await grabCanvas(page);
@@ -2853,12 +3035,7 @@ async function main() {
           await page.reload({ waitUntil: 'domcontentloaded' });
           await ready(page);
           for (const pair of layouts[kind]) {
-            const shot = await grabCanvas(page);
-            const pt = findStudNear(shot.img, pair[0], pair[1]) || findStud(shot.img, pair[0]);
-            assert(pt, kind + ' stud missing');
-            const x = shot.clip.x + pt.x / shot.dpr;
-            const y = shot.clip.y + pt.y / shot.dpr;
-            await placeAt(page, x, y);
+            await placeProjected(page, pair[0], pair[1]);
           }
           const field = await page.locator('#projectName').boundingBox();
           await typeInto(page, field, kind, 'click');
@@ -2908,7 +3085,10 @@ async function main() {
         await ready(page);
         const home = await grabCanvas(page, 'r18-home.png');
         const peaks = moirePeaks(home.img);
-        assert(peaks < 3, 'moire peaks ' + peaks);
+        const field = await plateStudField(page, home);
+        const plateProblems = studFieldProblems(field);
+        if (!(peaks < 3)) plateProblems.push('moire peaks ' + peaks);
+        assert(plateProblems.length === 0, plateProblems.join('; '));
         const hit = await clickStud(page, 0.55, false);
         const shot = await grabCanvas(page, 'r18-brick.png');
         const blob = brickBlob(shot.img, plateInset(page, shot));
@@ -3317,10 +3497,7 @@ async function main() {
           await page.reload({ waitUntil: 'domcontentloaded' });
           await ready(page);
           for (const pair of layouts[kind]) {
-            const shot = await grabCanvas(page);
-            const pt = findStudNear(shot.img, pair[0], pair[1]) || findStud(shot.img, pair[0]);
-            assert(pt, kind + ' stud missing');
-            await placeAt(page, shot.clip.x + pt.x / shot.dpr, shot.clip.y + pt.y / shot.dpr);
+            await placeProjected(page, pair[0], pair[1]);
           }
           const field = await page.locator('#projectName').boundingBox();
           await typeInto(page, field, kind, 'click');
@@ -3590,10 +3767,7 @@ async function main() {
           await page.reload({ waitUntil: 'domcontentloaded' });
           await ready(page);
           for (const pair of layouts[kind]) {
-            const shot = await grabCanvas(page);
-            const pt = findStudNear(shot.img, pair[0], pair[1]) || findStud(shot.img, pair[0]);
-            assert(pt, kind + ' stud missing');
-            await placeAt(page, shot.clip.x + pt.x / shot.dpr, shot.clip.y + pt.y / shot.dpr);
+            await placeProjected(page, pair[0], pair[1]);
           }
           const field = await page.locator('#projectName').boundingBox();
           await typeInto(page, field, kind, 'click');
@@ -3635,6 +3809,8 @@ async function main() {
         const problems = [];
         const peaks = moirePeaks(home.img);
         if (!(peaks < 3)) problems.push('plate moire peaks ' + peaks);
+        const field = await plateStudField(page, home);
+        for (const problem of studFieldProblems(field)) problems.push(problem);
         const corners = await page.evaluate(() => {
           const mesh = window.baseplateRef;
           const cam = window.camera;
@@ -3714,16 +3890,16 @@ async function main() {
         if (!(style.size >= 13 && style.h >= 13)) problems.push('counter ' + style.size + ' px h ' + style.h.toFixed(1));
         if (!(ratio >= 4.5)) problems.push('counter contrast ' + ratio.toFixed(2));
         const shot = await grabCanvas(page, 'r20-studs.png');
-        const shade = studShade(shot.img);
+        const field = await plateStudField(page, shot);
         const cylinders = await page.evaluate(() => {
           let mesh = null;
           if (window.scene) window.scene.traverse((obj) => { if (obj.name === 'nearPlateStuds') mesh = obj; });
           return mesh ? mesh.count : 0;
         });
         if (!(cylinders >= 30)) problems.push('cylinder studs ' + cylinders);
-        if (!(shade.shade >= 8 && shade.n >= 6)) problems.push('stud shade ' + shade.shade.toFixed(1) + ' n ' + shade.n);
+        for (const problem of studFieldProblems(field)) problems.push(problem);
         assert(problems.length === 0, problems.join('; '));
-        return 'counter ' + style.size + ' px contrast ' + ratio.toFixed(2) + ' studs ' + cylinders + ' shade ' + shade.shade.toFixed(1);
+        return 'counter ' + style.size + ' px contrast ' + ratio.toFixed(2) + ' studs ' + cylinders + ' shade ' + field.shade.toFixed(1);
       } finally { await context.close(); }
     });
 
@@ -3901,11 +4077,10 @@ async function main() {
       const { page, context } = await openPage(browser, true, 'r20j');
       try {
         await ready(page);
-        const shot = await grabCanvas(page);
-        const pt = findStud(shot.img, 0.55);
-        assert(pt, 'no stud');
-        const x = Math.round(shot.clip.x + pt.x / shot.dpr);
-        const y = Math.round(shot.clip.y + pt.y / shot.dpr);
+        const pt = await projectPlateCell(page, 0.55, 0.62);
+        assert(pt, 'no plate cell');
+        const x = Math.round(pt.x);
+        const y = Math.round(pt.y);
         const client = await page.context().newCDPSession(page);
         await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y, id: 1 }] });
         await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
@@ -3956,15 +4131,13 @@ async function main() {
         await ready(page);
         const shot = await grabCanvas(page, 'r21-plate.png');
         const band = plateBand(shot.img);
-        const problems = [];
+        const field = await plateStudField(page, shot);
+        const problems = studFieldProblems(field);
         if (!(band.peaks < 3)) problems.push('horizontal moire peaks ' + band.peaks + ' rows ' + band.rows);
-        const weak = [];
-        for (let i = 0; i < band.thirds.length; i++) {
-          if (band.thirds[i] < 3) weak.push(['left', 'mid', 'right'][i] + ' ' + band.thirds[i]);
-        }
-        if (weak.length) problems.push('plate studs ' + weak.join(' '));
+        if (!(band.band <= 0.68)) problems.push('row-band energy ' + band.band.toFixed(2));
         assert(problems.length === 0, problems.join('; '));
-        return 'peaks ' + band.peaks + ' studs ' + band.thirds.join('/');
+        const sideText = (field.sides || []).map((s) => s.disks + '/' + s.samples).join(' ');
+        return 'peaks ' + band.peaks + ' disks ' + field.disks + '/' + field.samples + ' sides ' + sideText;
       } finally { await context.close(); }
     });
 
@@ -4005,10 +4178,7 @@ async function main() {
           await page.reload({ waitUntil: 'domcontentloaded' });
           await ready(page);
           for (const pair of layouts[kind]) {
-            const shot = await grabCanvas(page);
-            const pt = findStudNear(shot.img, pair[0], pair[1]) || findStud(shot.img, pair[0]);
-            assert(pt, kind + ' stud missing');
-            await placeAt(page, shot.clip.x + pt.x / shot.dpr, shot.clip.y + pt.y / shot.dpr);
+            await placeProjected(page, pair[0], pair[1]);
           }
           const field = await page.locator('#projectName').boundingBox();
           await typeInto(page, field, kind, 'click');
@@ -4219,12 +4389,14 @@ async function main() {
       try {
         await ready(page);
         const quality = await page.locator('#qualityBar button.active').innerText().catch(() => '');
+        const home = await grabCanvas(page, 'r21-phone-plate.png');
+        const field = await plateStudField(page, home);
         await clickStud(page, 0.55, false);
         const shot = await grabCanvas(page, 'r21-phone-brick.png');
         const blob = brickBlob(shot.img, 0);
         assert(blob.n > 8, 'no brick');
         const relief = brickRelief(shot.img, blob);
-        const problems = [];
+        const problems = studFieldProblems(field);
         if (!(relief.spread >= 22)) problems.push('flat face spread ' + relief.spread.toFixed(1));
         if (!(relief.studs >= 2)) problems.push('studs ' + relief.studs);
         assert(problems.length === 0, problems.join('; ') + (quality ? ' quality ' + quality.trim() : ''));
@@ -4893,7 +5065,7 @@ async function main() {
       try {
         await ready(page);
         const shot = await grabCanvas(page, 'r22-desk-plate.png');
-        const problems = [];
+        const problems = studFieldProblems(await plateStudField(page, shot));
         const span = plateSpan(shot.img);
         const near0 = span.top >= 0 ? Math.floor(span.bot - (span.bot - span.top) * 0.28) : Math.floor(shot.img.height * 0.72);
         const near1 = span.top >= 0 ? Math.floor(span.bot - (span.bot - span.top) * 0.06) : Math.floor(shot.img.height * 0.9);
@@ -4933,10 +5105,9 @@ async function main() {
         await page.waitForFunction(() => (parseInt(document.getElementById('brickCount').textContent, 10) || 0) === 0, null, { timeout: 4000 });
         const spots = [[0.62, 0.60], [0.72, 0.64], [0.62, 0.80]];
         for (const pair of spots) {
-          const shot = await grabCanvas(page);
-          const pt = findStudNear(shot.img, pair[0], pair[1]);
-          assert(pt, 'right stud missing at ' + pair.join(','));
-          await placeAt(page, shot.clip.x + pt.x / shot.dpr, shot.clip.y + pt.y / shot.dpr);
+          const pt = await projectPlateCell(page, pair[0], pair[1]);
+          assert(pt, 'right plate cell missing at ' + pair.join(','));
+          await placeAt(page, pt.x, pt.y);
         }
         assert(await brickCount(page) >= 3, 'right cluster placed ' + await brickCount(page));
         await scrollUntil(page, page.locator('#projectName'));
@@ -5229,7 +5400,7 @@ async function main() {
         const pitch = pitchDeg(pose);
         const shot = await grabCanvas(page, 'r22-phone-home.png');
         const span = plateSpan(shot.img);
-        const problems = [];
+        const problems = studFieldProblems(await plateStudField(page, shot));
         if (!(pitch >= 22)) problems.push('pitch ' + pitch.toFixed(1) + ' deg');
         if (span.top < 0 || span.bot - span.top < 40) problems.push('plate rows missing');
         else {
@@ -5574,43 +5745,14 @@ async function main() {
       try {
         await ready(page);
         const shot = await grabCanvas(page, 'r23-desk-bands.png');
-        const img = shot.img;
-        const y0 = Math.floor(img.height * 0.48);
-        const y1 = Math.floor(img.height * 0.78);
-        const x0 = Math.floor(img.width * 0.35);
-        const x1 = Math.floor(img.width * 0.65);
-        const means = [];
-        for (let y = y0; y <= y1; y++) {
-          let s = 0;
-          let n = 0;
-          for (let x = x0; x < x1; x += 2) {
-            const i = (y * img.width + x) * 4;
-            const r = img.data[i];
-            const g = img.data[i + 1];
-            const b = img.data[i + 2];
-            if (!(g > 50 && g >= r - 10 && g >= b - 10)) continue;
-            s += r * 0.3 + g * 0.5 + b * 0.2;
-            n++;
-          }
-          if (n > (x1 - x0) / 8) means.push(s / n);
-        }
-        let peaks = 0;
-        let prevSign = 0;
-        let prev = means[0] || 0;
-        for (let i = 1; i < means.length; i++) {
-          const d = means[i] - means[i - 1];
-          const sign = d > 1.2 ? 1 : d < -1.2 ? -1 : 0;
-          if (sign && prevSign && sign !== prevSign && Math.abs(means[i] - prev) > 4) {
-            peaks++;
-            prev = means[i];
-          }
-          if (sign) prevSign = sign;
-        }
+        const bands = wholePlateBands(shot.img);
+        const field = await plateStudField(page, shot);
+        const peaks = bands.peaks;
         await clickStud(page, 0.55, false);
         const brickShot = await grabCanvas(page, 'r23-desk-brick.png');
         const blob = brickBlob(brickShot.img, plateInset(page, brickShot));
         const px = blob.n > 8 ? Math.max(blob.w, blob.h) / brickShot.dpr : 0;
-        const problems = [];
+        const problems = studFieldProblems(field);
         if (peaks >= 4) problems.push('stripes ' + peaks);
         if (!(px >= 36 && px <= 55)) problems.push('2x2 ' + px.toFixed(1) + ' px');
         assert(problems.length === 0, problems.join('; '));
@@ -5976,7 +6118,9 @@ async function main() {
         const y0 = Math.floor(span.top + height * 0.18);
         const y1 = Math.floor(span.top + height * 0.42);
         const peaks = studPeaksIn(shot.img, y0, y1, Math.floor(shot.img.width * 0.25), Math.floor(shot.img.width * 0.75));
-        assert(peaks >= 3, 'mid studs ' + peaks + ' y ' + y0 + '-' + y1);
+        const problems = studFieldProblems(await plateStudField(page, shot));
+        if (!(peaks >= 3)) problems.push('mid studs ' + peaks + ' y ' + y0 + '-' + y1);
+        assert(problems.length === 0, problems.join('; '));
         return 'studs ' + peaks;
       } finally { await context.close(); }
     });
