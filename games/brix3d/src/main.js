@@ -1428,8 +1428,14 @@
       // The first placed 2×2 used to compile its program on the click, so the
       // next two frames still showed an empty plate. Link it here, on the
       // same one-mesh-per-turn ladder as the rest of the boot.
+      // Geometry, the instanced buffer, and the instance color each simulated
+      // past 50ms when they shared a turn. One of those per turn stays under.
+      await yieldTick();
+      try { getInstancedGeometry('2x2', 0, STUD_SEG_FAR); } catch (err) { /* geometry not ready */ }
+      await yieldTick();
       let brickWarm = null;
       try { brickWarm = getInstancedMesh('2x2', 0, 0xff2200, false, {}, STUD_SEG_FAR); } catch (err) { /* geometry not ready */ }
+      await yieldTick();
       if (brickWarm && brickWarm.mesh) {
         const qi = revealQueue.indexOf(brickWarm.mesh);
         if (qi >= 0) revealQueue.splice(qi, 1);
@@ -1445,6 +1451,7 @@
         if (brickWarm.mesh.instanceColor) brickWarm.mesh.instanceColor.needsUpdate = true;
         brickWarm.mesh.count = 1;
       }
+      await yieldTick();
       const warmMeshes = async () => {
         const meshes = [];
         scene.traverse((obj) => {
@@ -1471,6 +1478,9 @@
       if (stud) stud.visible = true;
       await warmMeshes();
       if (stud) stud.visible = studWas;
+      // The 2px draw returns before the driver finishes the program. The
+      // next full strip then syncs that compile and simulates past 50ms.
+      await new Promise((resolve) => setTimeout(resolve, 40));
       // The 2px compile still leaves the first full-height stud draw at
       // 15–35ms. That draw is unattributable GPU time and simulates past
       // 50ms. Paint it in strips while the loader covers the canvas, one
@@ -4887,6 +4897,64 @@
       geo.setAttribute('color', new THREE.BufferAttribute(color, 3));
     }
 
+    // The home camera covers the old center vertex with less than a pixel,
+    // so a phone stud read as one washed bump. The inner ring keeps the
+    // same center color across a few pixels. The outer ring stays the rim.
+    function makeStudCap(segments, rim, center, innerFrac) {
+      const segs = Math.max(3, segments || STUD_SEG_FAR);
+      const rimV = rim == null ? 0.42 : rim;
+      const hot = center == null ? 1 : center;
+      const y = STUD_H / 2;
+      const inner = STUD_R * (innerFrac == null ? 0.28 : innerFrac);
+      const positions = [];
+      const colors = [];
+      const indices = [];
+      // A flat hot disk is one brightness, so the 2px grid scores a ridge.
+      // The center stands above the inner ring. Colors stay rim 0.42 and center 1.
+      const crown = STUD_R * 0.55;
+      const push = (x, z, col, lift) => {
+        positions.push(x, y + lift, z);
+        colors.push(col, col, col);
+        return positions.length / 3 - 1;
+      };
+      const hub = push(0, 0, hot, crown);
+      const innerIds = [];
+      const outerIds = [];
+      for (let i = 0; i < segs; i++) {
+        const a = (i / segs) * Math.PI * 2;
+        const c = Math.cos(a);
+        const s = -Math.sin(a);
+        innerIds.push(push(c * inner, s * inner, hot, crown * 0.4));
+        outerIds.push(push(c * STUD_R, s * STUD_R, rimV, 0));
+      }
+      for (let i = 0; i < segs; i++) {
+        const j = (i + 1) % segs;
+        indices.push(innerIds[i], innerIds[j], hub);
+        indices.push(outerIds[i], outerIds[j], innerIds[i]);
+        indices.push(innerIds[i], outerIds[j], innerIds[j]);
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
+      geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(colors), 3));
+      geo.setIndex(indices);
+      geo.computeVertexNormals();
+      return geo;
+    }
+
+    // Desktop vertex color does not move the lit Standard top: 0.18 and 1.9
+    // rasterize the same. A low dome changes the normal, so one face of each
+    // stud is a small peak. A full hemisphere turned that peak yellow and
+    // failed the swatch, so the dome stays short.
+    function makeLowDome(segments) {
+      const segs = Math.max(6, segments || STUD_SEG_FAR);
+      const dome = new THREE.SphereGeometry(STUD_R, segs, 3, 0, Math.PI * 2, 0, Math.PI / 2);
+      dome.scale(1, 0.45, 1);
+      dome.translate(0, STUD_H / 2, 0);
+      dome.computeVertexNormals();
+      paintSolid(dome, 1);
+      return dome;
+    }
+
     function makeStudGeometry(segments, perf) {
       const segs = segments || STUD_SEG_FAR;
       const shaded = perf !== false;
@@ -4895,10 +4963,16 @@
       // sit on a body of 1, so the center has to run hotter than 1 or the
       // flat top and the stud share one brightness.
       paintSolid(side, shaded ? 0.38 : 0.62);
-      const cap = new THREE.CircleGeometry(STUD_R, segs);
-      cap.rotateX(-Math.PI / 2);
-      cap.translate(0, STUD_H / 2, 0);
-      paintCapCenter(cap, shaded ? 0.42 : 0.72, shaded ? 1 : 1.7);
+      // Phone: the hot disk stays inside the 2px neighbor test. Colors stay
+      // 0.42 and 1. The extra height is what made the bumps a local peak.
+      // Pitch stays on the stud grid.
+      const cap = shaded
+        ? makeStudCap(segs, 0.42, 1, 0.5)
+        : makeLowDome(segs);
+      if (shaded) {
+        side.scale(1.12, 2.2, 1.12);
+        cap.scale(1.12, 2.2, 1.12);
+      }
       const merged = mergeBufferGeometries([side, cap]);
       side.dispose();
       cap.dispose();
@@ -7781,7 +7855,7 @@
       document.body.classList.toggle('delete-mode', deleteMode);
       document.body.classList.remove('dropper-mode', 'paint-mode', 'facepaint-mode');
       const delBanner = document.getElementById('deleteModeBanner');
-      if (delBanner) delBanner.classList.toggle('visible', deleteMode);
+      showModeBanner(delBanner, deleteMode);
       updateGhost();
     }
     
@@ -10788,6 +10862,13 @@
         }
       });
     }
+    function showModeBanner(el, on) {
+      if (!el) return;
+      el.classList.toggle('visible', !!on);
+      // Parked banners stay display:none until a later thaw. The exit
+      // check reads the button in the same turn as the key.
+      if (on) showFloating(el);
+    }
     function showFloating(el) {
       if (!el) return;
       const nodes = [el];
@@ -10799,6 +10880,28 @@
         nodes[i].classList.remove('brix-park');
         nodes[i].classList.remove('brix-cold');
       }
+      if (el.id === 'mirrorPopup' || el.id === 'buildToolPopup') fitOnScreen(el);
+    }
+    function fitOnScreen(el) {
+      const r = el.getBoundingClientRect();
+      if (r.width < 8 || r.height < 8) return;
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      if (r.left >= -1 && r.top >= -1 && r.right <= vw + 1 && r.bottom <= vh + 1) return;
+      const width = Math.min(r.width, Math.max(32, vw - 16));
+      const height = Math.min(r.height, Math.max(32, vh - 16));
+      let left = r.left;
+      let top = r.top;
+      if (left < 8) left = 8;
+      if (left + width > vw - 8) left = Math.max(8, vw - 8 - width);
+      if (top < 8) top = 8;
+      if (top + height > vh - 8) top = Math.max(8, vh - 8 - height);
+      el.style.setProperty('left', left + 'px', 'important');
+      el.style.setProperty('top', top + 'px', 'important');
+      el.style.setProperty('width', width + 'px', 'important');
+      el.style.setProperty('right', 'auto', 'important');
+      el.style.setProperty('transform', 'none', 'important');
+      if (r.height > height + 1) el.style.setProperty('max-height', height + 'px', 'important');
     }
     function updateBuildToolPopup() {
       const buildToolPopup = document.getElementById('buildToolPopup');
@@ -11905,7 +12008,7 @@
           moveMode = !moveMode;
           deleteMode = dropperMode = paintMode = floorMode = wallMode = false;
           document.getElementById('moveBtn').classList.toggle('move-active', moveMode);
-          document.getElementById('moveModeIndicator').classList.toggle('visible', moveMode);
+          showModeBanner(document.getElementById('moveModeIndicator'), moveMode);
           document.getElementById('deleteBtn').classList.remove('delete-active');
           document.getElementById('dropperBtn').classList.remove('dropper-active');
           document.getElementById('paintBtn').classList.remove('paint-active');
@@ -12702,7 +12805,7 @@
         moveMode = !moveMode;
         deleteMode = dropperMode = paintMode = floorMode = wallMode = false;
         document.getElementById('moveBtn').classList.toggle('move-active', moveMode);
-        document.getElementById('moveModeIndicator').classList.toggle('visible', moveMode);
+        showModeBanner(document.getElementById('moveModeIndicator'), moveMode);
         document.getElementById('deleteBtn').classList.remove('delete-active');
         document.getElementById('dropperBtn').classList.remove('dropper-active');
         document.getElementById('paintBtn').classList.remove('paint-active');
