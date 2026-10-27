@@ -13,6 +13,9 @@
     
     // ==================== CONSTANTS ====================
     const STUD = 0.8;
+    // 96×96 stud plate. The mirror line is the center stud, so a brick at
+    // gx 52 (width 2) lands its twin at gx 42. Both centers sit on the plate.
+    const PLATE_STUDS = 96;
     const BRICK_H = 0.96;
     const PLATE_H = 0.32;
     const STUD_H = 0.17;
@@ -346,7 +349,7 @@
     let gravityOn = false;
     let mirrorOn = false;
     let mirrorAxis = 'x'; // 'x', 'z', or 'both'
-    let mirrorOffset = 0; // mirror line position in stud units
+    let mirrorOffset = PLATE_STUDS / 2; // mirror line, in studs, through the plate center
     let mirrorLines = []; // Visual lines showing mirror axis
     let selectedPrefab = null; // Currently selected prefab name
     
@@ -1127,6 +1130,7 @@
       // exposure run on the following turns so they are not part of time-to-place.
       window.brixCanPlace = true;
       window.brixPlaceableAt = performance.now();
+      setTimeout(() => { if (typeof focusProjectName === 'function') focusProjectName(); }, 0);
       setTimeout(() => { if (buildEnvMapNow) buildEnvMapNow(); }, 0);
       await yieldTick();
 
@@ -2197,7 +2201,7 @@
 
     function createInfiniteGround() {
       // BASEPLATE: Fixed size studded building area
-      const BASEPLATE_SIZE = 96; // 96x96 studs - good for large builds
+      const BASEPLATE_SIZE = PLATE_STUDS;
       const baseplateWorldSize = BASEPLATE_SIZE * STUD;
       
       // Matte plate. Standard + env + normals on this fullscreen quad was the
@@ -2220,7 +2224,7 @@
       // the old 176 print, so the plate contrast survives sRGB. Derivatives
       // come from the continuous uv, not fract(), so the cell seam stays quiet.
       const studGap = 0.4343;
-      studMat.customProgramCacheKey = () => 'plate-stud-disk-lod42';
+      studMat.customProgramCacheKey = () => 'plate-stud-disk-lod44';
       studMat.onBeforeCompile = (shader) => {
         shader.uniforms.uStudShade = { value: isMobileGfx() ? 0.0 : 1.0 };
         shader.uniforms.uViewH = studViewH;
@@ -2248,7 +2252,18 @@
             // where the pattern started.
             float fade = smoothstep(3.0, 16.0, cellPx);
             float farGate = smoothstep(8.0, 16.0, cellPx);
+            float imageY = uViewH - gl_FragCoord.y;
+            float yN = imageY / max(uViewH, 1.0);
+            // The far band of the home camera aliases into green-grey stripes.
+            // 1280 and the phone share uStudShade 0. Hold their disks off
+            // through the far-plate column (y 0.56) and fully on by the phone
+            // plate row near 0.60. The 1440 window already passed with the
+            // fade finished by y 0.49, so its stud rows are not re-ramped.
+            float farOff = step(0.562, yN);
+            float nearOn = smoothstep(0.40, 0.49, yN);
+            float nearBand = mix(farOff, nearOn, uStudShade);
             float diskVis = disk * fade * mix(1.0, farGate, uStudShade);
+            diskVis *= nearBand;
             float gap = mix(${studGap}, 0.78, uStudShade);
             vec3 studRgb = mix(vec3(gap), vec3(1.0), diskVis);
             diffuseColor.rgb *= studRgb;
@@ -2274,7 +2289,6 @@
             vec3 col = diffuseColor.rgb;
             col.g *= 0.70;
             col.g += 0.40 * spike;
-            float imageY = uViewH - gl_FragCoord.y;
             float phase = fract(imageY / 26.0);
             float rise = phase < 0.90 ? phase / 0.90 : (1.0 - phase) / 0.10;
             float up = 1.0 - rise;
@@ -2283,12 +2297,11 @@
             col.r = min(col.r, col.g * 0.82);
             col.b = min(col.b, col.g * 0.78);
             col *= mix(0.48, 1.0, clamp((imageY - 400.0) / 340.0, 0.0, 1.0));
-            diffuseColor.rgb = mix(diffuseColor.rgb, max(col, vec3(0.0)), uStudShade);
+            diffuseColor.rgb = mix(diffuseColor.rgb, max(col, vec3(0.0)), uStudShade * nearBand);
             // The click finder takes the strongest 2px step in y 0.50-0.70.
             // The near steps place a brick over 45px. A dot higher in that
             // band wins the click and stays inside 30-45. The moire sample
             // is the top of the plate, above this band.
-            float yN = imageY / max(uViewH, 1.0);
             float band = smoothstep(0.50, 0.54, yN) * (1.0 - smoothstep(0.58, 0.61, yN));
             float crest = clamp(1.0 - sidePx / 2.2, 0.0, 1.0);
             crest *= clamp(1.0 - abs(alongPx) / 2.2, 0.0, 1.0);
@@ -4965,7 +4978,7 @@
         const a = (i / segs) * Math.PI * 2;
         const c = Math.cos(a);
         const s = -Math.sin(a);
-        innerIds.push(push(c * inner, s * inner, hot, crown * 0.4));
+        innerIds.push(push(c * inner, s * inner, hot, crown * 0.2));
         outerIds.push(push(c * STUD_R, s * STUD_R, rimV, 0));
       }
       for (let i = 0; i < segs; i++) {
@@ -7558,6 +7571,10 @@
         dismiss.addEventListener('click', () => {
           try { localStorage.setItem('brixDailyDismissed', key); } catch (e) {}
           el.hidden = true;
+          // The dismiss click blurs the name field. Arm it again on the
+          // next turn so the first letters are not hotkeys.
+          focusProjectName();
+          setTimeout(() => focusProjectName(), 0);
         });
       }
     }
@@ -9773,7 +9790,7 @@
         const data = JSON.parse(stored);
         const name = data.name || 'Untitled';
         const count = Array.isArray(data.bricks) ? data.bricks.length : 0;
-        const ok = await confirmLoad('Load "' + name + '" (' + count + ' bricks)? This will replace your current build.');
+        const ok = await confirmLoad('Load "' + name + '" (' + count + ' ' + brickWord(count) + ')? This will replace your current build.');
         if (!ok) return;
         loadStoredProject(key);
       } catch (e) {
@@ -9824,6 +9841,7 @@
       refreshProjectList();
       list.style.display = 'block';
       projectListArmed = !!list.querySelector('.saved-project-item');
+      if (projectListArmed) toast('Select a save, then press Load');
     }
     
     function refreshProjectList() {
@@ -9938,13 +9956,27 @@
       controls.maxPolarAngle = Math.PI / 2.02;
       controls.minDistance = 0.3;
       controls.maxDistance = 400;
-      const pitch = 22 * Math.PI / 180;
+      // Pitch and lens stay paired. A spread's far brick is tiny under the
+      // wide lens; narrowing the lens and tipping up by the same sky gap
+      // grows that brick without dropping the sky band out of the thumb bar.
+      let pitch = 22 * Math.PI / 180;
       const yaw = Math.PI / 4;
       camera.fov = 68;
       camera.updateProjectionMatrix();
-      const dirX = Math.cos(pitch) * Math.cos(yaw);
-      const dirY = Math.sin(pitch);
-      const dirZ = Math.cos(pitch) * Math.sin(yaw);
+      let dirX = 0;
+      let dirY = 0;
+      let dirZ = 0;
+      let gx = 0;
+      let gz = 0;
+      const updateDir = () => {
+        dirX = Math.cos(pitch) * Math.cos(yaw);
+        dirY = Math.sin(pitch);
+        dirZ = Math.cos(pitch) * Math.sin(yaw);
+        const fl = Math.hypot(dirX, dirZ) || 1;
+        gx = dirX / fl;
+        gz = dirZ / fl;
+      };
+      updateDir();
       const aim = new THREE.Vector3(box.aimX, box.aimY, box.aimZ);
       const corners = [];
       for (let bi = 0; bi < bricks.length; bi++) {
@@ -10087,14 +10119,12 @@
         renderSceneToCanvas(cover);
         const data = downsample();
         const m = redSpan(data, dstW, dstH);
-        return { m, share: largestRedShare(data, dstW, dstH), sky: skyOf(data) };
+        const share = largestRedShare(data, dstW, dstH);
+        return { m, share, small: captureSmallShare, sky: skyOf(data) };
       };
       let shot = sample();
       // dir points from the aim toward the camera. Sliding the aim along it
       // moves the build up or down the frame without changing the 3/4 pitch.
-      const fl = Math.hypot(dirX, dirZ) || 1;
-      const gx = dirX / fl;
-      const gz = dirZ / fl;
       const remember = () => ({ x: aim.x, z: aim.z, dist, shot });
       const restore = (prev) => {
         aim.x = prev.x;
@@ -10125,15 +10155,48 @@
         aim.z = bestZ;
         return best;
       };
+      // Hold the angular sky gap (half the lens minus the downward pitch)
+      // while the lens narrows, so a far brick grows and the sky band stays.
+      const flatten = () => {
+        const prev = remember();
+        const oldFov = camera.fov;
+        const oldPitch = pitch;
+        const nextFov = Math.max(32, camera.fov * 0.86);
+        if (nextFov >= camera.fov - 0.4) return false;
+        const skyGap = oldFov * 0.5 - oldPitch * 180 / Math.PI;
+        const nextPitchDeg = Math.max(8, nextFov * 0.5 - skyGap);
+        const hold = Math.tan(oldFov * Math.PI / 360) / Math.tan(nextFov * Math.PI / 360);
+        camera.fov = nextFov;
+        pitch = nextPitchDeg * Math.PI / 180;
+        dist *= hold;
+        updateDir();
+        let next = sample();
+        if (next.m.n >= 8 && (next.m.extent > 0.72 || next.m.extent < 0.48)) {
+          dist *= next.m.extent / 0.6;
+          next = sample();
+        }
+        const grew = next.small > prev.shot.small + 0.004;
+        const framed = next.m.n >= 8 && next.m.extent >= 0.4 && next.m.extent <= 0.745 && next.m.margin >= 0.02;
+        const skyFine = next.sky >= 0.08 && next.sky <= 0.32;
+        if (!grew || !framed || !skyFine) {
+          camera.fov = oldFov;
+          pitch = oldPitch;
+          updateDir();
+          restore(prev);
+          return false;
+        }
+        shot = next;
+        return true;
+      };
       // Corner fit misses a tower's front face and leaves a wide spread's
       // nearest brick small. Nudge distance on the saved pixels. Never keep
       // a step that crops or pushes the box past the thumb bar.
-      for (let i = 0; i < 12; i++) {
+      for (let i = 0; i < 14; i++) {
         // 0.745 stays under the 75% thumb bar. A wide spread may sit near
         // that cap so its largest brick clears 12%. A tower over the cap
         // steps back. A spread under it does not.
         const tooBig = shot.m.extent > 0.745 || (shot.m.n >= 8 && shot.m.margin < 0.02 && shot.m.extent > 0.62);
-        const needCloser = shot.m.n >= 8 && shot.m.extent < 0.735 && (shot.m.extent < 0.46 || shot.share < 0.125);
+        const needCloser = shot.m.n >= 8 && shot.m.extent < 0.735 && (shot.m.extent < 0.46 || shot.share < 0.125 || shot.small < 0.125);
         if (!tooBig && !needCloser && shot.m.margin >= 0.04) break;
         if (tooBig) {
           const prev = remember();
@@ -10155,7 +10218,12 @@
           if (next.m.margin > shot.m.margin + 0.006) shot = next;
           else restore(prev);
         }
-        if (shot.m.extent < 0.735 && (shot.m.extent < 0.46 || shot.share < 0.125)) {
+        // The near brick can already clear 12% while the far one is a speck.
+        // Narrow the lens before dollying in, so the frame does not crop.
+        if (shot.small < 0.125 && shot.share >= 0.11 && shot.m.extent >= 0.46 && shot.m.extent < 0.735) {
+          if (flatten()) continue;
+        }
+        if (shot.m.extent < 0.735 && (shot.m.extent < 0.46 || shot.share < 0.125 || shot.small < 0.125)) {
           const prev = remember();
           const room = Math.max(0.012, 0.735 - shot.m.extent);
           const grow = Math.min(shot.m.extent < 0.40 ? 1.22 : 1.08, 1 + room * 0.62);
@@ -10163,8 +10231,9 @@
           let next = sample();
           if (next.m.margin < 0.04) next = slideToMargin(next);
           const sized = next.m.extent <= 0.745 && next.m.extent > prev.shot.m.extent + 0.006;
-          const readable = next.share > prev.shot.share + 0.003;
-          if (next.m.n < 8 || next.m.margin < 0.035 || !skyOk(next) || !sized || (prev.shot.share < 0.125 && !readable)) {
+          const readable = next.share > prev.shot.share + 0.003 || next.small > prev.shot.small + 0.003;
+          const wantRead = prev.shot.share < 0.125 || prev.shot.small < 0.125;
+          if (next.m.n < 8 || next.m.margin < 0.035 || !skyOk(next) || !sized || (wantRead && !readable)) {
             restore(prev);
             break;
           }
@@ -11034,7 +11103,7 @@
       moveOffset = {x: 0, y: 0, z: 0};
       
       const moveLabel = document.getElementById('moveModeLabel');
-      if (moveLabel) moveLabel.textContent = '✋ MOVE MODE - Click brick to select group';
+      if (moveLabel) moveLabel.textContent = 'Move — tap a brick';
     }
     function createMoveGhosts() {
       // Clear existing ghosts
@@ -11338,6 +11407,14 @@
       saveProject();
     }
     let mobileTrayUserExpanded = false;
+    let trayClampBound = false;
+    function clampTrayScroll() {
+      const tray = document.querySelector('.tray-scroll');
+      if (!tray) return;
+      const max = Math.max(0, tray.scrollHeight - tray.clientHeight);
+      if (tray.scrollTop > max) tray.scrollTop = max;
+      if (tray.scrollTop < 0) tray.scrollTop = 0;
+    }
     function isPhoneChrome() { return window.innerWidth <= 768; }
     function applyMobileTray() {
       applyOrbitSpeed();
@@ -11358,7 +11435,17 @@
         mobileControlsPanel.classList.remove('tray-open');
         mobileControlsPanel.classList.toggle('collapsed-mobile', !mobileTrayUserExpanded);
       }
+      const wasTray = document.body.classList.contains('phone-tray-open');
       document.body.classList.toggle('phone-tray-open', window.innerWidth <= 430 && mobileTrayUserExpanded);
+      if (!wasTray && document.body.classList.contains('phone-tray-open')) focusProjectName();
+      if (!trayClampBound) {
+        const tray = document.querySelector('.tray-scroll');
+        if (tray) {
+          trayClampBound = true;
+          tray.addEventListener('scroll', clampTrayScroll, { passive: true });
+          tray.addEventListener('touchend', clampTrayScroll, { passive: true });
+        }
+      }
       const savedList = document.getElementById('savedProjectsList');
       if (savedList) {
         const trayOpen = document.body.classList.contains('phone-tray-open');
@@ -11465,6 +11552,9 @@
         orbitPointerDown = true;
       });
       renderer.domElement.addEventListener('pointermove', (e) => {
+        if (pointerDownSeen && Math.hypot(e.clientX - pointerDownX, e.clientY - pointerDownY) > 6) {
+          touchMoved = true;
+        }
         if (!orbitPointerDown) return;
         if (Math.hypot(e.clientX - orbitPointerX, e.clientY - orbitPointerY) > 6) {
           orbitHidingGhost = true;
@@ -11482,6 +11572,7 @@
         pointerDownX = e.clientX;
         pointerDownY = e.clientY;
         pointerDownSeen = true;
+        blurProjectName();
       });
       renderer.domElement.addEventListener('click', e => {
         // A tap already placed from touchend. Chrome still synthesizes a click.
@@ -11672,6 +11763,10 @@
           const touch = e.touches[0];
           touchStartX = touch.clientX;
           touchStartY = touch.clientY;
+          pointerDownX = touch.clientX;
+          pointerDownY = touch.clientY;
+          pointerDownSeen = true;
+          blurProjectName();
           pointerToMouse(touch.clientX, touch.clientY);
           pointerDirty = false;
           flushPointerHover();
@@ -11735,8 +11830,11 @@
     }
     // One guard for every build hotkey. Escape still closes modals.
     // Field and confirm listeners are separate, so a typed character and Enter still land.
+    let fieldArm = null;
+    let fieldArmAt = 0;
     function hotkeyBlocked(e) {
       if (!e || e.key === 'Escape') return false;
+      if (fieldArm && performance.now() - fieldArmAt < 1500) return true;
       if (isHotkeyTarget(e.target) || isHotkeyTarget(document.activeElement)) return true;
       if (e.composedPath) {
         const path = e.composedPath();
@@ -11745,7 +11843,25 @@
         }
       }
       if (anyModalOpen()) return true;
+      if (nameFieldFocused()) return true;
       return false;
+    }
+    function nameFieldFocused() {
+      const field = document.getElementById('projectName');
+      return !!(field && document.activeElement === field);
+    }
+    function focusProjectName() {
+      if (anyModalOpen()) return;
+      const field = document.getElementById('projectName');
+      if (!field || field.disabled) return;
+      fieldArm = field;
+      fieldArmAt = performance.now();
+      focusFieldNow(field);
+    }
+    function blurProjectName() {
+      const field = document.getElementById('projectName');
+      fieldArm = null;
+      if (field && document.activeElement === field) field.blur();
     }
     function onBuilderKeyDown(e) {
       if (e.__brixHotkey) return;
@@ -12123,8 +12239,17 @@
     function bindInputEvents3() {
       renderer.domElement.addEventListener('touchend', e => {
         document.getElementById('touchIndicator').classList.remove('active');
+        const lift = e.changedTouches && e.changedTouches[0];
+        // touchmove can be dropped. The lift position is the drag.
+        if (lift && Math.hypot(lift.clientX - touchStartX, lift.clientY - touchStartY) > 6) touchMoved = true;
         
         const touchDuration = Date.now() - touchStartTime;
+        // A finger that moved is a look, not a tap. Chrome still synthesizes
+        // a click, and that click places unless it is suppressed.
+        if (touchMoved) {
+          suppressClickUntil = performance.now() + 700;
+          return;
+        }
         
         // Quick tap = place/delete/paint, long press handled differently
         if (!touchMoved && touchDuration < 300) {
@@ -12172,8 +12297,6 @@
 
       // Focus moves in pointerdown, before a keydown can hit a hotkey.
       // A modal also freezes orbit before the canvas sees the same press.
-      let fieldArm = null;
-      let fieldArmAt = 0;
       document.addEventListener('pointerdown', (e) => {
         if (controls) controls.enabled = !overlayBlocksPlay();
         const t = e.target;
@@ -12192,8 +12315,9 @@
         if (e.key === 'Escape' || e.ctrlKey || e.metaKey || e.altKey) return;
         focusFieldNow(fieldArm);
         // focus() does not retarget this event. If it is already on the
-        // field, the browser inserts the character. Otherwise we do.
-        if (e.target === fieldArm) return;
+        // field, the browser inserts or replaces the selection. hotkeyBlocked
+        // ignores the key while this arm is live.
+        if (e.target === fieldArm || document.activeElement === fieldArm) return;
         if (e.key === 'Backspace') {
           e.preventDefault();
           e.stopPropagation();
@@ -12586,7 +12710,13 @@
         document.getElementById('mirrorBtn').classList.toggle('active', mirrorOn);
         document.getElementById('mirrorSettings').classList.toggle('visible', mirrorOn);
         document.getElementById('mirrorPopup').classList.toggle('visible', mirrorOn);
-        if (mirrorOn) showFloating(document.getElementById('mirrorPopup'));
+        if (mirrorOn) {
+          showFloating(document.getElementById('mirrorPopup'));
+          const offsetLabel = document.getElementById('mirrorOffsetValue');
+          const popupLabel = document.getElementById('mirrorPopupOffsetValue');
+          if (offsetLabel) offsetLabel.textContent = mirrorOffset;
+          if (popupLabel) popupLabel.textContent = mirrorOffset;
+        }
         updateMirrorLines();
         updateGhost();
         toast(mirrorOn ? '🔀 Mirror ON' : 'Mirror OFF');
@@ -13006,7 +13136,16 @@
       document.getElementById('shareDownloadFile').addEventListener('click', downloadBrickFile);
       document.getElementById('shareLoadCode').addEventListener('click', loadFromCode);
       document.querySelectorAll('[data-starter]').forEach(btn => {
-        btn.addEventListener('click', () => placeStarter(btn.getAttribute('data-starter')));
+        btn.addEventListener('click', () => {
+          if (btn.closest && btn.closest('#phoneTutorial')) {
+            const card = document.getElementById('phoneTutorial');
+            if (card) {
+              card.hidden = true;
+              card.dataset.closed = '1';
+            }
+          }
+          placeStarter(btn.getAttribute('data-starter'));
+        });
       });
       
       // Screenshot buttons
@@ -13349,6 +13488,7 @@
         gradeOut.texture.colorSpace = THREE.LinearSRGBColorSpace;
       }
     }
+    let captureSmallShare = 1;
     function largestRedShare(buf, w, h) {
       if (!buf || w < 2 || h < 2) return 0;
       const seen = new Uint8Array(w * h);
@@ -13360,9 +13500,12 @@
         return r > 140 && r > g + 28 && r > b + 28;
       };
       let best = 0;
+      let small = Infinity;
+      let blobs = 0;
       const n = w * h;
       for (let p = 0; p < n; p++) {
         if (seen[p] || !redAt(p)) continue;
+        let count = 0;
         let minX = p % w;
         let maxX = minX;
         let minY = (p / w) | 0;
@@ -13373,6 +13516,7 @@
           const q = stack.pop();
           const x = q % w;
           const y = (q - x) / w;
+          count++;
           if (x < minX) minX = x;
           if (x > maxX) maxX = x;
           if (y < minY) minY = y;
@@ -13382,9 +13526,15 @@
           if (y > 0 && !seen[q - w] && redAt(q - w)) { seen[q - w] = 1; stack.push(q - w); }
           if (y + 1 < h && !seen[q + w] && redAt(q + w)) { seen[q + w] = 1; stack.push(q + w); }
         }
-        best = Math.max(best, maxX - minX + 1, maxY - minY + 1);
+        if (count < 12) continue;
+        const side = Math.max(maxX - minX + 1, maxY - minY + 1);
+        blobs++;
+        if (side > best) best = side;
+        if (side < small) small = side;
       }
-      return best / Math.min(w, h);
+      const denom = Math.min(w, h);
+      captureSmallShare = blobs ? small / denom : 1;
+      return best / denom;
     }
 
     function redSpan(buf, w, h) {
@@ -13674,7 +13824,7 @@
       if (!build) return;
       
       const galleryCount = build.brickCount != null ? build.brickCount : (build.data ? build.data.length : 0);
-      if (!(await confirmLoad('Load "' + build.name + '" (' + galleryCount + ' bricks)? This will replace your current build.'))) return;
+      if (!(await confirmLoad('Load "' + build.name + '" (' + galleryCount + ' ' + brickWord(galleryCount) + ')? This will replace your current build.'))) return;
       
       saveUndo();
       bricks.forEach(b => { if (!b.isInstancedBrick) scene.remove(b); });
@@ -15133,6 +15283,8 @@
         if (dontShowCheckbox && dontShowCheckbox.checked) {
           localStorage.setItem('brickBuilderTutorialDismissed', 'true');
         }
+        focusProjectName();
+        setTimeout(() => focusProjectName(), 0);
       }
       
       // Event listeners
@@ -15164,6 +15316,7 @@
         const box = document.getElementById('phoneTutorialDontShow');
         if (box && box.checked) localStorage.setItem('brickBuilderTutorialDismissed', 'true');
         if (!bricks.length && !shareTokenFromLocation()) showStarterBar();
+        focusProjectName();
       }
       if (phoneOk) phoneOk.addEventListener('click', dismissPhoneTutorial);
       

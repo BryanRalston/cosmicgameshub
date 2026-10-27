@@ -1,0 +1,158 @@
+
+
+#loadConfirm.modal-overlay,
+#namePrompt.modal-overlay { z-index: 10080; background: rgba(0,0,0,0.72); }
+/* The desktop sidebar is 10050. A gallery behind it hides the left of each thumb. */
+#galleryModal.modal-overlay { z-index: 10070; }
+.name-prompt-input {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 14px;
+  min-height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(0,0,0,0.35);
+  color: #fff;
+  font: inherit;
+  font-size: 16px;
+  padding: 0 12px;
+}
+#namePromptCancel { background: rgba(255,255,255,0.12); color: #fff; }
+#namePromptOk { background: #f97316; color: #fff; }
+.load-confirm {
+  width: min(420px, calc(100% - 32px));
+  background: #142018;
+  color: #f4fff4;
+  border-radius: 16px;
+  padding: 18px 18px 14px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.45);
+}
+.load-confirm h2 { margin: 0 0 8px; font-size: 18px; }
+.load-confirm p { margin: 0 0 14px; font-size: 15px; line-height: 1.35; }
+.load-confirm-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.load-confirm-actions button {
+  min-height: 44px;
+  min-width: 96px;
+  border: 0;
+  border-radius: 12px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+#loadConfirmCancel { background: rgba(255,255,255,0.12); color: #fff; }
+#loadConfirmOk { background: #f97316; color: #fff; }
+@media (max-width: 430px) {
+  #controls.tray-open {
+    padding-bottom: 0 !important;
+    scroll-padding-bottom: 12px;
+  }
+  #controls.tray-open .tray-scroll > #projectSection {
+    order: 0;
+    padding: 2px 6px 4px;
+  }
+  #controls.tray-open #projectSection .project-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px;
+    align-items: center;
+  }
+  #controls.tray-open #projectSection .project-name-input {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  #controls.tray-open #projectSection .project-buttons:first-of-type {
+    grid-column: 2;
+    grid-row: 1;
+    margin: 0;
+  }
+  #controls.tray-open #projectSection .project-buttons:last-of-type {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    margin-top: 0 !important;
+  }
+  #controls.tray-open #savedProjectsList {
+    height: 36px;
+    max-height: 36px;
+    margin-top: 2px;
+  }
+  #controls.tray-open .tool-btn {
+    min-height: 36px;
+    padding: 4px 4px;
+  }
+  #controls.tray-open .tray-scroll > .section:has(#mirrorBtn) {
+    order: 1;
+    flex: 0 0 auto;
+    margin: 0;
+    padding: 2px 4px 4px;
+  }
+  #controls.tray-open .section:has(#mirrorBtn) .section-content,
+  #controls.tray-open .section:has(#mirrorBtn).collapsed .section-content {
+    display: block;
+    max-height: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    content-visibility: visible;
+    pointer-events: auto;
+  }
+  #controls.tray-open .tool-grid { display: grid; }
+  #controls.tray-open #mirrorBtn { order: -2; }
+  #controls.tray-open #moveBtn { order: -1; }
+  .toast {
+    top: 48px !important;
+    left: 128px !important;
+    right: 8px !important;
+    width: auto;
+    max-width: none;
+    padding: 6px 10px;
+    line-height: 1.2;
+    z-index: 400;
+    pointer-events: auto;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .toast.show { pointer-events: auto; }
+  #moveModeIndicator,
+  #deleteModeBanner {
+    top: 96px;
+    max-width: calc(100vw - 16px);
+    white-space: nowrap;
+    flex-wrap: nowrap;
+  }
+  #moveModeLabel { white-space: nowrap; }
+  body:has(#mirrorPopup.visible) .gotw-tag,
+  body:has(#mirrorPopup.visible) #qualityBar,
+  body:has(#moveModeIndicator.visible) .gotw-tag,
+  body:has(#moveModeIndicator.visible) #qualityBar,
+  body:has(#deleteModeBanner.visible) .gotw-tag,
+  body:has(#deleteModeBanner.visible) #qualityBar {
+    display: none !important;
+  }
+}
+@media (min-width: 769px) {
+  #controls {
+    z-index: 10050;
+    gap: 16px;
+    padding: 16px 16px 18px;
+  }
+  #sidebarToggle { z-index: 10051; }
+  #controls .section {
+    padding: 16px 16px 18px;
+  }
+  #controls .section-title {
+    margin-bottom: 14px;
+  }
+  #controls .subsection {
+    margin-top: 16px;
+    padding: 12px;
+  }
+  #controls .brick-grid {
+    gap: 8px;
+  }
+  #controls .brick-btn {
+    padding: 11px 4px;
+  }
+  #controls .tool-grid {
+    gap: 10px;
+  }
+}

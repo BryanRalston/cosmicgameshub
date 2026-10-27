@@ -443,7 +443,7 @@
     .rot-deg { color: #4ade80; font-weight: 700; min-width: 35px; }
     
     .toast {
-      position: fixed; top: 56px; bottom: auto; left: 50%; transform: translateX(-50%) translateY(20px);
+      position: fixed; top: 136px; bottom: auto; left: 50%; transform: translateX(-50%) translateY(20px);
       background: rgba(15, 15, 26, 0.98);
       backdrop-filter: blur(20px);
       color: white; padding: 12px 24px; border-radius: 12px;
@@ -453,7 +453,7 @@
       border: 1px solid rgba(255,255,255,0.1);
       box-shadow: 0 8px 32px rgba(0,0,0,0.4);
     }
-    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
     .toast.success { 
       background: linear-gradient(135deg, rgba(34, 197, 94, 0.95), rgba(22, 163, 74, 0.95));
       border-color: rgba(74, 222, 128, 0.3);
@@ -3196,7 +3196,7 @@
     width: 100% !important;
     bottom: calc(78px + env(safe-area-inset-bottom, 0px)) !important;
     /* Open sheet stays short enough that the plate above it is still most of the shot. */
-    max-height: 16vh !important;
+    max-height: 256px !important;
     height: auto !important;
     transition: none !important;
     z-index: 180 !important;
@@ -3215,8 +3215,8 @@
     flex-direction: column !important;
     gap: 0 !important;
     overflow: hidden !important;
-    max-height: 16vh !important;
-    height: 16vh !important;
+    max-height: 256px !important;
+    height: 256px !important;
     padding: 0 !important;
     box-sizing: border-box !important;
   }
@@ -3243,9 +3243,10 @@
     min-height: 0;
     overflow-x: hidden;
     overflow-y: auto;
-    /* The sheet stays at 16vh. Extra tail room lets the last tool's center
-       scroll into the open band, above the build HUD. */
-    padding: 0 8px 280px;
+    /* The sheet is tall enough for Mirror and Move. A short tail keeps the
+       last control reachable without a blank page under the tools. */
+    padding: 0 8px 16px;
+    overscroll-behavior: none;
   }
   #controls.tray-open .tray-scroll > .preview { display: none !important; }
   #controls.tray-open .tray-scroll > * { order: 4; }
@@ -3407,7 +3408,7 @@ body.phone-tray-open .drawer-starters button {
     font-size: 12px !important;
   }
   body.phone-tray-open .rotation-ind {
-    bottom: calc(78px + 16vh + 8px + env(safe-area-inset-bottom, 0px)) !important;
+    bottom: calc(78px + 256px + 8px + env(safe-area-inset-bottom, 0px)) !important;
   }
   #dailyPrompt { top: 92px !important; }
   #stats {
@@ -3462,7 +3463,7 @@ body.phone-tray-open .drawer-starters button {
     left: auto !important;
     right: 8px !important;
     top: auto !important;
-    bottom: calc(78px + 16vh + 56px + env(safe-area-inset-bottom, 0px)) !important;
+    bottom: calc(78px + 256px + 16px + env(safe-area-inset-bottom, 0px)) !important;
     z-index: 190 !important;
   }
   body.phone-tray-open #controls .preview { display: none !important; }
@@ -3491,8 +3492,8 @@ body.phone-tray-open .drawer-starters button {
     bottom: calc(176px + env(safe-area-inset-bottom, 0px)) !important;
   }
   #controls.tray-open {
-    max-height: 16vh !important;
-    height: 16vh !important;
+    max-height: 256px !important;
+    height: 256px !important;
   }
   .phone-view-btn {
     display: flex;
@@ -3524,7 +3525,7 @@ body.phone-tray-open .drawer-starters button {
   .mirror-popup {
     left: 8px !important;
     right: 8px !important;
-    top: 64px !important;
+    top: 88px !important;
     width: auto !important;
     min-width: 0 !important;
     max-width: calc(100vw - 16px) !important;
@@ -3544,7 +3545,7 @@ body.phone-tray-open .drawer-starters button {
     left: 8px !important;
     right: auto !important;
     transform: none !important;
-    bottom: calc(78px + 16vh + 16px + env(safe-area-inset-bottom, 0px)) !important;
+    bottom: calc(78px + 256px + 16px + env(safe-area-inset-bottom, 0px)) !important;
   }
   body.phone-view-open #stats {
     display: flex !important;
@@ -3610,8 +3611,90 @@ body.phone-tray-open .drawer-starters button {
 #loadConfirmOk { background: #f97316; color: #fff; }
 @media (max-width: 430px) {
   #controls.tray-open {
-    padding-bottom: 12px !important;
+    padding-bottom: 0 !important;
     scroll-padding-bottom: 12px;
+  }
+  #controls.tray-open .tray-scroll > #projectSection {
+    order: 0;
+    padding: 2px 6px 4px;
+  }
+  #controls.tray-open #projectSection .project-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px;
+    align-items: center;
+  }
+  #controls.tray-open #projectSection .project-name-input {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  #controls.tray-open #projectSection .project-buttons:first-of-type {
+    grid-column: 2;
+    grid-row: 1;
+    margin: 0;
+  }
+  #controls.tray-open #projectSection .project-buttons:last-of-type {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    margin-top: 0 !important;
+  }
+  #controls.tray-open #savedProjectsList {
+    height: 36px;
+    max-height: 36px;
+    margin-top: 2px;
+  }
+  #controls.tray-open .tool-btn {
+    min-height: 36px;
+    padding: 4px 4px;
+  }
+  #controls.tray-open .tray-scroll > .section:has(#mirrorBtn) {
+    order: 1;
+    flex: 0 0 auto;
+    margin: 0;
+    padding: 2px 4px 4px;
+  }
+  #controls.tray-open .section:has(#mirrorBtn) .section-content,
+  #controls.tray-open .section:has(#mirrorBtn).collapsed .section-content {
+    display: block;
+    max-height: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    content-visibility: visible;
+    pointer-events: auto;
+  }
+  #controls.tray-open .tool-grid { display: grid; }
+  #controls.tray-open #mirrorBtn { order: -2; }
+  #controls.tray-open #moveBtn { order: -1; }
+  .toast {
+    top: 48px !important;
+    left: 128px !important;
+    right: 8px !important;
+    width: auto;
+    max-width: none;
+    padding: 6px 10px;
+    line-height: 1.2;
+    z-index: 400;
+    pointer-events: auto;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .toast.show { pointer-events: auto; }
+  #moveModeIndicator,
+  #deleteModeBanner {
+    top: 96px;
+    max-width: calc(100vw - 16px);
+    white-space: nowrap;
+    flex-wrap: nowrap;
+  }
+  #moveModeLabel { white-space: nowrap; }
+  body:has(#mirrorPopup.visible) .gotw-tag,
+  body:has(#mirrorPopup.visible) #qualityBar,
+  body:has(#moveModeIndicator.visible) .gotw-tag,
+  body:has(#moveModeIndicator.visible) #qualityBar,
+  body:has(#deleteModeBanner.visible) .gotw-tag,
+  body:has(#deleteModeBanner.visible) #qualityBar {
+    display: none !important;
   }
 }
 @media (min-width: 769px) {

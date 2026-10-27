@@ -66,7 +66,7 @@
     width: 100% !important;
     bottom: calc(78px + env(safe-area-inset-bottom, 0px)) !important;
     /* Open sheet stays short enough that the plate above it is still most of the shot. */
-    max-height: 16vh !important;
+    max-height: 256px !important;
     height: auto !important;
     transition: none !important;
     z-index: 180 !important;
@@ -85,8 +85,8 @@
     flex-direction: column !important;
     gap: 0 !important;
     overflow: hidden !important;
-    max-height: 16vh !important;
-    height: 16vh !important;
+    max-height: 256px !important;
+    height: 256px !important;
     padding: 0 !important;
     box-sizing: border-box !important;
   }
@@ -113,9 +113,10 @@
     min-height: 0;
     overflow-x: hidden;
     overflow-y: auto;
-    /* The sheet stays at 16vh. Extra tail room lets the last tool's center
-       scroll into the open band, above the build HUD. */
-    padding: 0 8px 280px;
+    /* The sheet is tall enough for Mirror and Move. A short tail keeps the
+       last control reachable without a blank page under the tools. */
+    padding: 0 8px 16px;
+    overscroll-behavior: none;
   }
   #controls.tray-open .tray-scroll > .preview { display: none !important; }
   #controls.tray-open .tray-scroll > * { order: 4; }

@@ -58,7 +58,7 @@
     .rot-deg { color: #4ade80; font-weight: 700; min-width: 35px; }
     
     .toast {
-      position: fixed; top: 56px; bottom: auto; left: 50%; transform: translateX(-50%) translateY(20px);
+      position: fixed; top: 136px; bottom: auto; left: 50%; transform: translateX(-50%) translateY(20px);
       background: rgba(15, 15, 26, 0.98);
       backdrop-filter: blur(20px);
       color: white; padding: 12px 24px; border-radius: 12px;
@@ -68,7 +68,7 @@
       border: 1px solid rgba(255,255,255,0.1);
       box-shadow: 0 8px 32px rgba(0,0,0,0.4);
     }
-    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
     .toast.success { 
       background: linear-gradient(135deg, rgba(34, 197, 94, 0.95), rgba(22, 163, 74, 0.95));
       border-color: rgba(74, 222, 128, 0.3);

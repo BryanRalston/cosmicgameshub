@@ -59,7 +59,7 @@
     font-size: 12px !important;
   }
   body.phone-tray-open .rotation-ind {
-    bottom: calc(78px + 16vh + 8px + env(safe-area-inset-bottom, 0px)) !important;
+    bottom: calc(78px + 256px + 8px + env(safe-area-inset-bottom, 0px)) !important;
   }
   #dailyPrompt { top: 92px !important; }
   #stats {
@@ -114,7 +114,7 @@
     left: auto !important;
     right: 8px !important;
     top: auto !important;
-    bottom: calc(78px + 16vh + 56px + env(safe-area-inset-bottom, 0px)) !important;
+    bottom: calc(78px + 256px + 16px + env(safe-area-inset-bottom, 0px)) !important;
     z-index: 190 !important;
   }
   body.phone-tray-open #controls .preview { display: none !important; }
@@ -143,8 +143,8 @@
     bottom: calc(176px + env(safe-area-inset-bottom, 0px)) !important;
   }
   #controls.tray-open {
-    max-height: 16vh !important;
-    height: 16vh !important;
+    max-height: 256px !important;
+    height: 256px !important;
   }
   .phone-view-btn {
     display: flex;
@@ -176,7 +176,7 @@
   .mirror-popup {
     left: 8px !important;
     right: 8px !important;
-    top: 64px !important;
+    top: 88px !important;
     width: auto !important;
     min-width: 0 !important;
     max-width: calc(100vw - 16px) !important;
@@ -196,7 +196,7 @@
     left: 8px !important;
     right: auto !important;
     transform: none !important;
-    bottom: calc(78px + 16vh + 16px + env(safe-area-inset-bottom, 0px)) !important;
+    bottom: calc(78px + 256px + 16px + env(safe-area-inset-bottom, 0px)) !important;
   }
   body.phone-view-open #stats {
     display: flex !important;

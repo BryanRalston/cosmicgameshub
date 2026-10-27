@@ -1222,6 +1222,132 @@ function largestRedSide(img) {
   return best;
 }
 
+function redSides(img) {
+  const w = img.width;
+  const h = img.height;
+  const data = img.data;
+  const seen = new Uint8Array(w * h);
+  const isRedPx = (i) => data[i] > 140 && data[i] > data[i + 1] + 28 && data[i] > data[i + 2] + 28;
+  const sides = [];
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const start = y * w + x;
+      if (seen[start] || !isRedPx(start * 4)) continue;
+      let n = 0;
+      let minX = x;
+      let maxX = x;
+      let minY = y;
+      let maxY = y;
+      const stack = [start];
+      seen[start] = 1;
+      while (stack.length) {
+        const p = stack.pop();
+        const px = p % w;
+        const py = (p - px) / w;
+        n++;
+        if (px < minX) minX = px;
+        if (px > maxX) maxX = px;
+        if (py < minY) minY = py;
+        if (py > maxY) maxY = py;
+        if (px > 0 && !seen[p - 1] && isRedPx((p - 1) * 4)) { seen[p - 1] = 1; stack.push(p - 1); }
+        if (px + 1 < w && !seen[p + 1] && isRedPx((p + 1) * 4)) { seen[p + 1] = 1; stack.push(p + 1); }
+        if (py > 0 && !seen[p - w] && isRedPx((p - w) * 4)) { seen[p - w] = 1; stack.push(p - w); }
+        if (py + 1 < h && !seen[p + w] && isRedPx((p + w) * 4)) { seen[p + w] = 1; stack.push(p + w); }
+      }
+      if (n >= 12) sides.push(Math.max(maxX - minX + 1, maxY - minY + 1));
+    }
+  }
+  return sides;
+}
+
+function farPlate(img) {
+  const { width, height, data } = img;
+  function colPeaks(fx) {
+    const x = Math.floor(width * fx);
+    const y0 = Math.floor(height * 0.36);
+    const y1 = Math.floor(height * 0.56);
+    const vals = [];
+    for (let y = y0; y < y1; y++) {
+      const i = (y * width + x) * 4;
+      const g = data[i + 1];
+      vals.push(g > 60 && g > data[i] + 4 && g > data[i + 2] + 4 ? g : null);
+    }
+    let peaks = 0;
+    let prevSign = 0;
+    let prev = 0;
+    let seen = 0;
+    for (let i = 0; i < vals.length; i++) if (vals[i] != null) { prev = vals[i]; break; }
+    for (let i = 1; i < vals.length; i++) {
+      if (vals[i] == null || vals[i - 1] == null) { prevSign = 0; continue; }
+      seen++;
+      const d = vals[i] - vals[i - 1];
+      const sign = d > 1.2 ? 1 : d < -1.2 ? -1 : 0;
+      if (sign && prevSign && sign !== prevSign && Math.abs(vals[i] - prev) > 8) {
+        peaks++;
+        prev = vals[i];
+      }
+      if (sign) prevSign = sign;
+    }
+    return { peaks, seen };
+  }
+  function studsAt(yf) {
+    const y = Math.floor(height * yf);
+    let best = 0;
+    for (const fx of [0.36, 0.48, 0.6]) {
+      const xa = Math.floor(width * fx);
+      const xb = Math.floor(width * (fx + 0.14));
+      let n = 0;
+      let prev = 0;
+      for (let x = xa + 2; x < xb - 2; x++) {
+        const i = (y * width + x) * 4;
+        const g = data[i + 1];
+        if (!(g > 70 && g > data[i] && g > data[i + 2])) { prev = 0; continue; }
+        const left = data[(y * width + (x - 2)) * 4 + 1];
+        const right = data[(y * width + (x + 2)) * 4 + 1];
+        if (g >= left + 8 && g >= right + 8 && g >= prev) n++;
+        prev = g;
+      }
+      if (n > best) best = n;
+    }
+    return best;
+  }
+  let stripes = 0;
+  let samples = 0;
+  for (const fx of [0.4, 0.48, 0.56]) {
+    const col = colPeaks(fx);
+    samples += col.seen;
+    if (col.seen > 12 && col.peaks > stripes) stripes = col.peaks;
+  }
+  return { stripes, farStuds: Math.max(studsAt(0.42), studsAt(0.48)), samples };
+}
+
+function topBlackLine(img) {
+  const { width, height, data } = img;
+  const x0 = Math.floor(width * 0.42);
+  const x1 = Math.floor(width * 0.58);
+  const yMax = Math.min(24, height);
+  let run = 0;
+  let best = 0;
+  for (let y = 0; y < yMax; y++) {
+    let dark = 0;
+    let light = 0;
+    let n = 0;
+    for (let x = x0; x < x1; x += 2) {
+      const i = (y * width + x) * 4;
+      const luma = data[i] * 0.3 + data[i + 1] * 0.5 + data[i + 2] * 0.2;
+      n++;
+      if (luma < 18) dark++;
+      else if (luma > 80) light++;
+    }
+    if (n && dark > n * 0.7) run++;
+    else {
+      if (run >= 1 && run <= 3 && light > n * 0.4) best = Math.max(best, run);
+      run = 0;
+    }
+  }
+  return best;
+}
+
 function horizonSeam(img) {
   const w = img.width;
   const h = img.height;
@@ -4129,6 +4255,504 @@ async function main() {
         } finally { await context.close(); }
       }
       return lines.join(' | ');
+    });
+
+    await check('R21g-plate-stripes', 'the default desktop camera has no far-plate stripes, or the far studs resolve', async () => {
+      const { page, context } = await openPage(browser, false, 'r21gs');
+      try {
+        await ready(page);
+        const shot = await grabCanvas(page, 'r21g-plate.png');
+        const far = farPlate(shot.img);
+        assert(far.samples > 30, 'far plate not in frame, samples ' + far.samples);
+        const resolved = far.farStuds >= 3;
+        const smooth = far.stripes < 3;
+        assert(resolved || smooth, 'far stripes ' + far.stripes + ' studs ' + far.farStuds);
+        return 'stripes ' + far.stripes + ' studs ' + far.farStuds;
+      } finally { await context.close(); }
+    });
+
+    await check('R21g-mirror-plate', 'a mirrored brick and its ghost stay on the plate, and the axis crosses the plate center', async () => {
+      const { page, context } = await openPage(browser, false, 'r21gm');
+      try {
+        await ready(page);
+        await openSection(page, /^Tools$/);
+        await scrollUntil(page, page.locator('#mirrorBtn'));
+        await clickSel(page, '#mirrorBtn');
+        const stud = await locateStud(page, 0.55);
+        await page.mouse.move(stud.x, stud.y);
+        await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+        const hover = await page.evaluate(() => {
+          const THREE = window.THREE;
+          const plate = window.baseplateRef;
+          if (!THREE || !plate || !window.scene) return null;
+          const box = new THREE.Box3().setFromObject(plate);
+          const ghosts = [];
+          const lines = [];
+          window.scene.traverse((obj) => {
+            const data = obj.userData && obj.userData.ghostData;
+            if (data && obj.position) ghosts.push({ x: obj.position.x, z: obj.position.z });
+            if (!obj.isLine || !obj.geometry || !obj.geometry.attributes || !obj.geometry.attributes.position) return;
+            const color = obj.material && obj.material.color;
+            if (!color || color.r < 0.7 || color.b < 0.7 || color.g > 0.3) return;
+            const pos = obj.geometry.attributes.position;
+            lines.push({ x0: pos.getX(0), z0: pos.getZ(0), x1: pos.getX(1), z1: pos.getZ(1) });
+          });
+          return { minX: box.min.x, maxX: box.max.x, minZ: box.min.z, maxZ: box.max.z, ghosts, lines };
+        });
+        assert(hover, 'plate missing');
+        const inside = (x, z) => x >= hover.minX - 0.4 && x <= hover.maxX + 0.4 && z >= hover.minZ - 0.4 && z <= hover.maxZ + 0.4;
+        const problems = [];
+        if (!hover.ghosts.length) problems.push('no mirror ghost');
+        else if (!hover.ghosts.every((g) => inside(g.x, g.z))) problems.push('ghost off plate ' + hover.ghosts.map((g) => g.x.toFixed(1) + ',' + g.z.toFixed(1)).join(' '));
+        const upright = hover.lines.find((line) => Math.abs(line.x0 - line.x1) < 1);
+        const midX = (hover.minX + hover.maxX) / 2;
+        if (!upright) problems.push('no left-right axis');
+        else if (Math.abs(upright.x0 - midX) > 4) problems.push('axis x ' + upright.x0.toFixed(1) + ' center ' + midX.toFixed(1));
+        await clickAt(page, stud.x, stud.y);
+        assert(await waitGrown(page, 0, 2500), 'mirror place failed');
+        const placed = await page.evaluate(() => {
+          const THREE = window.THREE;
+          const plate = window.baseplateRef;
+          const box = new THREE.Box3().setFromObject(plate);
+          return {
+            n: window.bricks.length,
+            bricks: window.bricks.map((b) => ({ x: b.position.x, z: b.position.z })),
+            minX: box.min.x, maxX: box.max.x, minZ: box.min.z, maxZ: box.max.z
+          };
+        });
+        if (placed.n < 2) problems.push('count ' + placed.n);
+        const on = (x, z) => x >= placed.minX - 0.4 && x <= placed.maxX + 0.4 && z >= placed.minZ - 0.4 && z <= placed.maxZ + 0.4;
+        const off = placed.bricks.filter((b) => !on(b.x, b.z));
+        if (off.length) problems.push('twin off plate ' + off.map((b) => b.x.toFixed(1) + ',' + b.z.toFixed(1)).join(' '));
+        assert(problems.length === 0, problems.join('; '));
+        return 'on plate ' + placed.n;
+      } finally { await context.close(); }
+    });
+
+    await check('R21g-type-before-focus', 'Mad typed as the name UI opens stays in the field and does not toggle Mirror', async () => {
+      const problems = [];
+      async function typed(page, label) {
+        await page.keyboard.type('Mad', { delay: 0 });
+        const state = await hotState(page);
+        if (state.value.indexOf('Mad') < 0) problems.push(label + ' value "' + state.value + '"');
+        if (state.mirror) problems.push(label + ' mirror');
+      }
+      {
+        const { page, context } = await openPage(browser, false, 'r21gt');
+        try {
+          await ready(page);
+          await typed(page, 'open');
+          await page.mouse.click(760, 70);
+          const field = await page.locator('#projectName').boundingBox();
+          assert(field && field.width > 4, 'name field missing');
+          const x = field.x + field.width / 2;
+          const y = field.y + field.height / 2;
+          await page.mouse.move(x, y);
+          await page.mouse.down({ clickCount: 3 });
+          await page.keyboard.type('Mad', { delay: 0 });
+          await page.mouse.up({ clickCount: 3 });
+          const state = await hotState(page);
+          if (state.value.indexOf('Mad') < 0) problems.push('triple value "' + state.value + '"');
+          if (state.mirror) problems.push('triple mirror');
+        } finally { await context.close(); }
+      }
+      {
+        const { page, context } = await openPage(browser, true, 'r21gtp');
+        try {
+          await ready(page);
+          await ensureDrawer(page);
+          await typed(page, 'drawer');
+        } finally { await context.close(); }
+      }
+      assert(problems.length === 0, problems.join('; '));
+      return 'Mad stayed put';
+    });
+
+    await check('R21g-wide-thumb', 'a spread-out mirrored build frames every brick in the thumbnail', async () => {
+      const { page, context } = await openPage(browser, false, 'r21gw');
+      try {
+        await ready(page);
+        await openSection(page, /^Tools$/);
+        await scrollUntil(page, page.locator('#mirrorBtn'));
+        await clickSel(page, '#mirrorBtn');
+        await clickStud(page, 0.38, false);
+        await clickStud(page, 0.68, false);
+        await page.keyboard.press('Escape');
+        await page.waitForFunction(() => {
+          const pop = document.getElementById('mirrorPopup');
+          return !pop || !pop.classList.contains('visible');
+        }, null, { timeout: 2000 }).catch(() => {});
+        await scrollUntil(page, page.locator('#projectName'));
+        const field = await page.locator('#projectName').boundingBox();
+        await typeInto(page, field, 'spread', 'click');
+        await scrollUntil(page, page.locator('#saveProjectBtn'));
+        await clickSel(page, '#saveProjectBtn');
+        await page.waitForFunction(() => localStorage.getItem('brickProject_spread'), null, { timeout: 8000 });
+        await clickSel(page, '#galleryBtn');
+        await page.locator('#galleryGrid img').first().waitFor({ state: 'visible', timeout: 8000 });
+        const buf = await page.locator('#galleryGrid img').first().screenshot();
+        writeFileSync(join(shots, 'r21g-wide-thumb.png'), buf);
+        const thumb = decodePng(buf);
+        const sides = redSides(thumb);
+        const shortSide = Math.min(thumb.width, thumb.height);
+        assert(sides.length >= 1, 'no brick in the thumb');
+        const small = sides.filter((side) => side / shortSide < 0.12);
+        assert(small.length === 0, 'bricks ' + sides.map((side) => (side / shortSide * 100).toFixed(1) + '%').join(' '));
+        return sides.map((side) => (side / shortSide * 100).toFixed(1) + '%').join(' ');
+      } finally { await context.close(); }
+    });
+
+    await check('R21g-panel-load', 'one click on the panel Load button shows a load confirm or a load toast', async () => {
+      const { page, context } = await openPage(browser, false, 'r21gl');
+      try {
+        await ready(page);
+        await clickStud(page, 0.5, false);
+        const field = await page.locator('#projectName').boundingBox();
+        await typeInto(page, field, 'cabin', 'click');
+        await clickSel(page, '#saveProjectBtn');
+        await page.waitForFunction(() => localStorage.getItem('brickProject_cabin'), null, { timeout: 8000 });
+        await page.waitForFunction(() => {
+          const toast = document.getElementById('toast');
+          return toast && !toast.classList.contains('show');
+        }, null, { timeout: 4000 }).catch(() => {});
+        const before = await page.locator('#toast').innerText();
+        await clickSel(page, '#loadProjectBtn');
+        let saw = '';
+        const t0 = Date.now();
+        while (Date.now() - t0 < 900) {
+          saw = await page.evaluate(() => {
+            const confirm = document.getElementById('loadConfirm');
+            const body = document.getElementById('loadConfirmBody');
+            const open = confirm && (confirm.style.display === 'flex' || confirm.style.display === 'block' || confirm.classList.contains('visible'));
+            if (open && body && /load/i.test(body.textContent || '')) return 'confirm ' + body.textContent.replace(/\s+/g, ' ').trim();
+            const toast = document.getElementById('toast');
+            const text = toast ? (toast.textContent || '') : '';
+            if (toast && toast.classList.contains('show') && /load/i.test(text)) return 'toast ' + text.replace(/\s+/g, ' ').trim();
+            return '';
+          });
+          if (saw) break;
+          await page.evaluate(() => new Promise((r) => requestAnimationFrame(r)));
+        }
+        assert(saw, 'Load click left "' + before.replace(/\s+/g, ' ').trim() + '"');
+        return saw;
+      } finally { await context.close(); }
+    });
+
+    await check('R21g-singular', 'the load confirm for one brick says 1 brick', async () => {
+      const { page, context } = await openPage(browser, false, 'r21gq');
+      try {
+        await ready(page);
+        await clickStud(page, 0.5, false);
+        const field = await page.locator('#projectName').boundingBox();
+        await typeInto(page, field, 'solo', 'click');
+        await clickSel(page, '#saveProjectBtn');
+        await page.waitForFunction(() => localStorage.getItem('brickProject_solo'), null, { timeout: 8000 });
+        await clickSel(page, '#galleryBtn');
+        await page.locator('#galleryGrid .gallery-item-actions button').first().waitFor({ state: 'visible', timeout: 8000 });
+        await clickSel(page, '#galleryGrid .gallery-item-actions button');
+        await page.locator('#loadConfirmBody').waitFor({ state: 'visible', timeout: 4000 });
+        const text = (await page.locator('#loadConfirmBody').innerText()).replace(/\s+/g, ' ');
+        assert(text.indexOf('1 bricks') < 0, 'confirm "' + text + '"');
+        assert(/1 brick\b/.test(text), 'confirm "' + text + '"');
+        return text;
+      } finally { await context.close(); }
+    });
+
+    await check('R21g-toast-line', 'a mode toast misses the banner and the top center stays clear', async () => {
+      const { page, context } = await openPage(browser, false, 'r21gline');
+      try {
+        await ready(page);
+        await openSection(page, /^Tools$/);
+        await scrollUntil(page, page.locator('#moveBtn'));
+        await clickSel(page, '#moveBtn');
+        await page.locator('#moveModeIndicator.visible').waitFor({ state: 'visible', timeout: 4000 });
+        const toast = await page.locator('#toast').boundingBox();
+        const banner = await page.locator('#moveModeIndicator').boundingBox();
+        const problems = [];
+        if (!toast || toast.height < 8) problems.push('toast hidden');
+        else if (overlaps(toast, banner)) problems.push('toast overlaps the banner');
+        const shot = await page.screenshot({ type: 'png' });
+        const line = topBlackLine(decodePng(shot));
+        if (line) problems.push('black line ' + line + 'px');
+        assert(problems.length === 0, problems.join('; '));
+        return 'clear';
+      } finally { await context.close(); }
+    });
+
+    await check('R21g-drawer-visible', 'the phone tools sheet shows Mirror and Move before any scroll', async () => {
+      const { page, context } = await openPage(browser, true, 'r21gd');
+      try {
+        await ready(page);
+        await clickSel(page, '#panelToggle');
+        assert(await drawerOpen(page), 'drawer stayed closed');
+        const view = await page.evaluate(() => {
+          const scroll = document.querySelector('.tray-scroll');
+          const controls = document.getElementById('controls');
+          const hide = document.getElementById('panelToggle');
+          if (!scroll || !controls) return null;
+          const sr = scroll.getBoundingClientRect();
+          const cr = controls.getBoundingClientRect();
+          const top = Math.max(sr.top, cr.top, 0);
+          const bottom = Math.min(sr.bottom, cr.bottom, window.innerHeight);
+          const left = Math.max(sr.left, cr.left, 0);
+          const right = Math.min(sr.right, cr.right, window.innerWidth);
+          const hit = (id) => {
+            const el = document.getElementById(id);
+            if (!el) return 'missing';
+            const r = el.getBoundingClientRect();
+            const cx = r.left + r.width / 2;
+            const cy = r.top + r.height / 2;
+            if (cy < top || cy > bottom || cx < left || cx > right) return 'outside';
+            const node = document.elementFromPoint(cx, cy);
+            if (!node || (node !== el && !el.contains(node))) return 'covered';
+            return '';
+          };
+          const hr = hide ? hide.getBoundingClientRect() : null;
+          let hideHit = 'missing';
+          if (hr && hr.height > 8) {
+            const node = document.elementFromPoint(hr.left + hr.width / 2, hr.top + hr.height / 2);
+            hideHit = node && (node === hide || hide.contains(node)) ? '' : 'covered';
+          }
+          return {
+            h: bottom - top,
+            scrollTop: scroll.scrollTop,
+            max: scroll.scrollHeight - scroll.clientHeight,
+            mirror: hit('mirrorBtn'),
+            move: hit('moveBtn'),
+            hide: hideHit
+          };
+        });
+        assert(view, 'tray missing');
+        const problems = [];
+        if (!(view.h >= 200)) problems.push('visible ' + Math.round(view.h) + 'px');
+        if (view.mirror) problems.push('mirror ' + view.mirror);
+        if (view.move) problems.push('move ' + view.move);
+        if (view.hide) problems.push('hide tools ' + view.hide);
+        const tray = await page.locator('.tray-scroll').boundingBox();
+        const client = await page.context().newCDPSession(page);
+        const x = Math.round(tray.x + 28);
+        const y0 = Math.round(tray.y + Math.min(36, tray.height / 2));
+        await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y: y0, id: 1 }] });
+        for (let s = 1; s <= 6; s++) {
+          await client.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y: y0 - 50 * s, id: 1 }] });
+        }
+        await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+        await client.detach().catch(() => {});
+        const scrolled = await page.locator('.tray-scroll').evaluate((el) => ({
+          top: el.scrollTop,
+          max: el.scrollHeight - el.clientHeight
+        }));
+        if (scrolled.top > scrolled.max + 1) problems.push('scroll ' + Math.round(scrolled.top) + ' past ' + Math.round(scrolled.max));
+        assert(problems.length === 0, problems.join('; '));
+        return 'visible ' + Math.round(view.h) + 'px';
+      } finally { await context.close(); }
+    });
+
+    await check('R21g-badge-overlap', 'the week badge and the quality row miss Mirror, Move, and Delete', async () => {
+      const { page, context } = await openPage(browser, true, 'r21gb');
+      try {
+        await ready(page);
+        await page.waitForFunction(() => document.querySelector('.gotw-tag'), null, { timeout: 8000 });
+        await openSection(page, /^Tools$/);
+        await scrollUntil(page, page.locator('#mirrorBtn'));
+        await clickSel(page, '#mirrorBtn');
+        await page.locator('#mirrorPopup.visible').waitFor({ state: 'visible', timeout: 4000 });
+        const problems = [];
+        const clash = async (sel, label) => {
+          const box = await page.locator(sel).boundingBox().catch(() => null);
+          if (!box || box.width < 4 || box.height < 4) return;
+          const badge = await page.locator('.gotw-tag').boundingBox();
+          const quality = await page.locator('#qualityBar').boundingBox();
+          if (badge && overlaps(badge, box)) problems.push('badge overlaps ' + label);
+          if (quality && overlaps(quality, box)) problems.push('quality overlaps ' + label);
+        };
+        await clash('#mirrorPopup', 'mirror');
+        const toast = await page.locator('#toast').boundingBox();
+        const header = await page.locator('.mirror-popup-header').boundingBox().catch(() => null);
+        if (toast && header && overlaps(toast, header)) problems.push('toast overlaps the mirror header');
+        await page.keyboard.press('Escape');
+        await scrollUntil(page, page.locator('#moveBtn'));
+        await clickSel(page, '#moveBtn');
+        await page.locator('#moveModeIndicator.visible').waitFor({ state: 'visible', timeout: 4000 });
+        const lines = await page.locator('#moveModeLabel').evaluate((el) => {
+          const style = getComputedStyle(el);
+          const lh = parseFloat(style.lineHeight) || parseFloat(style.fontSize) * 1.2;
+          return Math.round(el.getBoundingClientRect().height / Math.max(1, lh));
+        });
+        if (lines > 2) problems.push('move banner wraps ' + lines + ' lines');
+        await clash('#moveModeIndicator', 'move');
+        await page.keyboard.press('Escape');
+        await clickSel(page, '#hudDeleteBtn');
+        await page.locator('#deleteModeBanner.visible').waitFor({ state: 'visible', timeout: 4000 });
+        await clash('#deleteModeBanner', 'delete');
+        assert(problems.length === 0, problems.join('; '));
+        return 'clear';
+      } finally { await context.close(); }
+    });
+
+    await check('R21g-stud-home', 'phone plate studs match brick studs at the home camera', async () => {
+      const { page, context } = await openPage(browser, true, 'r21gu');
+      try {
+        await ready(page);
+        await clickStud(page, 0.5, false);
+        const shot = await grabCanvas(page, 'r21g-stud-home.png');
+        const img = shot.img;
+        const pitch = (y, pred) => {
+          const row = [];
+          for (let x = 0; x < img.width; x++) {
+            const i = (y * img.width + x) * 4;
+            row.push(pred(img.data[i], img.data[i + 1], img.data[i + 2]) ? img.data[i + 1] + img.data[i] : 0);
+          }
+          let best = 0;
+          let bestLag = 0;
+          for (let lag = 6; lag < 80; lag++) {
+            let s = 0;
+            for (let x = 0; x < row.length - lag; x++) s += row[x] * row[x + lag];
+            if (s > best) { best = s; bestLag = lag; }
+          }
+          return bestLag;
+        };
+        const blob = brickBlob(img, 0);
+        assert(blob.n > 40, 'brick too small to measure studs');
+        const brickPitch = pitch(Math.floor((blob.minY + blob.maxY) / 2), (r, g) => r > 120 && r > g);
+        const plateY = Math.min(img.height - 4, blob.maxY + 12);
+        const platePitch = pitch(plateY, (r, g) => g > 70 && g > r);
+        const ratio = platePitch / Math.max(1, brickPitch);
+        assert(brickPitch > 4 && platePitch > 4, 'pitch brick ' + brickPitch + ' plate ' + platePitch);
+        assert(ratio < 1.7 && ratio > 0.6, 'plate/brick stud pitch ' + ratio.toFixed(2));
+        return 'ratio ' + ratio.toFixed(2);
+      } finally { await context.close(); }
+    });
+
+    await check('R21g-stray-tap', 'a 14 px finger move on the far plate does not place, and a still tap does', async () => {
+      const { page, context } = await openPage(browser, true, 'r21gy');
+      try {
+        await ready(page);
+        const far = await locateStud(page, 0.78);
+        const before = await brickCount(page);
+        const client = await page.context().newCDPSession(page);
+        await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: far.x, y: far.y, id: 1 }] });
+        await client.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: far.x + 14, y: far.y + 2, id: 1 }] });
+        await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+        await client.detach().catch(() => {});
+        await page.evaluate(() => new Promise((r) => setTimeout(r, 350)));
+        assert((await brickCount(page)) === before, 'stray drag placed a brick');
+        const near = await locateStud(page, 0.48);
+        await page.touchscreen.tap(near.x, near.y);
+        assert(await waitGrown(page, before, 2500), 'still tap did not place');
+        return 'drag ignored, tap placed';
+      } finally { await context.close(); }
+    });
+
+    await check('R21g-one-store', 'the gallery and the project list read one saved-build store', async () => {
+      const { page, context } = await openPage(browser, true, 'r21go');
+      try {
+        await ready(page);
+        const brick = [{ type: '2x2', color: '#ff2200', rot: 0, grid: { gx: 20, gz: 20, gy: 0, w: 2, d: 2, hp: 3 } }];
+        async function namesOf() {
+          await clickSel(page, '#galleryBtn');
+          await page.locator('#galleryModal').waitFor({ state: 'visible', timeout: 8000 });
+          await page.waitForFunction(() => {
+            const grid = document.getElementById('galleryGrid');
+            return grid && (grid.querySelector('.gallery-item-name') || grid.querySelector('.gallery-empty'));
+          }, null, { timeout: 4000 });
+          const gallery = await page.locator('#galleryGrid').innerText();
+          await page.keyboard.press('Escape');
+          await ensureDrawer(page);
+          const list = await page.locator('#savedProjectsList').innerText();
+          return { gallery: gallery.replace(/\s+/g, ' ').trim(), list: list.replace(/\s+/g, ' ').trim() };
+        }
+        await page.evaluate((row) => {
+          localStorage.clear();
+          localStorage.setItem('brickProject_cabin', JSON.stringify({ v: 4, name: 'Cabin', savedAt: new Date().toISOString(), bricks: row }));
+        }, brick);
+        await page.reload({ waitUntil: 'domcontentloaded' });
+        await ready(page);
+        const fromProject = await namesOf();
+        const problems = [];
+        if (fromProject.gallery.indexOf('Cabin') < 0 || /no saved builds/i.test(fromProject.gallery)) problems.push('gallery missed Cabin "' + fromProject.gallery.slice(0, 80) + '"');
+        if (fromProject.list.indexOf('Cabin') < 0) problems.push('list missed Cabin "' + fromProject.list.slice(0, 80) + '"');
+        await page.evaluate((row) => {
+          localStorage.clear();
+          localStorage.setItem('brickBuilderGallery', JSON.stringify([{
+            name: 'Shed', thumbnail: '', brickCount: 1, date: '10/26/2026', data: row
+          }]));
+        }, brick);
+        await page.reload({ waitUntil: 'domcontentloaded' });
+        await ready(page);
+        const fromGallery = await namesOf();
+        if (fromGallery.gallery.indexOf('Shed') < 0 || /no saved builds/i.test(fromGallery.gallery)) problems.push('gallery missed Shed "' + fromGallery.gallery.slice(0, 80) + '"');
+        if (fromGallery.list.indexOf('Shed') < 0) problems.push('list missed Shed "' + fromGallery.list.slice(0, 80) + '"');
+        assert(problems.length === 0, problems.join('; '));
+        return 'Cabin and Shed agree';
+      } finally { await context.close(); }
+    });
+
+    await check('R21g-save-toast', 'Save on the phone shows a toast the player can see', async () => {
+      const { page, context } = await openPage(browser, true, 'r21gv');
+      try {
+        await ready(page);
+        await clickStud(page, 0.5, false);
+        await ensureDrawer(page);
+        const field = await page.locator('#projectName').boundingBox();
+        await typeInto(page, field, 'phone', 'click');
+        await clickSel(page, '#saveProjectBtn');
+        await page.waitForFunction(() => {
+          const toast = document.getElementById('toast');
+          return toast && toast.classList.contains('show') && /saved/i.test(toast.textContent || '');
+        }, null, { timeout: 4000 });
+        const box = await page.locator('#toast').boundingBox();
+        assert(box && box.height > 8 && box.y >= -1 && box.y < 844, 'toast box missing');
+        const hit = await page.evaluate(() => {
+          const toast = document.getElementById('toast');
+          const r = toast.getBoundingClientRect();
+          const node = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+          if (node && (node === toast || toast.contains(node))) return '';
+          return node ? (node.id || node.className || node.tagName).toString().slice(0, 40) : 'none';
+        });
+        assert(!hit, 'toast covered by ' + hit);
+        const text = (await page.locator('#toast').innerText()).replace(/\s+/g, ' ').trim();
+        return text;
+      } finally { await context.close(); }
+    });
+
+    await check('R21g-toast-top', 'a phone toast misses More games and the Games link', async () => {
+      const { page, context } = await openPage(browser, true, 'r21gp');
+      try {
+        await ready(page);
+        const recenter = page.locator('button', { hasText: /recenter/i }).first();
+        await clickLoc(page, recenter);
+        await page.waitForFunction(() => {
+          const toast = document.getElementById('toast');
+          return toast && toast.classList.contains('show');
+        }, null, { timeout: 4000 });
+        const toast = await page.locator('#toast').boundingBox();
+        assert(toast && toast.height > 8, 'toast hidden');
+        const problems = [];
+        for (const sel of ['#brixBack', '.brix-more__toggle', '.brix-more']) {
+          const box = await page.locator(sel).boundingBox().catch(() => null);
+          if (box && overlaps(toast, box)) problems.push('toast overlaps ' + sel);
+        }
+        assert(problems.length === 0, problems.join('; '));
+        return 'clear';
+      } finally { await context.close(); }
+    });
+
+    await check('R21g-phone-starters', 'the phone tutorial card offers Cottage, Tower, and Buggy', async () => {
+      const { page, context } = await openPage(browser, true, 'r21gh');
+      try {
+        await page.waitForFunction(() => {
+          const card = document.getElementById('phoneTutorial');
+          return window.brixCanPlace && card && !card.hidden;
+        }, null, { timeout: 45000 });
+        const text = await page.locator('#phoneTutorial').innerText();
+        const problems = [];
+        if (!/cottage/i.test(text)) problems.push('no Cottage');
+        if (!/tower/i.test(text)) problems.push('no Tower');
+        if (!/buggy/i.test(text)) problems.push('no Buggy');
+        assert(problems.length === 0, problems.join('; ') + ' card "' + text.replace(/\s+/g, ' ').slice(0, 80) + '"');
+        return 'starters on the card';
+      } finally { await context.close(); }
     });
 
     await check('boot-x5', 'five fresh boots after localStorage.clear have no errors', async () => {
