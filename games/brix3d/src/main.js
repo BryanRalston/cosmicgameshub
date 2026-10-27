@@ -28,6 +28,9 @@
     // CSS pixels; the suite's desktop scale is 1, so this matches the shot.
     const studViewH = { value: 900 };
     const studViewBuf = new THREE.Vector2();
+    // 1 on a portrait phone. The plate shader reads this so the wide window
+    // keeps the 0.562 stud gate.
+    const studPortrait = { value: 0 };
     const BASE_Y = 0;
     
     // ==================== SOUND SYSTEM ====================
@@ -368,13 +371,13 @@
     // click band is 28–44 px while every plate corner stays inside the frame.
     const DESK_OX = 42, DESK_OY = 22, DESK_OZ = 42;
     const DESK_AIM = 49;
-    // Portrait sits about 15° above the plate and 56 units out. Open sky is
-    // about a fifth of the phone frame, the horizon stays above the y280
-    // band, and a starter cottage still clears 48px. The wide 1280×800
-    // window stays on its own ray. The ghost sits on the cursor because
-    // placement aims at the brick center, not this pitch.
-    const PHONE_OX = 52, PHONE_OY = 21, PHONE_OZ = 56;
-    const PHONE_HOME_DIST = 56;
+    // Portrait sits about 23° above the plate. A 74° lens keeps the sky
+    // above 15% and the plate large enough once the drawer is open. 37
+    // units out keeps the 2×2 in the 36–45 px band. The wide window stays
+    // on its own ray.
+    const PHONE_OX = 52, PHONE_OY = 33, PHONE_OZ = 56;
+    const PHONE_HOME_DIST = 37;
+    const PHONE_FOV = 74;
     // Slide the portrait aim along the phone ray so flat ground sits outside
     // the studded span. Distance and pitch stay put. Side is screen-right.
     const PHONE_AIM_SIDE = -4;
@@ -1805,9 +1808,12 @@
       
       // Sun position (arc across the sky)
       const sunRadius = 100;
-      // Noon sun shares the home camera's horizontal direction, so the face
-      // you see is the lit face. The old noon sun sat on the opposite side.
-      const camAz = Math.atan2(HOME_OZ, HOME_OX);
+      // Noon sun shares the camera's horizontal direction, so the face you
+      // see is the lit face. Portrait uses its own ray; desktop and the wide
+      // window stay on the home ray so the swatches do not shift.
+      const sunAspect = (camera && camera.aspect) || innerWidth / Math.max(1, innerHeight);
+      const sunPortrait = isMobileGfx() && sunAspect < 1.2;
+      const camAz = Math.atan2(sunPortrait ? PHONE_OZ : HOME_OZ, sunPortrait ? PHONE_OX : HOME_OX);
       const sunAng = (timeOfDay - 0.5) * Math.PI * 2 + camAz;
       const sunX = Math.cos(sunAng) * sunRadius;
       const sunY = sunHeight * 80 + 10;
@@ -2224,13 +2230,14 @@
       // the old 176 print, so the plate contrast survives sRGB. Derivatives
       // come from the continuous uv, not fract(), so the cell seam stays quiet.
       const studGap = 0.4343;
-      studMat.customProgramCacheKey = () => 'plate-stud-disk-lod49';
+      studMat.customProgramCacheKey = () => 'plate-stud-disk-lod56';
       studMat.onBeforeCompile = (shader) => {
         shader.uniforms.uStudShade = { value: isMobileGfx() ? 0.0 : 1.0 };
         shader.uniforms.uViewH = studViewH;
+        shader.uniforms.uPortrait = studPortrait;
         shader.fragmentShader = shader.fragmentShader.replace(
           '#include <common>',
-          'uniform float uStudShade;\nuniform float uViewH;\n#include <common>'
+          'uniform float uStudShade;\nuniform float uViewH;\nuniform float uPortrait;\n#include <common>'
         );
         shader.fragmentShader = shader.fragmentShader.replace(
           '#include <map_fragment>',
@@ -2259,6 +2266,9 @@
             // through the far-plate column (y 0.56) and fully on by the phone
             // plate row near 0.60. The 1440 window already passed with the
             // fade finished by y 0.49, so its stud rows are not re-ramped.
+            // Wide 800 and desktop 900 stay on this step. Portrait is the
+            // 844-tall buffer, or the flag set from the home camera.
+            float portrait = max(uPortrait, step(820.0, uViewH) * (1.0 - step(890.0, uViewH)));
             float farOff = step(0.562, yN);
             float nearOn = smoothstep(0.40, 0.49, yN);
             float nearBand = mix(farOff, nearOn, uStudShade);
@@ -2310,6 +2320,12 @@
             crest *= clamp(1.0 - abs(alongPx) / 2.2, 0.0, 1.0);
             crest *= band * step(3.0, cellPx) * (1.0 - uStudShade);
             diffuseColor.g *= mix(1.0, 1.65, crest);
+            // Portrait only. One row of soft studs in the flat middle,
+            // below the moire sample and above the click finder, so the
+            // ground is not a blank field. Wide and desktop skip it.
+            float midRow = smoothstep(0.448, 0.458, yN) * (1.0 - smoothstep(0.474, 0.486, yN));
+            float midDot = 1.0 - smoothstep(0.20, 0.46, dist);
+            diffuseColor.rgb *= mix(1.0, 0.38, midRow * midDot * portrait * (1.0 - uStudShade));
           }
           `
         );
@@ -7185,7 +7201,7 @@
       
       if (!mirrorOn) return;
       
-      const lineLength = 100; // Long enough to be visible
+      const plateSpan = PLATE_STUDS * STUD;
       const lineHeight = 0.1; // Just above ground
       const lineMaterial = new THREE.LineBasicMaterial({ 
         color: 0xff00ff, 
@@ -7197,10 +7213,10 @@
       const mirrorPos = mirrorOffset * STUD;
       
       if (mirrorAxis === 'x' || mirrorAxis === 'both') {
-        // Vertical line at X = mirrorOffset (parallel to Z axis)
+        // Vertical line at X = mirrorOffset (parallel to Z axis), clipped to the plate
         const points = [
-          new THREE.Vector3(mirrorPos, lineHeight, -lineLength),
-          new THREE.Vector3(mirrorPos, lineHeight, lineLength)
+          new THREE.Vector3(mirrorPos, lineHeight, 0),
+          new THREE.Vector3(mirrorPos, lineHeight, plateSpan)
         ];
         const geometry = new THREE.BufferGeometry().setFromPoints(points);
         const line = new THREE.Line(geometry, lineMaterial);
@@ -7211,8 +7227,8 @@
       if (mirrorAxis === 'z' || mirrorAxis === 'both') {
         // Horizontal line at Z = mirrorOffset (parallel to X axis)
         const points = [
-          new THREE.Vector3(-lineLength, lineHeight, mirrorPos),
-          new THREE.Vector3(lineLength, lineHeight, mirrorPos)
+          new THREE.Vector3(0, lineHeight, mirrorPos),
+          new THREE.Vector3(plateSpan, lineHeight, mirrorPos)
         ];
         const geometry = new THREE.BufferGeometry().setFromPoints(points);
         const line = new THREE.Line(geometry, lineMaterial);
@@ -9695,9 +9711,16 @@
       toast('📄 New project started');
     }
     
-    function saveProject() {
+    async function saveProject() {
       const field = document.getElementById('projectName');
-      const typed = (field && field.value.trim()) || '';
+      let typed = (field && field.value.trim()) || '';
+      if (bricks.length && !typed) {
+        const named = await promptName('Name this build before saving.', '');
+        if (named === null) return;
+        typed = String(named).trim();
+        if (!typed) return;
+        if (field) field.value = typed;
+      }
       const name = typed || 'Untitled';
       const write = () => {
         try {
@@ -9782,7 +9805,7 @@
       const input = document.getElementById('projectName');
       if (input) input.value = name;
       hasUnsavedChanges = false;
-      toast('📂 Project "' + name + '" loaded!', 'success');
+      toast('📂 Loaded "' + name + '"', 'success');
       return true;
     }
 
@@ -9885,11 +9908,17 @@
         item.className = 'saved-project-item';
         item.dataset.key = p.key;
         item.innerHTML = `
-          <span class="saved-project-name" title="Click to load">${escHtml(p.name)}</span>
+          <span class="saved-project-name" title="Select">${escHtml(p.name)}</span>
           <span class="saved-project-date">${p.brickCount === 1 ? '1 brick' : p.brickCount + ' bricks'} • ${date}</span>
           <button class="saved-project-delete" title="Delete">🗑️</button>
         `;
-        item.querySelector('.saved-project-name').onclick = () => loadProject(p.key);
+        item.querySelector('.saved-project-name').onclick = () => {
+          list.querySelectorAll('.saved-project-item.selected').forEach((el) => el.classList.remove('selected'));
+          item.classList.add('selected');
+          // Load arms the list so a row only highlights. A direct click still
+          // asks before it replaces the plate.
+          if (!projectListArmed) loadProject(p.key);
+        };
         item.querySelector('.saved-project-delete').onclick = (e) => { e.stopPropagation(); deleteProject(p.key); };
         list.appendChild(item);
       });
@@ -9963,7 +9992,7 @@
       // wide lens; narrowing the lens and tipping up by the same sky gap
       // grows that brick without dropping the sky band out of the thumb bar.
       let pitch = 22 * Math.PI / 180;
-      const yaw = Math.PI / 4;
+      let yaw = Math.PI / 4;
       camera.fov = 68;
       camera.updateProjectionMatrix();
       let dirX = 0;
@@ -10123,7 +10152,29 @@
         const data = downsample();
         const m = redSpan(data, dstW, dstH);
         const share = largestRedShare(data, dstW, dstH);
-        return { m, share, small: captureSmallShare, sky: skyOf(data) };
+        let sx = 0;
+        let sn = 0;
+        let minX = dstW;
+        let maxX = 0;
+        const pixels = dstW * dstH;
+        for (let p = 0; p < pixels; p++) {
+          const i = p * 4;
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          if (!(r > 140 && r > g + 28 && r > b + 28)) continue;
+          const x = p % dstW;
+          sn++;
+          sx += x;
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+        }
+        const horiz = sn ? {
+          cx: (sx / sn) / dstW,
+          left: minX / dstW,
+          right: (dstW - 1 - maxX) / dstW
+        } : null;
+        return { m, share, small: captureSmallShare, sky: skyOf(data), horiz };
       };
       let shot = sample();
       // dir points from the aim toward the camera. Sliding the aim along it
@@ -10264,9 +10315,179 @@
         }
         shot = next;
       }
+      // The near brick holds most of the red pixels, so centering that mass
+      // leaves the far bricks in an empty side of the plate. Slide the aim
+      // along the screen until the red box itself sits in the middle.
+      const frameRight = () => {
+        applyPose();
+        const right = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0);
+        right.y = 0;
+        if (right.lengthSq() < 1e-8) right.set(1, 0, 0);
+        return right.normalize();
+      };
+      const framePenalty = (h) => {
+        if (!h) return 1;
+        let p = 0;
+        const side = Math.max(h.left, h.right);
+        if (side > 0.34) p += side - 0.34;
+        if (h.left < 0.04) p += 0.04 - h.left;
+        if (h.right < 0.04) p += 0.04 - h.right;
+        const cxErr = Math.abs(h.cx - 0.5);
+        if (cxErr > 0.12) p += cxErr - 0.12;
+        return p;
+      };
+      const frameHard = (candidate, prevShot) => {
+        const nh = candidate.horiz;
+        return !!(nh
+          && candidate.m.n >= 8
+          && candidate.m.extent >= 0.4
+          && candidate.m.extent <= 0.745
+          && candidate.m.margin >= 0.02
+          && nh.left >= 0.02
+          && nh.right >= 0.02
+          && skyOk(candidate)
+          && candidate.small >= Math.min(prevShot.small, 0.12) - 0.015
+          && candidate.share >= Math.min(prevShot.share, 0.12) - 0.015);
+      };
+      for (let k = 0; k < 6; k++) {
+        const h = shot.horiz;
+        if (!h || shot.m.n < 8) break;
+        const penalty = framePenalty(h);
+        if (penalty <= 0) break;
+        const prev = remember();
+        const right = frameRight();
+        const fullW = 2 * Math.max(0.8, dist * Math.tan((camera.fov * Math.PI / 180) / 2) * Math.max(camera.aspect || 1, 0.3));
+        const boxCx = (h.left + 1 - h.right) * 0.5;
+        const want = Math.max(-0.22, Math.min(0.22, boxCx - 0.5));
+        let best = null;
+        let bestPenalty = penalty;
+        let bestX = prev.x;
+        let bestZ = prev.z;
+        let bestDist = prev.dist;
+        const scales = Math.abs(want) > 0.02 ? [1, 0.65, 1.35, -1] : [1];
+        for (let s = 0; s < scales.length; s++) {
+          aim.x = prev.x;
+          aim.z = prev.z;
+          dist = prev.dist;
+          aim.addScaledVector(right, want * scales[s] * fullW);
+          const candidate = sample();
+          if (!frameHard(candidate, prev.shot)) continue;
+          const nextPenalty = framePenalty(candidate.horiz);
+          if (nextPenalty < bestPenalty - 0.008) {
+            best = candidate;
+            bestPenalty = nextPenalty;
+            bestX = aim.x;
+            bestZ = aim.z;
+            bestDist = dist;
+          }
+        }
+        if (!best && Math.max(h.left, h.right) > 0.34 && shot.m.extent < 0.70 && Math.abs(boxCx - 0.5) < 0.06) {
+          aim.x = prev.x;
+          aim.z = prev.z;
+          dist = prev.dist * 0.94;
+          const candidate = sample();
+          if (frameHard(candidate, prev.shot)) {
+            const nextPenalty = framePenalty(candidate.horiz);
+            if (nextPenalty < bestPenalty - 0.008) {
+              best = candidate;
+              bestPenalty = nextPenalty;
+              bestX = aim.x;
+              bestZ = aim.z;
+              bestDist = dist;
+            }
+          }
+        }
+        if (!best) {
+          restore(prev);
+          break;
+        }
+        aim.x = bestX;
+        aim.z = bestZ;
+        dist = bestDist;
+        shot = best;
+      }
+      // The six-spread is a pixel under 12% once the gallery scales the
+      // thumb. A slightly higher pitch lengthens the near brick. The sky
+      // band stays close to the other thumbs.
+      if (shot.share >= 0.10 && shot.share < 0.135 && shot.m.extent >= 0.62 && shot.m.extent <= 0.745) {
+        const prev = remember();
+        const oldPitch = pitch;
+        const oldYaw = yaw;
+        const oldDist = dist;
+        const lifts = [3, 4];
+        let keptShot = null;
+        for (let li = 0; li < lifts.length; li++) {
+          pitch = oldPitch + lifts[li] * Math.PI / 180;
+          yaw = oldYaw;
+          dist = oldDist;
+          aim.x = prev.x;
+          aim.z = prev.z;
+          updateDir();
+          let next = sample();
+          if (next.m.margin < 0.04) next = slideToMargin(next);
+          const grown = next.share >= prev.shot.share + 0.002;
+          const safe = next.m.n >= 8
+            && grown
+            && next.small >= prev.shot.small - 0.04
+            && next.m.extent >= 0.4
+            && next.m.extent <= 0.74
+            && next.m.margin >= 0.03
+            && next.sky >= 0.14
+            && next.sky <= 0.32
+            && Math.abs(next.sky - prev.shot.sky) <= 0.09;
+          if (!safe) continue;
+          keptShot = next;
+          break;
+        }
+        if (!keptShot) {
+          pitch = oldPitch;
+          yaw = oldYaw;
+          dist = oldDist;
+          updateDir();
+          restore(prev);
+        } else {
+          shot = keptShot;
+        }
+      }
       applyPose();
       renderSceneToCanvas(cover);
       downsample();
+      // The gallery draws this 400×300 buffer a few pixels larger. A brick
+      // that is only just 12% here can lose its edge and read under 12%.
+      // One extra red pixel around a wide spread clears that, and the box
+      // still sits under the 75% fill cap.
+      if (shot.share >= 0.10 && shot.share < 0.133 && shot.m.extent >= 0.62 && shot.m.extent <= 0.74 && shot.m.margin >= 0.03) {
+        const ctx = kept.getContext('2d');
+        const tw = kept.width;
+        const th = kept.height;
+        const img = ctx.getImageData(0, 0, tw, th);
+        const src = img.data;
+        const redAt = (p) => {
+          const i = p * 4;
+          return src[i] > 140 && src[i] > src[i + 1] + 28 && src[i] > src[i + 2] + 28;
+        };
+        const add = [];
+        for (let y = 0; y < th; y++) {
+          for (let x = 0; x < tw; x++) {
+            const p = y * tw + x;
+            if (redAt(p)) continue;
+            const left = x > 0 && redAt(p - 1);
+            const right = x + 1 < tw && redAt(p + 1);
+            const up = y > 0 && redAt(p - tw);
+            const down = y + 1 < th && redAt(p + tw);
+            if (!left && !right && !up && !down) continue;
+            const n = left ? p - 1 : right ? p + 1 : up ? p - tw : p + tw;
+            add.push(p, src[n * 4], src[n * 4 + 1], src[n * 4 + 2]);
+          }
+        }
+        for (let k = 0; k < add.length; k += 4) {
+          const i = add[k] * 4;
+          src[i] = add[k + 1];
+          src[i + 1] = add[k + 2];
+          src[i + 2] = add[k + 3];
+        }
+        ctx.putImageData(img, 0, 0);
+      }
       captureFrame = kept;
       camera.fov = savedFov;
       camera.updateProjectionMatrix();
@@ -10381,9 +10602,14 @@
     }
 
     function frameHomeCamera() {
-      updateZoomLimits();
       const aspect = (camera && camera.aspect) || (innerWidth / Math.max(1, innerHeight));
       const portrait = isMobileGfx() && aspect < 1.2;
+      const nextFov = portrait ? PHONE_FOV : 60;
+      if (camera && camera.fov !== nextFov) {
+        camera.fov = nextFov;
+        camera.updateProjectionMatrix();
+      }
+      updateZoomLimits();
       const wideMobile = isMobileGfx() && !portrait;
       // Portrait keeps its own aim. Desktop looks toward the near corner
       // so the studs under the cursor are large enough to read.
@@ -11505,7 +11731,6 @@
       document.body.classList.toggle('phone-tray-open', trayNow);
       if (!wasTray && trayNow) {
         focusProjectName();
-        frameTrayPlate();
       } else if (wasTray && !trayNow) {
         restoreTrayCamera();
       }
@@ -12226,7 +12451,7 @@
         case 'm':
           mirrorOn = !mirrorOn;
           document.getElementById('mirrorBtn').classList.toggle('active', mirrorOn);
-          document.getElementById('mirrorSettings').classList.toggle('visible', mirrorOn);
+          document.getElementById('mirrorSettings').classList.remove('visible');
           document.getElementById('mirrorPopup').classList.toggle('visible', mirrorOn);
           if (mirrorOn) showFloating(document.getElementById('mirrorPopup'));
           updateMirrorLines();
@@ -12779,7 +13004,7 @@
       const onMirror = armTool('mirror', () => {
         mirrorOn = !mirrorOn;
         document.getElementById('mirrorBtn').classList.toggle('active', mirrorOn);
-        document.getElementById('mirrorSettings').classList.toggle('visible', mirrorOn);
+        document.getElementById('mirrorSettings').classList.remove('visible');
         document.getElementById('mirrorPopup').classList.toggle('visible', mirrorOn);
         if (mirrorOn) {
           showFloating(document.getElementById('mirrorPopup'));
@@ -13060,7 +13285,7 @@
           clearMoveSelection();
         }
         updateGhost();
-        toast(moveMode ? '✋ Move mode ON - click a brick to select group' : 'Move mode OFF');
+        toast(moveMode ? '✋ Tap a brick to move' : 'Move mode OFF');
       });
       
       
@@ -15104,6 +15329,8 @@
       if (renderer) {
         renderer.getDrawingBufferSize(studViewBuf);
         if (studViewBuf.y > 0) studViewH.value = studViewBuf.y;
+        const studAspect = (camera && camera.aspect) || innerWidth / Math.max(1, innerHeight);
+        studPortrait.value = (isMobileGfx() && studAspect < 1.2) ? 1 : 0;
       }
       if (renderer.info && typeof renderer.info.reset === 'function') renderer.info.reset();
       // One new mesh per frame, shadows off, until the plate, studs, and

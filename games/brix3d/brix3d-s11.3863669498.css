@@ -1,0 +1,148 @@
+
+    .weather-btn {
+      background: rgba(255,255,255,0.08);
+      border: none;
+      border-radius: 4px;
+      padding: 6px 4px;
+      font-size: 9px;
+      color: rgba(255,255,255,0.7);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .weather-btn:hover {
+      background: rgba(255,255,255,0.15);
+    }
+    .weather-btn.active {
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      color: white;
+    }
+    
+    /* Mobile responsive */
+    @media (max-width: 768px) {
+      #controls {
+        position: fixed; bottom: 0; left: 0; right: 0; top: auto;
+        width: 100%; height: auto; max-height: 50vh;
+        border-radius: 20px 20px 0 0;
+        padding: 16px;
+        /* Respect iPhone home bar / safe area */
+        padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+      }
+      /* Default the panel to collapsed on mobile so the canvas is usable */
+      #controls.collapsed-mobile {
+        max-height: 56px !important;
+        overflow: hidden;
+        padding-top: 8px;
+        padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+      }
+      #sidebarToggle { display: none; }
+      #buildHud {
+        bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+        max-width: calc(100vw - 12px);
+        overflow-x: auto;
+      }
+      .zoom-controls {
+        bottom: calc(130px + env(safe-area-inset-bottom, 0px));
+      }
+      /* Hide the floating stats panel on mobile — same counts are shown
+         in the controls panel and they overlap with the quick-bar icons */
+      #stats { display: none; }
+      #info { display: none; }
+      .fps { display: none; }
+      .rotation-ind { bottom: 96px; top: auto; }
+      .brick-grid { grid-template-columns: repeat(6, 1fr); }
+      .tool-grid { grid-template-columns: repeat(3, 1fr); }
+
+      /* WASD pan camera hint is keyboard-only — hide on touch devices */
+      .pan-hint { display: none; }
+
+      /* FPS hotbar safe area on mobile */
+      .fps-hotbar {
+        bottom: calc(120px + env(safe-area-inset-bottom, 0px));
+      }
+    }
+    
+    /* Touch indicator */
+    .touch-indicator {
+      position: fixed;
+      width: 60px; height: 60px;
+      border: 3px solid rgba(255,255,255,0.6);
+      border-radius: 50%;
+      pointer-events: none;
+      transform: translate(-50%, -50%) scale(0);
+      transition: transform 0.15s ease;
+      z-index: 1000;
+    }
+    .touch-indicator.active {
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    /* Collapsible panel toggle for mobile */
+    .panel-toggle {
+      display: none;
+      position: absolute;
+      top: -44px; left: 50%; transform: translateX(-50%);
+      background: rgba(15, 15, 26, 0.95);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px 12px 0 0;
+      padding: 10px 24px;
+      color: white;
+      font-size: 12px;
+      cursor: pointer;
+      min-height: 44px;
+    }
+    .brix-back {
+      display: none;
+    }
+    .brix-more {
+      position: fixed;
+      z-index: 160;
+      left: 10px;
+      bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+      display: flex;
+      flex-direction: column-reverse;
+      align-items: flex-start;
+      width: max-content;
+      max-width: calc(100vw - 20px);
+      margin: 0;
+      padding: 4px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(15, 15, 26, 0.94);
+    }
+    .brix-more__label { display: none; }
+    .brix-more__list {
+      display: none;
+      flex-wrap: wrap;
+      gap: 6px;
+      list-style: none;
+      margin: 0 0 4px;
+      padding: 0;
+      max-width: 280px;
+    }
+    .brix-more.is-open .brix-more__list { display: flex; }
+    .brix-more__list a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 36px;
+      padding: 0 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.12);
+      color: #fff;
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .brix-more__list a[aria-current="page"] { color: #00d4ff; border-color: rgba(0,212,255,0.45); }
+    .brix-more__toggle {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+      padding: 0 10px;
+      border: 0;
+      background: transparent;
+      color: #fff;
+      font: inherit;
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+    }

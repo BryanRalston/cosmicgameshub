@@ -1,0 +1,184 @@
+
+    .fps-controls-hint {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(10px);
+      padding: 15px 25px;
+      border-radius: 12px;
+      color: white;
+      text-align: center;
+    }
+    .fps-hint-title {
+      font-size: 14px;
+      font-weight: bold;
+      margin-bottom: 8px;
+      color: #4ade80;
+    }
+    .fps-hint-keys {
+      font-size: 12px;
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+    .fps-hint-keys span {
+      background: rgba(255,255,255,0.2);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: bold;
+      margin-right: 4px;
+    }
+    .fps-brick-info {
+      margin: 8px 0;
+      padding: 6px 12px;
+      background: rgba(59, 130, 246, 0.3);
+      border: 1px solid rgba(59, 130, 246, 0.5);
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #93c5fd;
+    }
+    .fps-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      pointer-events: auto;
+    }
+    .fps-btn {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s ease;
+    }
+    .fps-btn:hover {
+      background: rgba(255,255,255,0.25);
+      transform: scale(1.05);
+    }
+    .fps-btn.active {
+      background: rgba(74, 222, 128, 0.4);
+      border-color: #4ade80;
+    }
+    .fps-btn.fps-exit {
+      background: rgba(239, 68, 68, 0.3);
+      border-color: rgba(239, 68, 68, 0.5);
+    }
+    .fps-btn.fps-exit:hover {
+      background: rgba(239, 68, 68, 0.5);
+    }
+    
+    /* FPS Hotbar */
+    .fps-hotbar {
+      position: absolute;
+      bottom: 120px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 4px;
+      padding: 6px;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(10px);
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.1);
+      pointer-events: auto;
+    }
+    .fps-slot {
+      width: 50px;
+      height: 50px;
+      background: rgba(255,255,255,0.1);
+      border: 2px solid rgba(255,255,255,0.2);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      position: relative;
+    }
+    .fps-slot:hover {
+      background: rgba(255,255,255,0.2);
+      transform: translateY(-2px);
+    }
+    .fps-slot.selected {
+      border-color: #4ade80;
+      background: rgba(74, 222, 128, 0.3);
+      box-shadow: 0 0 10px rgba(74, 222, 128, 0.4);
+    }
+    .slot-key {
+      position: absolute;
+      top: 2px;
+      left: 4px;
+      font-size: 9px;
+      color: rgba(255,255,255,0.5);
+      font-weight: bold;
+    }
+    .slot-name {
+      font-size: 9px;
+      color: white;
+      text-align: center;
+      margin-top: 4px;
+    }
+    
+    /* FPS Radial Menu */
+    .fps-radial-menu {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 300px;
+      height: 300px;
+      display: none;
+      pointer-events: auto;
+    }
+    .fps-radial-menu.visible {
+      display: block;
+    }
+    .fps-radial-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80px;
+      height: 80px;
+      background: rgba(0,0,0,0.9);
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 12px;
+      font-weight: 600;
+      z-index: 10;
+    }
+    .fps-radial-item {
+      position: absolute;
+      width: 70px;
+      height: 70px;
+      background: rgba(30, 30, 50, 0.95);
+      border: 2px solid rgba(255,255,255,0.2);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      color: white;
+      font-size: 10px;
+      text-align: center;
+      padding: 4px;
+    }
+    .fps-radial-item:hover {
+      background: rgba(59, 130, 246, 0.6);
+      border-color: #3b82f6;
+      transform: scale(1.1);
+    }

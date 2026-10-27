@@ -1348,6 +1348,139 @@ function topBlackLine(img) {
   return best;
 }
 
+function columnStripes(img, fx, y0f, y1f) {
+  const { width, height, data } = img;
+  const x = Math.max(2, Math.min(width - 3, Math.floor(width * fx)));
+  const y0 = Math.floor(height * y0f);
+  const y1 = Math.floor(height * y1f);
+  const vals = [];
+  for (let y = y0; y < y1; y++) {
+    const i = (y * width + x) * 4;
+    const g = data[i + 1];
+    vals.push(g > 60 && g > data[i] + 4 && g > data[i + 2] + 4 ? g : null);
+  }
+  let peaks = 0;
+  let prevSign = 0;
+  let prev = 0;
+  let seen = 0;
+  for (let i = 0; i < vals.length; i++) if (vals[i] != null) { prev = vals[i]; break; }
+  for (let i = 1; i < vals.length; i++) {
+    if (vals[i] == null || vals[i - 1] == null) { prevSign = 0; continue; }
+    seen++;
+    const d = vals[i] - vals[i - 1];
+    const sign = d > 1.2 ? 1 : d < -1.2 ? -1 : 0;
+    if (sign && prevSign && sign !== prevSign && Math.abs(vals[i] - prev) > 8) {
+      peaks++;
+      prev = vals[i];
+    }
+    if (sign) prevSign = sign;
+  }
+  return { peaks, seen };
+}
+
+function studPeaksIn(img, y0, y1, x0, x1) {
+  const { width, data } = img;
+  let best = 0;
+  const ya = Math.max(2, y0);
+  const yb = Math.min(img.height - 3, y1);
+  for (let y = ya; y <= yb; y += 3) {
+    let n = 0;
+    let prev = 0;
+    for (let x = Math.max(2, x0); x < Math.min(width - 2, x1); x++) {
+      const i = (y * width + x) * 4;
+      const g = data[i + 1];
+      if (!(g > 70 && g > data[i] && g > data[i + 2])) { prev = 0; continue; }
+      const left = data[(y * width + (x - 2)) * 4 + 1];
+      const right = data[(y * width + (x + 2)) * 4 + 1];
+      if (g >= left + 8 && g >= right + 8 && g >= prev) n++;
+      prev = g;
+    }
+    if (n > best) best = n;
+  }
+  return best;
+}
+
+function plateSpan(img) {
+  const { width, height, data } = img;
+  let top = -1;
+  let bot = -1;
+  for (let y = 0; y < height; y++) {
+    let n = 0;
+    const step = 4;
+    for (let x = 0; x < width; x += step) {
+      const i = (y * width + x) * 4;
+      if (data[i + 1] > 60 && data[i + 1] > data[i] + 6 && data[i + 1] > data[i + 2] + 4) n++;
+    }
+    if (n > (width / step) * 0.22) {
+      if (top < 0) top = y;
+      bot = y;
+    }
+  }
+  return { top, bot };
+}
+
+function solidSkyBar(img) {
+  const { width, height, data } = img;
+  const x0 = Math.floor(width * 0.28);
+  const y0 = Math.floor(height * 0.04);
+  const y1 = Math.min(height - 1, Math.floor(height * 0.18));
+  let best = 0;
+  let at = 0;
+  for (let y = y0; y <= y1; y++) {
+    let run = 0;
+    let longest = 0;
+    for (let x = x0; x < width - 8; x++) {
+      const i = (y * width + x) * 4;
+      const luma = data[i] * 0.3 + data[i + 1] * 0.5 + data[i + 2] * 0.2;
+      if (luma < 22) {
+        run++;
+        if (run > longest) longest = run;
+      } else run = 0;
+    }
+    if (longest > best) { best = longest; at = y; }
+  }
+  return { best, at };
+}
+
+function redFrame(img) {
+  const blob = redBlob(img);
+  if (!blob.n) return null;
+  return {
+    n: blob.n,
+    cx: blob.cx / img.width,
+    left: blob.minX / img.width,
+    right: (img.width - 1 - blob.maxX) / img.width,
+    span: blob.w / img.width
+  };
+}
+
+function pitchDeg(pose) {
+  if (!pose) return 0;
+  const dx = pose.x - pose.tx;
+  const dy = pose.y - pose.ty;
+  const dz = pose.z - pose.tz;
+  return Math.atan2(dy, Math.hypot(dx, dz)) * 180 / Math.PI;
+}
+
+function topFaceRed(img, blob) {
+  if (!blob || !blob.n) return 0;
+  const { data, width } = img;
+  const samples = [];
+  for (let y = blob.minY; y <= blob.maxY; y++) {
+    for (let x = blob.minX; x <= blob.maxX; x++) {
+      const i = (y * width + x) * 4;
+      if (!isRed(data[i], data[i + 1], data[i + 2])) continue;
+      samples.push(data[i]);
+    }
+  }
+  if (!samples.length) return 0;
+  samples.sort((a, b) => a - b);
+  const cut = Math.floor(samples.length * 0.7);
+  let sum = 0;
+  for (let i = cut; i < samples.length; i++) sum += samples[i];
+  return sum / Math.max(1, samples.length - cut);
+}
+
 function horizonSeam(img) {
   const w = img.width;
   const h = img.height;
@@ -4752,6 +4885,570 @@ async function main() {
         if (!/buggy/i.test(text)) problems.push('no Buggy');
         assert(problems.length === 0, problems.join('; ') + ' card "' + text.replace(/\s+/g, ' ').slice(0, 80) + '"');
         return 'starters on the card';
+      } finally { await context.close(); }
+    });
+
+    await check('R22-desk-plate', 'the default desktop plate is a stud grid without horizontal stripes, and the 2x2 is readable', async () => {
+      const { page, context } = await openPage(browser, false, 'r22plate');
+      try {
+        await ready(page);
+        const shot = await grabCanvas(page, 'r22-desk-plate.png');
+        const problems = [];
+        const span = plateSpan(shot.img);
+        const near0 = span.top >= 0 ? Math.floor(span.bot - (span.bot - span.top) * 0.28) : Math.floor(shot.img.height * 0.72);
+        const near1 = span.top >= 0 ? Math.floor(span.bot - (span.bot - span.top) * 0.06) : Math.floor(shot.img.height * 0.9);
+        let worst = 0;
+        const studs = [];
+        for (const fx of [0.32, 0.48, 0.56]) {
+          const col = columnStripes(shot.img, fx, near0 / shot.img.height, near1 / shot.img.height);
+          if (col.peaks > worst) worst = col.peaks;
+          const x = Math.floor(shot.img.width * fx);
+          const peaks = studPeaksIn(shot.img, near0, near1, x - 80, x + 80);
+          studs.push(peaks);
+          if (peaks < 2) problems.push('studs x' + fx + ' ' + peaks);
+          else if (col.seen > 12 && col.peaks >= 8 && peaks < 3) problems.push('stripes x' + fx + ' ' + col.peaks);
+        }
+        await clickStud(page, 0.55, false);
+        const brickShot = await grabCanvas(page, 'r22-desk-brick.png');
+        const blob = brickBlob(brickShot.img, plateInset(page, brickShot));
+        const px = blob.n > 8 ? Math.max(blob.w, blob.h) / brickShot.dpr : 0;
+        if (!(px >= 18 && px <= 55)) problems.push('2x2 ' + px.toFixed(1) + ' px');
+        assert(problems.length === 0, problems.join('; '));
+        return 'stripes ' + worst + ' studs ' + studs.join('/') + ' brick ' + px.toFixed(1) + ' px';
+      } finally { await context.close(); }
+    });
+
+    await check('R22-spread-frame', 'a one-brick thumb and a spread thumb both frame the build in the middle', async () => {
+      const { page, context } = await openPage(browser, false, 'r22frame');
+      try {
+        await ready(page);
+        await clickStud(page, 0.55, false);
+        let field = await page.locator('#projectName').boundingBox();
+        await typeInto(page, field, 'solo', 'click');
+        await clickSel(page, '#saveProjectBtn');
+        await page.waitForFunction(() => localStorage.getItem('brickProject_solo'), null, { timeout: 8000 });
+        await clickSel(page, '#newProjectBtn');
+        await page.locator('#loadConfirmOk').waitFor({ state: 'visible', timeout: 4000 });
+        await clickSel(page, '#loadConfirmOk');
+        await page.waitForFunction(() => (parseInt(document.getElementById('brickCount').textContent, 10) || 0) === 0, null, { timeout: 4000 });
+        const spots = [[0.62, 0.60], [0.72, 0.64], [0.62, 0.80]];
+        for (const pair of spots) {
+          const shot = await grabCanvas(page);
+          const pt = findStudNear(shot.img, pair[0], pair[1]);
+          assert(pt, 'right stud missing at ' + pair.join(','));
+          await placeAt(page, shot.clip.x + pt.x / shot.dpr, shot.clip.y + pt.y / shot.dpr);
+        }
+        assert(await brickCount(page) >= 3, 'right cluster placed ' + await brickCount(page));
+        await scrollUntil(page, page.locator('#projectName'));
+        field = await page.locator('#projectName').boundingBox();
+        await typeInto(page, field, 'wide', 'click');
+        await scrollUntil(page, page.locator('#saveProjectBtn'));
+        await clickSel(page, '#saveProjectBtn');
+        await page.waitForFunction(() => localStorage.getItem('brickProject_wide'), null, { timeout: 8000 });
+        await clickSel(page, '#galleryBtn');
+        await page.locator('#galleryGrid img').nth(1).waitFor({ state: 'visible', timeout: 8000 });
+        const problems = [];
+        for (const name of ['solo', 'wide']) {
+          const card = page.locator('.gallery-item', { hasText: name }).first();
+          const buf = await card.locator('img').screenshot();
+          writeFileSync(join(shots, 'r22-frame-' + name + '.png'), buf);
+          const frame = redFrame(decodePng(buf));
+          if (!frame) { problems.push(name + ' has no red brick'); continue; }
+          if (Math.abs(frame.cx - 0.5) > 0.12) problems.push(name + ' center ' + frame.cx.toFixed(2));
+          if (frame.left < 0.04 || frame.right < 0.04) problems.push(name + ' edge left ' + frame.left.toFixed(2) + ' right ' + frame.right.toFixed(2));
+          if (frame.left > 0.34 || frame.right > 0.34) problems.push(name + ' jammed left ' + frame.left.toFixed(2) + ' right ' + frame.right.toFixed(2));
+          if (frame.span < 0.28) problems.push(name + ' span ' + frame.span.toFixed(2));
+        }
+        assert(problems.length === 0, problems.join('; '));
+        return 'framed';
+      } finally { await context.close(); }
+    });
+
+    await check('R22-toast-bar', 'a mode toast does not leave a black bar across the sky', async () => {
+      const { page, context } = await openPage(browser, false, 'r22bar');
+      try {
+        await ready(page);
+        await openSection(page, /^Tools$/);
+        await scrollUntil(page, page.locator('#moveBtn'));
+        await clickSel(page, '#moveBtn');
+        await page.locator('#toast.show').waitFor({ state: 'visible', timeout: 4000 });
+        const buf = await page.screenshot({ type: 'png' });
+        writeFileSync(join(shots, 'r22-toast-bar.png'), buf);
+        const bar = solidSkyBar(decodePng(buf));
+        assert(bar.best < 180, 'black bar ' + bar.best + ' px at y ' + bar.at);
+        return 'clear ' + bar.best + 'px';
+      } finally { await context.close(); }
+    });
+
+    await check('R22-load-select', 'a project row selects and only Load loads it', async () => {
+      const { page, context } = await openPage(browser, false, 'r22load');
+      try {
+        await ready(page);
+        await clickStud(page, 0.5, false);
+        const field = await page.locator('#projectName').boundingBox();
+        await typeInto(page, field, 'cabin', 'click');
+        await clickSel(page, '#saveProjectBtn');
+        await page.waitForFunction(() => localStorage.getItem('brickProject_cabin'), null, { timeout: 8000 });
+        await clickSel(page, '#newProjectBtn');
+        await page.locator('#loadConfirmOk').waitFor({ state: 'visible', timeout: 4000 });
+        await clickSel(page, '#loadConfirmOk');
+        await page.waitForFunction(() => (parseInt(document.getElementById('brickCount').textContent, 10) || 0) === 0, null, { timeout: 4000 });
+        await clickSel(page, '#loadProjectBtn');
+        await page.locator('.saved-project-name').first().waitFor({ state: 'visible', timeout: 4000 });
+        await clickSel(page, '.saved-project-name');
+        const row = await page.evaluate(() => {
+          const confirm = document.getElementById('loadConfirm');
+          const open = !!(confirm && confirm.style.display === 'flex');
+          const sel = document.querySelector('.saved-project-item.selected');
+          const outline = sel ? parseFloat(getComputedStyle(sel).outlineWidth) || 0 : 0;
+          return {
+            open,
+            selected: document.querySelectorAll('.saved-project-item.selected').length,
+            outline,
+            n: parseInt(document.getElementById('brickCount').textContent, 10) || 0
+          };
+        });
+        const problems = [];
+        if (row.open) problems.push('row click opened Load');
+        if (row.n !== 0) problems.push('row click loaded ' + row.n);
+        if (row.selected !== 1) problems.push('selected ' + row.selected);
+        if (!(row.outline >= 2)) problems.push('selected outline ' + row.outline);
+        assert(problems.length === 0, problems.join('; '));
+        await clickSel(page, '#loadProjectBtn');
+        let back = 0;
+        const t0 = Date.now();
+        while (Date.now() - t0 < 2500) {
+          back = await brickCount(page);
+          if (back >= 1) break;
+        }
+        const name = await page.locator('#projectName').inputValue();
+        assert(back >= 1 && name === 'cabin', 'Load left ' + back + ' named "' + name + '"');
+        return 'selected then loaded';
+      } finally { await context.close(); }
+    });
+
+    await check('R22-save-name', 'sidebar Save of an unnamed build asks for a name before it writes', async () => {
+      const { page, context } = await openPage(browser, false, 'r22name');
+      try {
+        await ready(page);
+        await clickStud(page, 0.5, false);
+        await clickSel(page, '#saveProjectBtn');
+        await page.waitForTimeout(300);
+        const state = await page.evaluate(() => {
+          const prompt = document.getElementById('namePrompt');
+          const open = !!(prompt && (prompt.style.display === 'flex' || prompt.style.display === 'block'));
+          let untitled = false;
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i) || '';
+            if (key.indexOf('Untitled') >= 0 || key.indexOf('untitled') >= 0) untitled = true;
+          }
+          return { open, untitled };
+        });
+        assert(state.open && !state.untitled, 'prompt ' + state.open + ' untitled ' + state.untitled);
+        return 'name dialog';
+      } finally { await context.close(); }
+    });
+
+    await check('R22-mirror-axis', 'the mirror line stays on the plate and the axis controls are not duplicated', async () => {
+      const { page, context } = await openPage(browser, false, 'r22axis');
+      try {
+        await ready(page);
+        await openSection(page, /^Tools$/);
+        await scrollUntil(page, page.locator('#mirrorBtn'));
+        await clickSel(page, '#mirrorBtn');
+        await page.locator('#mirrorPopup.visible').waitFor({ state: 'visible', timeout: 4000 });
+        const view = await page.evaluate(() => {
+          const THREE = window.THREE;
+          const plate = window.baseplateRef;
+          if (!THREE || !plate) return null;
+          const box = new THREE.Box3().setFromObject(plate);
+          const lines = [];
+          window.scene.traverse((obj) => {
+            if (!obj.isLine || !obj.geometry || !obj.geometry.attributes || !obj.geometry.attributes.position) return;
+            const color = obj.material && obj.material.color;
+            if (!color || color.r < 0.7 || color.b < 0.7 || color.g > 0.3) return;
+            const pos = obj.geometry.attributes.position;
+            lines.push({ x0: pos.getX(0), z0: pos.getZ(0), x1: pos.getX(1), z1: pos.getZ(1) });
+          });
+          const shown = (id) => {
+            const el = document.getElementById(id);
+            if (!el) return false;
+            const r = el.getBoundingClientRect();
+            return r.width > 8 && r.height > 8 && getComputedStyle(el).display !== 'none' && getComputedStyle(el).visibility !== 'hidden';
+          };
+          return {
+            minX: box.min.x, maxX: box.max.x, minZ: box.min.z, maxZ: box.max.z,
+            lines,
+            popup: shown('mirrorPopup'),
+            side: shown('mirrorSettings')
+          };
+        });
+        assert(view, 'plate missing');
+        const problems = [];
+        const upright = view.lines.find((line) => Math.abs(line.x0 - line.x1) < 1);
+        if (!upright) problems.push('no axis');
+        else {
+          const midX = (view.minX + view.maxX) / 2;
+          if (Math.abs(upright.x0 - midX) > 4) problems.push('axis x ' + upright.x0.toFixed(1));
+          const inside = (x, z) => x >= view.minX - 0.8 && x <= view.maxX + 0.8 && z >= view.minZ - 0.8 && z <= view.maxZ + 0.8;
+          if (!inside(upright.x0, upright.z0) || !inside(upright.x1, upright.z1)) {
+            problems.push('axis leaves the plate ' + upright.z0.toFixed(1) + ' to ' + upright.z1.toFixed(1));
+          }
+        }
+        const sets = (view.popup ? 1 : 0) + (view.side ? 1 : 0);
+        if (sets !== 1) problems.push('control sets ' + sets);
+        assert(problems.length === 0, problems.join('; '));
+        return 'one axis on the plate';
+      } finally { await context.close(); }
+    });
+
+    await check('R22-sidebar-type', 'sidebar tool labels are readable and the stat box sits clear of the icon buttons', async () => {
+      const { page, context } = await openPage(browser, false, 'r22type');
+      try {
+        await ready(page);
+        const view = await page.evaluate(() => {
+          const label = document.querySelector('#controls .tool-label');
+          const stats = document.getElementById('stats').getBoundingClientRect();
+          const icons = document.getElementById('quickBar').getBoundingClientRect();
+          return {
+            font: label ? parseFloat(getComputedStyle(label).fontSize) : 0,
+            stats: { x: stats.x, y: stats.y, width: stats.width, height: stats.height },
+            icons: { x: icons.x, y: icons.y, width: icons.width, height: icons.height }
+          };
+        });
+        const problems = [];
+        if (!(view.font >= 12)) problems.push('label ' + view.font + 'px');
+        const gap = gapPx(view.stats, view.icons);
+        if (!(gap >= 12)) problems.push('stat gap ' + gap.toFixed(1) + 'px');
+        assert(problems.length === 0, problems.join('; '));
+        return 'label ' + view.font + 'px gap ' + gap.toFixed(1) + 'px';
+      } finally { await context.close(); }
+    });
+
+    await check('R22-gallery-pin', 'Save Current Build stays on screen after three saves', async () => {
+      const { page, context } = await openPage(browser, false, 'r22pin');
+      try {
+        await ready(page);
+        await clickStud(page, 0.5, false);
+        for (const name of ['one', 'two', 'three']) {
+          const field = await page.locator('#projectName').boundingBox();
+          await typeInto(page, field, name, 'triple');
+          await clickSel(page, '#saveProjectBtn');
+          await page.waitForFunction((key) => !!localStorage.getItem(key), 'brickProject_' + name, { timeout: 8000 });
+        }
+        await clickSel(page, '#galleryBtn');
+        await page.locator('#galleryGrid .gallery-item').nth(2).waitFor({ state: 'visible', timeout: 8000 });
+        const vis = await page.evaluate(() => {
+          const btn = document.getElementById('gallerySaveNew');
+          const scroller = btn && btn.closest('.gallery-content');
+          if (!btn || !scroller) return null;
+          const br = btn.getBoundingClientRect();
+          const sr = scroller.getBoundingClientRect();
+          return {
+            top: br.top, bottom: br.bottom, height: br.height,
+            stop: sr.top, sbot: sr.bottom, scroll: scroller.scrollTop
+          };
+        });
+        assert(vis && vis.height > 8, 'save button missing');
+        assert(vis.scroll < 2 && vis.top >= vis.stop - 1 && vis.bottom <= vis.sbot + 1, 'save button y ' + Math.round(vis.top) + '-' + Math.round(vis.bottom) + ' in ' + Math.round(vis.stop) + '-' + Math.round(vis.sbot) + ' scroll ' + vis.scroll);
+        return 'pinned';
+      } finally { await context.close(); }
+    });
+
+    await check('R22-tutorial-next', 'tutorial Next stays in the same place from page to page', async () => {
+      const { page, context } = await openPage(browser, false, 'r22next');
+      try {
+        await page.waitForFunction(() => {
+          const modal = document.getElementById('tutorialModal');
+          const loading = document.getElementById('loadingScreen');
+          const gone = !loading || loading.classList.contains('hide') || getComputedStyle(loading).visibility === 'hidden' || parseFloat(getComputedStyle(loading).opacity) < 0.05;
+          return window.brixCanPlace && gone && modal && modal.classList.contains('visible');
+        }, null, { timeout: 45000 });
+        const first = await page.locator('#tutorialNext').boundingBox();
+        await clickSel(page, '#tutorialNext');
+        await page.waitForFunction(() => document.getElementById('tutorialCurrentPage').textContent === '2', null, { timeout: 4000 });
+        const second = await page.locator('#tutorialNext').boundingBox();
+        const dy = Math.abs((first ? first.y : 0) - (second ? second.y : 0));
+        assert(first && second && dy <= 8, 'Next jumped ' + dy.toFixed(1) + ' px');
+        return 'shift ' + dy.toFixed(1) + ' px';
+      } finally { await context.close(); }
+    });
+
+    await check('R22-load-wording', 'gallery load and the project list use the same load sentence', async () => {
+      const { page, context } = await openPage(browser, false, 'r22word');
+      try {
+        await ready(page);
+        await clickStud(page, 0.5, false);
+        const field = await page.locator('#projectName').boundingBox();
+        await typeInto(page, field, 'cabin', 'click');
+        await clickSel(page, '#saveProjectBtn');
+        await page.waitForFunction(() => localStorage.getItem('brickProject_cabin'), null, { timeout: 8000 });
+        await clickSel(page, '#newProjectBtn');
+        await page.locator('#loadConfirmOk').waitFor({ state: 'visible', timeout: 4000 });
+        await clickSel(page, '#loadConfirmOk');
+        await page.waitForFunction(() => (parseInt(document.getElementById('brickCount').textContent, 10) || 0) === 0, null, { timeout: 4000 });
+        async function readLoadToast() {
+          let text = '';
+          const t0 = Date.now();
+          while (Date.now() - t0 < 2500) {
+            text = await page.evaluate(() => {
+              const toast = document.getElementById('toast');
+              if (!toast || !toast.classList.contains('show')) return '';
+              return (toast.textContent || '').replace(/\s+/g, ' ').trim();
+            });
+            if (/cabin/i.test(text) && /load/i.test(text)) return text;
+          }
+          return text;
+        }
+        await clickSel(page, '#galleryBtn');
+        await page.locator('#galleryGrid .gallery-item-actions button').first().waitFor({ state: 'visible', timeout: 8000 });
+        await clickSel(page, '#galleryGrid .gallery-item-actions button');
+        await page.locator('#loadConfirmOk').waitFor({ state: 'visible', timeout: 4000 });
+        await clickSel(page, '#loadConfirmOk');
+        const gallery = await readLoadToast();
+        await clickSel(page, '#newProjectBtn');
+        await page.locator('#loadConfirmOk').waitFor({ state: 'visible', timeout: 4000 });
+        await clickSel(page, '#loadConfirmOk');
+        await page.waitForFunction(() => (parseInt(document.getElementById('brickCount').textContent, 10) || 0) === 0, null, { timeout: 4000 });
+        await clickSel(page, '#loadProjectBtn');
+        await page.locator('.saved-project-name').first().waitFor({ state: 'visible', timeout: 4000 });
+        await clickSel(page, '#loadProjectBtn');
+        const list = await readLoadToast();
+        const bone = (s) => s.replace(/cabin/ig, 'NAME').replace(/[^a-z0-9 ]/ig, '').replace(/\s+/g, ' ').trim().toLowerCase();
+        assert(/cabin/i.test(gallery) && /cabin/i.test(list), 'gallery "' + gallery + '" list "' + list + '"');
+        assert(bone(gallery) === bone(list), 'gallery "' + gallery + '" list "' + list + '"');
+        return gallery;
+      } finally { await context.close(); }
+    });
+
+    await check('R22-phone-home', 'the phone home camera looks down enough that studs read above the near edge', async () => {
+      const { page, context } = await openPage(browser, true, 'r22home');
+      try {
+        await ready(page);
+        const pose = await camPose(page);
+        const pitch = pitchDeg(pose);
+        const shot = await grabCanvas(page, 'r22-phone-home.png');
+        const span = plateSpan(shot.img);
+        const problems = [];
+        if (!(pitch >= 22)) problems.push('pitch ' + pitch.toFixed(1) + ' deg');
+        if (span.top < 0 || span.bot - span.top < 40) problems.push('plate rows missing');
+        else {
+          const height = span.bot - span.top;
+          const y1 = Math.floor(span.bot - height * 0.15);
+          const y0 = Math.floor(span.bot - height * 0.45);
+          const peaks = studPeaksIn(shot.img, y0, y1, Math.floor(shot.img.width * 0.2), Math.floor(shot.img.width * 0.8));
+          if (peaks < 3) problems.push('mid-plate studs ' + peaks + ' y ' + y0 + '-' + y1);
+        }
+        assert(problems.length === 0, problems.join('; '));
+        return 'pitch ' + pitch.toFixed(1) + ' deg';
+      } finally { await context.close(); }
+    });
+
+    await check('R22-drawer-camera', 'opening the phone drawer keeps the build in view', async () => {
+      const { page, context } = await openPage(browser, true, 'r22tray');
+      try {
+        await ready(page);
+        await clickStud(page, 0.55, false);
+        const before = await camPose(page);
+        const beforeShot = await grabCanvas(page);
+        const beforeRed = redBlob(beforeShot.img).n;
+        await clickSel(page, '#panelToggle');
+        assert(await drawerOpen(page), 'drawer stayed closed');
+        await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+        const after = await camPose(page);
+        const shift = poseShift(before, after);
+        const afterShot = await grabCanvas(page, 'r22-drawer-open.png');
+        const afterRed = redBlob(afterShot.img).n;
+        const problems = [];
+        if (shift > 1.5) problems.push('camera moved ' + shift.toFixed(1));
+        if (beforeRed > 20 && afterRed < beforeRed * 0.25) problems.push('brick left the frame ' + beforeRed + ' to ' + afterRed);
+        assert(problems.length === 0, problems.join('; '));
+        return 'shift ' + shift.toFixed(2);
+      } finally { await context.close(); }
+    });
+
+    await check('R22-phone-save-hold', 'a phone Save toast names the build and stays readable', async () => {
+      const { page, context } = await openPage(browser, true, 'r22save');
+      try {
+        await ready(page);
+        await clickStud(page, 0.5, false);
+        await ensureDrawer(page);
+        const field = await page.locator('#projectName').boundingBox();
+        await typeInto(page, field, 'hut', 'click');
+        await clickSel(page, '#saveProjectBtn');
+        await page.waitForTimeout(600);
+        const toast = await page.evaluate(() => {
+          const el = document.getElementById('toast');
+          if (!el || !el.classList.contains('show')) return '';
+          return (el.textContent || '').replace(/\s+/g, ' ').trim();
+        });
+        assert(/hut/i.test(toast) && /saved/i.test(toast), 'toast "' + toast + '"');
+        const box = await page.locator('#toast').boundingBox();
+        const hit = await page.evaluate(() => {
+          const el = document.getElementById('toast');
+          const r = el.getBoundingClientRect();
+          const node = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+          return node && (node === el || el.contains(node));
+        });
+        assert(box && box.height > 8 && hit, 'toast not readable');
+        return toast;
+      } finally { await context.close(); }
+    });
+
+    await check('R22-phone-toast-view', 'a phone Move toast misses View and the quality row, says tap, and is not cut off', async () => {
+      const { page, context } = await openPage(browser, true, 'r22toast');
+      try {
+        await ready(page);
+        await ensureDrawer(page);
+        await scrollUntil(page, page.locator('#moveBtn'));
+        await clickSel(page, '#moveBtn');
+        await page.locator('#toast.show').waitFor({ state: 'visible', timeout: 4000 });
+        const toast = await page.locator('#toast').boundingBox();
+        const problems = [];
+        for (const sel of ['#phoneViewBtn', '#qualityBar']) {
+          const box = await page.locator(sel).boundingBox().catch(() => null);
+          if (box && overlaps(toast, box)) problems.push('toast overlaps ' + sel);
+        }
+        const text = await page.evaluate(() => {
+          const el = document.getElementById('toast');
+          return {
+            text: (el.textContent || '').replace(/\s+/g, ' ').trim(),
+            cut: el.scrollWidth > el.clientWidth + 1
+          };
+        });
+        if (/click/i.test(text.text)) problems.push('says click "' + text.text + '"');
+        if (!/tap/i.test(text.text)) problems.push('missing tap "' + text.text + '"');
+        if (text.cut) problems.push('truncated "' + text.text + '"');
+        assert(problems.length === 0, problems.join('; '));
+        return text.text;
+      } finally { await context.close(); }
+    });
+
+    await check('R22-drawer-type', 'phone tool labels are readable, Mirror and Move are fully on the sheet, and Clear All is not an everyday tool', async () => {
+      const { page, context } = await openPage(browser, true, 'r22draw');
+      try {
+        await ready(page);
+        await clickSel(page, '#panelToggle');
+        assert(await drawerOpen(page), 'drawer stayed closed');
+        const view = await page.evaluate(() => {
+          const scroll = document.querySelector('.tray-scroll');
+          const controls = document.getElementById('controls');
+          const hud = document.getElementById('buildHud');
+          const sr = scroll.getBoundingClientRect();
+          const cr = controls.getBoundingClientRect();
+          const hr = hud.getBoundingClientRect();
+          const top = Math.max(sr.top, cr.top, 0);
+          const bottom = Math.min(sr.bottom, cr.bottom, hr.top, window.innerHeight);
+          const measure = (id) => {
+            const el = document.getElementById(id);
+            const label = el && el.querySelector('.tool-label');
+            if (!label) return null;
+            const r = label.getBoundingClientRect();
+            return {
+              font: parseFloat(getComputedStyle(label).fontSize),
+              top: r.top,
+              bottom: r.bottom,
+              height: r.height
+            };
+          };
+          const mirror = document.getElementById('mirrorBtn');
+          const clear = document.getElementById('clearBtn');
+          return {
+            top, bottom,
+            mirror: measure('mirrorBtn'),
+            move: measure('moveBtn'),
+            sameGrid: !!(mirror && clear && mirror.parentElement === clear.parentElement)
+          };
+        });
+        const problems = [];
+        for (const name of ['mirror', 'move']) {
+          const row = view[name];
+          if (!row) { problems.push(name + ' missing'); continue; }
+          if (!(row.font >= 12)) problems.push(name + ' ' + row.font + 'px');
+          if (row.top < view.top - 1 || row.bottom > view.bottom - 1 || row.height < 8) {
+            problems.push(name + ' clipped ' + Math.round(row.top) + '-' + Math.round(row.bottom) + ' sheet ' + Math.round(view.top) + '-' + Math.round(view.bottom));
+          }
+        }
+        if (view.sameGrid) problems.push('Clear All sits with Mirror');
+        assert(problems.length === 0, problems.join('; '));
+        return 'labels ' + view.mirror.font + 'px';
+      } finally { await context.close(); }
+    });
+
+    await check('R22-phone-orbit', 'a 45 px phone drag turns the view by less than about 14 degrees', async () => {
+      const { page, context } = await openPage(browser, true, 'r22orbit');
+      try {
+        await ready(page);
+        const spot = await page.evaluate(() => {
+          const tries = [[220, 200], [200, 260], [180, 320], [160, 180]];
+          for (let i = 0; i < tries.length; i++) {
+            const el = document.elementFromPoint(tries[i][0], tries[i][1]);
+            if (el && el.tagName === 'CANVAS') return tries[i];
+          }
+          return null;
+        });
+        assert(spot, 'no empty canvas for the drag');
+        const before = await camPose(page);
+        const client = await page.context().newCDPSession(page);
+        const x0 = spot[0];
+        const y0 = spot[1];
+        await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: x0, y: y0, id: 1 }] });
+        for (let s = 1; s <= 5; s++) {
+          await client.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x0 + 9 * s, y: y0, id: 1 }] });
+          await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(resolve)));
+        }
+        await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+        await client.detach().catch(() => {});
+        await settlePose(page);
+        const angle = viewAngle(before, await camPose(page));
+        const problems = [];
+        if (!(angle < 0.25)) problems.push('orbit ' + angle.toFixed(3) + ' rad');
+        if (!(angle > 0.02)) problems.push('drag did not orbit ' + angle.toFixed(3));
+        assert(problems.length === 0, problems.join('; '));
+        return 'swing ' + angle.toFixed(3) + ' rad';
+      } finally { await context.close(); }
+    });
+
+    await check('R22-phone-list', 'the phone project list has room for more than one row', async () => {
+      const { page, context } = await openPage(browser, true, 'r22list');
+      try {
+        await ready(page);
+        await clickStud(page, 0.5, false);
+        await ensureDrawer(page);
+        const field = await page.locator('#projectName').boundingBox();
+        await typeInto(page, field, 'hut', 'click');
+        await clickSel(page, '#saveProjectBtn');
+        await page.waitForFunction(() => localStorage.getItem('brickProject_hut'), null, { timeout: 8000 });
+        await ensureDrawer(page);
+        const box = await page.evaluate(() => {
+          const list = document.getElementById('savedProjectsList');
+          const row = list && list.querySelector('.saved-project-item');
+          if (!list || !row) return null;
+          const lr = list.getBoundingClientRect();
+          const rr = row.getBoundingClientRect();
+          return { listH: lr.height, rowH: rr.height, client: list.clientHeight };
+        });
+        assert(box, 'project row missing');
+        assert(box.client >= box.rowH * 2 + 4, 'list ' + Math.round(box.client) + ' px for a ' + Math.round(box.rowH) + ' px row');
+        return 'list ' + Math.round(box.client) + ' px';
+      } finally { await context.close(); }
+    });
+
+    await check('R22-phone-brick', 'the phone 2x2 at the default zoom is large enough and its top face is lit', async () => {
+      const { page, context } = await openPage(browser, true, 'r22brick');
+      try {
+        await ready(page);
+        await clickStud(page, 0.5, false);
+        const shot = await grabCanvas(page, 'r22-phone-brick.png');
+        const blob = brickBlob(shot.img, plateInset(page, shot));
+        assert(blob.n > 8, 'no brick');
+        const px = Math.max(blob.w, blob.h) / shot.dpr;
+        const face = topFaceRed(shot.img, blob);
+        const problems = [];
+        if (!(px >= 36 && px <= 45)) problems.push('brick ' + px.toFixed(1) + ' px');
+        if (!(face >= 160)) problems.push('top face ' + face.toFixed(0));
+        assert(problems.length === 0, problems.join('; '));
+        return px.toFixed(1) + ' px face ' + face.toFixed(0);
       } finally { await context.close(); }
     });
 
