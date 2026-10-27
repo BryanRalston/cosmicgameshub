@@ -1,1 +1,0 @@
-import{__brixScope as a}from"./brix3d-m56d9c429.js";a.pointerOnPlate=function(e){if(!e)return!1;const r=typeof window.baseplateSize=="number"&&window.baseplateSize>0?window.baseplateSize:96*a.STUD;return e.x>=-.05&&e.z>=-.05&&e.x<=r+.05&&e.z<=r+.05};

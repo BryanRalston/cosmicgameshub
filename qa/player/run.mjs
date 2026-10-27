@@ -5452,6 +5452,535 @@ async function main() {
       } finally { await context.close(); }
     });
 
+    await check('R23-gallery-card', 'clicking a gallery card loads that build', async () => {
+      const { page, context } = await openPage(browser, false, 'r23card');
+      try {
+        await ready(page);
+        await clickStud(page, 0.55, false);
+        const field = await page.locator('#projectName').boundingBox();
+        await typeInto(page, field, 'card', 'click');
+        await clickSel(page, '#saveProjectBtn');
+        await page.waitForFunction(() => localStorage.getItem('brickProject_card'), null, { timeout: 8000 });
+        await clickSel(page, '#newProjectBtn');
+        await page.locator('#loadConfirmOk').waitFor({ state: 'visible', timeout: 4000 });
+        await clickSel(page, '#loadConfirmOk');
+        await page.waitForFunction(() => (parseInt(document.getElementById('brickCount').textContent, 10) || 0) === 0, null, { timeout: 4000 });
+        await clickSel(page, '#galleryBtn');
+        await page.locator('#galleryGrid img').first().waitFor({ state: 'visible', timeout: 8000 });
+        await clickSel(page, '#galleryGrid img');
+        await page.waitForTimeout(500);
+        const open = await page.evaluate(() => {
+          const confirm = document.getElementById('loadConfirm');
+          return !!(confirm && confirm.style.display === 'flex');
+        });
+        assert(open, 'card click did not ask to load');
+        return 'card asked';
+      } finally { await context.close(); }
+    });
+
+    await check('R23-phone-card', 'tapping a phone gallery card loads that build', async () => {
+      const { page, context } = await openPage(browser, true, 'r23pcard');
+      try {
+        await ready(page);
+        await clickStud(page, 0.5, false);
+        await ensureDrawer(page);
+        const field = await page.locator('#projectName').boundingBox();
+        await typeInto(page, field, 'card', 'click');
+        await clickSel(page, '#saveProjectBtn');
+        await page.waitForFunction(() => localStorage.getItem('brickProject_card'), null, { timeout: 8000 });
+        await clickSel(page, '#newProjectBtn');
+        await page.locator('#loadConfirmOk').waitFor({ state: 'visible', timeout: 4000 });
+        await clickSel(page, '#loadConfirmOk');
+        await page.waitForFunction(() => (parseInt(document.getElementById('brickCount').textContent, 10) || 0) === 0, null, { timeout: 4000 });
+        await clickSel(page, '#galleryBtn');
+        await page.locator('#galleryGrid img').first().waitFor({ state: 'visible', timeout: 8000 });
+        await clickSel(page, '#galleryGrid img');
+        await page.waitForTimeout(500);
+        const open = await page.evaluate(() => {
+          const confirm = document.getElementById('loadConfirm');
+          return !!(confirm && confirm.style.display === 'flex');
+        });
+        assert(open, 'card tap did not ask to load');
+        return 'card asked';
+      } finally { await context.close(); }
+    });
+
+    await check('R23-load-selected', 'Load keeps a selected row and loads that build', async () => {
+      const { page, context } = await openPage(browser, false, 'r23load');
+      try {
+        await ready(page);
+        await clickStud(page, 0.5, false);
+        const field = await page.locator('#projectName').boundingBox();
+        await typeInto(page, field, 'cabin', 'click');
+        await clickSel(page, '#saveProjectBtn');
+        await page.waitForFunction(() => localStorage.getItem('brickProject_cabin'), null, { timeout: 8000 });
+        await clickSel(page, '#newProjectBtn');
+        await page.locator('#loadConfirmOk').waitFor({ state: 'visible', timeout: 4000 });
+        await clickSel(page, '#loadConfirmOk');
+        await page.waitForFunction(() => (parseInt(document.getElementById('brickCount').textContent, 10) || 0) === 0, null, { timeout: 4000 });
+        await clickSel(page, '.saved-project-name');
+        await page.locator('#loadConfirmCancel').waitFor({ state: 'visible', timeout: 4000 });
+        await clickSel(page, '#loadConfirmCancel');
+        const armed = await page.evaluate(() => document.querySelectorAll('.saved-project-item.selected').length);
+        assert(armed === 1, 'row lost its highlight before Load');
+        await clickSel(page, '#loadProjectBtn');
+        let back = 0;
+        const t0 = Date.now();
+        while (Date.now() - t0 < 2500) {
+          back = await brickCount(page);
+          if (back >= 1) break;
+        }
+        const still = await page.evaluate(() => document.querySelectorAll('.saved-project-item.selected').length);
+        const problems = [];
+        if (back < 1) problems.push('Load left ' + back + ' bricks');
+        if (still !== 1) problems.push('highlight ' + still);
+        assert(problems.length === 0, problems.join('; '));
+        return 'loaded ' + back;
+      } finally { await context.close(); }
+    });
+
+    await check('R23-save-focus', 'the first Save dialog takes typing without a click in the field', async () => {
+      const { page, context } = await openPage(browser, false, 'r23focus');
+      try {
+        await ready(page);
+        await clickStud(page, 0.55, false);
+        await clickSel(page, '#saveProjectBtn');
+        await page.locator('#namePromptInput').waitFor({ state: 'visible', timeout: 4000 });
+        await page.keyboard.type('Hut', { delay: 20 });
+        const value = await page.locator('#namePromptInput').inputValue();
+        assert(value === 'Hut', 'field "' + value + '"');
+        return 'focused';
+      } finally { await context.close(); }
+    });
+
+    await check('R23-toast-bar', 'a Mirror toast does not paint a black bar on the sky', async () => {
+      const { page, context } = await openPage(browser, false, 'r23bar');
+      try {
+        await ready(page);
+        await openSection(page, /^Tools$/);
+        await scrollUntil(page, page.locator('#mirrorBtn'));
+        await clickSel(page, '#mirrorBtn');
+        await page.locator('#toast.show').waitFor({ state: 'visible', timeout: 4000 });
+        const buf = await page.screenshot({ type: 'png' });
+        writeFileSync(join(shots, 'r23-toast-bar.png'), buf);
+        const bar = solidSkyBar(decodePng(buf));
+        assert(bar.best < 80, 'black bar ' + bar.best + ' px at y ' + bar.at);
+        return 'clear ' + bar.best + 'px';
+      } finally { await context.close(); }
+    });
+
+    await check('R23-desk-bands', 'a wide desktop plate has no full-width stripes and the 2x2 is readable', async () => {
+      const { page, context } = await openPage(browser, false, 'r23band', { width: 1920, height: 1000 });
+      try {
+        await ready(page);
+        const shot = await grabCanvas(page, 'r23-desk-bands.png');
+        const img = shot.img;
+        const y0 = Math.floor(img.height * 0.48);
+        const y1 = Math.floor(img.height * 0.78);
+        const x0 = Math.floor(img.width * 0.35);
+        const x1 = Math.floor(img.width * 0.65);
+        const means = [];
+        for (let y = y0; y <= y1; y++) {
+          let s = 0;
+          let n = 0;
+          for (let x = x0; x < x1; x += 2) {
+            const i = (y * img.width + x) * 4;
+            const r = img.data[i];
+            const g = img.data[i + 1];
+            const b = img.data[i + 2];
+            if (!(g > 50 && g >= r - 10 && g >= b - 10)) continue;
+            s += r * 0.3 + g * 0.5 + b * 0.2;
+            n++;
+          }
+          if (n > (x1 - x0) / 8) means.push(s / n);
+        }
+        let peaks = 0;
+        let prevSign = 0;
+        let prev = means[0] || 0;
+        for (let i = 1; i < means.length; i++) {
+          const d = means[i] - means[i - 1];
+          const sign = d > 1.2 ? 1 : d < -1.2 ? -1 : 0;
+          if (sign && prevSign && sign !== prevSign && Math.abs(means[i] - prev) > 4) {
+            peaks++;
+            prev = means[i];
+          }
+          if (sign) prevSign = sign;
+        }
+        await clickStud(page, 0.55, false);
+        const brickShot = await grabCanvas(page, 'r23-desk-brick.png');
+        const blob = brickBlob(brickShot.img, plateInset(page, brickShot));
+        const px = blob.n > 8 ? Math.max(blob.w, blob.h) / brickShot.dpr : 0;
+        const problems = [];
+        if (peaks >= 4) problems.push('stripes ' + peaks);
+        if (!(px >= 36 && px <= 55)) problems.push('2x2 ' + px.toFixed(1) + ' px');
+        assert(problems.length === 0, problems.join('; '));
+        return 'stripes ' + peaks + ' brick ' + px.toFixed(1) + ' px';
+      } finally { await context.close(); }
+    });
+
+    await check('R23-mirror-edge', 'a brick at the right edge of the plate mirrors onto the plate', async () => {
+      const { page, context } = await openPage(browser, false, 'r23mir', { width: 1440, height: 900 });
+      try {
+        await ready(page);
+        await openSection(page, /^Tools$/);
+        await scrollUntil(page, page.locator('#mirrorBtn'));
+        await clickSel(page, '#mirrorBtn');
+        await page.locator('#mirrorPopup.visible').waitFor({ state: 'visible', timeout: 4000 });
+        const spot = await page.evaluate(() => {
+          const THREE = window.THREE;
+          const plate = window.baseplateRef;
+          const cam = window.camera;
+          if (!THREE || !plate || !cam) return null;
+          const box = new THREE.Box3().setFromObject(plate);
+          const p = new THREE.Vector3(box.max.x - 2.4, box.max.y + 0.05, (box.min.z + box.max.z) * 0.5);
+          const q = p.clone().project(cam);
+          return {
+            x: (q.x * 0.5 + 0.5) * window.innerWidth,
+            y: (-q.y * 0.5 + 0.5) * window.innerHeight,
+            shown: (document.getElementById('mirrorOffsetValue') || {}).textContent || ''
+          };
+        });
+        assert(spot && spot.x > 0 && spot.y > 0, 'edge stud missing');
+        await page.mouse.move(spot.x, spot.y);
+        await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+        await clickAt(page, spot.x, spot.y);
+        assert(await waitGrown(page, 0, 2500), 'edge place failed');
+        const placed = await page.evaluate(() => {
+          const THREE = window.THREE;
+          const plate = window.baseplateRef;
+          const box = new THREE.Box3().setFromObject(plate);
+          const inset = 1.6;
+          return {
+            n: window.bricks.length,
+            off: window.bricks.filter((b) => b.position.x < box.min.x + inset || b.position.x > box.max.x - inset || b.position.z < box.min.z + inset || b.position.z > box.max.z - inset)
+              .map((b) => b.position.x.toFixed(1) + ',' + b.position.z.toFixed(1)),
+            center: ((document.getElementById('mirrorOffsetValue') || {}).textContent || '').trim()
+          };
+        });
+        const problems = [];
+        if (placed.n < 2) problems.push('count ' + placed.n);
+        if (placed.off.length) problems.push('off plate ' + placed.off.join(' ') + ' label ' + placed.center);
+        assert(problems.length === 0, problems.join('; '));
+        return 'on plate ' + placed.n;
+      } finally { await context.close(); }
+    });
+
+    await check('R23-thumb-fit', 'one brick, a tower, and a spread share one fixed frame', async () => {
+      const { page, context } = await openPage(browser, false, 'r23thumb');
+      try {
+        await ready(page);
+        async function saveNamed(name) {
+          await scrollUntil(page, page.locator('#projectName'));
+          const field = await page.locator('#projectName').boundingBox();
+          await typeInto(page, field, name, 'click');
+          await scrollUntil(page, page.locator('#saveProjectBtn'));
+          await clickSel(page, '#saveProjectBtn');
+          await page.waitForFunction((n) => localStorage.getItem('brickProject_' + n), name, { timeout: 8000 });
+          await clickSel(page, '#newProjectBtn');
+          await page.locator('#loadConfirmOk').waitFor({ state: 'visible', timeout: 4000 });
+          await clickSel(page, '#loadConfirmOk');
+          await page.waitForFunction(() => (parseInt(document.getElementById('brickCount').textContent, 10) || 0) === 0, null, { timeout: 4000 });
+        }
+        await clickStud(page, 0.55, false);
+        await saveNamed('one');
+        await clickStud(page, 0.55, false);
+        await clickStud(page, 0.55, true);
+        await clickStud(page, 0.55, true);
+        await clickStud(page, 0.55, true);
+        await saveNamed('tower');
+        for (const fx of [0.42, 0.50, 0.62, 0.70]) await clickStud(page, fx, false);
+        await saveNamed('spread');
+        await clickSel(page, '#galleryBtn');
+        await page.locator('#galleryGrid img').nth(2).waitFor({ state: 'visible', timeout: 8000 });
+        const problems = [];
+        const extents = [];
+        for (const name of ['one', 'tower', 'spread']) {
+          const card = page.locator('.gallery-item', { hasText: name }).first();
+          const buf = await card.locator('img').screenshot();
+          writeFileSync(join(shots, 'r23-thumb-' + name + '.png'), buf);
+          const stats = thumbStats(decodePng(buf));
+          extents.push(stats.extent);
+          if (stats.extent < 0.42 || stats.extent > 0.72) problems.push(name + ' fill ' + (stats.extent * 100).toFixed(0) + '%');
+          if (stats.margin < 0.03) problems.push(name + ' margin ' + stats.margin.toFixed(3));
+        }
+        const gap = Math.max.apply(null, extents) - Math.min.apply(null, extents);
+        if (gap > 0.18) problems.push('fill gap ' + (gap * 100).toFixed(0));
+        assert(problems.length === 0, problems.join('; '));
+        return extents.map((n) => (n * 100).toFixed(0)).join('/');
+      } finally { await context.close(); }
+    });
+
+    await check('R23-sidebar-read', 'project rows and Move sit where a player can read them', async () => {
+      const { page, context } = await openPage(browser, false, 'r23side');
+      try {
+        await ready(page);
+        await clickStud(page, 0.5, false);
+        const field = await page.locator('#projectName').boundingBox();
+        await typeInto(page, field, 'row', 'click');
+        await clickSel(page, '#saveProjectBtn');
+        await page.locator('.saved-project-date').first().waitFor({ state: 'visible', timeout: 8000 });
+        await openSection(page, /^Tools$/);
+        const view = await page.evaluate(() => {
+          const date = document.querySelector('.saved-project-date');
+          const move = document.getElementById('moveBtn');
+          const title = document.querySelector('.section-title');
+          const mr = move.getBoundingClientRect();
+          return {
+            date: date ? parseFloat(getComputedStyle(date).fontSize) : 0,
+            title: title ? parseFloat(getComputedStyle(title).fontSize) : 0,
+            moveY: mr.top,
+            moveH: mr.height,
+            vh: window.innerHeight
+          };
+        });
+        const problems = [];
+        if (!(view.date >= 12)) problems.push('row ' + view.date + 'px');
+        if (!(view.title >= 13)) problems.push('heading ' + view.title + 'px');
+        if (!(view.moveY + view.moveH < view.vh - 8)) problems.push('Move at y ' + Math.round(view.moveY));
+        assert(problems.length === 0, problems.join('; '));
+        return 'row ' + view.date + 'px';
+      } finally { await context.close(); }
+    });
+
+    await check('R23-finish-width', 'tutorial Finish is as wide as Next', async () => {
+      const { page, context } = await openPage(browser, false, 'r23fin');
+      try {
+        await page.waitForFunction(() => {
+          const modal = document.getElementById('tutorialModal');
+          const loading = document.getElementById('loadingScreen');
+          const gone = !loading || loading.classList.contains('hide') || getComputedStyle(loading).visibility === 'hidden' || parseFloat(getComputedStyle(loading).opacity) < 0.05;
+          return window.brixCanPlace && gone && modal && modal.classList.contains('visible');
+        }, null, { timeout: 45000 });
+        await clickSel(page, '#tutorialNext');
+        await page.waitForFunction(() => document.getElementById('tutorialCurrentPage').textContent === '2', null, { timeout: 4000 });
+        const next = await page.locator('#tutorialNext').boundingBox();
+        await clickSel(page, '#tutorialNext');
+        await page.waitForFunction(() => document.getElementById('tutorialCurrentPage').textContent === '3', null, { timeout: 4000 });
+        const finish = await page.locator('#tutorialNext').boundingBox();
+        const dw = (next ? next.width : 0) - (finish ? finish.width : 0);
+        const dx = Math.abs((next ? next.x : 0) - (finish ? finish.x : 0));
+        assert(next && finish && dw <= 2 && dx <= 2, 'Finish narrower by ' + dw.toFixed(1) + ' px, left ' + dx.toFixed(1));
+        return 'delta ' + dw.toFixed(1) + ' px';
+      } finally { await context.close(); }
+    });
+
+    await check('R23-phone-delete-tap', 'phone Delete tells the player to tap a brick', async () => {
+      const { page, context } = await openPage(browser, true, 'r23del');
+      try {
+        await ready(page);
+        await ensureDrawer(page);
+        await scrollUntil(page, page.locator('#deleteBtn'));
+        await clickSel(page, '#deleteBtn');
+        await page.locator('#toast.show').waitFor({ state: 'visible', timeout: 4000 });
+        const text = await page.evaluate(() => (document.getElementById('toast').textContent || '').replace(/\s+/g, ' ').trim());
+        assert(/tap/i.test(text), 'toast "' + text + '"');
+        return text;
+      } finally { await context.close(); }
+    });
+
+    await check('R23-phone-hints', 'phone tool labels do not show desktop key hints', async () => {
+      const { page, context } = await openPage(browser, true, 'r23hint');
+      try {
+        await ready(page);
+        await clickSel(page, '#panelToggle');
+        assert(await drawerOpen(page), 'drawer stayed closed');
+        const text = await page.locator('#mirrorBtn').innerText();
+        assert(!/\([A-Z0-9⇧]/.test(text), 'label "' + text.replace(/\s+/g, ' ') + '"');
+        return text.replace(/\s+/g, ' ');
+      } finally { await context.close(); }
+    });
+
+    await check('R23-phone-toast-fit', 'a phone save toast is fully visible and clear of View', async () => {
+      const { page, context } = await openPage(browser, true, 'r23fit');
+      try {
+        await ready(page);
+        await clickStud(page, 0.5, false);
+        await ensureDrawer(page);
+        const field = await page.locator('#projectName').boundingBox();
+        await typeInto(page, field, 'PhoneTest', 'click');
+        await clickSel(page, '#saveProjectBtn');
+        await page.locator('#toast.show').waitFor({ state: 'visible', timeout: 4000 });
+        const view = await page.evaluate(() => {
+          const toast = document.getElementById('toast');
+          const btn = document.getElementById('phoneViewBtn');
+          const tr = toast.getBoundingClientRect();
+          const br = btn.getBoundingClientRect();
+          const gap = br.left - tr.right;
+          return {
+            text: (toast.textContent || '').replace(/\s+/g, ' ').trim(),
+            cut: toast.scrollWidth > toast.clientWidth + 1,
+            gap
+          };
+        });
+        const problems = [];
+        if (view.cut) problems.push('clipped "' + view.text + '"');
+        if (!/PhoneTest/.test(view.text) || !/saved/i.test(view.text)) problems.push('text "' + view.text + '"');
+        if (!(view.gap >= 12)) problems.push('gap ' + view.gap.toFixed(0) + ' px');
+        assert(problems.length === 0, problems.join('; '));
+        return 'gap ' + view.gap.toFixed(0);
+      } finally { await context.close(); }
+    });
+
+    await check('R23-phone-list-near', 'the phone project list sits with Load and its rows are readable', async () => {
+      const { page, context } = await openPage(browser, true, 'r23list');
+      try {
+        await ready(page);
+        await clickStud(page, 0.5, false);
+        await ensureDrawer(page);
+        const field = await page.locator('#projectName').boundingBox();
+        await typeInto(page, field, 'hut', 'click');
+        await clickSel(page, '#saveProjectBtn');
+        await page.waitForFunction(() => localStorage.getItem('brickProject_hut'), null, { timeout: 8000 });
+        await ensureDrawer(page);
+        const view = await page.evaluate(() => {
+          const list = document.getElementById('savedProjectsList');
+          const load = document.getElementById('loadProjectBtn');
+          const row = list && list.querySelector('.saved-project-date');
+          const lr = list.getBoundingClientRect();
+          const br = load.getBoundingClientRect();
+          return {
+            gap: lr.top - br.bottom,
+            font: row ? parseFloat(getComputedStyle(row).fontSize) : 0,
+            rowH: row ? row.getBoundingClientRect().height : 0
+          };
+        });
+        const problems = [];
+        if (!(view.gap >= -8 && view.gap <= 180)) problems.push('list ' + Math.round(view.gap) + ' px below Load');
+        if (!(view.font >= 12)) problems.push('row ' + view.font + 'px');
+        if (!(view.rowH >= 18)) problems.push('row height ' + view.rowH.toFixed(0));
+        assert(problems.length === 0, problems.join('; '));
+        return 'gap ' + Math.round(view.gap) + ' font ' + view.font;
+      } finally { await context.close(); }
+    });
+
+    await check('R23-clear-gap', 'Clear All sits apart from the tools and asks before it deletes', async () => {
+      const { page, context } = await openPage(browser, true, 'r23clear');
+      try {
+        await ready(page);
+        await clickStud(page, 0.5, false);
+        await clickSel(page, '#panelToggle');
+        assert(await drawerOpen(page), 'drawer stayed closed');
+        await scrollUntil(page, page.locator('#clearBtn'));
+        const gap = await page.evaluate(() => {
+          const grid = document.querySelector('.tool-grid:not(#rareToolGrid)');
+          const clear = document.getElementById('clearBtn');
+          return clear.getBoundingClientRect().top - grid.getBoundingClientRect().bottom;
+        });
+        const before = await brickCount(page);
+        await clickSel(page, '#clearBtn');
+        await page.waitForTimeout(400);
+        const open = await page.evaluate(() => {
+          const confirm = document.getElementById('loadConfirm');
+          return !!(confirm && confirm.style.display === 'flex');
+        });
+        const after = await brickCount(page);
+        const problems = [];
+        if (!(gap >= 24)) problems.push('gap ' + gap.toFixed(0) + ' px');
+        if (!open) problems.push('no confirm');
+        if (after !== before) problems.push('cleared before confirm ' + before + ' to ' + after);
+        assert(problems.length === 0, problems.join('; '));
+        return 'gap ' + gap.toFixed(0);
+      } finally { await context.close(); }
+    });
+
+    await check('R23-axis-thick', 'the mirror axis is a visible stroke, not a hairline', async () => {
+      const { page, context } = await openPage(browser, true, 'r23axis');
+      try {
+        await ready(page);
+        await ensureDrawer(page);
+        await scrollUntil(page, page.locator('#mirrorBtn'));
+        await clickSel(page, '#mirrorBtn');
+        await page.locator('#mirrorPopup.visible').waitFor({ state: 'visible', timeout: 4000 });
+        const shot = await grabCanvas(page, 'r23-axis.png');
+        const img = shot.img;
+        let n = 0;
+        let minX = img.width;
+        let maxX = 0;
+        let minY = img.height;
+        let maxY = 0;
+        for (let y = 0; y < img.height; y++) {
+          for (let x = 0; x < img.width; x++) {
+            const i = (y * img.width + x) * 4;
+            const r = img.data[i];
+            const g = img.data[i + 1];
+            const b = img.data[i + 2];
+            if (!(r > 160 && b > 140 && r > g + 40 && b > g + 20)) continue;
+            n++;
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+          }
+        }
+        const length = Math.hypot(Math.max(0, maxX - minX), Math.max(0, maxY - minY));
+        const thick = length > 8 ? n / length : 0;
+        assert(thick >= 6, 'axis ' + thick.toFixed(2) + ' px');
+        return 'stroke ' + thick.toFixed(2) + ' px';
+      } finally { await context.close(); }
+    });
+
+    await check('R23-phone-swing', 'a short phone drag does not hide the build under the side controls', async () => {
+      const { page, context } = await openPage(browser, true, 'r23swing');
+      try {
+        await ready(page);
+        await clickStud(page, 0.62, false);
+        const beforePose = await camPose(page);
+        const before = await grabCanvas(page);
+        const blob = brickBlob(before.img, plateInset(page, before));
+        assert(blob.n > 8, 'no brick');
+        const spot = await page.evaluate(() => {
+          const tries = [[120, 220], [100, 280], [140, 180]];
+          for (let i = 0; i < tries.length; i++) {
+            const el = document.elementFromPoint(tries[i][0], tries[i][1]);
+            if (el && el.tagName === 'CANVAS') return tries[i];
+          }
+          return null;
+        });
+        assert(spot, 'no empty canvas');
+        const client = await page.context().newCDPSession(page);
+        await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: spot[0], y: spot[1], id: 1 }] });
+        for (let s = 1; s <= 8; s++) {
+          await client.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: spot[0] + 10 * s, y: spot[1], id: 1 }] });
+          await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(resolve)));
+        }
+        await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+        await client.detach().catch(() => {});
+        await settlePose(page);
+        const after = await grabCanvas(page);
+        const moved = brickBlob(after.img, plateInset(page, after));
+        const recenter = await page.locator('#recenterBtn').boundingBox();
+        const problems = [];
+        const beforeX = (blob.maxX / before.dpr).toFixed(0);
+        const afterX = moved.n > 8 ? (moved.maxX / after.dpr).toFixed(0) : '0';
+        const limitX = recenter ? (recenter.x - 8).toFixed(0) : 'none';
+        if (!(moved.n > 8)) problems.push('brick left the frame from ' + beforeX);
+        else if (recenter && (moved.maxX / after.dpr) > recenter.x - 8) {
+          problems.push('brick under side controls from ' + beforeX + ' to ' + afterX + ' limit ' + limitX);
+        }
+        const angle = viewAngle(beforePose, await camPose(page));
+        if (!(angle < 0.18)) problems.push('swing ' + angle.toFixed(3) + ' rad');
+        if (!(angle > 0.02)) problems.push('drag did not orbit ' + angle.toFixed(3));
+        assert(problems.length === 0, problems.join('; '));
+        return 'swing ' + angle.toFixed(3);
+      } finally { await context.close(); }
+    });
+
+    await check('R23-phone-far', 'phone studs read across the pale middle of the plate', async () => {
+      const { page, context } = await openPage(browser, true, 'r23far');
+      try {
+        await ready(page);
+        const shot = await grabCanvas(page, 'r23-phone-far.png');
+        const span = plateSpan(shot.img);
+        assert(span.top >= 0, 'no plate');
+        const height = span.bot - span.top;
+        const y0 = Math.floor(span.top + height * 0.18);
+        const y1 = Math.floor(span.top + height * 0.42);
+        const peaks = studPeaksIn(shot.img, y0, y1, Math.floor(shot.img.width * 0.25), Math.floor(shot.img.width * 0.75));
+        assert(peaks >= 3, 'mid studs ' + peaks + ' y ' + y0 + '-' + y1);
+        return 'studs ' + peaks;
+      } finally { await context.close(); }
+    });
+
     await check('boot-x5', 'five fresh boots after localStorage.clear have no errors', async () => {
       const { page, context } = await openPage(browser, false, 'boot');
       try {

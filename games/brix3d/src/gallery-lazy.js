@@ -28,4 +28,12 @@ export function renderGalleryGrid(grid, galleryBuilds, escHtml) {
           </div>
         </div>`;
   }).join('');
+  grid.querySelectorAll('.gallery-item').forEach((item) => {
+    item.addEventListener('click', (event) => {
+      if (event.target.closest('button')) return;
+      const index = Number(item.getAttribute('data-index'));
+      if (!Number.isFinite(index)) return;
+      if (typeof window.loadGalleryBuild === 'function') window.loadGalleryBuild(index);
+    });
+  });
 }

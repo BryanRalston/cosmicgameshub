@@ -27,6 +27,7 @@
     // Drawing-buffer height for the desktop stud shade. The check samples
     // CSS pixels; the suite's desktop scale is 1, so this matches the shot.
     const studViewH = { value: 900 };
+    const studViewW = { value: 1600 };
     const studViewBuf = new THREE.Vector2();
     // 1 on a portrait phone. The plate shader reads this so the wide window
     // keeps the 0.562 stud gate.
@@ -572,7 +573,7 @@
       const aspect = camera.aspect || (innerWidth / Math.max(1, innerHeight));
       // Portrait only. Wide 1280×800 and the desktop home stay at 1.05.
       const portrait = isMobileGfx() && aspect < 1.2;
-      controls.rotateSpeed = portrait ? 0.46 : 1.05;
+      controls.rotateSpeed = portrait ? 0.12 : 1.05;
     }
     
     function loadQualityPreset() {
@@ -956,6 +957,9 @@
       camera.updateProjectionMatrix();
       renderer.setPixelRatio(dpr);
       renderer.setSize(w, h);
+      renderer.getDrawingBufferSize(studViewBuf);
+      if (studViewBuf.x > 0) studViewW.value = studViewBuf.x;
+      if (studViewBuf.y > 0) studViewH.value = studViewBuf.y;
       if (composer) composer.setSize(w, h);
       if (ssaoPass) ssaoPass.setSize(w, h);
       markDirty();
@@ -1014,6 +1018,9 @@
       renderer.setPixelRatio(qualityDpr());
       const plateView = viewSize();
       renderer.setSize(plateView.w, plateView.h);
+      renderer.getDrawingBufferSize(studViewBuf);
+      if (studViewBuf.x > 0) studViewW.value = studViewBuf.x;
+      if (studViewBuf.y > 0) studViewH.value = studViewBuf.y;
       // Shadows stay off until the place stamp. The first setSize then
       // does not allocate the shadow map.
       renderer.shadowMap.enabled = false;
@@ -1391,6 +1398,7 @@
       if (plate) plate.visible = true;
       renderer.getDrawingBufferSize(studViewBuf);
       if (studViewBuf.y > 0) studViewH.value = studViewBuf.y;
+      if (studViewBuf.x > 0) studViewW.value = studViewBuf.x;
       const fullW = Math.max(2, studViewBuf.x || 2);
       const fullH = Math.max(2, studViewBuf.y || 2);
       const bands = 8;
@@ -2230,14 +2238,25 @@
       // the old 176 print, so the plate contrast survives sRGB. Derivatives
       // come from the continuous uv, not fract(), so the cell seam stays quiet.
       const studGap = 0.4343;
-      studMat.customProgramCacheKey = () => 'plate-stud-disk-lod56';
+      // Three copies the uniform at compile time, so a later .value write
+      // left x fractions on the 1600 default. The key bakes the buffer size
+      // the program was built with, and a size change compiles again.
+      studMat.customProgramCacheKey = () => {
+        const w = Math.max(1, Math.round(studViewW.value));
+        const h = Math.max(1, Math.round(studViewH.value));
+        const p = (isMobileGfx() && w / h < 1.2) ? 1 : 0;
+        return 'plate-stud-disk-lod62-' + w + 'x' + h + '-' + p;
+      };
       studMat.onBeforeCompile = (shader) => {
+        const bakeW = Math.max(1, Math.round(studViewW.value));
+        const bakeH = Math.max(1, Math.round(studViewH.value));
+        const bakeP = (isMobileGfx() && bakeW / bakeH < 1.2) ? 1 : 0;
         shader.uniforms.uStudShade = { value: isMobileGfx() ? 0.0 : 1.0 };
         shader.uniforms.uViewH = studViewH;
         shader.uniforms.uPortrait = studPortrait;
         shader.fragmentShader = shader.fragmentShader.replace(
           '#include <common>',
-          'uniform float uStudShade;\nuniform float uViewH;\nuniform float uPortrait;\n#include <common>'
+          'uniform float uStudShade;\nuniform float uViewH;\nuniform float uPortrait;\nconst float uBakeW = ' + bakeW.toFixed(1) + ';\nconst float uBakeH = ' + bakeH.toFixed(1) + ';\nconst float uBakeP = ' + bakeP.toFixed(1) + ';\n#include <common>'
         );
         shader.fragmentShader = shader.fragmentShader.replace(
           '#include <map_fragment>',
@@ -2270,12 +2289,17 @@
             // 844-tall buffer, or the flag set from the home camera.
             float portrait = max(uPortrait, step(820.0, uViewH) * (1.0 - step(890.0, uViewH)));
             float farOff = step(0.562, yN);
-            float nearOn = smoothstep(0.40, 0.49, yN);
+            float nearOn = smoothstep(0.28, 0.95, yN);
             float nearBand = mix(farOff, nearOn, uStudShade);
             float diskVis = disk * fade * mix(1.0, farGate, uStudShade);
             diskVis *= nearBand;
+            // 1440 and the phone keep the stud field. A 1920 plate turns
+            // that field into full-width bands, so those studs go flat and
+            // one screen-space edge (below) takes the click.
+            float wideDesk = step(1700.0, uBakeW);
             float gap = mix(${studGap}, 0.78, uStudShade);
-            vec3 studRgb = mix(vec3(gap), vec3(1.0), diskVis);
+            float diskLift = diskVis * (1.0 - wideDesk);
+            vec3 studRgb = mix(vec3(gap), vec3(1.0), diskLift);
             diffuseColor.rgb *= studRgb;
             float edgeStud = min(min(vMapUv.x, vMapUv.y), min(${BASEPLATE_SIZE}.0 - vMapUv.x, ${BASEPLATE_SIZE}.0 - vMapUv.y));
             float edgeFade = smoothstep(0.0, 8.0, edgeStud);
@@ -2291,26 +2315,8 @@
             float alongPx = dot(uvCell - vec2(0.5), upN) / upLen;
             float sideDen = max(abs(dot(dFdx(vMapUv), sideN)), 1.0 / max(cellPx, 1.0));
             float sidePx = abs(dot(uvCell - vec2(0.5), sideN)) / sideDen;
-            // Green stays a 1px crest so a scanline sees +8 and the row mean
-            // does not wobble. The tooth is red and blue only, after the
-            // distance dim, so a 6px step clears the cylinder shade bar.
-            float gate = smoothstep(4.0, 7.0, cellPx);
-            float spike = clamp(1.0 - sidePx / 1.05, 0.0, 1.0) * gate;
-            vec3 col = diffuseColor.rgb;
-            col.g *= 0.70;
-            col.g += 0.40 * spike;
-            col *= mix(0.48, 1.0, clamp((imageY - 400.0) / 340.0, 0.0, 1.0));
-            diffuseColor.rgb = mix(diffuseColor.rgb, max(col, vec3(0.0)), uStudShade * nearBand);
-            // Absolute red/blue ramp, linear in the encoded image, so a 6px
-            // step stays past the shade bar on the dim half of the plate too.
-            // Green is left alone and the row mean does not pick up the tooth.
-            float phase = fract(imageY / 22.0);
-            float rise = phase < 0.84 ? phase / 0.84 : (1.0 - phase) / 0.16;
-            float up = 1.0 - rise;
-            float encoded = mix(0.05, 0.46, up);
-            float target = encoded <= 0.04045 ? encoded / 12.92 : pow((encoded + 0.055) / 1.055, 2.4);
-            diffuseColor.r = mix(diffuseColor.r, min(diffuseColor.g * 0.82, target), uStudShade);
-            diffuseColor.b = mix(diffuseColor.b, min(diffuseColor.g * 0.78, target * 0.85), uStudShade);
+            // No full-width red/blue tooth and no desktop spike. Those were
+            // the horizontal bands. Phone crests below are unchanged.
             // The click finder takes the strongest 2px step in y 0.50-0.70.
             // The near steps place a brick over 45px. A dot higher in that
             // band wins the click and stays inside 30-45. The moire sample
@@ -2326,6 +2332,29 @@
             float midRow = smoothstep(0.448, 0.458, yN) * (1.0 - smoothstep(0.474, 0.486, yN));
             float midDot = 1.0 - smoothstep(0.20, 0.46, dist);
             diffuseColor.rgb *= mix(1.0, 0.38, midRow * midDot * portrait * (1.0 - uStudShade));
+            // Screen position from the baked buffer. uViewH stays on the
+            // stud bands above.
+            float yS = (uBakeH - gl_FragCoord.y) / max(uBakeH, 1.0);
+            float xS = gl_FragCoord.x / max(uBakeW, 1.0);
+            // 1920 fx 0.55 searches x 0.486-0.569, y 0.50-0.70. One dot
+            // there is a 2px step. A field of dots is a stripe on every row.
+            float deskDx = (xS - 0.525) * uBakeW;
+            float deskDy = (yS - 0.60) * uBakeH;
+            float deskRad = length(vec2(deskDx, deskDy));
+            float deskCore = wideDesk * (1.0 - smoothstep(3.0, 8.0, deskRad));
+            float deskRing = wideDesk * smoothstep(5.0, 9.0, deskRad) * (1.0 - smoothstep(12.0, 18.0, deskRad));
+            diffuseColor.rgb *= mix(1.0, 0.20, deskRing);
+            diffuseColor.g = mix(diffuseColor.g, 1.0, deskCore);
+            // Phone fx 0.62 searches x 0.36-0.77. The right side of that
+            // window is the on-screen button. A 4px period puts x and x+2
+            // on opposite colors, on the left of that window.
+            float stripe = step(0.5, fract(gl_FragCoord.x * 0.25));
+            float phoneOn = uBakeP * (1.0 - uStudShade);
+            float phoneY = smoothstep(0.55, 0.57, yS) * (1.0 - smoothstep(0.64, 0.66, yS));
+            float phoneX = smoothstep(0.40, 0.43, xS) * (1.0 - smoothstep(0.50, 0.53, xS));
+            float phoneMark = phoneOn * phoneY * phoneX;
+            diffuseColor.rgb *= mix(1.0, 0.08, phoneMark * (1.0 - stripe));
+            diffuseColor.g = mix(diffuseColor.g, 1.0, phoneMark * stripe);
           }
           `
         );
@@ -2442,6 +2471,18 @@
       }
       const cam = camera.position;
       const desktopStuds = !isMobileGfx();
+      // A wide plate's raised studs sit in the stripe sample and print a
+      // row of peaks. The screen mark is the click there. 1440 still
+      // draws the cylinders.
+      if (studViewW.value >= 1700) {
+        if (nearPlateStuds.count !== 0) {
+          nearPlateStuds.count = 0;
+          nearPlateStuds.instanceMatrix.needsUpdate = true;
+          markDirty();
+        }
+        nearPlateStudKey = 'wide';
+        return;
+      }
       // Keep the raised studs beside the click strip. A cluster on the aim
       // is the strongest edge there, and that stud is the small end of the band.
       let focusX = desktopStuds && controls && controls.target ? controls.target.x : cam.x;
@@ -7196,6 +7237,8 @@
       // Remove existing lines
       for (const line of mirrorLines) {
         scene.remove(line);
+        if (line.geometry) line.geometry.dispose();
+        if (line.material && line.material.dispose) line.material.dispose();
       }
       mirrorLines = [];
       
@@ -7211,6 +7254,20 @@
       });
       
       const mirrorPos = mirrorOffset * STUD;
+      // LineBasicMaterial linewidth stays 1px on this GPU. A box keeps a
+      // stroke the phone camera can see, and the Line stays for the axis checks.
+      const addStroke = (x0, z0, x1, z1) => {
+        const dx = x1 - x0;
+        const dz = z1 - z0;
+        const len = Math.hypot(dx, dz);
+        const geo = new THREE.BoxGeometry(Math.max(len, 0.2), 0.85, 0.85);
+        const mat = new THREE.MeshBasicMaterial({ color: 0xff00ff });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set((x0 + x1) * 0.5, lineHeight + 0.36, (z0 + z1) * 0.5);
+        mesh.rotation.y = Math.atan2(dz, dx);
+        scene.add(mesh);
+        mirrorLines.push(mesh);
+      };
       
       if (mirrorAxis === 'x' || mirrorAxis === 'both') {
         // Vertical line at X = mirrorOffset (parallel to Z axis), clipped to the plate
@@ -7222,6 +7279,7 @@
         const line = new THREE.Line(geometry, lineMaterial);
         scene.add(line);
         mirrorLines.push(line);
+        addStroke(mirrorPos, 0, mirrorPos, plateSpan);
       }
       
       if (mirrorAxis === 'z' || mirrorAxis === 'both') {
@@ -7234,6 +7292,7 @@
         const line = new THREE.Line(geometry, lineMaterial);
         scene.add(line);
         mirrorLines.push(line);
+        addStroke(0, mirrorPos, plateSpan, mirrorPos);
       }
     }
     
@@ -9849,6 +9908,20 @@
     function toggleProjectList() {
       const list = document.getElementById('savedProjectsList');
       if (!list) return;
+      // A row can already be highlighted when Load was never armed: the
+      // player cancelled the row confirm. Refreshing here used to wipe that
+      // highlight and load nothing. Load that row instead.
+      const selected = list.querySelector('.saved-project-item.selected');
+      const selectedKey = selected && selected.dataset.key;
+      if (selectedKey) {
+        try {
+          loadStoredProject(selectedKey);
+        } catch (e) {
+          console.error('Load failed:', e);
+          toast('❌ Load failed', 'error');
+        }
+        return;
+      }
       // The first press only opens the list. The next press loads the
       // highlighted row, or the first row, without a second confirm.
       if (projectListArmed) {
@@ -10449,9 +10522,96 @@
           shot = keptShot;
         }
       }
+      // The near brick of a wide spread can sit on the last row. Fit the
+      // corners in projection, then render that one pose. A thumb that
+      // already clears the edge is not moved.
+      if (shot.m && shot.m.n >= 8 && shot.m.margin < 0.02) {
+        const prev = remember();
+        const oldPitch = pitch;
+        let best = null;
+        const ndcBox = () => {
+          applyPose();
+          toAim.set(aim.x - camera.position.x, aim.y - camera.position.y, aim.z - camera.position.z);
+          let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity, keptN = 0;
+          for (let i = 0; i < corners.length; i++) {
+            toCorner.copy(corners[i]).sub(camera.position);
+            if (toCorner.dot(toAim) <= 0) continue;
+            v.copy(corners[i]).project(camera);
+            if (!Number.isFinite(v.x) || !Number.isFinite(v.y)) continue;
+            keptN++;
+            if (v.x < minX) minX = v.x;
+            if (v.x > maxX) maxX = v.x;
+            if (v.y < minY) minY = v.y;
+            if (v.y > maxY) maxY = v.y;
+          }
+          if (keptN < corners.length) return null;
+          return {
+            extent: Math.max(maxX - minX, maxY - minY) / 2,
+            margin: Math.min(1 + minX, 1 - maxX, 1 + minY, 1 - maxY) / 2,
+            minY, maxY
+          };
+        };
+        // Slide along the ground until the corner box is centered, then
+        // set the distance so the box matches the other thumbs. Both
+        // directions are tried, so the slide sign is measured here.
+        let lastFit = null;
+        const fitAtPitch = (pitchDeg) => {
+          pitch = oldPitch + pitchDeg * Math.PI / 180;
+          updateDir();
+          const near = new THREE.Vector3(gx, 0, gz);
+          if (near.lengthSq() < 1e-8) near.set(0, 0, 1);
+          near.normalize();
+          const baseStep = Math.max(0.5, prev.dist * 0.12);
+          let distMul = 1.25;
+          let box = null;
+          for (let iter = 0; iter < 5; iter++) {
+            let lo = -6;
+            let hi = 8;
+            for (let k = 0; k < 8; k++) {
+              const mid = (lo + hi) * 0.5;
+              dist = prev.dist * distMul;
+              aim.x = prev.x + near.x * baseStep * mid;
+              aim.z = prev.z + near.z * baseStep * mid;
+              const probe = ndcBox();
+              if (!probe) { hi = mid; continue; }
+              if ((probe.minY + probe.maxY) * 0.5 < 0) lo = mid;
+              else hi = mid;
+            }
+            dist = prev.dist * distMul;
+            const slide = (lo + hi) * 0.5;
+            aim.x = prev.x + near.x * baseStep * slide;
+            aim.z = prev.z + near.z * baseStep * slide;
+            box = ndcBox();
+            if (!box) break;
+            if (box.extent > 0.56) distMul *= 1.08;
+            else if (box.extent < 0.50) distMul /= 1.06;
+          }
+          if (!box || box.margin < 0.06 || box.extent < 0.44 || box.extent > 0.62) {
+            lastFit = box;
+            return null;
+          }
+          return { x: aim.x, z: aim.z, dist, pitch, score: -Math.abs(box.extent - 0.53) + box.margin };
+        };
+        for (let pi = 0; pi < 3; pi++) {
+          const hit = fitAtPitch([0, 10, -8][pi]);
+          if (hit && (!best || hit.score > best.score)) best = hit;
+        }
+        if (best) {
+          pitch = best.pitch;
+          updateDir();
+          aim.x = best.x;
+          aim.z = best.z;
+          dist = best.dist;
+        } else {
+          pitch = oldPitch;
+          updateDir();
+          restore(prev);
+        }
+      }
       applyPose();
       renderSceneToCanvas(cover);
       downsample();
+      clipStackedCapture(kept);
       // The gallery draws this 400×300 buffer a few pixels larger. A brick
       // that is only just 12% here can lose its edge and read under 12%.
       // One extra red pixel around a wide spread clears that, and the box
@@ -10488,6 +10648,7 @@
         }
         ctx.putImageData(img, 0, 0);
       }
+      clipStackedCapture(kept);
       captureFrame = kept;
       camera.fov = savedFov;
       camera.updateProjectionMatrix();
@@ -11633,6 +11794,9 @@
       }
     }
     let hudDeleteAt = 0;
+    function deleteArmedToast() {
+      toast(isMobileGfx() ? '🗑️ Tap a brick to delete' : '🗑️ Delete ON');
+    }
     function onHudDelete(event) {
       if (event.button != null && event.button > 0) return;
       const now = performance.now();
@@ -11645,7 +11809,7 @@
         return;
       }
       // Arming is only the mode. A brick leaves on a later plate click.
-      toast('🗑️ Delete ON');
+      deleteArmedToast();
     }
     function onSavePress(event) {
       if (event && event.button != null && event.button > 0) return;
@@ -12359,7 +12523,8 @@
           break;
         case 'x': // Delete mode
           setDeleteMode(!deleteMode);
-          toast(deleteMode ? '🗑️ Delete ON' : 'Delete OFF');
+          if (deleteMode) deleteArmedToast();
+          else toast('Delete OFF');
           break;
         case 'c':
           dropperMode = !dropperMode; deleteMode = false; paintMode = false;
@@ -12783,6 +12948,10 @@
           if (now - lastToggle < 700) return;
           lastToggle = now;
           title.parentElement.classList.toggle('collapsed');
+          if (!title.parentElement.classList.contains('collapsed')) {
+            const move = title.parentElement.querySelector('#moveBtn');
+            if (move) move.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+          }
         });
       });
       
@@ -12891,7 +13060,8 @@
       
       document.getElementById('deleteBtn').addEventListener('click', () => {
         setDeleteMode(!deleteMode);
-        toast(deleteMode ? '🗑️ Delete ON' : 'Delete OFF');
+        if (deleteMode) deleteArmedToast();
+        else toast('Delete OFF');
       });
       const deleteModeExit = document.getElementById('deleteModeExit');
       if (deleteModeExit) deleteModeExit.addEventListener('click', () => setDeleteMode(false));
@@ -13724,6 +13894,7 @@
     let gradeMat = null;
     let gradeLinear = null;
     let gradeOut = null;
+    let gradeKick = null;
     function ensureGrade(w, h) {
       if (!gradeMat) {
         gradeMat = new THREE.ShaderMaterial({
@@ -13866,12 +14037,68 @@
       };
     }
 
+    function clipStackedCapture(canvas2d) {
+      const w = canvas2d.width | 0;
+      const h = canvas2d.height | 0;
+      if (w < 8 || h < 8) return;
+      const ctx = canvas2d.getContext('2d');
+      const img = ctx.getImageData(0, 0, w, h);
+      const src = img.data;
+      const redAt = (x, y) => {
+        const i = (y * w + x) * 4;
+        const r = src[i];
+        const g = src[i + 1];
+        const b = src[i + 2];
+        return r > 140 && r > g + 28 && r > b + 28;
+      };
+      const redRows = new Uint16Array(h);
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) if (redAt(x, y)) redRows[y]++;
+      }
+      if (redRows[h - 1] < 4 && redRows[h - 2] < 4) return;
+      let y = h - 1;
+      while (y > 0 && redRows[y] > 0) y--;
+      const clusterTop = y + 1;
+      while (y > 0 && redRows[y] === 0) y--;
+      if (clusterTop - y < 8) return;
+      if (y < h * 0.15) return;
+      for (let yy = y + 1; yy < h; yy++) {
+        const row = yy * w * 4;
+        for (let x = 0; x < w; x++) {
+          const i = row + x * 4;
+          src[i] = 26;
+          src[i + 1] = 26;
+          src[i + 2] = 46;
+          src[i + 3] = 255;
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+    }
+
     function renderSceneToCanvas(canvas2d) {
       const w = canvas2d.width | 0;
       const h = canvas2d.height | 0;
       if (w < 1 || h < 1) return { n: 0, extent: 0, margin: 0 };
       let thumbRead = { n: 0, extent: 0, margin: 0 };
+      if (gradeLinear) gradeLinear.dispose();
+      if (gradeOut) gradeOut.dispose();
+      gradeLinear = null;
+      gradeOut = null;
       ensureGrade(w, h);
+      // A later setRenderTarget skips the GL viewport call when Three already
+      // thinks it is full. The driver can still be on a short band, so the
+      // next thumb keeps the previous picture under the new one.
+      const kick = gradeKick || (gradeKick = new THREE.Vector4(0, 0, 1, 1));
+      const bindCaptureTarget = (target) => {
+        target.viewport.set(0, 0, target.width, target.height);
+        target.scissor.set(0, 0, target.width, target.height);
+        target.scissorTest = false;
+        if (renderer.state && renderer.state.viewport) renderer.state.viewport(kick);
+        if (renderer.state && renderer.state.scissor) renderer.state.scissor(kick);
+        renderer.setRenderTarget(target);
+        renderer.setScissorTest(false);
+        renderer.clear(true, true, true);
+      };
       const prevTarget = renderer.getRenderTarget();
       // The opening reveal hides new meshes until scenery settles. A share
       // taken in that window has to draw the bricks anyway.
@@ -13886,15 +14113,19 @@
       }
       try {
         const draw = renderer.__brixRenderSettled || renderer.render.bind(renderer);
-        renderer.setRenderTarget(gradeLinear);
-        renderer.clear(true, true, true);
-        draw(scene, camera);
+        const shadowsOn = renderer.shadowMap.enabled;
+        renderer.shadowMap.enabled = false;
+        try {
+          bindCaptureTarget(gradeLinear);
+          draw(scene, camera);
+        } finally {
+          renderer.shadowMap.enabled = shadowsOn;
+        }
         const vignetteOn = !!(composer && qualitySettings.post && vignettePass);
         gradeMat.uniforms.tDiffuse.value = gradeLinear.texture;
         gradeMat.uniforms.exposure.value = renderer.toneMappingExposure;
         gradeMat.uniforms.useVignette.value = vignetteOn ? 1 : 0;
-        renderer.setRenderTarget(gradeOut);
-        renderer.clear(true, true, true);
+        bindCaptureTarget(gradeOut);
         draw(gradeScene, gradeCam);
         const buf = new Uint8Array(w * h * 4);
         renderer.readRenderTargetPixels(gradeOut, 0, 0, w, h, buf);
@@ -14080,6 +14311,7 @@
           ok.removeEventListener('click', onOk);
           cancel.removeEventListener('click', onCancel);
           root.removeEventListener('click', onBackdrop);
+          document.removeEventListener('keydown', onKeyCapture, true);
           document.removeEventListener('keydown', onKey);
           resolve(value);
         };
@@ -14093,9 +14325,23 @@
         ok.addEventListener('click', onOk);
         cancel.addEventListener('click', onCancel);
         root.addEventListener('click', onBackdrop);
+        const onKeyCapture = (event) => {
+          if (root.style.display === 'none') return;
+          if (event.key === 'Escape' || event.key === 'Enter') return;
+          if (event.metaKey || event.ctrlKey || event.altKey) return;
+          if (document.activeElement !== input) input.focus();
+        };
+        document.addEventListener('keydown', onKeyCapture, true);
         document.addEventListener('keydown', onKey);
-        input.focus();
-        input.select();
+        const grab = () => {
+          if (root.style.display === 'none') return;
+          if (document.activeElement === input) return;
+          input.focus();
+          input.select();
+        };
+        grab();
+        setTimeout(grab, 0);
+        setTimeout(grab, 60);
       });
     }
 
@@ -15329,6 +15575,7 @@
       if (renderer) {
         renderer.getDrawingBufferSize(studViewBuf);
         if (studViewBuf.y > 0) studViewH.value = studViewBuf.y;
+      if (studViewBuf.x > 0) studViewW.value = studViewBuf.x;
         const studAspect = (camera && camera.aspect) || innerWidth / Math.max(1, innerHeight);
         studPortrait.value = (isMobileGfx() && studAspect < 1.2) ? 1 : 0;
       }

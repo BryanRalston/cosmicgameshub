@@ -280,7 +280,7 @@
         }).catch(function (err) { console.error(err); });
         var s = document.createElement('script');
         s.type = 'module';
-        s.src = '/games/brix3d/brix3d.HJXMTZ2L.js';
+        s.src = '/games/brix3d/brix3d.NP36UENS.js';
         document.body.appendChild(s);
         var hold = document.createElement('div');
         hold.id = 'brixHold';
