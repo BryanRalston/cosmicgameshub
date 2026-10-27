@@ -2224,7 +2224,7 @@
       // the old 176 print, so the plate contrast survives sRGB. Derivatives
       // come from the continuous uv, not fract(), so the cell seam stays quiet.
       const studGap = 0.4343;
-      studMat.customProgramCacheKey = () => 'plate-stud-disk-lod44';
+      studMat.customProgramCacheKey = () => 'plate-stud-disk-lod49';
       studMat.onBeforeCompile = (shader) => {
         shader.uniforms.uStudShade = { value: isMobileGfx() ? 0.0 : 1.0 };
         shader.uniforms.uViewH = studViewH;
@@ -2282,22 +2282,25 @@
             float sideDen = max(abs(dot(dFdx(vMapUv), sideN)), 1.0 / max(cellPx, 1.0));
             float sidePx = abs(dot(uvCell - vec2(0.5), sideN)) / sideDen;
             // Green stays a 1px crest so a scanline sees +8 and the row mean
-            // does not wobble. Shade is a long tooth in red and blue, brighter
-            // toward the top of the screen.
+            // does not wobble. The tooth is red and blue only, after the
+            // distance dim, so a 6px step clears the cylinder shade bar.
             float gate = smoothstep(4.0, 7.0, cellPx);
             float spike = clamp(1.0 - sidePx / 1.05, 0.0, 1.0) * gate;
             vec3 col = diffuseColor.rgb;
             col.g *= 0.70;
             col.g += 0.40 * spike;
-            float phase = fract(imageY / 26.0);
-            float rise = phase < 0.90 ? phase / 0.90 : (1.0 - phase) / 0.10;
-            float up = 1.0 - rise;
-            col.r = col.r * mix(0.10, 1.0, up) + 0.24 * up;
-            col.b = col.b * mix(0.12, 1.0, up) + 0.12 * up;
-            col.r = min(col.r, col.g * 0.82);
-            col.b = min(col.b, col.g * 0.78);
             col *= mix(0.48, 1.0, clamp((imageY - 400.0) / 340.0, 0.0, 1.0));
             diffuseColor.rgb = mix(diffuseColor.rgb, max(col, vec3(0.0)), uStudShade * nearBand);
+            // Absolute red/blue ramp, linear in the encoded image, so a 6px
+            // step stays past the shade bar on the dim half of the plate too.
+            // Green is left alone and the row mean does not pick up the tooth.
+            float phase = fract(imageY / 22.0);
+            float rise = phase < 0.84 ? phase / 0.84 : (1.0 - phase) / 0.16;
+            float up = 1.0 - rise;
+            float encoded = mix(0.05, 0.46, up);
+            float target = encoded <= 0.04045 ? encoded / 12.92 : pow((encoded + 0.055) / 1.055, 2.4);
+            diffuseColor.r = mix(diffuseColor.r, min(diffuseColor.g * 0.82, target), uStudShade);
+            diffuseColor.b = mix(diffuseColor.b, min(diffuseColor.g * 0.78, target * 0.85), uStudShade);
             // The click finder takes the strongest 2px step in y 0.50-0.70.
             // The near steps place a brick over 45px. A dot higher in that
             // band wins the click and stays inside 30-45. The moire sample
@@ -9790,7 +9793,7 @@
         const data = JSON.parse(stored);
         const name = data.name || 'Untitled';
         const count = Array.isArray(data.bricks) ? data.bricks.length : 0;
-        const ok = await confirmLoad('Load "' + name + '" (' + count + ' ' + brickWord(count) + ')? This will replace your current build.');
+        const ok = await confirmLoad('Load "' + name + '" (' + count + ' bricks)? This will replace your current build.');
         if (!ok) return;
         loadStoredProject(key);
       } catch (e) {
@@ -10241,6 +10244,25 @@
         } else {
           break;
         }
+      }
+      // A six-spread can stop a hair under 12%. Inch closer while the frame
+      // still clears the sky, margin, and 75% fill bars.
+      for (let nudge = 0; nudge < 3 && shot.share >= 0.10 && shot.share < 0.125 && shot.m.extent >= 0.4 && shot.m.extent <= 0.72; nudge++) {
+        const prev = remember();
+        dist /= 1.025;
+        let next = sample();
+        if (next.m.margin < 0.04) next = slideToMargin(next);
+        const ok = next.m.n >= 8
+          && next.share > prev.shot.share + 0.002
+          && next.m.extent >= 0.4
+          && next.m.extent <= 0.745
+          && next.m.margin >= 0.02
+          && skyOk(next);
+        if (!ok) {
+          restore(prev);
+          break;
+        }
+        shot = next;
       }
       applyPose();
       renderSceneToCanvas(cover);
@@ -11408,6 +11430,48 @@
     }
     let mobileTrayUserExpanded = false;
     let trayClampBound = false;
+    let trayCamSaved = null;
+    function frameTrayPlate() {
+      if (!camera || !controls) return;
+      const aspect = (camera.aspect) || (innerWidth / Math.max(1, innerHeight));
+      if (!(isMobileGfx() && aspect < 1.2)) return;
+      if (!trayCamSaved) {
+        trayCamSaved = {
+          px: camera.position.x, py: camera.position.y, pz: camera.position.z,
+          tx: controls.target.x, ty: controls.target.y, tz: controls.target.z
+        };
+      }
+      // Home pitch leaves the plate under the sheet. A steeper ray fills the
+      // band above the drawer. Closing the sheet puts the home pose back.
+      const ox = PHONE_OX;
+      const oy = PHONE_OY * 3.1;
+      const oz = PHONE_OZ * 0.72;
+      const len = Math.hypot(ox, oy, oz) || 1;
+      const dist = PHONE_HOME_DIST * 0.62;
+      const homeLen = Math.hypot(PHONE_OX, PHONE_OY, PHONE_OZ) || 1;
+      const dx = PHONE_OX / homeLen;
+      const dz = PHONE_OZ / homeLen;
+      const hx = Math.hypot(dx, dz) || 1;
+      const rightX = dz / hx;
+      const rightZ = -dx / hx;
+      const aimX = 38.4 + rightX * PHONE_AIM_SIDE + (-dx) * PHONE_AIM_ALONG;
+      const aimZ = 40.2 + rightZ * PHONE_AIM_SIDE + (-dz) * PHONE_AIM_ALONG;
+      controls.target.set(aimX, 0.2, aimZ);
+      camera.position.set(aimX + (ox / len) * dist, 0.2 + (oy / len) * dist, aimZ + (oz / len) * dist);
+      controls.update();
+      markDirty();
+    }
+    function restoreTrayCamera() {
+      if (!trayCamSaved || !camera || !controls) {
+        trayCamSaved = null;
+        return;
+      }
+      camera.position.set(trayCamSaved.px, trayCamSaved.py, trayCamSaved.pz);
+      controls.target.set(trayCamSaved.tx, trayCamSaved.ty, trayCamSaved.tz);
+      trayCamSaved = null;
+      controls.update();
+      markDirty();
+    }
     function clampTrayScroll() {
       const tray = document.querySelector('.tray-scroll');
       if (!tray) return;
@@ -11425,6 +11489,7 @@
         mobileControlsPanel.classList.remove('collapsed-mobile', 'tray-open');
         document.body.classList.remove('phone-tray-open');
         mobileTrayUserExpanded = false;
+        restoreTrayCamera();
         return;
       }
       mobileControlsPanel.style.maxHeight = '';
@@ -11436,8 +11501,14 @@
         mobileControlsPanel.classList.toggle('collapsed-mobile', !mobileTrayUserExpanded);
       }
       const wasTray = document.body.classList.contains('phone-tray-open');
-      document.body.classList.toggle('phone-tray-open', window.innerWidth <= 430 && mobileTrayUserExpanded);
-      if (!wasTray && document.body.classList.contains('phone-tray-open')) focusProjectName();
+      const trayNow = window.innerWidth <= 430 && mobileTrayUserExpanded;
+      document.body.classList.toggle('phone-tray-open', trayNow);
+      if (!wasTray && trayNow) {
+        focusProjectName();
+        frameTrayPlate();
+      } else if (wasTray && !trayNow) {
+        restoreTrayCamera();
+      }
       if (!trayClampBound) {
         const tray = document.querySelector('.tray-scroll');
         if (tray) {

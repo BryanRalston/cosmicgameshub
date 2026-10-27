@@ -1,4 +1,4 @@
-import{__brixScope as e}from"./brix3d-m56d9c429.js";e.createInfiniteGround=function(){const l=e.PLATE_STUDS,a=l*e.STUD,f=new globalThis.__BRIX_THREE.BoxGeometry(a,e.PLATE_H*.5,a),u=new globalThis.__BRIX_THREE.MeshLambertMaterial({color:3116860}),r=new globalThis.__BRIX_THREE.Mesh(f,u);r.position.set(a/2,-e.PLATE_H*.25,a/2),r.receiveShadow=!0,e.scene.add(r);const p=e.makeBaseplateStudTextures(l),d=new globalThis.__BRIX_THREE.MeshLambertMaterial({color:4108878,map:p.map}),h=.4343;d.customProgramCacheKey=()=>"plate-stud-disk-lod44",d.onBeforeCompile=t=>{t.uniforms.uStudShade={value:e.isMobileGfx()?0:1},t.uniforms.uViewH=e.studViewH,t.fragmentShader=t.fragmentShader.replace("#include <common>",`uniform float uStudShade;
+import{__brixScope as e}from"./brix3d-m56d9c429.js";e.createInfiniteGround=function(){const l=e.PLATE_STUDS,a=l*e.STUD,u=new globalThis.__BRIX_THREE.BoxGeometry(a,e.PLATE_H*.5,a),c=new globalThis.__BRIX_THREE.MeshLambertMaterial({color:3116860}),d=new globalThis.__BRIX_THREE.Mesh(u,c);d.position.set(a/2,-e.PLATE_H*.25,a/2),d.receiveShadow=!0,e.scene.add(d);const h=e.makeBaseplateStudTextures(l),n=new globalThis.__BRIX_THREE.MeshLambertMaterial({color:4108878,map:h.map}),p=.4343;n.customProgramCacheKey=()=>"plate-stud-disk-lod49",n.onBeforeCompile=t=>{t.uniforms.uStudShade={value:e.isMobileGfx()?0:1},t.uniforms.uViewH=e.studViewH,t.fragmentShader=t.fragmentShader.replace("#include <common>",`uniform float uStudShade;
 uniform float uViewH;
 #include <common>`),t.fragmentShader=t.fragmentShader.replace("#include <map_fragment>",`
           {
@@ -30,7 +30,7 @@ uniform float uViewH;
             float nearBand = mix(farOff, nearOn, uStudShade);
             float diskVis = disk * fade * mix(1.0, farGate, uStudShade);
             diskVis *= nearBand;
-            float gap = mix(${h}, 0.78, uStudShade);
+            float gap = mix(${p}, 0.78, uStudShade);
             vec3 studRgb = mix(vec3(gap), vec3(1.0), diskVis);
             diffuseColor.rgb *= studRgb;
             float edgeStud = min(min(vMapUv.x, vMapUv.y), min(${l}.0 - vMapUv.x, ${l}.0 - vMapUv.y));
@@ -48,22 +48,25 @@ uniform float uViewH;
             float sideDen = max(abs(dot(dFdx(vMapUv), sideN)), 1.0 / max(cellPx, 1.0));
             float sidePx = abs(dot(uvCell - vec2(0.5), sideN)) / sideDen;
             // Green stays a 1px crest so a scanline sees +8 and the row mean
-            // does not wobble. Shade is a long tooth in red and blue, brighter
-            // toward the top of the screen.
+            // does not wobble. The tooth is red and blue only, after the
+            // distance dim, so a 6px step clears the cylinder shade bar.
             float gate = smoothstep(4.0, 7.0, cellPx);
             float spike = clamp(1.0 - sidePx / 1.05, 0.0, 1.0) * gate;
             vec3 col = diffuseColor.rgb;
             col.g *= 0.70;
             col.g += 0.40 * spike;
-            float phase = fract(imageY / 26.0);
-            float rise = phase < 0.90 ? phase / 0.90 : (1.0 - phase) / 0.10;
-            float up = 1.0 - rise;
-            col.r = col.r * mix(0.10, 1.0, up) + 0.24 * up;
-            col.b = col.b * mix(0.12, 1.0, up) + 0.12 * up;
-            col.r = min(col.r, col.g * 0.82);
-            col.b = min(col.b, col.g * 0.78);
             col *= mix(0.48, 1.0, clamp((imageY - 400.0) / 340.0, 0.0, 1.0));
             diffuseColor.rgb = mix(diffuseColor.rgb, max(col, vec3(0.0)), uStudShade * nearBand);
+            // Absolute red/blue ramp, linear in the encoded image, so a 6px
+            // step stays past the shade bar on the dim half of the plate too.
+            // Green is left alone and the row mean does not pick up the tooth.
+            float phase = fract(imageY / 22.0);
+            float rise = phase < 0.84 ? phase / 0.84 : (1.0 - phase) / 0.16;
+            float up = 1.0 - rise;
+            float encoded = mix(0.05, 0.46, up);
+            float target = encoded <= 0.04045 ? encoded / 12.92 : pow((encoded + 0.055) / 1.055, 2.4);
+            diffuseColor.r = mix(diffuseColor.r, min(diffuseColor.g * 0.82, target), uStudShade);
+            diffuseColor.b = mix(diffuseColor.b, min(diffuseColor.g * 0.78, target * 0.85), uStudShade);
             // The click finder takes the strongest 2px step in y 0.50-0.70.
             // The near steps place a brick over 45px. A dot higher in that
             // band wins the click and stays inside 30-45. The moire sample
@@ -74,6 +77,6 @@ uniform float uViewH;
             crest *= band * step(3.0, cellPx) * (1.0 - uStudShade);
             diffuseColor.g *= mix(1.0, 1.65, crest);
           }
-          `)},e.groundStuds=new globalThis.__BRIX_THREE.Mesh(new globalThis.__BRIX_THREE.PlaneGeometry(a,a),d),e.groundStuds.rotation.x=-Math.PI/2,e.groundStuds.position.set(a/2,.012,a/2),e.groundStuds.castShadow=!1,e.groundStuds.receiveShadow=!0,e.scene.add(e.groundStuds),r.castShadow=!1;const i=new globalThis.__BRIX_THREE.MeshLambertMaterial({color:3116860});i.polygonOffset=!0,i.polygonOffsetFactor=1,i.polygonOffsetUnits=1;const n=new globalThis.__BRIX_THREE.Mesh(new globalThis.__BRIX_THREE.BoxGeometry(a+1.6,e.PLATE_H*.28,a+1.6),i);n.position.set(a/2,-e.PLATE_H*.42,a/2),n.receiveShadow=!0,n.name="plateRim",e.scene.add(n);const m=new globalThis.__BRIX_THREE.PlaneGeometry(16e3,16e3,80,80),c=new globalThis.__BRIX_THREE.MeshLambertMaterial({color:3116860});c.customProgramCacheKey=()=>"grass-dim-lod31",c.onBeforeCompile=t=>{t.uniforms.uStudShade={value:e.isMobileGfx()?0:1},t.fragmentShader=t.fragmentShader.replace("#include <common>",`uniform float uStudShade;
+          `)},e.groundStuds=new globalThis.__BRIX_THREE.Mesh(new globalThis.__BRIX_THREE.PlaneGeometry(a,a),n),e.groundStuds.rotation.x=-Math.PI/2,e.groundStuds.position.set(a/2,.012,a/2),e.groundStuds.castShadow=!1,e.groundStuds.receiveShadow=!0,e.scene.add(e.groundStuds),d.castShadow=!1;const r=new globalThis.__BRIX_THREE.MeshLambertMaterial({color:3116860});r.polygonOffset=!0,r.polygonOffsetFactor=1,r.polygonOffsetUnits=1;const i=new globalThis.__BRIX_THREE.Mesh(new globalThis.__BRIX_THREE.BoxGeometry(a+1.6,e.PLATE_H*.28,a+1.6),r);i.position.set(a/2,-e.PLATE_H*.42,a/2),i.receiveShadow=!0,i.name="plateRim",e.scene.add(i);const m=new globalThis.__BRIX_THREE.PlaneGeometry(16e3,16e3,80,80),f=new globalThis.__BRIX_THREE.MeshLambertMaterial({color:3116860});f.customProgramCacheKey=()=>"grass-dim-lod31",f.onBeforeCompile=t=>{t.uniforms.uStudShade={value:e.isMobileGfx()?0:1},t.fragmentShader=t.fragmentShader.replace("#include <common>",`uniform float uStudShade;
 #include <common>`),t.fragmentShader=t.fragmentShader.replace("#include <color_fragment>",`#include <color_fragment>
-          diffuseColor.g *= mix(1.0, 0.34, uStudShade);`)};const o=new globalThis.__BRIX_THREE.Mesh(m,c);o.rotation.x=-Math.PI/2,o.position.set(a/2,-.02,a/2),o.receiveShadow=!1,o.userData.isGround=!0,e.scene.add(o),window.grassPlane=o,window.baseplateRef=r,window.groundStudsRef=e.groundStuds,e.createDistantScenery(a);const g=a,x=l,s=new globalThis.__BRIX_THREE.GridHelper(g,x,2059816,2059816);s.position.set(a/2,.002,a/2),s.material.opacity=0,s.material.transparent=!0,s.visible=!1,e.scene.add(s),window.gridHelper=s,e.controls&&!e.controls.__plateStudLod&&(e.controls.__plateStudLod=!0,e.controls.addEventListener("change",()=>e.updateNearPlateStuds(!1))),e.updateNearPlateStuds(!0)};
+          diffuseColor.g *= mix(1.0, 0.34, uStudShade);`)};const o=new globalThis.__BRIX_THREE.Mesh(m,f);o.rotation.x=-Math.PI/2,o.position.set(a/2,-.02,a/2),o.receiveShadow=!1,o.userData.isGround=!0,e.scene.add(o),window.grassPlane=o,window.baseplateRef=d,window.groundStudsRef=e.groundStuds,e.createDistantScenery(a);const g=a,x=l,s=new globalThis.__BRIX_THREE.GridHelper(g,x,2059816,2059816);s.position.set(a/2,.002,a/2),s.material.opacity=0,s.material.transparent=!0,s.visible=!1,e.scene.add(s),window.gridHelper=s,e.controls&&!e.controls.__plateStudLod&&(e.controls.__plateStudLod=!0,e.controls.addEventListener("change",()=>e.updateNearPlateStuds(!1))),e.updateNearPlateStuds(!0)};

@@ -97,6 +97,16 @@
   #controls.tray-open .tool-grid { display: grid; }
   #controls.tray-open #mirrorBtn { order: -2; }
   #controls.tray-open #moveBtn { order: -1; }
+  #controls.tray-open .tray-scroll > .section:has([data-background="classroom"]) .section-content,
+  #controls.tray-open .tray-scroll > .section:has([data-background="classroom"]).collapsed .section-content {
+    display: block;
+    max-height: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    content-visibility: visible;
+    pointer-events: auto;
+    transition: none;
+  }
   .toast {
     top: 48px !important;
     left: 128px !important;
@@ -127,32 +137,5 @@
   body:has(#deleteModeBanner.visible) .gotw-tag,
   body:has(#deleteModeBanner.visible) #qualityBar {
     display: none !important;
-  }
-}
-@media (min-width: 769px) {
-  #controls {
-    z-index: 10050;
-    gap: 16px;
-    padding: 16px 16px 18px;
-  }
-  #sidebarToggle { z-index: 10051; }
-  #controls .section {
-    padding: 16px 16px 18px;
-  }
-  #controls .section-title {
-    margin-bottom: 14px;
-  }
-  #controls .subsection {
-    margin-top: 16px;
-    padding: 12px;
-  }
-  #controls .brick-grid {
-    gap: 8px;
-  }
-  #controls .brick-btn {
-    padding: 11px 4px;
-  }
-  #controls .tool-grid {
-    gap: 10px;
   }
 }
