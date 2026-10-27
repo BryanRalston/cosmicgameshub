@@ -3692,7 +3692,7 @@ body.phone-tray-open .drawer-starters button {
     margin-top: 0 !important;
   }
   #controls.tray-open #savedProjectsList {
-    order: 0;
+    order: 2;
     flex: 0 0 72px;
     height: 72px;
     min-height: 72px;
@@ -3707,29 +3707,56 @@ body.phone-tray-open .drawer-starters button {
     min-height: 36px;
     padding: 4px 4px;
   }
+  /* Mirror and Move join the sheet under Save. The rest of Tools, including
+     Pitch, stays below the project list so a save click cannot hit it. */
   #controls.tray-open .tray-scroll > .section:has(#mirrorBtn) {
-    order: 1;
-    flex: 0 0 auto;
-    margin: 0;
-    padding: 0 4px 2px;
+    display: contents;
   }
   #controls.tray-open .section:has(#mirrorBtn) .section-title {
+    order: 3;
     margin: 0;
     font-size: 12px;
     line-height: 1;
   }
   #controls.tray-open .section:has(#mirrorBtn) .section-content,
   #controls.tray-open .section:has(#mirrorBtn).collapsed .section-content {
-    display: block;
+    display: contents;
     max-height: none !important;
     opacity: 1 !important;
     visibility: visible !important;
     content-visibility: visible;
     pointer-events: auto;
   }
+  /* Only Mirror and Move leave the grid. A full-width row for every
+     tool sat under the scroll finger and turned Floor and Clear All on. */
+  #controls.tray-open #sheetToolRow {
+    display: contents;
+  }
+  #controls.tray-open .section:has(#mirrorBtn) .tool-grid:not(#sheetToolRow) {
+    display: grid;
+    order: 3;
+    flex: 0 0 auto;
+    width: 100%;
+  }
+  #controls.tray-open .section:has(#mirrorBtn) #rareToolGrid {
+    margin-top: 28px;
+  }
+  #controls.tray-open .section:has(#mirrorBtn) .mirror-settings {
+    order: 3;
+    flex: 0 0 auto;
+    width: 100%;
+  }
   #controls.tray-open .tool-grid { display: grid; }
-  #controls.tray-open #mirrorBtn { order: -2; }
-  #controls.tray-open #moveBtn { order: -1; }
+  #controls.tray-open .section:has(#mirrorBtn) #mirrorBtn,
+  #controls.tray-open .section:has(#mirrorBtn) #moveBtn {
+    order: 1;
+    flex: 0 0 auto;
+    width: calc(50% - 6px);
+  }
+  #controls.tray-open .section:has(#mirrorBtn) #moveBtn {
+    margin-top: -44px;
+    margin-left: 50%;
+  }
   #controls.tray-open .tray-scroll > .section:has([data-background="classroom"]) .section-content,
   #controls.tray-open .tray-scroll > .section:has([data-background="classroom"]).collapsed .section-content {
     display: block;
@@ -3741,8 +3768,8 @@ body.phone-tray-open .drawer-starters button {
     transition: none;
   }
   .toast {
-    top: 48px !important;
-    left: 12px !important;
+    top: 88px !important;
+    left: 72px !important;
     right: 88px !important;
     width: auto;
     max-width: none;

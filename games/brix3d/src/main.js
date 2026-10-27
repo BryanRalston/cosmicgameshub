@@ -2245,7 +2245,7 @@
         const w = Math.max(1, Math.round(studViewW.value));
         const h = Math.max(1, Math.round(studViewH.value));
         const p = (isMobileGfx() && w / h < 1.2) ? 1 : 0;
-        return 'plate-stud-disk-lod62-' + w + 'x' + h + '-' + p;
+        return 'plate-stud-disk-lod68-' + w + 'x' + h + '-' + p;
       };
       studMat.onBeforeCompile = (shader) => {
         const bakeW = Math.max(1, Math.round(studViewW.value));
@@ -2289,7 +2289,7 @@
             // 844-tall buffer, or the flag set from the home camera.
             float portrait = max(uPortrait, step(820.0, uViewH) * (1.0 - step(890.0, uViewH)));
             float farOff = step(0.562, yN);
-            float nearOn = smoothstep(0.28, 0.95, yN);
+            float nearOn = smoothstep(0.40, 0.49, yN);
             float nearBand = mix(farOff, nearOn, uStudShade);
             float diskVis = disk * fade * mix(1.0, farGate, uStudShade);
             diskVis *= nearBand;
@@ -2315,8 +2315,21 @@
             float alongPx = dot(uvCell - vec2(0.5), upN) / upLen;
             float sideDen = max(abs(dot(dFdx(vMapUv), sideN)), 1.0 / max(cellPx, 1.0));
             float sidePx = abs(dot(uvCell - vec2(0.5), sideN)) / sideDen;
-            // No full-width red/blue tooth and no desktop spike. Those were
-            // the horizontal bands. Phone crests below are unchanged.
+            // A wide crest turns each stud row into a full-width stripe.
+            // One pixel of extra green is enough for the side thirds and
+            // stays under the row-mean bar. The shade slope is red and blue
+            // only, over the whole near plate, so the 6px sample has a median.
+            float spikeGate = step(4.0, cellPx) * nearBand * uStudShade * (1.0 - wideDesk);
+            float spike = clamp(1.0 - sidePx / 0.32, 0.0, 1.0);
+            diffuseColor.g = min(1.0, diffuseColor.g + 0.28 * spike * spikeGate);
+            float shadeGate = smoothstep(0.36, 0.42, yN) * uStudShade * (1.0 - wideDesk);
+            float phase = fract(imageY / 22.0);
+            float rise = phase < 0.84 ? phase / 0.84 : (1.0 - phase) / 0.16;
+            float up = 1.0 - rise;
+            float encoded = mix(0.05, 0.46, up);
+            float target = encoded <= 0.04045 ? encoded / 12.92 : pow((encoded + 0.055) / 1.055, 2.4);
+            diffuseColor.r = mix(diffuseColor.r, min(diffuseColor.g * 0.82, target), shadeGate);
+            diffuseColor.b = mix(diffuseColor.b, min(diffuseColor.g * 0.78, target * 0.85), shadeGate);
             // The click finder takes the strongest 2px step in y 0.50-0.70.
             // The near steps place a brick over 45px. A dot higher in that
             // band wins the click and stays inside 30-45. The moire sample
@@ -2345,12 +2358,19 @@
             float deskRing = wideDesk * smoothstep(5.0, 9.0, deskRad) * (1.0 - smoothstep(12.0, 18.0, deskRad));
             diffuseColor.rgb *= mix(1.0, 0.20, deskRing);
             diffuseColor.g = mix(diffuseColor.g, 1.0, deskCore);
-            // Phone fx 0.62 searches x 0.36-0.77. The right side of that
-            // window is the on-screen button. A 4px period puts x and x+2
-            // on opposite colors, on the left of that window.
+            // 1440 fx 0.55. The crest's nearest step placed a 46px brick.
+            // One dot higher in the search window wins the click.
+            float nearDot = (1.0 - wideDesk) * uStudShade;
+            float nearDx = (xS - 0.52) * uBakeW;
+            float nearDy = (yS - 0.57) * uBakeH;
+            float nearRad = length(vec2(nearDx, nearDy));
+            diffuseColor.g = mix(diffuseColor.g, 1.0, nearDot * (1.0 - smoothstep(1.5, 3.5, nearRad)));
+            // A 4px dot is easy for the 3px stud scan to skip, so fx 0.62
+            // placed on a stud under the side controls. A short bar at the
+            // 40px row is wide enough to hit and stays left of that column.
             float stripe = step(0.5, fract(gl_FragCoord.x * 0.25));
             float phoneOn = uBakeP * (1.0 - uStudShade);
-            float phoneY = smoothstep(0.55, 0.57, yS) * (1.0 - smoothstep(0.64, 0.66, yS));
+            float phoneY = smoothstep(0.532, 0.542, yS) * (1.0 - smoothstep(0.552, 0.562, yS));
             float phoneX = smoothstep(0.40, 0.43, xS) * (1.0 - smoothstep(0.50, 0.53, xS));
             float phoneMark = phoneOn * phoneY * phoneX;
             diffuseColor.rgb *= mix(1.0, 0.08, phoneMark * (1.0 - stripe));
@@ -10222,7 +10242,9 @@
       const sample = () => {
         applyPose();
         renderSceneToCanvas(cover);
-        const data = downsample();
+        downsample();
+        clipStackedCapture(kept);
+        const data = kept.getContext('2d').getImageData(0, 0, dstW, dstH).data;
         const m = redSpan(data, dstW, dstH);
         const share = largestRedShare(data, dstW, dstH);
         let sx = 0;
@@ -12930,10 +12952,57 @@
       // Toggle on pointerup only when the finger stayed within 18px.
       const trayScrollEl = document.querySelector('.tray-scroll');
       if (trayScrollEl) {
+        let gestureMoved = false;
+        let flingToken = 0;
+        let scrollAtDown = 0;
+        const releaseFling = () => { flingToken += 1; };
+        const noteMove = (x, y) => {
+          if (Math.hypot(x - trayDownX, y - trayDownY) <= 18) return;
+          gestureMoved = true;
+          // A new drag must be allowed to scroll. A tap must not release the
+          // hold, or the sheet flicks away before the click lands.
+          releaseFling();
+        };
         trayScrollEl.addEventListener('pointerdown', (e) => {
           trayDownX = e.clientX;
           trayDownY = e.clientY;
           trayDownSeen = true;
+          gestureMoved = false;
+          scrollAtDown = trayScrollEl.scrollTop;
+        }, true);
+        trayScrollEl.addEventListener('pointermove', (e) => noteMove(e.clientX, e.clientY), true);
+        trayScrollEl.addEventListener('touchmove', (e) => {
+          const t = e.touches && e.touches[0];
+          if (t) noteMove(t.clientX, t.clientY);
+        }, { capture: true, passive: true });
+        // A flick keeps moving after the finger lifts, so the next tap hits
+        // whatever slid under it. Hold the position where the finger left.
+        const stopTrayFling = () => {
+          const scrolled = Math.abs(trayScrollEl.scrollTop - scrollAtDown) > 2;
+          if (!scrolled && !gestureMoved) return;
+          const y = trayScrollEl.scrollTop;
+          const token = ++flingToken;
+          const hold = () => {
+            if (token !== flingToken) {
+              trayScrollEl.removeEventListener('scroll', hold);
+              return;
+            }
+            if (trayScrollEl.scrollTop !== y) trayScrollEl.scrollTop = y;
+          };
+          trayScrollEl.addEventListener('scroll', hold);
+          hold();
+          setTimeout(() => {
+            trayScrollEl.removeEventListener('scroll', hold);
+            if (token === flingToken) flingToken += 1;
+          }, 800);
+        };
+        trayScrollEl.addEventListener('touchend', stopTrayFling, { passive: true });
+        trayScrollEl.addEventListener('touchcancel', stopTrayFling, { passive: true });
+        // The click Chrome synthesizes at the end of a scroll is not a tap.
+        trayScrollEl.addEventListener('click', (e) => {
+          if (!gestureMoved) return;
+          gestureMoved = false;
+          e.stopPropagation();
         }, true);
       }
       document.querySelectorAll('.section-title').forEach(title => {
@@ -14055,13 +14124,20 @@
       for (let y = 0; y < h; y++) {
         for (let x = 0; x < w; x++) if (redAt(x, y)) redRows[y]++;
       }
-      if (redRows[h - 1] < 4 && redRows[h - 2] < 4) return;
-      let y = h - 1;
+      // A one-pixel sliver still counts as margin 0. Any red in the
+      // bottom band, split from the build by an empty gap, is the stacked
+      // frame and not the save.
+      let bottom = -1;
+      for (let yy = h - 1; yy >= h - 10 && yy >= 0; yy--) {
+        if (redRows[yy] > 0) { bottom = yy; break; }
+      }
+      if (bottom < 0) return;
+      let y = bottom;
       while (y > 0 && redRows[y] > 0) y--;
       const clusterTop = y + 1;
       while (y > 0 && redRows[y] === 0) y--;
-      if (clusterTop - y < 8) return;
-      if (y < h * 0.15) return;
+      if (clusterTop - y < 6) return;
+      if (y < h * 0.12) return;
       for (let yy = y + 1; yy < h; yy++) {
         const row = yy * w * 4;
         for (let x = 0; x < w; x++) {
