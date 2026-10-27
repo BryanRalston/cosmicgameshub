@@ -10178,7 +10178,7 @@
           dist *= next.m.extent / 0.6;
           next = sample();
         }
-        const grew = next.share > prev.shot.share + 0.004 || next.small > prev.shot.small + 0.004;
+        const grew = next.small > prev.shot.small + 0.004;
         const framed = next.m.n >= 8 && next.m.extent >= 0.4 && next.m.extent <= 0.745 && next.m.margin >= 0.02;
         const skyFine = next.sky >= 0.08 && next.sky <= 0.32;
         if (!grew || !framed || !skyFine) {
@@ -10223,7 +10223,7 @@
         }
         // The near brick can already clear 12% while the far one is a speck.
         // Narrow the lens before dollying in, so the frame does not crop.
-        if (shot.small < 0.125 && shot.share >= 0.145 && shot.m.extent >= 0.46 && shot.m.extent < 0.735) {
+        if (shot.small < 0.125 && shot.share >= 0.11 && shot.m.extent >= 0.46 && shot.m.extent < 0.735) {
           if (flatten()) continue;
         }
         if (shot.m.extent < 0.735 && (shot.m.extent < 0.46 || shot.share < 0.125 || shot.small < 0.125)) {
@@ -10263,95 +10263,6 @@
           break;
         }
         shot = next;
-      }
-      // A wide six-spread sits near 73% fill with the nearest brick on the
-      // 12% line. Dollying in crosses 75% fill first. Widen the lens and
-      // move closer by the same aim-plane factor: the near brick grows and
-      // the far speck shrinks. Capture FOV is restored after the thumb.
-      for (let step = 0; step < 8 && shot.share >= 0.09 && shot.share < 0.145 && shot.m.extent >= 0.4 && shot.m.extent <= 0.745; step++) {
-        const prev = remember();
-        const oldFov = camera.fov;
-        const oldPitch = pitch;
-        const nextFov = Math.min(82, camera.fov / 0.96);
-        if (nextFov > 82 || nextFov <= camera.fov + 0.25) break;
-        const skyGap = oldFov * 0.5 - oldPitch * 180 / Math.PI;
-        const nextPitchDeg = Math.max(8, Math.min(48, nextFov * 0.5 - skyGap));
-        const hold = Math.tan(oldFov * Math.PI / 360) / Math.tan(nextFov * Math.PI / 360);
-        camera.fov = nextFov;
-        pitch = nextPitchDeg * Math.PI / 180;
-        dist *= hold;
-        updateDir();
-        const next = sample();
-        const ok = next.m.n >= 8
-          && next.share > prev.shot.share + 0.004
-          && next.m.extent >= 0.4
-          && next.m.extent <= 0.745
-          && next.m.margin >= 0.02
-          && next.sky >= 0.08
-          && next.sky <= 0.32;
-        if (!ok) {
-          camera.fov = oldFov;
-          pitch = oldPitch;
-          updateDir();
-          restore(prev);
-          break;
-        }
-        shot = next;
-      }
-      // A wide flat spread fills the frame before any one brick clears 12%
-      // with room to spare. Tip up and open the lens so each brick's height
-      // passes its width. Distance then sits just under the 75% fill cap.
-      // Other saves keep the fixed 3/4, so their sky band does not move.
-      if (shot.m.n >= 8 && shot.share < 0.128 && shot.m.extent >= 0.68) {
-        const prev = remember();
-        const oldFov = camera.fov;
-        const oldPitch = pitch;
-        camera.fov = 78;
-        pitch = 30 * Math.PI / 180;
-        updateDir();
-        let loD = Math.max(1.4, dist * 0.35);
-        let hiD = Math.max(loD + 1, dist * 2.4);
-        for (let n = 0; n < 12; n++) {
-          dist = (loD + hiD) * 0.5;
-          if (projectedExtent() > 0.70) loD = dist;
-          else hiD = dist;
-        }
-        dist = hiD;
-        let next = sample();
-        for (let step = 0; step < 6 && next.share < 0.14 && next.m.extent < 0.735 && next.m.margin >= 0.04; step++) {
-          const snapDist = dist;
-          const snapShot = next;
-          dist *= 0.975;
-          const closer = sample();
-          const stepOk = closer.m.n >= 8
-            && closer.share > snapShot.share + 0.002
-            && closer.m.extent <= 0.74
-            && closer.m.margin >= 0.03
-            && closer.sky >= 0.12
-            && closer.sky <= 0.30;
-          if (!stepOk) {
-            dist = snapDist;
-            next = snapShot;
-            break;
-          }
-          next = closer;
-        }
-        const lifted = next.m.n >= 8
-          && next.share >= 0.128
-          && next.share > prev.shot.share + 0.006
-          && next.m.extent >= 0.4
-          && next.m.extent <= 0.745
-          && next.m.margin >= 0.03
-          && next.sky >= 0.12
-          && next.sky <= 0.30;
-        if (!lifted) {
-          camera.fov = oldFov;
-          pitch = oldPitch;
-          updateDir();
-          restore(prev);
-        } else {
-          shot = next;
-        }
       }
       applyPose();
       renderSceneToCanvas(cover);
@@ -10466,10 +10377,7 @@
       const aspect = (camera && camera.aspect) || (innerWidth / Math.max(1, innerHeight));
       if (isMobileGfx() && aspect < 1.2) return PHONE_HOME_DIST;
       if (isMobileGfx()) return WIDE_HOME_DIST;
-      // The plate-fit distance puts a 2×2 at 45px, and one pixel of raster
-      // noise fails the 45px home bar. Four percent more distance lands near
-      // 42px. The plate corners stay well inside the frame.
-      return plateFrameDistance(0.05, DESK_OX, DESK_OY, DESK_OZ, DESK_AIM, DESK_AIM) * 1.04;
+      return plateFrameDistance(0.05, DESK_OX, DESK_OY, DESK_OZ, DESK_AIM, DESK_AIM);
     }
 
     function frameHomeCamera() {
@@ -10940,20 +10848,15 @@
         markDirty();
       }
     }
-    // A phone tap is a touch plus a click. The click usually lands just
-    // after 400ms, but a long task on the main thread can push it past
-    // 700ms, and that late click was turning Floor, Wall, and Mirror off.
+    // A phone tap is a touch plus a click that lands just after 400ms.
+    // The second click was turning Floor, Wall, and Mirror straight back off.
     const recentClick = new Map();
-    const echoUntil = new Map();
     function repeatClick(key) {
       const now = performance.now();
       const prev = recentClick.get(key);
       if (prev != null && now - prev < 700) return true;
       recentClick.set(key, now);
       return false;
-    }
-    function echoClick(key) {
-      return (echoUntil.get(key) || 0) > performance.now();
     }
     function isTextField(el) {
       if (!el || !el.tagName) return false;
@@ -12641,11 +12544,6 @@
           trayDownX = e.clientX;
           trayDownY = e.clientY;
           trayDownSeen = true;
-          // A new finger ends the swallow from a scroll that lifted on a
-          // button. The compatibility click of that scroll already fired.
-          // A mouse pointerdown is the touch's own compatibility event and
-          // must keep the swallow, or the late click closes the tool.
-          if (e.pointerType !== 'mouse') echoUntil.clear();
         }, true);
       }
       document.querySelectorAll('.section-title').forEach(title => {
@@ -12655,13 +12553,10 @@
           // A scroll ends on a title. Only a finger that stayed put opens it.
           if (!trayDownSeen || Math.hypot(e.clientX - trayDownX, e.clientY - trayDownY) > 18) return;
           const now = performance.now();
-          // The compatibility mouse pointerup follows the touch. A long
-          // task can deliver it after 700ms, which closed the section
-          // again before Floor or Wall could be tapped.
-          if (e.pointerType === 'mouse' && now - title.__touchToggleAt < 2500) return;
+          // A phone tap can be followed by the click the button also
+          // expects. That second pointerup arrives just after 400 ms.
           if (now - lastToggle < 700) return;
           lastToggle = now;
-          if (e.pointerType !== 'mouse') title.__touchToggleAt = now;
           title.parentElement.classList.toggle('collapsed');
         });
       });
@@ -12834,14 +12729,8 @@
         return (e) => {
           if (e && e.type === 'pointerup') {
             if (e.pointerType === 'mouse') return;
-            // A touchEnd with no points reports 0,0. That is not a drag.
-            const bogus = e.clientX === 0 && e.clientY === 0;
-            const moved = !trayDownSeen || Math.hypot(e.clientX - trayDownX, e.clientY - trayDownY) > 18;
-            // A scroll that lifts on the button must not toggle and must not
-            // swallow the tap that follows. Only a still finger owns the click.
-            if ((moved && !bogus) || !trayDownSeen) return;
-            echoUntil.set(key, performance.now() + 2500);
-          } else if (echoClick(key)) return;
+            if (!trayDownSeen || Math.hypot(e.clientX - trayDownX, e.clientY - trayDownY) > 18) return;
+          }
           if (repeatClick(key)) return;
           run();
         };

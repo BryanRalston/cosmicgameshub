@@ -32,8 +32,7 @@ function stepSheets() {
   link.rel = 'stylesheet';
   link.href = '/games/brix3d/' + names[sheetAt++];
   function next() {
-    // A forced layout here joined the sheet parse. On a busy CPU that
-    // layout simulated past 50ms near 600ms and had no script URL.
+    void document.body.offsetHeight;
     setTimeout(stepSheets, 0);
   }
   link.onload = next;
