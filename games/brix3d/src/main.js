@@ -2400,9 +2400,10 @@
             : Math.hypot(cam.x - x, cam.y - y, cam.z - z);
           if (dist >= reach) continue;
           const distCam = Math.hypot(cam.x - x, cam.y - y, cam.z - z);
-          const px = STUD_H / Math.max(distCam, 0.05) * focal;
-          // A cap under about 5 px smears into the printed stud. Fade it in
-          // as the camera gets close enough for the cylinder to read.
+          // Desktop studs are wider than they are tall, so the cap is what
+          // reads. Phone home stays on the printed studs.
+          const span = desktopStuds ? STUD_R * 2 : STUD_H;
+          const px = span / Math.max(distCam, 0.05) * focal;
           if (px < 5) continue;
           picks.push({ x, z, dist, px });
         }
@@ -10998,6 +10999,36 @@
       camera.position.add(movement);
       controls.target.add(movement);
     }
+    // The left menu covers the canvas. A zoom that aims at the canvas center
+    // parks the build under that menu. Slide the aim to the open part.
+    function nudgeTargetIntoView() {
+      if (!camera || !controls || !renderer) return;
+      if (window.innerWidth <= 768) return;
+      if (document.body.classList.contains('sidebar-collapsed')) return;
+      const bar = document.getElementById('controls');
+      const canvas = renderer.domElement;
+      if (!bar || !canvas) return;
+      const br = bar.getBoundingClientRect();
+      const cr = canvas.getBoundingClientRect();
+      const coverLeft = Math.max(br.left, cr.left);
+      const coverRight = Math.min(br.right, cr.right);
+      if (coverRight - coverLeft < 40 || br.height < 40) return;
+      const visMid = (coverRight + cr.right) * 0.5;
+      const canvasMid = (cr.left + cr.right) * 0.5;
+      const ndc = ((visMid - canvasMid) / Math.max(1, cr.width)) * 2;
+      if (Math.abs(ndc) < 0.02) return;
+      const dist = camera.position.distanceTo(controls.target);
+      const halfW = Math.tan(camera.fov * Math.PI / 360) * dist * camera.aspect;
+      const forward = new THREE.Vector3();
+      camera.getWorldDirection(forward);
+      const right = new THREE.Vector3().crossVectors(forward, camera.up);
+      if (right.lengthSq() < 1e-8) return;
+      right.normalize().multiplyScalar(-ndc * halfW);
+      camera.position.add(right);
+      controls.target.add(right);
+      controls.update();
+      markDirty();
+    }
     function zoomCamera(delta, clientX, clientY) {
       const distance = camera.position.distanceTo(controls.target);
       if (distance < 0.001) return;
@@ -11056,6 +11087,7 @@
         controls.update();
         markDirty();
       }
+      if (!aimed) nudgeTargetIntoView();
       // Two phone zoom-ins slide a brick down onto the tool drawer. The
       // stud check reads the plate 12px under that brick, so keep the
       // build above the drawer. Distance stays; only the aim slides.

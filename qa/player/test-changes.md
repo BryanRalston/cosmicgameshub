@@ -6,6 +6,12 @@ These edits fix checks that measured the wrong thing. Numeric floors stay, or ge
 
 `clickStud` and `locateStud` used to screenshot the canvas and click the strongest green step in a fixed band. A painted dot in that band could win the click. They now project a plate grid cell through `window.camera` and press that CSS point. Layouts pass the same screen fraction and get the nearest on-screen cell, and they fail when no cell projects within 90 px. Stacking still clicks the brick that is already there.
 
+## The 0.68 row-band limit
+
+`wholePlateBands` takes a canvas screenshot and keeps the green plate. It runs a 1D FFT on 8 vertical slices and 8 horizontal slices. For each slice, `band` is the power in periods of 6–48 px. The score is vertical power divided by vertical plus horizontal power.
+
+A stud grid puts energy on both axes, so the score sits near 0.5. Full-width horizontal stripes put the energy in the vertical slices, so the score sits near 1. The fail point is 0.68, between those two. On the clean plate after the stripes were removed, the 1280 home shot printed band 0.53 (`D-stud-moire`). The 1440 and 1920 shots passed the same gate. There is no stored calibration image and no separate lab pass. 0.68 is that split: a two-axis stud grid clears it, a one-axis stripe field does not. It was not lowered to recover a score.
+
 ## Plate studs are a GPU screenshot, not a search window
 
 Moire and stud checks used to count peaks in a short vertical band, or a 6 px red/blue slope in one rectangle. A flat field with a few dots passed. The checks now take a real canvas screenshot and measure two things. Row-band energy is a 1D FFT of vertical slices against horizontal slices across the whole plate. Full-width bands put the energy in the vertical slices. Per-stud shape samples grid cells projected from the camera, shifted by the camera position, and compares each center with the gap halfway to the next stud along the grid, not along the screen axes. The contrast floor stays 8. A cell under 7 px on its short side only has to clear that floor on the resolved side, because a stripe is flat along its length. At least 8 of the counted samples have to be disks, at least half of them, and the left, middle, and right of the projected plate each need a disk. Shade still needs a median of at least 8 over at least 6 of those disks.
