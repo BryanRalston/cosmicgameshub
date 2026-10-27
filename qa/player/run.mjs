@@ -6125,6 +6125,276 @@ async function main() {
       } finally { await context.close(); }
     });
 
+    await check('R24-row-singular', 'a project-row load of one brick says 1 brick', async () => {
+      const { page, context } = await openPage(browser, false, 'r24row');
+      try {
+        await ready(page);
+        await clickStud(page, 0.5, false);
+        const field = await page.locator('#projectName').boundingBox();
+        await typeInto(page, field, 'solo', 'click');
+        await clickSel(page, '#saveProjectBtn');
+        await page.waitForFunction(() => localStorage.getItem('brickProject_solo'), null, { timeout: 8000 });
+        await page.locator('.saved-project-name').first().waitFor({ state: 'visible', timeout: 8000 });
+        await clickSel(page, '.saved-project-name');
+        await page.locator('#loadConfirmBody').waitFor({ state: 'visible', timeout: 4000 });
+        const text = (await page.locator('#loadConfirmBody').innerText()).replace(/\s+/g, ' ');
+        assert(text.indexOf('1 bricks') < 0, 'confirm "' + text + '"');
+        assert(/1 brick\b/.test(text), 'confirm "' + text + '"');
+        return text;
+      } finally { await context.close(); }
+    });
+
+    await check('R24-name-cleared', 'loading a save clears the name so the next Save is not a Replace', async () => {
+      const { page, context } = await openPage(browser, false, 'r24name');
+      try {
+        await ready(page);
+        await clickStud(page, 0.5, false);
+        const field = await page.locator('#projectName').boundingBox();
+        await typeInto(page, field, 'solo', 'click');
+        await clickSel(page, '#saveProjectBtn');
+        await page.waitForFunction(() => localStorage.getItem('brickProject_solo'), null, { timeout: 8000 });
+        await page.locator('.saved-project-name').first().waitFor({ state: 'visible', timeout: 8000 });
+        await clickSel(page, '.saved-project-name');
+        await page.locator('#loadConfirmOk').waitFor({ state: 'visible', timeout: 4000 });
+        await clickSel(page, '#loadConfirmOk');
+        await page.locator('#toast.show').waitFor({ state: 'visible', timeout: 4000 });
+        const value = await page.locator('#projectName').inputValue();
+        assert(value === '', 'name left as "' + value + '"');
+        return 'cleared';
+      } finally { await context.close(); }
+    });
+
+    await check('R24-sidebar-size', 'project buttons and tool buttons are at least 13 px', async () => {
+      const { page, context } = await openPage(browser, false, 'r24side');
+      try {
+        await ready(page);
+        await openSection(page, /^Tools$/);
+        const fonts = await page.evaluate(() => {
+          const project = document.querySelector('#controls .project-btn');
+          const tool = document.querySelector('#controls .tool-btn');
+          return {
+            project: project ? parseFloat(getComputedStyle(project).fontSize) : 0,
+            tool: tool ? parseFloat(getComputedStyle(tool).fontSize) : 0
+          };
+        });
+        const problems = [];
+        if (!(fonts.project >= 13)) problems.push('project ' + fonts.project + 'px');
+        if (!(fonts.tool >= 13)) problems.push('tool ' + fonts.tool + 'px');
+        assert(problems.length === 0, problems.join('; '));
+        return 'project ' + fonts.project + ' tool ' + fonts.tool;
+      } finally { await context.close(); }
+    });
+
+    await check('R24-tutorial-move', 'the tutorial tells the player about Move', async () => {
+      const { page, context } = await openPage(browser, false, 'r24tut');
+      try {
+        await page.waitForFunction(() => {
+          const modal = document.getElementById('tutorialModal');
+          const loading = document.getElementById('loadingScreen');
+          const gone = !loading || loading.classList.contains('hide') || getComputedStyle(loading).visibility === 'hidden' || parseFloat(getComputedStyle(loading).opacity) < 0.05;
+          return window.brixCanPlace && gone && modal && modal.classList.contains('visible');
+        }, null, { timeout: 45000 });
+        const text = await page.locator('#tutorialModal').evaluate((el) => el.textContent || '');
+        assert(/\bMove\b/.test(text), 'tutorial never says Move');
+        return 'mentions Move';
+      } finally { await context.close(); }
+    });
+
+    await check('R24-plate-gap', 'the plate reads as a different colour from the ground', async () => {
+      const { page, context } = await openPage(browser, false, 'r24plate');
+      try {
+        await ready(page);
+        const shot = await grabCanvas(page, 'r24-plate-gap.png');
+        const img = shot.img;
+        const mean = (y0, y1, x0, x1) => {
+          let n = 0;
+          let r = 0;
+          let g = 0;
+          let b = 0;
+          for (let y = y0; y < y1; y += 2) {
+            for (let x = x0; x < x1; x += 2) {
+              const i = (y * img.width + x) * 4;
+              const R = img.data[i];
+              const G = img.data[i + 1];
+              const B = img.data[i + 2];
+              if (G < 50 || G < R + 10 || G < B) continue;
+              n++;
+              r += R;
+              g += G;
+              b += B;
+            }
+          }
+          return n > 20 ? { r: r / n, g: g / n, b: b / n, n } : null;
+        };
+        let sky = 0;
+        for (let y = 0; y < img.height * 0.45; y++) {
+          let blue = 0;
+          const samples = 8;
+          for (let s = 0; s < samples; s++) {
+            const x = Math.floor(img.width * (0.2 + 0.6 * s / samples));
+            const i = (y * img.width + x) * 4;
+            if (img.data[i + 2] > 140 && img.data[i + 2] > img.data[i + 1] + 10) blue++;
+          }
+          if (blue >= 5) sky = y;
+        }
+        const ground = mean(Math.min(img.height - 8, sky + 6), Math.min(img.height - 4, sky + 36), Math.floor(img.width * 0.35), Math.floor(img.width * 0.65));
+        const plate = mean(Math.floor(img.height * 0.58), Math.floor(img.height * 0.78), Math.floor(img.width * 0.35), Math.floor(img.width * 0.7));
+        assert(ground && plate, 'samples ground ' + !!ground + ' plate ' + !!plate);
+        const dist = Math.hypot(plate.r - ground.r, plate.g - ground.g, plate.b - ground.b);
+        assert(dist >= 48, 'plate/ground distance ' + dist.toFixed(1));
+        return 'distance ' + dist.toFixed(1);
+      } finally { await context.close(); }
+    });
+
+    await check('R24-axis-slim', 'the mirror axis is a thin ribbon, not a thick bar', async () => {
+      const { page, context } = await openPage(browser, true, 'r24axis');
+      try {
+        await ready(page);
+        await ensureDrawer(page);
+        await scrollUntil(page, page.locator('#mirrorBtn'));
+        await clickSel(page, '#mirrorBtn');
+        await page.locator('#mirrorPopup.visible').waitFor({ state: 'visible', timeout: 4000 });
+        const shot = await grabCanvas(page, 'r24-axis.png');
+        const img = shot.img;
+        let n = 0;
+        let minX = img.width;
+        let maxX = 0;
+        let minY = img.height;
+        let maxY = 0;
+        for (let y = 0; y < img.height; y++) {
+          for (let x = 0; x < img.width; x++) {
+            const i = (y * img.width + x) * 4;
+            const r = img.data[i];
+            const g = img.data[i + 1];
+            const b = img.data[i + 2];
+            if (!(r > 160 && b > 140 && r > g + 40 && b > g + 20)) continue;
+            n++;
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+          }
+        }
+        const length = Math.hypot(Math.max(0, maxX - minX), Math.max(0, maxY - minY));
+        const thick = length > 8 ? n / length : 0;
+        assert(thick >= 6 && thick <= 10, 'axis ' + thick.toFixed(1) + ' px');
+        return 'stroke ' + thick.toFixed(1) + ' px';
+      } finally { await context.close(); }
+    });
+
+    await check('R24-mirror-share', 'the phone Mirror panel stays under a fifth of the screen', async () => {
+      const { page, context } = await openPage(browser, true, 'r24mir');
+      try {
+        await ready(page);
+        await ensureDrawer(page);
+        await scrollUntil(page, page.locator('#mirrorBtn'));
+        await clickSel(page, '#mirrorBtn');
+        await page.locator('#mirrorPopup.visible').waitFor({ state: 'visible', timeout: 4000 });
+        const share = await page.evaluate(() => {
+          const box = document.getElementById('mirrorPopup').getBoundingClientRect();
+          return box.height / window.innerHeight;
+        });
+        assert(share <= 0.18, 'mirror panel ' + (share * 100).toFixed(0) + '% of the screen');
+        return (share * 100).toFixed(0) + '%';
+      } finally { await context.close(); }
+    });
+
+    await check('R24-phone-keys', 'the phone drawer does not show the desktop Keys button', async () => {
+      const { page, context } = await openPage(browser, true, 'r24keys');
+      try {
+        await ready(page);
+        await clickSel(page, '#panelToggle');
+        assert(await drawerOpen(page), 'drawer stayed closed');
+        const box = await page.locator('#keybindBtn').boundingBox().catch(() => null);
+        const shown = !!(box && box.width > 8 && box.height > 8);
+        assert(!shown, 'Keys is on the phone');
+        return 'hidden';
+      } finally { await context.close(); }
+    });
+
+    await check('R24-phone-one-quality', 'the phone shows one quality control', async () => {
+      const { page, context } = await openPage(browser, true, 'r24qual');
+      try {
+        await ready(page);
+        await clickSel(page, '#panelToggle');
+        assert(await drawerOpen(page), 'drawer stayed closed');
+        await openSection(page, /^Environment$/);
+        const view = await page.evaluate(() => {
+          const on = (el) => {
+            if (!el) return false;
+            const style = getComputedStyle(el);
+            if (style.display === 'none' || style.visibility === 'hidden') return false;
+            const box = el.getBoundingClientRect();
+            return box.width > 20 && box.height > 8 && box.bottom > 0 && box.top < window.innerHeight;
+          };
+          return {
+            bar: on(document.getElementById('qualityBar')),
+            drawer: on(document.getElementById('qualityBtns'))
+          };
+        });
+        const count = (view.bar ? 1 : 0) + (view.drawer ? 1 : 0);
+        assert(count === 1, 'quality controls ' + count + ' bar ' + view.bar + ' drawer ' + view.drawer);
+        return 'one';
+      } finally { await context.close(); }
+    });
+
+    await check('R24-phone-press', 'the phone Load hint says tap, not press', async () => {
+      const { page, context } = await openPage(browser, true, 'r24press');
+      try {
+        await ready(page);
+        await clickStud(page, 0.5, false);
+        await ensureDrawer(page);
+        const field = await page.locator('#projectName').boundingBox();
+        await typeInto(page, field, 'hut', 'click');
+        await clickSel(page, '#saveProjectBtn');
+        await page.waitForFunction(() => localStorage.getItem('brickProject_hut'), null, { timeout: 8000 });
+        await ensureDrawer(page);
+        await clickSel(page, '#loadProjectBtn');
+        await page.locator('#toast.show').waitFor({ state: 'visible', timeout: 4000 });
+        const text = await page.evaluate(() => (document.getElementById('toast').textContent || '').replace(/\s+/g, ' ').trim());
+        assert(/tap/i.test(text), 'toast "' + text + '"');
+        assert(!/press/i.test(text), 'toast "' + text + '"');
+        return text;
+      } finally { await context.close(); }
+    });
+
+    await check('R24-clear-reach', 'Clear All is within three flicks of the top of the phone drawer', async () => {
+      const { page, context } = await openPage(browser, true, 'r24clear');
+      try {
+        await ready(page);
+        await clickSel(page, '#panelToggle');
+        assert(await drawerOpen(page), 'drawer stayed closed');
+        const reach = await page.evaluate(() => {
+          const scroll = document.querySelector('.tray-scroll');
+          const clear = document.getElementById('clearBtn');
+          if (!scroll || !clear) return null;
+          const dist = clear.getBoundingClientRect().top - scroll.getBoundingClientRect().top + scroll.scrollTop;
+          return { flicks: dist / Math.max(1, scroll.clientHeight), dist, view: scroll.clientHeight };
+        });
+        assert(reach, 'Clear All missing');
+        assert(reach.flicks <= 3, 'Clear All is ' + reach.flicks.toFixed(1) + ' flicks down');
+        return reach.flicks.toFixed(1) + ' flicks';
+      } finally { await context.close(); }
+    });
+
+    await check('R24-starter-cover', 'the phone starter strip does not cover the plate', async () => {
+      const { page, context } = await openPage(browser, true, 'r24start');
+      try {
+        await ready(page);
+        const bar = await page.locator('#starterBar').boundingBox();
+        assert(bar && bar.height > 8, 'starter hidden');
+        const hits = [];
+        for (const fy of [0.62, 0.74, 0.84]) {
+          const hit = await projectPlateCell(page, 0.5, fy);
+          if (hit) hits.push(hit);
+        }
+        assert(hits.length > 0, 'plate not on screen');
+        const covered = hits.filter((hit) => hit.x >= bar.x && hit.x <= bar.x + bar.width && hit.y >= bar.y && hit.y <= bar.y + bar.height);
+        assert(covered.length === 0, 'starter covers ' + covered.length + ' plate points');
+        return 'clear';
+      } finally { await context.close(); }
+    });
+
     await check('boot-x5', 'five fresh boots after localStorage.clear have no errors', async () => {
       const { page, context } = await openPage(browser, false, 'boot');
       try {
