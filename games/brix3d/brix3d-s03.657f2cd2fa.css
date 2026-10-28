@@ -58,18 +58,21 @@
     .rot-deg { color: #4ade80; font-weight: 700; min-width: 35px; }
     
     .toast {
-      position: fixed; top: 48px; bottom: auto; left: 50%; transform: translateX(-50%);
-      background: rgba(15, 15, 26, 0.98);
-      backdrop-filter: blur(20px);
+      position: fixed; top: 48px; bottom: auto; left: 0; right: 0;
+      width: max-content; max-width: calc(100% - 24px); margin-inline: auto;
+      transform: none;
+      background: #166534;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
       color: white; padding: 4px 16px; border-radius: 12px;
-      font-size: 13px; font-weight: 500; line-height: 1.1;
+      font-size: 13px; font-weight: 600; line-height: 1.2;
       white-space: nowrap;
-      opacity: 0; transition: opacity 0.25s ease; z-index: 200;
+      opacity: 0; visibility: hidden; transition: none; z-index: 200;
       pointer-events: none;
-      border: 1px solid rgba(255,255,255,0.1);
-      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,255,255,0.28);
+      box-shadow: none;
     }
-    .toast.show { transform: translateX(-50%); opacity: 1; pointer-events: auto; }
+    .toast.show { transform: none; opacity: 1; visibility: visible; pointer-events: auto; }
     .toast.success { 
       background: linear-gradient(135deg, rgba(34, 197, 94, 0.95), rgba(22, 163, 74, 0.95));
       border-color: rgba(74, 222, 128, 0.3);

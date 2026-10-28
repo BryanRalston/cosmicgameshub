@@ -25,8 +25,7 @@
       .brix-more,
       .gotw-tag,
       .gotw-tag--float,
-      #dailyPrompt,
-      .toast {
+      #dailyPrompt {
         will-change: transform;
       }
       #buildHud {

@@ -365,19 +365,17 @@
     // click band is 28–44 px while every plate corner stays inside the frame.
     const DESK_OX = 42, DESK_OY = 22, DESK_OZ = 42;
     const DESK_AIM = 49;
-    // Portrait sits about 23° above the plate. A 74° lens keeps the sky
-    // above 15% and the plate large enough once the drawer is open. 37
-    // units out keeps the 2×2 in the 36–45 px band. The wide window stays
-    // on its own ray.
+    // Portrait keeps this pitch so sky stays above the plate. Closer in,
+    // a 2×2 reads as a toy brick. The wide window has its own ray.
     const PHONE_OX = 52, PHONE_OY = 33, PHONE_OZ = 56;
-    const PHONE_HOME_DIST = 37;
+    const PHONE_HOME_DIST = 34;
     const PHONE_FOV = 74;
-    // Slide the portrait aim along the phone ray so flat ground sits outside
-    // the studded span. Distance and pitch stay put. Side is screen-right.
+    // Slide the portrait aim along the phone ray so the lawn sits past the
+    // studded span. Side is screen-right.
     const PHONE_AIM_SIDE = -4;
     const PHONE_AIM_ALONG = -4;
     const WIDE_OX = 58, WIDE_OY = 40, WIDE_OZ = 62;
-    const WIDE_HOME_DIST = 43;
+    const WIDE_HOME_DIST = 39;
     let weatherType = 'clear'; // 'clear', 'rain', 'snow', 'fog'
     let rainParticles = null;
     let snowParticles = null;
@@ -1273,11 +1271,10 @@
       // splash-only box now; the stylesheet already has the real toast size.
       document.body.classList.add('brix-live');
       const hinted = document.getElementById('toast');
-      // The splash hint is green so the first paint has a text box. A green
-      // bar left across the sky is a hard edge, so the playing hint is the
-      // dark toast and only when the phone card is not already explaining it.
-      // The stylesheet fades opacity over 0.25s. Hiding the node in the
-      // middle of that fade left the white splash text on the plate.
+      // The splash hint is green so the first paint has a text box. Drop it
+      // before the playing toast, and only when the phone card is not already
+      // explaining the plate. A fade in the middle of that swap left the
+      // white splash text on the plate.
       if (hinted) {
         hinted.style.transition = 'none';
         hinted.classList.remove('brix-early', 'show', 'success');
@@ -2277,18 +2274,28 @@
       scene.add(groundStuds);
       baseplate.castShadow = false;
       
-      // Dark rim so the plate edge reads against the grass.
-      const rimMat = new THREE.MeshLambertMaterial({ color: 0x2f8f3c });
-      rimMat.polygonOffset = true;
-      rimMat.polygonOffsetFactor = 1;
-      rimMat.polygonOffsetUnits = 1;
-      const rim = new THREE.Mesh(
-        new THREE.BoxGeometry(baseplateWorldSize + 1.6, PLATE_H * 0.28, baseplateWorldSize + 1.6),
-        rimMat
-      );
-      rim.position.set(baseplateWorldSize / 2, -PLATE_H * 0.42, baseplateWorldSize / 2);
-      rim.receiveShadow = true;
+      // Four bars outside the studs, clear of the grass. A slab flush with
+      // the stud plane disappeared: polygon offset at this angle pushed it
+      // under the lawn, and a buried box never showed.
+      const rimMat = new THREE.MeshLambertMaterial({ color: 0xd4f06a });
+      const rimLip = 2.2;
+      const rimH = 0.09;
+      const rimY = 0.055 - rimH * 0.5;
+      const rim = new THREE.Group();
       rim.name = 'plateRim';
+      const rimBars = [
+        [rimLip, rimH, baseplateWorldSize + rimLip * 2, -rimLip * 0.5, rimY, baseplateWorldSize * 0.5],
+        [rimLip, rimH, baseplateWorldSize + rimLip * 2, baseplateWorldSize + rimLip * 0.5, rimY, baseplateWorldSize * 0.5],
+        [baseplateWorldSize, rimH, rimLip, baseplateWorldSize * 0.5, rimY, -rimLip * 0.5],
+        [baseplateWorldSize, rimH, rimLip, baseplateWorldSize * 0.5, rimY, baseplateWorldSize + rimLip * 0.5]
+      ];
+      for (let i = 0; i < rimBars.length; i++) {
+        const b = rimBars[i];
+        const bar = new THREE.Mesh(new THREE.BoxGeometry(b[0], b[1], b[2]), rimMat);
+        bar.position.set(b[3], b[4], b[5]);
+        bar.receiveShadow = true;
+        rim.add(bar);
+      }
       scene.add(rim);
 
       // Grass is subdivided so per-vertex fog reaches the horizon instead of
