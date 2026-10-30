@@ -4664,7 +4664,7 @@
       var feelCss = document.createElement('style');
       feelCss.id = 'hr-feel-css';
       feelCss.textContent = [
-        '#hr-event.hr-inline{position:absolute;left:50%;right:auto;top:auto;bottom:8px;width:min(480px,calc(100% - 32px));max-width:480px;transform:translateX(-50%);height:auto;max-height:22%;z-index:8;margin:0;padding:0;background:transparent;display:block;pointer-events:none;overflow:visible;}',
+        '#hr-event.hr-inline{position:static;left:auto;right:auto;top:auto;bottom:auto;width:100%;max-width:none;transform:none;height:auto;max-height:none;z-index:2;margin:0;padding:0;background:transparent;display:block;pointer-events:none;overflow:visible;}',
         '#hr-event.hr-inline[hidden]{display:none !important;}',
         '#hr-event.hr-inline .hr-card{pointer-events:auto;width:100%;max-height:none;overflow:visible;padding:0.2rem 0.4rem 0.24rem;border-radius:12px;background:rgba(246,240,228,0.96);box-shadow:0 6px 16px rgba(0,0,0,0.28);box-sizing:border-box;display:flex;flex-direction:column;touch-action:pan-y;}',
         '#hr-event.hr-inline .hr-card h2{font-size:0.82rem;line-height:1.15;margin:0 0 0.08rem;}',
@@ -4786,46 +4786,44 @@
         playToast(ms);
       }
     }
+    function cardSlot() {
+      return document.getElementById('hr-card-slot');
+    }
+
     function placeEventCard() {
-      if (!els.event || !els.sim) return;
-      if (els.event.parentNode !== els.sim) els.sim.appendChild(els.event);
+      var slot = cardSlot();
+      if (!els.event || !slot) return;
+      if (els.event.parentNode !== slot) slot.insertBefore(els.event, slot.firstChild);
+    }
+
+    function syncCardSlot() {
+      var open = !!(els.event && !els.event.hidden && els.event.querySelector('.hr-card'));
+      if (els.sim) els.sim.classList.toggle('hr-has-card', open);
+      var hint = document.querySelector('#hr-sim .hr-hint');
+      if (hint) hint.hidden = open;
     }
 
     function fitCardBox() {
-      if (!els.event || !els.stage || els.event.hidden) return;
-      var h = els.stage.clientHeight || 0;
-      if (!(h > 0)) return;
-      var phoneCard = (window.innerWidth || 0) < 720;
-      var actions = els.sim && els.sim.querySelector('.hr-actions');
-      var simBox = els.sim ? els.sim.getBoundingClientRect() : null;
-      var actBox = actions ? actions.getBoundingClientRect() : null;
-      var stageBox = els.stage ? els.stage.getBoundingClientRect() : null;
-      var lift = simBox && actBox ? Math.max(8, Math.round(simBox.bottom - actBox.top + 4)) : 88;
-      var chrome = actBox && stageBox ? actBox.top - stageBox.bottom : 80;
-      var cap = Math.max(64, Math.min(phoneCard ? 86 : 96, Math.floor(chrome - 2)));
-      els.event.style.position = 'absolute';
+      syncCardSlot();
+      if (!els.event || els.event.hidden) return;
+      var h = els.stage ? els.stage.clientHeight || 0 : 0;
+      var nChoice = els.event.querySelectorAll('.hr-choices button').length;
+      els.event.style.position = 'static';
+      els.event.style.inset = 'auto';
+      els.event.style.left = 'auto';
+      els.event.style.right = 'auto';
       els.event.style.top = 'auto';
-      els.event.style.bottom = lift + 'px';
+      els.event.style.bottom = 'auto';
+      els.event.style.width = '100%';
+      els.event.style.maxWidth = 'none';
+      els.event.style.transform = 'none';
       els.event.style.margin = '0';
+      els.event.style.maxHeight = 'none';
+      els.event.style.height = 'auto';
+      els.event.style.zIndex = '2';
       els.event.style.background = 'transparent';
       els.event.style.pointerEvents = 'none';
-      els.event.style.height = 'auto';
       els.event.style.overflow = 'visible';
-      els.event.style.zIndex = '8';
-      els.event.style.maxHeight = cap + 'px';
-      if (phoneCard) {
-        els.event.style.left = '4px';
-        els.event.style.right = '4px';
-        els.event.style.width = 'auto';
-        els.event.style.maxWidth = 'none';
-        els.event.style.transform = 'none';
-      } else {
-        els.event.style.left = '12px';
-        els.event.style.right = 'auto';
-        els.event.style.width = 'min(360px, calc(100% - 24px))';
-        els.event.style.maxWidth = '360px';
-        els.event.style.transform = 'none';
-      }
       var card = els.event.querySelector('.hr-card');
       if (!card) return;
       card.style.pointerEvents = 'auto';
@@ -4846,16 +4844,23 @@
         body.style.flex = '0 0 auto';
       }
       if (choices) {
+        choices.style.display = 'flex';
+        choices.style.flexDirection = 'row';
+        choices.style.flexWrap = 'wrap';
+        choices.style.gap = '4px';
         choices.style.maxHeight = 'none';
         choices.style.overflow = 'visible';
         choices.style.flex = '0 0 auto';
       }
+      var wideChoice = nChoice >= 3 ? '46%' : '30%';
       var btns = choices ? choices.querySelectorAll('button') : [];
       for (var bi = 0; bi < btns.length; bi++) {
         var btn = btns[bi];
         btn.style.boxSizing = 'border-box';
+        btn.style.flex = '1 1 ' + wideChoice;
+        btn.style.width = 'auto';
         btn.style.height = 'auto';
-        btn.style.minHeight = '44px';
+        btn.style.minHeight = '36px';
         btn.style.maxHeight = 'none';
         btn.style.overflow = 'visible';
         btn.style.whiteSpace = 'normal';
@@ -4867,13 +4872,7 @@
           label.style.maxHeight = 'none';
         }
       }
-      var limit = cap;
-      if (body && card.offsetHeight > limit) body.style.display = 'none';
-      if (title && card.offsetHeight > limit) {
-        title.style.whiteSpace = 'nowrap';
-        title.style.overflow = 'hidden';
-        title.style.textOverflow = 'ellipsis';
-      }
+      if (body && nChoice >= 3) body.style.display = 'none';
       var clip = '0';
       var cardBox = card.getBoundingClientRect();
       var viewBottom = window.innerHeight || (cardBox.bottom + 1);
@@ -6038,6 +6037,7 @@
         }
       }
       placeChrome();
+      syncCardSlot();
     }
 
     function paintPromptTimer() {
@@ -7447,7 +7447,7 @@
         fit = fitH < fitW ? fitH : fitW;
       } else {
         var fitW = cssW / Math.max(1, worldW);
-        fit = Math.min(fitW, cssH / 860);
+        fit = Math.min(fitW, cssH / 940);
       }
       if (!(fit > 0.05)) fit = 0.05;
       return fit;
@@ -7480,8 +7480,9 @@
         }
         if (cssW >= 720) {
           var fullRoom = view.viewW >= worldW - 16 && view.viewH >= worldH - 16;
-          if (fullRoom) return camClamp((worldW - view.viewW) / 2, (worldH - view.viewH) / 2, view);
-          return camClamp((worldW - view.viewW) / 2, 0, view);
+          var deskCam = camClamp((worldW - view.viewW) / 2, fullRoom ? (worldH - view.viewH) / 2 : 0, view);
+          if (deskCam.y < 0) deskCam.y = 0;
+          return deskCam;
         }
       }
       var left = SPOTS.reg1 || { x: 420, y: 700 };
@@ -8621,6 +8622,7 @@
         var snapped = camClamp(cam.x, cam.y, view);
         cam.x = snapped.x;
         cam.y = snapped.y;
+        if (sim && sim.floorOn && !sim._phone && cam.y < 0) cam.y = 0;
       }
       if (sim && sim.floorOn) {
         sim._frame = { x0: cam.x, y0: cam.y, x1: cam.x + view.viewW, y1: cam.y + view.viewH };
@@ -9475,7 +9477,7 @@
     }
 
     function personDrawH() {
-      if (sim && sim.floorOn && sim.live) return 96;
+      if (sim && sim.floorOn && sim.live) return sim._phone ? 110 : 96;
       return SPRITE_PACK.displayH;
     }
 
@@ -10548,6 +10550,7 @@
 
     root.HolidayRush._debug = {
       cam: function () { return { x: cam.x, y: cam.y, zoom: cam.zoom || 1 }; },
+      missWrap: function () { if (isQA()) missWrap(); },
       zeroFinish: function (sales) {
         if (!isQA() || !sim) return;
         sim.sales = sales == null ? 0 : sales;
