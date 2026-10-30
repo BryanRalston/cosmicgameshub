@@ -1,2 +1,12 @@
 # Local install used to bundle BRIX 3D. The hashed bundle is what the page loads.
 games/brix3d/node_modules/
+
+# QA artifacts and build scratch
+games/brix3d/.brix-out/
+node_modules/
+qa/**/lh-*.json
+qa/pr30-r16/*.png
+qa/pr30-r16/*.jpg
+qa/player/gpu-shots/*.png
+!qa/player/gpu-shots/r25/
+
