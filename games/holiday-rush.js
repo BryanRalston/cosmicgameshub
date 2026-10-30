@@ -4661,7 +4661,7 @@
       var feelCss = document.createElement('style');
       feelCss.id = 'hr-feel-css';
       feelCss.textContent = [
-        '#hr-event.hr-inline{position:absolute;left:8px;right:8px;top:auto;bottom:8px;width:auto;height:auto;max-height:34%;z-index:8;margin:0;padding:0;background:transparent;display:block;pointer-events:none;overflow:visible;}',
+        '#hr-event.hr-inline{position:absolute;left:50%;right:auto;top:auto;bottom:8px;width:min(480px,calc(100% - 32px));max-width:480px;transform:translateX(-50%);height:auto;max-height:22%;z-index:8;margin:0;padding:0;background:transparent;display:block;pointer-events:none;overflow:visible;}',
         '#hr-event.hr-inline[hidden]{display:none !important;}',
         '#hr-event.hr-inline .hr-card{pointer-events:auto;width:100%;max-height:none;overflow:visible;padding:0.2rem 0.4rem 0.24rem;border-radius:12px;background:rgba(246,240,228,0.96);box-shadow:0 6px 16px rgba(0,0,0,0.28);box-sizing:border-box;display:flex;flex-direction:column;touch-action:pan-y;}',
         '#hr-event.hr-inline .hr-card h2{font-size:0.82rem;line-height:1.15;margin:0 0 0.08rem;}',
@@ -4672,7 +4672,7 @@
         '#hr-event.hr-inline .hr-choices button span{flex:1 1 auto;min-width:0;white-space:normal;line-height:1.2;}',
         '#hr-event.hr-inline .hr-choice-cost{flex:0 0 auto;white-space:nowrap;}',
         '@media (max-width:720px){',
-        '#hr-event.hr-inline{position:absolute;left:4px;right:4px;top:auto;bottom:4px;margin:0;z-index:8;display:block;overflow:visible;max-height:38%;}',
+        '#hr-event.hr-inline{position:absolute;left:4px;right:4px;top:auto;bottom:4px;width:auto;max-width:none;transform:none;margin:0;z-index:8;display:block;overflow:visible;max-height:38%;}',
         '#hr-event.hr-inline .hr-card{width:100%;padding:0.16rem 0.3rem 0.2rem;}',
         '#hr-event.hr-inline .hr-card h2{font-size:0.78rem;line-height:1.1;margin:0 0 0.06rem;}',
         '#hr-event.hr-inline .hr-card p{font-size:12px;line-height:1.15;margin:0 0 0.08rem;}',
@@ -4683,7 +4683,19 @@
         '.hr-card__timer{height:4px;border-radius:99px;background:rgba(43,29,46,0.15);overflow:hidden;margin:0 0 0.35rem;}',
         '.hr-card__timer i{display:block;height:100%;width:100%;background:#e0a322;}',
         '.hr-actions button{transition:transform 0.05s linear;}',
-        '.hr-actions button.is-down{transform:translateY(1px) scale(0.98);filter:brightness(1.12);}'
+        '.hr-actions button.is-down{transform:translateY(1px) scale(0.98);filter:brightness(1.12);}',
+        '.hr-actions button.is-coach{outline:3px solid #e0a322;outline-offset:2px;}',
+        '@media (prefers-reduced-motion:no-preference){',
+        '.hr-actions button.is-coach{animation:hrCoachPoint 1.3s ease-in-out infinite;}',
+        '@keyframes hrCoachPoint{0%,100%{outline-color:rgba(224,163,34,0.45);}50%{outline-color:#ffe08a;}}',
+        '}',
+        '@media (max-width:720px) and (prefers-reduced-motion:no-preference){',
+        '#hr-sim .hr-actions button.is-truck{animation:hrTruckPulse 1.8s ease-in-out infinite;}',
+        '@keyframes hrTruckPulse{0%,100%{box-shadow:inset 0 0 0 2px rgba(224,163,34,0.35);}50%{box-shadow:inset 0 0 0 3px #e0a322;}}',
+        '}',
+        '@media (max-width:720px) and (prefers-reduced-motion:reduce){',
+        '#hr-sim .hr-actions button.is-truck{box-shadow:inset 0 0 0 2px rgba(224,163,34,0.8);}',
+        '}'
       ].join('');
       document.head.appendChild(feelCss);
     }
@@ -4780,18 +4792,30 @@
       if (!els.event || !els.stage || els.event.hidden) return;
       var h = els.stage.clientHeight || 0;
       if (!(h > 0)) return;
+      var phoneCard = (window.innerWidth || 0) < 720;
       els.event.style.position = 'absolute';
-      els.event.style.left = '8px';
-      els.event.style.right = '8px';
       els.event.style.top = 'auto';
-      els.event.style.bottom = '8px';
+      els.event.style.bottom = phoneCard ? '4px' : '8px';
       els.event.style.margin = '0';
-      els.event.style.width = 'auto';
       els.event.style.background = 'transparent';
       els.event.style.pointerEvents = 'none';
       els.event.style.height = 'auto';
-      els.event.style.maxHeight = '34%';
       els.event.style.overflow = 'visible';
+      if (phoneCard) {
+        els.event.style.left = '4px';
+        els.event.style.right = '4px';
+        els.event.style.width = 'auto';
+        els.event.style.maxWidth = 'none';
+        els.event.style.transform = 'none';
+        els.event.style.maxHeight = '38%';
+      } else {
+        els.event.style.left = '50%';
+        els.event.style.right = 'auto';
+        els.event.style.width = 'min(480px, calc(100% - 32px))';
+        els.event.style.maxWidth = '480px';
+        els.event.style.transform = 'translateX(-50%)';
+        els.event.style.maxHeight = '22%';
+      }
       var card = els.event.querySelector('.hr-card');
       if (!card) return;
       card.style.pointerEvents = 'auto';
@@ -4833,7 +4857,9 @@
           label.style.maxHeight = 'none';
         }
       }
-      var limit = Math.max(96, Math.min(176, Math.floor(h * 0.34)));
+      var limit = phoneCard
+        ? Math.max(96, Math.min(176, Math.floor(h * 0.34)))
+        : Math.max(88, Math.min(124, Math.floor(h * 0.2)));
       if (body && card.offsetHeight > limit) body.style.display = 'none';
       if (title && card.offsetHeight > limit) {
         title.style.whiteSpace = 'nowrap';
@@ -5852,10 +5878,17 @@
         var callTruck = !!(sim.floorOn && !sim.tenant && backUnits <= 40);
         if (callTruck) stockLabel += ' · Call truck';
         stockText.textContent = stockLabel;
-        var freightName = els.sim && els.sim.querySelector('[data-act="freight"] span:last-child');
+        var freightBtn = els.sim && els.sim.querySelector('[data-act="freight"]');
+        var freightName = freightBtn && freightBtn.querySelector('span:last-child');
         if (freightName && sim.floorOn && !sim.tenant) {
           var nextLabel = callTruck ? 'Call truck' : 'Work freight';
           if (freightName.textContent !== nextLabel) freightName.textContent = nextLabel;
+        }
+        if (freightBtn) {
+          var phoneHud = (els.canvas && els.canvas._cssW || window.innerWidth || 0) < 720;
+          var truckReady = !!(callTruck || sim.truck);
+          freightBtn.classList.toggle('is-truck', !!(phoneHud && sim.floorOn && !sim.tenant && truckReady));
+          freightBtn.classList.toggle('is-coach', !!(coach && coach.step === 1));
         }
         var wrapBtn = els.sim && els.sim.querySelector('[data-act="wrap"]');
         if (wrapBtn) {
@@ -5984,11 +6017,9 @@
       if (crewBtn) crewBtn.hidden = !!coach;
       if (act) {
         var wideCoach = (els.canvas && els.canvas._cssW || window.innerWidth) >= 720;
-        if (coach && wideCoach) {
-          act.textContent = '';
-        } else if (coach && coach.step === 1) {
+        if (coach && !wideCoach && coach.step === 1) {
           act.textContent = 'A truck is in. Work freight unloads it. The floor keeps moving.';
-        } else if (coach) {
+        } else if (coach && !wideCoach) {
           act.textContent = 'Tutorial · clock is paused · step ' + (coach.step + 1) + ' of 3. Skip is there if you want the floor now.';
         } else {
           var maxA = sim.actionMax || CONFIG.baseActions;
@@ -7521,7 +7552,16 @@
         lineAim.label = '1/3  Tap the line\nA cashier keeps the sale.';
         return lineAim;
       }
-      if (coach.step === 1) return null;
+      if (coach.step === 1) {
+        var truckX = (SPOTS.truck && SPOTS.truck.x) || 1160;
+        var truckY = ((SPOTS.truck && SPOTS.truck.y) || 130) - 24;
+        return {
+          x: truckX,
+          y: truckY,
+          r: 54,
+          label: '2/3  A truck is in\nWork freight unloads it. Keep playing.'
+        };
+      }
       var angry = null;
       for (var i = 0; i < sim.customers.length; i++) {
         var c = sim.customers[i];
