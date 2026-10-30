@@ -250,7 +250,20 @@
     }
   }
 
+  function kioskSkin(images) {
+    var out = {};
+    var keys = Object.keys(images || {});
+    for (var i = 0; i < keys.length; i++) {
+      var key = keys[i];
+      if (key.indexOf('floor/floor_var_') === 0) continue;
+      var alt = key.indexOf('floor/') === 0 ? 'floor/kiosk/' + key.slice('floor/'.length) : '';
+      out[key] = (alt && images[alt]) ? images[alt] : images[key];
+    }
+    return out;
+  }
+
   function paint(ctx, images, worldW, worldH, opts) {
+    if (opts && opts.kiosk) images = kioskSkin(images);
     var steps = plan(worldW, worldH, opts);
     var tile = img(images, 'floor/floor_tile.png');
     var wing = img(images, 'floor/floor_wing.png');
@@ -362,7 +375,38 @@
     return { w: image.width * s, h: image.height * s };
   }
 
-  function deptFrame(sh) {
+  // Shoppers draw at 78px. Kiosk fixtures stay inside 1.3–1.5× that height.
+  // The flagship store keeps its own contain boxes.
+  function fixtureBox(kind, label, kiosk, image) {
+    var maxW = 150;
+    var maxH = 230;
+    if (kind === 'register') {
+      maxW = 176;
+      maxH = kiosk ? 122 : 150;
+    } else if (!kiosk && label === 'BOOTH') {
+      maxW = 360;
+      maxH = 400;
+    } else if (kiosk && label === 'TABLE') {
+      maxW = 100;
+      maxH = 109;
+    } else if (kiosk && label === 'WRAP') {
+      maxW = 80;
+      maxH = 110;
+    } else if (kiosk && label === 'BOOTH') {
+      maxW = 96;
+      maxH = 117;
+    } else if (kiosk) {
+      maxW = 130;
+      maxH = 117;
+    } else if (kind === 'cafe') {
+      maxW = 200;
+      maxH = 230;
+    }
+    return contain(image, maxW, maxH);
+  }
+
+  function deptFrame(sh, kiosk) {
+    if (kiosk && sh.label === 'TABLE') return 'dept/cafe/kiosk_table.png';
     if (sh.label === 'BOOTH') return 'dept/cafe/kiosk_booth.png';
     if (sh.label === 'WRAP') return 'dept/seasonal/wrap_station.png';
     if (sh.label === 'COCOA') return 'dept/cafe/counter.png';
@@ -387,18 +431,18 @@
     for (var i = 0; i < shelves.length; i++) {
       var sh = shelves[i];
       var pinned = sh.label === 'BOOTH' || sh.label === 'WRAP' || sh.label === 'COCOA' || sh.label === 'MENU' || sh.label === 'CART' || sh.label === 'TABLE' || sh.label === 'WINDOW';
-      var key = pinned ? (deptFrame(sh) || 'env/shelf_full.png') : (stock < 0.25 ? 'env/shelf_empty.png' : stock < 0.7 ? 'env/shelf_half.png' : (deptFrame(sh) || 'env/shelf_full.png'));
+      var key = pinned ? (deptFrame(sh, model.kiosk) || 'env/shelf_full.png') : (stock < 0.25 ? 'env/shelf_empty.png' : stock < 0.7 ? 'env/shelf_half.png' : (deptFrame(sh, model.kiosk) || 'env/shelf_full.png'));
       var shelf = img(images, key) || img(images, 'env/shelf_full.png');
       if (!shelf) continue;
       var cafePiece = sh.type === 'cafe' || sh.dept === 'cafe';
-      var box = contain(shelf, sh.label === 'BOOTH' ? 360 : cafePiece ? 200 : 150, sh.label === 'BOOTH' ? 400 : 230);
+      var box = fixtureBox(cafePiece ? 'cafe' : 'shelf', sh.label, !!model.kiosk, shelf);
       ctx.drawImage(shelf, sh.x - box.w / 2, sh.y - box.h, box.w, box.h);
     }
     var regs = model.registers || [];
-    var counter = img(images, 'env/register_counter.png');
+    var counter = img(images, model.kiosk ? 'env/kiosk_register.png' : 'env/register_counter.png') || img(images, 'env/register_counter.png');
     for (var r = 0; r < regs.length; r++) {
       if (!counter) break;
-      var boxR = contain(counter, 176, 150);
+      var boxR = fixtureBox('register', '', !!model.kiosk, counter);
       var bottom = Math.min(regs[r].y + 52, model.worldH - SPEC.frontH - 6);
       var rx = regs[r].x - boxR.w / 2;
       var ry = bottom - boxR.h;
@@ -445,12 +489,25 @@
     return glows;
   }
 
-  function isBootFile(file) {
-    if (file.indexOf('floor/') === 0 || file.indexOf('env/') === 0) return true;
-    if (file === 'decor/tree.png' || file === 'decor/wreath.png' || file === 'decor/gift_display.png') return true;
-    if (file === 'props/stock_box_stack.png' || file === 'icons/truck.png') return true;
-    if (file.indexOf('sprites/objects/gift_tower/') === 0) return true;
-    return false;
+  function isShellName(base) {
+    return base === 'floor_tile.png' || base === 'floor_wing.png'
+      || base === 'wall_back.png' || base === 'wall_back_door.png' || base === 'wall_back_arch.png'
+      || base === 'wall_corner_tl.png' || base === 'wall_corner_tr.png'
+      || base === 'wall_front.png' || base === 'wall_post.png'
+      || base === 'wall_side_left.png' || base === 'wall_side_left_end.png'
+      || base === 'wall_side_right.png' || base === 'wall_side_right_end.png';
+  }
+
+  function isBootFile(file, shell) {
+    var slash = file.lastIndexOf('/');
+    var base = slash < 0 ? file : file.slice(slash + 1);
+    if (shell !== 'kiosk' && (file === 'env/register_counter.png' || file === 'env/shelf_full.png')) return true;
+    if (!isShellName(base) || file.indexOf('floor/') !== 0) return false;
+    if (shell === 'kiosk') {
+      if (base === 'wall_back_arch.png') return false;
+      return file.indexOf('floor/kiosk/') === 0;
+    }
+    return file.indexOf('floor/kiosk/') !== 0;
   }
 
   function load(art, onAsset, opts) {
@@ -461,8 +518,10 @@
     }).then(function (files) {
       var gift = ['full', 'two_left', 'one_left', 'empty_spot', 'sale_tag', 'sparkle', 'toppled', 'restocked'];
       gift.forEach(function (state) { files.push('sprites/objects/gift_tower/' + state + '.png'); });
-      if (opts.critical) files = files.filter(isBootFile);
-      else if (opts.rest) files = files.filter(function (file) { return !isBootFile(file); });
+      var shell = opts.shell === 'kiosk' ? 'kiosk' : 'flagship';
+      if (opts.critical) files = files.filter(function (file) { return isBootFile(file, shell); });
+      else if (opts.rest) files = files.filter(function (file) { return !isBootFile(file, shell); });
+      if (typeof opts.onList === 'function') opts.onList(files.length);
       return Promise.all(files.map(function (file) {
         return new Promise(function (resolve) {
           var image = new Image();
@@ -582,6 +641,29 @@
     if (corners.length !== 2 || corners[0].w !== 222 || corners[0].h !== 125) reasons.push('corner');
     var band = steps.filter(function (step) { return step.op === 'endBand'; })[0];
     if (!band || band.h !== 14 || band.drop !== 6) reasons.push('end band');
+    var kioskTable = fixtureBox('cafe', 'TABLE', true, { width: 260, height: 300 });
+    var mainTable = fixtureBox('cafe', 'TABLE', false, { width: 298, height: 246 });
+    if (Math.round(kioskTable.h) !== 109 || Math.round(kioskTable.w) !== 94) reasons.push('kiosk table ' + Math.round(kioskTable.w) + 'x' + Math.round(kioskTable.h));
+    if (mainTable.h < 160) reasons.push('flag table');
+    var kioskBooth = fixtureBox('cafe', 'BOOTH', true, { width: 398, height: 500 });
+    if (Math.round(kioskBooth.w) !== 93 || Math.round(kioskBooth.h) !== 117) reasons.push('kiosk booth ' + Math.round(kioskBooth.w) + 'x' + Math.round(kioskBooth.h));
+    var kioskCocoa = fixtureBox('cafe', 'COCOA', true, { width: 292, height: 248 });
+    var kioskMenu = fixtureBox('cafe', 'MENU', true, { width: 169, height: 218 });
+    var kioskWin = fixtureBox('shelf', 'WINDOW', true, { width: 244, height: 371 });
+    if (kioskCocoa.h > 117.5 || kioskMenu.h > 117.5 || kioskWin.h > 117.5) reasons.push('kiosk prop');
+    var kioskWrap = fixtureBox('shelf', 'WRAP', true, { width: 236, height: 356 });
+    var mainWrap = fixtureBox('shelf', 'WRAP', false, { width: 236, height: 356 });
+    if (Math.round(kioskWrap.h) !== 110 || Math.round(kioskWrap.w) !== 73) reasons.push('kiosk wrap ' + Math.round(kioskWrap.w) + 'x' + Math.round(kioskWrap.h));
+    if (Math.round(mainWrap.h) < 200) reasons.push('flag wrap');
+    var kioskReg = fixtureBox('register', '', true, { width: 480, height: 322 });
+    var mainReg = fixtureBox('register', '', false, { width: 458, height: 317 });
+    if (Math.round(kioskReg.w) !== 176 || Math.round(kioskReg.h) !== 118) reasons.push('kiosk reg');
+    if (Math.abs(kioskReg.w - mainReg.w) > 1) reasons.push('reg scale');
+    if (isBootFile('floor/floor_var_dark_1.png', 'flagship')) reasons.push('var boot');
+    if (isBootFile('floor/kiosk/wall_back.png', 'flagship')) reasons.push('kiosk on flagship');
+    if (!isBootFile('floor/kiosk/wall_back_door.png', 'kiosk')) reasons.push('kiosk door boot');
+    if (isBootFile('floor/kiosk/wall_back_arch.png', 'kiosk')) reasons.push('kiosk arch boot');
+    if (isBootFile('dept/cafe/kiosk_booth.png', 'kiosk')) reasons.push('booth boot');
     if (Math.abs(SPEC.varChance - 0.17) > 0.0001) reasons.push('variation');
     var probe = mtRandom(3);
     var expect = [0.23796462709189137, 0.5442292252959519, 0.36995516654807925, 0.6039200385961945, 0.625720304108054];

@@ -6,6 +6,11 @@
   gap: 6px;
 }
 
+.hr-zoom[hidden],
+.hr-pan[hidden] {
+  display: none !important;
+}
+
 .hr-zoom {
   top: 8px;
   right: 8px;
