@@ -1,0 +1,5 @@
+node_modules/
+shots/
+last-run.json
+lh-*.json
+gpu-player.json

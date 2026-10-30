@@ -1,0 +1,32 @@
+{
+  "desktop": {
+    "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A7A8) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "vendor": "Google Inc. (Intel)",
+    "w": 1280,
+    "h": 800,
+    "pose": {
+      "x": 64.97405295856973,
+      "y": 18.676933074875674,
+      "z": 66.80674626605729,
+      "tx": 38.4,
+      "ty": 0.35,
+      "tz": 38.4,
+      "fov": 60
+    }
+  },
+  "phone": {
+    "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A7A8) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "vendor": "Google Inc. (Intel)",
+    "w": 390,
+    "h": 844,
+    "pose": {
+      "x": 61.0813229832262,
+      "y": 15.018320251229849,
+      "z": 70.50449342025676,
+      "tx": 37.9676062237125,
+      "ty": 0.35,
+      "tz": 45.61279844847279,
+      "fov": 74
+    }
+  }
+}
