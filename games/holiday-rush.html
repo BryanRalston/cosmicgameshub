@@ -64,6 +64,12 @@
     .hr-steps { margin: 0.8rem 0 1rem; padding-left: 1.2rem; color: var(--text-mid); }
     .hr-steps li { margin: 0.35rem 0; }
     .hr-cta, .hr-plan__actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.8rem; }
+    .hr-cta--next { display: flex; margin: 0.35rem 0 0.2rem; }
+    .hr-cta--next .btn { flex: 1 1 auto; width: 100%; min-height: 48px; font-size: 1.05rem; }
+    @media (max-width: 720px) {
+      body:has(#hr-score:not([hidden])) .nav,
+      body:has(#hr-score:not([hidden])) .hr-hero { display: none; }
+    }
     .hr-cta .btn, .hr-plan__actions .btn, .hr-choices button, .hr-perk .btn { min-height: 44px; }
     h2 { margin-top: 0; }
     .hr-plan__head h2, .hr-score h2, #hr-final h2 { font-size: clamp(1.35rem, 3vw, 1.8rem); margin: 0 0 0.25rem; }
@@ -288,6 +294,7 @@
         padding-right: 4px;
       }
       body:has(#hr-sim:not([hidden])) #hr-sim {
+        position: relative;
         flex: 1 1 auto;
         display: flex;
         flex-direction: column;
@@ -389,6 +396,7 @@
         width: 100%;
       }
       body:has(#hr-sim:not([hidden])) #hr-sim {
+        position: relative;
         flex: 1 1 auto;
         min-height: 0;
         display: flex;
@@ -497,7 +505,7 @@
         <button type="button" id="hr-skip" hidden>Skip</button>
       </div>
       <div id="hr-toast-dock" class="hr-toast-dock"></div>
-      <p class="hr-hint">Tap the Wrap button when a gift is ready. Call the truck when Back is low. Pull a cashier if the line stalls.</p>
+      <p class="hr-hint">Wrap a glowing gift. Call the truck when Back is low.</p>
       <div class="hr-actions"></div>
       <p class="hr-actline" id="hr-actline"></p>
     </section>
