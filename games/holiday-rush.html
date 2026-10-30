@@ -64,6 +64,17 @@
     .hr-steps { margin: 0.8rem 0 1rem; padding-left: 1.2rem; color: var(--text-mid); }
     .hr-steps li { margin: 0.35rem 0; }
     .hr-cta, .hr-plan__actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.8rem; }
+    .hr-cta--next { display: flex; margin: 0.35rem 0 0.2rem; }
+    .hr-cta--next .btn { flex: 1 1 auto; width: 100%; min-height: 48px; font-size: 1.05rem; }
+    @media (max-width: 720px) {
+      body:has(#hr-score:not([hidden])) .nav,
+      body:has(#hr-score:not([hidden])) .hr-hero { display: none; }
+      body:has(#hr-score:not([hidden])) #hr-score { padding-bottom: 72px; }
+      #hr-score .hr-cta { display: grid; grid-template-columns: 1fr 1fr; }
+      #hr-score .hr-cta .btn { width: 100%; }
+      #hr-score .hr-fine, #hr-score .hr-bank, #hr-score .hr-lead { overflow-wrap: anywhere; }
+      body:has(#hr-score:not([hidden])) .more-games--dock { top: auto; bottom: 8px; left: 8px; right: auto; }
+    }
     .hr-cta .btn, .hr-plan__actions .btn, .hr-choices button, .hr-perk .btn { min-height: 44px; }
     h2 { margin-top: 0; }
     .hr-plan__head h2, .hr-score h2, #hr-final h2 { font-size: clamp(1.35rem, 3vw, 1.8rem); margin: 0 0 0.25rem; }
@@ -288,6 +299,7 @@
         padding-right: 4px;
       }
       body:has(#hr-sim:not([hidden])) #hr-sim {
+        position: relative;
         flex: 1 1 auto;
         display: flex;
         flex-direction: column;
@@ -339,11 +351,34 @@
         overflow: visible;
         max-height: none;
         font-size: 13px;
-        line-height: 1.3;
-        margin: 2px 0 0;
+        line-height: 1.25;
+        margin: 0;
+        padding: 2px 4px 0;
         color: #f6ead8;
         font-weight: 700;
       }
+      body:has(#hr-sim:not([hidden])) .hr-toast-dock {
+        flex: 0 0 0;
+        height: 0;
+        min-height: 0;
+        max-height: 0;
+        margin: 0;
+        overflow: visible;
+      }
+      body:has(#hr-sim:not([hidden])) #hr-sim #hr-toast.show {
+        top: auto;
+        bottom: 8px;
+      }
+      body:has(#hr-sim:not([hidden])) #hr-sim .hr-hud__tools #hr-skip {
+        min-width: 0;
+        min-height: 28px;
+        padding: 0 8px;
+        font-size: 11px;
+        background: rgba(246, 240, 228, 0.55);
+        color: #2b1d2e;
+        border: 0;
+      }
+      #hr-sim.hr-has-card .hr-hint { display: none !important; }
       body:has(#hr-sim:not([hidden])) .more-games--dock { right: auto; left: 8px; top: calc(8px + env(safe-area-inset-top, 0px)); }
       body:has(#hr-sim:not([hidden])) .hr-actions { margin-top: 4px; gap: 4px; }
       body:has(#hr-sim:not([hidden])) .hr-actions button { min-height: 36px; font-size: 0.75rem; padding: 0 8px; }
@@ -389,6 +424,7 @@
         width: 100%;
       }
       body:has(#hr-sim:not([hidden])) #hr-sim {
+        position: relative;
         flex: 1 1 auto;
         min-height: 0;
         display: flex;
@@ -431,7 +467,7 @@
         font-size: 0.78rem;
       }
       body:has(#hr-sim:not([hidden])) .hr-actions button[data-act="wrap"] { grid-column: auto; }
-      body:has(#hr-sim:not([hidden])) .hr-actline { flex: 0 0 auto; margin: 0.15rem 0 0; }
+      body:has(#hr-sim:not([hidden])) .hr-actline { flex: 0 0 23px; height: 23px; min-height: 23px; max-height: 23px; margin: 0.15rem 0 0; line-height: 23px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
     }
   </style>
 </head>
@@ -497,7 +533,9 @@
         <button type="button" id="hr-skip" hidden>Skip</button>
       </div>
       <div id="hr-toast-dock" class="hr-toast-dock"></div>
-      <p class="hr-hint">Tap the Wrap button when a gift is ready. Call the truck when Back is low. Pull a cashier if the line stalls.</p>
+      <div id="hr-card-slot" class="hr-card-slot">
+        <p class="hr-hint">Wrap a glowing gift. Call the truck when Back is low.</p>
+      </div>
       <div class="hr-actions"></div>
       <p class="hr-actline" id="hr-actline"></p>
     </section>

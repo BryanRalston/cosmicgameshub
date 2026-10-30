@@ -81,6 +81,7 @@
     earnRate: 0.1
   };
   var MONDAY_GOAL_MUL = 0.55;
+  var TRUCK_CALL_AT = 40;
   var LIVE_RING_RATE = 0.95;
   var LIVE_BASKET = 0.53;
   var LIVE_STAFFED = 1.27;
@@ -1076,15 +1077,17 @@
   }
 
   function goalStars(pct) {
-    if (pct >= CONFIG.star3) return 3;
-    if (pct >= CONFIG.star2) return 2;
-    if (pct >= CONFIG.star1) return 1;
+    var shown = Math.round((pct || 0) * 100);
+    if (shown >= Math.round(CONFIG.star3 * 100)) return 3;
+    if (shown >= Math.round(CONFIG.star2 * 100)) return 2;
+    if (shown >= Math.round(CONFIG.star1 * 100)) return 1;
     return 0;
   }
 
   function paceStars(sim) {
     if (!sim || sim.sales <= 0) return 0;
-    if (sim.goal && sim.sales >= sim.goal * CONFIG.star3) return 3;
+    var now = sim.goal ? sim.sales / sim.goal : 0;
+    if (goalStars(now) >= 3) return 3;
     var elapsed = clamp(sim.duration ? sim.t / sim.duration : 0, 0.16, 1);
     var projected = sim.sales / elapsed;
     var ratio = sim.goal ? projected / sim.goal : 0;
@@ -2725,7 +2728,7 @@
       } else if (leftNow <= 0) {
         sim.stock = 0;
       }
-      if (leftNow <= 40) keepRestockPing(sim);
+      if (leftNow <= TRUCK_CALL_AT) keepRestockPing(sim);
       else clearRestockPing(sim);
     }
     if (frozen) {
@@ -3425,7 +3428,7 @@
       spend();
       var hadTruck = sim.truck > 0;
       var calledTruck = 0;
-      if (sim.floorOn && sim.live && !sim.tenant && backLeft(sim) <= 40) {
+      if (sim.floorOn && sim.live && !sim.tenant && backLeft(sim) <= TRUCK_CALL_AT) {
         calledTruck = addBackStock(sim, 0.28);
       }
       sim.truck = 0;
@@ -4661,7 +4664,7 @@
       var feelCss = document.createElement('style');
       feelCss.id = 'hr-feel-css';
       feelCss.textContent = [
-        '#hr-event.hr-inline{position:absolute;left:8px;right:8px;top:auto;bottom:8px;width:auto;height:auto;max-height:34%;z-index:8;margin:0;padding:0;background:transparent;display:block;pointer-events:none;overflow:visible;}',
+        '#hr-event.hr-inline{position:static;left:auto;right:auto;top:auto;bottom:auto;width:100%;max-width:none;transform:none;height:auto;max-height:none;z-index:2;margin:0;padding:0;background:transparent;display:block;pointer-events:none;overflow:visible;}',
         '#hr-event.hr-inline[hidden]{display:none !important;}',
         '#hr-event.hr-inline .hr-card{pointer-events:auto;width:100%;max-height:none;overflow:visible;padding:0.2rem 0.4rem 0.24rem;border-radius:12px;background:rgba(246,240,228,0.96);box-shadow:0 6px 16px rgba(0,0,0,0.28);box-sizing:border-box;display:flex;flex-direction:column;touch-action:pan-y;}',
         '#hr-event.hr-inline .hr-card h2{font-size:0.82rem;line-height:1.15;margin:0 0 0.08rem;}',
@@ -4672,7 +4675,7 @@
         '#hr-event.hr-inline .hr-choices button span{flex:1 1 auto;min-width:0;white-space:normal;line-height:1.2;}',
         '#hr-event.hr-inline .hr-choice-cost{flex:0 0 auto;white-space:nowrap;}',
         '@media (max-width:720px){',
-        '#hr-event.hr-inline{position:absolute;left:4px;right:4px;top:auto;bottom:4px;margin:0;z-index:8;display:block;overflow:visible;max-height:38%;}',
+        '#hr-event.hr-inline{position:absolute;left:4px;right:4px;top:auto;bottom:4px;width:auto;max-width:none;transform:none;margin:0;z-index:8;display:block;overflow:visible;max-height:38%;}',
         '#hr-event.hr-inline .hr-card{width:100%;padding:0.16rem 0.3rem 0.2rem;}',
         '#hr-event.hr-inline .hr-card h2{font-size:0.78rem;line-height:1.1;margin:0 0 0.06rem;}',
         '#hr-event.hr-inline .hr-card p{font-size:12px;line-height:1.15;margin:0 0 0.08rem;}',
@@ -4683,7 +4686,19 @@
         '.hr-card__timer{height:4px;border-radius:99px;background:rgba(43,29,46,0.15);overflow:hidden;margin:0 0 0.35rem;}',
         '.hr-card__timer i{display:block;height:100%;width:100%;background:#e0a322;}',
         '.hr-actions button{transition:transform 0.05s linear;}',
-        '.hr-actions button.is-down{transform:translateY(1px) scale(0.98);filter:brightness(1.12);}'
+        '.hr-actions button.is-down{transform:translateY(1px) scale(0.98);filter:brightness(1.12);}',
+        '.hr-actions button.is-coach{outline:3px solid #e0a322;outline-offset:2px;}',
+        '@media (prefers-reduced-motion:no-preference){',
+        '.hr-actions button.is-coach{animation:hrCoachPoint 1.3s ease-in-out infinite;}',
+        '@keyframes hrCoachPoint{0%,100%{outline-color:rgba(224,163,34,0.45);}50%{outline-color:#ffe08a;}}',
+        '}',
+        '@media (max-width:720px) and (prefers-reduced-motion:no-preference){',
+        '#hr-sim .hr-actions button.is-truck{animation:hrTruckPulse 1.8s ease-in-out infinite;}',
+        '@keyframes hrTruckPulse{0%,100%{box-shadow:inset 0 0 0 2px rgba(224,163,34,0.35);}50%{box-shadow:inset 0 0 0 3px #e0a322;}}',
+        '}',
+        '@media (max-width:720px) and (prefers-reduced-motion:reduce){',
+        '#hr-sim .hr-actions button.is-truck{box-shadow:inset 0 0 0 2px rgba(224,163,34,0.8);}',
+        '}'
       ].join('');
       document.head.appendChild(feelCss);
     }
@@ -4771,26 +4786,43 @@
         playToast(ms);
       }
     }
+    function cardSlot() {
+      return document.getElementById('hr-card-slot');
+    }
+
     function placeEventCard() {
-      if (!els.event || !els.stage) return;
-      if (els.event.parentNode !== els.stage) els.stage.appendChild(els.event);
+      var slot = cardSlot();
+      if (!els.event || !slot) return;
+      if (els.event.parentNode !== slot) slot.insertBefore(els.event, slot.firstChild);
+    }
+
+    function syncCardSlot() {
+      var open = !!(els.event && !els.event.hidden && els.event.querySelector('.hr-card'));
+      if (els.sim) els.sim.classList.toggle('hr-has-card', open);
+      var hint = document.querySelector('#hr-sim .hr-hint');
+      if (hint) hint.hidden = open;
     }
 
     function fitCardBox() {
-      if (!els.event || !els.stage || els.event.hidden) return;
-      var h = els.stage.clientHeight || 0;
-      if (!(h > 0)) return;
-      els.event.style.position = 'absolute';
-      els.event.style.left = '8px';
-      els.event.style.right = '8px';
+      syncCardSlot();
+      if (!els.event || els.event.hidden) return;
+      var h = els.stage ? els.stage.clientHeight || 0 : 0;
+      var nChoice = els.event.querySelectorAll('.hr-choices button').length;
+      els.event.style.position = 'static';
+      els.event.style.inset = 'auto';
+      els.event.style.left = 'auto';
+      els.event.style.right = 'auto';
       els.event.style.top = 'auto';
-      els.event.style.bottom = '8px';
+      els.event.style.bottom = 'auto';
+      els.event.style.width = '100%';
+      els.event.style.maxWidth = 'none';
+      els.event.style.transform = 'none';
       els.event.style.margin = '0';
-      els.event.style.width = 'auto';
+      els.event.style.maxHeight = 'none';
+      els.event.style.height = 'auto';
+      els.event.style.zIndex = '2';
       els.event.style.background = 'transparent';
       els.event.style.pointerEvents = 'none';
-      els.event.style.height = 'auto';
-      els.event.style.maxHeight = '34%';
       els.event.style.overflow = 'visible';
       var card = els.event.querySelector('.hr-card');
       if (!card) return;
@@ -4812,16 +4844,23 @@
         body.style.flex = '0 0 auto';
       }
       if (choices) {
+        choices.style.display = 'flex';
+        choices.style.flexDirection = 'row';
+        choices.style.flexWrap = 'wrap';
+        choices.style.gap = '4px';
         choices.style.maxHeight = 'none';
         choices.style.overflow = 'visible';
         choices.style.flex = '0 0 auto';
       }
+      var wideChoice = nChoice >= 3 ? '46%' : '30%';
       var btns = choices ? choices.querySelectorAll('button') : [];
       for (var bi = 0; bi < btns.length; bi++) {
         var btn = btns[bi];
         btn.style.boxSizing = 'border-box';
+        btn.style.flex = '1 1 ' + wideChoice;
+        btn.style.width = 'auto';
         btn.style.height = 'auto';
-        btn.style.minHeight = '44px';
+        btn.style.minHeight = '36px';
         btn.style.maxHeight = 'none';
         btn.style.overflow = 'visible';
         btn.style.whiteSpace = 'normal';
@@ -4833,13 +4872,7 @@
           label.style.maxHeight = 'none';
         }
       }
-      var limit = Math.max(96, Math.min(176, Math.floor(h * 0.34)));
-      if (body && card.offsetHeight > limit) body.style.display = 'none';
-      if (title && card.offsetHeight > limit) {
-        title.style.whiteSpace = 'nowrap';
-        title.style.overflow = 'hidden';
-        title.style.textOverflow = 'ellipsis';
-      }
+      if (body && nChoice >= 3) body.style.display = 'none';
       var clip = '0';
       var cardBox = card.getBoundingClientRect();
       var viewBottom = window.innerHeight || (cardBox.bottom + 1);
@@ -5794,7 +5827,7 @@
       paintMute();
       if (sim.mechanic === 'wrap' && !opts.resume && !sim._wrapTold) {
         sim._wrapTold = true;
-        toast('Plaza Kiosk. Tap the Wrap button when a gift is ready. Each gift adds to this drawer.', true);
+        toast('Plaza Kiosk. Tap Wrap when a gift glows.', true);
       }
       draw();
       saveRun();
@@ -5849,13 +5882,20 @@
         var stockLabel = backUnits <= 0
           ? 'Shelf empty · Back 0'
           : ('Shelf ' + shelfPct + '% · Back ' + backUnits);
-        var callTruck = !!(sim.floorOn && !sim.tenant && backUnits <= 40);
+        var callTruck = !!(sim.floorOn && !sim.tenant && backUnits <= TRUCK_CALL_AT);
         if (callTruck) stockLabel += ' · Call truck';
         stockText.textContent = stockLabel;
-        var freightName = els.sim && els.sim.querySelector('[data-act="freight"] span:last-child');
+        var freightBtn = els.sim && els.sim.querySelector('[data-act="freight"]');
+        var freightName = freightBtn && freightBtn.querySelector('span:last-child');
         if (freightName && sim.floorOn && !sim.tenant) {
           var nextLabel = callTruck ? 'Call truck' : 'Work freight';
           if (freightName.textContent !== nextLabel) freightName.textContent = nextLabel;
+        }
+        if (freightBtn) {
+          var phoneHud = (els.canvas && els.canvas._cssW || window.innerWidth || 0) < 720;
+          var truckReady = !!(callTruck || sim.truck);
+          freightBtn.classList.toggle('is-truck', !!(phoneHud && sim.floorOn && !sim.tenant && truckReady));
+          freightBtn.classList.toggle('is-coach', !!(coach && coach.step === 1));
         }
         var wrapBtn = els.sim && els.sim.querySelector('[data-act="wrap"]');
         if (wrapBtn) {
@@ -5984,12 +6024,10 @@
       if (crewBtn) crewBtn.hidden = !!coach;
       if (act) {
         var wideCoach = (els.canvas && els.canvas._cssW || window.innerWidth) >= 720;
-        if (coach && wideCoach) {
-          act.textContent = '';
-        } else if (coach && coach.step === 1) {
-          act.textContent = 'A truck is in. Work freight unloads it. The floor keeps moving.';
-        } else if (coach) {
-          act.textContent = 'Tutorial · clock is paused · step ' + (coach.step + 1) + ' of 3. Skip is there if you want the floor now.';
+        if (coach && !wideCoach && coach.step === 1) {
+          act.textContent = 'A truck is in. Tap Work freight to unload it.';
+        } else if (coach && !wideCoach) {
+          act.textContent = 'Tutorial, step ' + (coach.step + 1) + ' of 3. The clock is paused.';
         } else {
           var maxA = sim.actionMax || CONFIG.baseActions;
           var regenSec = CONFIG.actionRegen / (1 + 0.28 * upgradeLevel(run, 'hustle'));
@@ -5999,6 +6037,7 @@
         }
       }
       placeChrome();
+      syncCardSlot();
     }
 
     function paintPromptTimer() {
@@ -6365,6 +6404,7 @@
         '<p class="hr-kicker">' + esc(shiftLabel(run.day)) + '</p>' +
         '<h2>' + pct + '% of goal</h2>' +
         '<p class="hr-stars hr-stars--big">' + starGlyph(snap.shiftStars == null ? goalStars(snap.goalPct || 0) : snap.shiftStars) + '</p>' +
+        (snap.tenant ? '' : '<p class="hr-cta hr-cta--next"><button type="button" class="btn btn--primary" id="hr-next-day">Next day</button></p>') +
         '<p class="hr-thresholds">1★ ' + Math.round(CONFIG.star1 * 100) + '% · 2★ ' + Math.round(CONFIG.star2 * 100) + '% · 3★ ' + Math.round(CONFIG.star3 * 100) + '%</p>' +
         (snap.tenant ? '<p class="hr-lead">You ran ' + esc(snap.tenant) + '. Their drawer did ' + money(snap.sales) + '. You keep 15% (' + money(snap.cut || 0) + '). The other 85% stays on their tape.</p>' : '') +
         (snap.closeNote ? '<p class="hr-lead" id="hr-close-note">' + esc(snap.closeNote) + '</p>' : '') +
@@ -6394,6 +6434,16 @@
       document.getElementById('hr-retry').addEventListener('click', function () {
         if (snap.tenant) renderMall();
         else beginShift(run.day);
+      });
+      var nextDay = document.getElementById('hr-next-day');
+      if (nextDay) nextDay.addEventListener('click', function () {
+        var next = (run.day || 0) + 1;
+        if (next < SHIFT_COUNT) beginShift(next);
+        else {
+          run.phase = 'map';
+          saveRun();
+          renderMap();
+        }
       });
       var again = document.getElementById('hr-tenant-again');
       if (again) again.addEventListener('click', function () { beginTenantShift(snap.slot); });
@@ -7274,10 +7324,22 @@
         });
       }
       var bannerLow = false;
-      if (stageBox.width < 720 && coach && coach.step === 1) bannerLow = true;
       var z = zoom && !zoom.hidden ? zoom.getBoundingClientRect() : null;
       var clearance = z && z.width >= 8 ? Math.round(stageBox.right - z.left + 8) : 8;
-      if (skip) {
+      var tools = document.querySelector('#hr-sim .hr-hud__tools');
+      if (skip && phonePlay && tools) {
+        if (skip.parentNode !== tools) tools.insertBefore(skip, tools.firstChild);
+        skip.style.position = 'static';
+        skip.style.top = 'auto';
+        skip.style.right = 'auto';
+        skip.style.bottom = 'auto';
+        skip.style.margin = '0 4px 0 0';
+      } else if (skip && skip.parentNode !== stage) {
+        stage.appendChild(skip);
+      }
+      if (skip && !phonePlay) {
+        skip.style.position = 'absolute';
+        skip.style.margin = '0';
         if (bannerLow) {
           skip.style.top = 'auto';
           skip.style.bottom = '8px';
@@ -7285,7 +7347,7 @@
         } else {
           skip.style.bottom = 'auto';
           skip.style.top = '8px';
-          skip.style.right = (stageBox.width < 720 ? 8 : clearance) + 'px';
+          skip.style.right = clearance + 'px';
         }
       }
       if (!coachEl) {
@@ -7385,7 +7447,7 @@
         fit = fitH < fitW ? fitH : fitW;
       } else {
         var fitW = cssW / Math.max(1, worldW);
-        fit = Math.min(fitW, cssH / 800);
+        fit = Math.min(fitW, cssH / 940);
       }
       if (!(fit > 0.05)) fit = 0.05;
       return fit;
@@ -7418,8 +7480,9 @@
         }
         if (cssW >= 720) {
           var fullRoom = view.viewW >= worldW - 16 && view.viewH >= worldH - 16;
-          if (fullRoom) return camClamp((worldW - view.viewW) / 2, (worldH - view.viewH) / 2, view);
-          return camClamp((worldW - view.viewW) / 2, 0, view);
+          var deskCam = camClamp((worldW - view.viewW) / 2, fullRoom ? (worldH - view.viewH) / 2 : 0, view);
+          if (deskCam.y < 0) deskCam.y = 0;
+          return deskCam;
         }
       }
       var left = SPOTS.reg1 || { x: 420, y: 700 };
@@ -7518,10 +7581,19 @@
       if (!coach || !sim) return null;
       if (coach.step === 0) {
         var lineAim = aimOnScreen(SPOTS.reg1.x, QUEUE.reg1.y - 40, 52);
-        lineAim.label = '1/3  Tap the line\nA cashier keeps the sale.';
+        lineAim.label = '1/3. Tap the line. A cashier keeps the sale.';
         return lineAim;
       }
-      if (coach.step === 1) return null;
+      if (coach.step === 1) {
+        var truckX = (SPOTS.truck && SPOTS.truck.x) || 1160;
+        var truckY = ((SPOTS.truck && SPOTS.truck.y) || 130) - 24;
+        return {
+          x: truckX,
+          y: truckY,
+          r: 54,
+          label: '2/3. A truck is in. Tap Work freight to unload it.'
+        };
+      }
       var angry = null;
       for (var i = 0; i < sim.customers.length; i++) {
         var c = sim.customers[i];
@@ -7531,7 +7603,7 @@
       var calmAt = angry ? { x: angry.x, y: angry.y - 40 } : { x: SPOTS.floor.x, y: SPOTS.floor.y - 40 };
       var calmScale = Math.max(0.05, screenScale());
       var calmAim = aimOnScreen(calmAt.x, calmAt.y, Math.max(72, 88 / calmScale));
-      calmAim.label = '3/3  Tap the upset shopper\nA calm keeps the star.';
+      calmAim.label = '3/3. Tap the upset shopper. A calm keeps the star.';
       calmAim.cust = angry;
       return calmAim;
     }
@@ -7561,7 +7633,7 @@
         }
         return;
       }
-      var text = 'Tap the Wrap button, or the WRAP ring on the gift table. Each gift rings this drawer.';
+      var text = 'Tap Wrap, or the glowing ring. Each gift rings the drawer.';
       cap.hidden = true;
       cap.removeAttribute('data-wrap');
       if (hint && hint.dataset.coach !== '1') {
@@ -7577,7 +7649,7 @@
 
     function coachLine() {
       if (!coach) return '';
-      if (coach.step === 1) return '2/3  A truck is in\nWork freight unloads it. Keep playing.';
+      if (coach.step === 1) return '2/3. A truck is in. Tap Work freight to unload it.';
       var focus = coachFocus();
       return focus ? focus.label : '';
     }
@@ -7596,7 +7668,7 @@
         if (cap) cap.hidden = true;
         if (hint) {
           hint.dataset.coach = '1';
-          hint.textContent = line.replace(/\n+/g, ' ');
+          hint.textContent = line;
         }
       } else {
         if (hint && hint.dataset.coach === '1') {
@@ -7608,7 +7680,7 @@
       if (skip) skip.hidden = !coach;
       placeChrome();
       if (sim) sim.coachHold = coachBlocksPlay();
-      if (line && els.live) els.live.textContent = line + '. Skip is available.';
+      if (line && els.live) els.live.textContent = line + ' Skip anytime.';
       paintWrapCoach();
     }
 
@@ -7700,10 +7772,10 @@
         sim.truck = 1;
         sim.truckWork = 0;
         sim.hornPlayed = false;
-        coach.until = (sim.t || 0) + 6;
+        coach.until = (sim.t || 0) + 20;
       } else if (coach.step === 2) angerSomeone();
       else {
-        toast('Floor is yours. Chain checkouts for a combo.');
+        toast('The floor is yours. Chain checkouts for a combo.');
         endCoach();
       }
       var next = coach && coach.step !== 1 ? coachFocus() : null;
@@ -7914,6 +7986,20 @@
       var w = eventWorld(ev);
       focusLabel(ev);
       var hit = pickHit(ev);
+      if ((!hit || !hit.ping) && sim.mechanic === 'wrap') {
+        var wrapAt = wrapSpot();
+        var wrapY = wrapAt.y - wrapLift(wrapAt);
+        var wrapReady = false;
+        if (sim.pings) {
+          for (var wr = 0; wr < sim.pings.length; wr++) {
+            if (sim.pings[wr].kind === 'wrap' && !sim.pings[wr].dead) wrapReady = true;
+          }
+        }
+        if (!wrapReady && screenDist(wrapAt.x, wrapY, ev) < 96) {
+          missWrap();
+          return;
+        }
+      }
       if (hit && hit.ping) {
         tapFx(sim, hit.ping.x, hit.ping.y);
         flashAt(sim, hit.ping.x, hit.ping.y);
@@ -8283,6 +8369,58 @@
       }
     }
 
+    function drawTruckEdge(view) {
+      if (!coach || coach.step !== 1 || !SPOTS.truck || !view) {
+        if (els.stage && els.stage.dataset.truckChip) delete els.stage.dataset.truckChip;
+        return;
+      }
+      var tx = SPOTS.truck.x;
+      var ty = SPOTS.truck.y - 24;
+      var pad = 28;
+      var inside = tx >= cam.x + pad && tx <= cam.x + view.viewW - pad && ty >= cam.y + pad && ty <= cam.y + view.viewH - pad;
+      if (els.stage) els.stage.dataset.truckChip = inside ? '0' : '1';
+      if (inside) return;
+      var dpr = els.canvas._dpr || 1;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      var scaleX = view.cssW / Math.max(1, view.viewW);
+      var scaleY = view.cssH / Math.max(1, view.viewH);
+      var sx = (tx - cam.x) * scaleX;
+      var sy = (ty - cam.y) * scaleY;
+      var x = sx;
+      var y = sy;
+      if (x < 22) x = 22;
+      if (x > view.cssW - 22) x = view.cssW - 22;
+      if (y < 28) y = 28;
+      if (y > view.cssH - 28) y = view.cssH - 28;
+      var ang = Math.atan2(sy - y, sx - x);
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(ang);
+      ctx.fillStyle = '#e0a322';
+      ctx.strokeStyle = '#2b1d2e';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(18, 0);
+      ctx.lineTo(-10, 10);
+      ctx.lineTo(-10, -10);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+      ctx.font = '800 13px Outfit, Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      var label = 'Truck';
+      var tw = ctx.measureText(label).width + 16;
+      var ly = y + (sy < y ? -26 : 26);
+      if (ly < 14) ly = y + 26;
+      if (ly > view.cssH - 14) ly = y - 26;
+      ctx.fillStyle = 'rgba(43,29,46,0.94)';
+      ctx.fillRect(x - tw / 2, ly - 11, tw, 22);
+      ctx.fillStyle = '#ffe08a';
+      ctx.fillText(label, x, ly);
+    }
+
     function drawHand(x, y) {
       var bob = reduceMotion ? 0 : Math.sin(Date.now() / 160) * 8;
       ctx.save();
@@ -8484,6 +8622,7 @@
         var snapped = camClamp(cam.x, cam.y, view);
         cam.x = snapped.x;
         cam.y = snapped.y;
+        if (sim && sim.floorOn && !sim._phone && cam.y < 0) cam.y = 0;
       }
       if (sim && sim.floorOn) {
         sim._frame = { x0: cam.x, y0: cam.y, x1: cam.x + view.viewW, y1: cam.y + view.viewH };
@@ -8920,6 +9059,7 @@
         } else publishCoach(null);
         ctx.globalAlpha = 1;
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        drawTruckEdge(view);
         if (sim.flash > 0) {
           var alpha = Math.min(0.22, sim.flash * 0.45);
           ctx.fillStyle = sim.flashTint === 'red' ? 'rgba(214,69,69,' + alpha + ')' : 'rgba(255,224,138,' + alpha + ')';
@@ -9337,7 +9477,7 @@
     }
 
     function personDrawH() {
-      if (sim && sim.floorOn && sim.live) return 96;
+      if (sim && sim.floorOn && sim.live) return sim._phone ? 110 : 96;
       return SPRITE_PACK.displayH;
     }
 
@@ -10077,6 +10217,14 @@
       if (name === 'calm') return { x: SPOTS.reg1.x, y: QUEUE.reg1.y };
       return { x: SPOTS.reg1.x, y: SPOTS.reg1.y };
     }
+    function missWrap() {
+      if (!sim) return;
+      toast('No gift is ready yet.', true);
+      var spot = wrapSpot();
+      var wy = spot.y - wrapLift(spot);
+      floater(sim, spot.x, wy, 'Not yet', '#ffb4b4', true);
+      sfx('miss');
+    }
     function pressWrap() {
       if (!sim) return;
       var ping = null;
@@ -10086,8 +10234,7 @@
         }
       }
       if (!ping) {
-        toast('Wait for the next gift. Wrap glows on the table.');
-        sfx('miss');
+        missWrap();
         return;
       }
       tapFx(sim, ping.x, ping.y);
@@ -10403,6 +10550,7 @@
 
     root.HolidayRush._debug = {
       cam: function () { return { x: cam.x, y: cam.y, zoom: cam.zoom || 1 }; },
+      missWrap: function () { if (isQA()) missWrap(); },
       zeroFinish: function (sales) {
         if (!isQA() || !sim) return;
         sim.sales = sales == null ? 0 : sales;
@@ -10716,7 +10864,7 @@
     line('up14', up14);
     line('mid8', mid8);
     if (comboMult(10) !== 4 || comboMult(40) !== 4 || multLabel(10) !== '×4' || multLabel(24) !== '×4') bad = true;
-    if (goalStars(0.74) !== 0 || goalStars(0.75) !== 1 || goalStars(1) !== 2 || goalStars(1.2) !== 3) bad = true;
+    if (goalStars(0.74) !== 0 || goalStars(0.75) !== 1 || goalStars(1) !== 2 || goalStars(1.2) !== 3 || goalStars(1.195) !== 3) bad = true;
     if (!(comboMult(4) < 3) || comboMult(6) >= 3 || !(comboMult(7) >= 3)) bad = true;
     var seedEnc = seedsFromSearch('?seed=kiosk%2Cbus&_vercel_share=abc').join(',');
     var seedDbl = seedsFromSearch('?seed=kiosk%252Cbus').join(',');
