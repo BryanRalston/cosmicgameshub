@@ -1738,7 +1738,7 @@
     if (sim && sim._phone) {
       var spots = reg === 'reg2'
         ? [{ x: 860, y: 760 }, { x: 720, y: 848 }]
-        : [{ x: 310, y: 760 }, { x: 470, y: 848 }];
+        : [{ x: 340, y: 790 }, { x: 560, y: 858 }];
       var spot = spots[idx] || spots[spots.length - 1];
       var spillX = spill * (reg === 'reg2' ? -44 : 44);
       return { x: spot.x + spillX, y: Math.min(858, spot.y + spill * 18) };
@@ -4681,21 +4681,22 @@
       feelCss.textContent = [
         '#hr-event.hr-inline{position:static;left:auto;right:auto;top:auto;bottom:auto;width:100%;max-width:none;transform:none;height:auto;max-height:none;z-index:2;margin:0;padding:0;background:transparent;display:block;pointer-events:none;overflow:visible;}',
         '#hr-event.hr-inline[hidden]{display:none !important;}',
-        '#hr-event.hr-inline .hr-card{pointer-events:auto;width:100%;max-height:none;overflow:visible;padding:0.2rem 0.4rem 0.24rem;border-radius:12px;background:rgba(246,240,228,0.96);box-shadow:0 6px 16px rgba(0,0,0,0.28);box-sizing:border-box;display:flex;flex-direction:column;touch-action:pan-y;}',
-        '#hr-event.hr-inline .hr-card h2{font-size:1rem;line-height:1.2;margin:0 0 0.15rem;}',
-        '#hr-event.hr-inline .hr-card p{font-size:15px;line-height:1.35;margin:0 0 0.28rem;display:block;overflow:visible;}',
+        '#hr-event.hr-inline{height:100%;display:flex;flex-direction:column;}',
+        '#hr-event.hr-inline .hr-card{pointer-events:auto;width:100%;height:100%;flex:1 1 auto;max-height:none;overflow:visible;padding:0.35rem 0.5rem;border-radius:12px;background:#f6f0e4;box-shadow:none;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;touch-action:manipulation;}',
+        '#hr-event.hr-inline .hr-card h2{font-size:16px;line-height:1.2;margin:0 0 0.2rem;display:block;}',
+        '#hr-event.hr-inline .hr-card p{font-size:15px;line-height:1.35;margin:0 0 0.35rem;display:block;overflow:visible;}',
         '#hr-event.hr-inline .hr-card__art{display:none;}',
         '#hr-event.hr-inline .hr-choices{flex-direction:row;flex-wrap:wrap;gap:6px;align-items:stretch;overflow:visible;touch-action:manipulation;}',
-        '#hr-event.hr-inline .hr-choices button{width:auto;flex:1 1 140px;max-width:100%;height:auto;min-height:48px;font-size:15px;padding:0.35rem 0.5rem;white-space:normal;line-height:1.25;align-items:center;background:#fff;background-image:none;color:#2b1d2e;border:2px solid #2b1d2e;overflow:visible;}',
+        '#hr-event.hr-inline .hr-choices button{width:auto;flex:1 1 0;max-width:100%;height:auto;min-height:48px;font-size:15px;padding:0.35rem 0.55rem;white-space:normal;line-height:1.25;align-items:center;background:#fff;background-image:none;color:#2b1d2e;border:2px solid #2b1d2e;overflow:visible;touch-action:manipulation;}',
         '#hr-event.hr-inline .hr-choices button span{flex:1 1 auto;min-width:0;white-space:normal;line-height:1.25;}',
-        '#hr-event.hr-inline .hr-choice-cost{flex:0 0 auto;white-space:nowrap;}',
+        '#hr-event.hr-inline .hr-choices button .hr-choice-cost{flex:0 0 auto;width:auto;max-width:max-content;white-space:nowrap;}',
         '@media (max-width:720px){',
-        '#hr-event.hr-inline{position:static;left:auto;right:auto;top:auto;bottom:auto;width:100%;max-width:none;transform:none;margin:0;z-index:2;display:block;overflow:visible;max-height:none;}',
-        '#hr-event.hr-inline .hr-card{width:100%;padding:0.3rem 0.4rem 0.35rem;}',
+        '#hr-event.hr-inline{position:static;left:auto;right:auto;top:auto;bottom:auto;width:100%;max-width:none;transform:none;margin:0;z-index:2;height:100%;display:flex;flex-direction:column;overflow:visible;max-height:none;}',
+        '#hr-event.hr-inline .hr-card{width:100%;height:100%;flex:1 1 auto;padding:0.3rem 0.4rem 0.35rem;}',
         '#hr-event.hr-inline .hr-card h2{font-size:16px;line-height:1.2;margin:0 0 0.12rem;}',
         '#hr-event.hr-inline .hr-card p{font-size:15px;line-height:1.35;margin:0 0 0.24rem;}',
         '#hr-event.hr-inline .hr-choices{flex-direction:row;flex-wrap:wrap;gap:6px;}',
-        '#hr-event.hr-inline .hr-choices button{width:auto;flex:1 1 46%;min-height:48px;height:auto;font-size:15px;padding:0.3rem 0.45rem;white-space:normal;line-height:1.25;background:#fff;background-image:none;color:#2b1d2e;border:2px solid #2b1d2e;overflow:visible;}',
+        '#hr-event.hr-inline .hr-choices button{width:auto;flex:1 1 46%;min-height:48px;height:auto;font-size:15px;padding:0.3rem 0.45rem;white-space:normal;line-height:1.25;background:#fff;background-image:none;color:#2b1d2e;border:2px solid #2b1d2e;overflow:visible;touch-action:manipulation;}',
         '}',
         '.hr-combo.is-idle{background:#3a2a18;color:#ffe7a3;box-shadow:inset 0 0 0 2px #e0a322;}',
         '.hr-card__timer{height:4px;border-radius:99px;background:rgba(43,29,46,0.15);overflow:hidden;margin:0 0 0.35rem;}',
@@ -4834,7 +4835,9 @@
       els.event.style.transform = 'none';
       els.event.style.margin = '0';
       els.event.style.maxHeight = 'none';
-      els.event.style.height = 'auto';
+      els.event.style.height = '100%';
+      els.event.style.display = 'flex';
+      els.event.style.flexDirection = 'column';
       els.event.style.zIndex = '2';
       els.event.style.background = 'transparent';
       els.event.style.pointerEvents = 'none';
@@ -4842,7 +4845,8 @@
       var card = els.event.querySelector('.hr-card');
       if (!card) return;
       card.style.pointerEvents = 'auto';
-      card.style.height = 'auto';
+      card.style.height = '100%';
+      card.style.flex = '1 1 auto';
       card.style.maxHeight = 'none';
       card.style.overflow = 'visible';
       card.style.boxSizing = 'border-box';
@@ -4867,7 +4871,8 @@
         choices.style.overflow = 'visible';
         choices.style.flex = '0 0 auto';
       }
-      var wideChoice = nChoice >= 3 ? '46%' : '30%';
+      var phoneCard = (els.canvas && els.canvas._cssW ? els.canvas._cssW : window.innerWidth) < 720;
+      var wideChoice = phoneCard && nChoice >= 3 ? '46%' : '0';
       var btns = choices ? choices.querySelectorAll('button') : [];
       for (var bi = 0; bi < btns.length; bi++) {
         var btn = btns[bi];
@@ -4879,8 +4884,15 @@
         btn.style.maxHeight = 'none';
         btn.style.overflow = 'visible';
         btn.style.whiteSpace = 'normal';
-        var label = btn.querySelector('span');
+        var costTag = btn.querySelector('.hr-choice-cost');
+        if (costTag) {
+          costTag.style.flex = '0 0 auto';
+          costTag.style.width = 'auto';
+          costTag.style.whiteSpace = 'nowrap';
+        }
+        var label = btn.querySelector('span:not(.hr-choice-cost)');
         if (label) {
+          label.style.flex = '1 1 auto';
           label.style.whiteSpace = 'normal';
           label.style.overflow = 'visible';
           label.style.height = 'auto';
@@ -6066,7 +6078,7 @@
 
     var cardArmAt = 0;
     function armCardTap() {
-      cardArmAt = (root.performance ? root.performance.now() : Date.now()) + 300;
+      cardArmAt = (root.performance ? root.performance.now() : Date.now()) + 40;
     }
     function cardTapBlocked() {
       var now = root.performance ? root.performance.now() : Date.now();
@@ -6093,18 +6105,12 @@
       els.event.innerHTML = '<div class="hr-card" role="region" aria-labelledby="hr-ev-title"><div class="hr-card__art">' + art + '</div><h2 id="hr-ev-title">' + esc(card.title) + '</h2><p>' + esc(card.body) + '</p><div class="hr-choices">' + buttons + '</div></div>';
       hooks.alert();
       paintPromptTimer();
-      var choiceStartY = 0;
       var choiceBox = els.event.querySelector('.hr-choices');
       choiceBox.addEventListener('pointerdown', function (ev) {
-        choiceStartY = ev.clientY;
-        ev.stopPropagation();
-      });
-      choiceBox.addEventListener('pointerup', function (ev) {
         var btn = ev.target.closest('[data-choice]');
         if (!btn || btn.disabled) return;
+        ev.preventDefault();
         ev.stopPropagation();
-        if (Math.abs(ev.clientY - choiceStartY) > 8) return;
-        if (cardTapBlocked()) return;
         var res = resolvePending(sim, run, +btn.getAttribute('data-choice'));
         if (!res.ok) { toast(res.msg); sfx('miss'); return; }
         sfx('place');
@@ -7192,6 +7198,10 @@
       if (sim && sim._phone && sim.floorOn && !sim.tenant && sim._mondayEase && !sim._phoneGoal) {
         sim._phoneGoal = 1;
         sim.goal = Math.max(900, Math.round(sim.goal * 1.2));
+      }
+      if (sim && !sim._phone && sim.floorOn && !sim.tenant && sim._mondayEase && !sim._deskGoal) {
+        sim._deskGoal = 1;
+        sim.goal = Math.max(900, Math.round(sim.goal * 1.28));
       }
       if (els.stage) els.stage.dataset.hit = w < 720 ? '64' : '120';
       placeEventCard();
