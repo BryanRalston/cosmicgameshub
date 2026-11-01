@@ -21,6 +21,7 @@
   <meta property="og:url" content="https://www.cosmicgameshub.com/games" />
   <link rel="canonical" href="https://www.cosmicgameshub.com/games" />
   <link rel="stylesheet" href="../styles.css" />
+  <link rel="stylesheet" href="/hub.css" />
   <style>
     /* ─── Hero ─── */
     .gh-hero {
@@ -397,19 +398,20 @@
 }
   </script>
 </head>
-<body>
+<body class="page-games">
 
 <!-- ─── Nav ─────────────────────────────────── -->
 <nav class="nav" role="navigation" aria-label="Main navigation">
-  <div class="container">
+  <div class="hub-wrap">
     <div class="nav__inner">
-      <a href="/" class="nav__logo" aria-label="CosmicGamesHub home">
-        <span class="nav__logo-icon">🎮</span>
-        <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
+      <a href="/" class="nav__logo" aria-label="Cosmic Games Hub home">
+        <span class="nav__logo-text">Cosmic <span>Games</span> Hub</span>
       </a>
       <ul class="nav__links" id="navLinks">
         <li><a href="/games" class="nav__primary active">Games</a></li>
+        <li><a href="/games/daily" class="nav__primary">Daily</a></li>
         <li><a href="/guides" class="nav__secondary">Guides</a></li>
+        <li><button type="button" class="nav__search-btn" id="navSearchBtn" aria-label="Search" aria-haspopup="dialog" aria-controls="siteSearch" aria-expanded="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button></li>
       </ul>
       <button class="nav__hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
         <span></span><span></span><span></span>
@@ -468,149 +470,15 @@
 <!-- ─── Main ──────────────────────────────────── -->
 <main class="gh-main" id="ghMain">
 
-  <section class="gh-originals" id="ghOriginals" aria-label="Original games">
-    <div class="gh-section-label"><span class="sl-accent">◆</span> Originals we build</div>
-    <p class="gh-desk__lead">These six come first. The daily desk and the rest of the catalog are below.</p>
-    <div class="gh-originals__row">
-      <article class="gh-desk-card">
-        <a class="gh-desk-card__imgwrap" href="/games/holiday-rush">
-          <img src="/images/thumbs/holiday-rush.webp" alt="Holiday Rush Mart floor, top-down" width="1600" height="900" />
-          <span class="gh-card__badge gh-card__badge--new">Original</span>
-        </a>
-        <div class="gh-desk-card__body">
-          <div class="gh-desk-card__title">Holiday Rush</div>
-          <p class="gh-originals__pitch">Run the store through the holiday rush: check out shoppers, restock shelves, chain combos.</p>
-          <a class="gh-card__play" href="/games/holiday-rush">PLAY NOW</a>
-        </div>
-      </article>
-      <article class="gh-desk-card">
-        <a class="gh-desk-card__imgwrap" href="/games/rift">
-          <img src="/images/thumbs/rift.webp" alt="RIFT word game" width="1280" height="720" />
-          <span class="gh-card__badge gh-card__badge--daily">Original</span>
-        </a>
-        <div class="gh-desk-card__body">
-          <div class="gh-desk-card__title">RIFT</div>
-          <p class="gh-originals__pitch">Three daily word zones — chain, grow, and decode.</p>
-          <a class="gh-card__play" href="/games/rift">PLAY NOW</a>
-        </div>
-      </article>
-      <article class="gh-desk-card">
-        <a class="gh-desk-card__imgwrap" href="/games/gamerdle">
-          <img src="/images/thumbs/gamerdle.webp" alt="Gamerdle — guess the video game" width="1280" height="720" />
-          <span class="gh-card__badge gh-card__badge--daily">Original</span>
-        </a>
-        <div class="gh-desk-card__body">
-          <div class="gh-desk-card__title">Gamerdle</div>
-          <p class="gh-originals__pitch">Guess the mystery video game in six tries.</p>
-          <a class="gh-card__play" href="/games/gamerdle">PLAY NOW</a>
-        </div>
-      </article>
-      <article class="gh-desk-card">
-        <a class="gh-desk-card__imgwrap" href="/games/brix3d">
-          <img src="/images/thumbs/brix3d.webp" alt="BRIX 3D brick builder" width="1280" height="720" loading="lazy" />
-          <span class="gh-card__badge gh-card__badge--new">Original</span>
-        </a>
-        <div class="gh-desk-card__body">
-          <div class="gh-desk-card__title">BRIX 3D</div>
-          <p class="gh-originals__pitch">Build 3D brick creations in the browser.</p>
-          <a class="gh-card__play" href="/games/brix3d">PLAY NOW</a>
-        </div>
-      </article>
-      <article class="gh-desk-card">
-        <a class="gh-desk-card__imgwrap" href="/games/rootweave">
-          <img src="/images/thumbs/rootweave.webp" alt="Rootweave valley farm" width="1408" height="768" loading="lazy" />
-          <span class="gh-card__badge gh-card__badge--new">Original</span>
-        </a>
-        <div class="gh-desk-card__body">
-          <div class="gh-desk-card__title">Rootweave</div>
-          <p class="gh-originals__pitch">Heal a dying valley in a regenerative farm sim.</p>
-          <a class="gh-card__play" href="/games/rootweave">PLAY NOW</a>
-        </div>
-      </article>
-      <article class="gh-desk-card">
-        <a class="gh-desk-card__imgwrap" href="/games/pixle">
-          <img src="/images/thumbs/pixle.webp" alt="Pixle — daily 5-letter gaming Wordle" width="1280" height="720" loading="lazy" />
-          <span class="gh-card__badge gh-card__badge--daily">Original</span>
-        </a>
-        <div class="gh-desk-card__body">
-          <div class="gh-desk-card__title">Pixle</div>
-          <p class="gh-originals__pitch">Five-letter gaming words, six tries, one a day.</p>
-          <a class="gh-card__play" href="/games/pixle">PLAY NOW</a>
-        </div>
-      </article>
-    </div>
-  </section>
-
-  <section class="gh-desk" id="ghDesk">
-    <div class="gh-section-label"><span class="sl-accent">◆</span> Today’s desk</div>
-    <p class="gh-desk__lead">Five flagship dailies. Same UTC puzzle for every player. PLAY NOW — streaks and scores stay on this device.</p>
-    <div class="gh-desk__row">
-      <article class="gh-desk-card">
-        <a class="gh-desk-card__imgwrap" href="/games/rift">
-          <img src="/images/thumbs/rift.webp" alt="RIFT word game" />
-          <span class="gh-card__badge gh-card__badge--daily">Daily</span>
-        </a>
-        <div class="gh-desk-card__body">
-          <div class="gh-desk-card__title">RIFT</div>
-          <div class="gh-desk-card__meta">5–10 min · Medium</div>
-          <a class="gh-card__play" href="/games/rift">PLAY NOW</a>
-        </div>
-      </article>
-      <article class="gh-desk-card">
-        <a class="gh-desk-card__imgwrap" href="/games/gamerdle">
-          <img src="/images/thumbs/gamerdle.webp" alt="Gamerdle — guess the video game" />
-          <span class="gh-card__badge gh-card__badge--daily">Daily</span>
-        </a>
-        <div class="gh-desk-card__body">
-          <div class="gh-desk-card__title">Gamerdle</div>
-          <div class="gh-desk-card__meta">3–6 min · Medium</div>
-          <a class="gh-card__play" href="/games/gamerdle">PLAY NOW</a>
-        </div>
-      </article>
-      <article class="gh-desk-card">
-        <a class="gh-desk-card__imgwrap" href="/games/pixle">
-          <img src="/images/thumbs/pixle.webp" alt="Pixle — daily 5-letter gaming Wordle" />
-          <span class="gh-card__badge gh-card__badge--daily">Daily</span>
-        </a>
-        <div class="gh-desk-card__body">
-          <div class="gh-desk-card__title">Pixle</div>
-          <div class="gh-desk-card__meta">2–5 min · Medium</div>
-          <a class="gh-card__play" href="/games/pixle">PLAY NOW</a>
-        </div>
-      </article>
-      <article class="gh-desk-card">
-        <a class="gh-desk-card__imgwrap" href="/games/crossword">
-          <img src="/images/thumbs/crossword.webp" alt="Gaming Crossword — daily 5x5 puzzle" />
-          <span class="gh-card__badge gh-card__badge--daily">Daily</span>
-        </a>
-        <div class="gh-desk-card__body">
-          <div class="gh-desk-card__title">Mini Crossword</div>
-          <div class="gh-desk-card__meta">3–6 min · Medium</div>
-          <a class="gh-card__play" href="/games/crossword">PLAY NOW</a>
-        </div>
-      </article>
-      <article class="gh-desk-card">
-        <a class="gh-desk-card__imgwrap" href="/games/link">
-          <img src="/images/thumbs/link.webp" alt="Link — four groups of four" />
-          <span class="gh-card__badge gh-card__badge--daily">Daily</span>
-        </a>
-        <div class="gh-desk-card__body">
-          <div class="gh-desk-card__title">Link</div>
-          <div class="gh-desk-card__meta">3–6 min · Hard</div>
-          <a class="gh-card__play" href="/games/link">PLAY NOW</a>
-        </div>
-      </article>
-    </div>
-    <p class="gh-desk__more"><a href="/games/daily">Open the full daily desk — 12 puzzles →</a></p>
-  </section>
+  <p class="gh-lab-note" style="margin:0 0 1.25rem;"><a href="/games/daily">Today’s daily desk</a></p>
 
   <div class="gh-grid" id="ghGrid">
 
     <div class="gh-section-label"><span class="sl-accent">◆</span> Daily puzzles</div>
 
-    <article class="gh-card js-reveal" data-id="rift" data-name="RIFT" data-category="daily puzzle word" data-search="rift word chain grow decode daily" data-new="0">
+    <article class="gh-card" data-id="rift" data-name="RIFT" data-category="daily puzzle word" data-search="rift word chain grow decode daily" data-new="0">
       <a class="gh-card__thumb" href="/games/rift">
-        <img src="/images/thumbs/rift.webp" alt="RIFT word game" class="gh-card__img" loading="lazy" />
+        <img src="/images/thumbs/rift.webp" srcset="/images/thumbs/rift-800.webp 800w, /images/thumbs/rift.webp 1600w" sizes="(max-width: 760px) 78vw, 280px" alt="RIFT word game" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
         <span class="gh-card__badge gh-card__badge--daily">Daily</span>
       </a>
@@ -624,9 +492,9 @@
       </div>
     </article>
 
-    <article class="gh-card js-reveal" data-id="gamerdle" data-name="Gamerdle" data-category="daily word" data-search="gamerdle guess video game daily" data-new="0">
+    <article class="gh-card" data-id="gamerdle" data-name="Gamerdle" data-category="daily word" data-search="gamerdle guess video game daily" data-new="0">
       <a class="gh-card__thumb" href="/games/gamerdle">
-        <img src="/images/thumbs/gamerdle.webp" alt="Gamerdle — guess the video game" class="gh-card__img" loading="lazy" />
+        <img src="/images/thumbs/gamerdle.webp" srcset="/images/thumbs/gamerdle-800.webp 800w, /images/thumbs/gamerdle.webp 1600w" sizes="(max-width: 760px) 78vw, 280px" alt="Gamerdle — guess the video game" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
         <span class="gh-card__badge gh-card__badge--daily">Daily</span>
       </a>
@@ -640,9 +508,9 @@
       </div>
     </article>
 
-    <article class="gh-card js-reveal" data-id="pixle" data-name="Pixle" data-category="daily puzzle word" data-search="pixle wordle five letter gaming daily" data-new="0">
+    <article class="gh-card" data-id="pixle" data-name="Pixle" data-category="daily puzzle word" data-search="pixle wordle five letter gaming daily" data-new="0">
       <a class="gh-card__thumb" href="/games/pixle">
-        <img src="/images/thumbs/pixle.webp" alt="Pixle — daily 5-letter gaming Wordle" class="gh-card__img" loading="lazy" />
+        <img src="/images/thumbs/pixle.webp" srcset="/images/thumbs/pixle-800.webp 800w, /images/thumbs/pixle.webp 1600w" sizes="(max-width: 760px) 78vw, 280px" alt="Pixle — daily 5-letter gaming Wordle" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
         <span class="gh-card__badge gh-card__badge--daily">Daily</span>
       </a>
@@ -656,9 +524,9 @@
       </div>
     </article>
 
-    <article class="gh-card js-reveal" data-id="crossword" data-name="Gaming Crossword" data-category="daily puzzle" data-search="crossword mini 5x5 gaming daily" data-new="0">
+    <article class="gh-card" data-id="crossword" data-name="Gaming Crossword" data-category="daily puzzle" data-search="crossword mini 5x5 gaming daily" data-new="0">
       <a class="gh-card__thumb" href="/games/crossword">
-        <img src="/images/thumbs/crossword.webp" alt="Gaming Crossword — daily 5x5 puzzle" class="gh-card__img" loading="lazy" />
+        <img src="/images/thumbs/crossword.webp" srcset="/images/thumbs/crossword-800.webp 800w, /images/thumbs/crossword.webp 1600w" sizes="(max-width: 760px) 78vw, 280px" alt="Gaming Crossword — daily 5x5 puzzle" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
         <span class="gh-card__badge gh-card__badge--daily">Daily</span>
       </a>
@@ -672,9 +540,9 @@
       </div>
     </article>
 
-    <article class="gh-card js-reveal" data-id="link" data-name="Link" data-category="daily puzzle word" data-search="link groups four connections daily" data-new="0">
+    <article class="gh-card" data-id="link" data-name="Link" data-category="daily puzzle word" data-search="link groups four connections daily" data-new="0">
       <a class="gh-card__thumb" href="/games/link">
-        <img src="/images/thumbs/link.webp" alt="Link — four groups of four" class="gh-card__img" loading="lazy" />
+        <img src="/images/thumbs/link.webp" srcset="/images/thumbs/link-800.webp 800w, /images/thumbs/link.webp 1600w" sizes="(max-width: 760px) 78vw, 280px" alt="Link — four groups of four" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
         <span class="gh-card__badge gh-card__badge--daily">Daily</span>
       </a>
@@ -688,9 +556,9 @@
       </div>
     </article>
 
-    <article class="gh-card js-reveal" data-id="gaming-trivia" data-name="Gaming Trivia" data-category="daily" data-search="gaming trivia quiz daily questions" data-new="0">
+    <article class="gh-card" data-id="gaming-trivia" data-name="Gaming Trivia" data-category="daily" data-search="gaming trivia quiz daily questions" data-new="0">
       <a class="gh-card__thumb" href="/games/gaming-trivia">
-        <img src="/images/thumbs/gaming-trivia.webp" alt="Gaming Trivia — 10 questions daily" class="gh-card__img" loading="lazy" />
+        <img src="/images/thumbs/gaming-trivia.webp" srcset="/images/thumbs/gaming-trivia-800.webp 800w, /images/thumbs/gaming-trivia.webp 1600w" sizes="(max-width: 760px) 78vw, 280px" alt="Gaming Trivia — 10 questions daily" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
         <span class="gh-card__badge gh-card__badge--daily">Daily</span>
       </a>
@@ -704,9 +572,9 @@
       </div>
     </article>
 
-    <article class="gh-card js-reveal" data-id="price-guesser" data-name="Price Guesser" data-category="daily" data-search="price guesser amazon gear daily" data-new="0">
+    <article class="gh-card" data-id="price-guesser" data-name="Price Guesser" data-category="daily" data-search="price guesser amazon gear daily" data-new="0">
       <a class="gh-card__thumb" href="/games/price-guesser">
-        <img src="/images/thumbs/price-guesser.webp" alt="Price Guesser — guess gaming gear prices" class="gh-card__img" loading="lazy" />
+        <img src="/images/thumbs/price-guesser.webp" srcset="/images/thumbs/price-guesser-800.webp 800w, /images/thumbs/price-guesser.webp 1600w" sizes="(max-width: 760px) 78vw, 280px" alt="Price Guesser — guess gaming gear prices" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
         <span class="gh-card__badge gh-card__badge--daily">Daily</span>
       </a>
@@ -720,9 +588,9 @@
       </div>
     </article>
 
-    <article class="gh-card js-reveal" data-id="daily-challenge" data-name="Pro Kit Daily" data-category="daily" data-search="pro kit daily guess pro gear" data-new="0">
+    <article class="gh-card" data-id="daily-challenge" data-name="Pro Kit Daily" data-category="daily" data-search="pro kit daily guess pro gear" data-new="0">
       <a class="gh-card__thumb" href="/games/daily-challenge">
-        <img src="/images/thumbs/daily-challenge.webp" alt="Pro Kit Daily — guess the pro from their gear" class="gh-card__img" loading="lazy" />
+        <img src="/images/thumbs/daily-challenge.webp" srcset="/images/thumbs/daily-challenge-800.webp 800w, /images/thumbs/daily-challenge.webp 1600w" sizes="(max-width: 760px) 78vw, 280px" alt="Pro Kit Daily — guess the pro from their gear" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
         <span class="gh-card__badge gh-card__badge--daily">Daily</span>
       </a>
@@ -736,9 +604,9 @@
       </div>
     </article>
 
-    <article class="gh-card js-reveal" data-id="gear-quiz" data-name="Gear Knowledge Quiz" data-category="daily" data-search="gear knowledge quiz headsets mice daily" data-new="0">
+    <article class="gh-card" data-id="gear-quiz" data-name="Gear Knowledge Quiz" data-category="daily" data-search="gear knowledge quiz headsets mice daily" data-new="0">
       <a class="gh-card__thumb" href="/games/gear-quiz">
-        <img src="/images/thumbs/gear-quiz.webp" alt="Gaming Gear Knowledge Quiz — headsets, mice, keyboards, monitors" class="gh-card__img" loading="lazy" />
+        <img src="/images/thumbs/gear-quiz.webp" srcset="/images/thumbs/gear-quiz-800.webp 800w, /images/thumbs/gear-quiz.webp 1600w" sizes="(max-width: 760px) 78vw, 280px" alt="Gaming Gear Knowledge Quiz — headsets, mice, keyboards, monitors" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
         <span class="gh-card__badge gh-card__badge--daily">Daily</span>
       </a>
@@ -752,9 +620,9 @@
       </div>
     </article>
 
-    <article class="gh-card js-reveal" data-id="spec-match" data-name="Spec Match" data-category="daily" data-search="spec match identify gear daily" data-new="0">
+    <article class="gh-card" data-id="spec-match" data-name="Spec Match" data-category="daily" data-search="spec match identify gear daily" data-new="0">
       <a class="gh-card__thumb" href="/games/spec-match">
-        <img src="/images/thumbs/spec-match.webp" alt="Spec Match — identify gaming gear from specs" class="gh-card__img" loading="lazy" />
+        <img src="/images/thumbs/spec-match.webp" srcset="/images/thumbs/spec-match-800.webp 800w, /images/thumbs/spec-match.webp 1600w" sizes="(max-width: 760px) 78vw, 280px" alt="Spec Match — identify gaming gear from specs" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
         <span class="gh-card__badge gh-card__badge--daily">Daily</span>
       </a>
@@ -768,9 +636,9 @@
       </div>
     </article>
 
-    <article class="gh-card js-reveal" data-id="hardware-timeline" data-name="Hardware Timeline" data-category="daily" data-search="hardware timeline release year daily" data-new="0">
+    <article class="gh-card" data-id="hardware-timeline" data-name="Hardware Timeline" data-category="daily" data-search="hardware timeline release year daily" data-new="0">
       <a class="gh-card__thumb" href="/games/hardware-timeline">
-        <img src="/images/thumbs/hardware-timeline.webp" alt="Hardware Timeline — guess the release year of iconic gaming gear" class="gh-card__img" loading="lazy" />
+        <img src="/images/thumbs/hardware-timeline.webp" srcset="/images/thumbs/hardware-timeline-800.webp 800w, /images/thumbs/hardware-timeline.webp 1600w" sizes="(max-width: 760px) 78vw, 280px" alt="Hardware Timeline — guess the release year of iconic gaming gear" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
         <span class="gh-card__badge gh-card__badge--daily">Daily</span>
       </a>
@@ -784,9 +652,9 @@
       </div>
     </article>
 
-    <article class="gh-card js-reveal" data-id="sudoku" data-name="Sudoku" data-category="daily puzzle" data-search="sudoku daily numbers 9x9" data-new="0">
+    <article class="gh-card" data-id="sudoku" data-name="Sudoku" data-category="daily puzzle" data-search="sudoku daily numbers 9x9" data-new="0">
       <a class="gh-card__thumb" href="/games/sudoku">
-        <img src="/images/thumbs/sudoku.webp" alt="Sudoku — number grid puzzle" class="gh-card__img" loading="lazy" />
+        <img src="/images/thumbs/sudoku.webp" srcset="/images/thumbs/sudoku-800.webp 800w, /images/thumbs/sudoku.webp 1600w" sizes="(max-width: 760px) 78vw, 280px" alt="Sudoku — number grid puzzle" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
         <span class="gh-card__badge gh-card__badge--daily">Daily</span>
       </a>
@@ -802,9 +670,9 @@
 
     <div class="gh-section-label"><span class="sl-accent">◆</span> Skill trainers</div>
 
-    <article class="gh-card js-reveal" data-id="type-racer" data-name="Type Racer" data-category="skill" data-search="type racer wpm typing" data-new="0">
+    <article class="gh-card" data-id="type-racer" data-name="Type Racer" data-category="skill" data-search="type racer wpm typing" data-new="0">
       <a class="gh-card__thumb" href="/games/type-racer">
-        <img src="/images/thumbs/type-racer.webp" alt="Type Racer — test your WPM" class="gh-card__img" loading="lazy" />
+        <img src="/images/thumbs/type-racer.webp" srcset="/images/thumbs/type-racer-800.webp 800w, /images/thumbs/type-racer.webp 1600w" sizes="(max-width: 760px) 78vw, 280px" alt="Type Racer — test your WPM" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
         <span class="gh-card__badge gh-card__badge--skill">Skill</span>
       </a>
@@ -818,9 +686,9 @@
       </div>
     </article>
 
-    <article class="gh-card js-reveal" data-id="reaction-trainer" data-name="Reaction Time" data-category="skill" data-search="reaction time reflexes" data-new="0">
+    <article class="gh-card" data-id="reaction-trainer" data-name="Reaction Time" data-category="skill" data-search="reaction time reflexes" data-new="0">
       <a class="gh-card__thumb" href="/games/reaction-trainer">
-        <img src="/images/thumbs/reaction-trainer.webp" alt="Reaction Time Trainer" class="gh-card__img" loading="lazy" />
+        <img src="/images/thumbs/reaction-trainer.webp" srcset="/images/thumbs/reaction-trainer-800.webp 800w, /images/thumbs/reaction-trainer.webp 1600w" sizes="(max-width: 760px) 78vw, 280px" alt="Reaction Time Trainer" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
         <span class="gh-card__badge gh-card__badge--skill">Skill</span>
       </a>
@@ -834,9 +702,9 @@
       </div>
     </article>
 
-    <article class="gh-card js-reveal" data-id="aim-trainer" data-name="FPS Aim Trainer" data-category="skill aim" data-search="aim trainer fps targets" data-new="0">
+    <article class="gh-card" data-id="aim-trainer" data-name="FPS Aim Trainer" data-category="skill aim" data-search="aim trainer fps targets" data-new="0">
       <a class="gh-card__thumb" href="/games/aim-trainer">
-        <img src="/images/thumbs/aim-trainer.webp" alt="FPS Aim Trainer" class="gh-card__img" loading="lazy" />
+        <img src="/images/thumbs/aim-trainer.webp" srcset="/images/thumbs/aim-trainer-800.webp 800w, /images/thumbs/aim-trainer.webp 1600w" sizes="(max-width: 760px) 78vw, 280px" alt="FPS Aim Trainer" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
         <span class="gh-card__badge gh-card__badge--skill">Skill</span>
       </a>
@@ -850,9 +718,9 @@
       </div>
     </article>
 
-    <article class="gh-card js-reveal" data-id="color-memory" data-name="Color Memory" data-category="skill" data-search="color memory simon sequence" data-new="0">
+    <article class="gh-card" data-id="color-memory" data-name="Color Memory" data-category="skill" data-search="color memory simon sequence" data-new="0">
       <a class="gh-card__thumb" href="/games/color-memory">
-        <img src="/images/thumbs/color-memory.webp" alt="Color Memory — Simon Says style" class="gh-card__img" loading="lazy" />
+        <img src="/images/thumbs/color-memory.webp" srcset="/images/thumbs/color-memory-800.webp 800w, /images/thumbs/color-memory.webp 1600w" sizes="(max-width: 760px) 78vw, 280px" alt="Color Memory — Simon Says style" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
         <span class="gh-card__badge gh-card__badge--skill">Skill</span>
       </a>
@@ -866,9 +734,9 @@
       </div>
     </article>
 
-    <article class="gh-card js-reveal" data-id="memory-match" data-name="Memory Match" data-category="skill classics" data-search="memory match pairs cards" data-new="0">
+    <article class="gh-card" data-id="memory-match" data-name="Memory Match" data-category="skill classics" data-search="memory match pairs cards" data-new="0">
       <a class="gh-card__thumb" href="/games/memory-match">
-        <img src="/images/thumbs/memory-match.webp" alt="Memory Match" class="gh-card__img" loading="lazy" />
+        <img src="/images/thumbs/memory-match.webp" srcset="/images/thumbs/memory-match-800.webp 800w, /images/thumbs/memory-match.webp 1600w" sizes="(max-width: 760px) 78vw, 280px" alt="Memory Match" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
         <span class="gh-card__badge gh-card__badge--skill">Skill</span>
       </a>
@@ -884,9 +752,9 @@
 
     <div class="gh-section-label"><span class="sl-accent">◆</span> Arcade</div>
 
-    <article class="gh-card js-reveal" data-id="holiday-rush" data-name="Holiday Rush: Store Manager" data-category="arcade new" data-search="holiday rush store manager checkout combo restock shop upgrade" data-new="1">
+    <article class="gh-card" data-id="holiday-rush" data-name="Holiday Rush: Store Manager" data-category="arcade new" data-search="holiday rush store manager checkout combo restock shop upgrade" data-new="1">
       <a class="gh-card__thumb" href="/games/holiday-rush">
-        <img src="/images/thumbs/holiday-rush.webp" alt="Holiday Rush Mart floor, top-down" class="gh-card__img" loading="lazy" />
+        <img src="/images/thumbs/holiday-rush.webp" srcset="/images/thumbs/holiday-rush-800.webp 800w, /images/thumbs/holiday-rush.webp 1600w" sizes="(max-width: 760px) 78vw, 280px" alt="Holiday Rush Mart floor, top-down" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
         <span class="gh-card__badge gh-card__badge--new">New</span>
       </a>
@@ -900,9 +768,9 @@
       </div>
     </article>
 
-    <article class="gh-card js-reveal" data-id="asteroid-dodge" data-name="Asteroid Dodge" data-category="arcade new" data-search="asteroid dodge ship space" data-new="1">
+    <article class="gh-card" data-id="asteroid-dodge" data-name="Asteroid Dodge" data-category="arcade new" data-search="asteroid dodge ship space" data-new="1">
       <a class="gh-card__thumb" href="/games/asteroid-dodge">
-        <img src="/images/thumbs/asteroid-dodge.webp" alt="Asteroid Dodge — pilot through space" class="gh-card__img" loading="lazy" />
+        <img src="/images/thumbs/asteroid-dodge.webp" srcset="/images/thumbs/asteroid-dodge-800.webp 800w, /images/thumbs/asteroid-dodge.webp 1600w" sizes="(max-width: 760px) 78vw, 280px" alt="Asteroid Dodge — pilot through space" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
         <span class="gh-card__badge gh-card__badge--arcade">Arcade</span>
       </a>
@@ -916,9 +784,9 @@
       </div>
     </article>
 
-    <article class="gh-card js-reveal" data-id="beat-lab" data-name="Beat Lab" data-category="arcade" data-search="beat lab rhythm music" data-new="0">
+    <article class="gh-card" data-id="beat-lab" data-name="Beat Lab" data-category="arcade" data-search="beat lab rhythm music" data-new="0">
       <a class="gh-card__thumb" href="/games/beat-lab">
-        <img src="/images/thumbs/beat-lab.webp" alt="Beat Lab — rhythm game" class="gh-card__img" loading="lazy" />
+        <img src="/images/thumbs/beat-lab.webp" srcset="/images/thumbs/beat-lab-800.webp 800w, /images/thumbs/beat-lab.webp 1600w" sizes="(max-width: 760px) 78vw, 280px" alt="Beat Lab — rhythm game" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
         <span class="gh-card__badge gh-card__badge--arcade">Arcade</span>
       </a>
@@ -932,9 +800,9 @@
       </div>
     </article>
 
-    <article class="gh-card js-reveal" data-id="void-keeper" data-name="Void Keeper" data-category="arcade" data-search="void keeper particles ambient" data-new="0">
+    <article class="gh-card" data-id="void-keeper" data-name="Void Keeper" data-category="arcade" data-search="void keeper particles ambient" data-new="0">
       <a class="gh-card__thumb" href="/games/void-keeper">
-        <img src="/images/thumbs/void-keeper.webp" alt="Void Keeper — collect light, avoid noise" class="gh-card__img" loading="lazy" />
+        <img src="/images/thumbs/void-keeper.webp" srcset="/images/thumbs/void-keeper-800.webp 800w, /images/thumbs/void-keeper.webp 1600w" sizes="(max-width: 760px) 78vw, 280px" alt="Void Keeper — collect light, avoid noise" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
         <span class="gh-card__badge gh-card__badge--arcade">Arcade</span>
       </a>
@@ -950,9 +818,9 @@
 
     <div class="gh-section-label"><span class="sl-accent">◆</span> 3D &amp; sim</div>
 
-    <article class="gh-card js-reveal" data-id="brix3d" data-name="BRIX 3D" data-category="creative new" data-search="brix 3d bricks builder three" data-new="1">
+    <article class="gh-card" data-id="brix3d" data-name="BRIX 3D" data-category="creative new" data-search="brix 3d bricks builder three" data-new="1">
       <a class="gh-card__thumb" href="/games/brix3d">
-        <img src="/images/thumbs/brix3d.webp" alt="BRIX 3D brick builder" class="gh-card__img" loading="lazy" />
+        <img src="/images/thumbs/brix3d.webp" srcset="/images/thumbs/brix3d-800.webp 800w, /images/thumbs/brix3d.webp 1600w" sizes="(max-width: 760px) 78vw, 280px" alt="BRIX 3D brick builder" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
         <span class="gh-card__badge gh-card__badge--3d">3D</span>
       </a>
@@ -966,9 +834,9 @@
       </div>
     </article>
 
-    <article class="gh-card js-reveal" data-id="rootweave" data-name="Rootweave" data-category="creative new" data-search="rootweave farm sim valley" data-new="1">
+    <article class="gh-card" data-id="rootweave" data-name="Rootweave" data-category="creative new" data-search="rootweave farm sim valley" data-new="1">
       <a class="gh-card__thumb" href="/games/rootweave">
-        <img src="/images/thumbs/rootweave.webp" alt="Rootweave farm sim" class="gh-card__img" loading="lazy" />
+        <img src="/images/thumbs/rootweave.webp" srcset="/images/thumbs/rootweave-800.webp 800w, /images/thumbs/rootweave.webp 1600w" sizes="(max-width: 760px) 78vw, 280px" alt="Rootweave farm sim" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
         <span class="gh-card__badge gh-card__badge--3d">3D</span>
       </a>
@@ -984,9 +852,9 @@
 
     <div class="gh-section-label"><span class="sl-accent">◆</span> Classics &amp; puzzles</div>
 
-    <article class="gh-card js-reveal" data-id="minesweeper" data-name="Minesweeper" data-category="puzzle classics" data-search="minesweeper mines flag" data-new="0">
+    <article class="gh-card" data-id="minesweeper" data-name="Minesweeper" data-category="puzzle classics" data-search="minesweeper mines flag" data-new="0">
       <a class="gh-card__thumb" href="/games/minesweeper">
-        <img src="/images/thumbs/minesweeper.webp" alt="Minesweeper" class="gh-card__img" loading="lazy" />
+        <img src="/images/thumbs/minesweeper.webp" srcset="/images/thumbs/minesweeper-800.webp 800w, /images/thumbs/minesweeper.webp 1600w" sizes="(max-width: 760px) 78vw, 280px" alt="Minesweeper" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
         <span class="gh-card__badge gh-card__badge--puzzle">Puzzle</span>
       </a>
@@ -1000,9 +868,9 @@
       </div>
     </article>
 
-    <article class="gh-card js-reveal" data-id="word-scramble" data-name="Word Scramble" data-category="puzzle word classics" data-search="word scramble unscramble gaming" data-new="0">
+    <article class="gh-card" data-id="word-scramble" data-name="Word Scramble" data-category="puzzle word classics" data-search="word scramble unscramble gaming" data-new="0">
       <a class="gh-card__thumb" href="/games/word-scramble">
-        <img src="/images/thumbs/word-scramble.webp" alt="Word Scramble — unscramble gaming words" class="gh-card__img" loading="lazy" />
+        <img src="/images/thumbs/word-scramble.webp" srcset="/images/thumbs/word-scramble-800.webp 800w, /images/thumbs/word-scramble.webp 1600w" sizes="(max-width: 760px) 78vw, 280px" alt="Word Scramble — unscramble gaming words" class="gh-card__img" loading="lazy" />
         <div class="gh-card__play-overlay"><div class="gh-card__play-btn">▶</div></div>
         <span class="gh-card__badge gh-card__badge--puzzle">Puzzle</span>
       </a>
@@ -1026,56 +894,10 @@
 </main>
 
 <!-- ─── Footer ─────────────────────────────────── -->
-<footer class="site-footer" role="contentinfo">
-  <div class="container">
-    <div class="footer-grid">
-      <div class="footer-col">
-        <div class="footer-brand">
-          <span class="footer-brand__icon">🎮</span>
-          <span class="footer-brand__name">CosmicGamesHub</span>
-        </div>
-        <p class="footer-tagline">Expert gear guides &amp; free browser games.</p>
-        <p class="footer-disclosure">CosmicGamesHub participates in the Amazon Associates program. We earn a commission on qualifying purchases at no extra cost to you.</p>
-      </div>
-      <div class="footer-col">
-        <div class="footer-heading">Daily Games</div>
-        <ul class="footer-links">
-          <li><a href="/games/rift">RIFT</a></li>
-          <li><a href="/games/gamerdle">Gamerdle</a></li>
-          <li><a href="/games/pixle">Pixle</a></li>
-          <li><a href="/games/link">Link</a></li>
-          <li><a href="/games/crossword">Crossword</a></li>
-          <li><a href="/games/gaming-trivia">Trivia</a></li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <div class="footer-heading">Arcade &amp; Skill</div>
-        <ul class="footer-links">
-          <li><a href="/games/holiday-rush">Holiday Rush</a></li>
-          <li><a href="/games/rootweave">Rootweave</a></li>
-          <li><a href="/games/brix3d">BRIX 3D</a></li>
-          <li><a href="/games/void-keeper">Void Keeper</a></li>
-          <li><a href="/games/aim-trainer">Aim Trainer</a></li>
-          <li><a href="/games/type-racer">Type Racer</a></li>
-          <li><a href="/games/beat-lab">Beat Lab</a></li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <div class="footer-heading">Site</div>
-        <ul class="footer-links">
-          <li><a href="/">Home</a></li>
-          <li><a href="/guides">Gear Guides</a></li>
-          <li><a href="/ai-gaming">AI Gaming</a></li>
-          <li><a href="/versus">Comparisons</a></li>
-          <li><a href="/about">About</a></li>
-          <li><a href="/privacy">Privacy</a></li>
-          <li><a href="/pros">Pros</a></li>
-        </ul>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      <span>© 2026 CosmicGamesHub. All rights reserved.</span>
-    </div>
+<footer class="hub-foot" role="contentinfo">
+  <div class="hub-wrap">
+    <span>© 2026 Cosmic Games Hub</span>
+    <nav aria-label="Footer"><a href="/guides">Guides</a><a href="/about">About</a><a href="/privacy">Privacy</a><a href="mailto:hello@cosmicgameshub.com">Contact</a></nav>
   </div>
 </footer>
 
