@@ -1434,7 +1434,7 @@
     applyTenantTune(sim, c);
     applyKioskTune(sim, c);
     if (sim._phone && sim.floorOn) {
-      c.patience *= 1.2;
+      c.saleMul *= 0.8;
       c.maxPatience = c.patience;
     }
     if (forcedArch) {
@@ -1516,7 +1516,7 @@
   }
 
   function liveLineDrain(sim, drain) {
-    if (sim && sim.floorOn && sim.live && !sim.tenant && liveTillStaffed(sim)) return drain * 0.08;
+    if (sim && sim.floorOn && sim.live && !sim.tenant && liveTillStaffed(sim)) return drain * (sim._phone ? 0.16 : 0.08);
     return drain;
   }
 
@@ -1729,11 +1729,23 @@
     }
     var idx = index < 0 ? 0 : index;
     var cap = liveLineCap(sim);
-    if (idx > cap - 1) idx = cap - 1;
+    var spill = 0;
+    if (idx > cap - 1) {
+      spill = idx - (cap - 1);
+      idx = cap - 1;
+    }
     var anchor = (typeof SPOTS !== 'undefined' && SPOTS[reg]) ? SPOTS[reg] : base;
+    if (sim && sim._phone) {
+      var spots = reg === 'reg2'
+        ? [{ x: 860, y: 760 }, { x: 720, y: 848 }]
+        : [{ x: 310, y: 760 }, { x: 470, y: 848 }];
+      var spot = spots[idx] || spots[spots.length - 1];
+      var spillX = spill * (reg === 'reg2' ? -44 : 44);
+      return { x: spot.x + spillX, y: Math.min(858, spot.y + spill * 18) };
+    }
     var gap = liveQueueGap(sim);
-    var side = reg === 'reg2' ? 86 : -86;
-    return { x: anchor.x + side, y: anchor.y - idx * gap };
+    var deskSide = reg === 'reg2' ? 86 : -86;
+    return { x: anchor.x + deskSide, y: anchor.y - idx * gap };
   }
 
   function laneLoad(sim, reg) {
@@ -1981,7 +1993,7 @@
     var speed = CONFIG.walkSpeed * (sim.t < sim.spillUntil ? 0.6 : 1);
     var cocoa = hasPerk(run, 'cocoa') ? 0.82 : 1;
     var drainMul = (sim._heat && sim._heat.drain) ? sim._heat.drain : 1;
-    if (sim._phone && sim.floorOn) drainMul *= 0.62;
+    if (sim._phone && sim.floorOn) drainMul *= 1;
     if (sim._mondayEase && sim.floorOn) drainMul *= 0.7;
     if (sim.flickerUntil && sim.t < sim.flickerUntil) drainMul *= 1.85;
     for (var n = 0; n < sim.customers.length; n++) {
@@ -2089,7 +2101,10 @@
           var pocket = cust.waitSpot || waitPocket(cust);
           cust.waitSpot = pocket;
           if (moveToward(cust, pocket.x, pocket.y, dt, custSpeed * 0.8)) cust.anim = 'idle';
-          cust.patience -= liveLineDrain(sim, dt * 0.008 * cocoa * drainMul);
+          if (sim._phone && sim.floorOn) {
+            var phoneWait = (sim._heat && sim._heat.rush) ? 0.09 : 0.045;
+            cust.patience -= dt * phoneWait * cocoa * drainMul;
+          } else cust.patience -= liveLineDrain(sim, dt * 0.008 * cocoa * drainMul);
           if (cust.patience <= 0) walkout(sim, cust);
         }
       } else if (cust.state === 'toQueue') {
@@ -4667,20 +4682,20 @@
         '#hr-event.hr-inline{position:static;left:auto;right:auto;top:auto;bottom:auto;width:100%;max-width:none;transform:none;height:auto;max-height:none;z-index:2;margin:0;padding:0;background:transparent;display:block;pointer-events:none;overflow:visible;}',
         '#hr-event.hr-inline[hidden]{display:none !important;}',
         '#hr-event.hr-inline .hr-card{pointer-events:auto;width:100%;max-height:none;overflow:visible;padding:0.2rem 0.4rem 0.24rem;border-radius:12px;background:rgba(246,240,228,0.96);box-shadow:0 6px 16px rgba(0,0,0,0.28);box-sizing:border-box;display:flex;flex-direction:column;touch-action:pan-y;}',
-        '#hr-event.hr-inline .hr-card h2{font-size:0.82rem;line-height:1.15;margin:0 0 0.08rem;}',
-        '#hr-event.hr-inline .hr-card p{font-size:0.72rem;line-height:1.2;margin:0 0 0.12rem;display:block;overflow:visible;}',
+        '#hr-event.hr-inline .hr-card h2{font-size:1rem;line-height:1.2;margin:0 0 0.15rem;}',
+        '#hr-event.hr-inline .hr-card p{font-size:15px;line-height:1.35;margin:0 0 0.28rem;display:block;overflow:visible;}',
         '#hr-event.hr-inline .hr-card__art{display:none;}',
-        '#hr-event.hr-inline .hr-choices{flex-direction:row;flex-wrap:wrap;gap:4px;align-items:stretch;overflow:visible;touch-action:manipulation;}',
-        '#hr-event.hr-inline .hr-choices button{width:auto;flex:1 1 140px;max-width:100%;height:auto;min-height:44px;font-size:0.78rem;padding:0.22rem 0.4rem;white-space:normal;line-height:1.2;align-items:center;background:#fff;background-image:none;color:#2b1d2e;border:2px solid #2b1d2e;overflow:visible;}',
-        '#hr-event.hr-inline .hr-choices button span{flex:1 1 auto;min-width:0;white-space:normal;line-height:1.2;}',
+        '#hr-event.hr-inline .hr-choices{flex-direction:row;flex-wrap:wrap;gap:6px;align-items:stretch;overflow:visible;touch-action:manipulation;}',
+        '#hr-event.hr-inline .hr-choices button{width:auto;flex:1 1 140px;max-width:100%;height:auto;min-height:48px;font-size:15px;padding:0.35rem 0.5rem;white-space:normal;line-height:1.25;align-items:center;background:#fff;background-image:none;color:#2b1d2e;border:2px solid #2b1d2e;overflow:visible;}',
+        '#hr-event.hr-inline .hr-choices button span{flex:1 1 auto;min-width:0;white-space:normal;line-height:1.25;}',
         '#hr-event.hr-inline .hr-choice-cost{flex:0 0 auto;white-space:nowrap;}',
         '@media (max-width:720px){',
-        '#hr-event.hr-inline{position:absolute;left:4px;right:4px;top:auto;bottom:4px;width:auto;max-width:none;transform:none;margin:0;z-index:8;display:block;overflow:visible;max-height:38%;}',
-        '#hr-event.hr-inline .hr-card{width:100%;padding:0.16rem 0.3rem 0.2rem;}',
-        '#hr-event.hr-inline .hr-card h2{font-size:0.78rem;line-height:1.1;margin:0 0 0.06rem;}',
-        '#hr-event.hr-inline .hr-card p{font-size:12px;line-height:1.15;margin:0 0 0.08rem;}',
-        '#hr-event.hr-inline .hr-choices{flex-direction:row;flex-wrap:wrap;gap:4px;}',
-        '#hr-event.hr-inline .hr-choices button{width:auto;flex:1 1 120px;min-height:44px;height:auto;font-size:0.75rem;padding:0.18rem 0.35rem;white-space:normal;line-height:1.15;background:#fff;background-image:none;color:#2b1d2e;border:2px solid #2b1d2e;overflow:visible;}',
+        '#hr-event.hr-inline{position:static;left:auto;right:auto;top:auto;bottom:auto;width:100%;max-width:none;transform:none;margin:0;z-index:2;display:block;overflow:visible;max-height:none;}',
+        '#hr-event.hr-inline .hr-card{width:100%;padding:0.3rem 0.4rem 0.35rem;}',
+        '#hr-event.hr-inline .hr-card h2{font-size:16px;line-height:1.2;margin:0 0 0.12rem;}',
+        '#hr-event.hr-inline .hr-card p{font-size:15px;line-height:1.35;margin:0 0 0.24rem;}',
+        '#hr-event.hr-inline .hr-choices{flex-direction:row;flex-wrap:wrap;gap:6px;}',
+        '#hr-event.hr-inline .hr-choices button{width:auto;flex:1 1 46%;min-height:48px;height:auto;font-size:15px;padding:0.3rem 0.45rem;white-space:normal;line-height:1.25;background:#fff;background-image:none;color:#2b1d2e;border:2px solid #2b1d2e;overflow:visible;}',
         '}',
         '.hr-combo.is-idle{background:#3a2a18;color:#ffe7a3;box-shadow:inset 0 0 0 2px #e0a322;}',
         '.hr-card__timer{height:4px;border-radius:99px;background:rgba(43,29,46,0.15);overflow:hidden;margin:0 0 0.35rem;}',
@@ -4860,7 +4875,7 @@
         btn.style.flex = '1 1 ' + wideChoice;
         btn.style.width = 'auto';
         btn.style.height = 'auto';
-        btn.style.minHeight = '36px';
+        btn.style.minHeight = '48px';
         btn.style.maxHeight = 'none';
         btn.style.overflow = 'visible';
         btn.style.whiteSpace = 'normal';
@@ -4872,7 +4887,7 @@
           label.style.maxHeight = 'none';
         }
       }
-      if (body && nChoice >= 3) body.style.display = 'none';
+      if (body) body.style.display = 'block';
       var clip = '0';
       var cardBox = card.getBoundingClientRect();
       var viewBottom = window.innerHeight || (cardBox.bottom + 1);
@@ -4882,7 +4897,7 @@
         var textCut = span && (span.scrollWidth > span.clientWidth + 2 || span.scrollHeight > span.clientHeight + 2);
         var outside = box.bottom > cardBox.bottom + 1 || box.top < cardBox.top - 1 || box.right > cardBox.right + 1 || box.left < cardBox.left - 1;
         var offView = box.bottom > viewBottom + 1 || box.top < -1 || box.right > (window.innerWidth || box.right) + 1 || box.left < -1;
-        if (textCut || outside || offView || box.height < 36) clip = '1';
+        if (textCut || outside || offView || box.height < 44) clip = '1';
       }
       if (isQA() && els.stage) {
         els.stage.dataset.cardCap = String(Math.round(card.offsetHeight));
@@ -6457,19 +6472,6 @@
       });
       if (spriteSession && HR.sprites && books) {
         var tomorrow = HR.sprites.typesForDay(Math.min(SHIFT_COUNT - 1, run.day + 1), books);
-        var packNow = spriteSession.pack();
-        var waiting = [];
-        for (var ti = 0; ti < tomorrow.length; ti++) {
-          if (!packNow.types[tomorrow[ti]]) waiting.push(tomorrow[ti]);
-        }
-        if (waiting.length) {
-          var noteEl = document.createElement('p');
-          noteEl.className = 'hr-fine';
-          noteEl.id = 'hr-preload';
-          noteEl.textContent = 'Next shift’s new shoppers are loading in the back.';
-          var cta = els.score.querySelector('.hr-cta');
-          if (cta) els.score.insertBefore(noteEl, cta);
-        }
         spriteSession.preload(tomorrow);
         document.body.dataset.preload = tomorrow.join(',');
       }
@@ -7158,11 +7160,14 @@
         others += kid.offsetHeight + mt + mb;
       }
       var avail = parentH - pad - others;
-      if (!(avail > 160)) return;
-      var next = Math.round(avail);
-      if (stage._phoneH === next) return;
+      if (!(avail > 120)) return;
+      var width = stage.clientWidth || parent.clientWidth || 360;
+      var aspectH = Math.round(width * 900 / 720);
+      var next = Math.min(Math.round(avail), aspectH);
+      if (next < 160) next = Math.round(avail);
+      if (stage._phoneH === next && stage.style.flex === '0 0 auto') return;
       stage._phoneH = next;
-      stage.style.flex = '1 1 auto';
+      stage.style.flex = '0 0 auto';
       stage.style.height = next + 'px';
     }
 
@@ -7184,6 +7189,10 @@
       els.canvas._cssH = h;
       els.canvas._dpr = dpr;
       if (sim) sim._phone = w < 720;
+      if (sim && sim._phone && sim.floorOn && !sim.tenant && sim._mondayEase && !sim._phoneGoal) {
+        sim._phoneGoal = 1;
+        sim.goal = Math.max(900, Math.round(sim.goal * 1.2));
+      }
       if (els.stage) els.stage.dataset.hit = w < 720 ? '64' : '120';
       placeEventCard();
       placeToast();
@@ -7447,7 +7456,7 @@
         fit = fitH < fitW ? fitH : fitW;
       } else {
         var fitW = cssW / Math.max(1, worldW);
-        fit = Math.min(fitW, cssH / 940);
+        fit = Math.min(fitW, cssH / 900);
       }
       if (!(fit > 0.05)) fit = 0.05;
       return fit;
@@ -7474,9 +7483,9 @@
           var frame = phoneStoreFrame();
           var anchorX = (frame.left + frame.right) / 2;
           var frameX = anchorX - view.viewW / 2;
-          var frameH = frame.bottom - frame.top;
-          var frameY = view.viewH > frameH ? frame.top + (frameH - view.viewH) / 2 : frame.top;
-          return camClamp(frameX, frameY, view);
+          var phoneCam = camClamp(frameX, frame.top, view);
+          if (phoneCam.y < 0) phoneCam.y = 0;
+          return phoneCam;
         }
         if (cssW >= 720) {
           var fullRoom = view.viewW >= worldW - 16 && view.viewH >= worldH - 16;
@@ -8172,7 +8181,38 @@
         var bottom = y + 2;
         if (Math.abs(body.x - x) < body.hw + tw * 0.5 + pad && bottom + pad > body.top && top < body.bottom + pad) return true;
       }
+      var props = propSlots();
+      for (i = 0; i < props.length; i++) {
+        var prop = props[i];
+        var propTop = y - h;
+        var propBottom = y + 2;
+        if (Math.abs(prop.x - x) < prop.hw + tw * 0.5 + pad && propBottom + pad > prop.top && propTop < prop.bottom + pad) return true;
+      }
       return false;
+    }
+
+    function propSlots() {
+      var slots = [];
+      var i;
+      for (i = 0; i < SHELVES.length; i++) {
+        var sh = SHELVES[i];
+        var label = sh.label || '';
+        var w = 130;
+        var h = 120;
+        if (label === 'TABLE') { w = 108; h = 116; }
+        else if (label === 'WRAP') { w = 92; h = 120; }
+        else if (label === 'BOOTH') { w = 108; h = 128; }
+        else if (label === 'MENU') { w = 100; h = 126; }
+        else if (label === 'CART' || label === 'COCOA') { w = 124; h = 124; }
+        slots.push({ x: sh.x, top: sh.y - h, bottom: sh.y + 8, hw: w / 2 });
+      }
+      var regs = ['reg1', 'reg2', 'reg3'];
+      for (i = 0; i < regs.length; i++) {
+        var spot = SPOTS[regs[i]];
+        if (!spot) continue;
+        slots.push({ x: spot.x, top: spot.y - 80, bottom: spot.y + 58, hw: 96 });
+      }
+      return slots;
     }
 
     function tagAnchor(x, y, text) {
@@ -8372,13 +8412,17 @@
     function drawTruckEdge(view) {
       if (!coach || coach.step !== 1 || !SPOTS.truck || !view) {
         if (els.stage && els.stage.dataset.truckChip) delete els.stage.dataset.truckChip;
+        if (els.stage && els.stage.dataset.truckBox) delete els.stage.dataset.truckBox;
         return;
       }
       var tx = SPOTS.truck.x;
       var ty = SPOTS.truck.y - 24;
       var pad = 28;
       var inside = tx >= cam.x + pad && tx <= cam.x + view.viewW - pad && ty >= cam.y + pad && ty <= cam.y + view.viewH - pad;
-      if (els.stage) els.stage.dataset.truckChip = inside ? '0' : '1';
+      if (els.stage) {
+        els.stage.dataset.truckChip = inside ? '0' : '1';
+        if (inside) delete els.stage.dataset.truckBox;
+      }
       if (inside) return;
       var dpr = els.canvas._dpr || 1;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -8386,12 +8430,14 @@
       var scaleY = view.cssH / Math.max(1, view.viewH);
       var sx = (tx - cam.x) * scaleX;
       var sy = (ty - cam.y) * scaleY;
+      var offRight = sx > view.cssW - 28;
+      var offLeft = sx < 28;
       var x = sx;
       var y = sy;
-      if (x < 22) x = 22;
-      if (x > view.cssW - 22) x = view.cssW - 22;
-      if (y < 28) y = 28;
-      if (y > view.cssH - 28) y = view.cssH - 28;
+      if (x < 48) x = 48;
+      if (x > view.cssW - 72) x = view.cssW - 72;
+      if (y < 36) y = 36;
+      if (y > view.cssH - 36) y = view.cssH - 36;
       var ang = Math.atan2(sy - y, sx - x);
       ctx.save();
       ctx.translate(x, y);
@@ -8400,25 +8446,37 @@
       ctx.strokeStyle = '#2b1d2e';
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(18, 0);
-      ctx.lineTo(-10, 10);
-      ctx.lineTo(-10, -10);
+      ctx.moveTo(16, 0);
+      ctx.lineTo(-12, 11);
+      ctx.lineTo(-12, -11);
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
       ctx.restore();
-      ctx.font = '800 13px Outfit, Inter, sans-serif';
+      ctx.font = '800 14px Outfit, Inter, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       var label = 'Truck';
       var tw = ctx.measureText(label).width + 16;
-      var ly = y + (sy < y ? -26 : 26);
-      if (ly < 14) ly = y + 26;
-      if (ly > view.cssH - 14) ly = y - 26;
+      var lx = offRight ? x - tw / 2 - 20 : offLeft ? x + tw / 2 + 20 : x;
+      var ly = offRight || offLeft ? y : y + (sy < y ? -28 : 28);
+      if (lx - tw / 2 < 6) lx = tw / 2 + 6;
+      if (lx + tw / 2 > view.cssW - 6) lx = view.cssW - tw / 2 - 6;
+      if (ly < 14) ly = 14;
+      if (ly > view.cssH - 14) ly = view.cssH - 14;
       ctx.fillStyle = 'rgba(43,29,46,0.94)';
-      ctx.fillRect(x - tw / 2, ly - 11, tw, 22);
+      ctx.fillRect(lx - tw / 2, ly - 12, tw, 24);
       ctx.fillStyle = '#ffe08a';
-      ctx.fillText(label, x, ly);
+      ctx.fillText(label, lx, ly);
+      if (els.stage) {
+        var tipX = x + Math.cos(ang) * 16;
+        var tipY = y + Math.sin(ang) * 16;
+        var boxL = Math.min(lx - tw / 2, tipX - 2, x - 14);
+        var boxR = Math.max(lx + tw / 2, tipX + 2, x + 16);
+        var boxT = Math.min(ly - 12, tipY - 12, y - 12);
+        var boxB = Math.max(ly + 12, tipY + 12, y + 12);
+        els.stage.dataset.truckBox = [Math.round(boxL), Math.round(boxT), Math.round(boxR), Math.round(boxB)].join(',');
+      }
     }
 
     function drawHand(x, y) {
@@ -8495,6 +8553,8 @@
         els.stage.dataset.productPx = String(Math.round(view.productPx || 0));
         els.stage.dataset.zoom = String(view.zoom || cam.zoom || 1);
         els.stage.dataset.world = WORLD_W + 'x' + WORLD_H;
+        var charScale = view.cssW / Math.max(1, view.viewW);
+        els.stage.dataset.charCss = String(Math.round(personDrawH() * charScale));
         els.stage.dataset.framed = cam.overview ? '1' : '0';
         els.stage.dataset.minimap = cam.overview ? '1' : '0';
         var doorY = SPOTS.door ? SPOTS.door.y : 855;
@@ -8622,7 +8682,7 @@
         var snapped = camClamp(cam.x, cam.y, view);
         cam.x = snapped.x;
         cam.y = snapped.y;
-        if (sim && sim.floorOn && !sim._phone && cam.y < 0) cam.y = 0;
+        if (sim && sim.floorOn && cam.y < 0) cam.y = 0;
       }
       if (sim && sim.floorOn) {
         sim._frame = { x0: cam.x, y0: cam.y, x1: cam.x + view.viewW, y1: cam.y + view.viewH };
@@ -8883,6 +8943,22 @@
           els.stage.dataset.minGap = minBody == null ? '' : String(Math.round(minBody));
           els.stage.dataset.near = nearPair;
           els.stage.dataset.tagGap = minTag == null ? '' : String(Math.round(minTag));
+          var minProp = null;
+          var propsNow = propSlots();
+          for (var pi = 0; pi < labelSlots.length; pi++) {
+            if (labelSlots[pi].text !== 'Family') continue;
+            var famBox = {
+              x: labelSlots[pi].x,
+              top: labelSlots[pi].y - labelSlots[pi].h,
+              bottom: labelSlots[pi].y,
+              hw: labelSlots[pi].w * 0.5
+            };
+            for (var pj = 0; pj < propsNow.length; pj++) {
+              var pg = slotGap(famBox, propsNow[pj]) * gapScale;
+              if (minProp == null || pg < minProp) minProp = pg;
+            }
+          }
+          els.stage.dataset.tagProp = minProp == null ? '' : String(Math.round(minProp));
           els.stage.dataset.tagNames = labelSlots.map(function (slot) { return slot.text; }).join(',');
           els.stage.dataset.tags = String(labelSlots.length);
           els.stage.dataset.drawH = String(personDrawH());
@@ -9477,7 +9553,7 @@
     }
 
     function personDrawH() {
-      if (sim && sim.floorOn && sim.live) return sim._phone ? 110 : 96;
+      if (sim && sim.floorOn && sim.live) return sim._phone ? 200 : 96;
       return SPRITE_PACK.displayH;
     }
 
@@ -9887,7 +9963,7 @@
           drawTag('Rush', rushAt.x, rushAt.y);
           tagged = true;
         } else if (familyName) {
-          var famAt = tagAnchor(a.x, a.y - size - 36, 'Family');
+          var famAt = tagAnchor(a.x, a.y - size - 78, 'Family');
           drawTag('Family', famAt.x, famAt.y);
           tagged = true;
         } else if (a.arch === 'lift') {
@@ -10551,6 +10627,18 @@
     root.HolidayRush._debug = {
       cam: function () { return { x: cam.x, y: cam.y, zoom: cam.zoom || 1 }; },
       missWrap: function () { if (isQA()) missWrap(); },
+      showFamily: function () {
+        if (!isQA() || !sim) return '';
+        for (var i = 0; i < sim.customers.length; i++) {
+          var c = sim.customers[i];
+          if (c.dead || c.hidden) continue;
+          if (c.arch !== 'family' && c.giftSprite !== 'family') continue;
+          sim._labelKey = actorKey(c);
+          sim._labelUntil = sim.t + 8;
+          return Math.round(c.x) + ',' + Math.round(c.y);
+        }
+        return '';
+      },
       zeroFinish: function (sales) {
         if (!isQA() || !sim) return;
         sim.sales = sales == null ? 0 : sales;

@@ -64,16 +64,30 @@
     .hr-steps { margin: 0.8rem 0 1rem; padding-left: 1.2rem; color: var(--text-mid); }
     .hr-steps li { margin: 0.35rem 0; }
     .hr-cta, .hr-plan__actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.8rem; }
-    .hr-cta--next { display: flex; margin: 0.35rem 0 0.2rem; }
-    .hr-cta--next .btn { flex: 1 1 auto; width: 100%; min-height: 48px; font-size: 1.05rem; }
+    .hr-cta--next { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.35rem 0 0.2rem; align-items: center; }
+    .hr-cta--next .btn { flex: 0 0 auto; width: auto; min-height: 44px; font-size: 0.95rem; }
+    .hr-card-slot { flex: 0 0 136px; height: 136px; min-height: 136px; max-height: 136px; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
+    .hr-card-slot .hr-hint { flex: 1 1 auto; display: flex; align-items: center; margin: 0; padding: 10px 12px; background: #f6f0e4; color: #2b1d2e; border-radius: 12px; box-sizing: border-box; }
+    @media (min-width: 721px) {
+      #hr-score .hr-cta, #hr-score .hr-cta--next { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+      #hr-score .hr-cta .btn, #hr-score .hr-cta--next .btn { flex: 0 0 auto; width: auto; min-height: 44px; font-size: 0.95rem; }
+    }
     @media (max-width: 720px) {
       body:has(#hr-score:not([hidden])) .nav,
       body:has(#hr-score:not([hidden])) .hr-hero { display: none; }
-      body:has(#hr-score:not([hidden])) #hr-score { padding-bottom: 72px; }
+      body:has(#hr-score:not([hidden])) #hr-score { padding: 8px 18px 104px; }
       #hr-score .hr-cta { display: grid; grid-template-columns: 1fr 1fr; }
       #hr-score .hr-cta .btn { width: 100%; }
+      #hr-score .hr-cta--next { display: flex; width: 100%; }
+      #hr-score .hr-cta--next .btn { flex: 1 1 auto; width: 100%; min-height: 44px; }
       #hr-score .hr-fine, #hr-score .hr-bank, #hr-score .hr-lead { overflow-wrap: anywhere; }
-      body:has(#hr-score:not([hidden])) .more-games--dock { top: auto; bottom: 8px; left: 8px; right: auto; }
+      body:has(#hr-score:not([hidden])) .more-games--dock,
+      body:has(#hr-score:not([hidden])) .gotw-tag--float {
+        position: fixed; z-index: 220; top: auto; right: auto; bottom: 18px; left: 18px; margin: 0; max-width: calc(100vw - 36px);
+      }
+      body:has(#hr-score:not([hidden])) .more-games:not(.more-games--dock) { margin-top: 18px; }
+      body:has(#hr-sim:not([hidden])) .hr-card-slot { flex: 0 0 188px; height: 188px; min-height: 188px; max-height: 188px; }
+      body:has(#hr-sim:not([hidden])) .hr-card-slot .hr-hint { flex: 1 1 auto; display: flex; align-items: center; margin: 0; padding: 10px 12px; background: #f6f0e4; color: #2b1d2e; border-radius: 12px; font-size: 15px; line-height: 1.35; }
     }
     .hr-cta .btn, .hr-plan__actions .btn, .hr-choices button, .hr-perk .btn { min-height: 44px; }
     h2 { margin-top: 0; }
@@ -350,8 +364,8 @@
         display: block;
         overflow: visible;
         max-height: none;
-        font-size: 13px;
-        line-height: 1.25;
+        font-size: 15px;
+        line-height: 1.35;
         margin: 0;
         padding: 2px 4px 0;
         color: #f6ead8;
@@ -534,7 +548,7 @@
       </div>
       <div id="hr-toast-dock" class="hr-toast-dock"></div>
       <div id="hr-card-slot" class="hr-card-slot">
-        <p class="hr-hint">Wrap a glowing gift. Call the truck when Back is low.</p>
+        <p class="hr-hint">Wrap a glowing gift. Work freight when Back is low.</p>
       </div>
       <div class="hr-actions"></div>
       <p class="hr-actline" id="hr-actline"></p>
