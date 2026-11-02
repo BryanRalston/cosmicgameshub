@@ -87,14 +87,7 @@
         position: fixed; z-index: 220; top: auto; right: auto; bottom: 18px; left: 18px; margin: 0; max-width: calc(100vw - 36px);
       }
       body:has(#hr-score:not([hidden])) .more-games:not(.more-games--dock) { margin-top: 18px; }
-      body:has(#hr-sim:not([hidden])) .hr-playdock { position: relative; flex: 0 0 auto; }
-      body:has(#hr-sim:not([hidden])) .hr-card-slot {
-        position: absolute; left: 0; right: 0; bottom: 100%;
-        flex: none; width: auto; height: auto; min-height: 0; max-height: none;
-        background: transparent; z-index: 4; pointer-events: none; justify-content: flex-end;
-      }
-      body:has(#hr-sim:not([hidden])) .hr-card-slot .hr-hint,
-      body:has(#hr-sim:not([hidden])) .hr-card-slot .hr-card { pointer-events: auto; }
+      body:has(#hr-sim:not([hidden])) .hr-card-slot { flex: 0 0 188px; height: 188px; min-height: 188px; max-height: 188px; }
       body:has(#hr-sim:not([hidden])) .hr-card-slot .hr-hint { flex: 0 0 auto; height: auto; display: flex; align-items: center; margin: 0; padding: 6px 10px; background: #f6f0e4; color: #2b1d2e; border-radius: 12px; font-size: 15px; line-height: 1.35; }
     }
     .hr-cta .btn, .hr-plan__actions .btn, .hr-choices button, .hr-perk .btn { min-height: 44px; }
@@ -299,7 +292,7 @@
       #hr-sim .hr-stat--stars.hr-hud__extra > span { display: none; }
       #hr-sim .hr-stat--stars .hr-stars { font-size: 12px; letter-spacing: 0.04em; }
       #hr-rush { position: static; flex: 0 0 auto; width: 2.5rem; min-width: 2.5rem; min-height: 36px; font-size: 11px; }
-      #hr-sim .hr-hud__tools { order: 2; margin-left: auto; flex: 0 0 auto; gap: 4px; justify-content: flex-end; }
+      #hr-sim .hr-hud__tools { order: 6; margin-left: 0; flex: 1 0 100%; gap: 4px; justify-content: flex-end; }
       #hr-sim .hr-hud__tools .hr-mute { min-width: 44px; min-height: 36px; padding: 0 8px; font-size: 11px; }
       #hr-sim .hr-sales__top { flex-direction: row; align-items: baseline; flex-wrap: nowrap; gap: 4px; }
       #hr-sim .hr-sales__top span { display: none; }
@@ -387,14 +380,9 @@
         margin: 0;
         overflow: visible;
       }
-      body:has(#hr-sim:not([hidden])) .hr-toast-dock { position: static; }
       body:has(#hr-sim:not([hidden])) #hr-sim #hr-toast.show {
-        position: absolute;
-        left: 8px;
-        right: 8px;
-        top: 78px;
-        bottom: auto;
-        z-index: 8;
+        top: auto;
+        bottom: 8px;
       }
       body:has(#hr-sim:not([hidden])) #hr-sim .hr-hud__tools #hr-skip {
         min-width: 0;
@@ -560,12 +548,10 @@
         <button type="button" id="hr-skip" hidden>Skip</button>
       </div>
       <div id="hr-toast-dock" class="hr-toast-dock"></div>
-      <div class="hr-playdock">
       <div id="hr-card-slot" class="hr-card-slot">
         <p class="hr-hint">Wrap a glowing gift. Work freight when Back is low.</p>
       </div>
       <div class="hr-actions"></div>
-      </div>
       <p class="hr-actline" id="hr-actline"></p>
     </section>
     <section id="hr-score" hidden></section>
