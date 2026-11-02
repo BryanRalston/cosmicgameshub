@@ -82,6 +82,18 @@
   };
   var MONDAY_GOAL_MUL = 0.55;
   var TRUCK_CALL_AT = 40;
+  var EMPTY_WRAP_TOAST = 'No gift is ready yet.';
+
+  function freightHintHidden(callTruck, text) {
+    return !!(callTruck && /Work freight/i.test(text || ''));
+  }
+
+  function toastClearOfCard(toastBox, cardBox) {
+    if (!toastBox || !cardBox || toastBox.hidden || cardBox.hidden) return true;
+    var overlapX = Math.min(toastBox.right, cardBox.right) - Math.max(toastBox.left, cardBox.left);
+    var overlapY = Math.min(toastBox.bottom, cardBox.bottom) - Math.max(toastBox.top, cardBox.top);
+    return !(overlapX > 0 && overlapY > 0);
+  }
   var LIVE_RING_RATE = 0.95;
   var LIVE_BASKET = 0.53;
   var LIVE_STAFFED = 1.27;
@@ -1715,13 +1727,14 @@
       if (score < bestScore) { bestScore = score; best = reg; }
     }
     if (any && sim && sim._phone && regs.length > 1) {
-      var alt = null;
-      var bestLoad = laneLoad(sim, best);
+      var pick = best;
+      var pickLoad = laneLoad(sim, best);
       for (var j = 0; j < regs.length; j++) {
-        if (regs[j] === best || trafficBlocked(regs[j])) continue;
-        if (laneLoad(sim, regs[j]) <= bestLoad + 1) alt = regs[j];
+        if (trafficBlocked(regs[j])) continue;
+        var load = laneLoad(sim, regs[j]);
+        if (load < pickLoad) { pickLoad = load; pick = regs[j]; }
       }
-      if (alt && ((sim.seq || 0) % 2 === 1)) return alt;
+      return pick;
     }
     return any ? best : regs[0];
   }
@@ -1747,8 +1760,8 @@
     var anchor = (typeof SPOTS !== 'undefined' && SPOTS[reg]) ? SPOTS[reg] : base;
     if (sim && sim._phone) {
       var spots = reg === 'reg2'
-        ? [{ x: 860, y: 760 }, { x: 720, y: 848 }]
-        : [{ x: 300, y: 820 }, { x: 520, y: 860 }];
+        ? [{ x: 700, y: 790 }, { x: 940, y: 840 }]
+        : [{ x: 280, y: 790 }, { x: 520, y: 840 }];
       var spot = spots[idx] || spots[spots.length - 1];
       var spillX = spill * (reg === 'reg2' ? -44 : 44);
       return { x: spot.x + spillX, y: Math.min(858, spot.y + spill * 18) };
@@ -5932,7 +5945,7 @@
         var freightHint = document.querySelector('#hr-sim .hr-hint');
         if (freightHint && callTruck) {
           if (freightHint.dataset.base && /Work freight/i.test(freightHint.dataset.base)) freightHint.dataset.base = 'Wrap a glowing gift.';
-          if (/Work freight/i.test(freightHint.textContent || '')) freightHint.hidden = true;
+          if (freightHintHidden(true, freightHint.textContent || '')) freightHint.hidden = true;
         } else if (freightHint && freightHint.dataset.coach !== '1' && freightHint.dataset.wrap !== '1') {
           freightHint.hidden = false;
         }
@@ -7594,7 +7607,7 @@
       var floor = coaching ? 156 : 120;
       if (reach < floor) reach = floor;
       var view = viewSize();
-      return { scale: scale, ringCss: ringCss, wrapR: ringCss / scale, reach: reach, wordCss: 22, stageH: view.cssH || 0 };
+      return { scale: scale, ringCss: ringCss, wrapR: ringCss / scale, reach: reach, wordCss: view.cssW < 720 ? 14 : 22, stageW: view.cssW || 0, stageH: view.cssH || 0 };
     }
 
     function aimOnScreen(x, y, rWorld) {
@@ -8081,9 +8094,11 @@
     function tagPx() {
       var view = viewSize();
       var scale = view.cssW / Math.max(1, view.viewW);
-      var px = Math.round(18 / Math.max(0.22, scale));
-      if (px < 18) px = 18;
-      if (px > 46) px = 46;
+      var phoneTag = view.cssW < 720;
+      var want = phoneTag ? 13 : 18;
+      var px = Math.round(want / Math.max(0.22, scale));
+      if (px < want) px = want;
+      if (px > (phoneTag ? 30 : 46)) px = phoneTag ? 30 : 46;
       return px;
     }
 
@@ -8093,10 +8108,11 @@
       ctx.font = '800 ' + px + 'px Outfit, Inter, sans-serif';
       ctx.textAlign = 'center';
       var w = ctx.measureText(text).width + Math.round(px * 0.8);
-      var left = cam.x + 4;
-      var right = cam.x + (frameView.w || 0) - 4;
-      var top = cam.y + 4;
-      var bottom = cam.y + (frameView.h || 0) - 4;
+      var viewNow = viewSize();
+      var left = cam.x + 10;
+      var right = cam.x + viewNow.viewW - 10;
+      var top = cam.y + 8;
+      var bottom = cam.y + viewNow.viewH - 8;
       if (right > left) {
         if (x - w / 2 < left) x = left + w / 2;
         if (x + w / 2 > right) x = right - w / 2;
@@ -8360,10 +8376,13 @@
           for (var wp = 0; wp < pills.length; wp++) {
             var pillW = ctx.measureText(pills[wp][0]).width + 16;
             var pillY = pills[wp][1];
+            var pillX = sx;
+            if (pillX - pillW / 2 < 4) pillX = 4 + pillW / 2;
+            if (look.stageW && pillX + pillW / 2 > look.stageW - 4) pillX = look.stageW - 4 - pillW / 2;
             ctx.fillStyle = 'rgba(43,29,46,0.94)';
-            ctx.fillRect(sx - pillW / 2, pillY - pillH / 2, pillW, pillH);
+            ctx.fillRect(pillX - pillW / 2, pillY - pillH / 2, pillW, pillH);
             ctx.fillStyle = '#ffe08a';
-            ctx.fillText(pills[wp][0], sx, pillY);
+            ctx.fillText(pills[wp][0], pillX, pillY);
           }
           ctx.restore();
           continue;
@@ -8426,7 +8445,8 @@
         ctx.arc(SPOTS.truck.x, SPOTS.truck.y - 24, 30, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * done);
         ctx.stroke();
         if (labelOn('truck') || (coach && coach.step === 1)) {
-          var truckAt = tagAnchor(SPOTS.truck.x, SPOTS.truck.y - 68);
+          var unloadX = SPOTS.truck.x - (sim._phone ? 90 : 0);
+          var truckAt = tagAnchor(unloadX, SPOTS.truck.y - 68);
           drawTag(fp > 0.35 ? left.toFixed(1) + 's' : 'Unload', truckAt.x, truckAt.y);
         }
       }
@@ -10325,7 +10345,7 @@
     }
     function missWrap() {
       if (!sim) return;
-      toast('No gift is ready yet.', true);
+      toast(EMPTY_WRAP_TOAST, true);
       var spot = wrapSpot();
       var wy = spot.y - wrapLift(spot);
       floater(sim, spot.x, wy, 'Not yet', '#ffb4b4', true);
@@ -10983,6 +11003,16 @@
     line('mid8', mid8);
     if (comboMult(10) !== 4 || comboMult(40) !== 4 || multLabel(10) !== '×4' || multLabel(24) !== '×4') bad = true;
     if (goalStars(0.74) !== 0 || goalStars(0.75) !== 1 || goalStars(1) !== 2 || goalStars(1.2) !== 3 || goalStars(1.195) !== 3) bad = true;
+    if (EMPTY_WRAP_TOAST !== 'No gift is ready yet.') bad = true;
+    if (!freightHintHidden(true, 'Wrap a glowing gift. Work freight when Back is low.')) bad = true;
+    if (freightHintHidden(false, 'Wrap a glowing gift. Work freight when Back is low.')) bad = true;
+    if (freightHintHidden(true, 'Tap Wrap, or the glowing ring. Each gift rings the drawer.')) bad = true;
+    var clearToast = { left: 8, right: 360, top: 80, bottom: 124, hidden: false };
+    var openCard = { left: 8, right: 370, top: 430, bottom: 600, hidden: false };
+    var buriedToast = { left: 16, right: 200, top: 460, bottom: 510, hidden: false };
+    if (!toastClearOfCard(clearToast, openCard)) bad = true;
+    if (toastClearOfCard(buriedToast, openCard)) bad = true;
+    if (!toastClearOfCard(clearToast, { left: 0, right: 10, top: 0, bottom: 10, hidden: true })) bad = true;
     if (!(comboMult(4) < 3) || comboMult(6) >= 3 || !(comboMult(7) >= 3)) bad = true;
     var seedEnc = seedsFromSearch('?seed=kiosk%2Cbus&_vercel_share=abc').join(',');
     var seedDbl = seedsFromSearch('?seed=kiosk%252Cbus').join(',');
