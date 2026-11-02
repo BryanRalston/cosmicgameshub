@@ -1434,7 +1434,7 @@
     applyTenantTune(sim, c);
     applyKioskTune(sim, c);
     if (sim._phone && sim.floorOn) {
-      c.saleMul *= 0.8;
+      c.saleMul *= 1;
       c.maxPatience = c.patience;
     }
     if (forcedArch) {
@@ -1574,15 +1574,16 @@
     var base = HR.economy.starterStock(1);
     var id;
     for (id in base) full += base[id] || 0;
-    if (HR.economy.unitsLeft(sim.books) >= Math.round(full * 0.45)) return;
     var bag = stockBag(sim);
     if (!bag) return;
-    var floorBag = HR.economy.starterStock(0.55);
-    for (id in floorBag) {
-      if (!floorBag[id]) continue;
-      if ((bag[id] || 0) < floorBag[id]) bag[id] = floorBag[id];
+    if (HR.economy.unitsLeft(sim.books) < Math.round(full * 0.9)) {
+      var floorBag = HR.economy.starterStock(0.9);
+      for (id in floorBag) {
+        if (!floorBag[id]) continue;
+        if ((bag[id] || 0) < floorBag[id]) bag[id] = floorBag[id];
+      }
     }
-    sim.stock = Math.max(sim.stock || 0, 0.78);
+    sim.stock = Math.max(sim.stock || 0, 0.92);
     sim._eveningTruck = 0;
   }
 
@@ -1713,6 +1714,15 @@
       var score = queueOf(sim, reg).length * 2 - stationPower(sim, run, reg) * 1.4;
       if (score < bestScore) { bestScore = score; best = reg; }
     }
+    if (any && sim && sim._phone && regs.length > 1) {
+      var alt = null;
+      var bestLoad = laneLoad(sim, best);
+      for (var j = 0; j < regs.length; j++) {
+        if (regs[j] === best || trafficBlocked(regs[j])) continue;
+        if (laneLoad(sim, regs[j]) <= bestLoad + 1) alt = regs[j];
+      }
+      if (alt && ((sim.seq || 0) % 2 === 1)) return alt;
+    }
     return any ? best : regs[0];
   }
 
@@ -1738,7 +1748,7 @@
     if (sim && sim._phone) {
       var spots = reg === 'reg2'
         ? [{ x: 860, y: 760 }, { x: 720, y: 848 }]
-        : [{ x: 340, y: 790 }, { x: 560, y: 858 }];
+        : [{ x: 300, y: 820 }, { x: 520, y: 860 }];
       var spot = spots[idx] || spots[spots.length - 1];
       var spillX = spill * (reg === 'reg2' ? -44 : 44);
       return { x: spot.x + spillX, y: Math.min(858, spot.y + spill * 18) };
@@ -2753,7 +2763,8 @@
       if (sim.floorOn && fp <= 0.35 && drained < 0.36) drained = 0.36;
       sim.stock = Math.max(0, drained);
       if (fp > 0.35) sim.truckWork += used * fp;
-      if (sim.truckWork > 5.5 / (1 + 0.25 * stockLv)) {
+      var truckNeed = (sim.floorOn && sim.live && !sim.tenant) ? 4.2 : 5.5;
+      if (sim.truckWork > truckNeed / (1 + 0.25 * stockLv)) {
         sim.truck = 0;
         sim.stock = clamp(sim.stock + 0.12, 0, 1);
         note(sim, 'Truck is cleared.');
@@ -4682,17 +4693,17 @@
         '#hr-event.hr-inline{position:static;left:auto;right:auto;top:auto;bottom:auto;width:100%;max-width:none;transform:none;height:auto;max-height:none;z-index:2;margin:0;padding:0;background:transparent;display:block;pointer-events:none;overflow:visible;}',
         '#hr-event.hr-inline[hidden]{display:none !important;}',
         '#hr-event.hr-inline{height:100%;display:flex;flex-direction:column;}',
-        '#hr-event.hr-inline .hr-card{pointer-events:auto;width:100%;height:100%;flex:1 1 auto;max-height:none;overflow:visible;padding:0.35rem 0.5rem;border-radius:12px;background:#f6f0e4;box-shadow:none;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;touch-action:manipulation;}',
-        '#hr-event.hr-inline .hr-card h2{font-size:16px;line-height:1.2;margin:0 0 0.2rem;display:block;}',
-        '#hr-event.hr-inline .hr-card p{font-size:15px;line-height:1.35;margin:0 0 0.35rem;display:block;overflow:visible;}',
+        '#hr-event.hr-inline .hr-card{pointer-events:auto;width:100%;height:auto;flex:0 0 auto;max-height:none;overflow:visible;padding:8px 10px;border-radius:12px;background:#f6f0e4;box-shadow:none;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;touch-action:manipulation;}',
+        '#hr-event.hr-inline .hr-card h2{font-size:16px !important;line-height:1.25;margin:0 0 4px;display:block;}',
+        '#hr-event.hr-inline .hr-card p{font-size:15px !important;line-height:1.35;margin:0 0 8px;display:block;overflow:visible;}',
         '#hr-event.hr-inline .hr-card__art{display:none;}',
         '#hr-event.hr-inline .hr-choices{flex-direction:row;flex-wrap:wrap;gap:6px;align-items:stretch;overflow:visible;touch-action:manipulation;}',
-        '#hr-event.hr-inline .hr-choices button{width:auto;flex:1 1 0;max-width:100%;height:auto;min-height:48px;font-size:15px;padding:0.35rem 0.55rem;white-space:normal;line-height:1.25;align-items:center;background:#fff;background-image:none;color:#2b1d2e;border:2px solid #2b1d2e;overflow:visible;touch-action:manipulation;}',
+        '#hr-event.hr-inline .hr-choices button{width:auto;flex:1 1 0;flex-shrink:0;max-width:100%;height:auto;min-height:48px !important;font-size:15px !important;padding:8px 12px;white-space:normal;line-height:1.25;align-items:center;background:#fff;background-image:none;color:#2b1d2e;border:2px solid #2b1d2e;overflow:visible;touch-action:manipulation;}',
         '#hr-event.hr-inline .hr-choices button span{flex:1 1 auto;min-width:0;white-space:normal;line-height:1.25;}',
         '#hr-event.hr-inline .hr-choices button .hr-choice-cost{flex:0 0 auto;width:auto;max-width:max-content;white-space:nowrap;}',
         '@media (max-width:720px){',
         '#hr-event.hr-inline{position:static;left:auto;right:auto;top:auto;bottom:auto;width:100%;max-width:none;transform:none;margin:0;z-index:2;height:100%;display:flex;flex-direction:column;overflow:visible;max-height:none;}',
-        '#hr-event.hr-inline .hr-card{width:100%;height:100%;flex:1 1 auto;padding:0.3rem 0.4rem 0.35rem;}',
+        '#hr-event.hr-inline .hr-card{width:100%;height:auto;flex:0 0 auto;padding:6px 8px;}',
         '#hr-event.hr-inline .hr-card h2{font-size:16px;line-height:1.2;margin:0 0 0.12rem;}',
         '#hr-event.hr-inline .hr-card p{font-size:15px;line-height:1.35;margin:0 0 0.24rem;}',
         '#hr-event.hr-inline .hr-choices{flex-direction:row;flex-wrap:wrap;gap:6px;}',
@@ -4835,7 +4846,7 @@
       els.event.style.transform = 'none';
       els.event.style.margin = '0';
       els.event.style.maxHeight = 'none';
-      els.event.style.height = '100%';
+      els.event.style.height = 'auto';
       els.event.style.display = 'flex';
       els.event.style.flexDirection = 'column';
       els.event.style.zIndex = '2';
@@ -4845,8 +4856,8 @@
       var card = els.event.querySelector('.hr-card');
       if (!card) return;
       card.style.pointerEvents = 'auto';
-      card.style.height = '100%';
-      card.style.flex = '1 1 auto';
+      card.style.height = 'auto';
+      card.style.flex = '0 0 auto';
       card.style.maxHeight = 'none';
       card.style.overflow = 'visible';
       card.style.boxSizing = 'border-box';
@@ -5917,6 +5928,13 @@
         if (freightName && sim.floorOn && !sim.tenant) {
           var nextLabel = callTruck ? 'Call truck' : 'Work freight';
           if (freightName.textContent !== nextLabel) freightName.textContent = nextLabel;
+        }
+        var freightHint = document.querySelector('#hr-sim .hr-hint');
+        if (freightHint && callTruck) {
+          if (freightHint.dataset.base && /Work freight/i.test(freightHint.dataset.base)) freightHint.dataset.base = 'Wrap a glowing gift.';
+          if (/Work freight/i.test(freightHint.textContent || '')) freightHint.hidden = true;
+        } else if (freightHint && freightHint.dataset.coach !== '1' && freightHint.dataset.wrap !== '1') {
+          freightHint.hidden = false;
         }
         if (freightBtn) {
           var phoneHud = (els.canvas && els.canvas._cssW || window.innerWidth || 0) < 720;
@@ -7195,13 +7213,15 @@
       els.canvas._cssH = h;
       els.canvas._dpr = dpr;
       if (sim) sim._phone = w < 720;
-      if (sim && sim._phone && sim.floorOn && !sim.tenant && sim._mondayEase && !sim._phoneGoal) {
-        sim._phoneGoal = 1;
-        sim.goal = Math.max(900, Math.round(sim.goal * 1.2));
-      }
-      if (sim && !sim._phone && sim.floorOn && !sim.tenant && sim._mondayEase && !sim._deskGoal) {
-        sim._deskGoal = 1;
-        sim.goal = Math.max(900, Math.round(sim.goal * 1.28));
+      if (sim && sim.floorOn && !sim.tenant && sim._mondayEase) {
+        if (sim._goalBase == null) {
+          var prior = sim.goal || 0;
+          if (sim._phoneGoal) prior = Math.round(prior / 1.2);
+          if (sim._deskGoal) prior = Math.round(prior / 1.28);
+          sim._goalBase = prior;
+        }
+        var goalScale = sim._phone ? 1.21 : 1.11;
+        sim.goal = Math.max(900, Math.round(sim._goalBase * goalScale));
       }
       if (els.stage) els.stage.dataset.hit = w < 720 ? '64' : '120';
       placeEventCard();

@@ -66,8 +66,8 @@
     .hr-cta, .hr-plan__actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.8rem; }
     .hr-cta--next { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.35rem 0 0.2rem; align-items: center; }
     .hr-cta--next .btn { flex: 0 0 auto; width: auto; min-height: 44px; font-size: 0.95rem; }
-    .hr-card-slot { flex: 0 0 176px; height: 176px; min-height: 176px; max-height: 176px; overflow: hidden; display: flex; flex-direction: column; justify-content: stretch; background: #f6f0e4; border-radius: 12px; }
-    .hr-card-slot .hr-hint { flex: 1 1 auto; display: flex; align-items: center; margin: 0; padding: 10px 12px; background: #f6f0e4; color: #2b1d2e; border-radius: 12px; box-sizing: border-box; }
+    .hr-card-slot { flex: 0 0 132px; height: 132px; min-height: 132px; max-height: 132px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-start; background: transparent; }
+    .hr-card-slot .hr-hint { flex: 0 0 auto; height: auto; display: flex; align-items: center; margin: 0; padding: 6px 12px; background: #f6f0e4; color: #2b1d2e; border-radius: 12px; box-sizing: border-box; }
     .hr-card-slot .hr-hint[hidden], #hr-sim.hr-has-card .hr-hint { display: none !important; }
     @media (min-width: 721px) {
       #hr-score .hr-cta, #hr-score .hr-cta--next { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
@@ -88,7 +88,7 @@
       }
       body:has(#hr-score:not([hidden])) .more-games:not(.more-games--dock) { margin-top: 18px; }
       body:has(#hr-sim:not([hidden])) .hr-card-slot { flex: 0 0 188px; height: 188px; min-height: 188px; max-height: 188px; }
-      body:has(#hr-sim:not([hidden])) .hr-card-slot .hr-hint { flex: 1 1 auto; display: flex; align-items: center; margin: 0; padding: 10px 12px; background: #f6f0e4; color: #2b1d2e; border-radius: 12px; font-size: 15px; line-height: 1.35; }
+      body:has(#hr-sim:not([hidden])) .hr-card-slot .hr-hint { flex: 0 0 auto; height: auto; display: flex; align-items: center; margin: 0; padding: 6px 10px; background: #f6f0e4; color: #2b1d2e; border-radius: 12px; font-size: 15px; line-height: 1.35; }
     }
     .hr-cta .btn, .hr-plan__actions .btn, .hr-choices button, .hr-perk .btn { min-height: 44px; }
     h2 { margin-top: 0; }
