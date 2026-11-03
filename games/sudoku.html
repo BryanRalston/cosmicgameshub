@@ -29,6 +29,7 @@
       background-color: #070a1f;
       background-image: none;
       scroll-behavior: auto;
+      scrollbar-gutter: stable;
     }
     body.page-game.sdk-cosmic {
       min-height: 100vh;
@@ -267,8 +268,10 @@
       color: #fff6d8;
       font-size: 0.82rem;
       line-height: 1.3;
+      transition: opacity 0.18s linear;
     }
-    #firstTip[hidden], #dailyBtn[hidden] { display: none !important; }
+    .first-tip.is-dismissed { opacity: 0; visibility: hidden; }
+    #dailyBtn[hidden] { display: none !important; }
     .info-row, .sdk-panel, .settings-menu, .num-btn, .diff-btn, .sdk-daily {
       background: rgba(6, 10, 28, 0.82);
       color: #f4f6ff;
@@ -521,6 +524,7 @@
     html.sdk-reduce .btn,
     html.sdk-reduce .toggle-row input::after { transition: none !important; animation: none !important; }
     html.sdk-reduce .cell.shake { animation: none !important; }
+    html.sdk-reduce .first-tip { transition: none !important; }
   </style>
   <meta property="og:image" content="https://www.cosmicgameshub.com/images/game-sudoku.jpg">
   <meta property="og:image:width" content="600">
@@ -634,7 +638,7 @@
             <button type="button" class="btn btn--outline hud-pause" id="pauseBtn" aria-pressed="false">Pause</button>
           </div>
         </div>
-        <p class="first-tip" id="firstTip" hidden>Select a cell, then a number.</p>
+        <p class="first-tip" id="firstTip">Select a cell, then a number.</p>
         <button type="button" class="sdk-daily" id="dailyBtn">Today's puzzle</button>
         <div class="info-row puzzle-line"><span id="puzzleLabel">Daily</span><span id="dateDisp">—</span></div>
 
@@ -802,7 +806,8 @@ var settings = { mistakeLimit: true, autoNotes: false, planets: false, sound: fa
 var blockBoardUntil = 0;
 var pointerSelectUntil = 0;
 var suppressWinAnim = false;
-var settingsGesture = false;
+var settingsOpenedAt = 0;
+var padPointerAt = 0;
 
 function lsGet(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
 function storageKept() {
@@ -900,6 +905,7 @@ function setGameInert(on) {
     else el.removeAttribute('inert');
   });
 }
+function settingsGuard() { return Date.now() - settingsOpenedAt < 500; }
 function closeSettings(e) {
   if (e) { e.preventDefault(); e.stopPropagation(); }
   var menu = document.getElementById('settingsMenu');
@@ -907,7 +913,7 @@ function closeSettings(e) {
   if (menu) menu.hidden = true;
   if (btn) btn.setAttribute('aria-expanded', 'false');
   setGameInert(false);
-  settingsGesture = false;
+  settingsOpenedAt = 0;
   blockBoardUntil = Date.now() + 350;
   pinScroll(window.scrollX, window.scrollY);
 }
@@ -920,10 +926,9 @@ function openSettings(e) {
   menu.hidden = false;
   if (btn) btn.setAttribute('aria-expanded', 'true');
   setGameInert(true);
-  settingsGesture = true;
+  settingsOpenedAt = Date.now();
   focusNoScroll(menu);
   pinScroll(x, y);
-  setTimeout(function () { settingsGesture = false; }, 400);
 }
 function inSettingsCard(target) {
   return !!(target && target.closest && target.closest('#settingsCard, #settingsBtn'));
@@ -1098,12 +1103,16 @@ function markPlayed() {
 function dismissTip() {
   lsSet('sdk_tip_seen', '1');
   var tip = document.getElementById('firstTip');
-  if (tip) tip.hidden = true;
+  if (tip) {
+    tip.hidden = false;
+    tip.classList.add('is-dismissed');
+  }
 }
 function syncTip() {
   var tip = document.getElementById('firstTip');
   if (!tip) return;
-  tip.hidden = lsGet('sdk_tip_seen') === '1';
+  tip.hidden = false;
+  tip.classList.toggle('is-dismissed', lsGet('sdk_tip_seen') === '1');
 }
 function syncSoundLabel() {
   var mb = document.querySelector('[data-cg-mute]');
@@ -1523,11 +1532,11 @@ function buildNumpad() {
       btn.addEventListener('pointerdown', function (e) {
         if (e.pointerType === 'mouse' && e.button !== 0) return;
         e.preventDefault();
-        btn.dataset.armed = '1';
+        padPointerAt = Date.now();
         inputNum(num);
       });
       btn.addEventListener('click', function () {
-        if (btn.dataset.armed === '1') { btn.dataset.armed = ''; return; }
+        if (Date.now() - padPointerAt < 700) return;
         inputNum(num);
       });
     })(n);
@@ -1541,11 +1550,11 @@ function buildNumpad() {
   erase.addEventListener('pointerdown', function (e) {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     e.preventDefault();
-    erase.dataset.armed = '1';
+    padPointerAt = Date.now();
     inputNum(0);
   });
   erase.addEventListener('click', function () {
-    if (erase.dataset.armed === '1') { erase.dataset.armed = ''; return; }
+    if (Date.now() - padPointerAt < 700) return;
     inputNum(0);
   });
   pad.appendChild(erase);
@@ -1567,7 +1576,6 @@ function undoMove() {
   var snap = undoStack.pop();
   userGrid = snap.user.map(function (row) { return row.slice(); });
   notes = snap.notes.map(function (row) { return row.map(function (set) { return new Set(set); }); });
-  mistakes = snap.mistakes;
   hintsLeft = snap.hintsLeft;
   updateMistakes();
   syncChrome();
@@ -1995,12 +2003,12 @@ function bindControls() {
     e.stopPropagation();
     fromPointer = true;
     if (menu.hidden) openSettings(e);
-    else closeSettings(e);
+    else if (!settingsGuard()) closeSettings(e);
   });
   settingsBtn.addEventListener('click', function (e) {
     e.preventDefault();
     e.stopPropagation();
-    if (fromPointer) { fromPointer = false; return; }
+    if (fromPointer || settingsGuard()) { fromPointer = false; return; }
     if (menu.hidden) openSettings(e);
     else closeSettings(e);
   });
@@ -2014,28 +2022,28 @@ function bindControls() {
     if (e.target !== menu) return;
     e.preventDefault();
     e.stopPropagation();
-    if (settingsGesture) return;
+    if (settingsGuard()) return;
     closeSettings(e);
   });
   menu.addEventListener('pointerup', function (e) { e.stopPropagation(); });
   menu.addEventListener('click', function (e) {
     e.preventDefault();
     e.stopPropagation();
-    if (e.target !== menu || settingsGesture) return;
+    if (e.target !== menu || settingsGuard()) return;
     closeSettings(e);
   });
   document.addEventListener('pointerdown', function (e) {
     if (!settingsOn() || inSettingsCard(e.target)) return;
     e.preventDefault();
     e.stopPropagation();
-    if (!settingsGesture) closeSettings(e);
+    if (!settingsGuard()) closeSettings(e);
   }, true);
   document.addEventListener('pointerup', function () {
     if (!fromPointer) return;
     setTimeout(function () { fromPointer = false; }, 0);
   }, true);
   document.addEventListener('click', function (e) {
-    if (!settingsOn() || !settingsGesture || inSettingsCard(e.target)) return;
+    if (!settingsOn() || !settingsGuard() || inSettingsCard(e.target)) return;
     e.preventDefault();
     e.stopPropagation();
   }, true);
@@ -2084,7 +2092,10 @@ function bindControls() {
     saveSettings();
     if (settings.autoNotes) {
       notesMode = false;
-      if (live && !done) applyAutoNotes();
+      if (live && !done) {
+        pushUndo();
+        applyAutoNotes();
+      }
     }
     syncChrome();
     if (live) { renderBoard(); save(); }
