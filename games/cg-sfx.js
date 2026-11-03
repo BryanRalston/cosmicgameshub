@@ -13,8 +13,8 @@
     return ctx;
   }
 
-  function beep(freq, dur, type, vol, slide) {
-    if (mute) return;
+  function beep(freq, dur, type, vol, slide, force) {
+    if (mute && !force) return;
     var a = ac();
     if (!a) return;
     var o = a.createOscillator();
@@ -43,6 +43,25 @@
     },
     tick: function () { beep(920, 0.025, 'sine', 0.03); }
   };
+
+  var PENTA = [261.63, 293.66, 329.63, 392, 440, 523.25, 587.33, 659.25, 783.99];
+
+  function softDigit(n) {
+    var i = (Math.max(1, Math.min(9, n | 0)) - 1);
+    beep(PENTA[i], 0.1, 'sine', 0.045, 0, true);
+  }
+
+  function softUnit() {
+    beep(392, 0.18, 'sine', 0.04, 0, true);
+    beep(493.88, 0.2, 'triangle', 0.028, 0, true);
+    beep(587.33, 0.22, 'sine', 0.026, 0, true);
+  }
+
+  function softWin() {
+    [523.25, 659.25, 783.99, 1046.5].forEach(function (freq, i) {
+      setTimeout(function () { beep(freq, 0.2, 'sine', 0.05, 0, true); }, i * 100);
+    });
+  }
 
   function play(name) { if (kit[name]) kit[name](); }
   function haptic(ms) { try { if (!mute && navigator.vibrate) navigator.vibrate(ms || 10); } catch (e) {} }
@@ -156,6 +175,9 @@
 
   w.CGSfx = {
     play: play,
+    softDigit: softDigit,
+    softUnit: softUnit,
+    softWin: softWin,
     haptic: haptic,
     setMuted: setMuted,
     isMuted: function () { return mute; },
