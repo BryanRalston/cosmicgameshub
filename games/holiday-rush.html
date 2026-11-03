@@ -87,8 +87,8 @@
         position: fixed; z-index: 220; top: auto; right: auto; bottom: 18px; left: 18px; margin: 0; max-width: calc(100vw - 36px);
       }
       body:has(#hr-score:not([hidden])) .more-games:not(.more-games--dock) { margin-top: 18px; }
-      body:has(#hr-sim:not([hidden])) .hr-card-slot { flex: 0 0 188px; height: 188px; min-height: 188px; max-height: 188px; }
-      body:has(#hr-sim:not([hidden])) .hr-card-slot .hr-hint { flex: 0 0 auto; height: auto; display: flex; align-items: center; margin: 0; padding: 6px 10px; background: #f6f0e4; color: #2b1d2e; border-radius: 12px; font-size: 15px; line-height: 1.35; }
+      body:has(#hr-sim:not([hidden])) .hr-card-slot { flex: 0 0 188px; height: 188px; min-height: 188px; max-height: 188px; background: #f6f0e4; justify-content: flex-end; overflow: hidden; }
+      body:has(#hr-sim:not([hidden])) .hr-card-slot .hr-hint { flex: 1 1 auto; height: auto; display: flex; align-items: center; margin: 0; padding: 6px 10px; background: #f6f0e4; color: #2b1d2e; border-radius: 12px; font-size: 15px; line-height: 1.35; }
     }
     .hr-cta .btn, .hr-plan__actions .btn, .hr-choices button, .hr-perk .btn { min-height: 44px; }
     h2 { margin-top: 0; }
@@ -331,7 +331,7 @@
         margin-inline: 0;
         background: #342824;
       }
-      body:has(#hr-sim:not([hidden])) .hr-wrap { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.85rem); }
+      body:has(#hr-sim:not([hidden])) .hr-wrap { padding-bottom: env(safe-area-inset-bottom, 0px); }
       body:has(#hr-sim:not([hidden])) .hr-actions { margin-bottom: env(safe-area-inset-bottom, 0px); }
       #hr-actline { font-size: 15.56px; }
       #hr-sim .hr-sales__top span { font-size: 12px; }
@@ -383,6 +383,11 @@
       body:has(#hr-sim:not([hidden])) #hr-sim #hr-toast.show {
         top: auto;
         bottom: 8px;
+        z-index: 3;
+      }
+      body:has(#hr-sim:not([hidden])) .more-games__list { display: none !important; }
+      body:has(#hr-sim:not([hidden])) .more-games:not(.more-games--dock) {
+        position: fixed; top: 94px; left: 6px; right: auto; bottom: auto; z-index: 4; width: auto; margin: 0; max-width: 46%;
       }
       body:has(#hr-sim:not([hidden])) #hr-sim .hr-hud__tools #hr-skip {
         min-width: 0;
@@ -404,7 +409,7 @@
         max-height: 100dvh;
         min-height: 0;
         overflow: hidden;
-        padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.35rem);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
         padding-left: 4px;
         padding-right: 4px;
       }

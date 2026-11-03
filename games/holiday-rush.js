@@ -82,6 +82,18 @@
   };
   var MONDAY_GOAL_MUL = 0.55;
   var TRUCK_CALL_AT = 40;
+  var EMPTY_WRAP_TOAST = 'No gift is ready yet.';
+
+  function freightHintHidden(callTruck, text) {
+    return !!(callTruck && /Work freight/i.test(text || ''));
+  }
+
+  function toastClearOfCard(toastBox, cardBox) {
+    if (!toastBox || !cardBox || toastBox.hidden || cardBox.hidden) return true;
+    var overlapX = Math.min(toastBox.right, cardBox.right) - Math.max(toastBox.left, cardBox.left);
+    var overlapY = Math.min(toastBox.bottom, cardBox.bottom) - Math.max(toastBox.top, cardBox.top);
+    return !(overlapX > 0 && overlapY > 0);
+  }
   var LIVE_RING_RATE = 0.95;
   var LIVE_BASKET = 0.53;
   var LIVE_STAFFED = 1.27;
@@ -1714,14 +1726,15 @@
       var score = queueOf(sim, reg).length * 2 - stationPower(sim, run, reg) * 1.4;
       if (score < bestScore) { bestScore = score; best = reg; }
     }
-    if (any && sim && sim._phone && regs.length > 1) {
-      var alt = null;
-      var bestLoad = laneLoad(sim, best);
+    if (any && sim && sim._phone && sim.floorOn && regs.length > 1) {
+      var pick = best;
+      var pickLoad = laneLoad(sim, best);
       for (var j = 0; j < regs.length; j++) {
-        if (regs[j] === best || trafficBlocked(regs[j])) continue;
-        if (laneLoad(sim, regs[j]) <= bestLoad + 1) alt = regs[j];
+        if (trafficBlocked(regs[j])) continue;
+        var load = laneLoad(sim, regs[j]);
+        if (load < pickLoad) { pickLoad = load; pick = regs[j]; }
       }
-      if (alt && ((sim.seq || 0) % 2 === 1)) return alt;
+      return pick;
     }
     return any ? best : regs[0];
   }
@@ -5932,7 +5945,7 @@
         var freightHint = document.querySelector('#hr-sim .hr-hint');
         if (freightHint && callTruck) {
           if (freightHint.dataset.base && /Work freight/i.test(freightHint.dataset.base)) freightHint.dataset.base = 'Wrap a glowing gift.';
-          if (/Work freight/i.test(freightHint.textContent || '')) freightHint.hidden = true;
+          if (freightHintHidden(true, freightHint.textContent || '')) freightHint.hidden = true;
         } else if (freightHint && freightHint.dataset.coach !== '1' && freightHint.dataset.wrap !== '1') {
           freightHint.hidden = false;
         }
@@ -7185,10 +7198,7 @@
       }
       var avail = parentH - pad - others;
       if (!(avail > 120)) return;
-      var width = stage.clientWidth || parent.clientWidth || 360;
-      var aspectH = Math.round(width * 900 / 720);
-      var next = Math.min(Math.round(avail), aspectH);
-      if (next < 160) next = Math.round(avail);
+      var next = Math.round(avail);
       if (stage._phoneH === next && stage.style.flex === '0 0 auto') return;
       stage._phoneH = next;
       stage.style.flex = '0 0 auto';
@@ -10325,7 +10335,7 @@
     }
     function missWrap() {
       if (!sim) return;
-      toast('No gift is ready yet.', true);
+      toast(EMPTY_WRAP_TOAST, true);
       var spot = wrapSpot();
       var wy = spot.y - wrapLift(spot);
       floater(sim, spot.x, wy, 'Not yet', '#ffb4b4', true);
@@ -10983,6 +10993,15 @@
     line('mid8', mid8);
     if (comboMult(10) !== 4 || comboMult(40) !== 4 || multLabel(10) !== '×4' || multLabel(24) !== '×4') bad = true;
     if (goalStars(0.74) !== 0 || goalStars(0.75) !== 1 || goalStars(1) !== 2 || goalStars(1.2) !== 3 || goalStars(1.195) !== 3) bad = true;
+    if (EMPTY_WRAP_TOAST !== 'No gift is ready yet.') bad = true;
+    if (!freightHintHidden(true, 'Wrap a glowing gift. Work freight when Back is low.')) bad = true;
+    if (freightHintHidden(false, 'Wrap a glowing gift. Work freight when Back is low.')) bad = true;
+    if (freightHintHidden(true, 'Tap Wrap, or the glowing ring. Each gift rings the drawer.')) bad = true;
+    var clearToast = { left: 8, right: 360, top: 80, bottom: 124, hidden: false };
+    var openCard = { left: 8, right: 370, top: 430, bottom: 600, hidden: false };
+    var buriedToast = { left: 16, right: 200, top: 460, bottom: 510, hidden: false };
+    if (!toastClearOfCard(clearToast, openCard)) bad = true;
+    if (toastClearOfCard(buriedToast, openCard)) bad = true;
     if (!(comboMult(4) < 3) || comboMult(6) >= 3 || !(comboMult(7) >= 3)) bad = true;
     var seedEnc = seedsFromSearch('?seed=kiosk%2Cbus&_vercel_share=abc').join(',');
     var seedDbl = seedsFromSearch('?seed=kiosk%252Cbus').join(',');
