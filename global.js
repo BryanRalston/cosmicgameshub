@@ -826,5 +826,7 @@
     });
   }
 
+  window.cgTrackEvent = trackEvent;
+
   onReady(initSiteChrome);
 })();

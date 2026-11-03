@@ -59,7 +59,14 @@
       var ps = safeJSON('pixle-state-v1') || {};
       map.pixle = ps.dayIndex === dayIndex2026() && (ps.status === 'won' || ps.status === 'lost');
     } catch (e) { map.pixle = false; }
-    map.sudoku = localStorage.getItem('sdk_solved_' + iso) === '1' || localStorage.getItem('sdk_solved_' + ymd) === '1';
+    map.sudoku = (function () {
+      var n = now();
+      var mm = n.getMonth() + 1;
+      var dd = n.getDate();
+      var padded = n.getFullYear() + '-' + (mm < 10 ? '0' : '') + mm + '-' + (dd < 10 ? '0' : '') + dd;
+      var loose = n.getFullYear() + '-' + mm + '-' + dd;
+      return localStorage.getItem('sdk_solved_' + padded) === '1' || localStorage.getItem('sdk_solved_' + loose) === '1';
+    })();
     map.crossword = safeInt('cw_last_day', -1) === dayOfYear();
     map['price-guesser'] = safeInt('pg_last_day', -1) === dayOfYear();
     try {
