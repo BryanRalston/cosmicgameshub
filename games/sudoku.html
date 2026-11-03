@@ -356,12 +356,13 @@
     .settings-sheet {
       position: fixed;
       inset: 0;
-      z-index: 80;
+      z-index: 400;
       display: flex;
       align-items: flex-end;
       justify-content: center;
       padding: 0.75rem;
       background: rgba(2, 4, 14, 0.62);
+      touch-action: manipulation;
     }
     #settingsMenu[hidden] { display: none !important; }
     .settings-card {
@@ -504,6 +505,10 @@
       .hud-row { min-height: 32px; padding: 0.15rem 0.4rem 0.15rem 0.55rem; }
       .hud-pause { min-height: 32px; }
       .num-btn { aspect-ratio: auto; min-height: 40px; height: 40px; font-size: 1.05rem; }
+      .cell { padding: 0; }
+      .cell-notes,
+      .note-dot { min-width: 0; min-height: 0; }
+      .note-dot { font-size: 10px; line-height: 1; }
       .action-btns .btn { min-height: 40px; padding: 0.2rem 0.35rem; font-size: 0.8rem; }
       .sdk-daily { min-height: 36px; }
     }
@@ -797,6 +802,7 @@ var settings = { mistakeLimit: true, autoNotes: false, planets: false, sound: fa
 var blockBoardUntil = 0;
 var pointerSelectUntil = 0;
 var suppressWinAnim = false;
+var settingsGesture = false;
 
 function lsGet(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
 function storageKept() {
@@ -884,6 +890,44 @@ function pinScroll(x, y) {
   setTimeout(function () { window.removeEventListener('scroll', onScroll, true); }, 300);
 }
 function boardBlocked() { return Date.now() < blockBoardUntil; }
+function settingsOn() {
+  var menu = document.getElementById('settingsMenu');
+  return !!(menu && !menu.hidden);
+}
+function setGameInert(on) {
+  document.querySelectorAll('nav, .game-layout, .cg-daily-dock, .rg-section, footer').forEach(function (el) {
+    if (on) el.setAttribute('inert', '');
+    else el.removeAttribute('inert');
+  });
+}
+function closeSettings(e) {
+  if (e) { e.preventDefault(); e.stopPropagation(); }
+  var menu = document.getElementById('settingsMenu');
+  var btn = document.getElementById('settingsBtn');
+  if (menu) menu.hidden = true;
+  if (btn) btn.setAttribute('aria-expanded', 'false');
+  setGameInert(false);
+  settingsGesture = false;
+  blockBoardUntil = Date.now() + 350;
+  pinScroll(window.scrollX, window.scrollY);
+}
+function openSettings(e) {
+  if (e) { e.preventDefault(); e.stopPropagation(); }
+  var menu = document.getElementById('settingsMenu');
+  var btn = document.getElementById('settingsBtn');
+  if (!menu) return;
+  var x = window.scrollX, y = window.scrollY;
+  menu.hidden = false;
+  if (btn) btn.setAttribute('aria-expanded', 'true');
+  setGameInert(true);
+  settingsGesture = true;
+  focusNoScroll(menu);
+  pinScroll(x, y);
+  setTimeout(function () { settingsGesture = false; }, 400);
+}
+function inSettingsCard(target) {
+  return !!(target && target.closest && target.closest('#settingsCard, #settingsBtn'));
+}
 function randomSeed() {
   try {
     var buf = new Uint32Array(1);
@@ -1440,7 +1484,7 @@ function renderBoard() {
   highlightCells();
 }
 function selectCell(r, c) {
-  if (paused || boardBlocked()) return;
+  if (paused || boardBlocked() || settingsOn()) return;
   selected = { r: r, c: c };
   highlightCells();
   focusNoScroll(cellEl(r, c));
@@ -1464,7 +1508,8 @@ function buildNumpad() {
   pad.innerHTML = '';
   var counts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
   for (var r = 0; r < 9; r++) for (var c = 0; c < 9; c++) {
-    var value = userGrid[r][c] || puzzle[r][c];
+    var value = puzzle[r][c];
+    if (!value && userGrid[r][c] && userGrid[r][c] === solved[r][c]) value = userGrid[r][c];
     if (value) counts[value]++;
   }
   for (var n = 1; n <= 9; n++) {
@@ -1609,7 +1654,7 @@ function readSelection() {
   return { r: +el.dataset.r, c: +el.dataset.c };
 }
 function inputNum(n) {
-  if (boardBlocked() || !selected || typeof selected.r !== 'number' || done || paused) return;
+  if (boardBlocked() || settingsOn() || !selected || typeof selected.r !== 'number' || done || paused) return;
   var r = selected.r, c = selected.c;
   if (puzzle[r][c] !== 0) return;
   markPlayed();
@@ -1656,7 +1701,7 @@ function inputNum(n) {
 }
 
 function useHint() {
-  if (boardBlocked() || hintsLeft <= 0 || !selected || typeof selected.r !== 'number' || done || paused) return;
+  if (boardBlocked() || settingsOn() || hintsLeft <= 0 || !selected || typeof selected.r !== 'number' || done || paused) return;
   var r = selected.r, c = selected.c;
   if (puzzle[r][c] !== 0) return;
   if (userGrid[r][c] === solved[r][c]) return;
@@ -1874,12 +1919,11 @@ function shareWin() {
 
 document.addEventListener('keydown', function (e) {
   if (e.key === 'Escape') {
-    document.getElementById('settingsMenu').hidden = true;
-    document.getElementById('settingsBtn').setAttribute('aria-expanded', 'false');
-    if (paused) setPaused(false);
+    if (settingsOn()) closeSettings();
+    else if (paused) setPaused(false);
     return;
   }
-  if (paused || done || !selected || typeof selected.r !== 'number') return;
+  if (settingsOn() || paused || done || !selected || typeof selected.r !== 'number') return;
   var tag = e.target && e.target.tagName;
   if (tag === 'INPUT' || tag === 'TEXTAREA') return;
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undoMove(); return; }
@@ -1943,48 +1987,58 @@ function bindControls() {
   });
   var menu = document.getElementById('settingsMenu');
   var settingsBtn = document.getElementById('settingsBtn');
-  function closeSettings(e) {
-    if (e) { e.preventDefault(); e.stopPropagation(); }
-    var x = window.scrollX, y = window.scrollY;
-    menu.hidden = true;
-    settingsBtn.setAttribute('aria-expanded', 'false');
-    blockBoardUntil = Date.now() + 300;
-    pinScroll(x, y);
-  }
-  function openSettings(e) {
-    if (e) { e.preventDefault(); e.stopPropagation(); }
-    var x = window.scrollX, y = window.scrollY;
-    menu.hidden = false;
-    settingsBtn.setAttribute('aria-expanded', 'true');
-    focusNoScroll(menu);
-    pinScroll(x, y);
-  }
+  var fromPointer = false;
   menu.tabIndex = -1;
   settingsBtn.addEventListener('pointerdown', function (e) {
-    if (e.button) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
     e.preventDefault();
     e.stopPropagation();
+    fromPointer = true;
+    if (menu.hidden) openSettings(e);
+    else closeSettings(e);
+  });
+  settingsBtn.addEventListener('click', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (fromPointer) { fromPointer = false; return; }
     if (menu.hidden) openSettings(e);
     else closeSettings(e);
   });
   document.getElementById('settingsClose').addEventListener('pointerdown', function (e) {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
     e.preventDefault();
     e.stopPropagation();
     closeSettings(e);
   });
   menu.addEventListener('pointerdown', function (e) {
-    if (e.target === menu) {
-      e.preventDefault();
-      e.stopPropagation();
-      closeSettings(e);
-    }
+    if (e.target !== menu) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (settingsGesture) return;
+    closeSettings(e);
   });
   menu.addEventListener('pointerup', function (e) { e.stopPropagation(); });
   menu.addEventListener('click', function (e) {
     e.preventDefault();
     e.stopPropagation();
-    if (e.target === menu) closeSettings(e);
+    if (e.target !== menu || settingsGesture) return;
+    closeSettings(e);
   });
+  document.addEventListener('pointerdown', function (e) {
+    if (!settingsOn() || inSettingsCard(e.target)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (!settingsGesture) closeSettings(e);
+  }, true);
+  document.addEventListener('pointerup', function () {
+    if (!fromPointer) return;
+    setTimeout(function () { fromPointer = false; }, 0);
+  }, true);
+  document.addEventListener('click', function (e) {
+    if (!settingsOn() || !settingsGesture || inSettingsCard(e.target)) return;
+    e.preventDefault();
+    e.stopPropagation();
+  }, true);
   document.addEventListener('pointerup', function (e) {
     if (!boardBlocked() || !e.target || !e.target.closest) return;
     if (e.target.closest('#board, #numpad, .board-frame')) {
