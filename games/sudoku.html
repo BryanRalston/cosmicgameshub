@@ -401,7 +401,31 @@
     .handoff[hidden], .vs-result[hidden], .vs-setup[hidden] { display: none !important; }
     .handoff h2, .vs-result h2, .vs-setup h2 { margin: 0; color: #ffe08a; }
     .handoff p, .vs-result p, .vs-setup p { margin: 0; color: #d5d8ea; }
+    .handoff-delta { margin: 0; color: #ffe08a; font-size: 1.15rem; font-weight: 800; }
     body.is-handoff #board, body.is-handoff .numpad, body.is-handoff .trail, body.is-handoff .constel { visibility: hidden !important; }
+    .mistake-bit { display: inline-flex; }
+    body.sdk-match .mistake-bit { display: none; }
+    .score-bar { display: none; gap: 0.35rem; width: 100%; }
+    body.sdk-match .score-bar { display: flex; }
+    .score-side {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.35rem;
+      min-height: 36px;
+      padding: 0.2rem 0.55rem;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(6, 10, 28, 0.82);
+      color: #f4f6ff;
+      opacity: 0.48;
+    }
+    .score-side.is-active { opacity: 1; border-color: #ffe08a; box-shadow: inset 0 0 0 1px rgba(255, 224, 138, 0.35); }
+    .score-side b { color: #ffe08a; font-variant-numeric: tabular-nums; }
+    .strike-dots { letter-spacing: 0.12em; font-size: 0.72rem; color: #ffe08a; }
+    .toggle-row.is-locked { opacity: 0.4; pointer-events: none; }
+    #hintBtn:disabled { opacity: 0.4; }
     .settings-head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.35rem; }
     .settings-head h2 { margin: 0; color: #ffe08a; font-size: 1.05rem; }
     .settings-head .btn { min-height: 44px; }
@@ -659,8 +683,12 @@
           </div>
           <div class="hud-row">
             <span class="hud-bit">Time <b id="timerDisp">0:00</b></span>
-            <span class="hud-bit">Mistakes <b id="mistakeDisp">0 / 3</b><b id="limitTag" hidden>Limit off</b></span>
+            <span class="hud-bit mistake-bit">Mistakes <b id="mistakeDisp">0 / 3</b><b id="limitTag" hidden>Limit off</b></span>
             <button type="button" class="btn btn--outline hud-pause" id="pauseBtn" aria-pressed="false">Pause</button>
+          </div>
+          <div class="score-bar" id="scoreBar">
+            <div class="score-side" id="scoreP0"><span>P1</span><b id="scoreVal0">0</b><span class="strike-dots" id="strikeDots0" hidden></span></div>
+            <div class="score-side" id="scoreP1"><span>P2</span><b id="scoreVal1">0</b><span class="strike-dots" id="strikeDots1" hidden></span></div>
           </div>
         </div>
         <p class="first-tip" id="firstTip">Select a cell, then a number.</p>
@@ -697,7 +725,8 @@
     <div class="handoff" id="handoff" hidden>
       <p>Pass the phone</p>
       <h2 id="handoffWho">Player 1</h2>
-      <p id="handoffScore">P1 0 · P2 0</p>
+      <p class="handoff-delta" id="handoffDelta" hidden></p>
+      <p id="handoffScore">Score P1 0 / P2 0</p>
       <button type="button" class="btn btn--primary" id="handoffGo">Start turn</button>
     </div>
     <div class="vs-result" id="vsResult" hidden>
@@ -1084,10 +1113,7 @@ function urlFor(route) {
   return path + '?p=' + route.id;
 }
 function playRandom(name) {
-  if (!(match && match.fresh)) {
-    match = null;
-    hideMatchUi();
-  }
+  if (!(match && match.fresh)) resetMatch();
   var nextSeed = randomSeed();
   launch({
     mode: 'free',
@@ -1234,6 +1260,7 @@ function candidates(r, c) {
   return set;
 }
 function applyAutoNotes() {
+  if (match) return;
   for (var r = 0; r < 9; r++) for (var c = 0; c < 9; c++) {
     notes[r][c] = userGrid[r][c] ? new Set() : candidates(r, c);
   }
@@ -1462,6 +1489,14 @@ function logicalBoard() {
   }
   return b;
 }
+var swallowHandoff = false;
+var handoffGesture = false;
+function blurFocus() {
+  var ae = document.activeElement;
+  if (ae && ae.blur && ae !== document.body && ae !== document.documentElement) {
+    try { ae.blur(); } catch (e) {}
+  }
+}
 function hideMatchUi() {
   var ids = ['handoff', 'vsResult', 'vsSetup'];
   for (var i = 0; i < ids.length; i++) {
@@ -1469,32 +1504,118 @@ function hideMatchUi() {
     if (el) el.hidden = true;
   }
   document.body.classList.remove('is-handoff');
+  document.body.classList.remove('sdk-match');
+}
+function resetMatch() {
+  match = null;
+  swallowHandoff = false;
+  handoffGesture = false;
+  blockBoardUntil = 0;
+  hideMatchUi();
+  paused = false;
+  var frame = document.getElementById('boardFrame');
+  if (frame) frame.classList.remove('is-paused');
+  var ov = document.getElementById('pauseOverlay');
+  if (ov) ov.hidden = true;
+  blurFocus();
+  syncMatchLocks();
+}
+function strikeDots(n) {
+  var s = '', i;
+  n = n > 3 ? 3 : n;
+  for (i = 0; i < 3; i++) s += i < n ? '\u25CF' : '\u25CB';
+  return s;
+}
+function updateScoreBar() {
+  var bar = document.getElementById('scoreBar');
+  if (!bar) return;
+  if (!match) {
+    document.body.classList.remove('sdk-match');
+    return;
+  }
+  document.body.classList.add('sdk-match');
+  var i, side, val, dots;
+  for (i = 0; i < 2; i++) {
+    side = document.getElementById('scoreP' + i);
+    val = document.getElementById('scoreVal' + i);
+    dots = document.getElementById('strikeDots' + i);
+    if (val) val.textContent = String(match.p[i].score);
+    if (side) side.classList.toggle('is-active', i === match.turn && !match.over);
+    if (dots) {
+      dots.hidden = !match.strikes;
+      dots.textContent = match.strikes ? strikeDots(match.p[i].mistakes) : '';
+    }
+  }
+}
+function syncMatchLocks() {
+  var hint = document.getElementById('hintBtn');
+  var auto = document.getElementById('setAuto');
+  var limit = document.getElementById('setLimit');
+  var autoRow = auto && auto.closest('.toggle-row');
+  var limitRow = limit && limit.closest('.toggle-row');
+  if (match) {
+    if (hint) { hint.disabled = true; hint.textContent = 'Hint off'; }
+    if (auto) { auto.disabled = true; auto.checked = false; }
+    if (autoRow) autoRow.classList.add('is-locked');
+    if (limit) limit.disabled = true;
+    if (limitRow) limitRow.classList.add('is-locked');
+  } else {
+    if (hint) hint.disabled = false;
+    if (auto) { auto.disabled = false; auto.checked = !!settings.autoNotes; }
+    if (autoRow) autoRow.classList.remove('is-locked');
+    if (limit) { limit.disabled = false; limit.checked = !!settings.mistakeLimit; }
+    if (limitRow) limitRow.classList.remove('is-locked');
+  }
+  updateScoreBar();
 }
 function showHandoff() {
   if (!match) return;
   match.ready = false;
-  document.getElementById('handoffWho').textContent = 'Player ' + (match.turn + 1);
-  var line = 'P1 ' + match.p[0].score + '  ·  P2 ' + match.p[1].score;
-  if (match.lastNote) line += '    ' + match.lastNote;
-  document.getElementById('handoffScore').textContent = line;
+  selected = null;
+  highlightCells();
+  blurFocus();
+  var next = match.turn;
+  var prev = 1 - next;
+  document.getElementById('handoffWho').textContent = 'Player ' + (next + 1);
+  var delta = document.getElementById('handoffDelta');
+  if (match.lastNote) {
+    delta.hidden = false;
+    delta.textContent = 'P' + (prev + 1) + ' scored ' + match.lastNote + ' this turn';
+  } else if (delta) {
+    delta.hidden = true;
+    delta.textContent = '';
+  }
+  document.getElementById('handoffScore').textContent = 'Score P1 ' + match.p[0].score + ' / P2 ' + match.p[1].score;
   document.getElementById('handoff').hidden = false;
   document.getElementById('vsResult').hidden = true;
   document.body.classList.add('is-handoff');
+  document.body.classList.add('sdk-match');
   updateTimer();
-  updateMistakes();
+  updateScoreBar();
+  syncMatchLocks();
 }
 function readyTurn() {
-  if (!match || match.over) return;
+  if (swallowHandoff || !match || match.over || match.ready) return;
+  match.switching = false;
   match.ready = true;
   turnStamp = Date.now();
-  document.getElementById('handoff').hidden = true;
+  blockBoardUntil = Date.now() + 450;
+  selected = null;
+  var el = document.getElementById('handoff');
+  if (el) el.hidden = true;
   document.body.classList.remove('is-handoff');
+  selected = null;
+  highlightCells();
+  blurFocus();
   updateTimer();
+  updateScoreBar();
 }
 function finishMatch(winner, reason) {
   match.over = true;
   match.ready = false;
+  match.switching = true;
   match.winner = winner;
+  selected = null;
   clearInterval(timerInt);
   document.body.classList.remove('is-handoff');
   document.getElementById('handoff').hidden = true;
@@ -1502,15 +1623,52 @@ function finishMatch(winner, reason) {
   document.getElementById('vsFinal').textContent = 'P1 ' + match.p[0].score + ' · P2 ' + match.p[1].score + (reason === 'strikes' ? ' · three strikes' : '');
   document.getElementById('vsResult').hidden = false;
   done = true;
+  updateScoreBar();
 }
-function endTurn() {
+function commitMatchTurn(n, correct, wrong, prev, rated) {
+  if (!match || match.over) return;
+  var p = match.p[match.turn];
+  var mult = speedMult(Date.now() - turnStamp);
+  if (correct && prev !== n) {
+    var pts = Math.round(SCORE_BASE * rated * mult);
+    p.score += pts;
+    match.lastNote = '+' + pts;
+  } else if (wrong) {
+    p.score -= SCORE_PENALTY;
+    p.mistakes += 1;
+    match.lastNote = '-' + SCORE_PENALTY;
+    if (match.strikes && p.mistakes >= 3) {
+      selected = null;
+      highlightCells();
+      updateScoreBar();
+      save();
+      finishMatch(1 - match.turn, 'strikes');
+      return;
+    }
+  } else {
+    match.lastNote = '';
+  }
+  selected = null;
+  highlightCells();
+  if (isSolved()) {
+    var w = match.p[0].score === match.p[1].score ? null : (match.p[0].score > match.p[1].score ? 0 : 1);
+    save();
+    finishMatch(w, 'score');
+    return;
+  }
   match.turn = 1 - match.turn;
+  save();
   showHandoff();
+  swallowHandoff = true;
 }
 function startMatch(strikes) {
+  swallowHandoff = false;
+  handoffGesture = false;
+  paused = false;
   match = {
     fresh: true,
     strikes: !!strikes,
+    switching: false,
     p: [{ score: 0, mistakes: 0, secs: 0 }, { score: 0, mistakes: 0, secs: 0 }],
     turn: 0,
     ready: false,
@@ -1610,10 +1768,7 @@ function resetWinArt() {
 }
 
 function begin(route) {
-  if (match && !match.fresh) {
-    match = null;
-    hideMatchUi();
-  }
+  if (match && !match.fresh) resetMatch();
   clearInterval(timerInt);
   document.getElementById('winBanner').classList.remove('show');
   document.getElementById('failBanner').classList.remove('show');
@@ -1652,7 +1807,7 @@ function begin(route) {
     celebrated = !!saved.celebrated || !!saved.done;
     suppressWinAnim = !!(saved.done || saved.celebrated);
     selected = saved.selected && typeof saved.selected.r === 'number' ? saved.selected : firstEmpty();
-    if (settings.autoNotes && !done) applyAutoNotes();
+    if (settings.autoNotes && !done && !match) applyAutoNotes();
   } else {
     var made = makePuzzle(route.diff, route.seed);
     puzzle = made.puzzle;
@@ -1672,7 +1827,7 @@ function begin(route) {
     countedPlay = false;
     celebrated = false;
     selected = firstEmpty();
-    if (settings.autoNotes) applyAutoNotes();
+    if (settings.autoNotes && !match) applyAutoNotes();
     postCount(puzzleId, 'start');
     trackSudoku('sudoku_start', {
       puzzle_id: puzzleId,
@@ -1746,6 +1901,7 @@ function syncChrome() {
   document.getElementById('hintBtn').textContent = 'Hint (' + hintsLeft + ' left)';
   document.getElementById('pauseBtn').textContent = paused ? 'Resume' : 'Pause';
   document.getElementById('pauseBtn').setAttribute('aria-pressed', paused ? 'true' : 'false');
+  syncMatchLocks();
 }
 
 function renderStats() {
@@ -2047,7 +2203,7 @@ function readSelection() {
 }
 function inputNum(n) {
   if (boardBlocked() || settingsOn() || !selected || typeof selected.r !== 'number' || done || paused) return;
-  if (match && (!match.ready || match.over)) return;
+  if (match && (match.switching || !match.ready || match.over)) return;
   var r = selected.r, c = selected.c;
   if (puzzle[r][c] !== 0) return;
   if (match && userGrid[r][c] && userGrid[r][c] === solved[r][c]) return;
@@ -2059,6 +2215,10 @@ function inputNum(n) {
     renderBoard();
     save();
     return;
+  }
+  if (match && n) {
+    match.switching = true;
+    match.ready = false;
   }
   var rated = 1;
   if (match && n) {
@@ -2078,11 +2238,11 @@ function inputNum(n) {
     sfxMiss();
   } else if (wrong) sfxMiss();
   if (correct && prev !== n) {
-    if (settings.autoNotes) applyAutoNotes();
+    if (settings.autoNotes && !match) applyAutoNotes();
     else clearPeerNotes(r, c, n);
     sfxDigit(n);
     announceUnits(r, c);
-  } else if (settings.autoNotes) {
+  } else if (settings.autoNotes && !match) {
     applyAutoNotes();
   }
   if (settings.autoNotes || (correct && prev !== n) || !paintCell(r, c)) {
@@ -2093,32 +2253,7 @@ function inputNum(n) {
     refreshPadUsed();
   }
   if (match && n) {
-    var p = match.p[match.turn];
-    var mult = speedMult(Date.now() - turnStamp);
-    if (correct && prev !== n) {
-      var pts = Math.round(SCORE_BASE * rated * mult);
-      p.score += pts;
-      match.lastNote = '+' + pts;
-    } else if (wrong) {
-      p.score -= SCORE_PENALTY;
-      p.mistakes += 1;
-      match.lastNote = '\u2212' + SCORE_PENALTY;
-      if (match.strikes && p.mistakes >= 3) {
-        updateMistakes();
-        save();
-        finishMatch(1 - match.turn, 'strikes');
-        return;
-      }
-    }
-    updateMistakes();
-    if (isSolved()) {
-      var w = match.p[0].score === match.p[1].score ? null : (match.p[0].score > match.p[1].score ? 0 : 1);
-      save();
-      finishMatch(w, 'score');
-      return;
-    }
-    save();
-    endTurn();
+    commitMatchTurn(n, correct, wrong, prev, rated);
     return;
   }
   if (wrong) {
@@ -2144,7 +2279,7 @@ function useHint() {
   var prev = userGrid[r][c];
   userGrid[r][c] = solved[r][c];
   notes[r][c] = new Set();
-  if (settings.autoNotes) applyAutoNotes();
+  if (settings.autoNotes && !match) applyAutoNotes();
   else clearPeerNotes(r, c, solved[r][c]);
   hintsLeft -= 1;
   trackSudoku('sudoku_hint', {
@@ -2199,6 +2334,7 @@ function updateMistakes() {
   if (match) {
     document.getElementById('mistakeDisp').textContent = match.p[0].score + ' · ' + match.p[1].score;
     if (tag) { tag.hidden = false; tag.textContent = match.strikes ? 'Three strikes' : 'Unlimited'; }
+    updateScoreBar();
     return;
   }
   document.getElementById('mistakeDisp').textContent = settings.mistakeLimit ? (mistakes + ' / 3') : String(mistakes);
@@ -2375,7 +2511,7 @@ document.addEventListener('keydown', function (e) {
     return;
   }
   if (settingsOn() || paused || done || !selected || typeof selected.r !== 'number') return;
-  if (match && (!match.ready || match.over)) return;
+  if (match && (match.switching || !match.ready || match.over)) return;
   var tag = e.target && e.target.tagName;
   if (tag === 'INPUT' || tag === 'TEXTAREA') return;
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undoMove(); return; }
@@ -2429,15 +2565,46 @@ function bindControls() {
   });
   document.getElementById('vsCancel').addEventListener('click', function () { document.getElementById('vsSetup').hidden = true; });
   document.getElementById('vsStart').addEventListener('click', function () { startMatch(document.getElementById('vsStrikes').checked); });
-  document.getElementById('handoffGo').addEventListener('click', readyTurn);
-  document.getElementById('handoff').addEventListener('pointerdown', function (e) {
-    if (e.target && e.target.id === 'handoffGo') return;
-    if (e.target === document.getElementById('handoff')) readyTurn();
+  var handoffEl = document.getElementById('handoff');
+  handoffEl.addEventListener('pointerdown', function (e) {
+    if (e.button) return;
+    e.preventDefault();
+    e.stopPropagation();
+    handoffGesture = true;
   });
+  handoffEl.addEventListener('pointerup', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  });
+  handoffEl.addEventListener('click', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (swallowHandoff) return;
+    if (e.detail === 0 || handoffGesture) {
+      handoffGesture = false;
+      readyTurn();
+    }
+  });
+  document.addEventListener('click', function (e) {
+    if (!swallowHandoff) return;
+    swallowHandoff = false;
+    e.preventDefault();
+    e.stopPropagation();
+  }, true);
+  document.addEventListener('keyup', function (e) {
+    if (!swallowHandoff) return;
+    swallowHandoff = false;
+    e.preventDefault();
+    e.stopPropagation();
+  }, true);
   document.getElementById('vsRematch').addEventListener('click', function () {
     var strikes = match && match.strikes;
+    swallowHandoff = false;
+    handoffGesture = false;
+    paused = false;
+    done = false;
     match = {
-      fresh: true, strikes: !!strikes,
+      fresh: true, strikes: !!strikes, switching: false,
       p: [{ score: 0, mistakes: 0, secs: 0 }, { score: 0, mistakes: 0, secs: 0 }],
       turn: 0, ready: false, over: false, lastNote: ''
     };
@@ -2445,10 +2612,10 @@ function bindControls() {
     playRandom(diff || 'easy');
   });
   document.getElementById('vsSolo').addEventListener('click', function () {
-    match = null;
     done = false;
-    hideMatchUi();
+    resetMatch();
     updateMistakes();
+    syncChrome();
     startTimer();
   });
   document.getElementById('playAgain').addEventListener('click', function () { playRandom(diff || 'easy'); });
@@ -2539,7 +2706,7 @@ function bindControls() {
       e.preventDefault();
       e.stopPropagation();
       var input = row.querySelector('input');
-      if (!input) return;
+      if (!input || input.disabled) return;
       input.checked = !input.checked;
       input.dispatchEvent(new Event('change', { bubbles: true }));
     });
@@ -2555,11 +2722,13 @@ function bindControls() {
   document.getElementById('setHighlight').checked = settings.highlight;
   document.getElementById('setReduce').checked = reducedMotion();
   document.getElementById('setLimit').addEventListener('change', function () {
+    if (match) { this.checked = settings.mistakeLimit; return; }
     settings.mistakeLimit = this.checked;
     saveSettings();
     updateMistakes();
   });
   document.getElementById('setAuto').addEventListener('change', function () {
+    if (match) { this.checked = false; return; }
     settings.autoNotes = this.checked;
     saveSettings();
     if (settings.autoNotes) {
