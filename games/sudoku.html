@@ -153,7 +153,10 @@
       pointer-events: none;
     }
     .face .planet.p2 { filter: brightness(1.45) saturate(1.55) hue-rotate(18deg); }
+    .face .planet.p3 { filter: brightness(1.9) saturate(1.75) contrast(1.12); }
     .face .planet.p5 { filter: brightness(1.7) saturate(1.35) contrast(1.05); }
+    .face .planet.p6 { filter: brightness(1.8) saturate(1.55) contrast(1.15); }
+    .face .planet.p9 { filter: brightness(1.85) saturate(1.45) contrast(1.2); }
     .face .num {
       position: relative;
       z-index: 1;
@@ -437,9 +440,29 @@
     .vs-card .btn { min-width: 12rem; }
     .vs-celebrate { position: relative; width: 160px; height: 84px; }
     .vs-celebrate[hidden] { display: none !important; }
+    .vs-celebrate.is-win { width: 220px; height: 128px; }
+    .vs-celebrate.is-tie { width: 96px; height: 52px; opacity: 0.75; }
     .vs-constel, .vs-nova { position: absolute; left: 50%; top: 50%; width: 140px; height: auto; transform: translate(-50%, -50%); pointer-events: none; }
     .vs-nova { width: 112px; }
+    .vs-celebrate.is-win .vs-nova { width: 200px; }
+    .vs-celebrate.is-tie .vs-nova { width: 64px; }
     html.sdk-reduce .vs-celebrate { display: none !important; }
+    .vs-rules-list { display: none; margin: 0; padding: 0 0 0 1.15rem; text-align: left; color: #d5d8ea; max-width: 22rem; }
+    .vs-rules-list li { margin: 0.22rem 0; }
+    .score-side.is-burst-big::after,
+    .score-side.is-burst-soft::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      border-radius: 50%;
+      pointer-events: none;
+      background: radial-gradient(circle, rgba(255, 224, 138, 0.95), transparent 68%);
+    }
+    .score-side.is-burst-big::after { width: 54px; height: 54px; transform: translate(-50%, -50%); }
+    .score-side.is-burst-soft::after { width: 16px; height: 16px; opacity: 0.7; transform: translate(-50%, -50%); }
+    html.sdk-reduce .score-side.is-burst-big::after,
+    html.sdk-reduce .score-side.is-burst-soft::after { display: none !important; }
     .handoff-delta { margin: 0; color: #ffe08a; font-size: 1.15rem; font-weight: 800; }
     body.is-handoff #board, body.is-handoff .numpad, body.is-handoff .trail, body.is-handoff .constel { visibility: hidden !important; }
     .mistake-bit { display: inline-flex; }
@@ -447,6 +470,7 @@
     .score-bar { display: none; gap: 0.35rem; width: 100%; }
     body.sdk-match .score-bar { display: flex; }
     .score-side {
+      position: relative;
       flex: 1;
       display: flex;
       align-items: center;
@@ -465,7 +489,9 @@
     .strike-dots { display: inline-flex; gap: 3px; align-items: center; }
     .strike-dots i { display: block; width: 10px; height: 10px; border-radius: 50%; background: transparent; box-shadow: inset 0 0 0 1.5px rgba(255, 170, 170, 0.55); }
     .strike-dots i.on { background: #ff3b4e; box-shadow: none; }
-    .toggle-row.is-locked { opacity: 0.4; pointer-events: none; }
+    .toggle-row.is-locked { opacity: 0.55; pointer-events: none; }
+    .toggle-row.is-locked input::before { background: #2c334c !important; }
+    .toggle-row.is-locked input::after { transform: none !important; }
     #hintBtn:disabled { opacity: 0.4; }
     .settings-head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.35rem; }
     .settings-head h2 { margin: 0; color: #ffe08a; font-size: 1.05rem; }
@@ -568,6 +594,8 @@
       .note-dot { font-size: 14px; }
     }
     @media (max-width: 800px) {
+      #vsRules { display: none; }
+      .vs-rules-list { display: block; }
       body.page-game.sdk-cosmic .container { padding-left: 4vw; padding-right: 4vw; }
       .sdk-intro {
         position: absolute;
@@ -760,6 +788,11 @@
       <h2>Pass and play</h2>
       <p>One cell per turn. The board stays hidden between turns.</p>
       <p id="vsRules">Speed bonus up to 2×, down to 1× at 30s. A mistake costs 140. Highest score wins, and equal scores tie. Three strikes: a third mistake loses. Player 1 starts, then turns swap, so the starter can get one extra turn.</p>
+      <ul class="vs-rules-list" id="vsRulesList">
+        <li>Up to 2× speed. A mistake costs 140. High score wins; equal scores tie.</li>
+        <li>Three strikes: a third mistake loses.</li>
+        <li>Player 1 starts. Turns swap, so the starter can get one extra turn.</li>
+      </ul>
       <label class="toggle-row"><span>Three strikes</span><input type="checkbox" id="vsStrikes"></label>
       <button type="button" class="btn btn--primary" id="vsStart">Start match</button>
       <button type="button" class="btn btn--outline" id="vsCancel">Cancel</button>
@@ -1656,6 +1689,7 @@ function resetMatch() {
   var frame = document.getElementById('boardFrame');
   if (frame) frame.classList.remove('is-paused', 'win-glow');
   resetWinArt();
+  clearSideBursts();
   var ov = document.getElementById('pauseOverlay');
   if (ov) ov.hidden = true;
   blurFocus();
@@ -1690,28 +1724,40 @@ function updateScoreBar() {
 }
 function syncMatchLocks() {
   var hint = document.getElementById('hintBtn');
-  var auto = document.getElementById('setAuto');
-  var limit = document.getElementById('setLimit');
-  var autoRow = auto && auto.closest('.toggle-row');
-  var limitRow = limit && limit.closest('.toggle-row');
-  var autoLabel = autoRow && autoRow.querySelector('span');
-  var limitLabel = limitRow && limitRow.querySelector('span');
+  var labels = {
+    setLimit: 'Mistake limit (3)',
+    setAuto: 'Auto notes',
+    setPlanets: 'Planet digits',
+    setSound: 'Sound',
+    setHighlight: 'Highlight matches',
+    setReduce: 'Reduced motion'
+  };
+  var rows = document.querySelectorAll('#settingsCard .toggle-row');
   if (match) {
-    if (hint) { hint.disabled = true; hint.textContent = 'Hint off'; }
-    if (auto) { auto.disabled = true; auto.checked = false; }
-    if (autoRow) autoRow.classList.add('is-locked');
-    if (autoLabel) autoLabel.textContent = 'Auto notes: Off';
-    if (limit) limit.disabled = true;
-    if (limitRow) limitRow.classList.add('is-locked');
-    if (limitLabel) limitLabel.textContent = 'Mistake limit: Off';
+    if (hint) { hint.disabled = true; hint.textContent = 'Locked'; }
+    rows.forEach(function (row) {
+      var input = row.querySelector('input');
+      var label = row.querySelector('span');
+      row.classList.add('is-locked');
+      if (input) { input.disabled = true; input.checked = false; }
+      if (label) label.textContent = 'Locked';
+    });
   } else {
     if (hint) hint.disabled = false;
-    if (auto) { auto.disabled = false; auto.checked = !!settings.autoNotes; }
-    if (autoRow) autoRow.classList.remove('is-locked');
-    if (autoLabel) autoLabel.textContent = 'Auto notes';
-    if (limit) { limit.disabled = false; limit.checked = !!settings.mistakeLimit; }
-    if (limitRow) limitRow.classList.remove('is-locked');
-    if (limitLabel) limitLabel.textContent = 'Mistake limit (3)';
+    rows.forEach(function (row) {
+      var input = row.querySelector('input');
+      var label = row.querySelector('span');
+      row.classList.remove('is-locked');
+      if (!input) return;
+      input.disabled = false;
+      if (input.id === 'setAuto') input.checked = !!settings.autoNotes;
+      else if (input.id === 'setLimit') input.checked = !!settings.mistakeLimit;
+      else if (input.id === 'setPlanets') input.checked = !!settings.planets;
+      else if (input.id === 'setSound') input.checked = !!settings.sound;
+      else if (input.id === 'setHighlight') input.checked = !!settings.highlight;
+      else if (input.id === 'setReduce') input.checked = reducedMotion();
+      if (label && labels[input.id]) label.textContent = labels[input.id];
+    });
   }
   updateScoreBar();
 }
@@ -1769,24 +1815,45 @@ function finishMatch(winner, reason) {
   done = true;
   updateScoreBar();
   showWinAnimation();
-  celebrateResult();
+  celebrateResult(winner);
   sfxWin();
 }
-function celebrateResult() {
+function clearSideBursts() {
+  var i, side;
+  for (i = 0; i < 2; i++) {
+    side = document.getElementById('scoreP' + i);
+    if (side) side.classList.remove('is-burst-big', 'is-burst-soft');
+  }
+}
+function celebrateResult(winner) {
   var box = document.getElementById('vsCelebrate');
   var img = document.getElementById('vsNova');
   var art = document.getElementById('vsConstel');
+  clearSideBursts();
   if (!box || !img) return;
+  box.classList.remove('is-win', 'is-tie');
   if (reducedMotion()) {
     box.hidden = true;
     img.hidden = true;
     img.removeAttribute('src');
     return;
   }
+  var tie = winner == null;
+  box.classList.add(tie ? 'is-tie' : 'is-win');
   box.hidden = false;
   if (art && !art.getAttribute('src')) art.src = THEME.constellation;
   img.hidden = false;
-  var hold = [80, 120, 280];
+  var side, i;
+  if (tie) {
+    for (i = 0; i < 2; i++) {
+      side = document.getElementById('scoreP' + i);
+      if (side) side.classList.add('is-burst-soft');
+    }
+  } else if (winner === 0 || winner === 1) {
+    side = document.getElementById('scoreP' + winner);
+    if (side) side.classList.add('is-burst-big');
+  }
+  var hold = tie ? [50, 70, 110] : [120, 180, 460];
   var step = 0;
   function next() {
     if (step >= 3) { img.hidden = true; return; }
@@ -2782,7 +2849,7 @@ document.addEventListener('keydown', function (e) {
   e.preventDefault();
   selected = { r: nr, c: nc };
   selectCell(nr, nc);
-});
+}, true);
 document.addEventListener('visibilitychange', function () {
   if (!live || done) return;
   hiddenHold = !!document.hidden;
