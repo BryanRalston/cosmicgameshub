@@ -426,6 +426,11 @@
       border: 1px solid rgba(255, 214, 140, 0.4);
     }
     .vs-card .btn { min-width: 12rem; }
+    .vs-celebrate { position: relative; width: 160px; height: 84px; }
+    .vs-celebrate[hidden] { display: none !important; }
+    .vs-constel, .vs-nova { position: absolute; left: 50%; top: 50%; width: 140px; height: auto; transform: translate(-50%, -50%); pointer-events: none; }
+    .vs-nova { width: 112px; }
+    html.sdk-reduce .vs-celebrate { display: none !important; }
     .handoff-delta { margin: 0; color: #ffe08a; font-size: 1.15rem; font-weight: 800; }
     body.is-handoff #board, body.is-handoff .numpad, body.is-handoff .trail, body.is-handoff .constel { visibility: hidden !important; }
     .mistake-bit { display: inline-flex; }
@@ -448,7 +453,9 @@
     }
     .score-side.is-active { opacity: 1; border-color: #ffe08a; box-shadow: inset 0 0 0 1px rgba(255, 224, 138, 0.35); }
     .score-side b { color: #ffe08a; font-variant-numeric: tabular-nums; }
-    .strike-dots { letter-spacing: 0.12em; font-size: 0.72rem; color: #ffe08a; }
+    .strike-dots { display: inline-flex; gap: 3px; align-items: center; }
+    .strike-dots i { display: block; width: 10px; height: 10px; border-radius: 50%; background: transparent; box-shadow: inset 0 0 0 1.5px rgba(255, 170, 170, 0.55); }
+    .strike-dots i.on { background: #ff3b4e; box-shadow: none; }
     .toggle-row.is-locked { opacity: 0.4; pointer-events: none; }
     #hintBtn:disabled { opacity: 0.4; }
     .settings-head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.35rem; }
@@ -743,7 +750,7 @@
     <div class="vs-setup" id="vsSetup" hidden>
       <h2>Pass and play</h2>
       <p>One cell per turn. The board stays hidden between turns.</p>
-      <p id="vsRules">Speed bonus up to 2×, down to 1× at 30s. A mistake costs 140. Highest score on a full board wins.</p>
+      <p id="vsRules">Speed bonus up to 2×, down to 1× at 30s. A mistake costs 140. Highest score wins, and equal scores tie. Three strikes: a third mistake loses. Player 1 starts, then turns swap, so the starter can get one extra turn.</p>
       <label class="toggle-row"><span>Three strikes</span><input type="checkbox" id="vsStrikes"></label>
       <button type="button" class="btn btn--primary" id="vsStart">Start match</button>
       <button type="button" class="btn btn--outline" id="vsCancel">Cancel</button>
@@ -763,6 +770,10 @@
     </div>
     <div class="vs-result" id="vsResult" hidden>
       <div class="vs-card">
+        <div class="vs-celebrate" id="vsCelebrate" hidden>
+          <img class="vs-constel" id="vsConstel" alt="">
+          <img class="vs-nova" id="vsNova" alt="" hidden>
+        </div>
         <h2 id="vsWinner">Player 1 wins</h2>
         <p id="vsWhy">Board finished</p>
         <p id="vsFinal">P1 0 · P2 0</p>
@@ -1628,10 +1639,10 @@ function resetMatch() {
   blurFocus();
   syncMatchLocks();
 }
-function strikeDots(n) {
+function strikeMarkup(n) {
   var s = '', i;
   n = n > 3 ? 3 : n;
-  for (i = 0; i < 3; i++) s += i < n ? '\u25CF' : '\u25CB';
+  for (i = 0; i < 3; i++) s += '<i class="' + (i < n ? 'on' : '') + '"></i>';
   return s;
 }
 function updateScoreBar() {
@@ -1651,7 +1662,7 @@ function updateScoreBar() {
     if (side) side.classList.toggle('is-active', i === match.turn && !match.over);
     if (dots) {
       dots.hidden = !match.strikes;
-      dots.textContent = match.strikes ? strikeDots(match.p[i].mistakes) : '';
+      dots.innerHTML = match.strikes ? strikeMarkup(match.p[i].mistakes) : '';
     }
   }
 }
@@ -1661,18 +1672,24 @@ function syncMatchLocks() {
   var limit = document.getElementById('setLimit');
   var autoRow = auto && auto.closest('.toggle-row');
   var limitRow = limit && limit.closest('.toggle-row');
+  var autoLabel = autoRow && autoRow.querySelector('span');
+  var limitLabel = limitRow && limitRow.querySelector('span');
   if (match) {
     if (hint) { hint.disabled = true; hint.textContent = 'Hint off'; }
     if (auto) { auto.disabled = true; auto.checked = false; }
     if (autoRow) autoRow.classList.add('is-locked');
+    if (autoLabel) autoLabel.textContent = 'Auto notes: Off';
     if (limit) limit.disabled = true;
     if (limitRow) limitRow.classList.add('is-locked');
+    if (limitLabel) limitLabel.textContent = 'Mistake limit: Off';
   } else {
     if (hint) hint.disabled = false;
     if (auto) { auto.disabled = false; auto.checked = !!settings.autoNotes; }
     if (autoRow) autoRow.classList.remove('is-locked');
+    if (autoLabel) autoLabel.textContent = 'Auto notes';
     if (limit) { limit.disabled = false; limit.checked = !!settings.mistakeLimit; }
     if (limitRow) limitRow.classList.remove('is-locked');
+    if (limitLabel) limitLabel.textContent = 'Mistake limit (3)';
   }
   updateScoreBar();
 }
@@ -1730,7 +1747,33 @@ function finishMatch(winner, reason) {
   done = true;
   updateScoreBar();
   showWinAnimation();
+  celebrateResult();
   sfxWin();
+}
+function celebrateResult() {
+  var box = document.getElementById('vsCelebrate');
+  var img = document.getElementById('vsNova');
+  var art = document.getElementById('vsConstel');
+  if (!box || !img) return;
+  if (reducedMotion()) {
+    box.hidden = true;
+    img.hidden = true;
+    img.removeAttribute('src');
+    return;
+  }
+  box.hidden = false;
+  if (art && !art.getAttribute('src')) art.src = THEME.constellation;
+  img.hidden = false;
+  var hold = [80, 120, 280];
+  var step = 0;
+  function next() {
+    if (step >= 3) { img.hidden = true; return; }
+    img.src = THEME.nova(step + 1);
+    var wait = hold[step];
+    step += 1;
+    setTimeout(next, wait);
+  }
+  next();
 }
 function playerStat(i) {
   var p = match.p[i];
@@ -2675,6 +2718,12 @@ document.addEventListener('keydown', function (e) {
   if (e.key === 'Escape') {
     if (settingsOn()) closeSettings();
     else if (paused) setPaused(false);
+    return;
+  }
+  var hand = document.getElementById('handoff');
+  if ((e.key === 'Enter' || e.key === ' ') && match && hand && !hand.hidden && !match.over && !match.ready && !settingsOn()) {
+    e.preventDefault();
+    if (!goHold) armGo();
     return;
   }
   if (settingsOn() || paused || done || !selected || typeof selected.r !== 'number') return;
