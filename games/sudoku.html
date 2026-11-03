@@ -152,6 +152,8 @@
       object-fit: contain;
       pointer-events: none;
     }
+    .face .planet.p2 { filter: brightness(1.45) saturate(1.55) hue-rotate(18deg); }
+    .face .planet.p5 { filter: brightness(1.7) saturate(1.35) contrast(1.05); }
     .face .num {
       position: relative;
       z-index: 1;
@@ -261,16 +263,23 @@
     .hud-bit b { color: #ffe08a; font-variant-numeric: tabular-nums; }
     .hud-pause { margin-left: auto; min-height: 36px; padding: 0.2rem 0.7rem; }
     .first-tip {
+      position: fixed;
+      z-index: 45;
+      left: 50%;
+      bottom: max(10px, env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      width: min(92vw, 420px);
       margin: 0;
       padding: 0.35rem 0.7rem;
       border-radius: 10px;
-      background: rgba(255, 224, 138, 0.14);
+      background: rgba(18, 16, 8, 0.94);
       color: #fff6d8;
       font-size: 0.82rem;
       line-height: 1.3;
+      text-align: center;
       transition: opacity 0.18s linear;
     }
-    .first-tip.is-dismissed { opacity: 0; visibility: hidden; }
+    .first-tip.is-dismissed { opacity: 0; visibility: hidden; pointer-events: none; }
     #dailyBtn[hidden] { display: none !important; }
     .info-row, .sdk-panel, .settings-menu, .num-btn, .diff-btn, .sdk-daily {
       background: rgba(6, 10, 28, 0.82);
@@ -376,7 +385,23 @@
       border: 1px solid rgba(255, 214, 140, 0.4);
       border-radius: 16px 16px 12px 12px;
       padding: 0.85rem 0.9rem 1rem;
+      transform: translateY(110%);
+      transition: transform 0.28s ease;
     }
+    .settings-sheet.is-shown .settings-card { transform: none; }
+    html.sdk-reduce .settings-card { transition: none !important; }
+    #limitTag { margin-left: 0.35rem; color: #ffe08a; font-weight: 800; font-size: 0.72rem; letter-spacing: 0.02em; }
+    #limitTag[hidden] { display: none !important; }
+    .handoff, .vs-result, .vs-setup {
+      position: fixed; inset: 0; z-index: 360;
+      background: #070a1f;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 0.8rem; padding: 1.5rem; text-align: center; color: #f4f6ff;
+    }
+    .handoff[hidden], .vs-result[hidden], .vs-setup[hidden] { display: none !important; }
+    .handoff h2, .vs-result h2, .vs-setup h2 { margin: 0; color: #ffe08a; }
+    .handoff p, .vs-result p, .vs-setup p { margin: 0; color: #d5d8ea; }
+    body.is-handoff #board, body.is-handoff .numpad, body.is-handoff .trail, body.is-handoff .constel { visibility: hidden !important; }
     .settings-head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.35rem; }
     .settings-head h2 { margin: 0; color: #ffe08a; font-size: 1.05rem; }
     .settings-head .btn { min-height: 44px; }
@@ -497,7 +522,7 @@
       }
       .sidebar { display: contents; }
       .topbar { order: 1; width: min(92vw, 70vh); gap: 0.25rem; }
-      .first-tip { order: 2; width: min(92vw, 70vh); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .first-tip { width: min(92vw, 420px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       .board-col { order: 3; width: min(92vw, 70vh); }
       .numpad { order: 4; width: min(92vw, 70vh); gap: 0.25rem; }
       .action-btns { order: 5; width: min(92vw, 70vh); gap: 0.25rem; }
@@ -511,7 +536,7 @@
       .cell { padding: 0; }
       .cell-notes,
       .note-dot { min-width: 0; min-height: 0; }
-      .note-dot { font-size: 10px; line-height: 1; }
+      .note-dot { font-size: 11px; line-height: 1; font-weight: 800; text-shadow: none; color: #fff; }
       .action-btns .btn { min-height: 40px; padding: 0.2rem 0.35rem; font-size: 0.8rem; }
       .sdk-daily { min-height: 36px; }
     }
@@ -634,7 +659,7 @@
           </div>
           <div class="hud-row">
             <span class="hud-bit">Time <b id="timerDisp">0:00</b></span>
-            <span class="hud-bit">Mistakes <b id="mistakeDisp">0 / 3</b></span>
+            <span class="hud-bit">Mistakes <b id="mistakeDisp">0 / 3</b><b id="limitTag" hidden>Limit off</b></span>
             <button type="button" class="btn btn--outline hud-pause" id="pauseBtn" aria-pressed="false">Pause</button>
           </div>
         </div>
@@ -657,9 +682,29 @@
           <button type="button" class="btn btn--outline" id="undoBtn">Undo</button>
           <button type="button" class="btn btn--outline" id="hintBtn">Hint (3 left)</button>
           <button type="button" class="btn btn--outline" id="settingsBtn" aria-expanded="false" aria-controls="settingsMenu">Settings</button>
+          <button type="button" class="btn btn--outline wide" id="vsBtn">2 Players</button>
           <button type="button" class="btn btn--primary wide" id="newBtn">New Puzzle</button>
         </div>
       </div>
+    </div>
+    <div class="vs-setup" id="vsSetup" hidden>
+      <h2>Pass and play</h2>
+      <p>Two players, one phone. The board stays hidden between turns.</p>
+      <label class="toggle-row"><span>Three strikes</span><input type="checkbox" id="vsStrikes"></label>
+      <button type="button" class="btn btn--primary" id="vsStart">Start match</button>
+      <button type="button" class="btn btn--outline" id="vsCancel">Cancel</button>
+    </div>
+    <div class="handoff" id="handoff" hidden>
+      <p>Pass the phone</p>
+      <h2 id="handoffWho">Player 1</h2>
+      <p id="handoffScore">P1 0 · P2 0</p>
+      <button type="button" class="btn btn--primary" id="handoffGo">Start turn</button>
+    </div>
+    <div class="vs-result" id="vsResult" hidden>
+      <h2 id="vsWinner">Player 1 wins</h2>
+      <p id="vsFinal"></p>
+      <button type="button" class="btn btn--primary" id="vsRematch">Rematch</button>
+      <button type="button" class="btn btn--outline" id="vsSolo">Back to solo</button>
     </div>
     <div class="settings-sheet" id="settingsMenu" hidden role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
       <div class="settings-card" id="settingsCard">
@@ -910,7 +955,7 @@ function closeSettings(e) {
   if (e) { e.preventDefault(); e.stopPropagation(); }
   var menu = document.getElementById('settingsMenu');
   var btn = document.getElementById('settingsBtn');
-  if (menu) menu.hidden = true;
+  if (menu) { menu.hidden = true; menu.classList.remove('is-shown'); }
   if (btn) btn.setAttribute('aria-expanded', 'false');
   setGameInert(false);
   settingsOpenedAt = 0;
@@ -924,11 +969,13 @@ function openSettings(e) {
   if (!menu) return;
   var x = window.scrollX, y = window.scrollY;
   menu.hidden = false;
+  menu.classList.remove('is-shown');
   if (btn) btn.setAttribute('aria-expanded', 'true');
   setGameInert(true);
   settingsOpenedAt = Date.now();
   focusNoScroll(menu);
   pinScroll(x, y);
+  requestAnimationFrame(function () { menu.classList.add('is-shown'); });
 }
 function inSettingsCard(target) {
   return !!(target && target.closest && target.closest('#settingsCard, #settingsBtn'));
@@ -1037,6 +1084,10 @@ function urlFor(route) {
   return path + '?p=' + route.id;
 }
 function playRandom(name) {
+  if (!(match && match.fresh)) {
+    match = null;
+    hideMatchUi();
+  }
   var nextSeed = randomSeed();
   launch({
     mode: 'free',
@@ -1187,6 +1238,294 @@ function applyAutoNotes() {
     notes[r][c] = userGrid[r][c] ? new Set() : candidates(r, c);
   }
 }
+
+var SCORE_BASE = 100;
+var SCORE_PENALTY = 140;
+var match = null;
+var turnStamp = 0;
+function sdkFillCands(board) {
+  var g = [];
+  for (var r = 0; r < 9; r++) {
+    g[r] = [];
+    for (var c = 0; c < 9; c++) {
+      g[r][c] = new Set();
+      if (board[r][c]) continue;
+      var used = {};
+      for (var i = 0; i < 9; i++) {
+        if (board[r][i]) used[board[r][i]] = 1;
+        if (board[i][c]) used[board[i][c]] = 1;
+      }
+      var br = Math.floor(r / 3) * 3, bc = Math.floor(c / 3) * 3;
+      for (var a = 0; a < 3; a++) for (var b = 0; b < 3; b++) if (board[br + a][bc + b]) used[board[br + a][bc + b]] = 1;
+      for (var n = 1; n <= 9; n++) if (!used[n]) g[r][c].add(n);
+    }
+  }
+  return g;
+}
+function sdkPlace(board, g, r, c, n) {
+  board[r][c] = n;
+  g[r][c].clear();
+  for (var i = 0; i < 9; i++) { g[r][i].delete(n); g[i][c].delete(n); }
+  var br = Math.floor(r / 3) * 3, bc = Math.floor(c / 3) * 3;
+  for (var a = 0; a < 3; a++) for (var b = 0; b < 3; b++) g[br + a][bc + b].delete(n);
+}
+function sdkUnits() {
+  var u = [], r, c, br, bc, i, j, row, col, box;
+  for (r = 0; r < 9; r++) {
+    row = []; col = [];
+    for (c = 0; c < 9; c++) { row.push([r, c]); col.push([c, r]); }
+    u.push(row); u.push(col);
+  }
+  for (br = 0; br < 9; br += 3) for (bc = 0; bc < 9; bc += 3) {
+    box = [];
+    for (i = 0; i < 3; i++) for (j = 0; j < 3; j++) box.push([br + i, bc + j]);
+    u.push(box);
+  }
+  return u;
+}
+var SDK_UNITS = sdkUnits();
+function sdkFindHidden(g, board) {
+  var ui, unit, n, hits, k, cell;
+  for (ui = 0; ui < SDK_UNITS.length; ui++) {
+    unit = SDK_UNITS[ui];
+    for (n = 1; n <= 9; n++) {
+      hits = [];
+      for (k = 0; k < unit.length; k++) {
+        cell = unit[k];
+        if (!board[cell[0]][cell[1]] && g[cell[0]][cell[1]].has(n)) hits.push(cell);
+      }
+      if (hits.length === 1 && g[hits[0][0]][hits[0][1]].size > 1) return { r: hits[0][0], c: hits[0][1], n: n };
+    }
+  }
+  return null;
+}
+function sdkEliminate(g, board) {
+  var changed = false;
+  function drop(r, c, n) {
+    if (!board[r][c] && g[r][c].has(n)) { g[r][c].delete(n); changed = true; }
+  }
+  var ui, unit, i, j, k, n, cells, key, map, pair, digs, hits, br, bc, rows, cols, boxes, rr, cc;
+  for (ui = 0; ui < SDK_UNITS.length; ui++) {
+    unit = SDK_UNITS[ui];
+    cells = [];
+    for (k = 0; k < unit.length; k++) if (!board[unit[k][0]][unit[k][1]] && g[unit[k][0]][unit[k][1]].size === 2) cells.push(unit[k]);
+    map = {};
+    for (k = 0; k < cells.length; k++) {
+      key = Array.from(g[cells[k][0]][cells[k][1]]).sort().join('');
+      if (!map[key]) map[key] = [];
+      map[key].push(cells[k]);
+    }
+    for (key in map) if (map[key].length === 2) {
+      pair = map[key];
+      digs = Array.from(g[pair[0][0]][pair[0][1]]);
+      for (k = 0; k < unit.length; k++) {
+        if (unit[k][0] === pair[0][0] && unit[k][1] === pair[0][1]) continue;
+        if (unit[k][0] === pair[1][0] && unit[k][1] === pair[1][1]) continue;
+        drop(unit[k][0], unit[k][1], digs[0]);
+        drop(unit[k][0], unit[k][1], digs[1]);
+      }
+    }
+  }
+  for (br = 0; br < 9; br += 3) for (bc = 0; bc < 9; bc += 3) {
+    for (n = 1; n <= 9; n++) {
+      rows = {}; cols = {}; hits = [];
+      for (i = 0; i < 3; i++) for (j = 0; j < 3; j++) {
+        rr = br + i; cc = bc + j;
+        if (!board[rr][cc] && g[rr][cc].has(n)) { rows[rr] = 1; cols[cc] = 1; hits.push([rr, cc]); }
+      }
+      if (Object.keys(rows).length === 1 && hits.length) {
+        rr = +Object.keys(rows)[0];
+        for (cc = 0; cc < 9; cc++) if (cc < bc || cc >= bc + 3) drop(rr, cc, n);
+      }
+      if (Object.keys(cols).length === 1 && hits.length) {
+        cc = +Object.keys(cols)[0];
+        for (rr = 0; rr < 9; rr++) if (rr < br || rr >= br + 3) drop(rr, cc, n);
+      }
+    }
+  }
+  for (rr = 0; rr < 9; rr++) for (n = 1; n <= 9; n++) {
+    boxes = {};
+    for (cc = 0; cc < 9; cc++) if (!board[rr][cc] && g[rr][cc].has(n)) boxes[Math.floor(cc / 3)] = 1;
+    if (Object.keys(boxes).length === 1) {
+      bc = +Object.keys(boxes)[0] * 3;
+      br = Math.floor(rr / 3) * 3;
+      for (i = 0; i < 3; i++) for (j = 0; j < 3; j++) if (br + i !== rr) drop(br + i, bc + j, n);
+    }
+  }
+  return changed;
+}
+function sdkRateCells(board) {
+  var b = board.map(function (row) { return row.slice(); });
+  var g = sdkFillCands(b);
+  var rate = [];
+  var r, c, n, hs, floor = 1, guard = 0, placed;
+  for (r = 0; r < 9; r++) { rate[r] = []; for (c = 0; c < 9; c++) rate[r][c] = 0; }
+  while (guard++ < 400) {
+    placed = false;
+    for (r = 0; r < 9; r++) for (c = 0; c < 9; c++) {
+      if (b[r][c] || g[r][c].size !== 1) continue;
+      n = Array.from(g[r][c])[0];
+      rate[r][c] = floor;
+      sdkPlace(b, g, r, c, n);
+      placed = true;
+    }
+    if (placed) continue;
+    hs = sdkFindHidden(g, b);
+    if (hs) {
+      floor = Math.max(floor, 2);
+      rate[hs.r][hs.c] = floor;
+      sdkPlace(b, g, hs.r, hs.c, hs.n);
+      continue;
+    }
+    if (sdkEliminate(g, b)) { floor = Math.max(floor, 3); continue; }
+    break;
+  }
+  for (r = 0; r < 9; r++) for (c = 0; c < 9; c++) if (!b[r][c]) rate[r][c] = 4;
+  return rate;
+}
+function sdkCyclic() {
+  return [
+    [1,2,3,4,5,6,7,8,9],[4,5,6,7,8,9,1,2,3],[7,8,9,1,2,3,4,5,6],
+    [2,3,4,5,6,7,8,9,1],[5,6,7,8,9,1,2,3,4],[8,9,1,2,3,4,5,6,7],
+    [3,4,5,6,7,8,9,1,2],[6,7,8,9,1,2,3,4,5],[9,1,2,3,4,5,6,7,8]
+  ];
+}
+function sdkFromString(s) {
+  var b = [], k = 0, r, c, ch;
+  for (r = 0; r < 9; r++) {
+    b[r] = [];
+    for (c = 0; c < 9; c++) {
+      ch = s.charAt(k++);
+      b[r][c] = (ch === '.' || ch === '0') ? 0 : +ch;
+    }
+  }
+  return b;
+}
+function sdkCellHidden(g, board, r, c) {
+  if (board[r][c] || g[r][c].size < 2) return false;
+  var nums = Array.from(g[r][c]), ni, n, i, br, bc, a, b0, count;
+  for (ni = 0; ni < nums.length; ni++) {
+    n = nums[ni];
+    count = 0;
+    for (i = 0; i < 9; i++) if (!board[r][i] && g[r][i].has(n)) count++;
+    if (count === 1) return true;
+    count = 0;
+    for (i = 0; i < 9; i++) if (!board[i][c] && g[i][c].has(n)) count++;
+    if (count === 1) return true;
+    count = 0;
+    br = Math.floor(r / 3) * 3; bc = Math.floor(c / 3) * 3;
+    for (a = 0; a < 3; a++) for (b0 = 0; b0 < 3; b0++) if (!board[br + a][bc + b0] && g[br + a][bc + b0].has(n)) count++;
+    if (count === 1) return true;
+  }
+  return false;
+}
+function sdkNakedOnly(board) {
+  var b = board.map(function (row) { return row.slice(); });
+  var g = sdkFillCands(b), guard = 0, r, c, placed, n;
+  while (guard++ < 120) {
+    placed = false;
+    for (r = 0; r < 9; r++) for (c = 0; c < 9; c++) {
+      if (b[r][c] || g[r][c].size !== 1) continue;
+      n = Array.from(g[r][c])[0];
+      sdkPlace(b, g, r, c, n);
+      placed = true;
+    }
+    if (!placed) break;
+  }
+  return b;
+}
+function sdkHiddenDemo() {
+  var b = sdkFromString('4.....8.5.3..........7......2.....6.....8.4......1.......6.3.7.5..2.....1.4......');
+  var rates = sdkRateCells(b);
+  var naked = sdkNakedOnly(b);
+  if (rates[5][1] === 2 && !naked[5][1]) return { r: 5, c: 1, rate: 2 };
+  return null;
+}
+function sdkRandomEv(board) {
+  var rate = sdkRateCells(board), ev = 0, cells = 0, r, c, gain;
+  for (r = 0; r < 9; r++) for (c = 0; c < 9; c++) if (!board[r][c]) {
+    gain = SCORE_BASE * (rate[r][c] || 4) * 2;
+    ev += gain / 9 - (SCORE_PENALTY * 8) / 9;
+    cells++;
+  }
+  return { ev: ev, cells: cells, penalty: SCORE_PENALTY, base: SCORE_BASE };
+}
+function logicalBoard() {
+  var b = [], r, c, v;
+  for (r = 0; r < 9; r++) {
+    b[r] = [];
+    for (c = 0; c < 9; c++) {
+      v = puzzle[r][c];
+      if (!v && userGrid[r][c] && userGrid[r][c] === solved[r][c]) v = userGrid[r][c];
+      b[r][c] = v || 0;
+    }
+  }
+  return b;
+}
+function hideMatchUi() {
+  var ids = ['handoff', 'vsResult', 'vsSetup'];
+  for (var i = 0; i < ids.length; i++) {
+    var el = document.getElementById(ids[i]);
+    if (el) el.hidden = true;
+  }
+  document.body.classList.remove('is-handoff');
+}
+function showHandoff() {
+  if (!match) return;
+  match.ready = false;
+  document.getElementById('handoffWho').textContent = 'Player ' + (match.turn + 1);
+  var line = 'P1 ' + match.p[0].score + '  ·  P2 ' + match.p[1].score;
+  if (match.lastNote) line += '    ' + match.lastNote;
+  document.getElementById('handoffScore').textContent = line;
+  document.getElementById('handoff').hidden = false;
+  document.getElementById('vsResult').hidden = true;
+  document.body.classList.add('is-handoff');
+  updateTimer();
+  updateMistakes();
+}
+function readyTurn() {
+  if (!match || match.over) return;
+  match.ready = true;
+  turnStamp = Date.now();
+  document.getElementById('handoff').hidden = true;
+  document.body.classList.remove('is-handoff');
+  updateTimer();
+}
+function finishMatch(winner, reason) {
+  match.over = true;
+  match.ready = false;
+  match.winner = winner;
+  clearInterval(timerInt);
+  document.body.classList.remove('is-handoff');
+  document.getElementById('handoff').hidden = true;
+  document.getElementById('vsWinner').textContent = winner == null ? 'Tie' : ('Player ' + (winner + 1) + ' wins');
+  document.getElementById('vsFinal').textContent = 'P1 ' + match.p[0].score + ' · P2 ' + match.p[1].score + (reason === 'strikes' ? ' · three strikes' : '');
+  document.getElementById('vsResult').hidden = false;
+  done = true;
+}
+function endTurn() {
+  match.turn = 1 - match.turn;
+  showHandoff();
+}
+function startMatch(strikes) {
+  match = {
+    fresh: true,
+    strikes: !!strikes,
+    p: [{ score: 0, mistakes: 0, secs: 0 }, { score: 0, mistakes: 0, secs: 0 }],
+    turn: 0,
+    ready: false,
+    over: false,
+    lastNote: ''
+  };
+  var setup = document.getElementById('vsSetup');
+  if (setup) setup.hidden = true;
+  playRandom(diff || 'easy');
+}
+function speedMult(ms) {
+  var s = ms / 1000;
+  if (s >= 30) return 1;
+  return 2 - s / 30;
+}
 function clearPeerNotes(r, c, n) {
   var i, j;
   for (i = 0; i < 9; i++) {
@@ -1271,6 +1610,10 @@ function resetWinArt() {
 }
 
 function begin(route) {
+  if (match && !match.fresh) {
+    match = null;
+    hideMatchUi();
+  }
   clearInterval(timerInt);
   document.getElementById('winBanner').classList.remove('show');
   document.getElementById('failBanner').classList.remove('show');
@@ -1359,6 +1702,11 @@ function begin(route) {
     document.getElementById('pauseOverlay').hidden = !paused;
     startTimer();
   }
+  if (match && match.fresh) {
+    match.fresh = false;
+    match.ready = false;
+    showHandoff();
+  } else if (!match) hideMatchUi();
   save();
 }
 
@@ -1432,7 +1780,7 @@ function renderStats() {
 
 function digitMarkup(n) {
   if (!settings.planets) return String(n);
-  return '<span class="face"><img class="planet" alt="" width="64" height="64" loading="lazy" decoding="async" src="' + THEME.planet(n) + '"><span class="num">' + n + '</span></span>';
+  return '<span class="face"><img class="planet p' + n + '" alt="" width="64" height="64" loading="lazy" decoding="async" src="' + THEME.planet(n) + '"><span class="num">' + n + '</span></span>';
 }
 function renderBoard() {
   var board = document.getElementById('board');
@@ -1494,6 +1842,7 @@ function renderBoard() {
 }
 function selectCell(r, c) {
   if (paused || boardBlocked() || settingsOn()) return;
+  if (match && !match.ready) return;
   selected = { r: r, c: c };
   highlightCells();
   focusNoScroll(cellEl(r, c));
@@ -1562,6 +1911,41 @@ function buildNumpad() {
 function cellEl(r, c) {
   return document.querySelector('.cell[data-r="' + r + '"][data-c="' + c + '"]');
 }
+function paintCell(r, c) {
+  var cell = cellEl(r, c);
+  if (!cell) return false;
+  var orig = puzzle[r][c];
+  var user = userGrid[r][c];
+  if (!orig && !user && notes[r][c] && notes[r][c].size) return false;
+  cell.classList.remove('given', 'user-num', 'error');
+  var label = 'Row ' + (r + 1) + ', column ' + (c + 1);
+  if (orig !== 0) {
+    cell.classList.add('given');
+    cell.innerHTML = digitMarkup(orig);
+    label += ', given ' + orig;
+  } else if (user !== 0) {
+    cell.classList.add('user-num');
+    if (user !== solved[r][c]) cell.classList.add('error');
+    cell.innerHTML = digitMarkup(user);
+    label += ', ' + user;
+  } else {
+    cell.innerHTML = '';
+    label += ', empty';
+  }
+  cell.setAttribute('aria-label', label);
+  return true;
+}
+function refreshPadUsed() {
+  var counts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  var r, c, value, n;
+  for (r = 0; r < 9; r++) for (c = 0; c < 9; c++) {
+    value = puzzle[r][c];
+    if (!value && userGrid[r][c] && userGrid[r][c] === solved[r][c]) value = userGrid[r][c];
+    if (value) counts[value]++;
+  }
+  var btns = document.querySelectorAll('#numpad .num-btn');
+  for (n = 1; n <= 9; n++) if (btns[n - 1]) btns[n - 1].classList.toggle('used', counts[n] >= 9);
+}
 function pushUndo() {
   undoStack.push({
     user: userGrid.map(function (row) { return row.slice(); }),
@@ -1572,7 +1956,7 @@ function pushUndo() {
   if (undoStack.length > 200) undoStack.shift();
 }
 function undoMove() {
-  if (!undoStack.length || done || paused) return;
+  if (match || !undoStack.length || done || paused) return;
   var snap = undoStack.pop();
   userGrid = snap.user.map(function (row) { return row.slice(); });
   notes = snap.notes.map(function (row) { return row.map(function (set) { return new Set(set); }); });
@@ -1663,8 +2047,10 @@ function readSelection() {
 }
 function inputNum(n) {
   if (boardBlocked() || settingsOn() || !selected || typeof selected.r !== 'number' || done || paused) return;
+  if (match && (!match.ready || match.over)) return;
   var r = selected.r, c = selected.c;
   if (puzzle[r][c] !== 0) return;
+  if (match && userGrid[r][c] && userGrid[r][c] === solved[r][c]) return;
   markPlayed();
   pushUndo();
   if (notesMode && !settings.autoNotes && n !== 0) {
@@ -1674,17 +2060,23 @@ function inputNum(n) {
     save();
     return;
   }
+  var rated = 1;
+  if (match && n) {
+    var board = logicalBoard();
+    board[r][c] = 0;
+    rated = sdkRateCells(board)[r][c] || 4;
+  }
   var prev = userGrid[r][c];
   notes[r][c] = new Set();
   if (n === 0) userGrid[r][c] = 0;
   else userGrid[r][c] = n;
   var correct = n !== 0 && n === solved[r][c];
   var wrong = n !== 0 && n !== solved[r][c];
-  if (wrong) {
+  if (wrong && !match) {
     mistakes += 1;
     updateMistakes();
     sfxMiss();
-  }
+  } else if (wrong) sfxMiss();
   if (correct && prev !== n) {
     if (settings.autoNotes) applyAutoNotes();
     else clearPeerNotes(r, c, n);
@@ -1693,8 +2085,42 @@ function inputNum(n) {
   } else if (settings.autoNotes) {
     applyAutoNotes();
   }
-  renderBoard();
-  buildNumpad();
+  if (settings.autoNotes || (correct && prev !== n) || !paintCell(r, c)) {
+    renderBoard();
+    buildNumpad();
+  } else {
+    highlightCells();
+    refreshPadUsed();
+  }
+  if (match && n) {
+    var p = match.p[match.turn];
+    var mult = speedMult(Date.now() - turnStamp);
+    if (correct && prev !== n) {
+      var pts = Math.round(SCORE_BASE * rated * mult);
+      p.score += pts;
+      match.lastNote = '+' + pts;
+    } else if (wrong) {
+      p.score -= SCORE_PENALTY;
+      p.mistakes += 1;
+      match.lastNote = '\u2212' + SCORE_PENALTY;
+      if (match.strikes && p.mistakes >= 3) {
+        updateMistakes();
+        save();
+        finishMatch(1 - match.turn, 'strikes');
+        return;
+      }
+    }
+    updateMistakes();
+    if (isSolved()) {
+      var w = match.p[0].score === match.p[1].score ? null : (match.p[0].score > match.p[1].score ? 0 : 1);
+      save();
+      finishMatch(w, 'score');
+      return;
+    }
+    save();
+    endTurn();
+    return;
+  }
   if (wrong) {
     var el = cellEl(r, c);
     if (el) el.classList.add('shake');
@@ -1709,7 +2135,7 @@ function inputNum(n) {
 }
 
 function useHint() {
-  if (boardBlocked() || settingsOn() || hintsLeft <= 0 || !selected || typeof selected.r !== 'number' || done || paused) return;
+  if (match || boardBlocked() || settingsOn() || hintsLeft <= 0 || !selected || typeof selected.r !== 'number' || done || paused) return;
   var r = selected.r, c = selected.c;
   if (puzzle[r][c] !== 0) return;
   if (userGrid[r][c] === solved[r][c]) return;
@@ -1755,14 +2181,31 @@ function startTimer() {
   clearInterval(timerInt);
   timerInt = setInterval(function () {
     if (done || paused || hiddenHold) return;
-    timerSecs += 1;
+    if (match) {
+      if (!match.ready || match.over) return;
+      match.p[match.turn].secs += 1;
+      timerSecs = match.p[match.turn].secs;
+    } else timerSecs += 1;
     updateTimer();
     if (timerSecs % 5 === 0) save();
   }, 1000);
 }
-function updateTimer() { document.getElementById('timerDisp').textContent = fmtTime(timerSecs); }
+function updateTimer() {
+  var secs = match ? match.p[match.turn].secs : timerSecs;
+  document.getElementById('timerDisp').textContent = fmtTime(secs);
+}
 function updateMistakes() {
+  var tag = document.getElementById('limitTag');
+  if (match) {
+    document.getElementById('mistakeDisp').textContent = match.p[0].score + ' · ' + match.p[1].score;
+    if (tag) { tag.hidden = false; tag.textContent = match.strikes ? 'Three strikes' : 'Unlimited'; }
+    return;
+  }
   document.getElementById('mistakeDisp').textContent = settings.mistakeLimit ? (mistakes + ' / 3') : String(mistakes);
+  if (tag) {
+    tag.hidden = !!settings.mistakeLimit;
+    tag.textContent = 'Limit off';
+  }
 }
 
 function fillWinCopy(isNew, streak) {
@@ -1811,7 +2254,7 @@ function commitWin() {
   fillWinCopy(false, isDaily ? (+lsGet('sdk_streak') || 0) : 0);
 }
 function checkWin() {
-  if (done || !isSolved()) return;
+  if (match || done || !isSolved()) return;
   done = true;
   celebrated = true;
   paused = false;
@@ -1932,6 +2375,7 @@ document.addEventListener('keydown', function (e) {
     return;
   }
   if (settingsOn() || paused || done || !selected || typeof selected.r !== 'number') return;
+  if (match && (!match.ready || match.over)) return;
   var tag = e.target && e.target.tagName;
   if (tag === 'INPUT' || tag === 'TEXTAREA') return;
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undoMove(); return; }
@@ -1979,6 +2423,34 @@ function bindControls() {
   document.getElementById('pauseBtn').addEventListener('click', function () { setPaused(!paused); });
   document.getElementById('resumeBtn').addEventListener('click', function () { setPaused(false); });
   document.getElementById('newBtn').addEventListener('click', function () { playRandom(diff || 'easy'); });
+  document.getElementById('vsBtn').addEventListener('click', function () {
+    document.getElementById('vsStrikes').checked = false;
+    document.getElementById('vsSetup').hidden = false;
+  });
+  document.getElementById('vsCancel').addEventListener('click', function () { document.getElementById('vsSetup').hidden = true; });
+  document.getElementById('vsStart').addEventListener('click', function () { startMatch(document.getElementById('vsStrikes').checked); });
+  document.getElementById('handoffGo').addEventListener('click', readyTurn);
+  document.getElementById('handoff').addEventListener('pointerdown', function (e) {
+    if (e.target && e.target.id === 'handoffGo') return;
+    if (e.target === document.getElementById('handoff')) readyTurn();
+  });
+  document.getElementById('vsRematch').addEventListener('click', function () {
+    var strikes = match && match.strikes;
+    match = {
+      fresh: true, strikes: !!strikes,
+      p: [{ score: 0, mistakes: 0, secs: 0 }, { score: 0, mistakes: 0, secs: 0 }],
+      turn: 0, ready: false, over: false, lastNote: ''
+    };
+    document.getElementById('vsResult').hidden = true;
+    playRandom(diff || 'easy');
+  });
+  document.getElementById('vsSolo').addEventListener('click', function () {
+    match = null;
+    done = false;
+    hideMatchUi();
+    updateMistakes();
+    startTimer();
+  });
   document.getElementById('playAgain').addEventListener('click', function () { playRandom(diff || 'easy'); });
   document.getElementById('failAgain').addEventListener('click', function () { playRandom(diff || 'easy'); });
   document.getElementById('failContinue').addEventListener('click', continuePlay);
