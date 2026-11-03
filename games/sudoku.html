@@ -39,8 +39,8 @@
       body.page-game.sdk-cosmic { background-attachment: scroll; }
     }
 
-    .sdk-intro { padding: 1.5rem 0 0.35rem; }
-    .sdk-intro h1 { margin-top: 0.4rem; margin-bottom: 0.25rem; color: #f7f8ff; }
+    .sdk-intro { padding: 1.1rem 0 0.25rem; }
+    .sdk-intro h1 { margin-top: 0.35rem; margin-bottom: 0.2rem; color: #f7f8ff; }
     .sdk-lead { color: #d5d8ea; margin: 0; font-size: 0.95rem; }
     .complete-stat {
       margin: 0.55rem 0 0;
@@ -51,9 +51,16 @@
     }
     #completeStat[hidden] { display: none !important; }
 
-    .game-layout { display: flex; gap: 2rem; align-items: flex-start; flex-wrap: wrap; justify-content: center; padding: 1rem 0 3rem; }
+    .game-layout {
+      display: grid;
+      grid-template-columns: 480px minmax(240px, 320px);
+      gap: 1.25rem;
+      align-items: start;
+      justify-content: center;
+      padding: 0.75rem 0 2.5rem;
+    }
 
-    .board-col { width: min(450px, 92vw); }
+    .board-col { width: 480px; max-width: 100%; }
     .board-frame {
       position: relative;
       width: 100%;
@@ -82,7 +89,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: clamp(0.95rem, 4.4vw, 1.45rem);
+      font-size: clamp(1rem, 4.6vw, 1.7rem);
       font-weight: 800;
       font-variant-numeric: tabular-nums;
       cursor: pointer;
@@ -92,10 +99,14 @@
       color: #ffffff;
       user-select: none;
       touch-action: manipulation;
+      overflow: hidden;
       text-shadow: 0 0 3px #000, 0 1px 2px #000, 0 0 8px rgba(0, 0, 0, 0.9);
     }
     .cell.given { color: #ffffff; }
-    .cell.user-num { color: #ffe08a; }
+    .cell.user-num {
+      color: #ffe08a;
+      text-shadow: 0 0 8px rgba(255, 210, 90, 0.95), 0 0 2px #000, 0 1px 2px #000;
+    }
     .cell.selected { background: rgba(0, 212, 255, 0.22); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.85); z-index: 1; }
     .cell.highlight { background: rgba(160, 196, 255, 0.12); }
     .cell.same-num { background: rgba(255, 214, 120, 0.16); }
@@ -105,10 +116,18 @@
       box-shadow: inset 0 0 0 2px #ff8b98;
     }
     .cell.unit-done { background: rgba(255, 220, 140, 0.28); }
-    .cell-notes { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; height: 100%; }
+    .cell-notes {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
     .note-dot {
-      font-size: clamp(0.42rem, 1.5vw, 0.58rem);
-      color: #e4e7f8;
+      font-size: 11px;
+      line-height: 1;
+      color: #f4f6ff;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -117,16 +136,17 @@
     }
     .face {
       position: relative;
-      width: 92%;
-      height: 92%;
+      width: 100%;
+      height: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
+      overflow: hidden;
     }
     .face .planet {
       position: absolute;
-      width: 86%;
-      height: 86%;
+      width: 70%;
+      height: 70%;
       object-fit: contain;
       pointer-events: none;
     }
@@ -135,14 +155,18 @@
       z-index: 1;
       color: #ffffff;
       line-height: 1;
-      min-width: 1.2em;
-      min-height: 1.2em;
+      min-width: 1.15em;
+      min-height: 1.15em;
       display: flex;
       align-items: center;
       justify-content: center;
       border-radius: 50%;
-      background: rgba(0, 0, 0, 0.62);
+      background: rgba(0, 0, 0, 0.72);
       text-shadow: 0 0 2px #000, 0 1px 1px #000;
+    }
+    .cell.user-num .num {
+      color: #ffe08a;
+      box-shadow: 0 0 0 2px #ffe08a, 0 0 10px rgba(255, 200, 80, 0.9);
     }
 
     .trail, .constel, .nova { position: absolute; pointer-events: none; }
@@ -164,7 +188,7 @@
       stroke-dashoffset: 48;
       filter: drop-shadow(0 0 2px rgba(255, 236, 180, 0.9));
     }
-    .trail.on path { animation: sdkTrail 1.35s ease forwards; }
+    .trail.on path { animation: sdkDraw 1.15s ease forwards, sdkFade 0.45s ease 2s forwards; }
     .constel {
       inset: 22% 0 auto;
       width: 100%;
@@ -175,14 +199,15 @@
       clip-path: inset(0 100% 0 0);
     }
     #constel[hidden] { display: none !important; }
-    .constel.on { animation: sdkReveal 1.6s ease forwards; }
+    .constel.on { animation: sdkReveal 1.15s ease forwards, sdkFade 0.45s ease 2s forwards; }
     .nova {
       z-index: 3;
-      width: 46%;
+      width: 42%;
       height: auto;
       transform: translate(-50%, -50%) scale(0.45);
       opacity: 0;
     }
+    .nova.win-burst { width: 88%; z-index: 5; }
     #nova[hidden] { display: none !important; }
     .nova.f1 { transform: translate(-50%, -50%) scale(0.55); opacity: 0.95; }
     .nova.f2 { transform: translate(-50%, -50%) scale(1); opacity: 1; }
@@ -200,9 +225,15 @@
       border-radius: 12px;
     }
     #pauseOverlay[hidden] { display: none !important; }
-    .pause-overlay p { margin: 0; color: #fff; font-size: 1.7rem; font-weight: 750; letter-spacing: 0.04em; }
+    .board-frame.is-paused #board,
+    .board-frame.is-paused .trail { visibility: hidden; }
+    .board-frame.win-glow {
+      box-shadow: 0 0 0 3px rgba(255, 224, 138, 0.92), 0 0 28px rgba(255, 196, 80, 0.55);
+    }
+    .pause-overlay p { margin: 0; color: #fff; font-size: 1.7rem; font-weight: 700; letter-spacing: 0.04em; }
 
-    @keyframes sdkTrail { to { stroke-dashoffset: 0; } }
+    @keyframes sdkDraw { to { stroke-dashoffset: 0; } }
+    @keyframes sdkFade { to { opacity: 0; } }
     @keyframes sdkReveal { to { opacity: 0.95; clip-path: inset(0 0 0 0); } }
     @keyframes sdkShake {
       0%, 100% { transform: translateX(0); }
@@ -211,7 +242,32 @@
     }
     .cell.shake { animation: sdkShake 0.28s ease; }
 
-    .sidebar { display: flex; flex-direction: column; gap: 0.75rem; min-width: 220px; max-width: 320px; flex: 1; }
+    .sidebar { display: flex; flex-direction: column; gap: 0.65rem; min-width: 0; }
+    .topbar { display: flex; flex-direction: column; gap: 0.4rem; }
+    .hud-row {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      background: rgba(6, 10, 28, 0.82);
+      color: #f4f6ff;
+      border: 1px solid rgba(255, 214, 140, 0.22);
+      border-radius: 12px;
+      padding: 0.35rem 0.55rem 0.35rem 0.75rem;
+      min-height: 44px;
+    }
+    .hud-bit { display: flex; gap: 0.35rem; align-items: baseline; font-size: 0.84rem; white-space: nowrap; }
+    .hud-bit b { color: #ffe08a; font-variant-numeric: tabular-nums; }
+    .hud-pause { margin-left: auto; min-height: 36px; padding: 0.2rem 0.7rem; }
+    .first-tip {
+      margin: 0;
+      padding: 0.35rem 0.7rem;
+      border-radius: 10px;
+      background: rgba(255, 224, 138, 0.14);
+      color: #fff6d8;
+      font-size: 0.82rem;
+      line-height: 1.3;
+    }
+    #firstTip[hidden], #dailyBtn[hidden] { display: none !important; }
     .info-row, .sdk-panel, .settings-menu, .num-btn, .diff-btn, .sdk-daily {
       background: rgba(6, 10, 28, 0.82);
       color: #f4f6ff;
@@ -296,36 +352,95 @@
     .sdk-cosmic .btn--outline { color: #f4f6ff; border-color: rgba(255, 255, 255, 0.28); background: rgba(6, 10, 28, 0.72); }
     .sdk-cosmic .btn--outline:hover { color: #ffe08a; border-color: #ffe08a; }
     .note-active { border-color: #ffe08a !important; color: #ffe08a !important; }
-    .settings-menu {
+    .settings-sheet {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
       display: flex;
-      flex-direction: column;
-      gap: 0.45rem;
-      padding: 0.75rem 0.85rem;
-      border-radius: 12px;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 0.75rem;
+      background: rgba(2, 4, 14, 0.62);
     }
     #settingsMenu[hidden] { display: none !important; }
-    .settings-menu label {
-      display: flex;
-      gap: 0.55rem;
-      align-items: center;
-      font-size: 0.88rem;
-      color: #f4f6ff;
-      min-height: 32px;
+    .settings-card {
+      width: min(420px, 100%);
+      max-height: min(80vh, 560px);
+      overflow: auto;
+      background: #12182c;
+      border: 1px solid rgba(255, 214, 140, 0.4);
+      border-radius: 16px 16px 12px 12px;
+      padding: 0.85rem 0.9rem 1rem;
     }
+    .settings-head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.35rem; }
+    .settings-head h2 { margin: 0; color: #ffe08a; font-size: 1.05rem; }
+    .settings-head .btn { min-height: 44px; }
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      min-height: 44px;
+      padding: 0 0.1rem;
+      color: #f4f6ff;
+      font-size: 1rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      cursor: pointer;
+    }
+    .toggle-row input {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 48px;
+      height: 28px;
+      margin: 0;
+      border: 0;
+      border-radius: 999px;
+      background: #2c334c;
+      position: relative;
+      flex: 0 0 auto;
+      cursor: pointer;
+    }
+    .toggle-row input::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #fff;
+    }
+    .toggle-row input:checked { background: #e0b85a; }
+    .toggle-row input:checked::after { transform: translateX(20px); }
+    .toggle-row input:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 
     .win-banner, .fail-banner {
       display: none;
       border-radius: 16px;
       padding: 1.2rem 1rem 1.1rem;
       text-align: center;
-      margin-top: 0.9rem;
-      background: rgba(6, 10, 28, 0.88);
+      background: rgba(6, 10, 28, 0.92);
     }
-    .win-banner { border: 1px solid rgba(255, 214, 140, 0.55); }
-    .win-banner.show, .fail-banner.show { display: block; }
+    .win-banner { border: 1px solid rgba(255, 214, 140, 0.55); margin-top: 0.9rem; }
+    .win-banner.show { display: block; }
     .win-banner h2 { color: #ffe08a; margin: 0 0 0.45rem; font-size: 1.45rem; }
-    .fail-banner { border: 1px solid rgba(255, 120, 136, 0.5); }
-    .fail-banner h2 { color: #ffb3bc; margin: 0 0 0.45rem; font-size: 1.35rem; }
+    .fail-banner {
+      position: absolute;
+      inset: 0;
+      z-index: 6;
+      margin: 0;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 120, 136, 0.5);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.65rem;
+    }
+    .fail-banner.show { display: flex; }
+    .fail-banner h2 { color: #ffb3bc; margin: 0; font-size: 1.25rem; }
+    .fail-copy { color: #d5d8ea; margin: 0; font-size: 0.88rem; max-width: 16rem; }
+    .fail-actions { display: flex; flex-wrap: wrap; gap: 0.45rem; justify-content: center; }
+    .fail-actions .btn { min-height: 44px; }
     .sdk-best { font-size: 0.85rem; color: #d5d8ea; margin: 0.35rem 0 0.8rem; }
     .sdk-best span { color: #ffe08a; font-weight: 800; }
     .btn-share {
@@ -341,25 +456,50 @@
       min-height: 44px;
     }
 
-    @media (max-width: 720px) {
-      .sdk-intro { padding: 0.7rem 0 0.2rem; }
-      .sdk-intro h1 { font-size: 1.7rem; }
-      .sidebar { width: 100%; max-width: min(450px, 92vw); }
-      .sidebar > .numpad { order: 1; }
-      .sidebar > .action-btns { order: 2; }
-      .sidebar > .diff-row { order: 3; }
-      .sidebar > .sdk-daily { order: 4; }
-      .sidebar > .info-row { order: 5; }
-      .sidebar > .sdk-panel { order: 6; }
-      .sidebar > .settings-menu { order: 7; }
-      .num-btn { aspect-ratio: auto; min-height: 44px; font-size: 1rem; }
-      .diff-btn, .sdk-daily { min-height: 44px; }
+    @media (min-width: 801px) {
+      .settings-sheet { align-items: center; }
+      .settings-card { border-radius: 16px; }
+      .note-dot { font-size: 14px; }
+    }
+    @media (max-width: 800px) {
+      body.page-game.sdk-cosmic .container { padding-left: 4vw; padding-right: 4vw; }
+      .sdk-intro {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        clip-path: inset(50%);
+      }
+      .game-layout {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.3rem;
+        width: 100%;
+        padding: 0.3rem 0 0.8rem;
+      }
+      .sidebar { display: contents; }
+      .topbar { order: 1; width: min(92vw, 70vh); gap: 0.25rem; }
+      .first-tip { order: 2; width: min(92vw, 70vh); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .board-col { order: 3; width: min(92vw, 70vh); }
+      .numpad { order: 4; width: min(92vw, 70vh); gap: 0.25rem; }
+      .action-btns { order: 5; width: min(92vw, 70vh); gap: 0.25rem; }
+      #dailyBtn { order: 6; width: min(92vw, 70vh); }
+      .puzzle-line { order: 7; width: min(92vw, 70vh); }
+      .sdk-panel { order: 8; width: min(92vw, 70vh); }
+      .diff-btn { min-height: 32px; padding: 0.15rem 0.1rem; }
+      .hud-row { min-height: 32px; padding: 0.15rem 0.4rem 0.15rem 0.55rem; }
+      .hud-pause { min-height: 32px; }
+      .num-btn { aspect-ratio: auto; min-height: 40px; height: 40px; font-size: 1.05rem; }
+      .action-btns .btn { min-height: 40px; padding: 0.2rem 0.35rem; font-size: 0.8rem; }
+      .sdk-daily { min-height: 36px; }
     }
     @media (prefers-reduced-motion: reduce) {
-      .trail.on path { animation: none; stroke-dashoffset: 0; }
-      .constel.on { animation: none; opacity: 0.95; clip-path: none; }
+      .trail.on path { animation: none; opacity: 0; }
+      .constel.on { animation: none; opacity: 0; }
       .nova { display: none !important; }
-      .cell, .num-btn, .rg-card, .btn { transition: none !important; animation: none !important; }
+      .cell, .num-btn, .rg-card, .btn, .toggle-row input::after { transition: none !important; animation: none !important; }
       .cell.shake { animation: none; }
     }
   </style>
@@ -443,34 +583,41 @@
             <p>Paused</p>
             <button type="button" class="btn btn--primary" id="resumeBtn">Resume</button>
           </div>
+          <div class="fail-banner" id="failBanner">
+            <h2>Too many mistakes</h2>
+            <p class="fail-copy">The limit is 3. Keep playing with it off, or start a new puzzle.</p>
+            <div class="fail-actions">
+              <button type="button" class="btn btn--primary" id="failContinue">Continue (limit off)</button>
+              <button type="button" class="btn btn--outline" id="failAgain">Play again</button>
+            </div>
+          </div>
         </div>
         <div class="win-banner" id="winBanner">
-          <h2>Puzzle solved</h2>
+          <h2>You solved it</h2>
           <p id="winMsg" style="color:#d5d8ea;margin:0;"></p>
           <p class="sdk-best" id="winBest"></p>
           <button type="button" class="btn btn--primary" id="playAgain">Play again</button>
           <button type="button" class="btn-share" id="winShareBtn">Share</button>
         </div>
-        <div class="fail-banner" id="failBanner">
-          <h2>Too many mistakes</h2>
-          <p style="color:#d5d8ea;margin:0 0 1rem;">3 mistakes. Turn the limit off in Settings to keep going.</p>
-          <button type="button" class="btn btn--primary" id="failAgain">Play again</button>
-          <button type="button" class="btn-share" id="failShareBtn">Share</button>
-        </div>
       </div>
 
       <div class="sidebar">
-        <div class="diff-row" role="group" aria-label="Difficulty">
-          <button type="button" class="diff-btn active" data-d="easy">Easy</button>
-          <button type="button" class="diff-btn" data-d="medium">Med</button>
-          <button type="button" class="diff-btn" data-d="hard">Hard</button>
-          <button type="button" class="diff-btn" data-d="expert">Expert</button>
+        <div class="topbar">
+          <div class="diff-row" role="group" aria-label="Difficulty">
+            <button type="button" class="diff-btn active" data-d="easy">Easy</button>
+            <button type="button" class="diff-btn" data-d="medium">Med</button>
+            <button type="button" class="diff-btn" data-d="hard">Hard</button>
+            <button type="button" class="diff-btn" data-d="expert">Expert</button>
+          </div>
+          <div class="hud-row">
+            <span class="hud-bit">Time <b id="timerDisp">0:00</b></span>
+            <span class="hud-bit">Mistakes <b id="mistakeDisp">0 / 3</b></span>
+            <button type="button" class="btn btn--outline hud-pause" id="pauseBtn" aria-pressed="false">Pause</button>
+          </div>
         </div>
+        <p class="first-tip" id="firstTip" hidden>Select a cell, then a number.</p>
         <button type="button" class="sdk-daily" id="dailyBtn">Today's puzzle</button>
-
-        <div class="info-row"><span>Time</span><span id="timerDisp">0:00</span></div>
-        <div class="info-row"><span>Mistakes</span><span id="mistakeDisp">0 / 3</span></div>
-        <div class="info-row"><span id="puzzleLabel">Daily</span><span id="dateDisp">—</span></div>
+        <div class="info-row puzzle-line"><span id="puzzleLabel">Daily</span><span id="dateDisp">—</span></div>
 
         <section class="sdk-panel" id="statsPanel" aria-label="Stats">
           <h2>Stats</h2>
@@ -486,17 +633,22 @@
           <button type="button" class="btn btn--outline" id="noteBtn">Notes: OFF</button>
           <button type="button" class="btn btn--outline" id="undoBtn">Undo</button>
           <button type="button" class="btn btn--outline" id="hintBtn">Hint (3 left)</button>
-          <button type="button" class="btn btn--outline" id="pauseBtn" aria-pressed="false">Pause</button>
           <button type="button" class="btn btn--outline" id="settingsBtn" aria-expanded="false" aria-controls="settingsMenu">Settings</button>
           <button type="button" class="btn btn--primary wide" id="newBtn">New Puzzle</button>
         </div>
-        <div class="settings-menu" id="settingsMenu" hidden>
-          <label><input type="checkbox" id="setLimit" checked> Mistake limit (3)</label>
-          <label><input type="checkbox" id="setAuto"> Auto notes</label>
-          <label><input type="checkbox" id="setPlanets"> Planet digits</label>
-          <label><input type="checkbox" id="setSound"> Sound</label>
-          <label><input type="checkbox" id="setHighlight" checked> Highlight matches</label>
+      </div>
+    </div>
+    <div class="settings-sheet" id="settingsMenu" hidden role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <div class="settings-card" id="settingsCard">
+        <div class="settings-head">
+          <h2 id="settingsTitle">Settings</h2>
+          <button type="button" class="btn btn--outline" id="settingsClose">Close</button>
         </div>
+        <label class="toggle-row"><span>Mistake limit (3)</span><input type="checkbox" id="setLimit" checked></label>
+        <label class="toggle-row"><span>Auto notes</span><input type="checkbox" id="setAuto"></label>
+        <label class="toggle-row"><span>Planet digits</span><input type="checkbox" id="setPlanets"></label>
+        <label class="toggle-row"><span>Sound</span><input type="checkbox" id="setSound"></label>
+        <label class="toggle-row"><span>Highlight matches</span><input type="checkbox" id="setHighlight" checked></label>
       </div>
     </div>
   </div>
@@ -620,16 +772,28 @@ var mistakes = 0, hintsLeft = 3, notesMode = false, timerSecs = 0, timerInt = nu
 var diff = 'easy', done = false, failed = false, paused = false, isDaily = true;
 var puzzleId = '', puzzleSeed = 1, undoStack = [], live = false, hiddenHold = false;
 var reportedStart = false, reportedFinish = false, quitSent = false;
-var countedPlay = false, countedWin = false;
+var countedPlay = false, countedWin = false, celebrated = false;
 var pendingEvents = [];
+var storageStamp = '';
 var SETTINGS_KEY = 'sdk_settings';
 var STATS_KEY = 'sdk_stats';
 var SAVE_INDEX = 'sdk_save_index';
 var settings = { mistakeLimit: true, autoNotes: false, planets: false, sound: false, highlight: true };
 
 function lsGet(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
-function lsSet(key, value) { try { localStorage.setItem(key, value); } catch (e) {} }
+function storageKept() {
+  try { return !!storageStamp && localStorage.getItem('sdk_stamp') === storageStamp; }
+  catch (e) { return false; }
+}
+function lsSet(key, value) {
+  if (storageStamp && !storageKept()) return;
+  try { localStorage.setItem(key, value); } catch (e) {}
+}
 function lsDel(key) { try { localStorage.removeItem(key); } catch (e) {} }
+function initStamp() {
+  storageStamp = 's' + Date.now().toString(36) + Math.random().toString(36).slice(2);
+  try { localStorage.setItem('sdk_stamp', storageStamp); } catch (e) {}
+}
 
 function localDateStr(d) {
   d = d || new Date();
@@ -808,7 +972,42 @@ function readSave(id) {
     return raw;
   } catch (e) { return null; }
 }
+function markPlayed() {
+  if (countedPlay || !live) return;
+  countedPlay = true;
+  var stats = loadStats();
+  stats.played += 1;
+  saveStats(stats);
+  renderStats();
+  dismissTip();
+}
+function dismissTip() {
+  lsSet('sdk_tip_seen', '1');
+  var tip = document.getElementById('firstTip');
+  if (tip) tip.hidden = true;
+}
+function syncTip() {
+  var tip = document.getElementById('firstTip');
+  if (!tip) return;
+  tip.hidden = lsGet('sdk_tip_seen') === '1';
+}
+function syncSoundLabel() {
+  var mb = document.querySelector('[data-cg-mute]');
+  if (!mb) return;
+  mb.textContent = settings.sound ? 'Sound on' : 'Sound off';
+  mb.setAttribute('aria-pressed', settings.sound ? 'true' : 'false');
+}
+window.sdkSetSound = function (on) {
+  settings.sound = !!on;
+  saveSettings();
+  var box = document.getElementById('setSound');
+  if (box) box.checked = settings.sound;
+  syncSoundLabel();
+  if (settings.sound) sfxDigit(1);
+};
+
 function save() {
+  if (!storageKept()) return;
   if (!puzzleId || !gridOk(puzzle) || !gridOk(userGrid)) return;
   var data = {
     id: puzzleId,
@@ -825,11 +1024,12 @@ function save() {
     notesMode: notesMode,
     done: done,
     failed: failed,
-    paused: paused,
+    paused: false,
     reportedStart: reportedStart,
     reportedFinish: reportedFinish,
     countedPlay: countedPlay,
     countedWin: countedWin,
+    celebrated: celebrated,
     selected: selected
   };
   try {
@@ -953,7 +1153,9 @@ function begin(route) {
   document.getElementById('failBanner').classList.remove('show');
   resetWinArt();
   paused = false;
+  document.getElementById('boardFrame').classList.remove('is-paused', 'win-glow');
   document.getElementById('pauseOverlay').hidden = true;
+  syncTip();
 
   var saved = readSave(route.id);
   diff = route.diff;
@@ -975,11 +1177,12 @@ function begin(route) {
     notesMode = !!saved.notesMode && !settings.autoNotes;
     done = !!saved.done;
     failed = !!saved.failed;
-    paused = !!saved.paused && !done;
+    paused = false;
     reportedStart = !!saved.reportedStart;
     reportedFinish = !!saved.reportedFinish;
     countedPlay = !!saved.countedPlay;
     countedWin = !!saved.countedWin;
+    celebrated = !!saved.celebrated || !!saved.done;
     selected = saved.selected && typeof saved.selected.r === 'number' ? saved.selected : firstEmpty();
     if (settings.autoNotes && !done) applyAutoNotes();
   } else {
@@ -998,12 +1201,10 @@ function begin(route) {
     reportedStart = true;
     reportedFinish = false;
     countedWin = false;
-    countedPlay = true;
+    countedPlay = false;
+    celebrated = false;
     selected = firstEmpty();
     if (settings.autoNotes) applyAutoNotes();
-    var stats = loadStats();
-    stats.played += 1;
-    saveStats(stats);
     postCount(puzzleId, 'start');
     trackSudoku('sudoku_start', {
       puzzle_id: puzzleId,
@@ -1026,7 +1227,7 @@ function begin(route) {
   if (done && !failed) {
     fillWinCopy(false, isDaily ? (+lsGet('sdk_streak') || 0) : 0);
     document.getElementById('winBanner').classList.add('show');
-    showWinAnimation();
+    document.getElementById('boardFrame').classList.add('win-glow');
   } else if (failed) {
     document.getElementById('failBanner').classList.add('show');
   } else {
@@ -1042,7 +1243,17 @@ function syncChrome() {
     btn.classList.toggle('active', on);
     btn.setAttribute('aria-pressed', on ? 'true' : 'false');
   });
-  document.getElementById('dailyBtn').classList.toggle('active', isDaily);
+  var dailyBtn = document.getElementById('dailyBtn');
+  var solvedToday = lsGet('sdk_solved_' + localDateStr()) === '1';
+  if (isDaily) {
+    dailyBtn.hidden = false;
+    dailyBtn.textContent = solvedToday ? "Today's puzzle \u2713" : "Today's puzzle";
+    dailyBtn.classList.toggle('is-done', solvedToday);
+    dailyBtn.classList.toggle('active', true);
+  } else {
+    dailyBtn.hidden = true;
+    dailyBtn.classList.remove('is-done', 'active');
+  }
   var eyebrow = document.getElementById('eyebrow');
   if (eyebrow) eyebrow.textContent = isDaily ? 'Daily puzzle' : 'Free play';
   document.getElementById('puzzleLabel').textContent = isDaily ? 'Daily' : 'Puzzle';
@@ -1134,7 +1345,14 @@ function renderBoard() {
       label += ', empty';
     }
     cell.setAttribute('aria-label', label);
-    (function (rr, cc) { cell.addEventListener('click', function () { selectCell(rr, cc); }); })(r, c);
+    (function (rr, cc) {
+      cell.addEventListener('pointerdown', function (e) {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        e.preventDefault();
+        selectCell(rr, cc);
+      });
+      cell.addEventListener('click', function () { selectCell(rr, cc); });
+    })(r, c);
     board.appendChild(cell);
   }
   highlightCells();
@@ -1173,7 +1391,18 @@ function buildNumpad() {
     btn.textContent = String(n);
     btn.setAttribute('aria-label', 'Enter ' + n);
     if (counts[n] >= 9) btn.classList.add('used');
-    (function (num) { btn.addEventListener('click', function () { inputNum(num); }); })(n);
+    (function (num) {
+      btn.addEventListener('pointerdown', function (e) {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        e.preventDefault();
+        btn.dataset.armed = '1';
+        inputNum(num);
+      });
+      btn.addEventListener('click', function () {
+        if (btn.dataset.armed === '1') { btn.dataset.armed = ''; return; }
+        inputNum(num);
+      });
+    })(n);
     pad.appendChild(btn);
   }
   var erase = document.createElement('button');
@@ -1181,7 +1410,16 @@ function buildNumpad() {
   erase.className = 'num-btn erase';
   erase.textContent = 'Erase';
   erase.setAttribute('aria-label', 'Erase');
-  erase.addEventListener('click', function () { inputNum(0); });
+  erase.addEventListener('pointerdown', function (e) {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    e.preventDefault();
+    erase.dataset.armed = '1';
+    inputNum(0);
+  });
+  erase.addEventListener('click', function () {
+    if (erase.dataset.armed === '1') { erase.dataset.armed = ''; return; }
+    inputNum(0);
+  });
   pad.appendChild(erase);
 }
 function cellEl(r, c) {
@@ -1281,10 +1519,18 @@ function isSolved() {
   }
   return true;
 }
+function readSelection() {
+  if (selected && typeof selected.r === 'number') return selected;
+  var el = document.querySelector('#board .cell.selected');
+  if (!el) return null;
+  return { r: +el.dataset.r, c: +el.dataset.c };
+}
 function inputNum(n) {
+  selected = readSelection();
   if (!selected || done || paused) return;
   var r = selected.r, c = selected.c;
   if (puzzle[r][c] !== 0) return;
+  markPlayed();
   pushUndo();
   if (notesMode && !settings.autoNotes && n !== 0) {
     if (notes[r][c].has(n)) notes[r][c].delete(n);
@@ -1328,10 +1574,12 @@ function inputNum(n) {
 }
 
 function useHint() {
+  selected = readSelection();
   if (hintsLeft <= 0 || !selected || done || paused) return;
   var r = selected.r, c = selected.c;
   if (puzzle[r][c] !== 0) return;
   if (userGrid[r][c] === solved[r][c]) return;
+  markPlayed();
   pushUndo();
   var prev = userGrid[r][c];
   userGrid[r][c] = solved[r][c];
@@ -1364,6 +1612,7 @@ function toggleNotes() {
 function setPaused(value) {
   if (done) return;
   paused = !!value;
+  document.getElementById('boardFrame').classList.toggle('is-paused', paused);
   document.getElementById('pauseOverlay').hidden = !paused;
   syncChrome();
   save();
@@ -1430,8 +1679,10 @@ function commitWin() {
 function checkWin() {
   if (done || !isSolved()) return;
   done = true;
+  celebrated = true;
   paused = false;
   clearInterval(timerInt);
+  document.getElementById('boardFrame').classList.remove('is-paused');
   document.getElementById('pauseOverlay').hidden = true;
   commitWin();
   showWinAnimation();
@@ -1442,6 +1693,9 @@ function checkWin() {
   if (banner.scrollIntoView) banner.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'nearest' });
 }
 function showWinAnimation() {
+  var frame = document.getElementById('boardFrame');
+  frame.classList.add('win-glow');
+  if (reducedMotion()) return;
   var trail = document.getElementById('trail');
   var pts = [[0, 4], [2, 1], [4, 3], [6, 0], [8, 2], [7, 5], [5, 7], [3, 8], [1, 6], [0, 4]];
   var d = '';
@@ -1452,6 +1706,35 @@ function showWinAnimation() {
   if (!art.getAttribute('src')) art.src = THEME.constellation;
   art.hidden = false;
   art.classList.add('on');
+  var nova = document.getElementById('nova');
+  nova.style.left = '50%';
+  nova.style.top = '50%';
+  nova.hidden = false;
+  var hold = [80, 120, 280];
+  var step = 0;
+  function next() {
+    if (step >= 3) { nova.hidden = true; nova.className = 'nova'; return; }
+    nova.src = THEME.nova(step + 1);
+    nova.className = 'nova win-burst f' + (step + 1);
+    var wait = hold[step];
+    step += 1;
+    setTimeout(next, wait);
+  }
+  next();
+}
+function continuePlay() {
+  if (!failed) return;
+  failed = false;
+  done = false;
+  settings.mistakeLimit = false;
+  var box = document.getElementById('setLimit');
+  if (box) box.checked = false;
+  saveSettings();
+  document.getElementById('failBanner').classList.remove('show');
+  updateMistakes();
+  syncChrome();
+  startTimer();
+  save();
 }
 function gameover() {
   if (done) return;
@@ -1459,6 +1742,7 @@ function gameover() {
   failed = true;
   paused = false;
   clearInterval(timerInt);
+  document.getElementById('boardFrame').classList.remove('is-paused');
   document.getElementById('pauseOverlay').hidden = true;
   document.getElementById('failBanner').classList.add('show');
   document.getElementById('winBanner').classList.remove('show');
@@ -1512,6 +1796,7 @@ document.addEventListener('keydown', function (e) {
     if (paused) setPaused(false);
     return;
   }
+  selected = readSelection();
   if (paused || !selected || done) return;
   var tag = e.target && e.target.tagName;
   if (tag === 'INPUT' || tag === 'TEXTAREA') return;
@@ -1557,9 +1842,10 @@ function bindControls() {
   document.getElementById('newBtn').addEventListener('click', function () { playRandom(diff || 'easy'); });
   document.getElementById('playAgain').addEventListener('click', function () { playRandom(diff || 'easy'); });
   document.getElementById('failAgain').addEventListener('click', function () { playRandom(diff || 'easy'); });
+  document.getElementById('failContinue').addEventListener('click', continuePlay);
   document.getElementById('dailyBtn').addEventListener('click', function () { launch(dailyRoute(diff || 'easy'), true); });
   document.getElementById('winShareBtn').addEventListener('click', shareWin);
-  document.getElementById('failShareBtn').addEventListener('click', shareWin);
+  document.getElementById('firstTip').addEventListener('click', dismissTip);
   document.querySelectorAll('.diff-btn').forEach(function (btn) {
     btn.addEventListener('click', function () {
       var name = btn.dataset.d;
@@ -1569,9 +1855,21 @@ function bindControls() {
     });
   });
   var menu = document.getElementById('settingsMenu');
+  function closeSettings() {
+    menu.hidden = true;
+    document.getElementById('settingsBtn').setAttribute('aria-expanded', 'false');
+  }
+  function openSettings() {
+    menu.hidden = false;
+    document.getElementById('settingsBtn').setAttribute('aria-expanded', 'true');
+  }
   document.getElementById('settingsBtn').addEventListener('click', function () {
-    menu.hidden = !menu.hidden;
-    this.setAttribute('aria-expanded', menu.hidden ? 'false' : 'true');
+    if (menu.hidden) openSettings();
+    else closeSettings();
+  });
+  document.getElementById('settingsClose').addEventListener('click', closeSettings);
+  menu.addEventListener('click', function (e) {
+    if (e.target === menu) closeSettings();
   });
   document.getElementById('setLimit').checked = settings.mistakeLimit;
   document.getElementById('setAuto').checked = settings.autoNotes;
@@ -1601,6 +1899,7 @@ function bindControls() {
   document.getElementById('setSound').addEventListener('change', function () {
     settings.sound = this.checked;
     saveSettings();
+    syncSoundLabel();
     if (settings.sound) sfxDigit(1);
   });
   document.getElementById('setHighlight').addEventListener('change', function () {
@@ -1621,6 +1920,7 @@ function bindControls() {
   });
 })();
 
+initStamp();
 loadSettings();
 bindControls();
 begin(routeFromUrl());

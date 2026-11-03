@@ -259,13 +259,38 @@
     html += '</div>';
     el.innerHTML = html;
     var mb = el.querySelector('[data-cg-mute]');
+    function sudokuSoundOn() {
+      try {
+        var raw = JSON.parse(localStorage.getItem('sdk_settings') || 'null');
+        return !!(raw && raw.sound);
+      } catch (e) { return false; }
+    }
     function syncMute() {
       if (!mb) return;
+      if (slug === 'sudoku') {
+        var gameOn = sudokuSoundOn();
+        mb.textContent = gameOn ? 'Sound on' : 'Sound off';
+        mb.setAttribute('aria-pressed', gameOn ? 'true' : 'false');
+        return;
+      }
       var on = !(w.CGSfx && w.CGSfx.isMuted());
       mb.textContent = on ? 'Sound on' : 'Muted';
     }
     syncMute();
     if (mb) mb.addEventListener('click', function () {
+      if (slug === 'sudoku') {
+        var next = !sudokuSoundOn();
+        if (typeof w.sdkSetSound === 'function') w.sdkSetSound(next);
+        else {
+          try {
+            var raw = JSON.parse(localStorage.getItem('sdk_settings') || '{}') || {};
+            raw.sound = next;
+            localStorage.setItem('sdk_settings', JSON.stringify(raw));
+          } catch (e) {}
+        }
+        syncMute();
+        return;
+      }
       if (!w.CGSfx) return;
       w.CGSfx.setMuted(!w.CGSfx.isMuted());
       syncMute();
