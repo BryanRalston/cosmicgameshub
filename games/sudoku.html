@@ -400,7 +400,21 @@
     }
     .handoff[hidden], .vs-result[hidden], .vs-setup[hidden] { display: none !important; }
     .handoff h2, .vs-result h2, .vs-setup h2 { margin: 0; color: #ffe08a; }
-    .handoff p, .vs-result p, .vs-setup p { margin: 0; color: #d5d8ea; }
+    .handoff p, .vs-result p, .vs-setup p { margin: 0; color: #d5d8ea; max-width: 28rem; }
+    #vsSetup, #vsConfirm { z-index: 380; }
+    .vs-result { background: rgba(7, 10, 31, 0.58); }
+    .vs-card {
+      width: min(420px, 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.7rem;
+      padding: 1.15rem 1rem 1rem;
+      border-radius: 16px;
+      background: #12182c;
+      border: 1px solid rgba(255, 214, 140, 0.4);
+    }
+    .vs-card .btn { min-width: 12rem; }
     .handoff-delta { margin: 0; color: #ffe08a; font-size: 1.15rem; font-weight: 800; }
     body.is-handoff #board, body.is-handoff .numpad, body.is-handoff .trail, body.is-handoff .constel { visibility: hidden !important; }
     .mistake-bit { display: inline-flex; }
@@ -717,10 +731,17 @@
     </div>
     <div class="vs-setup" id="vsSetup" hidden>
       <h2>Pass and play</h2>
-      <p>Two players, one phone. The board stays hidden between turns.</p>
+      <p>One cell per turn. The board stays hidden between turns.</p>
+      <p id="vsRules">Speed bonus up to 2×, down to 1× at 30s. A mistake costs 140. Highest score on a full board wins.</p>
       <label class="toggle-row"><span>Three strikes</span><input type="checkbox" id="vsStrikes"></label>
       <button type="button" class="btn btn--primary" id="vsStart">Start match</button>
       <button type="button" class="btn btn--outline" id="vsCancel">Cancel</button>
+    </div>
+    <div class="vs-setup" id="vsConfirm" hidden>
+      <h2>Leave this match?</h2>
+      <p id="vsConfirmCopy">This ends the match for both players.</p>
+      <button type="button" class="btn btn--primary" id="vsConfirmGo">Leave match</button>
+      <button type="button" class="btn btn--outline" id="vsConfirmStay">Keep playing</button>
     </div>
     <div class="handoff" id="handoff" hidden>
       <p>Pass the phone</p>
@@ -730,10 +751,15 @@
       <button type="button" class="btn btn--primary" id="handoffGo">Start turn</button>
     </div>
     <div class="vs-result" id="vsResult" hidden>
-      <h2 id="vsWinner">Player 1 wins</h2>
-      <p id="vsFinal"></p>
-      <button type="button" class="btn btn--primary" id="vsRematch">Rematch</button>
-      <button type="button" class="btn btn--outline" id="vsSolo">Back to solo</button>
+      <div class="vs-card">
+        <h2 id="vsWinner">Player 1 wins</h2>
+        <p id="vsWhy">Board finished</p>
+        <p id="vsFinal">P1 0 · P2 0</p>
+        <p id="vsStats"></p>
+        <button type="button" class="btn btn--primary" id="vsSame">Same puzzle</button>
+        <button type="button" class="btn btn--outline" id="vsRematch">New puzzle</button>
+        <button type="button" class="btn btn--outline" id="vsSolo">Back to solo</button>
+      </div>
     </div>
     <div class="settings-sheet" id="settingsMenu" hidden role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
       <div class="settings-card" id="settingsCard">
@@ -1498,7 +1524,7 @@ function blurFocus() {
   }
 }
 function hideMatchUi() {
-  var ids = ['handoff', 'vsResult', 'vsSetup'];
+  var ids = ['handoff', 'vsResult', 'vsSetup', 'vsConfirm'];
   for (var i = 0; i < ids.length; i++) {
     var el = document.getElementById(ids[i]);
     if (el) el.hidden = true;
@@ -1514,7 +1540,8 @@ function resetMatch() {
   hideMatchUi();
   paused = false;
   var frame = document.getElementById('boardFrame');
-  if (frame) frame.classList.remove('is-paused');
+  if (frame) frame.classList.remove('is-paused', 'win-glow');
+  resetWinArt();
   var ov = document.getElementById('pauseOverlay');
   if (ov) ov.hidden = true;
   blurFocus();
@@ -1619,11 +1646,81 @@ function finishMatch(winner, reason) {
   clearInterval(timerInt);
   document.body.classList.remove('is-handoff');
   document.getElementById('handoff').hidden = true;
+  var why = reason === 'strikes' ? 'Three strikes' : 'Board finished';
+  if (winner == null) why = 'Board finished · tie';
   document.getElementById('vsWinner').textContent = winner == null ? 'Tie' : ('Player ' + (winner + 1) + ' wins');
-  document.getElementById('vsFinal').textContent = 'P1 ' + match.p[0].score + ' · P2 ' + match.p[1].score + (reason === 'strikes' ? ' · three strikes' : '');
+  document.getElementById('vsWhy').textContent = why;
+  document.getElementById('vsFinal').textContent = 'P1 ' + match.p[0].score + ' · P2 ' + match.p[1].score;
+  document.getElementById('vsStats').textContent = playerStat(0) + ' · ' + playerStat(1);
   document.getElementById('vsResult').hidden = false;
   done = true;
   updateScoreBar();
+  showWinAnimation();
+  sfxWin();
+}
+function playerStat(i) {
+  var p = match.p[i];
+  var n = p.mistakes;
+  return 'P' + (i + 1) + ' ' + (p.corrects || 0) + ' correct, ' + n + ' mistake' + (n === 1 ? '' : 's');
+}
+function freshMatch(strikes, starter) {
+  starter = starter ? 1 : 0;
+  return {
+    fresh: true,
+    strikes: !!strikes,
+    switching: false,
+    starter: starter,
+    p: [
+      { score: 0, mistakes: 0, corrects: 0, secs: 0 },
+      { score: 0, mistakes: 0, corrects: 0, secs: 0 }
+    ],
+    turn: starter,
+    ready: false,
+    over: false,
+    lastNote: ''
+  };
+}
+var confirmAction = null;
+function askLeave(copy, action) {
+  if (!(match && !match.over)) { action(); return; }
+  confirmAction = action;
+  document.getElementById('vsConfirmCopy').textContent = copy;
+  document.getElementById('vsConfirm').hidden = false;
+}
+function rematch(same) {
+  if (!match) return;
+  var strikes = match.strikes;
+  var starter = 1 - (match.starter ? 1 : 0);
+  swallowHandoff = false;
+  handoffGesture = false;
+  paused = false;
+  done = false;
+  failed = false;
+  document.getElementById('vsResult').hidden = true;
+  resetWinArt();
+  var frame = document.getElementById('boardFrame');
+  if (frame) frame.classList.remove('win-glow', 'is-paused');
+  match = freshMatch(strikes, starter);
+  if (!same) {
+    playRandom(diff || 'easy');
+    return;
+  }
+  match.fresh = false;
+  userGrid = puzzle.map(function (row) { return row.slice(); });
+  notes = emptyNotes();
+  undoStack = [];
+  mistakes = 0;
+  hintsLeft = 3;
+  timerSecs = 0;
+  selected = null;
+  notesMode = false;
+  renderBoard();
+  buildNumpad();
+  updateTimer();
+  updateMistakes();
+  showHandoff();
+  startTimer();
+  save();
 }
 function commitMatchTurn(n, correct, wrong, prev, rated) {
   if (!match || match.over) return;
@@ -1632,6 +1729,7 @@ function commitMatchTurn(n, correct, wrong, prev, rated) {
   if (correct && prev !== n) {
     var pts = Math.round(SCORE_BASE * rated * mult);
     p.score += pts;
+    p.corrects += 1;
     match.lastNote = '+' + pts;
   } else if (wrong) {
     p.score -= SCORE_PENALTY;
@@ -1665,16 +1763,7 @@ function startMatch(strikes) {
   swallowHandoff = false;
   handoffGesture = false;
   paused = false;
-  match = {
-    fresh: true,
-    strikes: !!strikes,
-    switching: false,
-    p: [{ score: 0, mistakes: 0, secs: 0 }, { score: 0, mistakes: 0, secs: 0 }],
-    turn: 0,
-    ready: false,
-    over: false,
-    lastNote: ''
-  };
+  match = freshMatch(strikes, 0);
   var setup = document.getElementById('vsSetup');
   if (setup) setup.hidden = true;
   playRandom(diff || 'easy');
@@ -2558,10 +2647,24 @@ function bindControls() {
   document.getElementById('hintBtn').addEventListener('click', useHint);
   document.getElementById('pauseBtn').addEventListener('click', function () { setPaused(!paused); });
   document.getElementById('resumeBtn').addEventListener('click', function () { setPaused(false); });
-  document.getElementById('newBtn').addEventListener('click', function () { playRandom(diff || 'easy'); });
+  document.getElementById('newBtn').addEventListener('click', function () {
+    askLeave('New Puzzle ends this match for both players.', function () { playRandom(diff || 'easy'); });
+  });
   document.getElementById('vsBtn').addEventListener('click', function () {
-    document.getElementById('vsStrikes').checked = false;
-    document.getElementById('vsSetup').hidden = false;
+    askLeave('A new two-player match ends this one.', function () {
+      document.getElementById('vsStrikes').checked = false;
+      document.getElementById('vsSetup').hidden = false;
+    });
+  });
+  document.getElementById('vsConfirmStay').addEventListener('click', function () {
+    confirmAction = null;
+    document.getElementById('vsConfirm').hidden = true;
+  });
+  document.getElementById('vsConfirmGo').addEventListener('click', function () {
+    var action = confirmAction;
+    confirmAction = null;
+    document.getElementById('vsConfirm').hidden = true;
+    if (action) action();
   });
   document.getElementById('vsCancel').addEventListener('click', function () { document.getElementById('vsSetup').hidden = true; });
   document.getElementById('vsStart').addEventListener('click', function () { startMatch(document.getElementById('vsStrikes').checked); });
@@ -2597,20 +2700,8 @@ function bindControls() {
     e.preventDefault();
     e.stopPropagation();
   }, true);
-  document.getElementById('vsRematch').addEventListener('click', function () {
-    var strikes = match && match.strikes;
-    swallowHandoff = false;
-    handoffGesture = false;
-    paused = false;
-    done = false;
-    match = {
-      fresh: true, strikes: !!strikes, switching: false,
-      p: [{ score: 0, mistakes: 0, secs: 0 }, { score: 0, mistakes: 0, secs: 0 }],
-      turn: 0, ready: false, over: false, lastNote: ''
-    };
-    document.getElementById('vsResult').hidden = true;
-    playRandom(diff || 'easy');
-  });
+  document.getElementById('vsSame').addEventListener('click', function () { rematch(true); });
+  document.getElementById('vsRematch').addEventListener('click', function () { rematch(false); });
   document.getElementById('vsSolo').addEventListener('click', function () {
     done = false;
     resetMatch();
