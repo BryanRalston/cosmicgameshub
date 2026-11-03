@@ -400,13 +400,22 @@
     }
     .handoff {
       position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      width: 100%;
-      height: 100%;
-      min-height: 100vh;
-      min-height: 100dvh;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
       z-index: 480;
       touch-action: none;
+      pointer-events: auto;
+    }
+    #handoffGo {
+      position: fixed;
+      left: 50%;
+      top: 46%;
+      transform: translate(-50%, -50%);
+      z-index: 2;
+      min-width: 14rem;
+      min-height: 52px;
     }
     .handoff.is-go #handoffGo { font-size: 1.45rem; letter-spacing: 0.14em; }
     .handoff[hidden], .vs-result[hidden], .vs-setup[hidden] { display: none !important; }
@@ -1279,6 +1288,7 @@ window.sdkSetSound = function (on) {
 };
 
 function save() {
+  if (match) return;
   if (!storageKept()) return;
   if (!puzzleId || !gridOk(puzzle) || !gridOk(userGrid)) return;
   var data = {
@@ -1565,6 +1575,14 @@ var swallowHandoff = false;
 var handoffGesture = false;
 var goHold = false;
 var goTimer = 0;
+var ghostClick = false;
+function handoffUp() {
+  var hand = document.getElementById('handoff');
+  return !!(match && !match.over && !match.ready && hand && !hand.hidden);
+}
+function turnCovered() {
+  return goHold || handoffUp();
+}
 function clearGo() {
   goHold = false;
   if (goTimer) { clearTimeout(goTimer); goTimer = 0; }
@@ -1583,7 +1601,7 @@ function armGo() {
   if (btn) btn.textContent = 'Go!';
   var el = document.getElementById('handoff');
   if (el) el.classList.add('is-go');
-  blockBoardUntil = Date.now() + 300;
+  blockBoardUntil = 0;
   blurFocus();
   pinScroll(x, y);
   goTimer = setTimeout(releaseGo, 300);
@@ -1592,6 +1610,8 @@ function releaseGo() {
   goTimer = 0;
   goHold = false;
   blockBoardUntil = 0;
+  swallowHandoff = false;
+  pointerSelectUntil = 0;
   var btn = document.getElementById('handoffGo');
   if (btn) btn.textContent = 'Start turn';
   var el = document.getElementById('handoff');
@@ -1601,6 +1621,8 @@ function releaseGo() {
   match.ready = true;
   turnStamp = Date.now();
   selected = null;
+  ghostClick = true;
+  setTimeout(function () { ghostClick = false; }, 500);
   if (el) el.hidden = true;
   document.body.classList.remove('is-handoff');
   highlightCells();
@@ -1798,6 +1820,23 @@ function freshMatch(strikes, starter) {
   };
 }
 var confirmAction = null;
+function stripDebugParams() {
+  var params = new URLSearchParams(location.search);
+  if (!params.has('debug') && !params.has('tie')) return;
+  params.delete('debug');
+  params.delete('tie');
+  var search = params.toString();
+  history.replaceState(history.state, '', location.pathname + (search ? '?' + search : '') + location.hash);
+}
+function exitToSolo() {
+  stripDebugParams();
+  resetMatch();
+  done = false;
+  failed = false;
+  celebrated = false;
+  suppressWinAnim = false;
+  begin(routeFromUrl());
+}
 function askLeave(copy, action) {
   if (!(match && !match.over)) { action(); return; }
   confirmAction = action;
@@ -2810,22 +2849,26 @@ function bindControls() {
   handoffEl.addEventListener('click', stopHandoff, true);
   handoffEl.addEventListener('touchstart', stopHandoff, { capture: true, passive: false });
   handoffEl.addEventListener('touchend', stopHandoff, { capture: true, passive: false });
-  function eatHold(e) {
-    if (!goHold) return;
+  function guardPointer(e) {
+    if (!turnCovered()) {
+      if (e.type === 'click' && ghostClick) {
+        ghostClick = false;
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      return;
+    }
+    if (e.type === 'pointerdown' && e.button) return;
     e.preventDefault();
     e.stopPropagation();
+    if (goHold || e.type === 'pointerup' || e.type === 'touchend' || e.type === 'click') return;
+    armGo();
   }
-  document.addEventListener('pointerdown', eatHold, true);
-  document.addEventListener('pointerup', eatHold, true);
-  document.addEventListener('click', eatHold, true);
-  document.addEventListener('touchstart', eatHold, { capture: true, passive: false });
-  document.addEventListener('touchend', eatHold, { capture: true, passive: false });
-  document.addEventListener('click', function (e) {
-    if (!swallowHandoff) return;
-    swallowHandoff = false;
-    e.preventDefault();
-    e.stopPropagation();
-  }, true);
+  document.addEventListener('pointerdown', guardPointer, true);
+  document.addEventListener('pointerup', guardPointer, true);
+  document.addEventListener('click', guardPointer, true);
+  document.addEventListener('touchstart', guardPointer, { capture: true, passive: false });
+  document.addEventListener('touchend', guardPointer, { capture: true, passive: false });
   document.addEventListener('keyup', function (e) {
     if (!swallowHandoff) return;
     swallowHandoff = false;
@@ -2834,13 +2877,7 @@ function bindControls() {
   }, true);
   document.getElementById('vsSame').addEventListener('click', function () { rematch(true); });
   document.getElementById('vsRematch').addEventListener('click', function () { rematch(false); });
-  document.getElementById('vsSolo').addEventListener('click', function () {
-    done = false;
-    resetMatch();
-    updateMistakes();
-    syncChrome();
-    startTimer();
-  });
+  document.getElementById('vsSolo').addEventListener('click', exitToSolo);
   document.getElementById('playAgain').addEventListener('click', function () { playRandom(diff || 'easy'); });
   document.getElementById('failAgain').addEventListener('click', function () { playRandom(diff || 'easy'); });
   document.getElementById('failContinue').addEventListener('click', continuePlay);
