@@ -496,8 +496,7 @@
     .strike-dots i.on { background: #ff3b4e; box-shadow: none; }
     .toggle-row.is-locked { opacity: 0.55; pointer-events: none; flex-wrap: wrap; row-gap: 0.2rem; height: auto; }
     .toggle-row.is-locked > span:not(.lock-tag) { flex: 1 1 auto; min-width: min(100%, 9.5rem); }
-    .toggle-row.is-locked input::before { background: #2c334c !important; }
-    .toggle-row.is-locked input::after { transform: none !important; }
+    .toggle-row.is-locked input:disabled { opacity: 1; }
     .lock-tag {
       flex: 0 0 auto;
       margin-left: auto;
@@ -1781,6 +1780,15 @@ function updateScoreBar() {
     }
   }
 }
+function reflectToggle(input) {
+  if (!input) return;
+  if (input.id === 'setAuto') input.checked = !!settings.autoNotes;
+  else if (input.id === 'setLimit') input.checked = !!settings.mistakeLimit;
+  else if (input.id === 'setPlanets') input.checked = !!settings.planets;
+  else if (input.id === 'setSound') input.checked = !!settings.sound;
+  else if (input.id === 'setHighlight') input.checked = !!settings.highlight;
+  else if (input.id === 'setReduce') input.checked = reducedMotion();
+}
 function syncMatchLocks() {
   var hint = document.getElementById('hintBtn');
   var labels = {
@@ -1800,7 +1808,8 @@ function syncMatchLocks() {
       var input = row.querySelector('input');
       var label = row.querySelector('span:not(.lock-tag)');
       row.classList.add('is-locked');
-      if (input) { input.disabled = true; input.checked = false; }
+      if (input) input.disabled = true;
+      reflectToggle(input);
       if (label && input && labels[input.id]) label.textContent = labels[input.id];
       var tag = row.querySelector('.lock-tag');
       if (!tag) {
@@ -1820,12 +1829,7 @@ function syncMatchLocks() {
       row.classList.remove('is-locked');
       if (!input) return;
       input.disabled = false;
-      if (input.id === 'setAuto') input.checked = !!settings.autoNotes;
-      else if (input.id === 'setLimit') input.checked = !!settings.mistakeLimit;
-      else if (input.id === 'setPlanets') input.checked = !!settings.planets;
-      else if (input.id === 'setSound') input.checked = !!settings.sound;
-      else if (input.id === 'setHighlight') input.checked = !!settings.highlight;
-      else if (input.id === 'setReduce') input.checked = reducedMotion();
+      reflectToggle(input);
       if (label && labels[input.id]) label.textContent = labels[input.id];
     });
   }
@@ -3148,7 +3152,7 @@ function bindControls() {
     save();
   });
   document.getElementById('setAuto').addEventListener('change', function () {
-    if (match) { this.checked = false; return; }
+    if (match) { this.checked = !!settings.autoNotes; return; }
     settings.autoNotes = this.checked;
     saveSettings();
     if (settings.autoNotes) {
