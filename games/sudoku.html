@@ -283,6 +283,17 @@
       transition: opacity 0.18s linear;
     }
     .first-tip.is-dismissed { opacity: 0; visibility: hidden; pointer-events: none; }
+    #sdkVhProbe {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 0;
+      height: 100vh;
+      height: 100svh;
+      height: min(100svh, 100dvh);
+      pointer-events: none;
+      visibility: hidden;
+    }
     #dailyBtn[hidden] { display: none !important; }
     .info-row, .sdk-panel, .settings-menu, .num-btn, .diff-btn, .sdk-daily {
       background: rgba(6, 10, 28, 0.82);
@@ -342,6 +353,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      touch-action: manipulation;
     }
     .num-btn:hover { border-color: #ffe08a; color: #ffe08a; }
     .num-btn.used { opacity: 0.35; }
@@ -632,12 +644,40 @@
         width: 100%;
         padding: 0.3rem 0 0.8rem;
       }
+      body.page-game.sdk-cosmic .nav__inner { height: 48px; }
       .sidebar { display: contents; }
-      .topbar { order: 1; width: min(92vw, 70vh); gap: 0.25rem; }
-      .first-tip { width: min(92vw, 420px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-      .board-col { order: 3; width: min(92vw, 70vh); }
-      .numpad { order: 4; width: min(92vw, 70vh); gap: 0.25rem; }
-      .action-btns { order: 5; width: min(92vw, 70vh); gap: 0.25rem; }
+      .topbar { order: 1; width: min(92vw, 70vh); width: min(92vw, min(70svh, 70dvh)); gap: 0.25rem; }
+      .first-tip {
+        position: static;
+        left: auto;
+        bottom: auto;
+        transform: none;
+        order: 2;
+        width: min(92vw, 70vh);
+        width: min(92vw, min(70svh, 70dvh));
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .first-tip.is-dismissed { display: none; }
+      .board-col {
+        order: 3;
+        width: min(92vw, 70vh);
+        width: min(92vw, var(--sdk-fit, min(70svh, 70dvh)));
+      }
+      #board { container-type: inline-size; }
+      .cell { font-size: clamp(0.6rem, 5.6cqw, 1.15rem); }
+
+      .numpad { order: 4; width: min(92vw, 70vh); width: min(92vw, min(70svh, 70dvh)); gap: 0.25rem; touch-action: manipulation; }
+      .action-btns {
+        order: 5;
+        width: min(92vw, 70vh);
+        width: min(92vw, min(70svh, 70dvh));
+        gap: 0.25rem;
+        grid-template-columns: repeat(4, 1fr);
+      }
+      .action-btns .wide { grid-column: span 2; }
       #dailyBtn { order: 6; width: min(92vw, 70vh); }
       .puzzle-line { order: 7; width: min(92vw, 70vh); }
       .sdk-panel { order: 8; width: min(92vw, 70vh); }
@@ -648,8 +688,15 @@
       .cell { padding: 0; }
       .cell-notes,
       .note-dot { min-width: 0; min-height: 0; }
-      .note-dot { font-size: 11px; line-height: 1; font-weight: 800; text-shadow: none; color: #fff; }
-      .action-btns .btn { min-height: 40px; padding: 0.2rem 0.35rem; font-size: 0.8rem; }
+      .note-dot { font-size: clamp(7px, 2.1cqw, 11px); line-height: 1; font-weight: 800; text-shadow: none; color: #fff; }
+      .action-btns .btn {
+        min-height: 40px;
+        height: auto;
+        padding: 0.2rem 0.15rem;
+        font-size: 0.72rem;
+        line-height: 1.15;
+        white-space: nowrap;
+      }
       .sdk-daily { min-height: 36px; }
     }
     html.sdk-reduce .trail.on path { animation: none !important; opacity: 0; }
@@ -701,6 +748,7 @@
   <meta property="og:url" content="https://www.cosmicgameshub.com/games/sudoku">
 </head>
 <body class="page-game sdk-cosmic">
+<div id="sdkVhProbe" aria-hidden="true"></div>
 <nav class="nav" role="navigation" aria-label="Main navigation">
   <div class="container">
     <div class="nav__inner">
@@ -1013,10 +1061,11 @@ var settings = { mistakeLimit: true, autoNotes: false, planets: false, sound: fa
 var limitWaived = false;
 var soloClockHeld = false;
 var blockBoardUntil = 0;
-var pointerSelectUntil = 0;
 var suppressWinAnim = false;
 var settingsOpenedAt = 0;
-var padPointerAt = 0;
+var TAP_SLOP = 10;
+var activeTap = null;
+var blockTapClick = 0;
 
 function lsGet(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
 function storageKept() {
@@ -1324,6 +1373,7 @@ function dismissTip() {
     tip.hidden = false;
     tip.classList.add('is-dismissed');
   }
+  fitPhoneBoard();
 }
 function syncTip() {
   var tip = document.getElementById('firstTip');
@@ -1697,7 +1747,6 @@ function releaseGo(epoch) {
   goHold = false;
   blockBoardUntil = 0;
   swallowHandoff = false;
-  pointerSelectUntil = 0;
   var btn = document.getElementById('handoffGo');
   if (btn) btn.textContent = 'Start turn';
   var el = document.getElementById('handoff');
@@ -1764,6 +1813,7 @@ function updateScoreBar() {
   if (!bar) return;
   if (!match) {
     document.body.classList.remove('sdk-match');
+    fitPhoneBoard();
     return;
   }
   document.body.classList.add('sdk-match');
@@ -1779,6 +1829,7 @@ function updateScoreBar() {
       dots.innerHTML = match.strikes ? strikeMarkup(match.p[i].mistakes) : '';
     }
   }
+  fitPhoneBoard();
 }
 function reflectToggle(input) {
   if (!input) return;
@@ -2272,6 +2323,7 @@ function begin(route) {
     showHandoff();
   } else if (!match) hideMatchUi();
   save();
+  fitPhoneBoard();
 }
 
 function syncChrome() {
@@ -2343,6 +2395,90 @@ function renderStats() {
   document.getElementById('streakCal').innerHTML = cal;
 }
 
+function installTapWatch() {
+  if (installTapWatch.done) return;
+  installTapWatch.done = true;
+  function noteMove(id, x, y) {
+    var g = activeTap;
+    if (!g || (id != null && id !== g.id)) return;
+    var dx = x - g.x;
+    var dy = y - g.y;
+    if (dx * dx + dy * dy > TAP_SLOP * TAP_SLOP) g.moved = true;
+    if (window.scrollX !== g.sx || window.scrollY !== g.sy) g.moved = true;
+  }
+  document.addEventListener('pointermove', function (e) {
+    noteMove(e.pointerId, e.clientX, e.clientY);
+  }, { capture: true, passive: true });
+  document.addEventListener('touchmove', function (e) {
+    var t = e.changedTouches && e.changedTouches[0];
+    if (!t) return;
+    noteMove(null, t.clientX, t.clientY);
+  }, { capture: true, passive: true });
+  window.addEventListener('scroll', function () {
+    if (activeTap) activeTap.moved = true;
+  }, true);
+  function endTap(e, cancelled) {
+    var g = activeTap;
+    if (!g || e.pointerId !== g.id) return;
+    activeTap = null;
+    blockTapClick = Date.now() + 1000;
+    if (cancelled) return;
+    var dx = e.clientX - g.x;
+    var dy = e.clientY - g.y;
+    if (g.moved) return;
+    if (dx * dx + dy * dy > TAP_SLOP * TAP_SLOP) return;
+    if (window.scrollX !== g.sx || window.scrollY !== g.sy) return;
+    g.act(e);
+  }
+  document.addEventListener('pointerup', function (e) { endTap(e, false); }, true);
+  document.addEventListener('pointercancel', function (e) { endTap(e, true); }, true);
+}
+function armTap(el, act) {
+  installTapWatch();
+  el.addEventListener('pointerdown', function (e) {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    activeTap = {
+      id: e.pointerId,
+      x: e.clientX,
+      y: e.clientY,
+      sx: window.scrollX,
+      sy: window.scrollY,
+      moved: false,
+      fresh: true,
+      act: act
+    };
+  });
+  el.addEventListener('click', function (e) {
+    if (Date.now() < blockTapClick || e.detail !== 0) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    act(e);
+  });
+}
+function fitPhoneBoard() {
+  var root = document.documentElement;
+  if (window.matchMedia && window.matchMedia('(min-width: 801px)').matches) {
+    root.style.removeProperty('--sdk-fit');
+    return;
+  }
+  var probe = document.getElementById('sdkVhProbe');
+  var frame = document.getElementById('boardFrame');
+  var actions = document.querySelector('.action-btns');
+  if (!probe || !frame || !actions) return;
+  var vh = probe.getBoundingClientRect().height;
+  var frameRect = frame.getBoundingClientRect();
+  var above = frameRect.top + window.scrollY;
+  var below = actions.getBoundingClientRect().bottom - frameRect.bottom;
+  var cap = Math.floor(Math.min(window.innerWidth * 0.92, vh - above - below - 2));
+  if (cap < 72) {
+    root.style.removeProperty('--sdk-fit');
+    return;
+  }
+  var next = cap + 'px';
+  if (root.style.getPropertyValue('--sdk-fit') !== next) root.style.setProperty('--sdk-fit', next);
+}
 function digitMarkup(n) {
   if (!settings.planets) return String(n);
   return '<span class="face"><img class="planet p' + n + '" alt="" width="64" height="64" loading="lazy" decoding="async" src="' + THEME.planet(n) + '"><span class="num">' + n + '</span></span>';
@@ -2385,21 +2521,7 @@ function renderBoard() {
     cell.setAttribute('aria-label', label);
     cell.tabIndex = -1;
     (function (rr, cc) {
-      cell.addEventListener('pointerdown', function (e) {
-        if (e.pointerType === 'mouse' && e.button !== 0) return;
-        e.preventDefault();
-        e.stopPropagation();
-        pointerSelectUntil = Date.now() + 350;
-        var x = window.scrollX, y = window.scrollY;
-        selectCell(rr, cc);
-        pinScroll(x, y);
-      });
-      cell.addEventListener('click', function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        if (boardBlocked() || Date.now() < pointerSelectUntil) return;
-        selectCell(rr, cc);
-      });
+      armTap(cell, function () { selectCell(rr, cc); });
     })(r, c);
     board.appendChild(cell);
   }
@@ -2443,16 +2565,7 @@ function buildNumpad() {
     btn.setAttribute('aria-label', 'Enter ' + n);
     if (counts[n] >= 9) btn.classList.add('used');
     (function (num) {
-      btn.addEventListener('pointerdown', function (e) {
-        if (e.pointerType === 'mouse' && e.button !== 0) return;
-        e.preventDefault();
-        padPointerAt = Date.now();
-        inputNum(num);
-      });
-      btn.addEventListener('click', function () {
-        if (Date.now() - padPointerAt < 700) return;
-        inputNum(num);
-      });
+      armTap(btn, function () { inputNum(num); });
     })(n);
     pad.appendChild(btn);
   }
@@ -2461,16 +2574,7 @@ function buildNumpad() {
   erase.className = 'num-btn erase';
   erase.textContent = 'Erase';
   erase.setAttribute('aria-label', 'Erase');
-  erase.addEventListener('pointerdown', function (e) {
-    if (e.pointerType === 'mouse' && e.button !== 0) return;
-    e.preventDefault();
-    padPointerAt = Date.now();
-    inputNum(0);
-  });
-  erase.addEventListener('click', function () {
-    if (Date.now() - padPointerAt < 700) return;
-    inputNum(0);
-  });
+  armTap(erase, function () { inputNum(0); });
   pad.appendChild(erase);
 }
 function cellEl(r, c) {
@@ -3018,6 +3122,7 @@ function bindControls() {
   function guardPointer(e) {
     if (!turnCovered()) {
       if (ghostClick && (e.type === 'click' || e.type === 'pointerup' || e.type === 'touchend')) {
+        if (activeTap && activeTap.fresh && e.type === 'pointerup' && e.pointerId === activeTap.id) return;
         e.preventDefault();
         e.stopPropagation();
       }
@@ -3262,6 +3367,19 @@ initStamp();
 loadSettings();
 bindControls();
 if (!applyDebugBoard()) begin(routeFromUrl());
+window.addEventListener('resize', fitPhoneBoard);
+if (window.visualViewport) window.visualViewport.addEventListener('resize', fitPhoneBoard);
+document.addEventListener('DOMContentLoaded', function () {
+  fitPhoneBoard();
+  requestAnimationFrame(fitPhoneBoard);
+});
+if (window.ResizeObserver) {
+  var fitWatch = new ResizeObserver(function () { fitPhoneBoard(); });
+  ['.nav', '.topbar', '#numpad', '.action-btns', '#firstTip'].forEach(function (sel) {
+    var el = document.querySelector(sel);
+    if (el) fitWatch.observe(el);
+  });
+}
 </script>
 <script src="/games/cg-sfx.js"></script>
 <script src="/games/daily-kit.js" defer></script>
