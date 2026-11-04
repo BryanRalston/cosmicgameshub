@@ -410,15 +410,20 @@
       z-index: 480;
       touch-action: none;
       pointer-events: auto;
+      overflow: hidden;
+      overflow-anchor: none;
+      justify-content: center;
+      gap: 1.1rem;
     }
     #handoffGo {
-      position: fixed;
-      left: 50%;
-      top: 46%;
-      transform: translate(-50%, -50%);
+      position: static;
+      transform: none;
       z-index: 2;
-      min-width: 14rem;
-      min-height: 52px;
+      flex: 0 0 4.25rem;
+      width: min(18rem, 86vw);
+      height: 4.25rem;
+      margin-top: 0.35rem;
+      overflow-anchor: none;
     }
     .handoff.is-go #handoffGo { font-size: 1.45rem; letter-spacing: 0.14em; }
     .handoff[hidden], .vs-result[hidden], .vs-setup[hidden] { display: none !important; }
@@ -1006,6 +1011,8 @@ var SETTINGS_KEY = 'sdk_settings';
 var STATS_KEY = 'sdk_stats';
 var SAVE_INDEX = 'sdk_save_index';
 var settings = { mistakeLimit: true, autoNotes: false, planets: false, sound: false, highlight: true, reduce: null };
+var limitWaived = false;
+var soloClockHeld = false;
 var blockBoardUntil = 0;
 var pointerSelectUntil = 0;
 var suppressWinAnim = false;
@@ -1097,6 +1104,7 @@ function pinScroll(x, y) {
   setTimeout(fix, 0);
   setTimeout(function () { window.removeEventListener('scroll', onScroll, true); }, 300);
 }
+function limitOn() { return !!settings.mistakeLimit && !limitWaived; }
 function boardBlocked() { return Date.now() < blockBoardUntil; }
 function settingsOn() {
   var menu = document.getElementById('settingsMenu');
@@ -1118,10 +1126,14 @@ function closeSettings(e) {
   setGameInert(false);
   settingsOpenedAt = 0;
   blockBoardUntil = Date.now() + 350;
+  var held = soloClockHeld;
+  soloClockHeld = false;
   pinScroll(window.scrollX, window.scrollY);
+  if (held && !match && !done && !paused) startTimer();
 }
 function openSettings(e) {
   if (e) { e.preventDefault(); e.stopPropagation(); }
+  if (!match && !done && !paused) soloClockHeld = true;
   var menu = document.getElementById('settingsMenu');
   var btn = document.getElementById('settingsBtn');
   if (!menu) return;
@@ -1360,7 +1372,8 @@ function save() {
     countedPlay: countedPlay,
     countedWin: countedWin,
     celebrated: celebrated,
-    selected: selected
+    selected: selected,
+    limitWaived: limitWaived
   };
   try {
     lsSet('sdk_save_' + puzzleId, JSON.stringify(data));
@@ -1690,6 +1703,7 @@ function releaseGo(epoch) {
   if (btn) btn.textContent = 'Start turn';
   var el = document.getElementById('handoff');
   if (el) el.classList.remove('is-go');
+  var scrollX = window.scrollX, scrollY = window.scrollY;
   if (!match || match.over || match.phase !== 'go') return;
   if (!setTurnPhase('live')) return;
   match.scored = false;
@@ -1699,10 +1713,12 @@ function releaseGo(epoch) {
   selected = null;
   ghostClick = true;
   setTimeout(function () { ghostClick = false; }, 500);
+  blurFocus();
   if (el) el.hidden = true;
   document.body.classList.remove('is-handoff');
+  forceScroll(scrollX, scrollY);
+  pinScroll(scrollX, scrollY);
   highlightCells();
-  blurFocus();
   updateTimer();
   updateScoreBar();
 }
@@ -2174,6 +2190,7 @@ function begin(route) {
   live = true;
   quitSent = false;
   undoStack = [];
+  limitWaived = false;
 
   if (saved) {
     puzzle = saved.puzzle;
@@ -2192,6 +2209,7 @@ function begin(route) {
     countedPlay = !!saved.countedPlay;
     countedWin = !!saved.countedWin;
     celebrated = !!saved.celebrated || !!saved.done;
+    limitWaived = !!saved.limitWaived;
     suppressWinAnim = !!(saved.done || saved.celebrated);
     selected = saved.selected && typeof saved.selected.r === 'number' ? saved.selected : firstEmpty();
     if (settings.autoNotes && !done && !match) applyAutoNotes();
@@ -2653,7 +2671,7 @@ function inputNum(n) {
   if (wrong) {
     var el = cellEl(r, c);
     if (el) el.classList.add('shake');
-    if (settings.mistakeLimit && mistakes >= 3) {
+    if (limitOn() && mistakes >= 3) {
       save();
       gameover();
       return;
@@ -2709,7 +2727,7 @@ function setPaused(value) {
 function startTimer() {
   clearInterval(timerInt);
   timerInt = setInterval(function () {
-    if (done || paused || hiddenHold) return;
+    if (done || paused || hiddenHold || soloClockHeld) return;
     if (match) {
       if (!match.ready || match.over) return;
       match.p[match.turn].secs += 1;
@@ -2731,9 +2749,9 @@ function updateMistakes() {
     updateScoreBar();
     return;
   }
-  document.getElementById('mistakeDisp').textContent = settings.mistakeLimit ? (mistakes + ' / 3') : String(mistakes);
+  document.getElementById('mistakeDisp').textContent = limitOn() ? (mistakes + ' / 3') : String(mistakes);
   if (tag) {
-    tag.hidden = !!settings.mistakeLimit;
+    tag.hidden = limitOn();
     tag.textContent = 'Limit off';
   }
 }
@@ -2835,10 +2853,7 @@ function continuePlay() {
   if (!failed) return;
   failed = false;
   done = false;
-  settings.mistakeLimit = false;
-  var box = document.getElementById('setLimit');
-  if (box) box.checked = false;
-  saveSettings();
+  limitWaived = true;
   document.getElementById('failBanner').classList.remove('show');
   updateMistakes();
   syncChrome();
@@ -2888,7 +2903,7 @@ function shareWin() {
     window.CGSfx.shareNow({
       title: 'Sudoku',
       subtitle: (isDaily ? 'daily ' : '') + diff + '  ·  ' + timeStr,
-      lines: ['Mistakes ' + mistakes + (settings.mistakeLimit ? '/3' : ''), failed ? 'Stopped' : 'Solved'],
+      lines: ['Mistakes ' + mistakes + (limitOn() ? '/3' : ''), failed ? 'Stopped' : 'Solved'],
       url: link,
       filename: 'sudoku',
       text: text
@@ -3127,8 +3142,10 @@ function bindControls() {
   document.getElementById('setLimit').addEventListener('change', function () {
     if (match) { this.checked = settings.mistakeLimit; return; }
     settings.mistakeLimit = this.checked;
+    if (this.checked) limitWaived = false;
     saveSettings();
     updateMistakes();
+    save();
   });
   document.getElementById('setAuto').addEventListener('change', function () {
     if (match) { this.checked = false; return; }
@@ -3196,6 +3213,8 @@ function applyDebugBoard() {
   match = freshMatch(false, 0);
   match.fresh = false;
   match.debugTie = tie;
+  limitWaived = false;
+  soloClockHeld = false;
   puzzle = made.puzzle;
   solved = made.solved;
   userGrid = puzzle.map(function (row) { return row.slice(); });
