@@ -355,8 +355,44 @@
       justify-content: center;
       touch-action: manipulation;
     }
+    .num-btn { position: relative; }
     .num-btn:hover { border-color: #ffe08a; color: #ffe08a; }
-    .num-btn.used { opacity: 0.35; }
+    .num-btn.picked,
+    .num-btn.picked:hover {
+      border-color: #ffe08a;
+      color: #1b1406;
+      background: #ffe08a;
+      box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.45);
+    }
+    .num-btn.used,
+    .num-btn:disabled {
+      opacity: 0.35;
+      cursor: default;
+      color: #f4f6ff;
+    }
+    .num-btn.used:hover,
+    .num-btn:disabled:hover {
+      border-color: rgba(255, 214, 140, 0.22);
+      color: #f4f6ff;
+    }
+    .num-btn.used.picked,
+    .num-btn.used.picked:hover {
+      opacity: 0.72;
+      color: #ffe08a;
+      background: rgba(255, 208, 112, 0.2);
+      border-color: #ffe08a;
+    }
+    .num-btn .pad-check {
+      position: absolute;
+      top: 2px;
+      right: 3px;
+      font-size: 0.62rem;
+      font-style: normal;
+      font-weight: 800;
+      line-height: 1;
+      color: #ffe08a;
+      pointer-events: none;
+    }
     .num-btn.erase { font-size: 0.95rem; }
 
     .diff-row { display: flex; gap: 0.35rem; }
@@ -898,6 +934,7 @@
           <h2 id="settingsTitle">Settings</h2>
           <button type="button" class="btn btn--outline" id="settingsClose">Close</button>
         </div>
+        <label class="toggle-row"><span>Number first</span><input type="checkbox" id="setNumberFirst"></label>
         <label class="toggle-row"><span>Mistake limit (3)</span><input type="checkbox" id="setLimit" checked></label>
         <label class="toggle-row"><span>Auto notes</span><input type="checkbox" id="setAuto"></label>
         <label class="toggle-row"><span>Planet digits</span><input type="checkbox" id="setPlanets"></label>
@@ -1047,6 +1084,7 @@ function debugAllowed(host) {
 
 var puzzle = [], solved = [], userGrid = [], notes = [];
 var selected = null;
+var stickyDigit = 0;
 var mistakes = 0, hintsLeft = 3, notesMode = false, timerSecs = 0, timerInt = null;
 var diff = 'easy', done = false, failed = false, paused = false, isDaily = true;
 var puzzleId = '', puzzleSeed = 1, undoStack = [], live = false, hiddenHold = false;
@@ -1057,7 +1095,7 @@ var storageStamp = '';
 var SETTINGS_KEY = 'sdk_settings';
 var STATS_KEY = 'sdk_stats';
 var SAVE_INDEX = 'sdk_save_index';
-var settings = { mistakeLimit: true, autoNotes: false, planets: false, sound: false, highlight: true, reduce: null };
+var settings = { mistakeLimit: true, autoNotes: false, planets: false, sound: false, highlight: true, reduce: null, numberFirst: false };
 var limitWaived = false;
 var soloClockHeld = false;
 var blockBoardUntil = 0;
@@ -1212,7 +1250,7 @@ function loadSettings() {
   try {
     var raw = JSON.parse(lsGet(SETTINGS_KEY) || '{}');
     if (!raw || typeof raw !== 'object') return;
-    ['mistakeLimit', 'autoNotes', 'planets', 'sound', 'highlight', 'reduce'].forEach(function (key) {
+    ['mistakeLimit', 'autoNotes', 'planets', 'sound', 'highlight', 'reduce', 'numberFirst'].forEach(function (key) {
       if (typeof raw[key] === 'boolean') settings[key] = raw[key];
     });
   } catch (e) {}
@@ -1839,10 +1877,12 @@ function reflectToggle(input) {
   else if (input.id === 'setSound') input.checked = !!settings.sound;
   else if (input.id === 'setHighlight') input.checked = !!settings.highlight;
   else if (input.id === 'setReduce') input.checked = reducedMotion();
+  else if (input.id === 'setNumberFirst') input.checked = !!settings.numberFirst;
 }
 function syncMatchLocks() {
   var hint = document.getElementById('hintBtn');
   var labels = {
+    setNumberFirst: 'Number first',
     setLimit: 'Mistake limit (3)',
     setAuto: 'Auto notes',
     setPlanets: 'Planet digits',
@@ -1858,6 +1898,15 @@ function syncMatchLocks() {
     rows.forEach(function (row) {
       var input = row.querySelector('input');
       var label = row.querySelector('span:not(.lock-tag)');
+      if (input && input.id === 'setNumberFirst') {
+        var kept = row.querySelector('.lock-tag');
+        if (kept) kept.remove();
+        row.classList.remove('is-locked');
+        input.disabled = false;
+        reflectToggle(input);
+        if (label) label.textContent = 'Number first';
+        return;
+      }
       row.classList.add('is-locked');
       if (input) input.disabled = true;
       reflectToggle(input);
@@ -1945,6 +1994,8 @@ function finishMatch(winner, reason) {
   showWinAnimation();
   celebrateResult(winner);
   sfxWin();
+  ghostClick = true;
+  setTimeout(function () { ghostClick = false; }, 500);
 }
 function clearSideBursts() {
   var i, side;
@@ -2521,7 +2572,7 @@ function renderBoard() {
     cell.setAttribute('aria-label', label);
     cell.tabIndex = -1;
     (function (rr, cc) {
-      armTap(cell, function () { selectCell(rr, cc); });
+      armTap(cell, function () { onCellTap(rr, cc); });
     })(r, c);
     board.appendChild(cell);
   }
@@ -2533,6 +2584,28 @@ function selectCell(r, c) {
   selected = { r: r, c: c };
   highlightCells();
   focusNoScroll(cellEl(r, c));
+}
+function onCellTap(r, c) {
+  if (paused || boardBlocked() || settingsOn()) return;
+  if (match && (match.phase !== 'live' || !match.ready)) return;
+  if (settings.numberFirst && !done) {
+    var shown = puzzle[r][c] || userGrid[r][c] || 0;
+    if (shown) {
+      selected = { r: r, c: c };
+      stickyDigit = shown;
+      highlightCells();
+      paintPad();
+      focusNoScroll(cellEl(r, c));
+      return;
+    }
+    if (stickyDigit && !digitExhausted(stickyDigit)) {
+      selected = { r: r, c: c };
+      inputNum(stickyDigit);
+      if (!done && !(match && (match.over || match.phase !== 'live'))) focusNoScroll(cellEl(r, c));
+      return;
+    }
+  }
+  selectCell(r, c);
 }
 function highlightCells() {
   document.querySelectorAll('.cell').forEach(function (cell) {
@@ -2548,24 +2621,92 @@ function highlightCells() {
     if (selVal && selVal === thisVal) cell.classList.add('same-num');
   });
 }
-function buildNumpad() {
-  var pad = document.getElementById('numpad');
-  pad.innerHTML = '';
+function correctCounts() {
   var counts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-  for (var r = 0; r < 9; r++) for (var c = 0; c < 9; c++) {
-    var value = puzzle[r][c];
+  if (!puzzle || puzzle.length !== 9 || !userGrid || !solved) return counts;
+  var r, c, value;
+  for (r = 0; r < 9; r++) for (c = 0; c < 9; c++) {
+    value = puzzle[r][c];
     if (!value && userGrid[r][c] && userGrid[r][c] === solved[r][c]) value = userGrid[r][c];
     if (value) counts[value]++;
   }
-  for (var n = 1; n <= 9; n++) {
+  return counts;
+}
+function digitExhausted(n) {
+  return n >= 1 && n <= 9 && correctCounts()[n] >= 9;
+}
+function settleSticky() {
+  if (!userGrid || userGrid.length !== 9 || !solved || solved.length !== 9) return;
+  if (isSolved()) {
+    stickyDigit = 0;
+    selected = null;
+    highlightCells();
+    return;
+  }
+  if (!settings.numberFirst || !stickyDigit || !digitExhausted(stickyDigit)) return;
+  var start = stickyDigit;
+  var counts = correctCounts();
+  var i, n;
+  stickyDigit = 0;
+  for (i = 1; i <= 8; i++) {
+    n = ((start - 1 + i) % 9) + 1;
+    if (counts[n] < 9) { stickyDigit = n; return; }
+  }
+}
+function paintPad() {
+  var counts = correctCounts();
+  var n, btn, exhausted, face, label, stamp;
+  for (n = 1; n <= 9; n++) {
+    btn = document.querySelector('#numpad .num-btn[data-n="' + n + '"]');
+    if (!btn) continue;
+    exhausted = counts[n] >= 9;
+    btn.classList.toggle('used', exhausted);
+    btn.classList.toggle('picked', !!(settings.numberFirst && stickyDigit === n));
+    btn.disabled = exhausted && !(settings.numberFirst && stickyDigit === n);
+    btn.setAttribute('aria-disabled', exhausted ? 'true' : 'false');
+    if (settings.numberFirst) btn.setAttribute('aria-pressed', stickyDigit === n ? 'true' : 'false');
+    else btn.removeAttribute('aria-pressed');
+    stamp = (exhausted ? 'x' : 'o') + n;
+    if (btn.dataset.face !== stamp) {
+      btn.dataset.face = stamp;
+      face = String(n);
+      if (exhausted) face += '<i class="pad-check" aria-hidden="true">\u2713</i>';
+      btn.innerHTML = face;
+    }
+    if (exhausted) label = n + ' finished';
+    else if (settings.numberFirst) label = (notesMode ? 'Note ' : 'Select ') + n;
+    else label = 'Enter ' + n;
+    btn.setAttribute('aria-label', label);
+  }
+}
+function finishEntry() {
+  settleSticky();
+  paintPad();
+}
+function onPadDigit(num) {
+  if (boardBlocked() || settingsOn() || done || paused) return;
+  if (match && (match.phase !== 'live' || match.switching || !match.ready || match.over || match.scored)) return;
+  if (settings.numberFirst) {
+    if (digitExhausted(num) && stickyDigit !== num) return;
+    stickyDigit = stickyDigit === num ? 0 : num;
+    paintPad();
+    return;
+  }
+  if (digitExhausted(num)) return;
+  inputNum(num);
+}
+function buildNumpad() {
+  var pad = document.getElementById('numpad');
+  pad.innerHTML = '';
+  var n;
+  for (n = 1; n <= 9; n++) {
     var btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'num-btn';
+    btn.dataset.n = String(n);
     btn.textContent = String(n);
-    btn.setAttribute('aria-label', 'Enter ' + n);
-    if (counts[n] >= 9) btn.classList.add('used');
     (function (num) {
-      armTap(btn, function () { inputNum(num); });
+      armTap(btn, function () { onPadDigit(num); });
     })(n);
     pad.appendChild(btn);
   }
@@ -2576,6 +2717,7 @@ function buildNumpad() {
   erase.setAttribute('aria-label', 'Erase');
   armTap(erase, function () { inputNum(0); });
   pad.appendChild(erase);
+  paintPad();
 }
 function cellEl(r, c) {
   return document.querySelector('.cell[data-r="' + r + '"][data-c="' + c + '"]');
@@ -2605,15 +2747,7 @@ function paintCell(r, c) {
   return true;
 }
 function refreshPadUsed() {
-  var counts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-  var r, c, value, n;
-  for (r = 0; r < 9; r++) for (c = 0; c < 9; c++) {
-    value = puzzle[r][c];
-    if (!value && userGrid[r][c] && userGrid[r][c] === solved[r][c]) value = userGrid[r][c];
-    if (value) counts[value]++;
-  }
-  var btns = document.querySelectorAll('#numpad .num-btn');
-  for (n = 1; n <= 9; n++) if (btns[n - 1]) btns[n - 1].classList.toggle('used', counts[n] >= 9);
+  paintPad();
 }
 function pushUndo() {
   undoStack.push({
@@ -2721,6 +2855,7 @@ function inputNum(n) {
   if (puzzle[r][c] !== 0) return;
   if (match && userGrid[r][c] && userGrid[r][c] === solved[r][c]) return;
   if (match && n && Date.now() - lastMatchDigit < 100) return;
+  if (n && digitExhausted(n)) return;
   markPlayed();
   pushUndo();
   if (notesMode && !settings.autoNotes && !match && n !== 0) {
@@ -2774,18 +2909,21 @@ function inputNum(n) {
       var handNow = document.getElementById('handoff');
       if (handNow && handNow.hidden) showHandoff();
     }
+    finishEntry();
     return;
   }
   if (wrong) {
     var el = cellEl(r, c);
     if (el) el.classList.add('shake');
     if (limitOn() && mistakes >= 3) {
+      finishEntry();
       save();
       gameover();
       return;
     }
   }
   checkWin();
+  finishEntry();
   save();
 }
 
@@ -2816,12 +2954,14 @@ function useHint() {
   renderBoard();
   buildNumpad();
   checkWin();
+  finishEntry();
   save();
 }
 function toggleNotes() {
   if (match || settings.autoNotes || done) return;
   notesMode = !notesMode;
   syncChrome();
+  if (settings.numberFirst) paintPad();
   save();
 }
 function setPaused(value) {
@@ -3242,6 +3382,7 @@ function bindControls() {
       e.stopPropagation();
     });
   });
+  document.getElementById('setNumberFirst').checked = !!settings.numberFirst;
   document.getElementById('setLimit').checked = settings.mistakeLimit;
   document.getElementById('setAuto').checked = settings.autoNotes;
   document.getElementById('setPlanets').checked = settings.planets;
@@ -3290,6 +3431,12 @@ function bindControls() {
     settings.highlight = this.checked;
     saveSettings();
     if (live) highlightCells();
+  });
+  document.getElementById('setNumberFirst').addEventListener('change', function () {
+    settings.numberFirst = !!this.checked;
+    saveSettings();
+    if (!settings.numberFirst) stickyDigit = 0;
+    if (live) paintPad();
   });
 }
 
