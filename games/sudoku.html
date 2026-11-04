@@ -283,6 +283,17 @@
       transition: opacity 0.18s linear;
     }
     .first-tip.is-dismissed { opacity: 0; visibility: hidden; pointer-events: none; }
+    #sdkVhProbe {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 0;
+      height: 100vh;
+      height: 100svh;
+      height: min(100svh, 100dvh);
+      pointer-events: none;
+      visibility: hidden;
+    }
     #dailyBtn[hidden] { display: none !important; }
     .info-row, .sdk-panel, .settings-menu, .num-btn, .diff-btn, .sdk-daily {
       background: rgba(6, 10, 28, 0.82);
@@ -342,9 +353,46 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      touch-action: manipulation;
     }
+    .num-btn { position: relative; }
     .num-btn:hover { border-color: #ffe08a; color: #ffe08a; }
-    .num-btn.used { opacity: 0.35; }
+    .num-btn.picked,
+    .num-btn.picked:hover {
+      border-color: #ffe08a;
+      color: #1b1406;
+      background: #ffe08a;
+      box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.45);
+    }
+    .num-btn.used,
+    .num-btn:disabled {
+      opacity: 0.35;
+      cursor: default;
+      color: #f4f6ff;
+    }
+    .num-btn.used:hover,
+    .num-btn:disabled:hover {
+      border-color: rgba(255, 214, 140, 0.22);
+      color: #f4f6ff;
+    }
+    .num-btn.used.picked,
+    .num-btn.used.picked:hover {
+      opacity: 0.72;
+      color: #ffe08a;
+      background: rgba(255, 208, 112, 0.2);
+      border-color: #ffe08a;
+    }
+    .num-btn .pad-check {
+      position: absolute;
+      top: 2px;
+      right: 3px;
+      font-size: 0.62rem;
+      font-style: normal;
+      font-weight: 800;
+      line-height: 1;
+      color: #ffe08a;
+      pointer-events: none;
+    }
     .num-btn.erase { font-size: 0.95rem; }
 
     .diff-row { display: flex; gap: 0.35rem; }
@@ -427,8 +475,15 @@
     }
     .handoff.is-go #handoffGo { font-size: 1.45rem; letter-spacing: 0.14em; }
     .handoff[hidden], .vs-result[hidden], .vs-setup[hidden] { display: none !important; }
-    .handoff h2, .vs-result h2, .vs-setup h2 { margin: 0; color: #ffe08a; }
-    .handoff p, .vs-result p, .vs-setup p { margin: 0; color: #d5d8ea; max-width: 28rem; }
+    .handoff h2, .vs-result h2, .vs-setup h2, .vs-resume h2 { margin: 0; color: #ffe08a; }
+    .handoff p, .vs-result p, .vs-setup p, .vs-resume p { margin: 0; color: #d5d8ea; max-width: 28rem; }
+    .vs-resume {
+      position: fixed; inset: 0; z-index: 520;
+      display: flex; align-items: center; justify-content: center;
+      padding: 1rem; background: rgba(7, 10, 31, 0.55);
+    }
+    .vs-resume[hidden] { display: none !important; }
+    .vs-resume .vs-card { width: min(20rem, 100%); }
     #vsSetup, #vsConfirm { z-index: 380; }
     .vs-result { background: rgba(7, 10, 31, 0.58); }
     .vs-card {
@@ -632,12 +687,40 @@
         width: 100%;
         padding: 0.3rem 0 0.8rem;
       }
+      body.page-game.sdk-cosmic .nav__inner { height: 48px; }
       .sidebar { display: contents; }
-      .topbar { order: 1; width: min(92vw, 70vh); gap: 0.25rem; }
-      .first-tip { width: min(92vw, 420px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-      .board-col { order: 3; width: min(92vw, 70vh); }
-      .numpad { order: 4; width: min(92vw, 70vh); gap: 0.25rem; }
-      .action-btns { order: 5; width: min(92vw, 70vh); gap: 0.25rem; }
+      .topbar { order: 1; width: min(92vw, 70vh); width: min(92vw, min(70svh, 70dvh)); gap: 0.25rem; }
+      .first-tip {
+        position: static;
+        left: auto;
+        bottom: auto;
+        transform: none;
+        order: 2;
+        width: min(92vw, 70vh);
+        width: min(92vw, min(70svh, 70dvh));
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .first-tip.is-dismissed { display: none; }
+      .board-col {
+        order: 3;
+        width: min(92vw, 70vh);
+        width: min(92vw, var(--sdk-fit, min(70svh, 70dvh)));
+      }
+      #board { container-type: inline-size; }
+      .cell { font-size: clamp(0.6rem, 5.6cqw, 1.15rem); }
+
+      .numpad { order: 4; width: min(92vw, 70vh); width: min(92vw, min(70svh, 70dvh)); gap: 0.25rem; touch-action: manipulation; }
+      .action-btns {
+        order: 5;
+        width: min(92vw, 70vh);
+        width: min(92vw, min(70svh, 70dvh));
+        gap: 0.25rem;
+        grid-template-columns: repeat(4, 1fr);
+      }
+      .action-btns .wide { grid-column: span 2; }
       #dailyBtn { order: 6; width: min(92vw, 70vh); }
       .puzzle-line { order: 7; width: min(92vw, 70vh); }
       .sdk-panel { order: 8; width: min(92vw, 70vh); }
@@ -648,8 +731,15 @@
       .cell { padding: 0; }
       .cell-notes,
       .note-dot { min-width: 0; min-height: 0; }
-      .note-dot { font-size: 11px; line-height: 1; font-weight: 800; text-shadow: none; color: #fff; }
-      .action-btns .btn { min-height: 40px; padding: 0.2rem 0.35rem; font-size: 0.8rem; }
+      .note-dot { font-size: clamp(7px, 2.1cqw, 11px); line-height: 1; font-weight: 800; text-shadow: none; color: #fff; }
+      .action-btns .btn {
+        min-height: 40px;
+        height: auto;
+        padding: 0.2rem 0.15rem;
+        font-size: 0.72rem;
+        line-height: 1.15;
+        white-space: nowrap;
+      }
       .sdk-daily { min-height: 36px; }
     }
     html.sdk-reduce .trail.on path { animation: none !important; opacity: 0; }
@@ -701,6 +791,7 @@
   <meta property="og:url" content="https://www.cosmicgameshub.com/games/sudoku">
 </head>
 <body class="page-game sdk-cosmic">
+<div id="sdkVhProbe" aria-hidden="true"></div>
 <nav class="nav" role="navigation" aria-label="Main navigation">
   <div class="container">
     <div class="nav__inner">
@@ -822,6 +913,14 @@
       <button type="button" class="btn btn--primary" id="vsConfirmGo">Leave match</button>
       <button type="button" class="btn btn--outline" id="vsConfirmStay">Keep playing</button>
     </div>
+    <div class="vs-resume" id="vsResume" hidden>
+      <div class="vs-card">
+        <h2>Resume match?</h2>
+        <p>An unfinished match is saved on this device.</p>
+        <button type="button" class="btn btn--primary" id="vsResumeGo">Resume match</button>
+        <button type="button" class="btn btn--outline" id="vsResumeEnd">End match</button>
+      </div>
+    </div>
     <div class="handoff" id="handoff" hidden>
       <p>Pass the phone</p>
       <h2 id="handoffWho">Player 1</h2>
@@ -850,6 +949,7 @@
           <h2 id="settingsTitle">Settings</h2>
           <button type="button" class="btn btn--outline" id="settingsClose">Close</button>
         </div>
+        <label class="toggle-row"><span>Number first</span><input type="checkbox" id="setNumberFirst"></label>
         <label class="toggle-row"><span>Mistake limit (3)</span><input type="checkbox" id="setLimit" checked></label>
         <label class="toggle-row"><span>Auto notes</span><input type="checkbox" id="setAuto"></label>
         <label class="toggle-row"><span>Planet digits</span><input type="checkbox" id="setPlanets"></label>
@@ -999,6 +1099,7 @@ function debugAllowed(host) {
 
 var puzzle = [], solved = [], userGrid = [], notes = [];
 var selected = null;
+var stickyDigit = 0;
 var mistakes = 0, hintsLeft = 3, notesMode = false, timerSecs = 0, timerInt = null;
 var diff = 'easy', done = false, failed = false, paused = false, isDaily = true;
 var puzzleId = '', puzzleSeed = 1, undoStack = [], live = false, hiddenHold = false;
@@ -1009,14 +1110,16 @@ var storageStamp = '';
 var SETTINGS_KEY = 'sdk_settings';
 var STATS_KEY = 'sdk_stats';
 var SAVE_INDEX = 'sdk_save_index';
-var settings = { mistakeLimit: true, autoNotes: false, planets: false, sound: false, highlight: true, reduce: null };
+var MATCH_KEY = 'sdk_match_v1';
+var settings = { mistakeLimit: true, autoNotes: false, planets: false, sound: false, highlight: true, reduce: null, numberFirst: false };
 var limitWaived = false;
 var soloClockHeld = false;
 var blockBoardUntil = 0;
-var pointerSelectUntil = 0;
 var suppressWinAnim = false;
 var settingsOpenedAt = 0;
-var padPointerAt = 0;
+var TAP_SLOP = 10;
+var activeTap = null;
+var blockTapClick = 0;
 
 function lsGet(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
 function storageKept() {
@@ -1163,7 +1266,7 @@ function loadSettings() {
   try {
     var raw = JSON.parse(lsGet(SETTINGS_KEY) || '{}');
     if (!raw || typeof raw !== 'object') return;
-    ['mistakeLimit', 'autoNotes', 'planets', 'sound', 'highlight', 'reduce'].forEach(function (key) {
+    ['mistakeLimit', 'autoNotes', 'planets', 'sound', 'highlight', 'reduce', 'numberFirst'].forEach(function (key) {
       if (typeof raw[key] === 'boolean') settings[key] = raw[key];
     });
   } catch (e) {}
@@ -1324,6 +1427,7 @@ function dismissTip() {
     tip.hidden = false;
     tip.classList.add('is-dismissed');
   }
+  fitPhoneBoard();
 }
 function syncTip() {
   var tip = document.getElementById('firstTip');
@@ -1347,8 +1451,10 @@ window.sdkSetSound = function (on) {
 };
 
 function save() {
-  if (match) return;
+  if (match) { saveMatch(); return; }
   if (!storageKept()) return;
+  var held = readMatchSave();
+  if (held && held.id === puzzleId) return;
   if (!puzzleId || !gridOk(puzzle) || !gridOk(userGrid)) return;
   var data = {
     id: puzzleId,
@@ -1383,6 +1489,217 @@ function save() {
     while (idx.length > 12) lsDel('sdk_save_' + idx.shift());
     lsSet(SAVE_INDEX, JSON.stringify(idx));
   } catch (e) {}
+}
+
+function matchScreen() {
+  if (!match || match.over) return 'result';
+  if (match.phase !== 'live' && typeof match.lastNote === 'string' && match.lastNote.charAt(0) === '-') return 'strike';
+  return 'turn';
+}
+function undoSnapJSON(snap) {
+  return {
+    user: snap.user.map(function (row) { return row.slice(); }),
+    notes: notesToJSON(snap.notes),
+    mistakes: snap.mistakes | 0,
+    hintsLeft: snap.hintsLeft
+  };
+}
+function undoSnapLive(snap) {
+  if (!snap || !gridOk(snap.user)) return null;
+  return {
+    user: snap.user.map(function (row) { return row.slice(); }),
+    notes: notesFromJSON(snap.notes),
+    mistakes: +snap.mistakes || 0,
+    hintsLeft: typeof snap.hintsLeft === 'number' ? snap.hintsLeft : 3
+  };
+}
+function playerSaveOk(p) {
+  return !!(p && typeof p.score === 'number' && typeof p.mistakes === 'number' && typeof p.secs === 'number' && (p.undo == null || Array.isArray(p.undo)));
+}
+function saveMatch() {
+  if (!match || match.over || !storageKept()) return;
+  if (debugRequested() || (puzzleId && puzzleId.indexOf('debug-') === 0)) return;
+  if (!gridOk(puzzle) || !gridOk(userGrid) || !gridOk(solved)) return;
+  var phase = match.phase === 'live' ? 'live' : 'handoff';
+  var screen = matchScreen();
+  if (screen === 'result') return;
+  var data = {
+    v: 1,
+    over: false,
+    screen: screen,
+    id: puzzleId,
+    diff: diff,
+    daily: !!isDaily,
+    seed: puzzleSeed,
+    puzzle: puzzle,
+    solved: solved,
+    user: userGrid,
+    notes: notesToJSON(notes),
+    turn: match.turn,
+    phase: phase,
+    strikes: !!match.strikes,
+    starter: match.starter ? 1 : 0,
+    lastNote: match.lastNote || '',
+    turnMs: phase === 'live' && match.ready ? Math.max(0, Date.now() - turnStamp) : 0,
+    timerSecs: timerSecs | 0,
+    mistakes: mistakes | 0,
+    hintsLeft: hintsLeft,
+    stickyDigit: stickyDigit | 0,
+    selected: selected && typeof selected.r === 'number' ? { r: selected.r, c: selected.c } : null,
+    limitWaived: !!limitWaived,
+    undo: undoStack.map(undoSnapJSON),
+    locked: {
+      mistakeLimit: !!settings.mistakeLimit,
+      autoNotes: !!settings.autoNotes,
+      planets: !!settings.planets,
+      sound: !!settings.sound,
+      highlight: !!settings.highlight,
+      reduce: typeof settings.reduce === 'boolean' ? settings.reduce : null,
+      numberFirst: !!settings.numberFirst
+    },
+    p: [0, 1].map(function (i) {
+      var p = match.p[i];
+      return {
+        score: p.score | 0,
+        mistakes: p.mistakes | 0,
+        corrects: p.corrects | 0,
+        secs: p.secs | 0,
+        undo: (match.undos && match.undos[i]) ? match.undos[i] : []
+      };
+    })
+  };
+  lsSet(MATCH_KEY, JSON.stringify(data));
+}
+function clearMatchSave() { lsDel(MATCH_KEY); }
+function readMatchSave() {
+  try {
+    var raw = JSON.parse(lsGet(MATCH_KEY) || 'null');
+    if (!raw || raw.v !== 1 || raw.over) return null;
+    if (raw.screen !== 'turn' && raw.screen !== 'strike') return null;
+    if (raw.phase !== 'handoff' && raw.phase !== 'live') return null;
+    if (raw.turn !== 0 && raw.turn !== 1) return null;
+    if (!raw.p || !playerSaveOk(raw.p[0]) || !playerSaveOk(raw.p[1])) return null;
+    if (!gridOk(raw.puzzle) || !gridOk(raw.user) || !gridOk(raw.solved)) return null;
+    if (typeof raw.seed !== 'number' || !(raw.seed > 0) || typeof raw.id !== 'string') return null;
+    return raw;
+  } catch (e) { return null; }
+}
+function showResumePrompt() {
+  var el = document.getElementById('vsResume');
+  if (!el || !readMatchSave()) return;
+  soloClockHeld = true;
+  clearInterval(timerInt);
+  el.hidden = false;
+}
+function dismissResumePrompt() {
+  var el = document.getElementById('vsResume');
+  if (el) el.hidden = true;
+  soloClockHeld = false;
+}
+function endSavedMatch() {
+  clearMatchSave();
+  dismissResumePrompt();
+  if (live && !done && !paused && !match) startTimer();
+}
+function resumeSavedMatch() {
+  var data = readMatchSave();
+  dismissResumePrompt();
+  if (!data) {
+    if (live && !done && !paused) startTimer();
+    return;
+  }
+  applyMatchSave(data);
+}
+function applyLocked(locked) {
+  if (!locked || typeof locked !== 'object') return;
+  ['mistakeLimit', 'autoNotes', 'planets', 'sound', 'highlight', 'numberFirst'].forEach(function (key) {
+    if (typeof locked[key] === 'boolean') settings[key] = locked[key];
+  });
+  if (typeof locked.reduce === 'boolean' || locked.reduce === null) settings.reduce = locked.reduce;
+  applyMotion();
+}
+function applyMatchSave(data) {
+  clearInterval(timerInt);
+  swallowHandoff = false;
+  handoffGesture = false;
+  clearGo();
+  paused = false;
+  done = false;
+  failed = false;
+  celebrated = false;
+  suppressWinAnim = false;
+  quitSent = false;
+  live = true;
+  limitWaived = !!data.limitWaived;
+  diff = data.diff || 'easy';
+  isDaily = !!data.daily;
+  puzzleId = data.id;
+  puzzleSeed = data.seed;
+  puzzle = data.puzzle.map(function (row) { return row.slice(); });
+  solved = data.solved.map(function (row) { return row.slice(); });
+  userGrid = data.user.map(function (row) { return row.slice(); });
+  notes = notesFromJSON(data.notes);
+  mistakes = +data.mistakes || 0;
+  hintsLeft = typeof data.hintsLeft === 'number' ? data.hintsLeft : 3;
+  timerSecs = +data.timerSecs || 0;
+  notesMode = false;
+  stickyDigit = data.stickyDigit | 0;
+  selected = data.selected && typeof data.selected.r === 'number' ? { r: data.selected.r, c: data.selected.c } : null;
+  undoStack = [];
+  (Array.isArray(data.undo) ? data.undo : []).forEach(function (snap) {
+    var liveSnap = undoSnapLive(snap);
+    if (liveSnap) undoStack.push(liveSnap);
+  });
+  applyLocked(data.locked);
+  var undos = [[], []];
+  match = {
+    fresh: false,
+    strikes: !!data.strikes,
+    switching: false,
+    starter: data.starter ? 1 : 0,
+    undos: undos,
+    p: [0, 1].map(function (i) {
+      var p = data.p[i];
+      undos[i] = Array.isArray(p.undo) ? p.undo : [];
+      return { score: p.score | 0, mistakes: p.mistakes | 0, corrects: p.corrects | 0, secs: p.secs | 0 };
+    }),
+    turn: data.turn,
+    ready: data.phase === 'live',
+    over: false,
+    phase: data.phase === 'live' ? 'live' : 'handoff',
+    lastNote: typeof data.lastNote === 'string' ? data.lastNote : '',
+    scored: false
+  };
+  document.getElementById('winBanner').classList.remove('show');
+  document.getElementById('failBanner').classList.remove('show');
+  resetWinArt();
+  var frame = document.getElementById('boardFrame');
+  frame.classList.remove('is-paused', 'win-glow');
+  frame.dataset.puzzleId = puzzleId;
+  frame.dataset.daily = isDaily ? '1' : '0';
+  frame.dataset.seed = String(puzzleSeed);
+  document.getElementById('pauseOverlay').hidden = true;
+  document.getElementById('vsResult').hidden = true;
+  document.getElementById('vsSetup').hidden = true;
+  document.getElementById('vsConfirm').hidden = true;
+  syncChrome();
+  renderBoard();
+  buildNumpad();
+  updateMistakes();
+  if (match.phase === 'live') {
+    document.getElementById('handoff').hidden = true;
+    document.body.classList.remove('is-handoff');
+    document.body.classList.add('sdk-match');
+    turnStamp = Date.now() - Math.max(0, data.turnMs | 0);
+    match.ready = true;
+    updateTimer();
+    syncMatchLocks();
+    highlightCells();
+  } else showHandoff();
+  startTimer();
+  var next = urlFor({ daily: isDaily, diff: diff, id: puzzleId, mode: isDaily ? 'daily' : 'free' });
+  if (location.pathname + location.search !== next) history.replaceState({ id: puzzleId }, '', next);
+  fitPhoneBoard();
 }
 
 function candidates(r, c) {
@@ -1697,7 +2014,6 @@ function releaseGo(epoch) {
   goHold = false;
   blockBoardUntil = 0;
   swallowHandoff = false;
-  pointerSelectUntil = 0;
   var btn = document.getElementById('handoffGo');
   if (btn) btn.textContent = 'Start turn';
   var el = document.getElementById('handoff');
@@ -1720,6 +2036,7 @@ function releaseGo(epoch) {
   highlightCells();
   updateTimer();
   updateScoreBar();
+  save();
 }
 function blurFocus() {
   var ae = document.activeElement;
@@ -1728,7 +2045,7 @@ function blurFocus() {
   }
 }
 function hideMatchUi() {
-  var ids = ['handoff', 'vsResult', 'vsSetup', 'vsConfirm'];
+  var ids = ['handoff', 'vsResult', 'vsSetup', 'vsConfirm', 'vsResume'];
   for (var i = 0; i < ids.length; i++) {
     var el = document.getElementById(ids[i]);
     if (el) el.hidden = true;
@@ -1737,6 +2054,7 @@ function hideMatchUi() {
   document.body.classList.remove('sdk-match');
 }
 function resetMatch() {
+  if (match) clearMatchSave();
   match = null;
   swallowHandoff = false;
   handoffGesture = false;
@@ -1764,6 +2082,7 @@ function updateScoreBar() {
   if (!bar) return;
   if (!match) {
     document.body.classList.remove('sdk-match');
+    fitPhoneBoard();
     return;
   }
   document.body.classList.add('sdk-match');
@@ -1779,6 +2098,7 @@ function updateScoreBar() {
       dots.innerHTML = match.strikes ? strikeMarkup(match.p[i].mistakes) : '';
     }
   }
+  fitPhoneBoard();
 }
 function reflectToggle(input) {
   if (!input) return;
@@ -1788,10 +2108,12 @@ function reflectToggle(input) {
   else if (input.id === 'setSound') input.checked = !!settings.sound;
   else if (input.id === 'setHighlight') input.checked = !!settings.highlight;
   else if (input.id === 'setReduce') input.checked = reducedMotion();
+  else if (input.id === 'setNumberFirst') input.checked = !!settings.numberFirst;
 }
 function syncMatchLocks() {
   var hint = document.getElementById('hintBtn');
   var labels = {
+    setNumberFirst: 'Number first',
     setLimit: 'Mistake limit (3)',
     setAuto: 'Auto notes',
     setPlanets: 'Planet digits',
@@ -1807,6 +2129,15 @@ function syncMatchLocks() {
     rows.forEach(function (row) {
       var input = row.querySelector('input');
       var label = row.querySelector('span:not(.lock-tag)');
+      if (input && input.id === 'setNumberFirst') {
+        var kept = row.querySelector('.lock-tag');
+        if (kept) kept.remove();
+        row.classList.remove('is-locked');
+        input.disabled = false;
+        reflectToggle(input);
+        if (label) label.textContent = 'Number first';
+        return;
+      }
       row.classList.add('is-locked');
       if (input) input.disabled = true;
       reflectToggle(input);
@@ -1874,6 +2205,7 @@ function finishMatch(winner, reason) {
   if (!match || match.over) return;
   setTurnPhase('ended');
   match.over = true;
+  clearMatchSave();
   match.ready = false;
   match.switching = true;
   match.winner = winner;
@@ -1894,6 +2226,8 @@ function finishMatch(winner, reason) {
   showWinAnimation();
   celebrateResult(winner);
   sfxWin();
+  ghostClick = true;
+  setTimeout(function () { ghostClick = false; }, 500);
 }
 function clearSideBursts() {
   var i, side;
@@ -1961,7 +2295,8 @@ function freshMatch(strikes, starter) {
     ready: false,
     over: false,
     phase: 'handoff',
-    lastNote: ''
+    lastNote: '',
+    undos: [[], []]
   };
 }
 var confirmAction = null;
@@ -2175,6 +2510,8 @@ function begin(route) {
     applyDebugBoard();
     return;
   }
+  var heldMatch = !match && readMatchSave();
+  var skipSoloWrite = !!(heldMatch && heldMatch.id === route.id);
   if (match && !match.fresh) resetMatch();
   clearInterval(timerInt);
   document.getElementById('winBanner').classList.remove('show');
@@ -2237,12 +2574,14 @@ function begin(route) {
     celebrated = false;
     selected = firstEmpty();
     if (settings.autoNotes && !match) applyAutoNotes();
-    postCount(puzzleId, 'start');
-    trackSudoku('sudoku_start', {
-      puzzle_id: puzzleId,
-      difficulty: diff,
-      daily: isDaily ? 1 : 0
-    });
+    if (!skipSoloWrite) {
+      postCount(puzzleId, 'start');
+      trackSudoku('sudoku_start', {
+        puzzle_id: puzzleId,
+        difficulty: diff,
+        daily: isDaily ? 1 : 0
+      });
+    }
   }
 
   var frame = document.getElementById('boardFrame');
@@ -2271,7 +2610,8 @@ function begin(route) {
     match.ready = false;
     showHandoff();
   } else if (!match) hideMatchUi();
-  save();
+  if (match || !skipSoloWrite) save();
+  fitPhoneBoard();
 }
 
 function syncChrome() {
@@ -2343,6 +2683,90 @@ function renderStats() {
   document.getElementById('streakCal').innerHTML = cal;
 }
 
+function installTapWatch() {
+  if (installTapWatch.done) return;
+  installTapWatch.done = true;
+  function noteMove(id, x, y) {
+    var g = activeTap;
+    if (!g || (id != null && id !== g.id)) return;
+    var dx = x - g.x;
+    var dy = y - g.y;
+    if (dx * dx + dy * dy > TAP_SLOP * TAP_SLOP) g.moved = true;
+    if (window.scrollX !== g.sx || window.scrollY !== g.sy) g.moved = true;
+  }
+  document.addEventListener('pointermove', function (e) {
+    noteMove(e.pointerId, e.clientX, e.clientY);
+  }, { capture: true, passive: true });
+  document.addEventListener('touchmove', function (e) {
+    var t = e.changedTouches && e.changedTouches[0];
+    if (!t) return;
+    noteMove(null, t.clientX, t.clientY);
+  }, { capture: true, passive: true });
+  window.addEventListener('scroll', function () {
+    if (activeTap) activeTap.moved = true;
+  }, true);
+  function endTap(e, cancelled) {
+    var g = activeTap;
+    if (!g || e.pointerId !== g.id) return;
+    activeTap = null;
+    blockTapClick = Date.now() + 1000;
+    if (cancelled) return;
+    var dx = e.clientX - g.x;
+    var dy = e.clientY - g.y;
+    if (g.moved) return;
+    if (dx * dx + dy * dy > TAP_SLOP * TAP_SLOP) return;
+    if (window.scrollX !== g.sx || window.scrollY !== g.sy) return;
+    g.act(e);
+  }
+  document.addEventListener('pointerup', function (e) { endTap(e, false); }, true);
+  document.addEventListener('pointercancel', function (e) { endTap(e, true); }, true);
+}
+function armTap(el, act) {
+  installTapWatch();
+  el.addEventListener('pointerdown', function (e) {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    activeTap = {
+      id: e.pointerId,
+      x: e.clientX,
+      y: e.clientY,
+      sx: window.scrollX,
+      sy: window.scrollY,
+      moved: false,
+      fresh: true,
+      act: act
+    };
+  });
+  el.addEventListener('click', function (e) {
+    if (Date.now() < blockTapClick || e.detail !== 0) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    act(e);
+  });
+}
+function fitPhoneBoard() {
+  var root = document.documentElement;
+  if (window.matchMedia && window.matchMedia('(min-width: 801px)').matches) {
+    root.style.removeProperty('--sdk-fit');
+    return;
+  }
+  var probe = document.getElementById('sdkVhProbe');
+  var frame = document.getElementById('boardFrame');
+  var actions = document.querySelector('.action-btns');
+  if (!probe || !frame || !actions) return;
+  var vh = probe.getBoundingClientRect().height;
+  var frameRect = frame.getBoundingClientRect();
+  var above = frameRect.top + window.scrollY;
+  var below = actions.getBoundingClientRect().bottom - frameRect.bottom;
+  var cap = Math.floor(Math.min(window.innerWidth * 0.92, vh - above - below - 2));
+  if (cap < 72) {
+    root.style.removeProperty('--sdk-fit');
+    return;
+  }
+  var next = cap + 'px';
+  if (root.style.getPropertyValue('--sdk-fit') !== next) root.style.setProperty('--sdk-fit', next);
+}
 function digitMarkup(n) {
   if (!settings.planets) return String(n);
   return '<span class="face"><img class="planet p' + n + '" alt="" width="64" height="64" loading="lazy" decoding="async" src="' + THEME.planet(n) + '"><span class="num">' + n + '</span></span>';
@@ -2385,21 +2809,7 @@ function renderBoard() {
     cell.setAttribute('aria-label', label);
     cell.tabIndex = -1;
     (function (rr, cc) {
-      cell.addEventListener('pointerdown', function (e) {
-        if (e.pointerType === 'mouse' && e.button !== 0) return;
-        e.preventDefault();
-        e.stopPropagation();
-        pointerSelectUntil = Date.now() + 350;
-        var x = window.scrollX, y = window.scrollY;
-        selectCell(rr, cc);
-        pinScroll(x, y);
-      });
-      cell.addEventListener('click', function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        if (boardBlocked() || Date.now() < pointerSelectUntil) return;
-        selectCell(rr, cc);
-      });
+      armTap(cell, function () { onCellTap(rr, cc); });
     })(r, c);
     board.appendChild(cell);
   }
@@ -2411,6 +2821,28 @@ function selectCell(r, c) {
   selected = { r: r, c: c };
   highlightCells();
   focusNoScroll(cellEl(r, c));
+}
+function onCellTap(r, c) {
+  if (paused || boardBlocked() || settingsOn()) return;
+  if (match && (match.phase !== 'live' || !match.ready)) return;
+  if (settings.numberFirst && !done) {
+    var shown = puzzle[r][c] || userGrid[r][c] || 0;
+    if (shown) {
+      selected = { r: r, c: c };
+      stickyDigit = shown;
+      highlightCells();
+      paintPad();
+      focusNoScroll(cellEl(r, c));
+      return;
+    }
+    if (stickyDigit && (!digitExhausted(stickyDigit) || notesOpen())) {
+      selected = { r: r, c: c };
+      inputNum(stickyDigit);
+      if (!done && !(match && (match.over || match.phase !== 'live'))) focusNoScroll(cellEl(r, c));
+      return;
+    }
+  }
+  selectCell(r, c);
 }
 function highlightCells() {
   document.querySelectorAll('.cell').forEach(function (cell) {
@@ -2426,33 +2858,99 @@ function highlightCells() {
     if (selVal && selVal === thisVal) cell.classList.add('same-num');
   });
 }
-function buildNumpad() {
-  var pad = document.getElementById('numpad');
-  pad.innerHTML = '';
+function correctCounts() {
   var counts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-  for (var r = 0; r < 9; r++) for (var c = 0; c < 9; c++) {
-    var value = puzzle[r][c];
+  if (!puzzle || puzzle.length !== 9 || !userGrid || !solved) return counts;
+  var r, c, value;
+  for (r = 0; r < 9; r++) for (c = 0; c < 9; c++) {
+    value = puzzle[r][c];
     if (!value && userGrid[r][c] && userGrid[r][c] === solved[r][c]) value = userGrid[r][c];
     if (value) counts[value]++;
   }
-  for (var n = 1; n <= 9; n++) {
+  return counts;
+}
+function digitExhausted(n) {
+  return n >= 1 && n <= 9 && correctCounts()[n] >= 9;
+}
+function notesOpen() {
+  return !!(notesMode && !settings.autoNotes && !match);
+}
+function cellCorrect(r, c) {
+  return !!(userGrid[r] && userGrid[r][c] && solved[r] && userGrid[r][c] === solved[r][c]);
+}
+function settleSticky() {
+  if (!userGrid || userGrid.length !== 9 || !solved || solved.length !== 9) return;
+  if (isSolved()) {
+    stickyDigit = 0;
+    selected = null;
+    highlightCells();
+    return;
+  }
+  if (!settings.numberFirst || !stickyDigit || !digitExhausted(stickyDigit)) return;
+  var start = stickyDigit;
+  var counts = correctCounts();
+  var i, n;
+  stickyDigit = 0;
+  for (i = 1; i <= 8; i++) {
+    n = ((start - 1 + i) % 9) + 1;
+    if (counts[n] < 9) { stickyDigit = n; return; }
+  }
+}
+function paintPad() {
+  var counts = correctCounts();
+  var n, btn, exhausted, face, label, stamp;
+  for (n = 1; n <= 9; n++) {
+    btn = document.querySelector('#numpad .num-btn[data-n="' + n + '"]');
+    if (!btn) continue;
+    exhausted = counts[n] >= 9;
+    var noteFinished = exhausted && notesOpen();
+    btn.classList.toggle('used', exhausted);
+    btn.classList.toggle('picked', !!(settings.numberFirst && stickyDigit === n));
+    btn.disabled = noteFinished ? false : (exhausted && !(settings.numberFirst && stickyDigit === n));
+    btn.setAttribute('aria-disabled', (exhausted && !noteFinished) ? 'true' : 'false');
+    if (settings.numberFirst) btn.setAttribute('aria-pressed', stickyDigit === n ? 'true' : 'false');
+    else btn.removeAttribute('aria-pressed');
+    stamp = (exhausted ? 'x' : 'o') + n;
+    if (btn.dataset.face !== stamp) {
+      btn.dataset.face = stamp;
+      face = String(n);
+      if (exhausted) face += '<i class="pad-check" aria-hidden="true">\u2713</i>';
+      btn.innerHTML = face;
+    }
+    if (exhausted) label = n + ' finished';
+    else if (settings.numberFirst) label = (notesMode ? 'Note ' : 'Select ') + n;
+    else label = 'Enter ' + n;
+    btn.setAttribute('aria-label', label);
+  }
+}
+function finishEntry() {
+  settleSticky();
+  paintPad();
+}
+function onPadDigit(num) {
+  if (boardBlocked() || settingsOn() || done || paused) return;
+  if (match && (match.phase !== 'live' || match.switching || !match.ready || match.over || match.scored)) return;
+  if (settings.numberFirst) {
+    if (digitExhausted(num) && stickyDigit !== num && !notesOpen()) return;
+    stickyDigit = stickyDigit === num ? 0 : num;
+    paintPad();
+    return;
+  }
+  if (digitExhausted(num) && !notesOpen()) return;
+  inputNum(num);
+}
+function buildNumpad() {
+  var pad = document.getElementById('numpad');
+  pad.innerHTML = '';
+  var n;
+  for (n = 1; n <= 9; n++) {
     var btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'num-btn';
+    btn.dataset.n = String(n);
     btn.textContent = String(n);
-    btn.setAttribute('aria-label', 'Enter ' + n);
-    if (counts[n] >= 9) btn.classList.add('used');
     (function (num) {
-      btn.addEventListener('pointerdown', function (e) {
-        if (e.pointerType === 'mouse' && e.button !== 0) return;
-        e.preventDefault();
-        padPointerAt = Date.now();
-        inputNum(num);
-      });
-      btn.addEventListener('click', function () {
-        if (Date.now() - padPointerAt < 700) return;
-        inputNum(num);
-      });
+      armTap(btn, function () { onPadDigit(num); });
     })(n);
     pad.appendChild(btn);
   }
@@ -2461,17 +2959,9 @@ function buildNumpad() {
   erase.className = 'num-btn erase';
   erase.textContent = 'Erase';
   erase.setAttribute('aria-label', 'Erase');
-  erase.addEventListener('pointerdown', function (e) {
-    if (e.pointerType === 'mouse' && e.button !== 0) return;
-    e.preventDefault();
-    padPointerAt = Date.now();
-    inputNum(0);
-  });
-  erase.addEventListener('click', function () {
-    if (Date.now() - padPointerAt < 700) return;
-    inputNum(0);
-  });
+  armTap(erase, function () { inputNum(0); });
   pad.appendChild(erase);
+  paintPad();
 }
 function cellEl(r, c) {
   return document.querySelector('.cell[data-r="' + r + '"][data-c="' + c + '"]');
@@ -2501,15 +2991,7 @@ function paintCell(r, c) {
   return true;
 }
 function refreshPadUsed() {
-  var counts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-  var r, c, value, n;
-  for (r = 0; r < 9; r++) for (c = 0; c < 9; c++) {
-    value = puzzle[r][c];
-    if (!value && userGrid[r][c] && userGrid[r][c] === solved[r][c]) value = userGrid[r][c];
-    if (value) counts[value]++;
-  }
-  var btns = document.querySelectorAll('#numpad .num-btn');
-  for (n = 1; n <= 9; n++) if (btns[n - 1]) btns[n - 1].classList.toggle('used', counts[n] >= 9);
+  paintPad();
 }
 function pushUndo() {
   undoStack.push({
@@ -2519,6 +3001,10 @@ function pushUndo() {
     hintsLeft: hintsLeft
   });
   if (undoStack.length > 200) undoStack.shift();
+  if (match && match.undos && match.undos[match.turn]) {
+    match.undos[match.turn].push(undoSnapJSON(undoStack[undoStack.length - 1]));
+    if (match.undos[match.turn].length > 200) match.undos[match.turn].shift();
+  }
 }
 function undoMove() {
   if (match || !undoStack.length || done || paused) return;
@@ -2615,8 +3101,9 @@ function inputNum(n) {
   if (match && (match.phase !== 'live' || match.switching || !match.ready || match.over || match.scored)) return;
   var r = selected.r, c = selected.c;
   if (puzzle[r][c] !== 0) return;
-  if (match && userGrid[r][c] && userGrid[r][c] === solved[r][c]) return;
+  if (cellCorrect(r, c)) return;
   if (match && n && Date.now() - lastMatchDigit < 100) return;
+  if (n && digitExhausted(n) && !notesOpen()) return;
   markPlayed();
   pushUndo();
   if (notesMode && !settings.autoNotes && !match && n !== 0) {
@@ -2670,18 +3157,21 @@ function inputNum(n) {
       var handNow = document.getElementById('handoff');
       if (handNow && handNow.hidden) showHandoff();
     }
+    finishEntry();
     return;
   }
   if (wrong) {
     var el = cellEl(r, c);
     if (el) el.classList.add('shake');
     if (limitOn() && mistakes >= 3) {
+      finishEntry();
       save();
       gameover();
       return;
     }
   }
   checkWin();
+  finishEntry();
   save();
 }
 
@@ -2712,12 +3202,14 @@ function useHint() {
   renderBoard();
   buildNumpad();
   checkWin();
+  finishEntry();
   save();
 }
 function toggleNotes() {
   if (match || settings.autoNotes || done) return;
   notesMode = !notesMode;
   syncChrome();
+  paintPad();
   save();
 }
 function setPaused(value) {
@@ -3018,6 +3510,7 @@ function bindControls() {
   function guardPointer(e) {
     if (!turnCovered()) {
       if (ghostClick && (e.type === 'click' || e.type === 'pointerup' || e.type === 'touchend')) {
+        if (activeTap && activeTap.fresh && e.type === 'pointerup' && e.pointerId === activeTap.id) return;
         e.preventDefault();
         e.stopPropagation();
       }
@@ -3044,6 +3537,10 @@ function bindControls() {
   document.getElementById('vsSame').addEventListener('click', function () { rematch(true); });
   document.getElementById('vsRematch').addEventListener('click', function () { rematch(false); });
   document.getElementById('vsSolo').addEventListener('click', exitToSolo);
+  var resumeEl = document.getElementById('vsResume');
+  if (resumeEl && resumeEl.parentNode !== document.body) document.body.appendChild(resumeEl);
+  document.getElementById('vsResumeGo').addEventListener('click', resumeSavedMatch);
+  document.getElementById('vsResumeEnd').addEventListener('click', endSavedMatch);
   document.getElementById('playAgain').addEventListener('click', function () { playRandom(diff || 'easy'); });
   document.getElementById('failAgain').addEventListener('click', function () { playRandom(diff || 'easy'); });
   document.getElementById('failContinue').addEventListener('click', continuePlay);
@@ -3137,6 +3634,7 @@ function bindControls() {
       e.stopPropagation();
     });
   });
+  document.getElementById('setNumberFirst').checked = !!settings.numberFirst;
   document.getElementById('setLimit').checked = settings.mistakeLimit;
   document.getElementById('setAuto').checked = settings.autoNotes;
   document.getElementById('setPlanets').checked = settings.planets;
@@ -3185,6 +3683,13 @@ function bindControls() {
     settings.highlight = this.checked;
     saveSettings();
     if (live) highlightCells();
+  });
+  document.getElementById('setNumberFirst').addEventListener('change', function () {
+    settings.numberFirst = !!this.checked;
+    saveSettings();
+    if (!settings.numberFirst) stickyDigit = 0;
+    if (live) paintPad();
+    if (match) saveMatch();
   });
 }
 
@@ -3262,6 +3767,20 @@ initStamp();
 loadSettings();
 bindControls();
 if (!applyDebugBoard()) begin(routeFromUrl());
+if (!debugRequested()) showResumePrompt();
+window.addEventListener('resize', fitPhoneBoard);
+if (window.visualViewport) window.visualViewport.addEventListener('resize', fitPhoneBoard);
+document.addEventListener('DOMContentLoaded', function () {
+  fitPhoneBoard();
+  requestAnimationFrame(fitPhoneBoard);
+});
+if (window.ResizeObserver) {
+  var fitWatch = new ResizeObserver(function () { fitPhoneBoard(); });
+  ['.nav', '.topbar', '#numpad', '.action-btns', '#firstTip'].forEach(function (sel) {
+    var el = document.querySelector(sel);
+    if (el) fitWatch.observe(el);
+  });
+}
 </script>
 <script src="/games/cg-sfx.js"></script>
 <script src="/games/daily-kit.js" defer></script>
