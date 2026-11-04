@@ -475,8 +475,15 @@
     }
     .handoff.is-go #handoffGo { font-size: 1.45rem; letter-spacing: 0.14em; }
     .handoff[hidden], .vs-result[hidden], .vs-setup[hidden] { display: none !important; }
-    .handoff h2, .vs-result h2, .vs-setup h2 { margin: 0; color: #ffe08a; }
-    .handoff p, .vs-result p, .vs-setup p { margin: 0; color: #d5d8ea; max-width: 28rem; }
+    .handoff h2, .vs-result h2, .vs-setup h2, .vs-resume h2 { margin: 0; color: #ffe08a; }
+    .handoff p, .vs-result p, .vs-setup p, .vs-resume p { margin: 0; color: #d5d8ea; max-width: 28rem; }
+    .vs-resume {
+      position: fixed; inset: 0; z-index: 520;
+      display: flex; align-items: center; justify-content: center;
+      padding: 1rem; background: rgba(7, 10, 31, 0.55);
+    }
+    .vs-resume[hidden] { display: none !important; }
+    .vs-resume .vs-card { width: min(20rem, 100%); }
     #vsSetup, #vsConfirm { z-index: 380; }
     .vs-result { background: rgba(7, 10, 31, 0.58); }
     .vs-card {
@@ -906,6 +913,14 @@
       <button type="button" class="btn btn--primary" id="vsConfirmGo">Leave match</button>
       <button type="button" class="btn btn--outline" id="vsConfirmStay">Keep playing</button>
     </div>
+    <div class="vs-resume" id="vsResume" hidden>
+      <div class="vs-card">
+        <h2>Resume match?</h2>
+        <p>An unfinished match is saved on this device.</p>
+        <button type="button" class="btn btn--primary" id="vsResumeGo">Resume match</button>
+        <button type="button" class="btn btn--outline" id="vsResumeEnd">End match</button>
+      </div>
+    </div>
     <div class="handoff" id="handoff" hidden>
       <p>Pass the phone</p>
       <h2 id="handoffWho">Player 1</h2>
@@ -1095,6 +1110,7 @@ var storageStamp = '';
 var SETTINGS_KEY = 'sdk_settings';
 var STATS_KEY = 'sdk_stats';
 var SAVE_INDEX = 'sdk_save_index';
+var MATCH_KEY = 'sdk_match_v1';
 var settings = { mistakeLimit: true, autoNotes: false, planets: false, sound: false, highlight: true, reduce: null, numberFirst: false };
 var limitWaived = false;
 var soloClockHeld = false;
@@ -1435,8 +1451,10 @@ window.sdkSetSound = function (on) {
 };
 
 function save() {
-  if (match) return;
+  if (match) { saveMatch(); return; }
   if (!storageKept()) return;
+  var held = readMatchSave();
+  if (held && held.id === puzzleId) return;
   if (!puzzleId || !gridOk(puzzle) || !gridOk(userGrid)) return;
   var data = {
     id: puzzleId,
@@ -1471,6 +1489,217 @@ function save() {
     while (idx.length > 12) lsDel('sdk_save_' + idx.shift());
     lsSet(SAVE_INDEX, JSON.stringify(idx));
   } catch (e) {}
+}
+
+function matchScreen() {
+  if (!match || match.over) return 'result';
+  if (match.phase !== 'live' && typeof match.lastNote === 'string' && match.lastNote.charAt(0) === '-') return 'strike';
+  return 'turn';
+}
+function undoSnapJSON(snap) {
+  return {
+    user: snap.user.map(function (row) { return row.slice(); }),
+    notes: notesToJSON(snap.notes),
+    mistakes: snap.mistakes | 0,
+    hintsLeft: snap.hintsLeft
+  };
+}
+function undoSnapLive(snap) {
+  if (!snap || !gridOk(snap.user)) return null;
+  return {
+    user: snap.user.map(function (row) { return row.slice(); }),
+    notes: notesFromJSON(snap.notes),
+    mistakes: +snap.mistakes || 0,
+    hintsLeft: typeof snap.hintsLeft === 'number' ? snap.hintsLeft : 3
+  };
+}
+function playerSaveOk(p) {
+  return !!(p && typeof p.score === 'number' && typeof p.mistakes === 'number' && typeof p.secs === 'number' && (p.undo == null || Array.isArray(p.undo)));
+}
+function saveMatch() {
+  if (!match || match.over || !storageKept()) return;
+  if (debugRequested() || (puzzleId && puzzleId.indexOf('debug-') === 0)) return;
+  if (!gridOk(puzzle) || !gridOk(userGrid) || !gridOk(solved)) return;
+  var phase = match.phase === 'live' ? 'live' : 'handoff';
+  var screen = matchScreen();
+  if (screen === 'result') return;
+  var data = {
+    v: 1,
+    over: false,
+    screen: screen,
+    id: puzzleId,
+    diff: diff,
+    daily: !!isDaily,
+    seed: puzzleSeed,
+    puzzle: puzzle,
+    solved: solved,
+    user: userGrid,
+    notes: notesToJSON(notes),
+    turn: match.turn,
+    phase: phase,
+    strikes: !!match.strikes,
+    starter: match.starter ? 1 : 0,
+    lastNote: match.lastNote || '',
+    turnMs: phase === 'live' && match.ready ? Math.max(0, Date.now() - turnStamp) : 0,
+    timerSecs: timerSecs | 0,
+    mistakes: mistakes | 0,
+    hintsLeft: hintsLeft,
+    stickyDigit: stickyDigit | 0,
+    selected: selected && typeof selected.r === 'number' ? { r: selected.r, c: selected.c } : null,
+    limitWaived: !!limitWaived,
+    undo: undoStack.map(undoSnapJSON),
+    locked: {
+      mistakeLimit: !!settings.mistakeLimit,
+      autoNotes: !!settings.autoNotes,
+      planets: !!settings.planets,
+      sound: !!settings.sound,
+      highlight: !!settings.highlight,
+      reduce: typeof settings.reduce === 'boolean' ? settings.reduce : null,
+      numberFirst: !!settings.numberFirst
+    },
+    p: [0, 1].map(function (i) {
+      var p = match.p[i];
+      return {
+        score: p.score | 0,
+        mistakes: p.mistakes | 0,
+        corrects: p.corrects | 0,
+        secs: p.secs | 0,
+        undo: (match.undos && match.undos[i]) ? match.undos[i] : []
+      };
+    })
+  };
+  lsSet(MATCH_KEY, JSON.stringify(data));
+}
+function clearMatchSave() { lsDel(MATCH_KEY); }
+function readMatchSave() {
+  try {
+    var raw = JSON.parse(lsGet(MATCH_KEY) || 'null');
+    if (!raw || raw.v !== 1 || raw.over) return null;
+    if (raw.screen !== 'turn' && raw.screen !== 'strike') return null;
+    if (raw.phase !== 'handoff' && raw.phase !== 'live') return null;
+    if (raw.turn !== 0 && raw.turn !== 1) return null;
+    if (!raw.p || !playerSaveOk(raw.p[0]) || !playerSaveOk(raw.p[1])) return null;
+    if (!gridOk(raw.puzzle) || !gridOk(raw.user) || !gridOk(raw.solved)) return null;
+    if (typeof raw.seed !== 'number' || !(raw.seed > 0) || typeof raw.id !== 'string') return null;
+    return raw;
+  } catch (e) { return null; }
+}
+function showResumePrompt() {
+  var el = document.getElementById('vsResume');
+  if (!el || !readMatchSave()) return;
+  soloClockHeld = true;
+  clearInterval(timerInt);
+  el.hidden = false;
+}
+function dismissResumePrompt() {
+  var el = document.getElementById('vsResume');
+  if (el) el.hidden = true;
+  soloClockHeld = false;
+}
+function endSavedMatch() {
+  clearMatchSave();
+  dismissResumePrompt();
+  if (live && !done && !paused && !match) startTimer();
+}
+function resumeSavedMatch() {
+  var data = readMatchSave();
+  dismissResumePrompt();
+  if (!data) {
+    if (live && !done && !paused) startTimer();
+    return;
+  }
+  applyMatchSave(data);
+}
+function applyLocked(locked) {
+  if (!locked || typeof locked !== 'object') return;
+  ['mistakeLimit', 'autoNotes', 'planets', 'sound', 'highlight', 'numberFirst'].forEach(function (key) {
+    if (typeof locked[key] === 'boolean') settings[key] = locked[key];
+  });
+  if (typeof locked.reduce === 'boolean' || locked.reduce === null) settings.reduce = locked.reduce;
+  applyMotion();
+}
+function applyMatchSave(data) {
+  clearInterval(timerInt);
+  swallowHandoff = false;
+  handoffGesture = false;
+  clearGo();
+  paused = false;
+  done = false;
+  failed = false;
+  celebrated = false;
+  suppressWinAnim = false;
+  quitSent = false;
+  live = true;
+  limitWaived = !!data.limitWaived;
+  diff = data.diff || 'easy';
+  isDaily = !!data.daily;
+  puzzleId = data.id;
+  puzzleSeed = data.seed;
+  puzzle = data.puzzle.map(function (row) { return row.slice(); });
+  solved = data.solved.map(function (row) { return row.slice(); });
+  userGrid = data.user.map(function (row) { return row.slice(); });
+  notes = notesFromJSON(data.notes);
+  mistakes = +data.mistakes || 0;
+  hintsLeft = typeof data.hintsLeft === 'number' ? data.hintsLeft : 3;
+  timerSecs = +data.timerSecs || 0;
+  notesMode = false;
+  stickyDigit = data.stickyDigit | 0;
+  selected = data.selected && typeof data.selected.r === 'number' ? { r: data.selected.r, c: data.selected.c } : null;
+  undoStack = [];
+  (Array.isArray(data.undo) ? data.undo : []).forEach(function (snap) {
+    var liveSnap = undoSnapLive(snap);
+    if (liveSnap) undoStack.push(liveSnap);
+  });
+  applyLocked(data.locked);
+  var undos = [[], []];
+  match = {
+    fresh: false,
+    strikes: !!data.strikes,
+    switching: false,
+    starter: data.starter ? 1 : 0,
+    undos: undos,
+    p: [0, 1].map(function (i) {
+      var p = data.p[i];
+      undos[i] = Array.isArray(p.undo) ? p.undo : [];
+      return { score: p.score | 0, mistakes: p.mistakes | 0, corrects: p.corrects | 0, secs: p.secs | 0 };
+    }),
+    turn: data.turn,
+    ready: data.phase === 'live',
+    over: false,
+    phase: data.phase === 'live' ? 'live' : 'handoff',
+    lastNote: typeof data.lastNote === 'string' ? data.lastNote : '',
+    scored: false
+  };
+  document.getElementById('winBanner').classList.remove('show');
+  document.getElementById('failBanner').classList.remove('show');
+  resetWinArt();
+  var frame = document.getElementById('boardFrame');
+  frame.classList.remove('is-paused', 'win-glow');
+  frame.dataset.puzzleId = puzzleId;
+  frame.dataset.daily = isDaily ? '1' : '0';
+  frame.dataset.seed = String(puzzleSeed);
+  document.getElementById('pauseOverlay').hidden = true;
+  document.getElementById('vsResult').hidden = true;
+  document.getElementById('vsSetup').hidden = true;
+  document.getElementById('vsConfirm').hidden = true;
+  syncChrome();
+  renderBoard();
+  buildNumpad();
+  updateMistakes();
+  if (match.phase === 'live') {
+    document.getElementById('handoff').hidden = true;
+    document.body.classList.remove('is-handoff');
+    document.body.classList.add('sdk-match');
+    turnStamp = Date.now() - Math.max(0, data.turnMs | 0);
+    match.ready = true;
+    updateTimer();
+    syncMatchLocks();
+    highlightCells();
+  } else showHandoff();
+  startTimer();
+  var next = urlFor({ daily: isDaily, diff: diff, id: puzzleId, mode: isDaily ? 'daily' : 'free' });
+  if (location.pathname + location.search !== next) history.replaceState({ id: puzzleId }, '', next);
+  fitPhoneBoard();
 }
 
 function candidates(r, c) {
@@ -1807,6 +2036,7 @@ function releaseGo(epoch) {
   highlightCells();
   updateTimer();
   updateScoreBar();
+  save();
 }
 function blurFocus() {
   var ae = document.activeElement;
@@ -1815,7 +2045,7 @@ function blurFocus() {
   }
 }
 function hideMatchUi() {
-  var ids = ['handoff', 'vsResult', 'vsSetup', 'vsConfirm'];
+  var ids = ['handoff', 'vsResult', 'vsSetup', 'vsConfirm', 'vsResume'];
   for (var i = 0; i < ids.length; i++) {
     var el = document.getElementById(ids[i]);
     if (el) el.hidden = true;
@@ -1824,6 +2054,7 @@ function hideMatchUi() {
   document.body.classList.remove('sdk-match');
 }
 function resetMatch() {
+  if (match) clearMatchSave();
   match = null;
   swallowHandoff = false;
   handoffGesture = false;
@@ -1974,6 +2205,7 @@ function finishMatch(winner, reason) {
   if (!match || match.over) return;
   setTurnPhase('ended');
   match.over = true;
+  clearMatchSave();
   match.ready = false;
   match.switching = true;
   match.winner = winner;
@@ -2063,7 +2295,8 @@ function freshMatch(strikes, starter) {
     ready: false,
     over: false,
     phase: 'handoff',
-    lastNote: ''
+    lastNote: '',
+    undos: [[], []]
   };
 }
 var confirmAction = null;
@@ -2277,6 +2510,8 @@ function begin(route) {
     applyDebugBoard();
     return;
   }
+  var heldMatch = !match && readMatchSave();
+  var skipSoloWrite = !!(heldMatch && heldMatch.id === route.id);
   if (match && !match.fresh) resetMatch();
   clearInterval(timerInt);
   document.getElementById('winBanner').classList.remove('show');
@@ -2339,12 +2574,14 @@ function begin(route) {
     celebrated = false;
     selected = firstEmpty();
     if (settings.autoNotes && !match) applyAutoNotes();
-    postCount(puzzleId, 'start');
-    trackSudoku('sudoku_start', {
-      puzzle_id: puzzleId,
-      difficulty: diff,
-      daily: isDaily ? 1 : 0
-    });
+    if (!skipSoloWrite) {
+      postCount(puzzleId, 'start');
+      trackSudoku('sudoku_start', {
+        puzzle_id: puzzleId,
+        difficulty: diff,
+        daily: isDaily ? 1 : 0
+      });
+    }
   }
 
   var frame = document.getElementById('boardFrame');
@@ -2373,7 +2610,7 @@ function begin(route) {
     match.ready = false;
     showHandoff();
   } else if (!match) hideMatchUi();
-  save();
+  if (match || !skipSoloWrite) save();
   fitPhoneBoard();
 }
 
@@ -2764,6 +3001,10 @@ function pushUndo() {
     hintsLeft: hintsLeft
   });
   if (undoStack.length > 200) undoStack.shift();
+  if (match && match.undos && match.undos[match.turn]) {
+    match.undos[match.turn].push(undoSnapJSON(undoStack[undoStack.length - 1]));
+    if (match.undos[match.turn].length > 200) match.undos[match.turn].shift();
+  }
 }
 function undoMove() {
   if (match || !undoStack.length || done || paused) return;
@@ -3296,6 +3537,10 @@ function bindControls() {
   document.getElementById('vsSame').addEventListener('click', function () { rematch(true); });
   document.getElementById('vsRematch').addEventListener('click', function () { rematch(false); });
   document.getElementById('vsSolo').addEventListener('click', exitToSolo);
+  var resumeEl = document.getElementById('vsResume');
+  if (resumeEl && resumeEl.parentNode !== document.body) document.body.appendChild(resumeEl);
+  document.getElementById('vsResumeGo').addEventListener('click', resumeSavedMatch);
+  document.getElementById('vsResumeEnd').addEventListener('click', endSavedMatch);
   document.getElementById('playAgain').addEventListener('click', function () { playRandom(diff || 'easy'); });
   document.getElementById('failAgain').addEventListener('click', function () { playRandom(diff || 'easy'); });
   document.getElementById('failContinue').addEventListener('click', continuePlay);
@@ -3444,6 +3689,7 @@ function bindControls() {
     saveSettings();
     if (!settings.numberFirst) stickyDigit = 0;
     if (live) paintPad();
+    if (match) saveMatch();
   });
 }
 
@@ -3521,6 +3767,7 @@ initStamp();
 loadSettings();
 bindControls();
 if (!applyDebugBoard()) begin(routeFromUrl());
+if (!debugRequested()) showResumePrompt();
 window.addEventListener('resize', fitPhoneBoard);
 if (window.visualViewport) window.visualViewport.addEventListener('resize', fitPhoneBoard);
 document.addEventListener('DOMContentLoaded', function () {
