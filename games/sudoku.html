@@ -2598,7 +2598,7 @@ function onCellTap(r, c) {
       focusNoScroll(cellEl(r, c));
       return;
     }
-    if (stickyDigit && !digitExhausted(stickyDigit)) {
+    if (stickyDigit && (!digitExhausted(stickyDigit) || notesOpen())) {
       selected = { r: r, c: c };
       inputNum(stickyDigit);
       if (!done && !(match && (match.over || match.phase !== 'live'))) focusNoScroll(cellEl(r, c));
@@ -2635,6 +2635,12 @@ function correctCounts() {
 function digitExhausted(n) {
   return n >= 1 && n <= 9 && correctCounts()[n] >= 9;
 }
+function notesOpen() {
+  return !!(notesMode && !settings.autoNotes && !match);
+}
+function cellCorrect(r, c) {
+  return !!(userGrid[r] && userGrid[r][c] && solved[r] && userGrid[r][c] === solved[r][c]);
+}
 function settleSticky() {
   if (!userGrid || userGrid.length !== 9 || !solved || solved.length !== 9) return;
   if (isSolved()) {
@@ -2660,10 +2666,11 @@ function paintPad() {
     btn = document.querySelector('#numpad .num-btn[data-n="' + n + '"]');
     if (!btn) continue;
     exhausted = counts[n] >= 9;
+    var noteFinished = exhausted && notesOpen();
     btn.classList.toggle('used', exhausted);
     btn.classList.toggle('picked', !!(settings.numberFirst && stickyDigit === n));
-    btn.disabled = exhausted && !(settings.numberFirst && stickyDigit === n);
-    btn.setAttribute('aria-disabled', exhausted ? 'true' : 'false');
+    btn.disabled = noteFinished ? false : (exhausted && !(settings.numberFirst && stickyDigit === n));
+    btn.setAttribute('aria-disabled', (exhausted && !noteFinished) ? 'true' : 'false');
     if (settings.numberFirst) btn.setAttribute('aria-pressed', stickyDigit === n ? 'true' : 'false');
     else btn.removeAttribute('aria-pressed');
     stamp = (exhausted ? 'x' : 'o') + n;
@@ -2687,12 +2694,12 @@ function onPadDigit(num) {
   if (boardBlocked() || settingsOn() || done || paused) return;
   if (match && (match.phase !== 'live' || match.switching || !match.ready || match.over || match.scored)) return;
   if (settings.numberFirst) {
-    if (digitExhausted(num) && stickyDigit !== num) return;
+    if (digitExhausted(num) && stickyDigit !== num && !notesOpen()) return;
     stickyDigit = stickyDigit === num ? 0 : num;
     paintPad();
     return;
   }
-  if (digitExhausted(num)) return;
+  if (digitExhausted(num) && !notesOpen()) return;
   inputNum(num);
 }
 function buildNumpad() {
@@ -2853,9 +2860,9 @@ function inputNum(n) {
   if (match && (match.phase !== 'live' || match.switching || !match.ready || match.over || match.scored)) return;
   var r = selected.r, c = selected.c;
   if (puzzle[r][c] !== 0) return;
-  if (match && userGrid[r][c] && userGrid[r][c] === solved[r][c]) return;
+  if (cellCorrect(r, c)) return;
   if (match && n && Date.now() - lastMatchDigit < 100) return;
-  if (n && digitExhausted(n)) return;
+  if (n && digitExhausted(n) && !notesOpen()) return;
   markPlayed();
   pushUndo();
   if (notesMode && !settings.autoNotes && !match && n !== 0) {
@@ -2961,7 +2968,7 @@ function toggleNotes() {
   if (match || settings.autoNotes || done) return;
   notesMode = !notesMode;
   syncChrome();
-  if (settings.numberFirst) paintPad();
+  paintPad();
   save();
 }
 function setPaused(value) {
