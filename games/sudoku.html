@@ -489,9 +489,24 @@
     .strike-dots { display: inline-flex; gap: 3px; align-items: center; }
     .strike-dots i { display: block; width: 10px; height: 10px; border-radius: 50%; background: transparent; box-shadow: inset 0 0 0 1.5px rgba(255, 170, 170, 0.55); }
     .strike-dots i.on { background: #ff3b4e; box-shadow: none; }
-    .toggle-row.is-locked { opacity: 0.55; pointer-events: none; }
+    .toggle-row.is-locked { opacity: 0.55; pointer-events: none; flex-wrap: wrap; row-gap: 0.2rem; height: auto; }
+    .toggle-row.is-locked > span:not(.lock-tag) { flex: 1 1 auto; min-width: min(100%, 9.5rem); }
     .toggle-row.is-locked input::before { background: #2c334c !important; }
     .toggle-row.is-locked input::after { transform: none !important; }
+    .lock-tag {
+      flex: 0 0 auto;
+      margin-left: auto;
+      font-size: 0.68rem;
+      line-height: 1.2;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      color: #ffe08a;
+      background: rgba(255, 224, 138, 0.12);
+      border: 1px solid rgba(255, 224, 138, 0.45);
+      border-radius: 999px;
+      padding: 0.15rem 0.45rem;
+      white-space: nowrap;
+    }
     #hintBtn:disabled { opacity: 0.4; }
     .settings-head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.35rem; }
     .settings-head h2 { margin: 0; color: #ffe08a; font-size: 1.05rem; }
@@ -1608,16 +1623,37 @@ var swallowHandoff = false;
 var handoffGesture = false;
 var goHold = false;
 var goTimer = 0;
+var goEpoch = 0;
 var ghostClick = false;
+var lastMatchDigit = 0;
+function startControlTarget(e) {
+  var t = e && e.target;
+  return !!(t && t.closest && t.closest('#handoffGo'));
+}
+function setTurnPhase(next) {
+  if (!match) return false;
+  var cur = match.phase || 'handoff';
+  if (cur === next) return true;
+  var allowed = {
+    handoff: { go: 1, ended: 1 },
+    go: { live: 1, handoff: 1, ended: 1 },
+    live: { handoff: 1, ended: 1 },
+    ended: {}
+  };
+  if (!allowed[cur] || !allowed[cur][next]) return false;
+  match.phase = next;
+  return true;
+}
 function handoffUp() {
   var hand = document.getElementById('handoff');
-  return !!(match && !match.over && !match.ready && hand && !hand.hidden);
+  return !!(match && !match.over && match.phase !== 'live' && hand && !hand.hidden);
 }
 function turnCovered() {
   return goHold || handoffUp();
 }
 function clearGo() {
   goHold = false;
+  goEpoch += 1;
   if (goTimer) { clearTimeout(goTimer); goTimer = 0; }
   var btn = document.getElementById('handoffGo');
   if (btn) btn.textContent = 'Start turn';
@@ -1626,9 +1662,13 @@ function clearGo() {
 }
 function armGo() {
   if (goHold || !match || match.over || match.ready) return;
+  if (match.phase !== 'handoff') return;
+  if (!setTurnPhase('go')) return;
   swallowHandoff = false;
   handoffGesture = false;
   goHold = true;
+  goEpoch += 1;
+  var epoch = goEpoch;
   var x = window.scrollX, y = window.scrollY;
   var btn = document.getElementById('handoffGo');
   if (btn) btn.textContent = 'Go!';
@@ -1637,9 +1677,10 @@ function armGo() {
   blockBoardUntil = 0;
   blurFocus();
   pinScroll(x, y);
-  goTimer = setTimeout(releaseGo, 300);
+  goTimer = setTimeout(function () { releaseGo(epoch); }, 300);
 }
-function releaseGo() {
+function releaseGo(epoch) {
+  if (epoch !== goEpoch) return;
   goTimer = 0;
   goHold = false;
   blockBoardUntil = 0;
@@ -1649,7 +1690,9 @@ function releaseGo() {
   if (btn) btn.textContent = 'Start turn';
   var el = document.getElementById('handoff');
   if (el) el.classList.remove('is-go');
-  if (!match || match.over) return;
+  if (!match || match.over || match.phase !== 'go') return;
+  if (!setTurnPhase('live')) return;
+  match.scored = false;
   match.switching = false;
   match.ready = true;
   turnStamp = Date.now();
@@ -1734,19 +1777,30 @@ function syncMatchLocks() {
   };
   var rows = document.querySelectorAll('#settingsCard .toggle-row');
   if (match) {
-    if (hint) { hint.disabled = true; hint.textContent = 'Locked'; }
+    if (hint) { hint.disabled = true; hint.textContent = 'Hint off'; }
+    var noteBtn = document.getElementById('noteBtn');
+    if (noteBtn) { noteBtn.disabled = true; noteBtn.textContent = 'Notes: OFF'; }
     rows.forEach(function (row) {
       var input = row.querySelector('input');
-      var label = row.querySelector('span');
+      var label = row.querySelector('span:not(.lock-tag)');
       row.classList.add('is-locked');
       if (input) { input.disabled = true; input.checked = false; }
-      if (label) label.textContent = 'Locked';
+      if (label && input && labels[input.id]) label.textContent = labels[input.id];
+      var tag = row.querySelector('.lock-tag');
+      if (!tag) {
+        tag = document.createElement('span');
+        tag.className = 'lock-tag';
+        row.appendChild(tag);
+      }
+      tag.textContent = 'Locked during match';
     });
   } else {
     if (hint) hint.disabled = false;
     rows.forEach(function (row) {
       var input = row.querySelector('input');
-      var label = row.querySelector('span');
+      var label = row.querySelector('span:not(.lock-tag)');
+      var tag = row.querySelector('.lock-tag');
+      if (tag) tag.remove();
       row.classList.remove('is-locked');
       if (!input) return;
       input.disabled = false;
@@ -1762,9 +1816,12 @@ function syncMatchLocks() {
   updateScoreBar();
 }
 function showHandoff() {
-  if (!match) return;
+  if (!match || match.over) return;
   clearGo();
+  if (!setTurnPhase('handoff')) return;
   match.ready = false;
+  match.switching = false;
+  notesMode = false;
   selected = null;
   highlightCells();
   blurFocus();
@@ -1790,12 +1847,12 @@ function showHandoff() {
 }
 function readyTurn() {
   if (swallowHandoff || !match || match.over || match.ready) return;
-  clearTimeout(goTimer);
-  goTimer = 0;
-  goHold = false;
-  releaseGo();
+  if (match.phase !== 'go') return;
+  releaseGo(goEpoch);
 }
 function finishMatch(winner, reason) {
+  if (!match || match.over) return;
+  setTurnPhase('ended');
   match.over = true;
   match.ready = false;
   match.switching = true;
@@ -1883,6 +1940,7 @@ function freshMatch(strikes, starter) {
     turn: starter,
     ready: false,
     over: false,
+    phase: 'handoff',
     lastNote: ''
   };
 }
@@ -1897,12 +1955,17 @@ function stripDebugParams() {
 }
 function exitToSolo() {
   stripDebugParams();
+  var route = routeFromUrl();
+  var saved = readSave(route.id);
+  var finished = !!(saved && (saved.done || saved.failed || saved.celebrated));
   resetMatch();
   done = false;
   failed = false;
   celebrated = false;
   suppressWinAnim = false;
-  begin(routeFromUrl());
+  quitSent = true;
+  if (finished) playRandom((saved && saved.diff) || route.diff || 'easy');
+  else begin(route);
 }
 function askLeave(copy, action) {
   if (!(match && !match.over)) { action(); return; }
@@ -1946,7 +2009,11 @@ function rematch(same) {
   save();
 }
 function commitMatchTurn(n, correct, wrong, prev, rated) {
-  if (!match || match.over) return;
+  if (!match || match.over || match.scored) return;
+  if (match.phase === 'live' && !setTurnPhase('handoff')) return;
+  if (match.phase !== 'handoff') return;
+  match.scored = true;
+  match.ready = false;
   var p = match.p[match.turn];
   var mult = speedMult(Date.now() - turnStamp);
   if (correct && prev !== n) {
@@ -2084,6 +2151,10 @@ function resetWinArt() {
 }
 
 function begin(route) {
+  if (debugRequested()) {
+    applyDebugBoard();
+    return;
+  }
   if (match && !match.fresh) resetMatch();
   clearInterval(timerInt);
   document.getElementById('winBanner').classList.remove('show');
@@ -2314,7 +2385,7 @@ function renderBoard() {
 }
 function selectCell(r, c) {
   if (paused || boardBlocked() || settingsOn()) return;
-  if (match && !match.ready) return;
+  if (match && (match.phase !== 'live' || !match.ready)) return;
   selected = { r: r, c: c };
   highlightCells();
   focusNoScroll(cellEl(r, c));
@@ -2519,13 +2590,14 @@ function readSelection() {
 }
 function inputNum(n) {
   if (boardBlocked() || settingsOn() || !selected || typeof selected.r !== 'number' || done || paused) return;
-  if (match && (match.switching || !match.ready || match.over)) return;
+  if (match && (match.phase !== 'live' || match.switching || !match.ready || match.over || match.scored)) return;
   var r = selected.r, c = selected.c;
   if (puzzle[r][c] !== 0) return;
   if (match && userGrid[r][c] && userGrid[r][c] === solved[r][c]) return;
+  if (match && n && Date.now() - lastMatchDigit < 100) return;
   markPlayed();
   pushUndo();
-  if (notesMode && !settings.autoNotes && n !== 0) {
+  if (notesMode && !settings.autoNotes && !match && n !== 0) {
     if (notes[r][c].has(n)) notes[r][c].delete(n);
     else notes[r][c].add(n);
     renderBoard();
@@ -2533,8 +2605,10 @@ function inputNum(n) {
     return;
   }
   if (match && n) {
+    if (!setTurnPhase('handoff')) return;
     match.switching = true;
     match.ready = false;
+    lastMatchDigit = Date.now();
   }
   var rated = 1;
   if (match && n) {
@@ -2570,6 +2644,10 @@ function inputNum(n) {
   }
   if (match && n) {
     commitMatchTurn(n, correct, wrong, prev, rated);
+    if (match && !match.over) {
+      var handNow = document.getElementById('handoff');
+      if (handNow && handNow.hidden) showHandoff();
+    }
     return;
   }
   if (wrong) {
@@ -2615,7 +2693,7 @@ function useHint() {
   save();
 }
 function toggleNotes() {
-  if (settings.autoNotes || done) return;
+  if (match || settings.autoNotes || done) return;
   notesMode = !notesMode;
   syncChrome();
   save();
@@ -2827,13 +2905,14 @@ document.addEventListener('keydown', function (e) {
     return;
   }
   var hand = document.getElementById('handoff');
-  if ((e.key === 'Enter' || e.key === ' ') && match && hand && !hand.hidden && !match.over && !match.ready && !settingsOn()) {
+  if ((e.key === 'Enter' || e.key === ' ') && match && hand && !hand.hidden && !match.over && match.phase === 'handoff' && !settingsOn()) {
     e.preventDefault();
-    if (!goHold) armGo();
+    if (e.repeat || goHold) return;
+    armGo();
     return;
   }
   if (settingsOn() || paused || done || !selected || typeof selected.r !== 'number') return;
-  if (match && (match.switching || !match.ready || match.over)) return;
+  if (match && match.phase !== 'live') return;
   var tag = e.target && e.target.tagName;
   if (tag === 'INPUT' || tag === 'TEXTAREA') return;
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undoMove(); return; }
@@ -2869,6 +2948,7 @@ window.addEventListener('pagehide', function () {
   flushEvents();
 });
 window.addEventListener('popstate', function () {
+  if (applyDebugBoard()) return;
   var route = routeFromUrl();
   if (puzzleId && route.id !== puzzleId) abandon();
   begin(route);
@@ -2908,7 +2988,7 @@ function bindControls() {
     e.preventDefault();
     e.stopPropagation();
     if (goHold || e.type === 'pointerup' || e.type === 'touchend') return;
-    if (e.type === 'click' && swallowHandoff) return;
+    if (!startControlTarget(e)) return;
     armGo();
   }
   handoffEl.addEventListener('pointerdown', stopHandoff, true);
@@ -2918,8 +2998,7 @@ function bindControls() {
   handoffEl.addEventListener('touchend', stopHandoff, { capture: true, passive: false });
   function guardPointer(e) {
     if (!turnCovered()) {
-      if (e.type === 'click' && ghostClick) {
-        ghostClick = false;
+      if (ghostClick && (e.type === 'click' || e.type === 'pointerup' || e.type === 'touchend')) {
         e.preventDefault();
         e.stopPropagation();
       }
@@ -2928,7 +3007,8 @@ function bindControls() {
     if (e.type === 'pointerdown' && e.button) return;
     e.preventDefault();
     e.stopPropagation();
-    if (goHold || e.type === 'pointerup' || e.type === 'touchend' || e.type === 'click') return;
+    if (goHold || e.type === 'pointerup' || e.type === 'touchend') return;
+    if (!startControlTarget(e)) return;
     armGo();
   }
   document.addEventListener('pointerdown', guardPointer, true);
@@ -3098,10 +3178,13 @@ function bindControls() {
   });
 })();
 
-function applyDebugBoard() {
+function debugRequested() {
   var params = new URLSearchParams(location.search);
-  if (params.get('debug') !== 'nearfull') return;
-  if (!debugAllowed(location.hostname)) return;
+  return params.get('debug') === 'nearfull' && debugAllowed(location.hostname);
+}
+function applyDebugBoard() {
+  if (!debugRequested()) return false;
+  var params = new URLSearchParams(location.search);
   var tie = params.get('tie') === '1';
   var made = makeNearFull(randomSeed(), tie ? 2 : 3);
   clearGo();
@@ -3131,6 +3214,12 @@ function applyDebugBoard() {
   suppressWinAnim = false;
   document.getElementById('winBanner').classList.remove('show');
   document.getElementById('failBanner').classList.remove('show');
+  var pauseOv = document.getElementById('pauseOverlay');
+  if (pauseOv) pauseOv.hidden = true;
+  var vsResult = document.getElementById('vsResult');
+  if (vsResult) vsResult.hidden = true;
+  var frame = document.getElementById('boardFrame');
+  if (frame) frame.classList.remove('is-paused', 'win-glow');
   syncChrome();
   renderBoard();
   buildNumpad();
@@ -3138,13 +3227,18 @@ function applyDebugBoard() {
   updateMistakes();
   showHandoff();
   startTimer();
+  if (frame) {
+    frame.dataset.puzzleId = puzzleId;
+    frame.dataset.daily = '0';
+    frame.dataset.seed = String(puzzleSeed || 0);
+  }
+  return true;
 }
 
 initStamp();
 loadSettings();
 bindControls();
-begin(routeFromUrl());
-applyDebugBoard();
+if (!applyDebugBoard()) begin(routeFromUrl());
 </script>
 <script src="/games/cg-sfx.js"></script>
 <script src="/games/daily-kit.js" defer></script>
