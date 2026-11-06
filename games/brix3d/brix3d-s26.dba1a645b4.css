@@ -1,0 +1,129 @@
+
+@media (min-width: 769px) {
+  #controls {
+    z-index: 10050;
+    gap: 16px;
+    padding: 16px 16px 18px;
+  }
+  #sidebarToggle { z-index: 10051; }
+  #controls .section {
+    padding: 16px 16px 18px;
+  }
+  #controls .section-title {
+    margin-bottom: 14px;
+  }
+  #controls .subsection {
+    margin-top: 16px;
+    padding: 12px;
+  }
+  #controls .brick-grid {
+    gap: 8px;
+  }
+  #controls .brick-btn {
+    padding: 11px 4px;
+  }
+  #controls .tool-grid {
+    gap: 10px;
+  }
+  #controls #moveBtn { order: -1; }
+}
+/* Badges live on body, above the hold that traps the modal's z-index.
+   Hide them while a modal is up so a hit falls through to the overlay. */
+body:has(#galleryModal[style*="flex"]) .gotw-tag,
+body:has(#loadConfirm[style*="flex"]) .gotw-tag,
+body:has(#namePrompt[style*="flex"]) .gotw-tag,
+body:has(#tutorialModal.visible) .gotw-tag,
+body:has(#keybindModal.visible) .gotw-tag,
+body:has(#galleryModal[style*="flex"]) .brix-more,
+body:has(#loadConfirm[style*="flex"]) .brix-more,
+body:has(#namePrompt[style*="flex"]) .brix-more,
+body:has(#tutorialModal.visible) .brix-more,
+body:has(#keybindModal.visible) .brix-more,
+body:has(#galleryModal[style*="flex"]) .toast,
+body:has(#loadConfirm[style*="flex"]) .toast,
+body:has(#namePrompt[style*="flex"]) .toast,
+body:has(#tutorialModal.visible) .toast,
+body:has(#keybindModal.visible) .toast,
+body:has(#galleryModal[style*="flex"]) #phoneViewBtn,
+body:has(#loadConfirm[style*="flex"]) #phoneViewBtn,
+body:has(#namePrompt[style*="flex"]) #phoneViewBtn,
+body:has(#tutorialModal.visible) #phoneViewBtn,
+body:has(#keybindModal.visible) #phoneViewBtn,
+body:has(#galleryModal[style*="flex"]) .zoom-controls,
+body:has(#loadConfirm[style*="flex"]) .zoom-controls,
+body:has(#namePrompt[style*="flex"]) .zoom-controls,
+body:has(#tutorialModal.visible) .zoom-controls,
+body:has(#keybindModal.visible) .zoom-controls {
+  visibility: hidden !important;
+}
+
+/* r25: short share dialog, phone drawer above the dock, toasts over modals. */
+.gallery-content,
+.gallery-panel.active {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+.share-preview canvas,
+.screenshot-preview canvas {
+  max-height: min(220px, 30vh);
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  margin-inline: auto;
+}
+@media (max-height: 760px) {
+  #galleryModal.modal-overlay {
+    align-items: flex-start;
+    overflow-y: auto;
+    padding: 8px 0;
+  }
+  .gallery-container {
+    max-height: calc(100dvh - 16px);
+    padding: 10px 12px;
+  }
+  .gallery-header { margin-bottom: 6px; }
+  .gallery-header h2 { font-size: 18px; }
+  .gallery-tabs { margin-bottom: 6px; }
+  .gallery-tab { padding: 6px 12px; }
+  .share-preview,
+  .screenshot-preview { margin-bottom: 6px; }
+  .share-options,
+  .screenshot-options,
+  .screenshot-actions { margin-bottom: 6px; gap: 6px; }
+  .share-code-section { padding: 8px; }
+  .share-code-section textarea { height: 56px; }
+}
+@media (max-width: 430px) {
+  body.phone-tray-open {
+    --brix-tray-h: min(360px, calc(100dvh - 280px));
+  }
+  body.phone-tray-open #controls.tray-open {
+    bottom: calc(68px + env(safe-area-inset-bottom, 0px)) !important;
+    height: var(--brix-tray-h) !important;
+    max-height: var(--brix-tray-h) !important;
+  }
+  body.phone-tray-open .zoom-controls,
+  body.phone-tray-open .rotation-ind {
+    bottom: calc(68px + var(--brix-tray-h, 360px) + 12px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+@media (min-width: 769px) {
+  body:not(.sidebar-collapsed) #sidebarToggle {
+    left: 236px;
+    top: 20px;
+  }
+  body.sidebar-collapsed #sidebarToggle {
+    left: 12px;
+    top: 12px;
+  }
+}
+body:has(#galleryModal[style*="flex"]) .toast.show,
+body:has(#loadConfirm[style*="flex"]) .toast.show,
+body:has(#namePrompt[style*="flex"]) .toast.show,
+body:has(#tutorialModal.visible) .toast.show,
+body:has(#keybindModal.visible) .toast.show {
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: none !important;
+  z-index: 10120 !important;
+}

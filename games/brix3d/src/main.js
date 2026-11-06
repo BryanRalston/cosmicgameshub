@@ -948,6 +948,10 @@
       camera.updateProjectionMatrix();
       renderer.setPixelRatio(dpr);
       renderer.setSize(w, h);
+      // An inline canvas leaves a strip of the page behind it. That strip
+      // is the dark page color, and it reads as a bar on the plate.
+      renderer.domElement.style.display = 'block';
+      renderer.domElement.style.verticalAlign = 'top';
       if (composer) composer.setSize(w, h);
       if (ssaoPass) ssaoPass.setSize(w, h);
       markDirty();
@@ -1060,6 +1064,8 @@
         }
       };
       document.getElementById('container').appendChild(renderer.domElement);
+      renderer.domElement.style.display = 'block';
+      renderer.domElement.style.verticalAlign = 'top';
       renderer.setClearColor(0x87CEEB, 1);
       renderer.clear(true, true, true);
       performance.mark('brix-renderer');
@@ -2236,7 +2242,9 @@
       // fragment cost that dropped the 520-brick view under 60 FPS, and the
       // bright env fill washed a lone 1x1 into the studs.
       const baseGeo = new THREE.BoxGeometry(baseplateWorldSize, PLATE_H * 0.5, baseplateWorldSize);
-      const baseMat = new THREE.MeshLambertMaterial({ color: 0x2f8f3c });
+      // Warm deck, not the lawn green. A plate painted the same as the grass
+      // disappears on a phone, and the stud print is too small to separate them.
+      const baseMat = new THREE.MeshLambertMaterial({ color: 0xd7b56a });
       const baseplate = new THREE.Mesh(baseGeo, baseMat);
       baseplate.position.set(baseplateWorldSize / 2, -PLATE_H * 0.25, baseplateWorldSize / 2);
       baseplate.receiveShadow = true;
@@ -2245,7 +2253,7 @@
       // One normal-mapped plane. The old 96x96 instanced studs (9,216 shadow casters) are gone.
       const studTex = makeBaseplateStudTextures(BASEPLATE_SIZE);
       const studMat = new THREE.MeshLambertMaterial({
-        color: 0x3eb24e,
+        color: 0xf3e2a4,
         map: studTex.map
       });
       // When a cell is only a couple of pixels on its short screen axis, the
@@ -2277,7 +2285,7 @@
       // Four bars outside the studs, clear of the grass. A slab flush with
       // the stud plane disappeared: polygon offset at this angle pushed it
       // under the lawn, and a buried box never showed.
-      const rimMat = new THREE.MeshLambertMaterial({ color: 0xd4f06a });
+      const rimMat = new THREE.MeshLambertMaterial({ color: 0xfff6d8 });
       const rimLip = 2.2;
       const rimH = 0.09;
       const rimY = 0.055 - rimH * 0.5;
@@ -3731,28 +3739,27 @@
       const baseColor = new THREE.Color(color);
       const hsl = { h: 0, s: 0, l: 0 };
       baseColor.getHSL(hsl);
-      // Keep a mid green. The old cap at lightness 0.32 turned the plate
-      // near-black. Sands and snow (lightness above 0.55) stay as asked.
+      // Keep a mid green lawn. The old cap at lightness 0.32 turned the
+      // ground near-black. Sands and snow (lightness above 0.55) stay as asked.
       const plateL = hsl.l > 0.55 ? hsl.l : Math.min(Math.max(hsl.l, 0.34), 0.44);
       const plateS = hsl.l > 0.55 ? hsl.s : Math.max(hsl.s, 0.42);
-      const plate = new THREE.Color().setHSL(hsl.h, Math.min(0.62, plateS), plateL);
+      const lawn = new THREE.Color().setHSL(hsl.h, Math.min(0.62, plateS), plateL);
 
-      // Studs a step lighter than the gaps so the grid reads. Not white.
-      const studColor = plate.clone();
-      studColor.offsetHSL(0, -0.06, 0.03);
-      
-      // Grid color is darker
-      const gridColor = plate.clone();
-      gridColor.offsetHSL(0, 0, -0.12);
+      // The plate stays a warm deck. Painting it with the lawn made the
+      // studded span vanish into the grass, especially on a phone.
+      const deck = new THREE.Color(0xd7b56a);
+      const studColor = new THREE.Color(0xf3e2a4);
+      const gridColor = deck.clone();
+      gridColor.offsetHSL(0, 0, -0.18);
       
       // Update grass plane (extends to horizon)
       if (window.grassPlane && window.grassPlane.material) {
-        window.grassPlane.material.color.copy(plate);
+        window.grassPlane.material.color.copy(lawn);
       }
       
       // Update baseplate
       if (window.baseplateRef && window.baseplateRef.material) {
-        window.baseplateRef.material.color.copy(plate);
+        window.baseplateRef.material.color.copy(deck);
       }
       // Update ground studs
       if (window.groundStudsRef && window.groundStudsRef.material) {
@@ -6519,6 +6526,13 @@
       const hudDel = document.getElementById('hudDeleteBtn');
       if (hudDel) hudDel.classList.toggle('delete-active', deleteMode);
       const forPlace = !!(opts && opts.forPlace);
+      // Move uses its own ghost. The place preview was stacking on the brick
+      // the finger just dropped.
+      if (moveMode) {
+        removeGhost();
+        removeWallModeGhost();
+        return;
+      }
       // Don't update regular ghost in walk mode - use fpGhost instead
       if (firstPersonMode) {
         removeGhost();
@@ -7450,20 +7464,106 @@
       });
     }
 
+    function starterFits(list, ox, oz) {
+      // Upper bricks rest on the ones earlier in the spec. Checking the
+      // live grid alone makes every cottage look full, because the walls
+      // are not on the plate yet.
+      const extra = new Map();
+      const hasLevel = (x, z, y) => {
+        const key = x + ',' + z;
+        if (extra.has(key) && extra.get(key).has(y)) return true;
+        return !!(grid.has(key) && grid.get(key).has(y));
+      };
+      for (let i = 0; i < list.length; i++) {
+        const s = list[i];
+        const dims = getEffectiveDims(s[0], 0);
+        const hp = getHP(s[0]);
+        const gx = s[2] + ox;
+        const gz = s[3] + oz;
+        const gy = s[4];
+        if (gx < 0 || gz < 0 || gx + dims.w > PLATE_STUDS || gz + dims.d > PLATE_STUDS) return false;
+        for (let dx = 0; dx < dims.w; dx++) {
+          for (let dz = 0; dz < dims.d; dz++) {
+            for (let h = 0; h < hp; h++) {
+              if (hasLevel(gx + dx, gz + dz, gy + h)) return false;
+            }
+          }
+        }
+        if (gy > 0) {
+          let supported = false;
+          for (let dx = 0; dx < dims.w && !supported; dx++) {
+            for (let dz = 0; dz < dims.d; dz++) {
+              if (hasLevel(gx + dx, gz + dz, gy - 1)) { supported = true; break; }
+            }
+          }
+          if (!supported) {
+            for (let dx = -1; dx <= dims.w && !supported; dx++) {
+              for (let dz = -1; dz <= dims.d; dz++) {
+                if (dx >= 0 && dx < dims.w && dz >= 0 && dz < dims.d) continue;
+                for (let h = 0; h < 3; h++) {
+                  if (hasLevel(gx + dx, gz + dz, gy + h) || hasLevel(gx + dx, gz + dz, gy - h)) {
+                    supported = true;
+                    break;
+                  }
+                }
+                if (supported) break;
+              }
+            }
+          }
+          if (!supported) return false;
+        }
+        for (let dx = 0; dx < dims.w; dx++) {
+          for (let dz = 0; dz < dims.d; dz++) {
+            const key = (gx + dx) + ',' + (gz + dz);
+            if (!extra.has(key)) extra.set(key, new Set());
+            const levels = extra.get(key);
+            for (let h = 0; h < hp; h++) levels.add(gy + h);
+          }
+        }
+      }
+      return true;
+    }
+
+    function starterShift(list) {
+      if (starterFits(list, 0, 0)) return { ox: 0, oz: 0 };
+      const steps = [8, 16, 24, 32, 40];
+      for (let i = 0; i < steps.length; i++) {
+        const step = steps[i];
+        const tries = [[step, 0], [-step, 0], [0, step], [0, -step], [step, step], [-step, step], [step, -step]];
+        for (let t = 0; t < tries.length; t++) {
+          if (starterFits(list, tries[t][0], tries[t][1])) return { ox: tries[t][0], oz: tries[t][1] };
+        }
+      }
+      return null;
+    }
+
+    function frameOnStarter(brick) {
+      if (!brick || !brick.position || !controls || !camera) return;
+      const aspect = camera.aspect || (innerWidth / Math.max(1, innerHeight));
+      const portrait = isMobileGfx() && aspect < 1.2;
+      // Home distance frames the whole 96-stud plate, so a cottage is a speck.
+      placeCameraOnHomeRay(brick.position.x, 0.6, brick.position.z, portrait ? 11 : 14);
+    }
+
     function placeStarter(kind) {
       const el = document.getElementById('starterSpecs');
       const specs = el ? JSON.parse(el.textContent) : null;
       const list = specs && specs[kind];
       if (!list) return 0;
+      const shift = starterShift(list);
+      if (!shift) {
+        toast('That spot is full. Clear the plate or move the build, then try the starter again.', 'info');
+        return 0;
+      }
       saveUndo();
       const placed = [];
       for (let i = 0; i < list.length; i++) {
         const s = list[i];
-        const brick = dropStarterBrick(s[0], s[1], s[2], s[3], s[4], 0);
+        const brick = dropStarterBrick(s[0], s[1], s[2] + shift.ox, s[3] + shift.oz, s[4], 0);
         if (brick) placed.push(brick);
       }
       if (!placed.length) {
-        toast('That spot is already built. Clear the plate and try again.', 'info');
+        toast('That spot is full. Clear the plate or move the build, then try the starter again.', 'info');
         return 0;
       }
       for (let i = 0; i < placed.length; i++) bouncePlaced(placed[i]);
@@ -7472,14 +7572,13 @@
       hideStarterBar();
       const modal = document.getElementById('tutorialModal');
       if (modal) modal.classList.remove('visible');
-      if (controls && placed[0].position) {
-        controls.target.set(placed[0].position.x, 1.1, placed[0].position.z);
-      }
+      frameOnStarter(placed[0]);
       hasUnsavedChanges = true;
       updateStats();
       updateGhost();
       const names = { cottage: 'Cottage started', tower: 'Tower started', buggy: 'Buggy started' };
-      toast(names[kind] || 'Starter placed', 'success');
+      const beside = shift.ox || shift.oz ? ' Next to the one already there.' : '';
+      toast((names[kind] || 'Starter placed') + beside, 'success');
       return placed.length;
     }
 
@@ -7656,6 +7755,7 @@
       if (url.length > 32000) return;
       const box = document.getElementById('shareBuildCode');
       if (box) box.value = url;
+      labelShareBox(url);
     }
 
     async function copyShareLink() {
@@ -7672,6 +7772,7 @@
       }
       const box = document.getElementById('shareBuildCode');
       if (box) box.value = url;
+      labelShareBox(url);
       try {
         await navigator.clipboard.writeText(url);
         SoundSystem.playSuccess();
@@ -9235,12 +9336,21 @@
     // ==================== UI ====================
     function toast(msg, type = '', persist = false) {
       const t = document.getElementById('toast');
+      if (!t) return;
       t.textContent = msg;
       t.className = 'toast show ' + type;
+      // A modal rule hides .toast so a badge cannot eat the overlay.
+      // Inline visibility keeps Save, Load, and starter notes on screen.
+      t.style.visibility = 'visible';
+      t.style.opacity = '1';
       clearTimeout(t.tid);
       // The first hint stays until a brick is placed. An 1.8s fade was a
       // late visual change and stretched the simulated Speed Index.
-      if (!persist) t.tid = setTimeout(() => t.classList.remove('show'), 1800);
+      if (!persist) t.tid = setTimeout(() => {
+        t.classList.remove('show');
+        t.style.visibility = '';
+        t.style.opacity = '';
+      }, 2200);
     }
     
     function updateStats() {
@@ -9836,11 +9946,15 @@
           }
           return;
         }
+        toast('Select a save, then press Load', 'info');
+        return;
       }
       refreshProjectList();
       list.style.display = 'block';
-      projectListArmed = !!list.querySelector('.saved-project-item');
-      if (projectListArmed) toast('Select a save, then press Load');
+      const anyRow = list.querySelector('.saved-project-item');
+      projectListArmed = !!anyRow;
+      if (projectListArmed) toast('Select a save, then press Load', 'info');
+      else toast('No saved projects to load', 'info');
     }
     
     function refreshProjectList() {
@@ -10983,6 +11097,8 @@
     let touchMoved = false;
     let touchStartX = 0;
     let touchStartY = 0;
+    let toolTouchId = null;
+    let ignoreMouseToolUntil = 0;
     const keysPressed = new Set();
     function panCamera(dx, dz) {
       // Get camera's forward direction (but on the horizontal plane)
@@ -11356,6 +11472,27 @@
       el.style.setProperty('transform', 'none', 'important');
       if (r.height > height + 1) el.style.setProperty('max-height', height + 'px', 'important');
     }
+    function coarsePointer() {
+      // maxTouchPoints is 2 on a desktop trackpad, so it cannot pick the hint.
+      // A finger hint is for a coarse pointer, or a narrow touch layout.
+      try {
+        if (window.matchMedia('(pointer: coarse)').matches) return true;
+      } catch (e) {}
+      return window.innerWidth <= 768 && (isTouchDevice || navigator.maxTouchPoints > 0);
+    }
+    function floorHintText() {
+      return coarsePointer()
+        ? 'Drag one finger to draw the floor. The camera stays still.'
+        : 'Click & drag to draw floor area';
+    }
+    function wallHintText() {
+      if (coarsePointer()) {
+        return wallBoxMode
+          ? 'Drag one finger to draw a 4-sided box. The camera stays still.'
+          : 'Drag one finger to draw the wall. The camera stays still.';
+      }
+      return wallBoxMode ? 'Click & drag to draw 4-sided box' : 'Click & drag to draw wall line';
+    }
     function updateBuildToolPopup() {
       const buildToolPopup = document.getElementById('buildToolPopup');
       if (!buildToolPopup) return;
@@ -11381,10 +11518,7 @@
       document.getElementById('buildShapeLine').classList.toggle('active', !wallBoxMode);
       document.getElementById('buildShapeBox').classList.toggle('active', wallBoxMode);
       
-      const wallInfoText = wallBoxMode ? 'Click & drag to draw 4-sided box' : 'Click & drag to draw wall line';
-      document.getElementById('buildToolInfo').textContent = isFloor 
-        ? 'Click & drag to draw floor area' 
-        : wallInfoText;
+      document.getElementById('buildToolInfo').textContent = isFloor ? floorHintText() : wallHintText();
         
       // Update values
       document.getElementById('buildHeightValue').textContent = wallHeight;
@@ -11447,6 +11581,69 @@
       const moveLabel = document.getElementById('moveModeLabel');
       if (moveLabel) moveLabel.textContent = 'Move — tap a brick';
     }
+    function ghostForMove(brick) {
+      const type = brick.userData.type || brick.userData.brickType;
+      const rot = brick.userData.rot || brick.userData.rotation || 0;
+      const pos = (brick.position && brick.position.clone) ? brick.position.clone() : new THREE.Vector3();
+      let ghost = null;
+      // A placed brick is a plain record, not an Object3D. clone() throws.
+      // Build the preview from the same geometry the instance uses.
+      if (brick.isInstancedBrick || typeof brick.clone !== 'function') {
+        ghost = createBrick(type, brick.userData.color, pos, rot, true, {
+          pitch: brick.userData.pitch || 0,
+          roll: brick.userData.roll || 0
+        });
+        if (ghost) {
+          ghost.traverse(obj => {
+            if (obj.isMesh && obj.material) {
+              obj.material = obj.material.clone();
+              obj.material.transparent = true;
+              obj.material.opacity = 0.45;
+              obj.material.depthWrite = false;
+            }
+          });
+        }
+      } else {
+        const ghostMat = new THREE.MeshStandardMaterial({
+          color: softGhostColor(true),
+          transparent: true,
+          opacity: 0.45,
+          depthWrite: false
+        });
+        ghost = brick.clone();
+        ghost.traverse(obj => {
+          if (obj.isMesh) obj.material = ghostMat.clone();
+        });
+      }
+      if (!ghost) {
+        const g = brick.userData.grid || { w: 2, d: 4, hp: 3 };
+        ghost = new THREE.Mesh(
+          new THREE.BoxGeometry(g.w * STUD, (g.hp || 1) * PLATE_H, g.d * STUD),
+          new THREE.MeshStandardMaterial({ color: 0x00ff00, transparent: true, opacity: 0.45, depthWrite: false })
+        );
+        ghost.position.copy(pos);
+        ghost.position.y += ((g.hp || 1) * PLATE_H) / 2;
+      }
+      return ghost;
+    }
+    function syncInstancedBrickPose(brick) {
+      const lookup = instancedSystem.brickLookup.get(brick.instanceId);
+      if (!lookup || !brick.position) return;
+      lookup.pos.set(brick.position.x, brick.position.y, brick.position.z);
+      const g = brick.userData && brick.userData.grid;
+      if (g) lookup.gridData = g;
+      const data = instancedSystem.meshes.get(lookup.key);
+      if (!data) return;
+      const index = data.instances.get(brick.instanceId);
+      if (index === undefined) return;
+      writeBrickInstance(instancedSystem.dummy, lookup, 0, 1);
+      data.mesh.setMatrixAt(index, instancedSystem.dummy.matrix);
+      data.mesh.instanceMatrix.needsUpdate = true;
+      markShadowDirty();
+      panelBatch.byId.forEach((rec) => {
+        if (rec.brickId === brick.instanceId) writePanelInstance(rec.id);
+      });
+    }
     function createMoveGhosts() {
       // Clear existing ghosts
       for (const mg of moveGhosts) {
@@ -11454,31 +11651,11 @@
       }
       moveGhosts = [];
       
-      // Create a semi-transparent ghost for each selected brick
       for (const brick of selectedGroup) {
-        const brickType = brick.userData.type || brick.userData.brickType;
-        const color = brick.userData.color;
-        const rot = brick.userData.rotation || 0;
-        
-        // Clone the brick as a ghost
-        const ghostMat = new THREE.MeshStandardMaterial({
-          color: softGhostColor(true),
-          transparent: true,
-          opacity: 0.45,
-          depthWrite: false
-        });
-        
-        const ghost = brick.clone();
-        ghost.traverse(obj => {
-          if (obj.isMesh) {
-            obj.material = ghostMat.clone();
-          }
-        });
-        
+        const ghost = ghostForMove(brick);
         ghost.userData.isMoveGhost = true;
         ghost.userData.originalBrick = brick;
         ghost.userData.originalGrid = {...brick.userData.grid};
-        
         scene.add(ghost);
         moveGhosts.push(ghost);
       }
@@ -11609,19 +11786,13 @@
       return false;
     }
     function selectBrickGroup(clickedBrick, singleBrickOnly = false) {
-      // Can't move instanced bricks (would need to recreate them)
-      if (clickedBrick.isInstancedBrick) {
-        toast('⚠️ Cannot move instanced bricks - use delete and recreate', 'error');
-        return;
-      }
-      
       clearMoveSelection();
-      
-      if (singleBrickOnly) {
-        // Select just this one brick
+      // Placed bricks are instanced records. Pick up the one that was tapped.
+      // A connected walk used to drop every instance and then refuse the tap.
+      const one = singleBrickOnly || !!clickedBrick.isInstancedBrick;
+      if (one) {
         selectedGroup = [clickedBrick];
       } else {
-        // Find all connected bricks (excluding instanced ones)
         selectedGroup = findConnectedBricks(clickedBrick).filter(b => !b.isInstancedBrick);
       }
       
@@ -11646,11 +11817,11 @@
       // Create ghost previews
       createMoveGhosts();
       
-      const modeText = singleBrickOnly ? '1 brick' : `${selectedGroup.length} bricks`;
+      const modeText = one ? '1 brick' : `${selectedGroup.length} bricks`;
       const moveLabel = document.getElementById('moveModeLabel');
       if (moveLabel) moveLabel.textContent = `✋ ${modeText} selected - Click to place, ESC to cancel`;
       
-      toast(`Selected ${modeText}${singleBrickOnly ? '' : ' (hold Shift for single brick)'}`);
+      toast(`Selected ${modeText}${one ? '' : ' (hold Shift for single brick)'}`);
     }
     function placeMoveGroup(targetGx, targetGz) {
       if (selectedGroup.length === 0) return;
@@ -11709,6 +11880,7 @@
           np.g.gx = np.newGx;
           np.g.gz = np.newGz;
           addToGrid(np.newGx, np.newGz, np.g.w, np.g.d, np.g.gy, np.g.hp, np.brick);
+          if (np.brick.isInstancedBrick) syncInstancedBrickPose(np.brick);
         }
         
         toast(`✅ Moved ${selectedGroup.length} bricks`, 'success');
@@ -11892,6 +12064,9 @@
       hideGhostOn(document.querySelector('.zoom-controls'));
       
       renderer.domElement.addEventListener('mousedown', e => {
+        // A touch drag already painted. The synthesized mouse press would
+        // start a second one-cell floor on the lift.
+        if (performance.now() < ignoreMouseToolUntil) return;
         if (e.button === 0 && floorMode) {
           // Disable orbit controls during floor drag
           controls.enabled = false;
@@ -11922,6 +12097,7 @@
       });
       
       renderer.domElement.addEventListener('mouseup', e => {
+        if (performance.now() < ignoreMouseToolUntil) return;
         if (e.button === 0) {
           if (floorMode && floorDragStart) {
             // Place the floor
@@ -11938,6 +12114,52 @@
         }
       });
       
+      function beginTouchToolDrag(clientX, clientY) {
+        pointerToMouse(clientX, clientY);
+        const hit = pickPoint();
+        if (!hit) return;
+        const gPos = worldToGrid(hit.point.x, hit.point.z);
+        if (floorMode) {
+          floorDragStart = { x: gPos.x, z: gPos.z };
+          floorDragEnd = { x: gPos.x, z: gPos.z };
+          updateFloorGhost();
+        } else if (wallMode) {
+          wallDragStart = { x: gPos.x, z: gPos.z };
+          wallDragEnd = { x: gPos.x, z: gPos.z };
+          updateWallGhost();
+        }
+      }
+      function endTouchToolDrag(e) {
+        if (toolTouchId == null) return;
+        if (e && e.pointerId !== toolTouchId) return;
+        toolTouchId = null;
+        ignoreMouseToolUntil = performance.now() + 800;
+        suppressClickUntil = performance.now() + 800;
+        if (floorMode && floorDragStart) placeFloor();
+        else if (wallMode && wallDragStart) placeWall();
+        if (controls && !overlayBlocksPlay()) controls.enabled = true;
+      }
+      // Capture runs before OrbitControls. A one-finger drag in Floor or
+      // Wall paints the area and the camera stays put.
+      renderer.domElement.addEventListener('pointerdown', (e) => {
+        if (e.pointerType === 'mouse') return;
+        if (!(floorMode || wallMode) || overlayBlocksPlay()) return;
+        if (toolTouchId != null) return;
+        toolTouchId = e.pointerId;
+        if (controls) controls.enabled = false;
+        e.stopPropagation();
+        try { renderer.domElement.setPointerCapture(e.pointerId); } catch (err) {}
+        beginTouchToolDrag(e.clientX, e.clientY);
+      }, true);
+      renderer.domElement.addEventListener('pointermove', (e) => {
+        if (toolTouchId == null || e.pointerId !== toolTouchId) return;
+        e.stopPropagation();
+        pointerToMouse(e.clientX, e.clientY);
+        pointerDirty = false;
+        flushPointerHover();
+      }, true);
+      renderer.domElement.addEventListener('pointerup', endTouchToolDrag, true);
+      renderer.domElement.addEventListener('pointercancel', endTouchToolDrag, true);
       renderer.domElement.addEventListener('pointerdown', (e) => {
         if (overlayBlocksPlay()) return;
         orbitPointerX = e.clientX;
@@ -12663,6 +12885,8 @@
           else if (dropperMode) pickColor();
           else if (paintMode) paintBrick();
           else if (facePaintMode) facePaintBrick();
+          else if (moveMode) handleMoveClick(false);
+          else if (floorMode || wallMode) { /* pointerup paints the drag */ }
           else placeBrick();
         }
       });
@@ -12845,7 +13069,7 @@
         document.body.classList.toggle('sidebar-collapsed', sidebarCollapsed);
         sidebarToggle.textContent = sidebarCollapsed ? '☰' : '✕';
         sidebarToggle.title = sidebarCollapsed ? 'Show Menu (Tab)' : 'Hide Menu (Tab)';
-        sidebarToggle.style.left = sidebarCollapsed ? '12px' : '304px';
+        sidebarToggle.style.left = '';
         applyViewSize();
       };
       
@@ -13122,7 +13346,7 @@
         if (!floorMode) cancelFloorDrag();
         updateGhost();
         updateBuildToolPopup();
-        toast(floorMode ? '⬜ Floor mode ON - click & drag to draw area' : 'Floor mode OFF');
+        toast(floorMode ? floorHintText() : 'Floor mode OFF');
       });
       document.getElementById('floorBtn').addEventListener('pointerup', onFloor);
       document.getElementById('floorBtn').addEventListener('click', onFloor);
@@ -13139,7 +13363,7 @@
         if (!wallMode) cancelWallDrag();
         updateGhost();
         updateBuildToolPopup();
-        toast(wallMode ? '🧱 Wall mode ON - click & drag to draw wall' : 'Wall mode OFF');
+        toast(wallMode ? wallHintText() : 'Wall mode OFF');
       });
       document.getElementById('wallBtn').addEventListener('pointerup', onWall);
       document.getElementById('wallBtn').addEventListener('click', onWall);
@@ -13288,7 +13512,7 @@
         wallBoxMode = false;
         document.getElementById('buildShapeLine').classList.add('active');
         document.getElementById('buildShapeBox').classList.remove('active');
-        document.getElementById('buildToolInfo').textContent = 'Click & drag to draw wall line';
+        document.getElementById('buildToolInfo').textContent = wallHintText();
         if (wallDragStart) updateWallGhost();
         toast('📏 Line mode - single wall');
       });
@@ -13297,7 +13521,7 @@
         wallBoxMode = true;
         document.getElementById('buildShapeBox').classList.add('active');
         document.getElementById('buildShapeLine').classList.remove('active');
-        document.getElementById('buildToolInfo').textContent = 'Click & drag to draw 4-sided box';
+        document.getElementById('buildToolInfo').textContent = wallHintText();
         if (wallDragStart) updateWallGhost();
         toast('⬜ Box mode - 4 walls');
       });
@@ -14279,10 +14503,11 @@
       SoundSystem.playClick();
     }
     
-    function promptName(message, suggested, maxLength) {
+    function promptName(message, suggested, maxLength, labels) {
       return new Promise((resolve) => {
         const root = document.getElementById('namePrompt');
         const body = document.getElementById('namePromptBody');
+        const title = document.getElementById('namePromptTitle');
         const input = document.getElementById('namePromptInput');
         const ok = document.getElementById('namePromptOk');
         const cancel = document.getElementById('namePromptCancel');
@@ -14290,7 +14515,12 @@
           resolve(null);
           return;
         }
-        if (body) body.textContent = message || 'Name your build';
+        const opts = labels || {};
+        // Every open resets the chrome. A load must not leave the next
+        // save saying "Load", and a save must not leave the next load as "Save".
+        if (title) title.textContent = opts.title || 'Name your build';
+        ok.textContent = opts.ok || 'Save';
+        if (body) body.textContent = message || 'Save this build to the gallery.';
         // Names stay short. A pasted build code or share link is much longer
         // than the name field's default, so the caller passes that cap.
         input.maxLength = (typeof maxLength === 'number' && maxLength > 0) ? maxLength : 30;
@@ -14420,6 +14650,7 @@
       const code = btoa(json);
       
       document.getElementById('shareBuildCode').value = code;
+      labelShareBox(code);
       navigator.clipboard.writeText(code).then(() => {
         SoundSystem.playSuccess();
         toast('📋 Build code copied to clipboard!', 'success');
@@ -14458,8 +14689,22 @@
       toast('💾 .brick file downloaded!', 'success');
     }
     
+    function labelShareBox(value) {
+      const label = document.getElementById('shareBuildCodeLabel');
+      if (!label) return;
+      const text = String(value || '').trim();
+      if (!text) label.textContent = 'Build code or share link';
+      else if (/^https?:/i.test(text) || text.indexOf('#b=') >= 0 || text.indexOf('?b=') >= 0) label.textContent = 'Share link';
+      else label.textContent = 'Build code';
+    }
+
     async function loadFromCode() {
-      const raw = await promptName('Paste build code:', '', 100000);
+      const raw = await promptName(
+        'Paste a build code or a share link.',
+        '',
+        100000,
+        { title: 'Load from code', ok: 'Load' }
+      );
       if (!raw) return;
       const code = String(raw).trim();
 
@@ -15561,7 +15806,29 @@
         }
       });
     }
+    const pinBuf = new THREE.Vector2();
+    const pinKick = new THREE.Vector4(0, 0, 1, 1);
+    function pinFullViewport() {
+      if (!renderer || !renderer.getContext) return;
+      const gl = renderer.getContext();
+      if (!gl) return;
+      renderer.getDrawingBufferSize(pinBuf);
+      const w = Math.max(1, pinBuf.x || gl.drawingBufferWidth || 1);
+      const h = Math.max(1, pinBuf.y || gl.drawingBufferHeight || 1);
+      // Three skips the GL viewport call when its cache already says full.
+      // A boot band can leave the driver there, so the top of an alpha
+      // canvas stays clear and the page shows through as a black bar.
+      if (renderer.state && renderer.state.viewport) renderer.state.viewport(pinKick);
+      if (renderer.state && renderer.state.scissor) renderer.state.scissor(pinKick);
+      renderer.setScissorTest(false);
+      renderer.setViewport(0, 0, w, h);
+      renderer.setScissor(0, 0, w, h);
+      gl.disable(gl.SCISSOR_TEST);
+      gl.viewport(0, 0, w, h);
+      gl.scissor(0, 0, w, h);
+    }
     function renderFrame() {
+      pinFullViewport();
       if (renderer.info && typeof renderer.info.reset === 'function') renderer.info.reset();
       // One new mesh per frame, shadows off, until the plate, studs, and
       // scenery have each been drawn once. The full shadowed frame was the
@@ -16190,11 +16457,38 @@
       grids() {
         return bricks.map((b) => {
           const g = b.userData.grid || {};
+          let ix = null;
+          let iz = null;
+          if (b.isInstancedBrick) {
+            const lookup = instancedSystem.brickLookup.get(b.instanceId);
+            if (lookup && lookup.pos) {
+              ix = lookup.pos.x;
+              iz = lookup.pos.z;
+            }
+          }
           return {
             t: b.userData.brickType || b.userData.type,
-            gx: g.gx, gz: g.gz, gy: g.gy
+            gx: g.gx, gz: g.gz, gy: g.gy,
+            x: b.position ? b.position.x : null,
+            z: b.position ? b.position.z : null,
+            ix, iz
           };
         });
+      },
+      pose() {
+        return {
+          px: camera.position.x, py: camera.position.y, pz: camera.position.z,
+          tx: controls.target.x, ty: controls.target.y, tz: controls.target.z
+        };
+      },
+      screenPoint(x, y, z) {
+        const v = new THREE.Vector3(x, y, z).project(camera);
+        const rect = renderer.domElement.getBoundingClientRect();
+        return {
+          x: rect.left + (v.x * 0.5 + 0.5) * rect.width,
+          y: rect.top + (-v.y * 0.5 + 0.5) * rect.height,
+          behind: v.z < -1 || v.z > 1
+        };
       },
       // Project every brick corner through the same 4:3 sphere fit the gallery uses.
       captureFit() {
