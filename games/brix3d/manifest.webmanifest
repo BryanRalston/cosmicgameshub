@@ -1,0 +1,24 @@
+{
+  "name": "BRIX 3D",
+  "short_name": "BRIX 3D",
+  "description": "Build amazing 3D brick creations right in your browser",
+  "start_url": "/games/brix3d",
+  "scope": "/games/brix3d",
+  "display": "standalone",
+  "background_color": "#0f0f1a",
+  "theme_color": "#0f0f1a",
+  "icons": [
+    {
+      "src": "/games/brix3d/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/games/brix3d/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

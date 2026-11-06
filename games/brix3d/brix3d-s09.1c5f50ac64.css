@@ -1,0 +1,149 @@
+
+    .color-preset.trans {
+      position: relative;
+      background-image: 
+        linear-gradient(45deg, #333 25%, transparent 25%),
+        linear-gradient(-45deg, #333 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #333 75%),
+        linear-gradient(-45deg, transparent 75%, #333 75%);
+      background-size: 8px 8px;
+      background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
+    }
+    .color-preset.trans::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 4px;
+    }
+    .color-preset.trans[data-color="#e53935"]::after { background: rgba(229,57,53,0.5); }
+    .color-preset.trans[data-color="#1e88e5"]::after { background: rgba(30,136,229,0.5); }
+    .color-preset.trans[data-color="#fdd835"]::after { background: rgba(253,216,53,0.5); }
+    .color-preset.trans[data-color="#43a047"]::after { background: rgba(67,160,71,0.5); }
+    .color-preset.trans[data-color="#00bcd4"]::after { background: rgba(0,188,212,0.5); }
+    .color-preset.trans[data-color="#8e24aa"]::after { background: rgba(142,36,170,0.5); }
+    .color-preset.trans[data-color="#ffffff"]::after { background: rgba(255,255,255,0.5); }
+    .color-preset.trans[data-color="#212121"]::after { background: rgba(33,33,33,0.5); }
+    
+    /* Prefabs */
+    .prefab-search {
+      width: 100%;
+      padding: 8px 12px;
+      margin-bottom: 10px;
+      border: 1px solid #444;
+      border-radius: 6px;
+      background: #1a1a2e;
+      color: #fff;
+      font-size: 13px;
+      outline: none;
+    }
+    .prefab-search:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+    }
+    .prefab-search::placeholder {
+      color: #666;
+    }
+    .prefab-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 4px;
+    }
+    .prefab-btn {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.8);
+      padding: 8px 6px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 10px;
+      transition: all 0.15s ease;
+      text-align: left;
+    }
+    .prefab-btn:hover {
+      background: rgba(255,255,255,0.12);
+      border-color: rgba(255,255,255,0.2);
+      transform: translateY(-1px);
+    }
+    .prefab-btn:active {
+      transform: scale(0.98);
+    }
+    .prefab-btn.selected {
+      background: linear-gradient(135deg, #00bcd4, #0097a7);
+      border-color: #00bcd4;
+      color: white;
+      box-shadow: 0 2px 8px rgba(0, 188, 212, 0.4);
+    }
+    
+    /* Project Management */
+    .project-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .project-name-input {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 6px;
+      background: rgba(255,255,255,0.1);
+      color: white;
+      font-size: 12px;
+      box-sizing: border-box;
+    }
+    .project-name-input:focus {
+      outline: none;
+      border-color: #4CAF50;
+      background: rgba(255,255,255,0.15);
+    }
+    .project-buttons {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px;
+    }
+    .project-btn {
+      padding: 8px 6px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 10px;
+      font-weight: 500;
+      transition: all 0.15s ease;
+      background: linear-gradient(135deg, #2196F3, #1976D2);
+      color: white;
+    }
+    .project-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(33, 150, 243, 0.4);
+    }
+    .saved-projects-list {
+      margin-top: 8px;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+    .saved-project-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 8px;
+      margin-bottom: 4px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 4px;
+      font-size: 11px;
+    }
+    .saved-project-item:hover {
+      background: rgba(255,255,255,0.15);
+    }
+    .saved-project-item.selected {
+      outline: 3px solid #fb923c;
+      outline-offset: 1px;
+    }
+    .saved-project-name {
+      flex: 1;
+      cursor: pointer;
+      color: white;
+    }
+    .saved-project-date {
+      font-size: 12px;
+      color: rgba(255,255,255,0.5);
+      margin-right: 8px;
+    }
