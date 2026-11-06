@@ -3168,6 +3168,7 @@ function undoMove() {
   var snap = undoStack.pop();
   userGrid = snap.user.map(function (row) { return row.slice(); });
   notes = snap.notes.map(function (row) { return row.map(function (set) { return new Set(set); }); });
+  if (typeof snap.mistakes === 'number') mistakes = snap.mistakes;
   hintsLeft = snap.hintsLeft;
   updateMistakes();
   syncChrome();
