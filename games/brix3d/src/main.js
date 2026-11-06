@@ -14279,7 +14279,7 @@
       SoundSystem.playClick();
     }
     
-    function promptName(message, suggested) {
+    function promptName(message, suggested, maxLength) {
       return new Promise((resolve) => {
         const root = document.getElementById('namePrompt');
         const body = document.getElementById('namePromptBody');
@@ -14291,6 +14291,9 @@
           return;
         }
         if (body) body.textContent = message || 'Name your build';
+        // Names stay short. A pasted build code or share link is much longer
+        // than the name field's default, so the caller passes that cap.
+        input.maxLength = (typeof maxLength === 'number' && maxLength > 0) ? maxLength : 30;
         input.value = suggested || '';
         root.style.display = 'flex';
         const finish = (value) => {
@@ -14456,7 +14459,7 @@
     }
     
     async function loadFromCode() {
-      const raw = await promptName('Paste build code:', '');
+      const raw = await promptName('Paste build code:', '', 100000);
       if (!raw) return;
       const code = String(raw).trim();
 

@@ -75,10 +75,16 @@
     content-visibility: visible;
     pointer-events: auto;
   }
-  /* Only Mirror and Move leave the grid. A full-width row for every
-     tool sat under the scroll finger and turned Floor and Clear All on. */
+  /* Mirror and Move stay in their own row under Save. Pulling Move up
+     with a negative margin laid that button on top of Save, so the tap
+     hit the icon. The other tools stay in their grids below the list. */
   #controls.tray-open #sheetToolRow {
-    display: contents;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    order: 1;
+    width: 100%;
+    margin: 0;
   }
   #controls.tray-open .section:has(#mirrorBtn) .tool-grid:not(#sheetToolRow) {
     display: grid;
@@ -97,13 +103,10 @@
   #controls.tray-open .tool-grid { display: grid; }
   #controls.tray-open .section:has(#mirrorBtn) #mirrorBtn,
   #controls.tray-open .section:has(#mirrorBtn) #moveBtn {
-    order: 1;
-    flex: 0 0 auto;
-    width: calc(50% - 6px);
-  }
-  #controls.tray-open .section:has(#mirrorBtn) #moveBtn {
-    margin-top: -44px;
-    margin-left: 50%;
+    order: 0;
+    flex: 0 1 auto;
+    width: auto;
+    margin: 0;
   }
   #controls.tray-open .tray-scroll > .section:has([data-background="classroom"]) .section-content,
   #controls.tray-open .tray-scroll > .section:has([data-background="classroom"]).collapsed .section-content {
