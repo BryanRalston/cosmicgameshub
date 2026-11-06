@@ -480,11 +480,71 @@
     .vs-resume {
       position: fixed; inset: 0; z-index: 520;
       display: flex; align-items: center; justify-content: center;
-      padding: 1rem; background: rgba(7, 10, 31, 0.55);
+      padding: 1.25rem;
+      background: #070a1f;
+      overflow: auto;
     }
     .vs-resume[hidden] { display: none !important; }
-    .vs-resume .vs-card { width: min(20rem, 100%); }
-    #vsSetup, #vsConfirm { z-index: 380; }
+    .vs-resume .vs-card {
+      width: min(34rem, 100%);
+      gap: 0.9rem;
+      padding: 1.4rem 1.35rem 1.25rem;
+    }
+    .vs-resume h2 { font-size: 1.7rem; line-height: 1.2; }
+    .vs-resume p { font-size: 1.125rem; line-height: 1.45; max-width: none; }
+    .vs-resume .btn { min-height: 48px; width: 100%; font-size: 1.05rem; }
+    .vs-resume-summary {
+      width: 100%;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+      padding: 0.85rem 0.95rem;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 224, 138, 0.35);
+      text-align: left;
+      font-size: 1.125rem;
+      line-height: 1.4;
+    }
+    .vs-resume-summary div {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 0.75rem;
+    }
+    .vs-resume-summary dt { margin: 0; color: #d5d8ea; font-weight: 650; }
+    .vs-resume-summary dd {
+      margin: 0;
+      max-width: 70%;
+      color: #ffe08a;
+      font-weight: 800;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    body.is-resume .game-layout { visibility: hidden; }
+    #vsSetup { z-index: 380; }
+    #vsConfirm { z-index: 540; }
+    #vsConfirm p { font-size: 1.05rem; line-height: 1.45; max-width: 24rem; }
+    #handoffEnd {
+      width: min(18rem, 86vw);
+      min-height: 44px;
+      flex: 0 0 auto;
+    }
+    @media (max-width: 800px) {
+      .vs-resume { padding: 0.7rem; }
+      .vs-resume .vs-card {
+        width: min(24rem, 100%);
+        gap: 0.65rem;
+        padding: 0.95rem 0.85rem 0.85rem;
+      }
+      .vs-resume h2 { font-size: 1.28rem; }
+      .vs-resume p,
+      .vs-resume-summary { font-size: 1rem; line-height: 1.35; }
+      .vs-resume .btn { min-height: 44px; font-size: 1rem; }
+      #vsConfirm p { font-size: 1rem; line-height: 1.4; }
+      #vsConfirm .btn { min-height: 44px; width: min(18rem, 100%); }
+    }
     .vs-result { background: rgba(7, 10, 31, 0.58); }
     .vs-card {
       width: min(420px, 100%);
@@ -907,16 +967,17 @@
       <button type="button" class="btn btn--primary" id="vsStart">Start match</button>
       <button type="button" class="btn btn--outline" id="vsCancel">Cancel</button>
     </div>
-    <div class="vs-setup" id="vsConfirm" hidden>
-      <h2>Leave this match?</h2>
+    <div class="vs-setup" id="vsConfirm" hidden role="dialog" aria-modal="true" aria-labelledby="vsConfirmTitle">
+      <h2 id="vsConfirmTitle">Leave this match?</h2>
       <p id="vsConfirmCopy">This ends the match for both players.</p>
       <button type="button" class="btn btn--primary" id="vsConfirmGo">Leave match</button>
       <button type="button" class="btn btn--outline" id="vsConfirmStay">Keep playing</button>
     </div>
-    <div class="vs-resume" id="vsResume" hidden>
+    <div class="vs-resume" id="vsResume" hidden role="dialog" aria-modal="true" aria-labelledby="vsResumeTitle" aria-describedby="vsResumeSummary">
       <div class="vs-card">
-        <h2>Resume match?</h2>
-        <p>An unfinished match is saved on this device.</p>
+        <h2 id="vsResumeTitle">Resume match?</h2>
+        <p id="vsResumeLead">An unfinished match is saved on this device.</p>
+        <dl class="vs-resume-summary" id="vsResumeSummary"></dl>
         <button type="button" class="btn btn--primary" id="vsResumeGo">Resume match</button>
         <button type="button" class="btn btn--outline" id="vsResumeEnd">End match</button>
       </div>
@@ -927,6 +988,7 @@
       <p class="handoff-delta" id="handoffDelta" hidden></p>
       <p id="handoffScore">Score P1 0 / P2 0</p>
       <button type="button" class="btn btn--primary" id="handoffGo">Start turn</button>
+      <button type="button" class="btn btn--outline" id="handoffEnd">End match</button>
     </div>
     <div class="vs-result" id="vsResult" hidden>
       <div class="vs-card">
@@ -1355,6 +1417,20 @@ function urlFor(route) {
   if (route.daily) return route.diff === 'easy' ? path : path + '?d=' + route.diff;
   return path + '?p=' + route.id;
 }
+function snapshotRoute(route) {
+  if (!route || typeof route !== 'object') return null;
+  var diffName = route.diff || 'easy';
+  if (!GIVENS[diffName]) return null;
+  var seed = +route.seed;
+  if (!(seed > 0) || seed >= 2147483647) return null;
+  var daily = !!route.daily;
+  var id = daily ? String(route.id || '') : (diffName + '-' + seed);
+  if (!id) return null;
+  if (daily) {
+    if (id.indexOf('daily-') !== 0) return null;
+  } else if (id !== diffName + '-' + seed) return null;
+  return { mode: daily ? 'daily' : 'free', diff: diffName, seed: seed, id: id, daily: daily };
+}
 function playRandom(name) {
   if (!(match && match.fresh)) resetMatch();
   var nextSeed = randomSeed();
@@ -1545,6 +1621,7 @@ function saveMatch() {
     mistakes: mistakes | 0,
     hintsLeft: hintsLeft,
     stickyDigit: stickyDigit | 0,
+    solo: snapshotRoute(match.solo),
     selected: selected && typeof selected.r === 'number' ? { r: selected.r, c: selected.c } : null,
     limitWaived: !!limitWaived,
     undo: undoStack.map(undoSnapJSON),
@@ -1584,17 +1661,68 @@ function readMatchSave() {
     return raw;
   } catch (e) { return null; }
 }
+function playerClock(p) {
+  var secs = p.secs | 0;
+  return secs > 0 ? fmtTime(secs) : '';
+}
+function playerSummary(p, strikes) {
+  var bits = [String(p.score | 0)];
+  var clock = playerClock(p);
+  if (clock) bits.push(clock);
+  if (strikes) {
+    var n = p.mistakes | 0;
+    bits.push(n + (n === 1 ? ' strike' : ' strikes'));
+  }
+  return bits.join(' · ');
+}
+function fillResumeSummary(data) {
+  var box = document.getElementById('vsResumeSummary');
+  if (!box) return;
+  var p1 = data.p[0];
+  var p2 = data.p[1];
+  var who = data.turn === 1 ? 'Player 2' : 'Player 1';
+  var turn = data.phase === 'live' ? (who + ' is mid-turn') : (who + ' to play');
+  var elapsed = (p1.secs | 0) + (p2.secs | 0);
+  var rows = [
+    ['Turn', turn],
+    ['Player 1', playerSummary(p1, !!data.strikes)],
+    ['Player 2', playerSummary(p2, !!data.strikes)],
+    ['Time', elapsed ? (fmtTime(elapsed) + ' played') : 'No time played yet']
+  ];
+  box.replaceChildren();
+  rows.forEach(function (row) {
+    var wrap = document.createElement('div');
+    var dt = document.createElement('dt');
+    var dd = document.createElement('dd');
+    dt.textContent = row[0];
+    dd.textContent = row[1];
+    wrap.appendChild(dt);
+    wrap.appendChild(dd);
+    box.appendChild(wrap);
+  });
+}
 function showResumePrompt() {
   var el = document.getElementById('vsResume');
-  if (!el || !readMatchSave()) return;
+  var data = readMatchSave();
+  if (!el || !data) {
+    document.body.classList.remove('is-resume');
+    setGameInert(false);
+    return;
+  }
+  fillResumeSummary(data);
   soloClockHeld = true;
   clearInterval(timerInt);
+  document.body.classList.add('is-resume');
   el.hidden = false;
+  setGameInert(true);
+  focusNoScroll(document.getElementById('vsResumeGo'));
 }
 function dismissResumePrompt() {
   var el = document.getElementById('vsResume');
   if (el) el.hidden = true;
+  document.body.classList.remove('is-resume');
   soloClockHeld = false;
+  setGameInert(false);
 }
 function endSavedMatch() {
   clearMatchSave();
@@ -1668,7 +1796,8 @@ function applyMatchSave(data) {
     over: false,
     phase: data.phase === 'live' ? 'live' : 'handoff',
     lastNote: typeof data.lastNote === 'string' ? data.lastNote : '',
-    scored: false
+    scored: false,
+    solo: snapshotRoute(data.solo)
   };
   document.getElementById('winBanner').classList.remove('show');
   document.getElementById('failBanner').classList.remove('show');
@@ -1959,6 +2088,10 @@ function startControlTarget(e) {
   var t = e && e.target;
   return !!(t && t.closest && t.closest('#handoffGo'));
 }
+function leaveControlTarget(e) {
+  var t = e && e.target;
+  return !!(t && t.closest && t.closest('#handoffEnd, #vsBtn, #vsConfirm, #vsResume'));
+}
 function setTurnPhase(next) {
   if (!match) return false;
   var cur = match.phase || 'handoff';
@@ -2111,6 +2244,8 @@ function reflectToggle(input) {
   else if (input.id === 'setNumberFirst') input.checked = !!settings.numberFirst;
 }
 function syncMatchLocks() {
+  var vsBtn = document.getElementById('vsBtn');
+  if (vsBtn) vsBtn.textContent = (match && !match.over) ? 'End match' : '2 Players';
   var hint = document.getElementById('hintBtn');
   var labels = {
     setNumberFirst: 'Number first',
@@ -2322,11 +2457,32 @@ function exitToSolo() {
   if (finished) playRandom((saved && saved.diff) || route.diff || 'easy');
   else begin(route);
 }
-function askLeave(copy, action) {
+function endMatchToSolo() {
+  var back = snapshotRoute(match && match.solo);
+  stripDebugParams();
+  resetMatch();
+  done = false;
+  failed = false;
+  celebrated = false;
+  suppressWinAnim = false;
+  quitSent = true;
+  if (!back) {
+    exitToSolo();
+    return;
+  }
+  var next = urlFor(back);
+  if (location.pathname + location.search !== next) history.replaceState({ id: back.id }, '', next);
+  begin(back);
+}
+function askLeave(copy, action, goLabel) {
   if (!(match && !match.over)) { action(); return; }
   confirmAction = action;
+  goLabel = goLabel || 'Leave match';
   document.getElementById('vsConfirmCopy').textContent = copy;
+  document.getElementById('vsConfirmGo').textContent = goLabel;
+  document.getElementById('vsConfirmTitle').textContent = goLabel === 'End match' ? 'End this match?' : 'Leave this match?';
   document.getElementById('vsConfirm').hidden = false;
+  focusNoScroll(document.getElementById('vsConfirmStay'));
 }
 function rematch(same) {
   if (!match) return;
@@ -2413,6 +2569,7 @@ function startMatch(strikes) {
   handoffGesture = false;
   paused = false;
   match = freshMatch(strikes, 0);
+  match.solo = snapshotRoute(routeFromUrl());
   var setup = document.getElementById('vsSetup');
   if (setup) setup.hidden = true;
   playRandom(diff || 'easy');
@@ -3411,11 +3568,20 @@ function shareWin() {
 
 document.addEventListener('keydown', function (e) {
   if (e.key === 'Escape') {
+    var confirmEl = document.getElementById('vsConfirm');
+    if (confirmEl && !confirmEl.hidden) {
+      e.preventDefault();
+      confirmAction = null;
+      confirmEl.hidden = true;
+      return;
+    }
     if (settingsOn()) closeSettings();
     else if (paused) setPaused(false);
     return;
   }
   var hand = document.getElementById('handoff');
+  var confirmOpen = document.getElementById('vsConfirm');
+  if (confirmOpen && !confirmOpen.hidden) return;
   if ((e.key === 'Enter' || e.key === ' ') && match && hand && !hand.hidden && !match.over && match.phase === 'handoff' && !settingsOn()) {
     e.preventDefault();
     if (e.repeat || goHold) return;
@@ -3475,10 +3641,15 @@ function bindControls() {
     askLeave('New Puzzle ends this match for both players.', function () { playRandom(diff || 'easy'); });
   });
   document.getElementById('vsBtn').addEventListener('click', function () {
-    askLeave('A new two-player match ends this one.', function () {
-      document.getElementById('vsStrikes').checked = false;
-      document.getElementById('vsSetup').hidden = false;
-    });
+    if (match && !match.over) {
+      askLeave('This clears the saved match and returns to your solo puzzle.', endMatchToSolo, 'End match');
+      return;
+    }
+    document.getElementById('vsStrikes').checked = false;
+    document.getElementById('vsSetup').hidden = false;
+  });
+  document.getElementById('handoffEnd').addEventListener('click', function () {
+    askLeave('This clears the saved match and returns to your solo puzzle.', endMatchToSolo, 'End match');
   });
   document.getElementById('vsConfirmStay').addEventListener('click', function () {
     confirmAction = null;
@@ -3495,6 +3666,7 @@ function bindControls() {
   var handoffEl = document.getElementById('handoff');
   if (handoffEl.parentNode !== document.body) document.body.appendChild(handoffEl);
   function stopHandoff(e) {
+    if (leaveControlTarget(e)) return;
     if (e.type === 'pointerdown' && e.button) return;
     e.preventDefault();
     e.stopPropagation();
@@ -3508,6 +3680,7 @@ function bindControls() {
   handoffEl.addEventListener('touchstart', stopHandoff, { capture: true, passive: false });
   handoffEl.addEventListener('touchend', stopHandoff, { capture: true, passive: false });
   function guardPointer(e) {
+    if (leaveControlTarget(e)) return;
     if (!turnCovered()) {
       if (ghostClick && (e.type === 'click' || e.type === 'pointerup' || e.type === 'touchend')) {
         if (activeTap && activeTap.fresh && e.type === 'pointerup' && e.pointerId === activeTap.id) return;
@@ -3537,6 +3710,8 @@ function bindControls() {
   document.getElementById('vsSame').addEventListener('click', function () { rematch(true); });
   document.getElementById('vsRematch').addEventListener('click', function () { rematch(false); });
   document.getElementById('vsSolo').addEventListener('click', exitToSolo);
+  var confirmEl = document.getElementById('vsConfirm');
+  if (confirmEl && confirmEl.parentNode !== document.body) document.body.appendChild(confirmEl);
   var resumeEl = document.getElementById('vsResume');
   if (resumeEl && resumeEl.parentNode !== document.body) document.body.appendChild(resumeEl);
   document.getElementById('vsResumeGo').addEventListener('click', resumeSavedMatch);
@@ -3766,6 +3941,7 @@ function applyDebugBoard() {
 initStamp();
 loadSettings();
 bindControls();
+if (!debugRequested() && readMatchSave()) document.body.classList.add('is-resume');
 if (!applyDebugBoard()) begin(routeFromUrl());
 if (!debugRequested()) showResumePrompt();
 window.addEventListener('resize', fitPhoneBoard);
