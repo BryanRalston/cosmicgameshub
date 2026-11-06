@@ -245,9 +245,13 @@
         return { played: !!finished, streak: stats.streak || 0 };
       },
       sudoku() {
-        const iso = isoToday;
-        const ymd = yyyymmdd;
-        return { played: localStorage.getItem('sdk_solved_' + iso) === '1' || localStorage.getItem('sdk_solved_' + ymd) === '1', streak: 0 };
+        const d = new Date();
+        const mm = d.getMonth() + 1;
+        const dd = d.getDate();
+        const local = d.getFullYear() + '-' + String(mm).padStart(2, '0') + '-' + String(dd).padStart(2, '0');
+        const played = localStorage.getItem('sdk_solved_' + local) === '1'
+          || localStorage.getItem('sdk_solved_' + yyyymmdd) === '1';
+        return { played: played, streak: safeInt('sdk_streak') };
       },
       crossword() {
         const last = safeInt('cw_last_day', -1);

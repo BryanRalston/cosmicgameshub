@@ -16,55 +16,802 @@
   <link rel="canonical" href="https://www.cosmicgameshub.com/games/sudoku" />
   <link rel="stylesheet" href="../styles.css" />
   <style>
-    .game-layout { display:flex; gap:2rem; align-items:flex-start; flex-wrap:wrap; justify-content:center; padding:1.5rem 0 3rem; }
+    /* Swappable theme layers. Phone nebula and desktop nebula are in separate media queries so only one downloads. */
+    @media (min-width: 801px) and (orientation: landscape) {
+      html:has(body.sdk-cosmic) { --sdk-nebula: url("/images/sudoku/nebula-desktop.webp"); }
+    }
+    @media (max-width: 800px), (orientation: portrait) {
+      html:has(body.sdk-cosmic) { --sdk-nebula: url("/images/sudoku/nebula-phone.webp"); }
+    }
+    html:has(body.sdk-cosmic) {
+      --sdk-board: url("/images/sudoku/board.webp");
+      --sdk-constellation: url("/images/sudoku/constellation-overlay-alpha.webp");
+      background-color: #070a1f;
+      background-image: none;
+      scroll-behavior: auto;
+      scrollbar-gutter: stable;
+    }
+    body.page-game.sdk-cosmic {
+      min-height: 100vh;
+      background: #070a1f var(--sdk-nebula) center / cover no-repeat;
+      background-attachment: fixed;
+      color: #e7e9f4;
+    }
+    @media (max-width: 800px) {
+      body.page-game.sdk-cosmic { background-attachment: scroll; }
+    }
 
-    /* Board */
-    #board { display:grid; grid-template-columns:repeat(9,1fr); gap:0; border:2px solid rgba(0,212,255,0.5); border-radius:8px; overflow:hidden; width:min(450px,92vw); flex-shrink:0; }
-    .cell { aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:clamp(1rem,3.5vw,1.4rem); font-weight:700; cursor:pointer; position:relative; background:var(--bg-card); border:1px solid rgba(0,212,255,0.08); transition:background 0.12s; user-select:none; }
-    .cell:hover:not(.given) { background:var(--bg-raised); }
-    .cell.selected { background:rgba(0,212,255,0.18) !important; }
-    .cell.highlight { background:rgba(0,212,255,0.07); }
-    .cell.same-num  { background:rgba(0,212,255,0.12); }
-    .cell.given     { color:var(--text-hi); }
-    .cell.user-num  { color:var(--accent); }
-    .cell.error     { color:var(--red) !important; background:rgba(255,71,87,0.1) !important; }
-    /* thick borders for 3x3 boxes */
-    .cell[data-col="2"],.cell[data-col="5"] { border-right:2px solid rgba(0,212,255,0.4); }
-    .cell[data-col="3"],.cell[data-col="6"] { border-left:2px solid rgba(0,212,255,0.4); }
-    .cell[data-row="2"],.cell[data-row="5"] { border-bottom:2px solid rgba(0,212,255,0.4); }
-    .cell[data-row="3"],.cell[data-row="6"] { border-top:2px solid rgba(0,212,255,0.4); }
-    .cell-notes { display:grid; grid-template-columns:repeat(3,1fr); width:90%; height:90%; gap:0; }
-    .note-dot { font-size:clamp(0.32rem,1.2vw,0.42rem); color:rgba(0,212,255,0.55); display:flex; align-items:center; justify-content:center; font-weight:600; }
+    .sdk-intro { padding: 1.1rem 0 0.25rem; }
+    .sdk-intro h1 { margin-top: 0.35rem; margin-bottom: 0.2rem; color: #f7f8ff; }
+    .sdk-lead { color: #d5d8ea; margin: 0; font-size: 0.95rem; }
+    .complete-stat {
+      margin: 0.55rem 0 0;
+      color: #fff4cc;
+      font-weight: 700;
+      font-size: 0.95rem;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
+    }
+    #completeStat[hidden] { display: none !important; }
 
-    /* Sidebar */
-    .sidebar { display:flex; flex-direction:column; gap:1rem; min-width:180px; }
-    .info-row { display:flex; justify-content:space-between; align-items:center; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-sm); padding:0.6rem 1rem; font-size:0.88rem; }
-    .info-row span:last-child { font-weight:700; color:var(--accent); font-variant-numeric:tabular-nums; }
+    .game-layout {
+      display: grid;
+      grid-template-columns: 480px minmax(240px, 320px);
+      gap: 1.25rem;
+      align-items: start;
+      justify-content: center;
+      padding: 0.75rem 0 2.5rem;
+    }
 
-    /* Numpad */
-    .numpad { display:grid; grid-template-columns:repeat(5,1fr); gap:0.4rem; }
-    .num-btn { aspect-ratio:1; background:var(--bg-card); border:1px solid var(--border); border-radius:6px; color:var(--text-hi); font-size:1.1rem; font-weight:700; cursor:pointer; font-family:inherit; transition:all 0.15s; display:flex; align-items:center; justify-content:center; }
-    .num-btn:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-dim); }
-    .num-btn.used { opacity:0.3; }
-    .num-btn.erase { font-size:0.85rem; color:var(--text-mid); }
-    .num-btn.note-active { border-color:var(--amber); color:var(--amber); background:rgba(255,179,0,0.1); }
+    .board-col { width: 480px; max-width: 100%; }
+    .board-frame {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1;
+      background: #070a18 var(--sdk-board) center / 100% 100% no-repeat;
+      border-radius: 12px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+    }
+    /* Line centers measured on board.webp (1024): x 34–990, y 34–986. */
+    #board {
+      position: absolute;
+      left: 3.3203125%;
+      top: 3.3203125%;
+      width: 93.359375%;
+      height: 92.96875%;
+      display: grid;
+      grid-template-columns: repeat(9, 1fr);
+      grid-template-rows: repeat(9, 1fr);
+      gap: 0;
+      border: 0;
+      background: transparent;
+    }
+    .cell {
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(1rem, 4.6vw, 1.7rem);
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      cursor: pointer;
+      position: relative;
+      background: transparent;
+      border: 0;
+      color: #ffffff;
+      user-select: none;
+      touch-action: manipulation;
+      overflow: hidden;
+      text-shadow: 0 0 3px #000, 0 1px 2px #000, 0 0 8px rgba(0, 0, 0, 0.9);
+    }
+    .cell.given { color: #ffffff; }
+    .cell.user-num {
+      color: #ffe08a;
+      text-shadow: 0 0 8px rgba(255, 210, 90, 0.95), 0 0 2px #000, 0 1px 2px #000;
+    }
+    .cell.selected { background: rgba(0, 212, 255, 0.22); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.85); z-index: 1; }
+    .cell.highlight { background: rgba(160, 196, 255, 0.12); }
+    .cell.same-num { background: rgba(255, 214, 120, 0.16); }
+    .cell.error {
+      color: #fff5f6;
+      background: rgba(150, 16, 36, 0.55);
+      box-shadow: inset 0 0 0 2px #ff8b98;
+    }
+    .cell.unit-done { background: rgba(255, 220, 140, 0.28); }
+    .cell-notes {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    .note-dot {
+      font-size: 11px;
+      line-height: 1;
+      color: #f4f6ff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      text-shadow: 0 1px 1px #000;
+    }
+    .face {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .face .planet {
+      position: absolute;
+      width: 70%;
+      height: 70%;
+      object-fit: contain;
+      pointer-events: none;
+    }
+    .face .planet.p2 { filter: brightness(1.45) saturate(1.55) hue-rotate(18deg); }
+    .face .planet.p3 { filter: brightness(1.9) saturate(1.75) contrast(1.12); }
+    .face .planet.p5 { filter: brightness(1.7) saturate(1.35) contrast(1.05); }
+    .face .planet.p6 { filter: brightness(1.8) saturate(1.55) contrast(1.15); }
+    .face .planet.p9 { filter: brightness(1.85) saturate(1.45) contrast(1.2); }
+    .face .num {
+      position: relative;
+      z-index: 1;
+      color: #ffffff;
+      line-height: 1;
+      min-width: 1.15em;
+      min-height: 1.15em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.72);
+      text-shadow: 0 0 2px #000, 0 1px 1px #000;
+    }
+    .cell.user-num .num {
+      color: #ffe08a;
+      box-shadow: 0 0 0 2px #ffe08a, 0 0 10px rgba(255, 200, 80, 0.9);
+    }
 
-    .action-btns { display:flex; flex-direction:column; gap:0.5rem; }
-    .diff-row { display:flex; gap:0.35rem; flex-wrap:wrap; }
-    .diff-btn { flex:1; background:var(--bg-card); border:1px solid var(--border); color:var(--text-mid); border-radius:4px; padding:0.3rem 0.2rem; font-size:0.72rem; font-weight:700; cursor:pointer; font-family:inherit; transition:all 0.15s; text-transform:uppercase; letter-spacing:0.04em; }
-    .diff-btn:hover { border-color:var(--border-mid); color:var(--text-hi); }
-    .diff-btn.active { border-color:var(--accent); color:var(--accent); background:var(--accent-dim); }
+    .trail, .constel, .nova { position: absolute; pointer-events: none; }
+    .trail {
+      left: 3.3203125%;
+      top: 3.3203125%;
+      width: 93.359375%;
+      height: 92.96875%;
+      z-index: 2;
+      overflow: visible;
+    }
+    .trail path {
+      fill: none;
+      stroke: #fff4c8;
+      stroke-width: 0.07;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 48;
+      stroke-dashoffset: 48;
+      filter: drop-shadow(0 0 2px rgba(255, 236, 180, 0.9));
+    }
+    .trail.on path { animation: sdkDraw 1.15s ease forwards, sdkFade 0.45s ease 2s forwards; }
+    .constel {
+      inset: 22% 0 auto;
+      width: 100%;
+      height: 56%;
+      object-fit: contain;
+      z-index: 2;
+      opacity: 0;
+      clip-path: inset(0 100% 0 0);
+    }
+    #constel[hidden] { display: none !important; }
+    .constel.on { animation: sdkReveal 1.15s ease forwards, sdkFade 0.45s ease 2s forwards; }
+    .nova {
+      z-index: 3;
+      width: 42%;
+      height: auto;
+      transform: translate(-50%, -50%) scale(0.45);
+      opacity: 0;
+    }
+    .nova.win-burst { width: 88%; z-index: 5; }
+    #nova[hidden] { display: none !important; }
+    .nova.f1 { transform: translate(-50%, -50%) scale(0.55); opacity: 0.95; }
+    .nova.f2 { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    .nova.f3 { transform: translate(-50%, -50%) scale(1.4); opacity: 0.2; }
+    .pause-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 4;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      background: rgba(4, 8, 22, 0.78);
+      border-radius: 12px;
+    }
+    #pauseOverlay[hidden] { display: none !important; }
+    .board-frame.is-paused #board,
+    .board-frame.is-paused .trail { visibility: hidden; }
+    .board-frame.win-glow {
+      box-shadow: 0 0 0 3px rgba(255, 224, 138, 0.92), 0 0 28px rgba(255, 196, 80, 0.55);
+    }
+    .pause-overlay p { margin: 0; color: #fff; font-size: 1.7rem; font-weight: 700; letter-spacing: 0.04em; }
 
-    .win-banner { display:none; background:linear-gradient(135deg,rgba(0,230,118,0.15),rgba(0,212,255,0.15)); border:1px solid rgba(0,230,118,0.4); border-radius:var(--radius); padding:1.5rem; text-align:center; margin-top:1rem; max-width:450px; }
-    .win-banner.show { display:block; }
-    .win-banner h2 { color:#00e676; margin-bottom:0.5rem; }
-    .fail-banner { display:none; background:linear-gradient(135deg,rgba(255,71,87,0.12),rgba(255,100,0,0.08)); border:1px solid rgba(255,71,87,0.35); border-radius:var(--radius); padding:1.5rem; text-align:center; margin-top:1rem; max-width:450px; }
-    .fail-banner.show { display:block; }
-    .fail-banner h2 { color:#ff4757; margin-bottom:0.5rem; }
-    .sdk-best { font-size:0.8rem; color:var(--text-lo); margin:0.4rem 0 1rem; }
-    .sdk-best span { color:var(--accent); font-weight:700; }
-    .btn-share { background:transparent; border:1px solid rgba(255,255,255,0.15); color:var(--text-mid); border-radius:var(--radius-sm); padding:0.45rem 1rem; font-size:0.82rem; cursor:pointer; font-family:inherit; transition:all 0.15s; margin-left:0.5rem; min-height:44px; }
-    .btn-share:hover { border-color:var(--accent); color:var(--accent); }
+    @keyframes sdkDraw { to { stroke-dashoffset: 0; } }
+    @keyframes sdkFade { to { opacity: 0; } }
+    @keyframes sdkReveal { to { opacity: 0.95; clip-path: inset(0 0 0 0); } }
+    @keyframes sdkShake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-3px); }
+      75% { transform: translateX(3px); }
+    }
+    .cell.shake { animation: sdkShake 0.28s ease; }
+
+    .sidebar { display: flex; flex-direction: column; gap: 0.65rem; min-width: 0; }
+    .topbar { display: flex; flex-direction: column; gap: 0.4rem; }
+    .hud-row {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      background: rgba(6, 10, 28, 0.82);
+      color: #f4f6ff;
+      border: 1px solid rgba(255, 214, 140, 0.22);
+      border-radius: 12px;
+      padding: 0.35rem 0.55rem 0.35rem 0.75rem;
+      min-height: 44px;
+    }
+    .hud-bit { display: flex; gap: 0.35rem; align-items: baseline; font-size: 0.84rem; white-space: nowrap; }
+    .hud-bit b { color: #ffe08a; font-variant-numeric: tabular-nums; }
+    .hud-pause { margin-left: auto; min-height: 36px; padding: 0.2rem 0.7rem; }
+    .first-tip {
+      position: fixed;
+      z-index: 45;
+      left: 50%;
+      bottom: max(10px, env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      width: min(92vw, 420px);
+      margin: 0;
+      padding: 0.35rem 0.7rem;
+      border-radius: 10px;
+      background: rgba(18, 16, 8, 0.94);
+      color: #fff6d8;
+      font-size: 0.82rem;
+      line-height: 1.3;
+      text-align: center;
+      transition: opacity 0.18s linear;
+    }
+    .first-tip.is-dismissed { opacity: 0; visibility: hidden; pointer-events: none; }
+    #sdkVhProbe {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 0;
+      height: 100vh;
+      height: 100svh;
+      height: min(100svh, 100dvh);
+      pointer-events: none;
+      visibility: hidden;
+    }
+    #dailyBtn[hidden] { display: none !important; }
+    .info-row, .sdk-panel, .settings-menu, .num-btn, .diff-btn, .sdk-daily {
+      background: rgba(6, 10, 28, 0.82);
+      color: #f4f6ff;
+      border: 1px solid rgba(255, 214, 140, 0.22);
+    }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-radius: 12px;
+      padding: 0.6rem 1rem;
+      font-size: 0.88rem;
+      gap: 0.75rem;
+    }
+    .info-row span:last-child { font-weight: 700; color: #ffe08a; font-variant-numeric: tabular-nums; text-align: right; }
+    .sdk-panel { border-radius: 12px; padding: 0.75rem 0.9rem 0.85rem; }
+    .sdk-panel h2 {
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin: 0 0 0.35rem;
+      color: #f2d48a;
+    }
+    .sdk-streak, .sdk-statline { margin: 0 0 0.35rem; color: #f7f8ff; font-size: 0.9rem; }
+    .sdk-diffstat {
+      display: grid;
+      grid-template-columns: 4.6rem 1fr 1fr;
+      gap: 0.35rem;
+      font-size: 0.78rem;
+      color: #d9dced;
+      font-variant-numeric: tabular-nums;
+      margin-top: 0.15rem;
+    }
+    .sdk-cal { display: flex; gap: 0.3rem; margin-top: 0.55rem; }
+    .cal-day {
+      width: 1.7rem;
+      height: 1.7rem;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.72rem;
+      color: #c5c9dc;
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .cal-day.on { background: rgba(255, 208, 112, 0.28); color: #fff8e4; font-weight: 800; }
+
+    .numpad { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.4rem; }
+    .num-btn {
+      aspect-ratio: 1;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: 800;
+      cursor: pointer;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: manipulation;
+    }
+    .num-btn { position: relative; }
+    .num-btn:hover { border-color: #ffe08a; color: #ffe08a; }
+    .num-btn.picked,
+    .num-btn.picked:hover {
+      border-color: #ffe08a;
+      color: #1b1406;
+      background: #ffe08a;
+      box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.45);
+    }
+    .num-btn.used,
+    .num-btn:disabled {
+      opacity: 0.35;
+      cursor: default;
+      color: #f4f6ff;
+    }
+    .num-btn.used:hover,
+    .num-btn:disabled:hover {
+      border-color: rgba(255, 214, 140, 0.22);
+      color: #f4f6ff;
+    }
+    .num-btn.used.picked,
+    .num-btn.used.picked:hover {
+      opacity: 0.72;
+      color: #ffe08a;
+      background: rgba(255, 208, 112, 0.2);
+      border-color: #ffe08a;
+    }
+    .num-btn .pad-check {
+      position: absolute;
+      top: 2px;
+      right: 3px;
+      font-size: 0.62rem;
+      font-style: normal;
+      font-weight: 800;
+      line-height: 1;
+      color: #ffe08a;
+      pointer-events: none;
+    }
+    .num-btn.erase { font-size: 0.95rem; }
+
+    .diff-row { display: flex; gap: 0.35rem; }
+    .diff-btn, .sdk-daily {
+      flex: 1;
+      border-radius: 8px;
+      padding: 0.45rem 0.2rem;
+      font-size: 0.72rem;
+      font-weight: 800;
+      cursor: pointer;
+      font-family: inherit;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .sdk-daily { text-transform: none; letter-spacing: 0; font-size: 0.85rem; }
+    .diff-btn.active, .sdk-daily.active { border-color: #ffe08a; color: #ffe08a; background: rgba(255, 208, 112, 0.12); }
+
+    .action-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 0.45rem; }
+    .action-btns .wide { grid-column: 1 / -1; }
+    .sdk-cosmic .btn { justify-content: center; min-height: 44px; }
+    .sdk-cosmic .btn--outline { color: #f4f6ff; border-color: rgba(255, 255, 255, 0.28); background: rgba(6, 10, 28, 0.72); }
+    .sdk-cosmic .btn--outline:hover { color: #ffe08a; border-color: #ffe08a; }
+    .note-active { border-color: #ffe08a !important; color: #ffe08a !important; }
+    .settings-sheet {
+      position: fixed;
+      inset: 0;
+      z-index: 400;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 0.75rem;
+      background: rgba(2, 4, 14, 0.62);
+      touch-action: manipulation;
+    }
+    #settingsMenu[hidden] { display: none !important; }
+    .settings-card {
+      width: min(420px, 100%);
+      max-height: min(80vh, 560px);
+      overflow: auto;
+      background: #12182c;
+      border: 1px solid rgba(255, 214, 140, 0.4);
+      border-radius: 16px 16px 12px 12px;
+      padding: 0.85rem 0.9rem 1rem;
+      transform: translateY(110%);
+      transition: transform 0.28s ease;
+    }
+    .settings-sheet.is-shown .settings-card { transform: none; }
+    html.sdk-reduce .settings-card { transition: none !important; }
+    #limitTag { margin-left: 0.35rem; color: #ffe08a; font-weight: 800; font-size: 0.72rem; letter-spacing: 0.02em; }
+    #limitTag[hidden] { display: none !important; }
+    .handoff, .vs-result, .vs-setup {
+      position: fixed; inset: 0; z-index: 360;
+      background: #070a1f;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 0.8rem; padding: 1.5rem; text-align: center; color: #f4f6ff;
+    }
+    .handoff {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      z-index: 480;
+      touch-action: none;
+      pointer-events: auto;
+      overflow: hidden;
+      overflow-anchor: none;
+      justify-content: center;
+      gap: 1.1rem;
+    }
+    #handoffGo {
+      position: static;
+      transform: none;
+      z-index: 2;
+      flex: 0 0 4.25rem;
+      width: min(18rem, 86vw);
+      height: 4.25rem;
+      margin-top: 0.35rem;
+      overflow-anchor: none;
+    }
+    .handoff.is-go #handoffGo { font-size: 1.45rem; letter-spacing: 0.14em; }
+    .handoff[hidden], .vs-result[hidden], .vs-setup[hidden] { display: none !important; }
+    .handoff h2, .vs-result h2, .vs-setup h2, .vs-resume h2 { margin: 0; color: #ffe08a; }
+    .handoff p, .vs-result p, .vs-setup p, .vs-resume p { margin: 0; color: #d5d8ea; max-width: 28rem; }
+    .vs-resume {
+      position: fixed; inset: 0; z-index: 520;
+      display: flex; align-items: center; justify-content: center;
+      padding: 1.25rem;
+      background: #070a1f;
+      overflow: auto;
+    }
+    .vs-resume[hidden] { display: none !important; }
+    .vs-resume .vs-card {
+      width: min(34rem, 100%);
+      gap: 0.9rem;
+      padding: 1.4rem 1.35rem 1.25rem;
+    }
+    .vs-resume h2 { font-size: 1.7rem; line-height: 1.2; }
+    .vs-resume p { font-size: 1.125rem; line-height: 1.45; max-width: none; }
+    .vs-resume .btn { min-height: 48px; width: 100%; font-size: 1.05rem; }
+    .vs-resume-summary {
+      width: 100%;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+      padding: 0.85rem 0.95rem;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 224, 138, 0.35);
+      text-align: left;
+      font-size: 1.125rem;
+      line-height: 1.4;
+    }
+    .vs-resume-summary div {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 0.75rem;
+    }
+    .vs-resume-summary dt { margin: 0; color: #d5d8ea; font-weight: 650; }
+    .vs-resume-summary dd {
+      margin: 0;
+      max-width: 70%;
+      color: #ffe08a;
+      font-weight: 800;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    body.is-resume .game-layout { visibility: hidden; }
+    #vsSetup { z-index: 380; }
+    #vsConfirm { z-index: 540; }
+    #vsConfirm p { font-size: 1.05rem; line-height: 1.45; max-width: 24rem; }
+    #handoffEnd {
+      width: min(18rem, 86vw);
+      min-height: 44px;
+      flex: 0 0 auto;
+    }
+    @media (max-width: 800px) {
+      .vs-resume { padding: 0.7rem; }
+      .vs-resume .vs-card {
+        width: min(24rem, 100%);
+        gap: 0.65rem;
+        padding: 0.95rem 0.85rem 0.85rem;
+      }
+      .vs-resume h2 { font-size: 1.28rem; }
+      .vs-resume p,
+      .vs-resume-summary { font-size: 1rem; line-height: 1.35; }
+      .vs-resume .btn { min-height: 44px; font-size: 1rem; }
+      #vsConfirm p { font-size: 1rem; line-height: 1.4; }
+      #vsConfirm .btn { min-height: 44px; width: min(18rem, 100%); }
+    }
+    .vs-result { background: rgba(7, 10, 31, 0.58); }
+    .vs-card {
+      width: min(420px, 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.7rem;
+      padding: 1.15rem 1rem 1rem;
+      border-radius: 16px;
+      background: #12182c;
+      border: 1px solid rgba(255, 214, 140, 0.4);
+    }
+    .vs-card .btn { min-width: 12rem; }
+    .vs-celebrate { position: relative; width: 160px; height: 84px; }
+    .vs-celebrate[hidden] { display: none !important; }
+    .vs-celebrate.is-win { width: 220px; height: 128px; }
+    .vs-celebrate.is-tie { width: 96px; height: 52px; opacity: 0.75; }
+    .vs-constel, .vs-nova { position: absolute; left: 50%; top: 50%; width: 140px; height: auto; transform: translate(-50%, -50%); pointer-events: none; }
+    .vs-nova { width: 112px; }
+    .vs-celebrate.is-win .vs-nova { width: 200px; }
+    .vs-celebrate.is-tie .vs-nova { width: 64px; }
+    html.sdk-reduce .vs-celebrate { display: none !important; }
+    .vs-rules-list { display: none; margin: 0; padding: 0 0 0 1.15rem; text-align: left; color: #d5d8ea; max-width: 22rem; }
+    .vs-rules-list li { margin: 0.22rem 0; }
+    .score-side.is-burst-big::after,
+    .score-side.is-burst-soft::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      border-radius: 50%;
+      pointer-events: none;
+      background: radial-gradient(circle, rgba(255, 224, 138, 0.95), transparent 68%);
+    }
+    .score-side.is-burst-big::after { width: 54px; height: 54px; transform: translate(-50%, -50%); }
+    .score-side.is-burst-soft::after { width: 16px; height: 16px; opacity: 0.7; transform: translate(-50%, -50%); }
+    html.sdk-reduce .score-side.is-burst-big::after,
+    html.sdk-reduce .score-side.is-burst-soft::after { display: none !important; }
+    .handoff-delta { margin: 0; color: #ffe08a; font-size: 1.15rem; font-weight: 800; }
+    body.is-handoff #board, body.is-handoff .numpad, body.is-handoff .trail, body.is-handoff .constel { visibility: hidden !important; }
+    .mistake-bit { display: inline-flex; }
+    body.sdk-match .mistake-bit { display: none; }
+    .score-bar { display: none; gap: 0.35rem; width: 100%; }
+    body.sdk-match .score-bar { display: flex; }
+    .score-side {
+      position: relative;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.35rem;
+      min-height: 36px;
+      padding: 0.2rem 0.55rem;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(6, 10, 28, 0.82);
+      color: #f4f6ff;
+      opacity: 0.48;
+    }
+    .score-side.is-active { opacity: 1; border-color: #ffe08a; box-shadow: inset 0 0 0 1px rgba(255, 224, 138, 0.35); }
+    .score-side b { color: #ffe08a; font-variant-numeric: tabular-nums; }
+    .strike-dots { display: inline-flex; gap: 3px; align-items: center; }
+    .strike-dots i { display: block; width: 10px; height: 10px; border-radius: 50%; background: transparent; box-shadow: inset 0 0 0 1.5px rgba(255, 170, 170, 0.55); }
+    .strike-dots i.on { background: #ff3b4e; box-shadow: none; }
+    .toggle-row.is-locked { opacity: 0.55; pointer-events: none; flex-wrap: wrap; row-gap: 0.2rem; height: auto; }
+    .toggle-row.is-locked > span:not(.lock-tag) { flex: 1 1 auto; min-width: min(100%, 9.5rem); }
+    .toggle-row.is-locked input:disabled { opacity: 1; }
+    .lock-tag {
+      flex: 0 0 auto;
+      margin-left: auto;
+      font-size: 0.68rem;
+      line-height: 1.2;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      color: #ffe08a;
+      background: rgba(255, 224, 138, 0.12);
+      border: 1px solid rgba(255, 224, 138, 0.45);
+      border-radius: 999px;
+      padding: 0.15rem 0.45rem;
+      white-space: nowrap;
+    }
+    #hintBtn:disabled { opacity: 0.4; }
+    .settings-head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.35rem; }
+    .settings-head h2 { margin: 0; color: #ffe08a; font-size: 1.05rem; }
+    .settings-head .btn { min-height: 44px; }
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      min-height: 44px;
+      padding: 0 0.1rem;
+      color: #f4f6ff;
+      font-size: 1rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    .toggle-row input {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 48px;
+      height: 44px;
+      margin: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      position: relative;
+      flex: 0 0 auto;
+      cursor: pointer;
+    }
+    .toggle-row input::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 8px;
+      width: 48px;
+      height: 28px;
+      border-radius: 999px;
+      background: #2c334c;
+    }
+    .toggle-row input::after {
+      content: '';
+      position: absolute;
+      top: 11px;
+      left: 3px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #fff;
+    }
+    .toggle-row input:checked::before { background: #e0b85a; }
+    .toggle-row input:checked::after { transform: translateX(20px); }
+    .toggle-row input:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+    .win-banner, .fail-banner {
+      display: none;
+      border-radius: 16px;
+      padding: 1.2rem 1rem 1.1rem;
+      text-align: center;
+      background: rgba(6, 10, 28, 0.92);
+    }
+    .win-banner { border: 1px solid rgba(255, 214, 140, 0.55); margin-top: 0.9rem; }
+    .win-banner.show { display: block; }
+    .win-banner h2 { color: #ffe08a; margin: 0 0 0.45rem; font-size: 1.45rem; }
+    .fail-banner {
+      position: absolute;
+      inset: 0;
+      z-index: 6;
+      margin: 0;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 120, 136, 0.5);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.65rem;
+    }
+    .fail-banner.show { display: flex; }
+    .fail-banner h2 { color: #ffb3bc; margin: 0; font-size: 1.25rem; }
+    .fail-copy { color: #d5d8ea; margin: 0; font-size: 0.88rem; max-width: 16rem; }
+    .fail-actions { display: flex; flex-wrap: wrap; gap: 0.45rem; justify-content: center; }
+    .fail-actions .btn { min-height: 44px; }
+    .sdk-best { font-size: 0.85rem; color: #d5d8ea; margin: 0.35rem 0 0.8rem; }
+    .sdk-best span { color: #ffe08a; font-weight: 800; }
+    .btn-share {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      color: #f4f6ff;
+      border-radius: 999px;
+      padding: 0.45rem 1rem;
+      font-size: 0.82rem;
+      cursor: pointer;
+      font-family: inherit;
+      margin-left: 0.5rem;
+      min-height: 44px;
+    }
+
+    @media (min-width: 801px) {
+      .settings-sheet { align-items: center; }
+      .settings-card { border-radius: 16px; }
+      .note-dot { font-size: 14px; }
+    }
+    @media (max-width: 800px) {
+      #vsRules { display: none; }
+      .vs-rules-list { display: block; }
+      body.page-game.sdk-cosmic .container { padding-left: 4vw; padding-right: 4vw; }
+      .sdk-intro {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        clip-path: inset(50%);
+      }
+      .game-layout {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.3rem;
+        width: 100%;
+        padding: 0.3rem 0 0.8rem;
+      }
+      body.page-game.sdk-cosmic .nav__inner { height: 48px; }
+      .sidebar { display: contents; }
+      .topbar { order: 1; width: min(92vw, 70vh); width: min(92vw, min(70svh, 70dvh)); gap: 0.25rem; }
+      .first-tip {
+        position: static;
+        left: auto;
+        bottom: auto;
+        transform: none;
+        order: 2;
+        width: min(92vw, 70vh);
+        width: min(92vw, min(70svh, 70dvh));
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .first-tip.is-dismissed { display: none; }
+      .board-col {
+        order: 3;
+        width: min(92vw, 70vh);
+        width: min(92vw, var(--sdk-fit, min(70svh, 70dvh)));
+      }
+      #board { container-type: inline-size; }
+      .cell { font-size: clamp(0.6rem, 5.6cqw, 1.15rem); }
+
+      .numpad { order: 4; width: min(92vw, 70vh); width: min(92vw, min(70svh, 70dvh)); gap: 0.25rem; touch-action: manipulation; }
+      .action-btns {
+        order: 5;
+        width: min(92vw, 70vh);
+        width: min(92vw, min(70svh, 70dvh));
+        gap: 0.25rem;
+        grid-template-columns: repeat(4, 1fr);
+      }
+      .action-btns .wide { grid-column: span 2; }
+      #dailyBtn { order: 6; width: min(92vw, 70vh); }
+      .puzzle-line { order: 7; width: min(92vw, 70vh); }
+      .sdk-panel { order: 8; width: min(92vw, 70vh); }
+      .diff-btn { min-height: 32px; padding: 0.15rem 0.1rem; }
+      .hud-row { min-height: 32px; padding: 0.15rem 0.4rem 0.15rem 0.55rem; }
+      .hud-pause { min-height: 32px; }
+      .num-btn { aspect-ratio: auto; min-height: 40px; height: 40px; font-size: 1.05rem; }
+      .cell { padding: 0; }
+      .cell-notes,
+      .note-dot { min-width: 0; min-height: 0; }
+      .note-dot { font-size: clamp(7px, 2.1cqw, 11px); line-height: 1; font-weight: 800; text-shadow: none; color: #fff; }
+      .action-btns .btn {
+        min-height: 40px;
+        height: auto;
+        padding: 0.2rem 0.15rem;
+        font-size: 0.72rem;
+        line-height: 1.15;
+        white-space: nowrap;
+      }
+      .sdk-daily { min-height: 36px; }
+    }
+    html.sdk-reduce .trail.on path { animation: none !important; opacity: 0; }
+    html.sdk-reduce .constel.on { animation: none !important; opacity: 0; }
+    html.sdk-reduce .nova { display: none !important; }
+    html.sdk-reduce .cell,
+    html.sdk-reduce .num-btn,
+    html.sdk-reduce .rg-card,
+    html.sdk-reduce .btn,
+    html.sdk-reduce .toggle-row input::after { transition: none !important; animation: none !important; }
+    html.sdk-reduce .cell.shake { animation: none !important; }
+    html.sdk-reduce .first-tip { transition: none !important; }
   </style>
   <meta property="og:image" content="https://www.cosmicgameshub.com/images/game-sudoku.jpg">
   <meta property="og:image:width" content="600">
@@ -103,7 +850,8 @@
   <meta property="og:site_name" content="CosmicGamesHub">
   <meta property="og:url" content="https://www.cosmicgameshub.com/games/sudoku">
 </head>
-<body class="page-game">
+<body class="page-game sdk-cosmic">
+<div id="sdkVhProbe" aria-hidden="true"></div>
 <nav class="nav" role="navigation" aria-label="Main navigation">
   <div class="container">
     <div class="nav__inner">
@@ -128,57 +876,154 @@
 
 <main>
   <div class="container">
-    <div style="padding:1.5rem 0 0.5rem;">
-      <span class="section__eyebrow">Daily Puzzle</span>
-      <h1 style="margin-top:0.4rem;margin-bottom:0.25rem;">Sudoku</h1>
-      <p style="color:var(--text-mid);margin:0;font-size:0.9rem;">Fill the grid so every row, column, and 3×3 box contains 1–9.</p>
+    <div class="sdk-intro">
+      <span class="section__eyebrow" id="eyebrow">Daily puzzle</span>
+      <h1>Sudoku</h1>
+      <p class="sdk-lead">Fill the grid so every row, column, and 3×3 box contains 1–9.</p>
+      <p class="complete-stat" id="completeStat" hidden></p>
     </div>
 
     <div class="game-layout">
-      <div>
-        <div id="board"></div>
-        <div class="win-banner" id="winBanner">
-          <h2>🎉 Puzzle Solved!</h2>
-          <p id="winMsg" style="color:var(--text-mid);margin-bottom:0.25rem;"></p>
-          <p class="sdk-best" id="winBest"></p>
-          <button class="btn btn--primary" onclick="newGame()" style="min-height:44px;">Play again</button>
-          <button class="btn-share" id="winShareBtn" onclick="shareWin()">📋 Share</button>
+      <div class="board-col">
+        <div class="board-frame" id="boardFrame">
+          <div id="board" role="grid" aria-label="Sudoku board" tabindex="-1"></div>
+          <svg id="trail" class="trail" viewBox="0 0 9 9" aria-hidden="true"></svg>
+          <img id="constel" class="constel" alt="" hidden>
+          <img id="nova" class="nova" alt="" hidden>
+          <div id="pauseOverlay" class="pause-overlay" hidden>
+            <p>Paused</p>
+            <button type="button" class="btn btn--primary" id="resumeBtn">Resume</button>
+          </div>
+          <div class="fail-banner" id="failBanner">
+            <h2>Too many mistakes</h2>
+            <p class="fail-copy">The limit is 3. Keep playing with it off, or start a new puzzle.</p>
+            <div class="fail-actions">
+              <button type="button" class="btn btn--primary" id="failContinue">Continue (limit off)</button>
+              <button type="button" class="btn btn--outline" id="failAgain">Play again</button>
+            </div>
+          </div>
         </div>
-        <div class="fail-banner" id="failBanner">
-          <h2>💥 Too Many Mistakes</h2>
-          <p style="color:var(--text-mid);margin-bottom:1rem;">3 mistakes made. Better luck next time!</p>
-          <button class="btn btn--primary" onclick="newGame()">Play again</button>
-          <button class="btn-share" type="button" onclick="shareWin()">📋 Share</button>
+        <div class="win-banner" id="winBanner">
+          <h2>You solved it</h2>
+          <p id="winMsg" style="color:#d5d8ea;margin:0;"></p>
+          <p class="sdk-best" id="winBest"></p>
+          <button type="button" class="btn btn--primary" id="playAgain">Play again</button>
+          <button type="button" class="btn-share" id="winShareBtn">Share</button>
         </div>
       </div>
 
       <div class="sidebar">
-        <div class="diff-row">
-          <button class="diff-btn active" data-d="easy">Easy</button>
-          <button class="diff-btn" data-d="medium">Med</button>
-          <button class="diff-btn" data-d="hard">Hard</button>
-          <button class="diff-btn" data-d="expert">Expert</button>
+        <div class="topbar">
+          <div class="diff-row" role="group" aria-label="Difficulty">
+            <button type="button" class="diff-btn active" data-d="easy">Easy</button>
+            <button type="button" class="diff-btn" data-d="medium">Med</button>
+            <button type="button" class="diff-btn" data-d="hard">Hard</button>
+            <button type="button" class="diff-btn" data-d="expert">Expert</button>
+          </div>
+          <div class="hud-row">
+            <span class="hud-bit">Time <b id="timerDisp">0:00</b></span>
+            <span class="hud-bit mistake-bit">Mistakes <b id="mistakeDisp">0 / 3</b><b id="limitTag" hidden>Limit off</b></span>
+            <button type="button" class="btn btn--outline hud-pause" id="pauseBtn" aria-pressed="false">Pause</button>
+          </div>
+          <div class="score-bar" id="scoreBar">
+            <div class="score-side" id="scoreP0"><span>P1</span><b id="scoreVal0">0</b><span class="strike-dots" id="strikeDots0" hidden></span></div>
+            <div class="score-side" id="scoreP1"><span>P2</span><b id="scoreVal1">0</b><span class="strike-dots" id="strikeDots1" hidden></span></div>
+          </div>
         </div>
+        <p class="first-tip" id="firstTip">Select a cell, then a number.</p>
+        <button type="button" class="sdk-daily" id="dailyBtn">Today's puzzle</button>
+        <div class="info-row puzzle-line"><span id="puzzleLabel">Daily</span><span id="dateDisp">—</span></div>
 
-        <div class="info-row"><span>⏱ Time</span><span id="timerDisp">0:00</span></div>
-        <div class="info-row"><span>❌ Mistakes</span><span id="mistakeDisp">0 / 3</span></div>
-        <div class="info-row"><span>📅 Daily</span><span id="dateDisp">—</span></div>
+        <section class="sdk-panel" id="statsPanel" aria-label="Stats">
+          <h2>Stats</h2>
+          <p class="sdk-streak" id="streakDisp">Daily streak: start today</p>
+          <p class="sdk-statline" id="statsLine">No games yet</p>
+          <div id="diffStats"></div>
+          <div class="sdk-cal" id="streakCal" aria-label="Daily solves, last 7 days"></div>
+        </section>
 
         <div class="numpad" id="numpad"></div>
 
         <div class="action-btns">
-          <button class="btn btn--outline" id="noteBtn" onclick="toggleNotes()" style="font-size:0.85rem;padding:0.5rem;">✏️ Notes: OFF</button>
-          <button class="btn btn--outline" id="undoBtn" onclick="undoMove()" style="font-size:0.85rem;padding:0.5rem;">↩ Undo</button>
-          <button class="btn btn--outline" onclick="useHint()" style="font-size:0.85rem;padding:0.5rem;" id="hintBtn">💡 Hint (3 left)</button>
-          <button class="btn btn--primary" onclick="newGame()" style="font-size:0.85rem;padding:0.5rem;">New Puzzle</button>
+          <button type="button" class="btn btn--outline" id="noteBtn">Notes: OFF</button>
+          <button type="button" class="btn btn--outline" id="undoBtn">Undo</button>
+          <button type="button" class="btn btn--outline" id="hintBtn">Hint (3 left)</button>
+          <button type="button" class="btn btn--outline" id="settingsBtn" aria-expanded="false" aria-controls="settingsMenu">Settings</button>
+          <button type="button" class="btn btn--outline wide" id="vsBtn">2 Players</button>
+          <button type="button" class="btn btn--primary wide" id="newBtn">New Puzzle</button>
         </div>
+      </div>
+    </div>
+    <div class="vs-setup" id="vsSetup" hidden>
+      <h2>Pass and play</h2>
+      <p>One cell per turn. The board stays hidden between turns.</p>
+      <p id="vsRules">Speed bonus up to 2×, down to 1× at 30s. A mistake costs 140. Highest score wins, and equal scores tie. Three strikes: a third mistake loses. Player 1 starts, then turns swap, so the starter can get one extra turn.</p>
+      <ul class="vs-rules-list" id="vsRulesList">
+        <li>Up to 2× speed. A mistake costs 140. High score wins; equal scores tie.</li>
+        <li>Three strikes: a third mistake loses.</li>
+        <li>Player 1 starts. Turns swap, so the starter can get one extra turn.</li>
+      </ul>
+      <label class="toggle-row"><span>Three strikes</span><input type="checkbox" id="vsStrikes"></label>
+      <button type="button" class="btn btn--primary" id="vsStart">Start match</button>
+      <button type="button" class="btn btn--outline" id="vsCancel">Cancel</button>
+    </div>
+    <div class="vs-setup" id="vsConfirm" hidden role="dialog" aria-modal="true" aria-labelledby="vsConfirmTitle">
+      <h2 id="vsConfirmTitle">Leave this match?</h2>
+      <p id="vsConfirmCopy">This ends the match for both players.</p>
+      <button type="button" class="btn btn--primary" id="vsConfirmGo">Leave match</button>
+      <button type="button" class="btn btn--outline" id="vsConfirmStay">Keep playing</button>
+    </div>
+    <div class="vs-resume" id="vsResume" hidden role="dialog" aria-modal="true" aria-labelledby="vsResumeTitle" aria-describedby="vsResumeSummary">
+      <div class="vs-card">
+        <h2 id="vsResumeTitle">Resume match?</h2>
+        <p id="vsResumeLead">An unfinished match is saved on this device.</p>
+        <dl class="vs-resume-summary" id="vsResumeSummary"></dl>
+        <button type="button" class="btn btn--primary" id="vsResumeGo">Resume match</button>
+        <button type="button" class="btn btn--outline" id="vsResumeEnd">End match</button>
+      </div>
+    </div>
+    <div class="handoff" id="handoff" hidden>
+      <p>Pass the phone</p>
+      <h2 id="handoffWho">Player 1</h2>
+      <p class="handoff-delta" id="handoffDelta" hidden></p>
+      <p id="handoffScore">Score P1 0 / P2 0</p>
+      <button type="button" class="btn btn--primary" id="handoffGo">Start turn</button>
+      <button type="button" class="btn btn--outline" id="handoffEnd">End match</button>
+    </div>
+    <div class="vs-result" id="vsResult" hidden>
+      <div class="vs-card">
+        <div class="vs-celebrate" id="vsCelebrate" hidden>
+          <img class="vs-constel" id="vsConstel" alt="">
+          <img class="vs-nova" id="vsNova" alt="" hidden>
+        </div>
+        <h2 id="vsWinner">Player 1 wins</h2>
+        <p id="vsWhy">Board finished</p>
+        <p id="vsFinal">P1 0 · P2 0</p>
+        <p id="vsStats"></p>
+        <button type="button" class="btn btn--primary" id="vsSame">Same puzzle</button>
+        <button type="button" class="btn btn--outline" id="vsRematch">New puzzle</button>
+        <button type="button" class="btn btn--outline" id="vsSolo">Back to solo</button>
+      </div>
+    </div>
+    <div class="settings-sheet" id="settingsMenu" hidden role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <div class="settings-card" id="settingsCard">
+        <div class="settings-head">
+          <h2 id="settingsTitle">Settings</h2>
+          <button type="button" class="btn btn--outline" id="settingsClose">Close</button>
+        </div>
+        <label class="toggle-row"><span>Number first</span><input type="checkbox" id="setNumberFirst"></label>
+        <label class="toggle-row"><span>Mistake limit (3)</span><input type="checkbox" id="setLimit" checked></label>
+        <label class="toggle-row"><span>Auto notes</span><input type="checkbox" id="setAuto"></label>
+        <label class="toggle-row"><span>Planet digits</span><input type="checkbox" id="setPlanets"></label>
+        <label class="toggle-row"><span>Sound</span><input type="checkbox" id="setSound"></label>
+        <label class="toggle-row"><span>Highlight matches</span><input type="checkbox" id="setHighlight" checked></label>
+        <label class="toggle-row"><span>Reduced motion</span><input type="checkbox" id="setReduce"></label>
       </div>
     </div>
   </div>
 
 <div class="cg-daily-dock" data-slug="sudoku"></div>
 </main>
-
 
 <section class="rg-section">
   <div class="container">
@@ -212,37 +1057,20 @@
   </div>
 </section>
 <style>
-.rg-section { padding: 2.5rem 0 3rem; border-top: 1px solid var(--border, rgba(255,255,255,0.08)); margin-top: 2rem; }
-.rg-heading { font-size: 0.75rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-lo, #666); margin: 0 0 1.25rem; }
+.rg-section { padding: 2.5rem 0 3rem; border-top: 1px solid rgba(255,255,255,0.08); margin-top: 2rem; }
+.rg-heading { font-size: 0.75rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #9aa0b8; margin: 0 0 1.25rem; }
 .rg-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-.rg-card { display: flex; gap: 0.75rem; background: var(--bg-card, #111); border: 1px solid var(--border, rgba(255,255,255,0.08)); border-radius: 10px; padding: 0.75rem; text-decoration: none; color: inherit; transition: border-color 0.15s, transform 0.15s; }
-.rg-card:hover { border-color: var(--accent, #22d3ee); transform: translateY(-2px); }
+.rg-card { display: flex; gap: 0.75rem; background: rgba(6, 10, 28, 0.82); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 0.75rem; text-decoration: none; color: inherit; }
+.rg-card:hover { border-color: #ffe08a; }
 .rg-card img { width: 100px; height: 43px; object-fit: cover; border-radius: 6px; flex-shrink: 0; }
 .rg-info { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
 .rg-tags { display: flex; gap: 0.3rem; flex-wrap: wrap; }
-.rg-tag { font-size: 0.65rem; font-weight: 700; color: var(--accent, #22d3ee); background: rgba(34,211,238,0.1); border-radius: 4px; padding: 0.1rem 0.35rem; letter-spacing: 0.04em; }
-.rg-name { font-size: 0.88rem; font-weight: 700; color: var(--text-hi, #fff); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rg-desc { font-size: 0.75rem; color: var(--text-lo, #888); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.rg-tag { font-size: 0.65rem; font-weight: 700; color: #ffe08a; background: rgba(255, 208, 112, 0.12); border-radius: 4px; padding: 0.1rem 0.35rem; letter-spacing: 0.04em; }
+.rg-name { font-size: 0.88rem; font-weight: 700; color: #f7f8ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rg-desc { font-size: 0.75rem; color: #c5c9dc; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 @media (max-width: 640px) {
   .rg-grid { grid-template-columns: 1fr; }
   .rg-card img { width: 80px; height: 35px; }
-}
-
-/* Mobile: numpad above difficulty/info so users see it without scrolling */
-@media (max-width: 720px) {
-  .sidebar { width: 100%; max-width: min(450px, 92vw); display: flex; flex-direction: column; }
-  .sidebar > .diff-row { order: 3; }
-  .sidebar > .info-row:nth-of-type(1) { order: 4; }
-  .sidebar > .info-row:nth-of-type(2) { order: 5; }
-  .sidebar > .info-row:nth-of-type(3) { order: 6; }
-  .sidebar > .numpad { order: 1; }
-  .sidebar > .action-btns { order: 2; margin-bottom: 0.5rem; }
-  .numpad { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.35rem; }
-  .num-btn { aspect-ratio: auto; min-height: 44px; font-size: 1rem; }
-  .diff-btn { min-height: 44px; padding: 0.45rem 0.3rem; }
-  .action-btns .btn { min-height: 44px; }
-  .container > div[style*="padding:1.5rem"] { padding: 0.7rem 0 0.25rem !important; }
-  .container > div[style*="padding:1.5rem"] h1 { font-size: 1.35rem; margin-top: 0.2rem !important; }
 }
 </style>
 <footer class="footer"><div class="container"><div class="footer__bottom">
@@ -251,7 +1079,12 @@
 </footer>
 
 <script>
-// ── Sudoku Engine ───────────────────────────────────────────────────────────
+var THEME = {
+  constellation: '/images/sudoku/constellation-overlay-alpha.webp',
+  planet: function (n) { return '/images/sudoku/planet-' + n + '-alpha.webp'; },
+  nova: function (n) { return '/images/sudoku/supernova-' + n + '-alpha.webp'; }
+};
+
 function shuffle(a) { for (let i=a.length-1;i>0;i--){const j=Math.floor(rng()*( i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
 
 let seed = 1;
@@ -286,252 +1119,2848 @@ function countSolutions(g, limit=2) {
 
 const GIVENS = { easy:36, medium:30, hard:25, expert:21 };
 
-function makePuzzle(diff, s) {
+function makePuzzle(diffName, s) {
   setSeed(s);
-  const solved = generateSolved();
-  const puzzle = solved.map(r=>[...r]);
+  const solvedGrid = generateSolved();
+  const puzzleGrid = solvedGrid.map(r=>[...r]);
   const cells  = shuffle([...Array(81).keys()]);
   let removed  = 0;
-  const target = 81 - GIVENS[diff];
+  const target = 81 - GIVENS[diffName];
   for (const idx of cells) {
     if (removed >= target) break;
-    const r=Math.floor(idx/9), c=idx%9, val=puzzle[r][c];
-    puzzle[r][c]=0;
-    if (countSolutions(puzzle)!==1) { puzzle[r][c]=val; } else { removed++; }
+    const r=Math.floor(idx/9), c=idx%9, val=puzzleGrid[r][c];
+    puzzleGrid[r][c]=0;
+    if (countSolutions(puzzleGrid)!==1) { puzzleGrid[r][c]=val; } else { removed++; }
   }
-  return { puzzle, solved };
+  return { puzzle: puzzleGrid, solved: solvedGrid };
 }
 
-// ── State ──────────────────────────────────────────────────────────────────
-let puzzle=[], solved=[], userGrid=[], notes=[], selected=null;
-let mistakes=0, hintsLeft=3, notesMode=false, timerSecs=0, timerInt=null, diff='easy', done=false;
-let undoStack=[];
-
-// ── Init ───────────────────────────────────────────────────────────────────
-const today = new Date();
-document.getElementById('dateDisp').textContent = today.toLocaleDateString('en-US',{month:'short',day:'numeric'});
-const dailySeed = today.getFullYear()*10000 + (today.getMonth()+1)*100 + today.getDate();
-
-function newGame(forceDiff) {
-  if(forceDiff) diff=forceDiff;
-  done=false; mistakes=0; hintsLeft=3; notesMode=false; selected=null;
-  clearInterval(timerInt); timerSecs=0;
-  document.getElementById('winBanner').classList.remove('show');
-  document.getElementById('failBanner').classList.remove('show');
-  document.getElementById('noteBtn').textContent='✏️ Notes: OFF';
-  document.getElementById('noteBtn').classList.remove('note-active');
-  document.getElementById('hintBtn').textContent='💡 Hint (3 left)';
-  updateMistakes();
-
-  const s = dailySeed + diff.charCodeAt(0);
-  const {puzzle:p, solved:sv} = makePuzzle(diff, s);
-  puzzle=p; solved=sv;
-  userGrid=p.map(r=>[...r]);
-  notes=Array.from({length:9},()=>Array.from({length:9},()=>new Set()));
-  undoStack=[];
-
-  renderBoard(); buildNumpad();
-  timerInt=setInterval(()=>{ if(!done){timerSecs++;updateTimer();} },1000);
+function makeNearFull(s, holes) {
+  setSeed(s);
+  var solvedGrid = generateSolved();
+  var puzzleGrid = solvedGrid.map(function (row) { return row.slice(); });
+  var cells = shuffle([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80]);
+  var n = 0, i, idx, r, c;
+  holes = holes === 2 ? 2 : 3;
+  for (i = 0; i < cells.length && n < holes; i++) {
+    idx = cells[i];
+    r = Math.floor(idx / 9);
+    c = idx % 9;
+    puzzleGrid[r][c] = 0;
+    n++;
+  }
+  return { puzzle: puzzleGrid, solved: solvedGrid };
 }
 
-// ── Render ─────────────────────────────────────────────────────────────────
-function renderBoard() {
-  const bd=document.getElementById('board'); bd.innerHTML='';
-  for(let r=0;r<9;r++) for(let c=0;c<9;c++) {
-    const cell=document.createElement('div');
-    cell.className='cell'; cell.dataset.r=r; cell.dataset.c=c;
-    cell.dataset.row=r; cell.dataset.col=c;
-    const orig=puzzle[r][c], user=userGrid[r][c];
-    if(orig!==0){ cell.classList.add('given'); cell.textContent=orig; }
-    else if(user!==0){
-      cell.classList.add('user-num');
-      if(user!==solved[r][c]) cell.classList.add('error');
-      cell.textContent=user;
-    } else if(notes[r][c].size>0) {
-      cell.classList.add('user-num');
-      const nd=document.createElement('div'); nd.className='cell-notes';
-      for(let n=1;n<=9;n++){const s=document.createElement('div');s.className='note-dot';s.textContent=notes[r][c].has(n)?n:'';nd.appendChild(s);}
-      cell.appendChild(nd);
+function debugAllowed(host) {
+  host = String(host || '').toLowerCase().replace(/:\d+$/, '');
+  if (host === 'localhost' || host === '127.0.0.1') return true;
+  if (host === 'cosmicgameshub-git-master-bryanralstons-projects.vercel.app') return false;
+  return /^cosmicgameshub-git-[a-z0-9-]+-bryanralstons-projects\.vercel\.app$/.test(host);
+}
+
+var puzzle = [], solved = [], userGrid = [], notes = [];
+var selected = null;
+var stickyDigit = 0;
+var mistakes = 0, hintsLeft = 3, notesMode = false, timerSecs = 0, timerInt = null;
+var diff = 'easy', done = false, failed = false, paused = false, isDaily = true;
+var puzzleId = '', puzzleSeed = 1, undoStack = [], live = false, hiddenHold = false;
+var reportedStart = false, reportedFinish = false, quitSent = false;
+var countedPlay = false, countedWin = false, celebrated = false;
+var pendingEvents = [];
+var storageStamp = '';
+var SETTINGS_KEY = 'sdk_settings';
+var STATS_KEY = 'sdk_stats';
+var SAVE_INDEX = 'sdk_save_index';
+var MATCH_KEY = 'sdk_match_v1';
+var settings = { mistakeLimit: true, autoNotes: false, planets: false, sound: false, highlight: true, reduce: null, numberFirst: false };
+var limitWaived = false;
+var soloClockHeld = false;
+var blockBoardUntil = 0;
+var suppressWinAnim = false;
+var settingsOpenedAt = 0;
+var TAP_SLOP = 10;
+var activeTap = null;
+var blockTapClick = 0;
+
+function lsGet(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
+function storageKept() {
+  try { return !!storageStamp && localStorage.getItem('sdk_stamp') === storageStamp; }
+  catch (e) { return false; }
+}
+function lsSet(key, value) {
+  if (storageStamp && !storageKept()) return;
+  try { localStorage.setItem(key, value); } catch (e) {}
+}
+function lsDel(key) { try { localStorage.removeItem(key); } catch (e) {} }
+function initStamp() {
+  storageStamp = 's' + Date.now().toString(36) + Math.random().toString(36).slice(2);
+  try { localStorage.setItem('sdk_stamp', storageStamp); } catch (e) {}
+}
+
+function localDateStr(d) {
+  d = d || new Date();
+  var m = d.getMonth() + 1;
+  var day = d.getDate();
+  return d.getFullYear() + '-' + (m < 10 ? '0' : '') + m + '-' + (day < 10 ? '0' : '') + day;
+}
+function yesterdayStr() {
+  var d = new Date();
+  d.setDate(d.getDate() - 1);
+  return localDateStr(d);
+}
+function fmtTime(secs) {
+  secs = Math.max(0, secs | 0);
+  var m = Math.floor(secs / 60);
+  var s = secs % 60;
+  return m + ':' + (s < 10 ? '0' : '') + s;
+}
+function osReduce() {
+  return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+}
+function reducedMotion() {
+  if (typeof settings.reduce === 'boolean') return settings.reduce;
+  return osReduce();
+}
+function applyMotion() {
+  document.documentElement.classList.toggle('sdk-reduce', reducedMotion());
+}
+function forceScroll(x, y) {
+  var root = document.documentElement;
+  var prev = root.style.scrollBehavior;
+  root.style.scrollBehavior = 'auto';
+  root.scrollLeft = x;
+  root.scrollTop = y;
+  document.body.scrollLeft = x;
+  document.body.scrollTop = y;
+  root.style.scrollBehavior = prev;
+}
+function focusNoScroll(el) {
+  if (!el || !el.focus) return;
+  var x = window.scrollX, y = window.scrollY;
+  var root = document.documentElement;
+  var prev = root.style.scrollBehavior;
+  root.style.scrollBehavior = 'auto';
+  try { el.focus({ preventScroll: true }); } catch (e) {}
+  if (window.scrollX !== x || window.scrollY !== y) forceScroll(x, y);
+  root.style.scrollBehavior = prev;
+}
+function pinScroll(x, y) {
+  var until = Date.now() + 280;
+  var lock = false;
+  function fix() {
+    if (lock) return;
+    if (window.scrollX === x && window.scrollY === y) return;
+    lock = true;
+    forceScroll(x, y);
+    lock = false;
+  }
+  function onScroll() {
+    if (Date.now() > until) {
+      window.removeEventListener('scroll', onScroll, true);
+      return;
     }
-    cell.addEventListener('click',()=>selectCell(r,c));
-    bd.appendChild(cell);
+    fix();
   }
-  highlightCells();
+  window.addEventListener('scroll', onScroll, true);
+  fix();
+  requestAnimationFrame(fix);
+  setTimeout(fix, 0);
+  setTimeout(function () { window.removeEventListener('scroll', onScroll, true); }, 300);
 }
-
-function selectCell(r,c) {
-  selected={r,c}; highlightCells();
+function limitOn() { return !!settings.mistakeLimit && !limitWaived; }
+function boardBlocked() { return Date.now() < blockBoardUntil; }
+function settingsOn() {
+  var menu = document.getElementById('settingsMenu');
+  return !!(menu && !menu.hidden);
 }
-
-function highlightCells() {
-  const cells=document.querySelectorAll('.cell');
-  cells.forEach(cell=>{
-    cell.classList.remove('selected','highlight','same-num');
-    const r=+cell.dataset.r, c=+cell.dataset.c;
-    if(!selected) return;
-    const {r:sr,c:sc}=selected;
-    if(r===sr&&c===sc){ cell.classList.add('selected'); return; }
-    const inBox=Math.floor(r/3)===Math.floor(sr/3)&&Math.floor(c/3)===Math.floor(sc/3);
-    if(r===sr||c===sc||inBox) cell.classList.add('highlight');
-    const selVal=userGrid[sr][sc]||puzzle[sr][sc];
-    const thisVal=userGrid[r][c]||puzzle[r][c];
-    if(selVal&&selVal===thisVal) cell.classList.add('same-num');
+function setGameInert(on) {
+  document.querySelectorAll('nav, .game-layout, .cg-daily-dock, .rg-section, footer').forEach(function (el) {
+    if (on) el.setAttribute('inert', '');
+    else el.removeAttribute('inert');
   });
 }
-
-function buildNumpad() {
-  const np=document.getElementById('numpad'); np.innerHTML='';
-  const counts=Array(10).fill(0);
-  for(let r=0;r<9;r++) for(let c=0;c<9;c++) { const v=userGrid[r][c]||puzzle[r][c]; if(v) counts[v]++; }
-  for(let n=1;n<=9;n++){
-    const btn=document.createElement('button'); btn.className='num-btn'; btn.textContent=n;
-    if(counts[n]>=9) btn.classList.add('used');
-    btn.addEventListener('click',()=>inputNum(n)); np.appendChild(btn);
-  }
-  const er=document.createElement('button'); er.className='num-btn erase'; er.textContent='⌫';
-  er.addEventListener('click',()=>inputNum(0)); np.appendChild(er);
+function settingsGuard() { return Date.now() - settingsOpenedAt < 500; }
+function closeSettings(e) {
+  if (e) { e.preventDefault(); e.stopPropagation(); }
+  var menu = document.getElementById('settingsMenu');
+  var btn = document.getElementById('settingsBtn');
+  if (menu) { menu.hidden = true; menu.classList.remove('is-shown'); }
+  if (btn) btn.setAttribute('aria-expanded', 'false');
+  setGameInert(false);
+  settingsOpenedAt = 0;
+  blockBoardUntil = Date.now() + 350;
+  var held = soloClockHeld;
+  soloClockHeld = false;
+  pinScroll(window.scrollX, window.scrollY);
+  if (held && !match && !done && !paused) startTimer();
 }
-
-function undoMove(){
-  if(!undoStack.length||done) return;
-  const snap=undoStack.pop();
-  userGrid=snap.user.map(row=>row.slice());
-  notes=snap.notes.map(row=>row.map(s=>new Set(s)));
-  mistakes=snap.mistakes;
-  updateMistakes();
-  renderBoard(); buildNumpad();
+function openSettings(e) {
+  if (e) { e.preventDefault(); e.stopPropagation(); }
+  if (!match && !done && !paused) soloClockHeld = true;
+  var menu = document.getElementById('settingsMenu');
+  var btn = document.getElementById('settingsBtn');
+  if (!menu) return;
+  var x = window.scrollX, y = window.scrollY;
+  menu.hidden = false;
+  menu.classList.remove('is-shown');
+  if (btn) btn.setAttribute('aria-expanded', 'true');
+  setGameInert(true);
+  settingsOpenedAt = Date.now();
+  focusNoScroll(menu);
+  pinScroll(x, y);
+  requestAnimationFrame(function () { menu.classList.add('is-shown'); });
 }
-
-function inputNum(n) {
-  if(!selected||done) return;
-  const {r,c}=selected;
-  if(puzzle[r][c]!==0) return;
-  undoStack.push({
-    user: userGrid.map(row=>row.slice()),
-    notes: notes.map(row=>row.map(s=>new Set(s))),
-    mistakes
-  });
-  if(notesMode&&n!==0){
-    if(notes[r][c].has(n)) notes[r][c].delete(n); else notes[r][c].add(n);
-    renderBoard(); return;
-  }
-  notes[r][c].clear();
-  if(n===0){ userGrid[r][c]=0; }
-  else {
-    userGrid[r][c]=n;
-    if(n!==solved[r][c]){ mistakes++; updateMistakes(); if(mistakes>=3) gameover(); }
-  }
-  renderBoard(); buildNumpad(); checkWin();
+function inSettingsCard(target) {
+  return !!(target && target.closest && target.closest('#settingsCard, #settingsBtn'));
 }
-
-document.addEventListener('keydown',e=>{
-  if(!selected||done) return;
-  if(e.key>='1'&&e.key<='9'){ inputNum(+e.key); return; }
-  if(e.key==='Backspace'||e.key==='Delete'||e.key==='0'){ inputNum(0); return; }
-  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){ e.preventDefault(); undoMove(); return; }
-  const {r,c}=selected;
-  if(e.key==='ArrowUp'   &&r>0) selectCell(r-1,c);
-  if(e.key==='ArrowDown' &&r<8) selectCell(r+1,c);
-  if(e.key==='ArrowLeft' &&c>0) selectCell(r,c-1);
-  if(e.key==='ArrowRight'&&c<8) selectCell(r,c+1);
-});
-
-function toggleNotes(){
-  notesMode=!notesMode;
-  const btn=document.getElementById('noteBtn');
-  btn.textContent='✏️ Notes: '+(notesMode?'ON':'OFF');
-  btn.classList.toggle('note-active',notesMode);
-}
-
-function useHint(){
-  if(hintsLeft<=0||!selected||done) return;
-  const {r,c}=selected;
-  if(puzzle[r][c]!==0) return;
-  userGrid[r][c]=solved[r][c]; notes[r][c].clear(); hintsLeft--;
-  document.getElementById('hintBtn').textContent=`💡 Hint (${hintsLeft} left)`;
-  renderBoard(); buildNumpad(); checkWin();
-}
-
-function checkWin(){
-  for(let r=0;r<9;r++) for(let c=0;c<9;c++) if(userGrid[r][c]!==solved[r][c]) return;
-  done=true; clearInterval(timerInt);
-  const m=Math.floor(timerSecs/60), s=timerSecs%60;
-  const timeStr=`${m}:${s.toString().padStart(2,'0')}`;
-  document.getElementById('winMsg').textContent=`Solved in ${timeStr} with ${mistakes} mistake${mistakes!==1?'s':''}.`;
-
-  const key=`sdk_best_${diff}`;
-  const prev=parseInt(localStorage.getItem(key)||'0',10);
-  const bestEl=document.getElementById('winBest');
-  if(!prev||timerSecs<prev){
-    localStorage.setItem(key,timerSecs);
-    bestEl.innerHTML=`🥇 New best for ${diff}: <span>${timeStr}</span>`;
-  } else {
-    const pm=Math.floor(prev/60), ps=prev%60;
-    bestEl.innerHTML=`Best for ${diff}: <span>${pm}:${ps.toString().padStart(2,'0')}</span>`;
-  }
-  document.getElementById('winBanner').classList.add('show');
+function randomSeed() {
   try {
-    var iso = new Date().toISOString().slice(0, 10);
-    localStorage.setItem('sdk_solved_' + iso, '1');
+    var buf = new Uint32Array(1);
+    crypto.getRandomValues(buf);
+    return (buf[0] % 2147483646) + 1;
+  } catch (e) {
+    return Math.floor(Math.random() * 2147483646) + 1;
+  }
+}
+
+function loadSettings() {
+  try {
+    var raw = JSON.parse(lsGet(SETTINGS_KEY) || '{}');
+    if (!raw || typeof raw !== 'object') return;
+    ['mistakeLimit', 'autoNotes', 'planets', 'sound', 'highlight', 'reduce', 'numberFirst'].forEach(function (key) {
+      if (typeof raw[key] === 'boolean') settings[key] = raw[key];
+    });
+  } catch (e) {}
+  applyMotion();
+}
+function saveSettings() { lsSet(SETTINGS_KEY, JSON.stringify(settings)); }
+
+function emptyStats() {
+  return {
+    played: 0,
+    won: 0,
+    byDiff: {
+      easy: { won: 0, seconds: 0 },
+      medium: { won: 0, seconds: 0 },
+      hard: { won: 0, seconds: 0 },
+      expert: { won: 0, seconds: 0 }
+    }
+  };
+}
+function loadStats() {
+  var base = emptyStats();
+  try {
+    var raw = JSON.parse(lsGet(STATS_KEY) || 'null');
+    if (!raw || typeof raw !== 'object') return base;
+    base.played = +raw.played || 0;
+    base.won = +raw.won || 0;
+    ['easy', 'medium', 'hard', 'expert'].forEach(function (name) {
+      var row = raw.byDiff && raw.byDiff[name];
+      if (!row) return;
+      base.byDiff[name].won = +row.won || 0;
+      base.byDiff[name].seconds = +row.seconds || 0;
+    });
+  } catch (e) {}
+  return base;
+}
+function saveStats(stats) { lsSet(STATS_KEY, JSON.stringify(stats)); }
+
+function trackSudoku(name, params) {
+  params = params || {};
+  function send(pair) {
+    if (typeof window.cgTrackEvent !== 'function') return false;
+    window.cgTrackEvent(pair[0], pair[1]);
+    return true;
+  }
+  if (!send([name, params])) pendingEvents.push([name, params]);
+}
+function flushEvents() {
+  if (typeof window.cgTrackEvent !== 'function') return;
+  var queued = pendingEvents.splice(0);
+  queued.forEach(function (pair) { window.cgTrackEvent(pair[0], pair[1]); });
+}
+window.addEventListener('load', flushEvents);
+
+function sfxDigit(n) { if (settings.sound && window.CGSfx && CGSfx.softDigit) CGSfx.softDigit(n); }
+function sfxUnit() { if (settings.sound && window.CGSfx && CGSfx.softUnit) CGSfx.softUnit(); }
+function sfxWin() { if (settings.sound && window.CGSfx && CGSfx.softWin) CGSfx.softWin(); }
+function sfxMiss() { if (settings.sound && window.CGSfx && CGSfx.play) CGSfx.play('miss'); }
+
+function dailyRoute(name) {
+  var today = new Date();
+  var base = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+  return {
+    mode: 'daily',
+    diff: name,
+    seed: base + name.charCodeAt(0),
+    id: 'daily-' + localDateStr(today) + '-' + name,
+    daily: true
+  };
+}
+function routeFromUrl() {
+  var params = new URLSearchParams(location.search);
+  var p = params.get('p') || '';
+  var match = /^(easy|medium|hard|expert)-([1-9]\d{0,9})$/.exec(p);
+  if (match) {
+    var n = parseInt(match[2], 10);
+    if (n > 0 && n < 2147483647) {
+      return { mode: 'free', diff: match[1], seed: n, id: match[1] + '-' + n, daily: false };
+    }
+  }
+  var name = params.get('d') || 'easy';
+  if (!GIVENS[name]) name = 'easy';
+  return dailyRoute(name);
+}
+function urlFor(route) {
+  var path = location.pathname;
+  if (route.daily) return route.diff === 'easy' ? path : path + '?d=' + route.diff;
+  return path + '?p=' + route.id;
+}
+function snapshotRoute(route) {
+  if (!route || typeof route !== 'object') return null;
+  var diffName = route.diff || 'easy';
+  if (!GIVENS[diffName]) return null;
+  var seed = +route.seed;
+  if (!(seed > 0) || seed >= 2147483647) return null;
+  var daily = !!route.daily;
+  var id = daily ? String(route.id || '') : (diffName + '-' + seed);
+  if (!id) return null;
+  if (daily) {
+    if (id.indexOf('daily-') !== 0) return null;
+  } else if (id !== diffName + '-' + seed) return null;
+  return { mode: daily ? 'daily' : 'free', diff: diffName, seed: seed, id: id, daily: daily };
+}
+function playRandom(name) {
+  if (!(match && match.fresh)) resetMatch();
+  var nextSeed = randomSeed();
+  launch({
+    mode: 'free',
+    diff: name,
+    seed: nextSeed,
+    id: name + '-' + nextSeed,
+    daily: false
+  }, true);
+}
+function launch(route, push) {
+  if (live && puzzleId && puzzleId !== route.id) abandon();
+  if (push) {
+    var next = urlFor(route);
+    var cur = location.pathname + location.search;
+    if (next !== cur) history.pushState({ id: route.id }, '', next);
+  }
+  begin(route);
+}
+
+function emptyNotes() {
+  var grid = [];
+  for (var r = 0; r < 9; r++) {
+    grid[r] = [];
+    for (var c = 0; c < 9; c++) grid[r][c] = new Set();
+  }
+  return grid;
+}
+function notesToJSON(grid) {
+  return grid.map(function (row) { return row.map(function (set) { return Array.from(set); }); });
+}
+function notesFromJSON(data) {
+  if (!Array.isArray(data) || data.length !== 9) return emptyNotes();
+  return data.map(function (row) {
+    return (row || []).map(function (arr) { return new Set(Array.isArray(arr) ? arr : []); });
+  });
+}
+function gridOk(grid) {
+  if (!Array.isArray(grid) || grid.length !== 9) return false;
+  for (var r = 0; r < 9; r++) {
+    if (!Array.isArray(grid[r]) || grid[r].length !== 9) return false;
+    for (var c = 0; c < 9; c++) {
+      if (typeof grid[r][c] !== 'number' || grid[r][c] < 0 || grid[r][c] > 9) return false;
+    }
+  }
+  return true;
+}
+function readSave(id) {
+  try {
+    var raw = JSON.parse(lsGet('sdk_save_' + id) || 'null');
+    if (!raw || raw.id !== id) return null;
+    if (!gridOk(raw.puzzle) || !gridOk(raw.user) || !gridOk(raw.solved)) return null;
+    return raw;
+  } catch (e) { return null; }
+}
+function markPlayed() {
+  if (countedPlay || !live) return;
+  countedPlay = true;
+  var stats = loadStats();
+  stats.played += 1;
+  saveStats(stats);
+  renderStats();
+  dismissTip();
+}
+function dismissTip() {
+  lsSet('sdk_tip_seen', '1');
+  var tip = document.getElementById('firstTip');
+  if (tip) {
+    tip.hidden = false;
+    tip.classList.add('is-dismissed');
+  }
+  fitPhoneBoard();
+}
+function syncTip() {
+  var tip = document.getElementById('firstTip');
+  if (!tip) return;
+  tip.hidden = false;
+  tip.classList.toggle('is-dismissed', lsGet('sdk_tip_seen') === '1');
+}
+function syncSoundLabel() {
+  var mb = document.querySelector('[data-cg-mute]');
+  if (!mb) return;
+  mb.textContent = settings.sound ? 'Sound on' : 'Sound off';
+  mb.setAttribute('aria-pressed', settings.sound ? 'true' : 'false');
+}
+window.sdkSetSound = function (on) {
+  settings.sound = !!on;
+  saveSettings();
+  var box = document.getElementById('setSound');
+  if (box) box.checked = settings.sound;
+  syncSoundLabel();
+  if (settings.sound) sfxDigit(1);
+};
+
+function save() {
+  if (match) { saveMatch(); return; }
+  if (!storageKept()) return;
+  var held = readMatchSave();
+  if (held && held.id === puzzleId) return;
+  if (!puzzleId || !gridOk(puzzle) || !gridOk(userGrid)) return;
+  var data = {
+    id: puzzleId,
+    diff: diff,
+    daily: isDaily,
+    seed: puzzleSeed,
+    puzzle: puzzle,
+    solved: solved,
+    user: userGrid,
+    notes: notesToJSON(notes),
+    mistakes: mistakes,
+    hintsLeft: hintsLeft,
+    timerSecs: timerSecs,
+    notesMode: notesMode,
+    done: done,
+    failed: failed,
+    paused: false,
+    reportedStart: reportedStart,
+    reportedFinish: reportedFinish,
+    countedPlay: countedPlay,
+    countedWin: countedWin,
+    celebrated: celebrated,
+    selected: selected,
+    limitWaived: limitWaived
+  };
+  try {
+    lsSet('sdk_save_' + puzzleId, JSON.stringify(data));
+    var idx = JSON.parse(lsGet(SAVE_INDEX) || '[]');
+    if (!Array.isArray(idx)) idx = [];
+    idx = idx.filter(function (item) { return item !== puzzleId; });
+    idx.push(puzzleId);
+    while (idx.length > 12) lsDel('sdk_save_' + idx.shift());
+    lsSet(SAVE_INDEX, JSON.stringify(idx));
   } catch (e) {}
 }
 
-function gameover(){
-  done=true; clearInterval(timerInt);
-  document.getElementById('failBanner').classList.add('show');
+function matchScreen() {
+  if (!match || match.over) return 'result';
+  if (match.phase !== 'live' && typeof match.lastNote === 'string' && match.lastNote.charAt(0) === '-') return 'strike';
+  return 'turn';
+}
+function undoSnapJSON(snap) {
+  return {
+    user: snap.user.map(function (row) { return row.slice(); }),
+    notes: notesToJSON(snap.notes),
+    mistakes: snap.mistakes | 0,
+    hintsLeft: snap.hintsLeft
+  };
+}
+function undoSnapLive(snap) {
+  if (!snap || !gridOk(snap.user)) return null;
+  return {
+    user: snap.user.map(function (row) { return row.slice(); }),
+    notes: notesFromJSON(snap.notes),
+    mistakes: +snap.mistakes || 0,
+    hintsLeft: typeof snap.hintsLeft === 'number' ? snap.hintsLeft : 3
+  };
+}
+function playerSaveOk(p) {
+  return !!(p && typeof p.score === 'number' && typeof p.mistakes === 'number' && typeof p.secs === 'number' && (p.undo == null || Array.isArray(p.undo)));
+}
+function saveMatch() {
+  if (!match || match.over || !storageKept()) return;
+  if (debugRequested() || (puzzleId && puzzleId.indexOf('debug-') === 0)) return;
+  if (!gridOk(puzzle) || !gridOk(userGrid) || !gridOk(solved)) return;
+  var phase = match.phase === 'live' ? 'live' : 'handoff';
+  var screen = matchScreen();
+  if (screen === 'result') return;
+  var data = {
+    v: 1,
+    over: false,
+    screen: screen,
+    id: puzzleId,
+    diff: diff,
+    daily: !!isDaily,
+    seed: puzzleSeed,
+    puzzle: puzzle,
+    solved: solved,
+    user: userGrid,
+    notes: notesToJSON(notes),
+    turn: match.turn,
+    phase: phase,
+    strikes: !!match.strikes,
+    starter: match.starter ? 1 : 0,
+    lastNote: match.lastNote || '',
+    turnMs: phase === 'live' && match.ready ? Math.max(0, Date.now() - turnStamp) : 0,
+    timerSecs: timerSecs | 0,
+    mistakes: mistakes | 0,
+    hintsLeft: hintsLeft,
+    stickyDigit: stickyDigit | 0,
+    solo: snapshotRoute(match.solo),
+    selected: selected && typeof selected.r === 'number' ? { r: selected.r, c: selected.c } : null,
+    limitWaived: !!limitWaived,
+    undo: undoStack.map(undoSnapJSON),
+    locked: {
+      mistakeLimit: !!settings.mistakeLimit,
+      autoNotes: !!settings.autoNotes,
+      planets: !!settings.planets,
+      sound: !!settings.sound,
+      highlight: !!settings.highlight,
+      reduce: typeof settings.reduce === 'boolean' ? settings.reduce : null,
+      numberFirst: !!settings.numberFirst
+    },
+    p: [0, 1].map(function (i) {
+      var p = match.p[i];
+      return {
+        score: p.score | 0,
+        mistakes: p.mistakes | 0,
+        corrects: p.corrects | 0,
+        secs: p.secs | 0,
+        undo: (match.undos && match.undos[i]) ? match.undos[i] : []
+      };
+    })
+  };
+  lsSet(MATCH_KEY, JSON.stringify(data));
+}
+function clearMatchSave() { lsDel(MATCH_KEY); }
+function readMatchSave() {
+  try {
+    var raw = JSON.parse(lsGet(MATCH_KEY) || 'null');
+    if (!raw || raw.v !== 1 || raw.over) return null;
+    if (raw.screen !== 'turn' && raw.screen !== 'strike') return null;
+    if (raw.phase !== 'handoff' && raw.phase !== 'live') return null;
+    if (raw.turn !== 0 && raw.turn !== 1) return null;
+    if (!raw.p || !playerSaveOk(raw.p[0]) || !playerSaveOk(raw.p[1])) return null;
+    if (!gridOk(raw.puzzle) || !gridOk(raw.user) || !gridOk(raw.solved)) return null;
+    if (typeof raw.seed !== 'number' || !(raw.seed > 0) || typeof raw.id !== 'string') return null;
+    return raw;
+  } catch (e) { return null; }
+}
+function playerClock(p) {
+  var secs = p.secs | 0;
+  return secs > 0 ? fmtTime(secs) : '';
+}
+function playerSummary(p, strikes) {
+  var bits = [String(p.score | 0)];
+  var clock = playerClock(p);
+  if (clock) bits.push(clock);
+  if (strikes) {
+    var n = p.mistakes | 0;
+    bits.push(n + (n === 1 ? ' strike' : ' strikes'));
+  }
+  return bits.join(' · ');
+}
+function fillResumeSummary(data) {
+  var box = document.getElementById('vsResumeSummary');
+  if (!box) return;
+  var p1 = data.p[0];
+  var p2 = data.p[1];
+  var who = data.turn === 1 ? 'Player 2' : 'Player 1';
+  var turn = data.phase === 'live' ? (who + ' is mid-turn') : (who + ' to play');
+  var elapsed = (p1.secs | 0) + (p2.secs | 0);
+  var rows = [
+    ['Turn', turn],
+    ['Player 1', playerSummary(p1, !!data.strikes)],
+    ['Player 2', playerSummary(p2, !!data.strikes)],
+    ['Time', elapsed ? (fmtTime(elapsed) + ' played') : 'No time played yet']
+  ];
+  box.replaceChildren();
+  rows.forEach(function (row) {
+    var wrap = document.createElement('div');
+    var dt = document.createElement('dt');
+    var dd = document.createElement('dd');
+    dt.textContent = row[0];
+    dd.textContent = row[1];
+    wrap.appendChild(dt);
+    wrap.appendChild(dd);
+    box.appendChild(wrap);
+  });
+}
+function showResumePrompt() {
+  var el = document.getElementById('vsResume');
+  var data = readMatchSave();
+  if (!el || !data) {
+    document.body.classList.remove('is-resume');
+    setGameInert(false);
+    return;
+  }
+  fillResumeSummary(data);
+  soloClockHeld = true;
+  clearInterval(timerInt);
+  document.body.classList.add('is-resume');
+  el.hidden = false;
+  setGameInert(true);
+  focusNoScroll(document.getElementById('vsResumeGo'));
+}
+function dismissResumePrompt() {
+  var el = document.getElementById('vsResume');
+  if (el) el.hidden = true;
+  document.body.classList.remove('is-resume');
+  soloClockHeld = false;
+  setGameInert(false);
+}
+function endSavedMatch() {
+  clearMatchSave();
+  dismissResumePrompt();
+  if (live && !done && !paused && !match) startTimer();
+}
+function resumeSavedMatch() {
+  var data = readMatchSave();
+  dismissResumePrompt();
+  if (!data) {
+    if (live && !done && !paused) startTimer();
+    return;
+  }
+  applyMatchSave(data);
+}
+function applyLocked(locked) {
+  if (!locked || typeof locked !== 'object') return;
+  ['mistakeLimit', 'autoNotes', 'planets', 'sound', 'highlight', 'numberFirst'].forEach(function (key) {
+    if (typeof locked[key] === 'boolean') settings[key] = locked[key];
+  });
+  if (typeof locked.reduce === 'boolean' || locked.reduce === null) settings.reduce = locked.reduce;
+  applyMotion();
+}
+function applyMatchSave(data) {
+  clearInterval(timerInt);
+  swallowHandoff = false;
+  handoffGesture = false;
+  clearGo();
+  paused = false;
+  done = false;
+  failed = false;
+  celebrated = false;
+  suppressWinAnim = false;
+  quitSent = false;
+  live = true;
+  limitWaived = !!data.limitWaived;
+  diff = data.diff || 'easy';
+  isDaily = !!data.daily;
+  puzzleId = data.id;
+  puzzleSeed = data.seed;
+  puzzle = data.puzzle.map(function (row) { return row.slice(); });
+  solved = data.solved.map(function (row) { return row.slice(); });
+  userGrid = data.user.map(function (row) { return row.slice(); });
+  notes = notesFromJSON(data.notes);
+  mistakes = +data.mistakes || 0;
+  hintsLeft = typeof data.hintsLeft === 'number' ? data.hintsLeft : 3;
+  timerSecs = +data.timerSecs || 0;
+  notesMode = false;
+  stickyDigit = data.stickyDigit | 0;
+  selected = data.selected && typeof data.selected.r === 'number' ? { r: data.selected.r, c: data.selected.c } : null;
+  undoStack = [];
+  (Array.isArray(data.undo) ? data.undo : []).forEach(function (snap) {
+    var liveSnap = undoSnapLive(snap);
+    if (liveSnap) undoStack.push(liveSnap);
+  });
+  applyLocked(data.locked);
+  var undos = [[], []];
+  match = {
+    fresh: false,
+    strikes: !!data.strikes,
+    switching: false,
+    starter: data.starter ? 1 : 0,
+    undos: undos,
+    p: [0, 1].map(function (i) {
+      var p = data.p[i];
+      undos[i] = Array.isArray(p.undo) ? p.undo : [];
+      return { score: p.score | 0, mistakes: p.mistakes | 0, corrects: p.corrects | 0, secs: p.secs | 0 };
+    }),
+    turn: data.turn,
+    ready: data.phase === 'live',
+    over: false,
+    phase: data.phase === 'live' ? 'live' : 'handoff',
+    lastNote: typeof data.lastNote === 'string' ? data.lastNote : '',
+    scored: false,
+    solo: snapshotRoute(data.solo)
+  };
+  document.getElementById('winBanner').classList.remove('show');
+  document.getElementById('failBanner').classList.remove('show');
+  resetWinArt();
+  var frame = document.getElementById('boardFrame');
+  frame.classList.remove('is-paused', 'win-glow');
+  frame.dataset.puzzleId = puzzleId;
+  frame.dataset.daily = isDaily ? '1' : '0';
+  frame.dataset.seed = String(puzzleSeed);
+  document.getElementById('pauseOverlay').hidden = true;
+  document.getElementById('vsResult').hidden = true;
+  document.getElementById('vsSetup').hidden = true;
+  document.getElementById('vsConfirm').hidden = true;
+  syncChrome();
+  renderBoard();
+  buildNumpad();
+  updateMistakes();
+  if (match.phase === 'live') {
+    document.getElementById('handoff').hidden = true;
+    document.body.classList.remove('is-handoff');
+    document.body.classList.add('sdk-match');
+    turnStamp = Date.now() - Math.max(0, data.turnMs | 0);
+    match.ready = true;
+    updateTimer();
+    syncMatchLocks();
+    highlightCells();
+  } else showHandoff();
+  startTimer();
+  var next = urlFor({ daily: isDaily, diff: diff, id: puzzleId, mode: isDaily ? 'daily' : 'free' });
+  if (location.pathname + location.search !== next) history.replaceState({ id: puzzleId }, '', next);
+  fitPhoneBoard();
 }
 
-function shareWin(){
-  const m=Math.floor(timerSecs/60),s=timerSecs%60;
-  const timeStr=`${m}:${s.toString().padStart(2,'0')}`;
-  const text=`🧩 Sudoku (${diff}) — Solved in ${timeStr} with ${mistakes} mistake${mistakes!==1?'s':''}!\ncosmicgameshub.com/games/sudoku`;
-  const go=function(){
-    const btn=document.getElementById('winShareBtn');
-    if(btn){ btn.textContent='✓ Copied + card'; setTimeout(()=>btn.textContent='📋 Share',1800); }
-  };
-  if(window.CGSfx&&window.CGSfx.shareNow){
-    window.CGSfx.shareNow({
-      title:'Sudoku',
-      subtitle:(diff||'daily')+'  ·  '+timeStr,
-      lines:['Mistakes '+mistakes+'/3','Solved'],
-      url:'cosmicgameshub.com/games/sudoku',
-      filename:'sudoku',
-      text:text
-    }).then(go).catch(go);
-  } else if(navigator.clipboard){
-    navigator.clipboard.writeText(text).then(go).catch(()=>{ prompt('Copy this:',text); });
+function candidates(r, c) {
+  var used = {};
+  var i, j, value;
+  for (i = 0; i < 9; i++) {
+    value = userGrid[r][i]; if (value) used[value] = 1;
+    value = userGrid[i][c]; if (value) used[value] = 1;
+  }
+  var br = Math.floor(r / 3) * 3, bc = Math.floor(c / 3) * 3;
+  for (i = 0; i < 3; i++) for (j = 0; j < 3; j++) {
+    value = userGrid[br + i][bc + j];
+    if (value) used[value] = 1;
+  }
+  var set = new Set();
+  for (var n = 1; n <= 9; n++) if (!used[n]) set.add(n);
+  return set;
+}
+function applyAutoNotes() {
+  if (match) return;
+  for (var r = 0; r < 9; r++) for (var c = 0; c < 9; c++) {
+    notes[r][c] = userGrid[r][c] ? new Set() : candidates(r, c);
   }
 }
 
-function updateTimer(){
-  const m=Math.floor(timerSecs/60),s=timerSecs%60;
-  document.getElementById('timerDisp').textContent=`${m}:${s.toString().padStart(2,'0')}`;
+var SCORE_BASE = 100;
+var SCORE_PENALTY = 140;
+var match = null;
+var turnStamp = 0;
+function sdkFillCands(board) {
+  var g = [];
+  for (var r = 0; r < 9; r++) {
+    g[r] = [];
+    for (var c = 0; c < 9; c++) {
+      g[r][c] = new Set();
+      if (board[r][c]) continue;
+      var used = {};
+      for (var i = 0; i < 9; i++) {
+        if (board[r][i]) used[board[r][i]] = 1;
+        if (board[i][c]) used[board[i][c]] = 1;
+      }
+      var br = Math.floor(r / 3) * 3, bc = Math.floor(c / 3) * 3;
+      for (var a = 0; a < 3; a++) for (var b = 0; b < 3; b++) if (board[br + a][bc + b]) used[board[br + a][bc + b]] = 1;
+      for (var n = 1; n <= 9; n++) if (!used[n]) g[r][c].add(n);
+    }
+  }
+  return g;
 }
-function updateMistakes(){ document.getElementById('mistakeDisp').textContent=`${mistakes} / 3`; }
+function sdkPlace(board, g, r, c, n) {
+  board[r][c] = n;
+  g[r][c].clear();
+  for (var i = 0; i < 9; i++) { g[r][i].delete(n); g[i][c].delete(n); }
+  var br = Math.floor(r / 3) * 3, bc = Math.floor(c / 3) * 3;
+  for (var a = 0; a < 3; a++) for (var b = 0; b < 3; b++) g[br + a][bc + b].delete(n);
+}
+function sdkUnits() {
+  var u = [], r, c, br, bc, i, j, row, col, box;
+  for (r = 0; r < 9; r++) {
+    row = []; col = [];
+    for (c = 0; c < 9; c++) { row.push([r, c]); col.push([c, r]); }
+    u.push(row); u.push(col);
+  }
+  for (br = 0; br < 9; br += 3) for (bc = 0; bc < 9; bc += 3) {
+    box = [];
+    for (i = 0; i < 3; i++) for (j = 0; j < 3; j++) box.push([br + i, bc + j]);
+    u.push(box);
+  }
+  return u;
+}
+var SDK_UNITS = sdkUnits();
+function sdkFindHidden(g, board) {
+  var ui, unit, n, hits, k, cell;
+  for (ui = 0; ui < SDK_UNITS.length; ui++) {
+    unit = SDK_UNITS[ui];
+    for (n = 1; n <= 9; n++) {
+      hits = [];
+      for (k = 0; k < unit.length; k++) {
+        cell = unit[k];
+        if (!board[cell[0]][cell[1]] && g[cell[0]][cell[1]].has(n)) hits.push(cell);
+      }
+      if (hits.length === 1 && g[hits[0][0]][hits[0][1]].size > 1) return { r: hits[0][0], c: hits[0][1], n: n };
+    }
+  }
+  return null;
+}
+function sdkEliminate(g, board) {
+  var changed = false;
+  function drop(r, c, n) {
+    if (!board[r][c] && g[r][c].has(n)) { g[r][c].delete(n); changed = true; }
+  }
+  var ui, unit, i, j, k, n, cells, key, map, pair, digs, hits, br, bc, rows, cols, boxes, rr, cc;
+  for (ui = 0; ui < SDK_UNITS.length; ui++) {
+    unit = SDK_UNITS[ui];
+    cells = [];
+    for (k = 0; k < unit.length; k++) if (!board[unit[k][0]][unit[k][1]] && g[unit[k][0]][unit[k][1]].size === 2) cells.push(unit[k]);
+    map = {};
+    for (k = 0; k < cells.length; k++) {
+      key = Array.from(g[cells[k][0]][cells[k][1]]).sort().join('');
+      if (!map[key]) map[key] = [];
+      map[key].push(cells[k]);
+    }
+    for (key in map) if (map[key].length === 2) {
+      pair = map[key];
+      digs = Array.from(g[pair[0][0]][pair[0][1]]);
+      for (k = 0; k < unit.length; k++) {
+        if (unit[k][0] === pair[0][0] && unit[k][1] === pair[0][1]) continue;
+        if (unit[k][0] === pair[1][0] && unit[k][1] === pair[1][1]) continue;
+        drop(unit[k][0], unit[k][1], digs[0]);
+        drop(unit[k][0], unit[k][1], digs[1]);
+      }
+    }
+  }
+  for (br = 0; br < 9; br += 3) for (bc = 0; bc < 9; bc += 3) {
+    for (n = 1; n <= 9; n++) {
+      rows = {}; cols = {}; hits = [];
+      for (i = 0; i < 3; i++) for (j = 0; j < 3; j++) {
+        rr = br + i; cc = bc + j;
+        if (!board[rr][cc] && g[rr][cc].has(n)) { rows[rr] = 1; cols[cc] = 1; hits.push([rr, cc]); }
+      }
+      if (Object.keys(rows).length === 1 && hits.length) {
+        rr = +Object.keys(rows)[0];
+        for (cc = 0; cc < 9; cc++) if (cc < bc || cc >= bc + 3) drop(rr, cc, n);
+      }
+      if (Object.keys(cols).length === 1 && hits.length) {
+        cc = +Object.keys(cols)[0];
+        for (rr = 0; rr < 9; rr++) if (rr < br || rr >= br + 3) drop(rr, cc, n);
+      }
+    }
+  }
+  for (rr = 0; rr < 9; rr++) for (n = 1; n <= 9; n++) {
+    boxes = {};
+    for (cc = 0; cc < 9; cc++) if (!board[rr][cc] && g[rr][cc].has(n)) boxes[Math.floor(cc / 3)] = 1;
+    if (Object.keys(boxes).length === 1) {
+      bc = +Object.keys(boxes)[0] * 3;
+      br = Math.floor(rr / 3) * 3;
+      for (i = 0; i < 3; i++) for (j = 0; j < 3; j++) if (br + i !== rr) drop(br + i, bc + j, n);
+    }
+  }
+  return changed;
+}
+function sdkRateCells(board) {
+  var b = board.map(function (row) { return row.slice(); });
+  var g = sdkFillCands(b);
+  var rate = [];
+  var r, c, n, hs, floor = 1, guard = 0, placed;
+  for (r = 0; r < 9; r++) { rate[r] = []; for (c = 0; c < 9; c++) rate[r][c] = 0; }
+  while (guard++ < 400) {
+    placed = false;
+    for (r = 0; r < 9; r++) for (c = 0; c < 9; c++) {
+      if (b[r][c] || g[r][c].size !== 1) continue;
+      n = Array.from(g[r][c])[0];
+      rate[r][c] = floor;
+      sdkPlace(b, g, r, c, n);
+      placed = true;
+    }
+    if (placed) continue;
+    hs = sdkFindHidden(g, b);
+    if (hs) {
+      floor = Math.max(floor, 2);
+      rate[hs.r][hs.c] = floor;
+      sdkPlace(b, g, hs.r, hs.c, hs.n);
+      continue;
+    }
+    if (sdkEliminate(g, b)) { floor = Math.max(floor, 3); continue; }
+    break;
+  }
+  for (r = 0; r < 9; r++) for (c = 0; c < 9; c++) if (!b[r][c]) rate[r][c] = 4;
+  return rate;
+}
+function sdkCyclic() {
+  return [
+    [1,2,3,4,5,6,7,8,9],[4,5,6,7,8,9,1,2,3],[7,8,9,1,2,3,4,5,6],
+    [2,3,4,5,6,7,8,9,1],[5,6,7,8,9,1,2,3,4],[8,9,1,2,3,4,5,6,7],
+    [3,4,5,6,7,8,9,1,2],[6,7,8,9,1,2,3,4,5],[9,1,2,3,4,5,6,7,8]
+  ];
+}
+function sdkFromString(s) {
+  var b = [], k = 0, r, c, ch;
+  for (r = 0; r < 9; r++) {
+    b[r] = [];
+    for (c = 0; c < 9; c++) {
+      ch = s.charAt(k++);
+      b[r][c] = (ch === '.' || ch === '0') ? 0 : +ch;
+    }
+  }
+  return b;
+}
+function sdkCellHidden(g, board, r, c) {
+  if (board[r][c] || g[r][c].size < 2) return false;
+  var nums = Array.from(g[r][c]), ni, n, i, br, bc, a, b0, count;
+  for (ni = 0; ni < nums.length; ni++) {
+    n = nums[ni];
+    count = 0;
+    for (i = 0; i < 9; i++) if (!board[r][i] && g[r][i].has(n)) count++;
+    if (count === 1) return true;
+    count = 0;
+    for (i = 0; i < 9; i++) if (!board[i][c] && g[i][c].has(n)) count++;
+    if (count === 1) return true;
+    count = 0;
+    br = Math.floor(r / 3) * 3; bc = Math.floor(c / 3) * 3;
+    for (a = 0; a < 3; a++) for (b0 = 0; b0 < 3; b0++) if (!board[br + a][bc + b0] && g[br + a][bc + b0].has(n)) count++;
+    if (count === 1) return true;
+  }
+  return false;
+}
+function sdkNakedOnly(board) {
+  var b = board.map(function (row) { return row.slice(); });
+  var g = sdkFillCands(b), guard = 0, r, c, placed, n;
+  while (guard++ < 120) {
+    placed = false;
+    for (r = 0; r < 9; r++) for (c = 0; c < 9; c++) {
+      if (b[r][c] || g[r][c].size !== 1) continue;
+      n = Array.from(g[r][c])[0];
+      sdkPlace(b, g, r, c, n);
+      placed = true;
+    }
+    if (!placed) break;
+  }
+  return b;
+}
+function sdkHiddenDemo() {
+  var b = sdkFromString('4.....8.5.3..........7......2.....6.....8.4......1.......6.3.7.5..2.....1.4......');
+  var rates = sdkRateCells(b);
+  var naked = sdkNakedOnly(b);
+  if (rates[5][1] === 2 && !naked[5][1]) return { r: 5, c: 1, rate: 2 };
+  return null;
+}
+function sdkRandomEv(board) {
+  var rate = sdkRateCells(board), ev = 0, cells = 0, r, c, gain;
+  for (r = 0; r < 9; r++) for (c = 0; c < 9; c++) if (!board[r][c]) {
+    gain = SCORE_BASE * (rate[r][c] || 4) * 2;
+    ev += gain / 9 - (SCORE_PENALTY * 8) / 9;
+    cells++;
+  }
+  return { ev: ev, cells: cells, penalty: SCORE_PENALTY, base: SCORE_BASE };
+}
+function logicalBoard() {
+  var b = [], r, c, v;
+  for (r = 0; r < 9; r++) {
+    b[r] = [];
+    for (c = 0; c < 9; c++) {
+      v = puzzle[r][c];
+      if (!v && userGrid[r][c] && userGrid[r][c] === solved[r][c]) v = userGrid[r][c];
+      b[r][c] = v || 0;
+    }
+  }
+  return b;
+}
+var swallowHandoff = false;
+var handoffGesture = false;
+var goHold = false;
+var goTimer = 0;
+var goEpoch = 0;
+var ghostClick = false;
+var lastMatchDigit = 0;
+function startControlTarget(e) {
+  var t = e && e.target;
+  return !!(t && t.closest && t.closest('#handoffGo'));
+}
+function leaveControlTarget(e) {
+  var t = e && e.target;
+  return !!(t && t.closest && t.closest('#handoffEnd, #vsBtn, #vsConfirm, #vsResume'));
+}
+function setTurnPhase(next) {
+  if (!match) return false;
+  var cur = match.phase || 'handoff';
+  if (cur === next) return true;
+  var allowed = {
+    handoff: { go: 1, ended: 1 },
+    go: { live: 1, handoff: 1, ended: 1 },
+    live: { handoff: 1, ended: 1 },
+    ended: {}
+  };
+  if (!allowed[cur] || !allowed[cur][next]) return false;
+  match.phase = next;
+  return true;
+}
+function handoffUp() {
+  var hand = document.getElementById('handoff');
+  return !!(match && !match.over && match.phase !== 'live' && hand && !hand.hidden);
+}
+function turnCovered() {
+  return goHold || handoffUp();
+}
+function clearGo() {
+  goHold = false;
+  goEpoch += 1;
+  if (goTimer) { clearTimeout(goTimer); goTimer = 0; }
+  var btn = document.getElementById('handoffGo');
+  if (btn) btn.textContent = 'Start turn';
+  var el = document.getElementById('handoff');
+  if (el) el.classList.remove('is-go');
+}
+function armGo() {
+  if (goHold || !match || match.over || match.ready) return;
+  if (match.phase !== 'handoff') return;
+  if (!setTurnPhase('go')) return;
+  swallowHandoff = false;
+  handoffGesture = false;
+  goHold = true;
+  goEpoch += 1;
+  var epoch = goEpoch;
+  var x = window.scrollX, y = window.scrollY;
+  var btn = document.getElementById('handoffGo');
+  if (btn) btn.textContent = 'Go!';
+  var el = document.getElementById('handoff');
+  if (el) el.classList.add('is-go');
+  blockBoardUntil = 0;
+  blurFocus();
+  pinScroll(x, y);
+  goTimer = setTimeout(function () { releaseGo(epoch); }, 300);
+}
+function releaseGo(epoch) {
+  if (epoch !== goEpoch) return;
+  goTimer = 0;
+  goHold = false;
+  blockBoardUntil = 0;
+  swallowHandoff = false;
+  var btn = document.getElementById('handoffGo');
+  if (btn) btn.textContent = 'Start turn';
+  var el = document.getElementById('handoff');
+  if (el) el.classList.remove('is-go');
+  var scrollX = window.scrollX, scrollY = window.scrollY;
+  if (!match || match.over || match.phase !== 'go') return;
+  if (!setTurnPhase('live')) return;
+  match.scored = false;
+  match.switching = false;
+  match.ready = true;
+  turnStamp = Date.now();
+  selected = null;
+  ghostClick = true;
+  setTimeout(function () { ghostClick = false; }, 500);
+  blurFocus();
+  if (el) el.hidden = true;
+  document.body.classList.remove('is-handoff');
+  forceScroll(scrollX, scrollY);
+  pinScroll(scrollX, scrollY);
+  highlightCells();
+  updateTimer();
+  updateScoreBar();
+  save();
+}
+function blurFocus() {
+  var ae = document.activeElement;
+  if (ae && ae.blur && ae !== document.body && ae !== document.documentElement) {
+    try { ae.blur(); } catch (e) {}
+  }
+}
+function hideMatchUi() {
+  var ids = ['handoff', 'vsResult', 'vsSetup', 'vsConfirm', 'vsResume'];
+  for (var i = 0; i < ids.length; i++) {
+    var el = document.getElementById(ids[i]);
+    if (el) el.hidden = true;
+  }
+  document.body.classList.remove('is-handoff');
+  document.body.classList.remove('sdk-match');
+}
+function resetMatch() {
+  if (match) clearMatchSave();
+  match = null;
+  swallowHandoff = false;
+  handoffGesture = false;
+  clearGo();
+  blockBoardUntil = 0;
+  hideMatchUi();
+  paused = false;
+  var frame = document.getElementById('boardFrame');
+  if (frame) frame.classList.remove('is-paused', 'win-glow');
+  resetWinArt();
+  clearSideBursts();
+  var ov = document.getElementById('pauseOverlay');
+  if (ov) ov.hidden = true;
+  blurFocus();
+  syncMatchLocks();
+}
+function strikeMarkup(n) {
+  var s = '', i;
+  n = n > 3 ? 3 : n;
+  for (i = 0; i < 3; i++) s += '<i class="' + (i < n ? 'on' : '') + '"></i>';
+  return s;
+}
+function updateScoreBar() {
+  var bar = document.getElementById('scoreBar');
+  if (!bar) return;
+  if (!match) {
+    document.body.classList.remove('sdk-match');
+    fitPhoneBoard();
+    return;
+  }
+  document.body.classList.add('sdk-match');
+  var i, side, val, dots;
+  for (i = 0; i < 2; i++) {
+    side = document.getElementById('scoreP' + i);
+    val = document.getElementById('scoreVal' + i);
+    dots = document.getElementById('strikeDots' + i);
+    if (val) val.textContent = String(match.p[i].score);
+    if (side) side.classList.toggle('is-active', i === match.turn && !match.over);
+    if (dots) {
+      dots.hidden = !match.strikes;
+      dots.innerHTML = match.strikes ? strikeMarkup(match.p[i].mistakes) : '';
+    }
+  }
+  fitPhoneBoard();
+}
+function reflectToggle(input) {
+  if (!input) return;
+  if (input.id === 'setAuto') input.checked = !!settings.autoNotes;
+  else if (input.id === 'setLimit') input.checked = !!settings.mistakeLimit;
+  else if (input.id === 'setPlanets') input.checked = !!settings.planets;
+  else if (input.id === 'setSound') input.checked = !!settings.sound;
+  else if (input.id === 'setHighlight') input.checked = !!settings.highlight;
+  else if (input.id === 'setReduce') input.checked = reducedMotion();
+  else if (input.id === 'setNumberFirst') input.checked = !!settings.numberFirst;
+}
+function syncMatchLocks() {
+  var vsBtn = document.getElementById('vsBtn');
+  if (vsBtn) vsBtn.textContent = (match && !match.over) ? 'End match' : '2 Players';
+  var hint = document.getElementById('hintBtn');
+  var labels = {
+    setNumberFirst: 'Number first',
+    setLimit: 'Mistake limit (3)',
+    setAuto: 'Auto notes',
+    setPlanets: 'Planet digits',
+    setSound: 'Sound',
+    setHighlight: 'Highlight matches',
+    setReduce: 'Reduced motion'
+  };
+  var rows = document.querySelectorAll('#settingsCard .toggle-row');
+  if (match) {
+    if (hint) { hint.disabled = true; hint.textContent = 'Hint off'; }
+    var noteBtn = document.getElementById('noteBtn');
+    if (noteBtn) { noteBtn.disabled = true; noteBtn.textContent = 'Notes: OFF'; }
+    rows.forEach(function (row) {
+      var input = row.querySelector('input');
+      var label = row.querySelector('span:not(.lock-tag)');
+      if (input && input.id === 'setNumberFirst') {
+        var kept = row.querySelector('.lock-tag');
+        if (kept) kept.remove();
+        row.classList.remove('is-locked');
+        input.disabled = false;
+        reflectToggle(input);
+        if (label) label.textContent = 'Number first';
+        return;
+      }
+      row.classList.add('is-locked');
+      if (input) input.disabled = true;
+      reflectToggle(input);
+      if (label && input && labels[input.id]) label.textContent = labels[input.id];
+      var tag = row.querySelector('.lock-tag');
+      if (!tag) {
+        tag = document.createElement('span');
+        tag.className = 'lock-tag';
+        row.appendChild(tag);
+      }
+      tag.textContent = 'Locked during match';
+    });
+  } else {
+    if (hint) hint.disabled = false;
+    rows.forEach(function (row) {
+      var input = row.querySelector('input');
+      var label = row.querySelector('span:not(.lock-tag)');
+      var tag = row.querySelector('.lock-tag');
+      if (tag) tag.remove();
+      row.classList.remove('is-locked');
+      if (!input) return;
+      input.disabled = false;
+      reflectToggle(input);
+      if (label && labels[input.id]) label.textContent = labels[input.id];
+    });
+  }
+  updateScoreBar();
+}
+function showHandoff() {
+  if (!match || match.over) return;
+  clearGo();
+  if (!setTurnPhase('handoff')) return;
+  match.ready = false;
+  match.switching = false;
+  notesMode = false;
+  selected = null;
+  highlightCells();
+  blurFocus();
+  var next = match.turn;
+  var prev = 1 - next;
+  document.getElementById('handoffWho').textContent = 'Player ' + (next + 1);
+  var delta = document.getElementById('handoffDelta');
+  if (match.lastNote) {
+    delta.hidden = false;
+    delta.textContent = 'P' + (prev + 1) + ' scored ' + match.lastNote + ' this turn';
+  } else if (delta) {
+    delta.hidden = true;
+    delta.textContent = '';
+  }
+  document.getElementById('handoffScore').textContent = 'Score P1 ' + match.p[0].score + ' / P2 ' + match.p[1].score;
+  document.getElementById('handoff').hidden = false;
+  document.getElementById('vsResult').hidden = true;
+  document.body.classList.add('is-handoff');
+  document.body.classList.add('sdk-match');
+  updateTimer();
+  updateScoreBar();
+  syncMatchLocks();
+}
+function readyTurn() {
+  if (swallowHandoff || !match || match.over || match.ready) return;
+  if (match.phase !== 'go') return;
+  releaseGo(goEpoch);
+}
+function finishMatch(winner, reason) {
+  if (!match || match.over) return;
+  setTurnPhase('ended');
+  match.over = true;
+  clearMatchSave();
+  match.ready = false;
+  match.switching = true;
+  match.winner = winner;
+  selected = null;
+  clearInterval(timerInt);
+  clearGo();
+  document.body.classList.remove('is-handoff');
+  document.getElementById('handoff').hidden = true;
+  var why = reason === 'strikes' ? 'Three strikes' : 'Board finished';
+  if (winner == null) why = 'Board finished · tie';
+  document.getElementById('vsWinner').textContent = winner == null ? 'Tie' : ('Player ' + (winner + 1) + ' wins');
+  document.getElementById('vsWhy').textContent = why;
+  document.getElementById('vsFinal').textContent = 'P1 ' + match.p[0].score + ' · P2 ' + match.p[1].score;
+  document.getElementById('vsStats').textContent = playerStat(0) + ' · ' + playerStat(1);
+  document.getElementById('vsResult').hidden = false;
+  done = true;
+  updateScoreBar();
+  showWinAnimation();
+  celebrateResult(winner);
+  sfxWin();
+  ghostClick = true;
+  setTimeout(function () { ghostClick = false; }, 500);
+}
+function clearSideBursts() {
+  var i, side;
+  for (i = 0; i < 2; i++) {
+    side = document.getElementById('scoreP' + i);
+    if (side) side.classList.remove('is-burst-big', 'is-burst-soft');
+  }
+}
+function celebrateResult(winner) {
+  var box = document.getElementById('vsCelebrate');
+  var img = document.getElementById('vsNova');
+  var art = document.getElementById('vsConstel');
+  clearSideBursts();
+  if (!box || !img) return;
+  box.classList.remove('is-win', 'is-tie');
+  if (reducedMotion()) {
+    box.hidden = true;
+    img.hidden = true;
+    img.removeAttribute('src');
+    return;
+  }
+  var tie = winner == null;
+  box.classList.add(tie ? 'is-tie' : 'is-win');
+  box.hidden = false;
+  if (art && !art.getAttribute('src')) art.src = THEME.constellation;
+  img.hidden = false;
+  var side, i;
+  if (tie) {
+    for (i = 0; i < 2; i++) {
+      side = document.getElementById('scoreP' + i);
+      if (side) side.classList.add('is-burst-soft');
+    }
+  } else if (winner === 0 || winner === 1) {
+    side = document.getElementById('scoreP' + winner);
+    if (side) side.classList.add('is-burst-big');
+  }
+  var hold = tie ? [50, 70, 110] : [120, 180, 460];
+  var step = 0;
+  function next() {
+    if (step >= 3) { img.hidden = true; return; }
+    img.src = THEME.nova(step + 1);
+    var wait = hold[step];
+    step += 1;
+    setTimeout(next, wait);
+  }
+  next();
+}
+function playerStat(i) {
+  var p = match.p[i];
+  var n = p.mistakes;
+  return 'P' + (i + 1) + ' ' + (p.corrects || 0) + ' correct, ' + n + ' mistake' + (n === 1 ? '' : 's');
+}
+function freshMatch(strikes, starter) {
+  starter = starter ? 1 : 0;
+  return {
+    fresh: true,
+    strikes: !!strikes,
+    switching: false,
+    starter: starter,
+    p: [
+      { score: 0, mistakes: 0, corrects: 0, secs: 0 },
+      { score: 0, mistakes: 0, corrects: 0, secs: 0 }
+    ],
+    turn: starter,
+    ready: false,
+    over: false,
+    phase: 'handoff',
+    lastNote: '',
+    undos: [[], []]
+  };
+}
+var confirmAction = null;
+function stripDebugParams() {
+  var params = new URLSearchParams(location.search);
+  if (!params.has('debug') && !params.has('tie')) return;
+  params.delete('debug');
+  params.delete('tie');
+  var search = params.toString();
+  history.replaceState(history.state, '', location.pathname + (search ? '?' + search : '') + location.hash);
+}
+function exitToSolo() {
+  stripDebugParams();
+  var route = routeFromUrl();
+  var saved = readSave(route.id);
+  var finished = !!(saved && (saved.done || saved.failed || saved.celebrated));
+  resetMatch();
+  done = false;
+  failed = false;
+  celebrated = false;
+  suppressWinAnim = false;
+  quitSent = true;
+  if (finished) playRandom((saved && saved.diff) || route.diff || 'easy');
+  else begin(route);
+}
+function endMatchToSolo() {
+  var back = snapshotRoute(match && match.solo);
+  stripDebugParams();
+  resetMatch();
+  done = false;
+  failed = false;
+  celebrated = false;
+  suppressWinAnim = false;
+  quitSent = true;
+  if (!back) {
+    exitToSolo();
+    return;
+  }
+  var next = urlFor(back);
+  if (location.pathname + location.search !== next) history.replaceState({ id: back.id }, '', next);
+  begin(back);
+}
+function askLeave(copy, action, goLabel) {
+  if (!(match && !match.over)) { action(); return; }
+  confirmAction = action;
+  goLabel = goLabel || 'Leave match';
+  document.getElementById('vsConfirmCopy').textContent = copy;
+  document.getElementById('vsConfirmGo').textContent = goLabel;
+  document.getElementById('vsConfirmTitle').textContent = goLabel === 'End match' ? 'End this match?' : 'Leave this match?';
+  document.getElementById('vsConfirm').hidden = false;
+  focusNoScroll(document.getElementById('vsConfirmStay'));
+}
+function rematch(same) {
+  if (!match) return;
+  var strikes = match.strikes;
+  var starter = 1 - (match.starter ? 1 : 0);
+  swallowHandoff = false;
+  handoffGesture = false;
+  paused = false;
+  done = false;
+  failed = false;
+  document.getElementById('vsResult').hidden = true;
+  resetWinArt();
+  var frame = document.getElementById('boardFrame');
+  if (frame) frame.classList.remove('win-glow', 'is-paused');
+  match = freshMatch(strikes, starter);
+  if (!same) {
+    playRandom(diff || 'easy');
+    return;
+  }
+  match.fresh = false;
+  userGrid = puzzle.map(function (row) { return row.slice(); });
+  notes = emptyNotes();
+  undoStack = [];
+  mistakes = 0;
+  hintsLeft = 3;
+  timerSecs = 0;
+  selected = null;
+  notesMode = false;
+  renderBoard();
+  buildNumpad();
+  updateTimer();
+  updateMistakes();
+  showHandoff();
+  startTimer();
+  save();
+}
+function commitMatchTurn(n, correct, wrong, prev, rated) {
+  if (!match || match.over || match.scored) return;
+  if (match.phase === 'live' && !setTurnPhase('handoff')) return;
+  if (match.phase !== 'handoff') return;
+  match.scored = true;
+  match.ready = false;
+  var p = match.p[match.turn];
+  var mult = speedMult(Date.now() - turnStamp);
+  if (correct && prev !== n) {
+    var pts = Math.round(SCORE_BASE * rated * mult);
+    p.score += pts;
+    p.corrects += 1;
+    match.lastNote = '+' + pts;
+  } else if (wrong) {
+    p.score -= SCORE_PENALTY;
+    p.mistakes += 1;
+    match.lastNote = '-' + SCORE_PENALTY;
+    if (match.strikes && p.mistakes >= 3) {
+      selected = null;
+      highlightCells();
+      updateScoreBar();
+      save();
+      finishMatch(1 - match.turn, 'strikes');
+      return;
+    }
+  } else {
+    match.lastNote = '';
+  }
+  selected = null;
+  highlightCells();
+  if (isSolved()) {
+    var w = match.p[0].score === match.p[1].score ? null : (match.p[0].score > match.p[1].score ? 0 : 1);
+    if (match.debugTie) {
+      match.p[1].score = match.p[0].score;
+      w = null;
+    }
+    save();
+    finishMatch(w, 'score');
+    return;
+  }
+  match.turn = 1 - match.turn;
+  save();
+  showHandoff();
+  swallowHandoff = true;
+}
+function startMatch(strikes) {
+  swallowHandoff = false;
+  handoffGesture = false;
+  paused = false;
+  match = freshMatch(strikes, 0);
+  match.solo = snapshotRoute(routeFromUrl());
+  var setup = document.getElementById('vsSetup');
+  if (setup) setup.hidden = true;
+  playRandom(diff || 'easy');
+}
+function speedMult(ms) {
+  var s = ms / 1000;
+  if (s >= 30) return 1;
+  return 2 - s / 30;
+}
+function clearPeerNotes(r, c, n) {
+  var i, j;
+  for (i = 0; i < 9; i++) {
+    notes[r][i].delete(n);
+    notes[i][c].delete(n);
+  }
+  var br = Math.floor(r / 3) * 3, bc = Math.floor(c / 3) * 3;
+  for (i = 0; i < 3; i++) for (j = 0; j < 3; j++) notes[br + i][bc + j].delete(n);
+}
 
-document.querySelectorAll('.diff-btn').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    document.querySelectorAll('.diff-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active'); newGame(btn.dataset.d);
+function recordDailySolve() {
+  var today = localDateStr();
+  if (lsGet('sdk_solved_' + today) === '1') return +lsGet('sdk_streak') || 1;
+  var last = lsGet('sdk_streak_last') || '';
+  var streak = +lsGet('sdk_streak') || 0;
+  streak = last === yesterdayStr() ? streak + 1 : 1;
+  lsSet('sdk_solved_' + today, '1');
+  lsSet('sdk_streak', String(streak));
+  lsSet('sdk_streak_last', today);
+  return streak;
+}
+
+function postCount(id, event) {
+  fetch('/api/sudoku-stats', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: id, event: event })
+  }).catch(function () {});
+}
+function loadCompletion(id) {
+  var el = document.getElementById('completeStat');
+  el.hidden = true;
+  el.textContent = '';
+  fetch('/api/sudoku-stats?id=' + encodeURIComponent(id), { headers: { Accept: 'application/json' } })
+    .then(function (res) {
+      if (!res.ok) return null;
+      var type = res.headers.get('content-type') || '';
+      if (type.indexOf('application/json') === -1) return null;
+      return res.json();
+    })
+    .then(function (data) {
+      if (!data || puzzleId !== id) return;
+      if (typeof data.starts !== 'number' || typeof data.finishes !== 'number') return;
+      if (!isFinite(data.starts) || !isFinite(data.finishes) || data.starts < 20 || data.finishes < 0) return;
+      var finishes = data.finishes > data.starts ? data.starts : data.finishes;
+      var pct = Math.round(((data.starts - finishes) / data.starts) * 100);
+      if (!isFinite(pct)) return;
+      el.textContent = pct + '% of players don\'t complete this puzzle';
+      el.hidden = false;
+    })
+    .catch(function () {});
+}
+
+function abandon() {
+  if (!live || done || quitSent || !puzzleId) return;
+  quitSent = true;
+  trackSudoku('sudoku_quit', {
+    puzzle_id: puzzleId,
+    difficulty: diff,
+    daily: isDaily ? 1 : 0,
+    seconds: timerSecs,
+    reason: 'abandon',
+    transport_type: 'beacon'
   });
+  save();
+}
+
+function firstEmpty() {
+  for (var r = 0; r < 9; r++) for (var c = 0; c < 9; c++) if (!userGrid[r][c]) return { r: r, c: c };
+  return { r: 0, c: 0 };
+}
+function resetWinArt() {
+  var trail = document.getElementById('trail');
+  trail.classList.remove('on');
+  trail.innerHTML = '';
+  var art = document.getElementById('constel');
+  art.classList.remove('on');
+  art.hidden = true;
+  var nova = document.getElementById('nova');
+  nova.hidden = true;
+  nova.removeAttribute('src');
+}
+
+function begin(route) {
+  if (debugRequested()) {
+    applyDebugBoard();
+    return;
+  }
+  var heldMatch = !match && readMatchSave();
+  var skipSoloWrite = !!(heldMatch && heldMatch.id === route.id);
+  if (match && !match.fresh) resetMatch();
+  clearInterval(timerInt);
+  document.getElementById('winBanner').classList.remove('show');
+  document.getElementById('failBanner').classList.remove('show');
+  resetWinArt();
+  paused = false;
+  document.getElementById('boardFrame').classList.remove('is-paused', 'win-glow');
+  document.getElementById('pauseOverlay').hidden = true;
+  syncTip();
+  suppressWinAnim = false;
+
+  var saved = readSave(route.id);
+  diff = route.diff;
+  isDaily = !!route.daily;
+  puzzleId = route.id;
+  puzzleSeed = route.seed;
+  live = true;
+  quitSent = false;
+  undoStack = [];
+  limitWaived = false;
+
+  if (saved) {
+    puzzle = saved.puzzle;
+    solved = saved.solved;
+    userGrid = saved.user;
+    notes = notesFromJSON(saved.notes);
+    mistakes = +saved.mistakes || 0;
+    hintsLeft = typeof saved.hintsLeft === 'number' ? saved.hintsLeft : 3;
+    timerSecs = +saved.timerSecs || 0;
+    notesMode = !!saved.notesMode && !settings.autoNotes;
+    done = !!saved.done;
+    failed = !!saved.failed;
+    paused = false;
+    reportedStart = !!saved.reportedStart;
+    reportedFinish = !!saved.reportedFinish;
+    countedPlay = !!saved.countedPlay;
+    countedWin = !!saved.countedWin;
+    celebrated = !!saved.celebrated || !!saved.done;
+    limitWaived = !!saved.limitWaived;
+    suppressWinAnim = !!(saved.done || saved.celebrated);
+    selected = saved.selected && typeof saved.selected.r === 'number' ? saved.selected : firstEmpty();
+    if (settings.autoNotes && !done && !match) applyAutoNotes();
+  } else {
+    var made = makePuzzle(route.diff, route.seed);
+    puzzle = made.puzzle;
+    solved = made.solved;
+    userGrid = puzzle.map(function (row) { return row.slice(); });
+    notes = emptyNotes();
+    mistakes = 0;
+    hintsLeft = 3;
+    timerSecs = 0;
+    notesMode = false;
+    done = false;
+    failed = false;
+    paused = false;
+    reportedStart = true;
+    reportedFinish = false;
+    countedWin = false;
+    countedPlay = false;
+    celebrated = false;
+    selected = firstEmpty();
+    if (settings.autoNotes && !match) applyAutoNotes();
+    if (!skipSoloWrite) {
+      postCount(puzzleId, 'start');
+      trackSudoku('sudoku_start', {
+        puzzle_id: puzzleId,
+        difficulty: diff,
+        daily: isDaily ? 1 : 0
+      });
+    }
+  }
+
+  var frame = document.getElementById('boardFrame');
+  frame.dataset.puzzleId = puzzleId;
+  frame.dataset.daily = isDaily ? '1' : '0';
+  frame.dataset.seed = String(puzzleSeed);
+  syncChrome();
+  renderBoard();
+  buildNumpad();
+  updateTimer();
+  updateMistakes();
+  renderStats();
+  loadCompletion(puzzleId);
+  if (done && !failed) {
+    fillWinCopy(false, isDaily ? (+lsGet('sdk_streak') || 0) : 0);
+    document.getElementById('winBanner').classList.add('show');
+    document.getElementById('boardFrame').classList.add('win-glow');
+  } else if (failed) {
+    document.getElementById('failBanner').classList.add('show');
+  } else {
+    document.getElementById('pauseOverlay').hidden = !paused;
+    startTimer();
+  }
+  if (match && match.fresh) {
+    match.fresh = false;
+    match.ready = false;
+    showHandoff();
+  } else if (!match) hideMatchUi();
+  if (match || !skipSoloWrite) save();
+  fitPhoneBoard();
+}
+
+function syncChrome() {
+  document.querySelectorAll('.diff-btn').forEach(function (btn) {
+    var on = btn.dataset.d === diff;
+    btn.classList.toggle('active', on);
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+  var dailyBtn = document.getElementById('dailyBtn');
+  var solvedToday = lsGet('sdk_solved_' + localDateStr()) === '1';
+  if (isDaily) {
+    dailyBtn.hidden = false;
+    dailyBtn.textContent = solvedToday ? "Today's puzzle \u2713" : "Today's puzzle";
+    dailyBtn.classList.toggle('is-done', solvedToday);
+    dailyBtn.classList.toggle('active', true);
+  } else {
+    dailyBtn.hidden = true;
+    dailyBtn.classList.remove('is-done', 'active');
+  }
+  var eyebrow = document.getElementById('eyebrow');
+  if (eyebrow) eyebrow.textContent = isDaily ? 'Daily puzzle' : 'Free play';
+  document.getElementById('puzzleLabel').textContent = isDaily ? 'Daily' : 'Puzzle';
+  var today = new Date();
+  document.getElementById('dateDisp').textContent = isDaily
+    ? today.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    : puzzleId;
+  var noteBtn = document.getElementById('noteBtn');
+  if (settings.autoNotes) {
+    noteBtn.textContent = 'Notes: Auto';
+    noteBtn.disabled = true;
+  } else {
+    noteBtn.disabled = false;
+    noteBtn.textContent = 'Notes: ' + (notesMode ? 'ON' : 'OFF');
+  }
+  noteBtn.classList.toggle('note-active', notesMode || settings.autoNotes);
+  document.getElementById('hintBtn').textContent = 'Hint (' + hintsLeft + ' left)';
+  document.getElementById('pauseBtn').textContent = paused ? 'Resume' : 'Pause';
+  document.getElementById('pauseBtn').setAttribute('aria-pressed', paused ? 'true' : 'false');
+  syncMatchLocks();
+}
+
+function renderStats() {
+  var stats = loadStats();
+  var streak = +lsGet('sdk_streak') || 0;
+  document.getElementById('streakDisp').textContent = streak > 0
+    ? 'Daily streak: ' + streak + (streak === 1 ? ' day' : ' days')
+    : 'Daily streak: start today';
+  var pct = stats.played ? Math.round((stats.won / stats.played) * 100) : 0;
+  document.getElementById('statsLine').textContent = stats.played
+    ? ('Played ' + stats.played + ' · Won ' + stats.won + ' (' + pct + '%)')
+    : 'No games yet';
+  var html = '';
+  ['easy', 'medium', 'hard', 'expert'].forEach(function (name) {
+    var bestRaw = lsGet('sdk_best_' + name);
+    var best = bestRaw == null || bestRaw === '' ? null : parseInt(bestRaw, 10);
+    var row = stats.byDiff[name];
+    var avg = row.won ? Math.round(row.seconds / row.won) : null;
+    var label = name.charAt(0).toUpperCase() + name.slice(1);
+    html += '<div class="sdk-diffstat"><span>' + label + '</span><span>Best ' + (best == null || !isFinite(best) ? '—' : fmtTime(best)) + '</span><span>Avg ' + (avg == null || !isFinite(avg) ? '—' : fmtTime(avg)) + '</span></div>';
+  });
+  document.getElementById('diffStats').innerHTML = html;
+  var cal = '';
+  for (var i = 6; i >= 0; i--) {
+    var day = new Date();
+    day.setDate(day.getDate() - i);
+    var on = lsGet('sdk_solved_' + localDateStr(day)) === '1';
+    cal += '<span class="cal-day' + (on ? ' on' : '') + '"' + (i === 0 ? ' aria-current="date"' : '') + '>' + day.getDate() + '</span>';
+  }
+  document.getElementById('streakCal').innerHTML = cal;
+}
+
+function installTapWatch() {
+  if (installTapWatch.done) return;
+  installTapWatch.done = true;
+  function noteMove(id, x, y) {
+    var g = activeTap;
+    if (!g || (id != null && id !== g.id)) return;
+    var dx = x - g.x;
+    var dy = y - g.y;
+    if (dx * dx + dy * dy > TAP_SLOP * TAP_SLOP) g.moved = true;
+    if (window.scrollX !== g.sx || window.scrollY !== g.sy) g.moved = true;
+  }
+  document.addEventListener('pointermove', function (e) {
+    noteMove(e.pointerId, e.clientX, e.clientY);
+  }, { capture: true, passive: true });
+  document.addEventListener('touchmove', function (e) {
+    var t = e.changedTouches && e.changedTouches[0];
+    if (!t) return;
+    noteMove(null, t.clientX, t.clientY);
+  }, { capture: true, passive: true });
+  window.addEventListener('scroll', function () {
+    if (activeTap) activeTap.moved = true;
+  }, true);
+  function endTap(e, cancelled) {
+    var g = activeTap;
+    if (!g || e.pointerId !== g.id) return;
+    activeTap = null;
+    blockTapClick = Date.now() + 1000;
+    if (cancelled) return;
+    var dx = e.clientX - g.x;
+    var dy = e.clientY - g.y;
+    if (g.moved) return;
+    if (dx * dx + dy * dy > TAP_SLOP * TAP_SLOP) return;
+    if (window.scrollX !== g.sx || window.scrollY !== g.sy) return;
+    g.act(e);
+  }
+  document.addEventListener('pointerup', function (e) { endTap(e, false); }, true);
+  document.addEventListener('pointercancel', function (e) { endTap(e, true); }, true);
+}
+function armTap(el, act) {
+  installTapWatch();
+  el.addEventListener('pointerdown', function (e) {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    activeTap = {
+      id: e.pointerId,
+      x: e.clientX,
+      y: e.clientY,
+      sx: window.scrollX,
+      sy: window.scrollY,
+      moved: false,
+      fresh: true,
+      act: act
+    };
+  });
+  el.addEventListener('click', function (e) {
+    if (Date.now() < blockTapClick || e.detail !== 0) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    act(e);
+  });
+}
+function fitPhoneBoard() {
+  var root = document.documentElement;
+  if (window.matchMedia && window.matchMedia('(min-width: 801px)').matches) {
+    root.style.removeProperty('--sdk-fit');
+    return;
+  }
+  var probe = document.getElementById('sdkVhProbe');
+  var frame = document.getElementById('boardFrame');
+  var actions = document.querySelector('.action-btns');
+  if (!probe || !frame || !actions) return;
+  var vh = probe.getBoundingClientRect().height;
+  var frameRect = frame.getBoundingClientRect();
+  var above = frameRect.top + window.scrollY;
+  var below = actions.getBoundingClientRect().bottom - frameRect.bottom;
+  var cap = Math.floor(Math.min(window.innerWidth * 0.92, vh - above - below - 2));
+  if (cap < 72) {
+    root.style.removeProperty('--sdk-fit');
+    return;
+  }
+  var next = cap + 'px';
+  if (root.style.getPropertyValue('--sdk-fit') !== next) root.style.setProperty('--sdk-fit', next);
+}
+function digitMarkup(n) {
+  if (!settings.planets) return String(n);
+  return '<span class="face"><img class="planet p' + n + '" alt="" width="64" height="64" loading="lazy" decoding="async" src="' + THEME.planet(n) + '"><span class="num">' + n + '</span></span>';
+}
+function renderBoard() {
+  var board = document.getElementById('board');
+  board.innerHTML = '';
+  for (var r = 0; r < 9; r++) for (var c = 0; c < 9; c++) {
+    var cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.dataset.r = r;
+    cell.dataset.c = c;
+    cell.setAttribute('role', 'gridcell');
+    var orig = puzzle[r][c];
+    var user = userGrid[r][c];
+    var label = 'Row ' + (r + 1) + ', column ' + (c + 1);
+    if (orig !== 0) {
+      cell.classList.add('given');
+      cell.innerHTML = digitMarkup(orig);
+      label += ', given ' + orig;
+    } else if (user !== 0) {
+      cell.classList.add('user-num');
+      if (user !== solved[r][c]) cell.classList.add('error');
+      cell.innerHTML = digitMarkup(user);
+      label += ', ' + user;
+    } else if (notes[r][c] && notes[r][c].size > 0) {
+      var wrap = document.createElement('div');
+      wrap.className = 'cell-notes';
+      for (var n = 1; n <= 9; n++) {
+        var dot = document.createElement('div');
+        dot.className = 'note-dot';
+        dot.textContent = notes[r][c].has(n) ? String(n) : '';
+        wrap.appendChild(dot);
+      }
+      cell.appendChild(wrap);
+      label += ', notes';
+    } else {
+      label += ', empty';
+    }
+    cell.setAttribute('aria-label', label);
+    cell.tabIndex = -1;
+    (function (rr, cc) {
+      armTap(cell, function () { onCellTap(rr, cc); });
+    })(r, c);
+    board.appendChild(cell);
+  }
+  highlightCells();
+}
+function selectCell(r, c) {
+  if (paused || boardBlocked() || settingsOn()) return;
+  if (match && (match.phase !== 'live' || !match.ready)) return;
+  selected = { r: r, c: c };
+  highlightCells();
+  focusNoScroll(cellEl(r, c));
+}
+function onCellTap(r, c) {
+  if (paused || boardBlocked() || settingsOn()) return;
+  if (match && (match.phase !== 'live' || !match.ready)) return;
+  if (settings.numberFirst && !done) {
+    var shown = puzzle[r][c] || userGrid[r][c] || 0;
+    if (shown) {
+      selected = { r: r, c: c };
+      stickyDigit = shown;
+      highlightCells();
+      paintPad();
+      focusNoScroll(cellEl(r, c));
+      return;
+    }
+    if (stickyDigit && (!digitExhausted(stickyDigit) || notesOpen())) {
+      selected = { r: r, c: c };
+      inputNum(stickyDigit);
+      if (!done && !(match && (match.over || match.phase !== 'live'))) focusNoScroll(cellEl(r, c));
+      return;
+    }
+  }
+  selectCell(r, c);
+}
+function highlightCells() {
+  document.querySelectorAll('.cell').forEach(function (cell) {
+    cell.classList.remove('selected', 'highlight', 'same-num');
+    var r = +cell.dataset.r, c = +cell.dataset.c;
+    if (!selected) return;
+    if (r === selected.r && c === selected.c) { cell.classList.add('selected'); return; }
+    if (!settings.highlight) return;
+    var inBox = Math.floor(r / 3) === Math.floor(selected.r / 3) && Math.floor(c / 3) === Math.floor(selected.c / 3);
+    if (r === selected.r || c === selected.c || inBox) cell.classList.add('highlight');
+    var selVal = userGrid[selected.r][selected.c] || puzzle[selected.r][selected.c];
+    var thisVal = userGrid[r][c] || puzzle[r][c];
+    if (selVal && selVal === thisVal) cell.classList.add('same-num');
+  });
+}
+function correctCounts() {
+  var counts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  if (!puzzle || puzzle.length !== 9 || !userGrid || !solved) return counts;
+  var r, c, value;
+  for (r = 0; r < 9; r++) for (c = 0; c < 9; c++) {
+    value = puzzle[r][c];
+    if (!value && userGrid[r][c] && userGrid[r][c] === solved[r][c]) value = userGrid[r][c];
+    if (value) counts[value]++;
+  }
+  return counts;
+}
+function digitExhausted(n) {
+  return n >= 1 && n <= 9 && correctCounts()[n] >= 9;
+}
+function notesOpen() {
+  return !!(notesMode && !settings.autoNotes && !match);
+}
+function cellCorrect(r, c) {
+  return !!(userGrid[r] && userGrid[r][c] && solved[r] && userGrid[r][c] === solved[r][c]);
+}
+function settleSticky() {
+  if (!userGrid || userGrid.length !== 9 || !solved || solved.length !== 9) return;
+  if (isSolved()) {
+    stickyDigit = 0;
+    selected = null;
+    highlightCells();
+    return;
+  }
+  if (!settings.numberFirst || !stickyDigit || !digitExhausted(stickyDigit)) return;
+  var start = stickyDigit;
+  var counts = correctCounts();
+  var i, n;
+  stickyDigit = 0;
+  for (i = 1; i <= 8; i++) {
+    n = ((start - 1 + i) % 9) + 1;
+    if (counts[n] < 9) { stickyDigit = n; return; }
+  }
+}
+function paintPad() {
+  var counts = correctCounts();
+  var n, btn, exhausted, face, label, stamp;
+  for (n = 1; n <= 9; n++) {
+    btn = document.querySelector('#numpad .num-btn[data-n="' + n + '"]');
+    if (!btn) continue;
+    exhausted = counts[n] >= 9;
+    var noteFinished = exhausted && notesOpen();
+    btn.classList.toggle('used', exhausted);
+    btn.classList.toggle('picked', !!(settings.numberFirst && stickyDigit === n));
+    btn.disabled = noteFinished ? false : (exhausted && !(settings.numberFirst && stickyDigit === n));
+    btn.setAttribute('aria-disabled', (exhausted && !noteFinished) ? 'true' : 'false');
+    if (settings.numberFirst) btn.setAttribute('aria-pressed', stickyDigit === n ? 'true' : 'false');
+    else btn.removeAttribute('aria-pressed');
+    stamp = (exhausted ? 'x' : 'o') + n;
+    if (btn.dataset.face !== stamp) {
+      btn.dataset.face = stamp;
+      face = String(n);
+      if (exhausted) face += '<i class="pad-check" aria-hidden="true">\u2713</i>';
+      btn.innerHTML = face;
+    }
+    if (exhausted) label = n + ' finished';
+    else if (settings.numberFirst) label = (notesMode ? 'Note ' : 'Select ') + n;
+    else label = 'Enter ' + n;
+    btn.setAttribute('aria-label', label);
+  }
+}
+function finishEntry() {
+  settleSticky();
+  paintPad();
+}
+function onPadDigit(num) {
+  if (boardBlocked() || settingsOn() || done || paused) return;
+  if (match && (match.phase !== 'live' || match.switching || !match.ready || match.over || match.scored)) return;
+  if (settings.numberFirst) {
+    if (digitExhausted(num) && stickyDigit !== num && !notesOpen()) return;
+    stickyDigit = stickyDigit === num ? 0 : num;
+    paintPad();
+    return;
+  }
+  if (digitExhausted(num) && !notesOpen()) return;
+  inputNum(num);
+}
+function buildNumpad() {
+  var pad = document.getElementById('numpad');
+  pad.innerHTML = '';
+  var n;
+  for (n = 1; n <= 9; n++) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'num-btn';
+    btn.dataset.n = String(n);
+    btn.textContent = String(n);
+    (function (num) {
+      armTap(btn, function () { onPadDigit(num); });
+    })(n);
+    pad.appendChild(btn);
+  }
+  var erase = document.createElement('button');
+  erase.type = 'button';
+  erase.className = 'num-btn erase';
+  erase.textContent = 'Erase';
+  erase.setAttribute('aria-label', 'Erase');
+  armTap(erase, function () { inputNum(0); });
+  pad.appendChild(erase);
+  paintPad();
+}
+function cellEl(r, c) {
+  return document.querySelector('.cell[data-r="' + r + '"][data-c="' + c + '"]');
+}
+function paintCell(r, c) {
+  var cell = cellEl(r, c);
+  if (!cell) return false;
+  var orig = puzzle[r][c];
+  var user = userGrid[r][c];
+  if (!orig && !user && notes[r][c] && notes[r][c].size) return false;
+  cell.classList.remove('given', 'user-num', 'error');
+  var label = 'Row ' + (r + 1) + ', column ' + (c + 1);
+  if (orig !== 0) {
+    cell.classList.add('given');
+    cell.innerHTML = digitMarkup(orig);
+    label += ', given ' + orig;
+  } else if (user !== 0) {
+    cell.classList.add('user-num');
+    if (user !== solved[r][c]) cell.classList.add('error');
+    cell.innerHTML = digitMarkup(user);
+    label += ', ' + user;
+  } else {
+    cell.innerHTML = '';
+    label += ', empty';
+  }
+  cell.setAttribute('aria-label', label);
+  return true;
+}
+function refreshPadUsed() {
+  paintPad();
+}
+function pushUndo() {
+  undoStack.push({
+    user: userGrid.map(function (row) { return row.slice(); }),
+    notes: notes.map(function (row) { return row.map(function (set) { return new Set(set); }); }),
+    mistakes: mistakes,
+    hintsLeft: hintsLeft
+  });
+  if (undoStack.length > 200) undoStack.shift();
+  if (match && match.undos && match.undos[match.turn]) {
+    match.undos[match.turn].push(undoSnapJSON(undoStack[undoStack.length - 1]));
+    if (match.undos[match.turn].length > 200) match.undos[match.turn].shift();
+  }
+}
+function undoMove() {
+  if (match || !undoStack.length || done || paused) return;
+  var snap = undoStack.pop();
+  userGrid = snap.user.map(function (row) { return row.slice(); });
+  notes = snap.notes.map(function (row) { return row.map(function (set) { return new Set(set); }); });
+  if (typeof snap.mistakes === 'number') mistakes = snap.mistakes;
+  hintsLeft = snap.hintsLeft;
+  updateMistakes();
+  syncChrome();
+  renderBoard();
+  buildNumpad();
+  save();
+}
+function unitCoords(type, r, c) {
+  var list = [];
+  var i, j;
+  if (type === 'row') for (i = 0; i < 9; i++) list.push([r, i]);
+  if (type === 'col') for (i = 0; i < 9; i++) list.push([i, c]);
+  if (type === 'box') {
+    var br = Math.floor(r / 3) * 3, bc = Math.floor(c / 3) * 3;
+    for (i = 0; i < 3; i++) for (j = 0; j < 3; j++) list.push([br + i, bc + j]);
+  }
+  return list;
+}
+function unitDone(type, r, c) {
+  var cells = unitCoords(type, r, c);
+  for (var i = 0; i < cells.length; i++) {
+    if (userGrid[cells[i][0]][cells[i][1]] !== solved[cells[i][0]][cells[i][1]]) return false;
+  }
+  return true;
+}
+function flashUnit(type, r, c, silent) {
+  var cells = unitCoords(type, r, c);
+  if (reducedMotion()) {
+    cells.forEach(function (rc) {
+      var el = cellEl(rc[0], rc[1]);
+      if (!el) return;
+      el.classList.add('unit-done');
+      setTimeout(function () { el.classList.remove('unit-done'); }, 450);
+    });
+    if (!silent) sfxUnit();
+    return;
+  }
+  var nova = document.getElementById('nova');
+  var left = 3.3203125, top = 3.3203125, width = 93.359375, height = 92.96875;
+  var cw = width / 9, ch = height / 9;
+  var cx, cy;
+  if (type === 'row') { cx = left + width / 2; cy = top + (r + 0.5) * ch; }
+  else if (type === 'col') { cx = left + (c + 0.5) * cw; cy = top + height / 2; }
+  else {
+    var br = Math.floor(r / 3) * 3, bc = Math.floor(c / 3) * 3;
+    cx = left + (bc + 1.5) * cw;
+    cy = top + (br + 1.5) * ch;
+  }
+  nova.style.left = cx + '%';
+  nova.style.top = cy + '%';
+  nova.hidden = false;
+  var hold = [80, 120, 200];
+  var frame = 0;
+  function step() {
+    if (frame >= 3) { nova.hidden = true; return; }
+    nova.src = THEME.nova(frame + 1);
+    nova.className = 'nova f' + (frame + 1);
+    var wait = hold[frame];
+    frame += 1;
+    setTimeout(step, wait);
+  }
+  step();
+  if (!silent) sfxUnit();
+}
+function announceUnits(r, c) {
+  var types = [];
+  if (unitDone('row', r, c)) types.push('row');
+  if (unitDone('col', r, c)) types.push('col');
+  if (unitDone('box', r, c)) types.push('box');
+  types.forEach(function (type, idx) {
+    setTimeout(function () { flashUnit(type, r, c, idx > 0); }, idx * 320);
+  });
+}
+function isSolved() {
+  for (var r = 0; r < 9; r++) for (var c = 0; c < 9; c++) {
+    if (userGrid[r][c] !== solved[r][c]) return false;
+  }
+  return true;
+}
+function readSelection() {
+  if (selected && typeof selected.r === 'number') return selected;
+  var el = document.querySelector('#board .cell.selected');
+  if (!el) return null;
+  return { r: +el.dataset.r, c: +el.dataset.c };
+}
+function inputNum(n) {
+  if (boardBlocked() || settingsOn() || !selected || typeof selected.r !== 'number' || done || paused) return;
+  if (match && (match.phase !== 'live' || match.switching || !match.ready || match.over || match.scored)) return;
+  var r = selected.r, c = selected.c;
+  if (puzzle[r][c] !== 0) return;
+  if (cellCorrect(r, c)) return;
+  if (match && n && Date.now() - lastMatchDigit < 100) return;
+  if (n && digitExhausted(n) && !notesOpen()) return;
+  markPlayed();
+  pushUndo();
+  if (notesMode && !settings.autoNotes && !match && n !== 0) {
+    if (notes[r][c].has(n)) notes[r][c].delete(n);
+    else notes[r][c].add(n);
+    renderBoard();
+    save();
+    return;
+  }
+  if (match && n) {
+    if (!setTurnPhase('handoff')) return;
+    match.switching = true;
+    match.ready = false;
+    lastMatchDigit = Date.now();
+  }
+  var rated = 1;
+  if (match && n) {
+    var board = logicalBoard();
+    board[r][c] = 0;
+    rated = sdkRateCells(board)[r][c] || 4;
+  }
+  var prev = userGrid[r][c];
+  notes[r][c] = new Set();
+  if (n === 0) userGrid[r][c] = 0;
+  else userGrid[r][c] = n;
+  var correct = n !== 0 && n === solved[r][c];
+  var wrong = n !== 0 && n !== solved[r][c];
+  if (wrong && !match) {
+    mistakes += 1;
+    updateMistakes();
+    sfxMiss();
+  } else if (wrong) sfxMiss();
+  if (correct && prev !== n) {
+    if (settings.autoNotes && !match) applyAutoNotes();
+    else clearPeerNotes(r, c, n);
+    sfxDigit(n);
+    announceUnits(r, c);
+  } else if (settings.autoNotes && !match) {
+    applyAutoNotes();
+  }
+  if (settings.autoNotes || (correct && prev !== n) || !paintCell(r, c)) {
+    renderBoard();
+    buildNumpad();
+  } else {
+    highlightCells();
+    refreshPadUsed();
+  }
+  if (match && n) {
+    commitMatchTurn(n, correct, wrong, prev, rated);
+    if (match && !match.over) {
+      var handNow = document.getElementById('handoff');
+      if (handNow && handNow.hidden) showHandoff();
+    }
+    finishEntry();
+    return;
+  }
+  if (wrong) {
+    var el = cellEl(r, c);
+    if (el) el.classList.add('shake');
+    if (limitOn() && mistakes >= 3) {
+      finishEntry();
+      save();
+      gameover();
+      return;
+    }
+  }
+  checkWin();
+  finishEntry();
+  save();
+}
+
+function useHint() {
+  if (match || boardBlocked() || settingsOn() || hintsLeft <= 0 || !selected || typeof selected.r !== 'number' || done || paused) return;
+  var r = selected.r, c = selected.c;
+  if (puzzle[r][c] !== 0) return;
+  if (userGrid[r][c] === solved[r][c]) return;
+  markPlayed();
+  pushUndo();
+  var prev = userGrid[r][c];
+  userGrid[r][c] = solved[r][c];
+  notes[r][c] = new Set();
+  if (settings.autoNotes && !match) applyAutoNotes();
+  else clearPeerNotes(r, c, solved[r][c]);
+  hintsLeft -= 1;
+  trackSudoku('sudoku_hint', {
+    puzzle_id: puzzleId,
+    difficulty: diff,
+    daily: isDaily ? 1 : 0,
+    hints_left: hintsLeft
+  });
+  if (prev !== solved[r][c]) {
+    sfxDigit(solved[r][c]);
+    announceUnits(r, c);
+  }
+  syncChrome();
+  renderBoard();
+  buildNumpad();
+  checkWin();
+  finishEntry();
+  save();
+}
+function toggleNotes() {
+  if (match || settings.autoNotes || done) return;
+  notesMode = !notesMode;
+  syncChrome();
+  paintPad();
+  save();
+}
+function setPaused(value) {
+  if (done) return;
+  paused = !!value;
+  document.getElementById('boardFrame').classList.toggle('is-paused', paused);
+  document.getElementById('pauseOverlay').hidden = !paused;
+  syncChrome();
+  save();
+}
+function startTimer() {
+  clearInterval(timerInt);
+  timerInt = setInterval(function () {
+    if (done || paused || hiddenHold || soloClockHeld) return;
+    if (match) {
+      if (!match.ready || match.over) return;
+      match.p[match.turn].secs += 1;
+      timerSecs = match.p[match.turn].secs;
+    } else timerSecs += 1;
+    updateTimer();
+    if (timerSecs % 5 === 0) save();
+  }, 1000);
+}
+function updateTimer() {
+  var secs = match ? match.p[match.turn].secs : timerSecs;
+  document.getElementById('timerDisp').textContent = fmtTime(secs);
+}
+function updateMistakes() {
+  var tag = document.getElementById('limitTag');
+  if (match) {
+    document.getElementById('mistakeDisp').textContent = match.p[0].score + ' · ' + match.p[1].score;
+    if (tag) { tag.hidden = false; tag.textContent = match.strikes ? 'Three strikes' : 'Unlimited'; }
+    updateScoreBar();
+    return;
+  }
+  document.getElementById('mistakeDisp').textContent = limitOn() ? (mistakes + ' / 3') : String(mistakes);
+  if (tag) {
+    tag.hidden = limitOn();
+    tag.textContent = 'Limit off';
+  }
+}
+
+function fillWinCopy(isNew, streak) {
+  var timeStr = fmtTime(timerSecs);
+  var extra = '';
+  if (isDaily && streak) extra = ' Daily streak: ' + streak + '.';
+  document.getElementById('winMsg').textContent = 'Solved in ' + timeStr + ' with ' + mistakes + ' mistake' + (mistakes === 1 ? '' : 's') + '.' + extra;
+  var bestEl = document.getElementById('winBest');
+  var prevRaw = lsGet('sdk_best_' + diff);
+  var prev = prevRaw == null || prevRaw === '' ? null : parseInt(prevRaw, 10);
+  if (isNew) bestEl.innerHTML = 'New best for ' + diff + ': <span>' + timeStr + '</span>';
+  else if (prev != null && isFinite(prev)) bestEl.innerHTML = 'Best for ' + diff + ': <span>' + fmtTime(prev) + '</span>';
+  else bestEl.textContent = '';
+}
+function commitWin() {
+  var key = 'sdk_best_' + diff;
+  var prevRaw = lsGet(key);
+  var prev = prevRaw == null || prevRaw === '' ? null : parseInt(prevRaw, 10);
+  var isNew = prev == null || !isFinite(prev) || timerSecs < prev;
+  if (!countedWin) {
+    countedWin = true;
+    if (isNew) lsSet(key, String(timerSecs));
+    var stats = loadStats();
+    stats.won += 1;
+    if (!stats.byDiff[diff]) stats.byDiff[diff] = { won: 0, seconds: 0 };
+    stats.byDiff[diff].won += 1;
+    stats.byDiff[diff].seconds += timerSecs;
+    saveStats(stats);
+    var streak = isDaily ? recordDailySolve() : 0;
+    if (!reportedFinish) {
+      reportedFinish = true;
+      postCount(puzzleId, 'finish');
+      trackSudoku('sudoku_solve', {
+        puzzle_id: puzzleId,
+        difficulty: diff,
+        daily: isDaily ? 1 : 0,
+        seconds: timerSecs,
+        mistakes: mistakes
+      });
+      sfxWin();
+    }
+    fillWinCopy(isNew, streak);
+    renderStats();
+    return;
+  }
+  fillWinCopy(false, isDaily ? (+lsGet('sdk_streak') || 0) : 0);
+}
+function checkWin() {
+  if (match || done || !isSolved()) return;
+  done = true;
+  celebrated = true;
+  paused = false;
+  clearInterval(timerInt);
+  document.getElementById('boardFrame').classList.remove('is-paused');
+  document.getElementById('pauseOverlay').hidden = true;
+  commitWin();
+  showWinAnimation();
+  document.getElementById('winBanner').classList.add('show');
+  document.getElementById('failBanner').classList.remove('show');
+  syncChrome();
+}
+function showWinAnimation() {
+  var frame = document.getElementById('boardFrame');
+  frame.classList.add('win-glow');
+  if (suppressWinAnim || reducedMotion()) {
+    resetWinArt();
+    frame.classList.add('win-glow');
+    return;
+  }
+  var trail = document.getElementById('trail');
+  var pts = [[0, 4], [2, 1], [4, 3], [6, 0], [8, 2], [7, 5], [5, 7], [3, 8], [1, 6], [0, 4]];
+  var d = '';
+  for (var i = 0; i < pts.length; i++) d += (i ? 'L' : 'M') + (pts[i][0] + 0.5) + ' ' + (pts[i][1] + 0.5);
+  trail.innerHTML = '<path d="' + d + '"></path>';
+  trail.classList.add('on');
+  var art = document.getElementById('constel');
+  if (!art.getAttribute('src')) art.src = THEME.constellation;
+  art.hidden = false;
+  art.classList.add('on');
+  var nova = document.getElementById('nova');
+  nova.style.left = '50%';
+  nova.style.top = '50%';
+  nova.hidden = false;
+  var hold = [80, 120, 280];
+  var step = 0;
+  function next() {
+    if (step >= 3) { nova.hidden = true; nova.className = 'nova'; return; }
+    nova.src = THEME.nova(step + 1);
+    nova.className = 'nova win-burst f' + (step + 1);
+    var wait = hold[step];
+    step += 1;
+    setTimeout(next, wait);
+  }
+  next();
+}
+function continuePlay() {
+  if (!failed) return;
+  failed = false;
+  done = false;
+  limitWaived = true;
+  document.getElementById('failBanner').classList.remove('show');
+  updateMistakes();
+  syncChrome();
+  startTimer();
+  save();
+}
+function gameover() {
+  if (done) return;
+  done = true;
+  failed = true;
+  paused = false;
+  clearInterval(timerInt);
+  document.getElementById('boardFrame').classList.remove('is-paused');
+  document.getElementById('pauseOverlay').hidden = true;
+  document.getElementById('failBanner').classList.add('show');
+  document.getElementById('winBanner').classList.remove('show');
+  if (!quitSent) {
+    quitSent = true;
+    trackSudoku('sudoku_quit', {
+      puzzle_id: puzzleId,
+      difficulty: diff,
+      daily: isDaily ? 1 : 0,
+      seconds: timerSecs,
+      reason: 'fail',
+      transport_type: 'beacon'
+    });
+  }
+  syncChrome();
+  save();
+  renderStats();
+}
+
+function shareWin() {
+  var timeStr = fmtTime(timerSecs);
+  var link = isDaily
+    ? ('cosmicgameshub.com/games/sudoku' + (diff === 'easy' ? '' : '?d=' + diff))
+    : ('cosmicgameshub.com/games/sudoku?p=' + puzzleId);
+  var outcome = failed ? 'Stopped' : ('Solved in ' + timeStr);
+  var text = 'Sudoku (' + (isDaily ? 'daily ' : '') + diff + ') — ' + outcome + ' with ' + mistakes + ' mistake' + (mistakes === 1 ? '' : 's') + '.\n' + link;
+  var go = function () {
+    var btn = document.getElementById('winShareBtn');
+    if (!btn) return;
+    btn.textContent = 'Copied';
+    setTimeout(function () { btn.textContent = 'Share'; }, 1800);
+  };
+  if (window.CGSfx && window.CGSfx.shareNow) {
+    window.CGSfx.shareNow({
+      title: 'Sudoku',
+      subtitle: (isDaily ? 'daily ' : '') + diff + '  ·  ' + timeStr,
+      lines: ['Mistakes ' + mistakes + (limitOn() ? '/3' : ''), failed ? 'Stopped' : 'Solved'],
+      url: link,
+      filename: 'sudoku',
+      text: text
+    }).then(go).catch(go);
+  } else if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(go).catch(function () { prompt('Copy this:', text); });
+  }
+}
+
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') {
+    var confirmEl = document.getElementById('vsConfirm');
+    if (confirmEl && !confirmEl.hidden) {
+      e.preventDefault();
+      confirmAction = null;
+      confirmEl.hidden = true;
+      return;
+    }
+    if (settingsOn()) closeSettings();
+    else if (paused) setPaused(false);
+    return;
+  }
+  var hand = document.getElementById('handoff');
+  var confirmOpen = document.getElementById('vsConfirm');
+  if (confirmOpen && !confirmOpen.hidden) return;
+  if ((e.key === 'Enter' || e.key === ' ') && match && hand && !hand.hidden && !match.over && match.phase === 'handoff' && !settingsOn()) {
+    e.preventDefault();
+    if (e.repeat || goHold) return;
+    armGo();
+    return;
+  }
+  if (settingsOn() || paused || done || !selected || typeof selected.r !== 'number') return;
+  if (match && match.phase !== 'live') return;
+  var tag = e.target && e.target.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undoMove(); return; }
+  if (e.key >= '1' && e.key <= '9') { inputNum(+e.key); return; }
+  if (e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') { inputNum(0); return; }
+  var r = selected.r, c = selected.c;
+  var nr = r, nc = c;
+  if (e.key === 'ArrowUp' && r > 0) nr = r - 1;
+  else if (e.key === 'ArrowDown' && r < 8) nr = r + 1;
+  else if (e.key === 'ArrowLeft' && c > 0) nc = c - 1;
+  else if (e.key === 'ArrowRight' && c < 8) nc = c + 1;
+  else return;
+  e.preventDefault();
+  selected = { r: nr, c: nc };
+  selectCell(nr, nc);
+}, true);
+document.addEventListener('visibilitychange', function () {
+  if (!live || done) return;
+  hiddenHold = !!document.hidden;
+});
+window.addEventListener('pagehide', function () {
+  save();
+  if (!live || done || quitSent || !puzzleId) return;
+  quitSent = true;
+  trackSudoku('sudoku_quit', {
+    puzzle_id: puzzleId,
+    difficulty: diff,
+    daily: isDaily ? 1 : 0,
+    seconds: timerSecs,
+    reason: 'leave',
+    transport_type: 'beacon'
+  });
+  flushEvents();
+});
+window.addEventListener('popstate', function () {
+  if (applyDebugBoard()) return;
+  var route = routeFromUrl();
+  if (puzzleId && route.id !== puzzleId) abandon();
+  begin(route);
 });
 
-(function(){
-  var h=document.getElementById('hamburger')||document.querySelector('.nav__hamburger');
-  var n=document.getElementById('navLinks');
-  if(!h||!n) return;
-  h.dataset.navInit='1';
-  h.addEventListener('click',function(){
-    var open=n.classList.toggle('open');
+function bindControls() {
+  document.getElementById('noteBtn').addEventListener('click', toggleNotes);
+  document.getElementById('undoBtn').addEventListener('click', undoMove);
+  document.getElementById('hintBtn').addEventListener('click', useHint);
+  document.getElementById('pauseBtn').addEventListener('click', function () { setPaused(!paused); });
+  document.getElementById('resumeBtn').addEventListener('click', function () { setPaused(false); });
+  document.getElementById('newBtn').addEventListener('click', function () {
+    askLeave('New Puzzle ends this match for both players.', function () { playRandom(diff || 'easy'); });
+  });
+  document.getElementById('vsBtn').addEventListener('click', function () {
+    if (match && !match.over) {
+      askLeave('This clears the saved match and returns to your solo puzzle.', endMatchToSolo, 'End match');
+      return;
+    }
+    document.getElementById('vsStrikes').checked = false;
+    document.getElementById('vsSetup').hidden = false;
+  });
+  document.getElementById('handoffEnd').addEventListener('click', function () {
+    askLeave('This clears the saved match and returns to your solo puzzle.', endMatchToSolo, 'End match');
+  });
+  document.getElementById('vsConfirmStay').addEventListener('click', function () {
+    confirmAction = null;
+    document.getElementById('vsConfirm').hidden = true;
+  });
+  document.getElementById('vsConfirmGo').addEventListener('click', function () {
+    var action = confirmAction;
+    confirmAction = null;
+    document.getElementById('vsConfirm').hidden = true;
+    if (action) action();
+  });
+  document.getElementById('vsCancel').addEventListener('click', function () { document.getElementById('vsSetup').hidden = true; });
+  document.getElementById('vsStart').addEventListener('click', function () { startMatch(document.getElementById('vsStrikes').checked); });
+  var handoffEl = document.getElementById('handoff');
+  if (handoffEl.parentNode !== document.body) document.body.appendChild(handoffEl);
+  function stopHandoff(e) {
+    if (leaveControlTarget(e)) return;
+    if (e.type === 'pointerdown' && e.button) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (goHold || e.type === 'pointerup' || e.type === 'touchend') return;
+    if (!startControlTarget(e)) return;
+    armGo();
+  }
+  handoffEl.addEventListener('pointerdown', stopHandoff, true);
+  handoffEl.addEventListener('pointerup', stopHandoff, true);
+  handoffEl.addEventListener('click', stopHandoff, true);
+  handoffEl.addEventListener('touchstart', stopHandoff, { capture: true, passive: false });
+  handoffEl.addEventListener('touchend', stopHandoff, { capture: true, passive: false });
+  function guardPointer(e) {
+    if (leaveControlTarget(e)) return;
+    if (!turnCovered()) {
+      if (ghostClick && (e.type === 'click' || e.type === 'pointerup' || e.type === 'touchend')) {
+        if (activeTap && activeTap.fresh && e.type === 'pointerup' && e.pointerId === activeTap.id) return;
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      return;
+    }
+    if (e.type === 'pointerdown' && e.button) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (goHold || e.type === 'pointerup' || e.type === 'touchend') return;
+    if (!startControlTarget(e)) return;
+    armGo();
+  }
+  document.addEventListener('pointerdown', guardPointer, true);
+  document.addEventListener('pointerup', guardPointer, true);
+  document.addEventListener('click', guardPointer, true);
+  document.addEventListener('touchstart', guardPointer, { capture: true, passive: false });
+  document.addEventListener('touchend', guardPointer, { capture: true, passive: false });
+  document.addEventListener('keyup', function (e) {
+    if (!swallowHandoff) return;
+    swallowHandoff = false;
+    e.preventDefault();
+    e.stopPropagation();
+  }, true);
+  document.getElementById('vsSame').addEventListener('click', function () { rematch(true); });
+  document.getElementById('vsRematch').addEventListener('click', function () { rematch(false); });
+  document.getElementById('vsSolo').addEventListener('click', exitToSolo);
+  var confirmEl = document.getElementById('vsConfirm');
+  if (confirmEl && confirmEl.parentNode !== document.body) document.body.appendChild(confirmEl);
+  var resumeEl = document.getElementById('vsResume');
+  if (resumeEl && resumeEl.parentNode !== document.body) document.body.appendChild(resumeEl);
+  document.getElementById('vsResumeGo').addEventListener('click', resumeSavedMatch);
+  document.getElementById('vsResumeEnd').addEventListener('click', endSavedMatch);
+  document.getElementById('playAgain').addEventListener('click', function () { playRandom(diff || 'easy'); });
+  document.getElementById('failAgain').addEventListener('click', function () { playRandom(diff || 'easy'); });
+  document.getElementById('failContinue').addEventListener('click', continuePlay);
+  document.getElementById('dailyBtn').addEventListener('click', function () { launch(dailyRoute(diff || 'easy'), true); });
+  document.getElementById('winShareBtn').addEventListener('click', shareWin);
+  document.getElementById('firstTip').addEventListener('click', dismissTip);
+  document.querySelectorAll('.diff-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var name = btn.dataset.d;
+      if (name === diff && live) return;
+      if (isDaily) launch(dailyRoute(name), true);
+      else playRandom(name);
+    });
+  });
+  var menu = document.getElementById('settingsMenu');
+  var settingsBtn = document.getElementById('settingsBtn');
+  var fromPointer = false;
+  menu.tabIndex = -1;
+  settingsBtn.addEventListener('pointerdown', function (e) {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    fromPointer = true;
+    if (menu.hidden) openSettings(e);
+    else if (!settingsGuard()) closeSettings(e);
+  });
+  settingsBtn.addEventListener('click', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (fromPointer || settingsGuard()) { fromPointer = false; return; }
+    if (menu.hidden) openSettings(e);
+    else closeSettings(e);
+  });
+  document.getElementById('settingsClose').addEventListener('pointerdown', function (e) {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    closeSettings(e);
+  });
+  menu.addEventListener('pointerdown', function (e) {
+    if (e.target !== menu) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (settingsGuard()) return;
+    closeSettings(e);
+  });
+  menu.addEventListener('pointerup', function (e) { e.stopPropagation(); });
+  menu.addEventListener('click', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.target !== menu || settingsGuard()) return;
+    closeSettings(e);
+  });
+  document.addEventListener('pointerdown', function (e) {
+    if (!settingsOn() || inSettingsCard(e.target)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (!settingsGuard()) closeSettings(e);
+  }, true);
+  document.addEventListener('pointerup', function () {
+    if (!fromPointer) return;
+    setTimeout(function () { fromPointer = false; }, 0);
+  }, true);
+  document.addEventListener('click', function (e) {
+    if (!settingsOn() || !settingsGuard() || inSettingsCard(e.target)) return;
+    e.preventDefault();
+    e.stopPropagation();
+  }, true);
+  function blockedControl(e) {
+    if (!boardBlocked() || !e.target || !e.target.closest) return;
+    if (e.target.closest('#board, #numpad, .board-frame, .action-btns, .diff-row, #pauseBtn, #dailyBtn')) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }
+  document.addEventListener('pointerdown', blockedControl, true);
+  document.addEventListener('pointerup', blockedControl, true);
+  document.addEventListener('click', blockedControl, true);
+  document.querySelectorAll('.toggle-row').forEach(function (row) {
+    row.addEventListener('pointerdown', function (e) {
+      if (e.button) return;
+      e.preventDefault();
+      e.stopPropagation();
+      var input = row.querySelector('input');
+      if (!input || input.disabled) return;
+      input.checked = !input.checked;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    row.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+  });
+  document.getElementById('setNumberFirst').checked = !!settings.numberFirst;
+  document.getElementById('setLimit').checked = settings.mistakeLimit;
+  document.getElementById('setAuto').checked = settings.autoNotes;
+  document.getElementById('setPlanets').checked = settings.planets;
+  document.getElementById('setSound').checked = settings.sound;
+  document.getElementById('setHighlight').checked = settings.highlight;
+  document.getElementById('setReduce').checked = reducedMotion();
+  document.getElementById('setLimit').addEventListener('change', function () {
+    if (match) { this.checked = settings.mistakeLimit; return; }
+    settings.mistakeLimit = this.checked;
+    if (this.checked) limitWaived = false;
+    saveSettings();
+    updateMistakes();
+    save();
+  });
+  document.getElementById('setAuto').addEventListener('change', function () {
+    if (match) { this.checked = !!settings.autoNotes; return; }
+    settings.autoNotes = this.checked;
+    saveSettings();
+    if (settings.autoNotes) {
+      notesMode = false;
+      if (live && !done) {
+        pushUndo();
+        applyAutoNotes();
+      }
+    }
+    syncChrome();
+    if (live) { renderBoard(); save(); }
+  });
+  document.getElementById('setPlanets').addEventListener('change', function () {
+    settings.planets = this.checked;
+    saveSettings();
+    if (live) renderBoard();
+  });
+  document.getElementById('setSound').addEventListener('change', function () {
+    settings.sound = this.checked;
+    saveSettings();
+    syncSoundLabel();
+    if (settings.sound) setTimeout(function () { sfxDigit(1); }, 0);
+  });
+  document.getElementById('setReduce').addEventListener('change', function () {
+    settings.reduce = this.checked;
+    saveSettings();
+    applyMotion();
+  });
+  document.getElementById('setHighlight').addEventListener('change', function () {
+    settings.highlight = this.checked;
+    saveSettings();
+    if (live) highlightCells();
+  });
+  document.getElementById('setNumberFirst').addEventListener('change', function () {
+    settings.numberFirst = !!this.checked;
+    saveSettings();
+    if (!settings.numberFirst) stickyDigit = 0;
+    if (live) paintPad();
+    if (match) saveMatch();
+  });
+}
+
+(function () {
+  var h = document.getElementById('hamburger') || document.querySelector('.nav__hamburger');
+  var n = document.getElementById('navLinks');
+  if (!h || !n) return;
+  h.dataset.navInit = '1';
+  h.addEventListener('click', function () {
+    var open = n.classList.toggle('open');
     h.setAttribute('aria-expanded', String(open));
   });
 })();
 
-newGame();
+function debugRequested() {
+  var params = new URLSearchParams(location.search);
+  return params.get('debug') === 'nearfull' && debugAllowed(location.hostname);
+}
+function applyDebugBoard() {
+  if (!debugRequested()) return false;
+  var params = new URLSearchParams(location.search);
+  var tie = params.get('tie') === '1';
+  var made = makeNearFull(randomSeed(), tie ? 2 : 3);
+  clearGo();
+  swallowHandoff = false;
+  handoffGesture = false;
+  paused = false;
+  done = false;
+  failed = false;
+  match = freshMatch(false, 0);
+  match.fresh = false;
+  match.debugTie = tie;
+  limitWaived = false;
+  soloClockHeld = false;
+  puzzle = made.puzzle;
+  solved = made.solved;
+  userGrid = puzzle.map(function (row) { return row.slice(); });
+  notes = emptyNotes();
+  mistakes = 0;
+  hintsLeft = 3;
+  timerSecs = 0;
+  notesMode = false;
+  selected = null;
+  undoStack = [];
+  puzzleId = tie ? 'debug-nearfull-tie' : 'debug-nearfull';
+  diff = 'easy';
+  isDaily = false;
+  live = true;
+  celebrated = false;
+  suppressWinAnim = false;
+  document.getElementById('winBanner').classList.remove('show');
+  document.getElementById('failBanner').classList.remove('show');
+  var pauseOv = document.getElementById('pauseOverlay');
+  if (pauseOv) pauseOv.hidden = true;
+  var vsResult = document.getElementById('vsResult');
+  if (vsResult) vsResult.hidden = true;
+  var frame = document.getElementById('boardFrame');
+  if (frame) frame.classList.remove('is-paused', 'win-glow');
+  syncChrome();
+  renderBoard();
+  buildNumpad();
+  updateTimer();
+  updateMistakes();
+  showHandoff();
+  startTimer();
+  if (frame) {
+    frame.dataset.puzzleId = puzzleId;
+    frame.dataset.daily = '0';
+    frame.dataset.seed = String(puzzleSeed || 0);
+  }
+  return true;
+}
+
+initStamp();
+loadSettings();
+bindControls();
+if (!debugRequested() && readMatchSave()) document.body.classList.add('is-resume');
+if (!applyDebugBoard()) begin(routeFromUrl());
+if (!debugRequested()) showResumePrompt();
+window.addEventListener('resize', fitPhoneBoard);
+if (window.visualViewport) window.visualViewport.addEventListener('resize', fitPhoneBoard);
+document.addEventListener('DOMContentLoaded', function () {
+  fitPhoneBoard();
+  requestAnimationFrame(fitPhoneBoard);
+});
+if (window.ResizeObserver) {
+  var fitWatch = new ResizeObserver(function () { fitPhoneBoard(); });
+  ['.nav', '.topbar', '#numpad', '.action-btns', '#firstTip'].forEach(function (sel) {
+    var el = document.querySelector(sel);
+    if (el) fitWatch.observe(el);
+  });
+}
 </script>
 <script src="/games/cg-sfx.js"></script>
 <script src="/games/daily-kit.js" defer></script>
 <script src="/global.js" defer></script>
-
 </body>
 </html>

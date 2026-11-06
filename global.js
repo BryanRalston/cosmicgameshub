@@ -24,8 +24,11 @@
     if (!navLinks) return;
     navLinks.innerHTML =
       '<li><a href="/games" class="nav__primary">Games</a></li>' +
+      '<li><a href="/games/daily" class="nav__primary">Daily</a></li>' +
       '<li><a href="/guides" class="nav__secondary">Guides</a></li>' +
-      '<li><button type="button" class="nav__search-btn" id="navSearchBtn" aria-label="Open search" aria-haspopup="dialog" aria-controls="siteSearch">Search</button></li>';
+      '<li><button type="button" class="nav__search-btn" id="navSearchBtn" aria-label="Search" aria-haspopup="dialog" aria-controls="siteSearch" aria-expanded="false">' +
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>' +
+      '</button></li>';
   }
 
   function pagePath() {
@@ -346,12 +349,16 @@
 
   var WEEK_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-  function weekLabel(iso) {
-    var match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
-    if (!match) return '';
-    var month = WEEK_MONTHS[Number(match[2]) - 1];
-    if (!month) return '';
-    return 'Week of ' + month + ' ' + Number(match[3]);
+  function currentWeekBadge(date) {
+    var now = date || new Date();
+    var day = now.getDay();
+    var monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (day === 0 ? 6 : day - 1));
+    var sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
+    var start = WEEK_MONTHS[monday.getMonth()] + ' ' + monday.getDate();
+    var end = monday.getMonth() === sunday.getMonth()
+      ? String(sunday.getDate())
+      : WEEK_MONTHS[sunday.getMonth()] + ' ' + sunday.getDate();
+    return 'Game of the Week \u00b7 ' + start + '\u2013' + end;
   }
 
   function titleFromSlug(slug) {
@@ -377,7 +384,7 @@
       var media = document.getElementById('gotwMedia');
       if (title) title.textContent = name;
       if (blurbEl) blurbEl.textContent = blurb;
-      if (week) week.textContent = weekLabel(data.weekStart);
+      if (week) week.textContent = currentWeekBadge(new Date());
       if (img && media) {
         if (art) {
           img.hidden = false;
@@ -505,8 +512,8 @@
 
   function clickPlacement(el) {
     if (el.closest('.play-break')) return 'play_break';
-    if (el.closest('#gotw, .gotw')) return 'feature';
-    if (el.closest('.tile, .tile-grid')) return 'tile';
+    if (el.closest('#gotw, .gotw, .hub-hero')) return 'feature';
+    if (el.closest('.tile, .tile-grid, .hub-card')) return 'tile';
     if (el.closest('.more-games, .brix-more')) return 'more_games';
     if (el.closest('.nav')) return 'nav';
     return 'link';
@@ -637,7 +644,7 @@
     /* ── Scroll reveal: first-paint visible, animate only off-screen ── */
     (function () {
       var revealEls = document.querySelectorAll(
-        '.js-reveal, .product-card, .guide-card, .game-card, .cat-card, .versus-card, .feature-card, .stat-block, .faq__item, .faq-item, .disclosure, .tile, .shelf, .gotw, .secondary-card, .gh-card, .gh-desk-card'
+        '.js-reveal, .product-card, .guide-card, .game-card, .cat-card, .versus-card, .feature-card, .stat-block, .faq__item, .faq-item, .disclosure'
       );
       var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       revealEls.forEach(function (el) {
@@ -818,6 +825,8 @@
       el.innerHTML = emailCaptureHTML();
     });
   }
+
+  window.cgTrackEvent = trackEvent;
 
   onReady(initSiteChrome);
 })();

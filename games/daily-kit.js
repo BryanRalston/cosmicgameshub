@@ -59,7 +59,14 @@
       var ps = safeJSON('pixle-state-v1') || {};
       map.pixle = ps.dayIndex === dayIndex2026() && (ps.status === 'won' || ps.status === 'lost');
     } catch (e) { map.pixle = false; }
-    map.sudoku = localStorage.getItem('sdk_solved_' + iso) === '1' || localStorage.getItem('sdk_solved_' + ymd) === '1';
+    map.sudoku = (function () {
+      var n = now();
+      var mm = n.getMonth() + 1;
+      var dd = n.getDate();
+      var padded = n.getFullYear() + '-' + (mm < 10 ? '0' : '') + mm + '-' + (dd < 10 ? '0' : '') + dd;
+      var loose = n.getFullYear() + '-' + mm + '-' + dd;
+      return localStorage.getItem('sdk_solved_' + padded) === '1' || localStorage.getItem('sdk_solved_' + loose) === '1';
+    })();
     map.crossword = safeInt('cw_last_day', -1) === dayOfYear();
     map['price-guesser'] = safeInt('pg_last_day', -1) === dayOfYear();
     try {
@@ -252,13 +259,38 @@
     html += '</div>';
     el.innerHTML = html;
     var mb = el.querySelector('[data-cg-mute]');
+    function sudokuSoundOn() {
+      try {
+        var raw = JSON.parse(localStorage.getItem('sdk_settings') || 'null');
+        return !!(raw && raw.sound);
+      } catch (e) { return false; }
+    }
     function syncMute() {
       if (!mb) return;
+      if (slug === 'sudoku') {
+        var gameOn = sudokuSoundOn();
+        mb.textContent = gameOn ? 'Sound on' : 'Sound off';
+        mb.setAttribute('aria-pressed', gameOn ? 'true' : 'false');
+        return;
+      }
       var on = !(w.CGSfx && w.CGSfx.isMuted());
       mb.textContent = on ? 'Sound on' : 'Muted';
     }
     syncMute();
     if (mb) mb.addEventListener('click', function () {
+      if (slug === 'sudoku') {
+        var next = !sudokuSoundOn();
+        if (typeof w.sdkSetSound === 'function') w.sdkSetSound(next);
+        else {
+          try {
+            var raw = JSON.parse(localStorage.getItem('sdk_settings') || '{}') || {};
+            raw.sound = next;
+            localStorage.setItem('sdk_settings', JSON.stringify(raw));
+          } catch (e) {}
+        }
+        syncMute();
+        return;
+      }
       if (!w.CGSfx) return;
       w.CGSfx.setMuted(!w.CGSfx.isMuted());
       syncMute();
