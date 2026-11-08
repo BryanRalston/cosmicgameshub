@@ -15,30 +15,40 @@
   <meta name="description" content="Free daily Sudoku puzzle with multiple difficulty levels. Classic 9x9 grid with timer, hints, notes mode, and mistake tracking." />
   <link rel="canonical" href="https://www.cosmicgameshub.com/games/sudoku" />
   <link rel="stylesheet" href="../styles.css" />
+  <link rel="preload" as="image" href="/images/sudoku/sudoku-bg-desktop.webp" media="(orientation: landscape)" />
   <style>
-    /* Swappable theme layers. Phone nebula and desktop nebula are in separate media queries so only one downloads. */
-    @media (min-width: 801px) and (orientation: landscape) {
-      html:has(body.sdk-cosmic) { --sdk-nebula: url("/images/sudoku/nebula-desktop.webp"); }
-    }
-    @media (max-width: 800px), (orientation: portrait) {
-      html:has(body.sdk-cosmic) { --sdk-nebula: url("/images/sudoku/nebula-phone.webp"); }
-    }
-    html:has(body.sdk-cosmic) {
-      --sdk-board: url("/images/sudoku/board.webp");
-      --sdk-constellation: url("/images/sudoku/constellation-overlay-alpha.webp");
-      background-color: #070a1f;
+    /* One background image per orientation so the other file is not requested. */
+    html:has(body.sudoku-cosmic) {
+      background-color: #05070f;
       background-image: none;
       scroll-behavior: auto;
       scrollbar-gutter: stable;
     }
     body.page-game.sdk-cosmic {
       min-height: 100vh;
-      background: #070a1f var(--sdk-nebula) center / cover no-repeat;
-      background-attachment: fixed;
       color: #e7e9f4;
     }
+    body.sudoku-cosmic {
+      background-color: #05070f;
+      background-position: center;
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-attachment: scroll;
+    }
+    @media (orientation: landscape) {
+      body.sudoku-cosmic {
+        background-image: url("/images/sudoku/sudoku-bg-desktop.webp");
+        background-attachment: fixed;
+      }
+    }
+    @media (orientation: portrait) {
+      body.sudoku-cosmic {
+        background-image: url("/images/sudoku/sudoku-bg-portrait.webp");
+        background-attachment: scroll;
+      }
+    }
     @media (max-width: 800px) {
-      body.page-game.sdk-cosmic { background-attachment: scroll; }
+      body.sudoku-cosmic { background-attachment: scroll; }
     }
 
     .sdk-intro { padding: 1.1rem 0 0.25rem; }
@@ -67,23 +77,22 @@
       position: relative;
       width: 100%;
       aspect-ratio: 1;
-      background: #070a18 var(--sdk-board) center / 100% 100% no-repeat;
+      background: transparent;
       border-radius: 12px;
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
     }
-    /* Line centers measured on board.webp (1024): x 34–990, y 34–986. */
     #board {
       position: absolute;
-      left: 3.3203125%;
-      top: 3.3203125%;
-      width: 93.359375%;
-      height: 92.96875%;
+      inset: 0;
       display: grid;
       grid-template-columns: repeat(9, 1fr);
       grid-template-rows: repeat(9, 1fr);
       gap: 0;
       border: 0;
-      background: transparent;
+      background-color: transparent;
+      background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.08) 1px, transparent 1.5px);
+      background-size: 22px 22px;
+      backdrop-filter: blur(2px);
+      box-shadow: 0 0 0 1px rgba(0, 212, 255, 0.35), 0 0 40px rgba(0, 212, 255, 0.12);
     }
     .cell {
       min-width: 0;
@@ -96,28 +105,57 @@
       font-variant-numeric: tabular-nums;
       cursor: pointer;
       position: relative;
-      background: transparent;
       border: 0;
-      color: #ffffff;
+      border-right: 1px solid rgba(170, 205, 230, 0.2);
+      border-bottom: 1px solid rgba(170, 205, 230, 0.2);
+      color: var(--text-hi);
+      background-color: rgba(10, 14, 30, 0.82);
+      background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.08) 1px, transparent 1.5px);
+      background-size: 22px 22px;
       user-select: none;
       touch-action: manipulation;
       overflow: hidden;
-      text-shadow: 0 0 3px #000, 0 1px 2px #000, 0 0 8px rgba(0, 0, 0, 0.9);
+      text-shadow: none;
     }
-    .cell.given { color: #ffffff; }
+    .cell:nth-child(9n+1) { border-left: 1.5px solid rgba(0, 212, 255, 0.45); }
+    .cell:nth-child(-n+9) { border-top: 1.5px solid rgba(0, 212, 255, 0.45); }
+    .cell:nth-child(9n+3),
+    .cell:nth-child(9n+6),
+    .cell:nth-child(9n) { border-right: 1.5px solid rgba(0, 212, 255, 0.45); }
+    .cell:nth-child(n+19):nth-child(-n+27),
+    .cell:nth-child(n+46):nth-child(-n+54),
+    .cell:nth-child(n+73) { border-bottom: 1.5px solid rgba(0, 212, 255, 0.45); }
+    .cell.given {
+      color: var(--text-hi);
+      text-shadow: 0 0 6px rgba(200, 230, 255, 0.35);
+    }
     .cell.user-num {
-      color: #ffe08a;
-      text-shadow: 0 0 8px rgba(255, 210, 90, 0.95), 0 0 2px #000, 0 1px 2px #000;
+      color: var(--accent);
+      text-shadow: 0 0 8px rgba(0, 212, 255, 0.55);
     }
-    .cell.selected { background: rgba(0, 212, 255, 0.22); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.85); z-index: 1; }
-    .cell.highlight { background: rgba(160, 196, 255, 0.12); }
-    .cell.same-num { background: rgba(255, 214, 120, 0.16); }
+    .cell.selected {
+      background-color: rgba(8, 20, 36, 0.9);
+      box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.85);
+      z-index: 1;
+      perspective: 140px;
+    }
+    .cell.selected::after {
+      content: "";
+      position: absolute;
+      inset: 18%;
+      border-radius: 50%;
+      border: 1px solid rgba(0, 212, 255, 0.35);
+      transform: rotateX(70deg);
+      pointer-events: none;
+    }
+    .cell.highlight { background-color: rgba(14, 20, 40, 0.88); }
+    .cell.same-num { background-color: rgba(32, 26, 14, 0.9); }
     .cell.error {
       color: #fff5f6;
-      background: rgba(150, 16, 36, 0.55);
+      background-color: rgba(78, 10, 24, 0.94);
       box-shadow: inset 0 0 0 2px #ff8b98;
     }
-    .cell.unit-done { background: rgba(255, 220, 140, 0.28); }
+    .cell.unit-done { background-color: rgba(42, 32, 14, 0.9); }
     .cell-notes {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -233,7 +271,8 @@
     }
     #pauseOverlay[hidden] { display: none !important; }
     .board-frame.is-paused #board,
-    .board-frame.is-paused .trail { visibility: hidden; }
+    .board-frame.is-paused .trail,
+    .board-frame.is-paused .constellation { visibility: hidden; }
     .board-frame.win-glow {
       box-shadow: 0 0 0 3px rgba(255, 224, 138, 0.92), 0 0 28px rgba(255, 196, 80, 0.55);
     }
@@ -355,7 +394,10 @@
       justify-content: center;
       touch-action: manipulation;
     }
-    .num-btn { position: relative; }
+    .num-btn {
+      position: relative;
+      background-image: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.1), transparent 60%);
+    }
     .num-btn:hover { border-color: #ffe08a; color: #ffe08a; }
     .num-btn.picked,
     .num-btn.picked:hover {
@@ -584,7 +626,7 @@
     html.sdk-reduce .score-side.is-burst-big::after,
     html.sdk-reduce .score-side.is-burst-soft::after { display: none !important; }
     .handoff-delta { margin: 0; color: #ffe08a; font-size: 1.15rem; font-weight: 800; }
-    body.is-handoff #board, body.is-handoff .numpad, body.is-handoff .trail, body.is-handoff .constel { visibility: hidden !important; }
+    body.is-handoff #board, body.is-handoff .numpad, body.is-handoff .trail, body.is-handoff .constel, body.is-handoff .constellation { visibility: hidden !important; }
     .mistake-bit { display: inline-flex; }
     body.sdk-match .mistake-bit { display: none; }
     .score-bar { display: none; gap: 0.35rem; width: 100%; }
@@ -805,6 +847,11 @@
     html.sdk-reduce .trail.on path { animation: none !important; opacity: 0; }
     html.sdk-reduce .constel.on { animation: none !important; opacity: 0; }
     html.sdk-reduce .nova { display: none !important; }
+    html.sdk-reduce body.sudoku-cosmic { background-attachment: scroll; }
+    html.sdk-reduce .constellation line { animation: none !important; stroke-dashoffset: 0 !important; }
+    html.sdk-reduce .supernova,
+    html.sdk-reduce .supernova.is-play { animation: none !important; opacity: 0.5; transform: none; }
+    html.sdk-reduce .board-frame.is-nova::before { animation: none !important; opacity: 0; }
     html.sdk-reduce .cell,
     html.sdk-reduce .num-btn,
     html.sdk-reduce .rg-card,
@@ -812,6 +859,76 @@
     html.sdk-reduce .toggle-row input::after { transition: none !important; animation: none !important; }
     html.sdk-reduce .cell.shake { animation: none !important; }
     html.sdk-reduce .first-tip { transition: none !important; }
+
+    .constellation {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+      pointer-events: none;
+      overflow: visible;
+    }
+    .constellation line {
+      fill: none;
+      stroke: rgba(140, 220, 255, 0.55);
+      stroke-width: 1.6px;
+      stroke-linecap: round;
+      vector-effect: non-scaling-stroke;
+    }
+    .constellation circle { fill: rgba(186, 230, 255, 0.85); }
+    .constellation line.draw {
+      animation: constDraw 600ms ease forwards, constDim 500ms ease 600ms forwards;
+    }
+    .constellation line.draw-hold { animation: constDraw 600ms ease forwards; }
+    @keyframes constDraw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+    @keyframes constDim { to { opacity: 0.25; } }
+
+    .supernova {
+      position: absolute;
+      width: 140%;
+      max-width: none;
+      left: -20%;
+      top: -20%;
+      height: auto;
+      mix-blend-mode: screen;
+      pointer-events: none;
+      z-index: 5;
+      opacity: 0;
+    }
+    .supernova.is-play { animation: nova 1.6s ease-out forwards; }
+    .supernova.is-static { animation: none; opacity: 0.5; transform: none; }
+    @keyframes nova {
+      0% { transform: scale(0.2); opacity: 0; }
+      25% { opacity: 1; }
+      100% { transform: scale(1.3); opacity: 0; }
+    }
+    .board-frame.is-nova::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 86%;
+      height: 86%;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 4;
+      background: radial-gradient(circle, transparent 54%, rgba(0, 212, 255, 0.5) 62%, transparent 70%);
+      animation: novaRing 1.6s ease-out forwards;
+    }
+    @keyframes novaRing {
+      0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0; }
+      25% { opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(1.45); opacity: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .supernova, .supernova.is-play { animation: none !important; opacity: 0.5; transform: none; }
+      .constellation line,
+      .constellation line.draw,
+      .constellation line.draw-hold { animation: none !important; stroke-dashoffset: 0 !important; }
+      .board-frame.is-nova::before { animation: none !important; opacity: 0; }
+      body.sudoku-cosmic { background-attachment: scroll; }
+    }
   </style>
   <meta property="og:image" content="https://www.cosmicgameshub.com/images/game-sudoku.jpg">
   <meta property="og:image:width" content="600">
@@ -850,7 +967,7 @@
   <meta property="og:site_name" content="CosmicGamesHub">
   <meta property="og:url" content="https://www.cosmicgameshub.com/games/sudoku">
 </head>
-<body class="page-game sdk-cosmic">
+<body class="page-game sdk-cosmic sudoku-cosmic">
 <div id="sdkVhProbe" aria-hidden="true"></div>
 <nav class="nav" role="navigation" aria-label="Main navigation">
   <div class="container">
@@ -887,9 +1004,7 @@
       <div class="board-col">
         <div class="board-frame" id="boardFrame">
           <div id="board" role="grid" aria-label="Sudoku board" tabindex="-1"></div>
-          <svg id="trail" class="trail" viewBox="0 0 9 9" aria-hidden="true"></svg>
-          <img id="constel" class="constel" alt="" hidden>
-          <img id="nova" class="nova" alt="" hidden>
+          <svg id="constellation" class="constellation" viewBox="0 0 9 9" preserveAspectRatio="none" aria-hidden="true" pointer-events="none"></svg>
           <div id="pauseOverlay" class="pause-overlay" hidden>
             <p>Paused</p>
             <button type="button" class="btn btn--primary" id="resumeBtn">Resume</button>
@@ -1080,9 +1195,7 @@
 
 <script>
 var THEME = {
-  constellation: '/images/sudoku/constellation-overlay-alpha.webp',
-  planet: function (n) { return '/images/sudoku/planet-' + n + '-alpha.webp'; },
-  nova: function (n) { return '/images/sudoku/supernova-' + n + '-alpha.webp'; }
+  supernova: '/images/sudoku/sudoku-supernova-640.webp'
 };
 
 function shuffle(a) { for (let i=a.length-1;i>0;i--){const j=Math.floor(rng()*( i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
@@ -1178,6 +1291,7 @@ var limitWaived = false;
 var soloClockHeld = false;
 var blockBoardUntil = 0;
 var suppressWinAnim = false;
+var sameDigitKey = '';
 var settingsOpenedAt = 0;
 var TAP_SLOP = 10;
 var activeTap = null;
@@ -2376,19 +2490,11 @@ function celebrateResult(winner) {
   var img = document.getElementById('vsNova');
   var art = document.getElementById('vsConstel');
   clearSideBursts();
-  if (!box || !img) return;
-  box.classList.remove('is-win', 'is-tie');
-  if (reducedMotion()) {
-    box.hidden = true;
-    img.hidden = true;
-    img.removeAttribute('src');
-    return;
-  }
+  if (box) box.hidden = true;
+  if (img) { img.hidden = true; img.removeAttribute('src'); }
+  if (art) art.removeAttribute('src');
+  if (reducedMotion()) return;
   var tie = winner == null;
-  box.classList.add(tie ? 'is-tie' : 'is-win');
-  box.hidden = false;
-  if (art && !art.getAttribute('src')) art.src = THEME.constellation;
-  img.hidden = false;
   var side, i;
   if (tie) {
     for (i = 0; i < 2; i++) {
@@ -2399,16 +2505,6 @@ function celebrateResult(winner) {
     side = document.getElementById('scoreP' + winner);
     if (side) side.classList.add('is-burst-big');
   }
-  var hold = tie ? [50, 70, 110] : [120, 180, 460];
-  var step = 0;
-  function next() {
-    if (step >= 3) { img.hidden = true; return; }
-    img.src = THEME.nova(step + 1);
-    var wait = hold[step];
-    step += 1;
-    setTimeout(next, wait);
-  }
-  next();
 }
 function playerStat(i) {
   var p = match.p[i];
@@ -2651,15 +2747,15 @@ function firstEmpty() {
   return { r: 0, c: 0 };
 }
 function resetWinArt() {
-  var trail = document.getElementById('trail');
-  trail.classList.remove('on');
-  trail.innerHTML = '';
-  var art = document.getElementById('constel');
-  art.classList.remove('on');
-  art.hidden = true;
-  var nova = document.getElementById('nova');
-  nova.hidden = true;
-  nova.removeAttribute('src');
+  sameDigitKey = '';
+  var svg = document.getElementById('constellation');
+  if (svg) svg.textContent = '';
+  var bursts = document.querySelectorAll('.supernova');
+  for (var i = 0; i < bursts.length; i++) {
+    if (bursts[i].parentNode) bursts[i].parentNode.removeChild(bursts[i]);
+  }
+  var frame = document.getElementById('boardFrame');
+  if (frame) frame.classList.remove('is-nova');
 }
 
 function begin(route) {
@@ -2925,8 +3021,7 @@ function fitPhoneBoard() {
   if (root.style.getPropertyValue('--sdk-fit') !== next) root.style.setProperty('--sdk-fit', next);
 }
 function digitMarkup(n) {
-  if (!settings.planets) return String(n);
-  return '<span class="face"><img class="planet p' + n + '" alt="" width="64" height="64" loading="lazy" decoding="async" src="' + THEME.planet(n) + '"><span class="num">' + n + '</span></span>';
+  return String(n);
 }
 function renderBoard() {
   var board = document.getElementById('board');
@@ -3014,6 +3109,7 @@ function highlightCells() {
     var thisVal = userGrid[r][c] || puzzle[r][c];
     if (selVal && selVal === thisVal) cell.classList.add('same-num');
   });
+  syncSameDigitLines();
 }
 function correctCounts() {
   var counts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
@@ -3194,43 +3290,105 @@ function unitDone(type, r, c) {
   }
   return true;
 }
+var SVG_NS = 'http://www.w3.org/2000/svg';
+function makeStar(x, y) {
+  var dot = document.createElementNS(SVG_NS, 'circle');
+  dot.setAttribute('cx', String(x));
+  dot.setAttribute('cy', String(y));
+  dot.setAttribute('r', '0.06');
+  return dot;
+}
+function makeConstLine(x1, y1, x2, y2, hold) {
+  var line = document.createElementNS(SVG_NS, 'line');
+  line.setAttribute('x1', String(x1));
+  line.setAttribute('y1', String(y1));
+  line.setAttribute('x2', String(x2));
+  line.setAttribute('y2', String(y2));
+  line.setAttribute('pathLength', '1');
+  line.setAttribute('stroke-dasharray', '1');
+  if (reducedMotion()) line.setAttribute('stroke-dashoffset', '0');
+  else {
+    line.setAttribute('stroke-dashoffset', '1');
+    line.setAttribute('class', hold ? 'draw-hold' : 'draw');
+  }
+  return line;
+}
+function connectCenters(pts, hold) {
+  var g = document.createElementNS(SVG_NS, 'g');
+  var i;
+  for (i = 0; i < pts.length - 1; i++) {
+    g.appendChild(makeConstLine(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], hold));
+  }
+  for (i = 0; i < pts.length; i++) g.appendChild(makeStar(pts[i][0], pts[i][1]));
+  return g;
+}
+function syncSameDigitLines() {
+  var svg = document.getElementById('constellation');
+  if (!svg) return;
+  var key = '';
+  var pts = [];
+  if (selected && settings.highlight && userGrid && userGrid.length === 9 && puzzle && puzzle.length === 9) {
+    var val = userGrid[selected.r][selected.c] || puzzle[selected.r][selected.c] || 0;
+    if (val) {
+      var r, c, v;
+      for (r = 0; r < 9; r++) for (c = 0; c < 9; c++) {
+        v = userGrid[r][c] || puzzle[r][c];
+        if (v === val) pts.push([c + 0.5, r + 0.5]);
+      }
+      if (pts.length >= 2) {
+        key = String(val) + ':' + pts.map(function (p) { return p[0] + ',' + p[1]; }).join(';');
+      }
+    }
+  }
+  if (key === sameDigitKey) return;
+  sameDigitKey = key;
+  var old = svg.querySelectorAll('[data-kind="same"]');
+  for (var i = 0; i < old.length; i++) old[i].parentNode.removeChild(old[i]);
+  if (!key) return;
+  var g = connectCenters(pts, true);
+  g.setAttribute('data-kind', 'same');
+  svg.appendChild(g);
+}
+function showUnitLines(cells) {
+  var svg = document.getElementById('constellation');
+  if (!svg || !cells || cells.length < 2) return;
+  var pts = [];
+  for (var i = 0; i < cells.length; i++) pts.push([cells[i][1] + 0.5, cells[i][0] + 0.5]);
+  var g = connectCenters(pts, false);
+  g.setAttribute('data-kind', 'unit');
+  svg.appendChild(g);
+  setTimeout(function () {
+    if (g.parentNode) g.parentNode.removeChild(g);
+  }, 1500);
+}
+function spawnSupernova() {
+  if (suppressWinAnim) return;
+  var frame = document.getElementById('boardFrame');
+  if (!frame || frame.querySelector('.supernova')) return;
+  var img = document.createElement('img');
+  img.className = 'supernova';
+  img.alt = '';
+  img.setAttribute('aria-hidden', 'true');
+  var reduce = reducedMotion();
+  img.classList.add(reduce ? 'is-static' : 'is-play');
+  img.src = THEME.supernova;
+  frame.classList.add('is-nova');
+  frame.appendChild(img);
+  setTimeout(function () {
+    frame.classList.remove('is-nova');
+    if (img.parentNode) img.parentNode.removeChild(img);
+  }, reduce ? 1200 : 1600);
+}
 function flashUnit(type, r, c, silent) {
   var cells = unitCoords(type, r, c);
-  if (reducedMotion()) {
-    cells.forEach(function (rc) {
-      var el = cellEl(rc[0], rc[1]);
-      if (!el) return;
-      el.classList.add('unit-done');
-      setTimeout(function () { el.classList.remove('unit-done'); }, 450);
-    });
-    if (!silent) sfxUnit();
-    return;
-  }
-  var nova = document.getElementById('nova');
-  var left = 3.3203125, top = 3.3203125, width = 93.359375, height = 92.96875;
-  var cw = width / 9, ch = height / 9;
-  var cx, cy;
-  if (type === 'row') { cx = left + width / 2; cy = top + (r + 0.5) * ch; }
-  else if (type === 'col') { cx = left + (c + 0.5) * cw; cy = top + height / 2; }
-  else {
-    var br = Math.floor(r / 3) * 3, bc = Math.floor(c / 3) * 3;
-    cx = left + (bc + 1.5) * cw;
-    cy = top + (br + 1.5) * ch;
-  }
-  nova.style.left = cx + '%';
-  nova.style.top = cy + '%';
-  nova.hidden = false;
-  var hold = [80, 120, 200];
-  var frame = 0;
-  function step() {
-    if (frame >= 3) { nova.hidden = true; return; }
-    nova.src = THEME.nova(frame + 1);
-    nova.className = 'nova f' + (frame + 1);
-    var wait = hold[frame];
-    frame += 1;
-    setTimeout(step, wait);
-  }
-  step();
+  var ms = reducedMotion() ? 450 : 700;
+  cells.forEach(function (rc) {
+    var el = cellEl(rc[0], rc[1]);
+    if (!el) return;
+    el.classList.add('unit-done');
+    setTimeout(function () { el.classList.remove('unit-done'); }, ms);
+  });
+  showUnitLines(cells);
   if (!silent) sfxUnit();
 }
 function announceUnits(r, c) {
@@ -3471,37 +3629,9 @@ function checkWin() {
 }
 function showWinAnimation() {
   var frame = document.getElementById('boardFrame');
-  frame.classList.add('win-glow');
-  if (suppressWinAnim || reducedMotion()) {
-    resetWinArt();
-    frame.classList.add('win-glow');
-    return;
-  }
-  var trail = document.getElementById('trail');
-  var pts = [[0, 4], [2, 1], [4, 3], [6, 0], [8, 2], [7, 5], [5, 7], [3, 8], [1, 6], [0, 4]];
-  var d = '';
-  for (var i = 0; i < pts.length; i++) d += (i ? 'L' : 'M') + (pts[i][0] + 0.5) + ' ' + (pts[i][1] + 0.5);
-  trail.innerHTML = '<path d="' + d + '"></path>';
-  trail.classList.add('on');
-  var art = document.getElementById('constel');
-  if (!art.getAttribute('src')) art.src = THEME.constellation;
-  art.hidden = false;
-  art.classList.add('on');
-  var nova = document.getElementById('nova');
-  nova.style.left = '50%';
-  nova.style.top = '50%';
-  nova.hidden = false;
-  var hold = [80, 120, 280];
-  var step = 0;
-  function next() {
-    if (step >= 3) { nova.hidden = true; nova.className = 'nova'; return; }
-    nova.src = THEME.nova(step + 1);
-    nova.className = 'nova win-burst f' + (step + 1);
-    var wait = hold[step];
-    step += 1;
-    setTimeout(next, wait);
-  }
-  next();
+  if (frame) frame.classList.add('win-glow');
+  if (suppressWinAnim) return;
+  spawnSupernova();
 }
 function continuePlay() {
   if (!failed) return;
