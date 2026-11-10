@@ -15,48 +15,618 @@
   <meta name="description" content="Play Cosmic Minesweeper free in your browser. Classic minesweeper with a space theme. Easy, Medium, Hard difficulties. No download needed."/>
   <link rel="canonical" href="https://www.cosmicgameshub.com/games/minesweeper"/>
   <link rel="stylesheet" href="../styles.css"/>
+  <link rel="preload" as="image" href="/images/minesweeper/minesweeper-bg-desktop.webp" media="(orientation: landscape)"/>
+  <link rel="preload" as="image" href="/images/minesweeper/minesweeper-bg-portrait.webp" media="(orientation: portrait)"/>
   <style>
-    html { overflow-x: hidden; }
-    .ms-wrap { display:flex; flex-direction:column; align-items:center; padding:1.5rem 0 3rem; max-width:100%; }
-    .ms-header { display:flex; align-items:center; justify-content:space-between; width:100%; max-width:600px; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); padding:0.75rem 1.25rem; margin-bottom:1rem; gap:1rem; flex-wrap:wrap; }
-    .ms-stat { display:flex; flex-direction:column; align-items:center; gap:0.1rem; }
-    .ms-stat__val { font-size:1.5rem; font-weight:800; color:var(--accent); font-variant-numeric:tabular-nums; line-height:1; }
-    .ms-stat__label { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:var(--text-lo); }
-    .ms-face { font-size:1.8rem; cursor:pointer; transition:transform 0.15s; background:none; border:none; line-height:1; }
-    .ms-face:hover { transform:scale(1.15); }
+    html:has(body.minesweeper-cosmic) {
+      background-color: #05070f;
+      background-image: none;
+      scroll-behavior: auto;
+    }
+    body.minesweeper-cosmic {
+      background-color: #05070f;
+      background-image: url("/images/minesweeper/minesweeper-bg-desktop.webp");
+      background-position: center center;
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      color: #e7e9f4;
+      min-height: 100vh;
+    }
+    @media (orientation: portrait) {
+      body.minesweeper-cosmic {
+        background-image: url("/images/minesweeper/minesweeper-bg-portrait.webp");
+        background-attachment: scroll;
+      }
+    }
+    @media (max-width: 800px) {
+      body.minesweeper-cosmic { background-attachment: scroll; }
+    }
+    body.minesweeper-cosmic::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse at 50% 42%, rgba(5, 7, 15, 0.18) 0%, rgba(5, 7, 15, 0.52) 58%, rgba(5, 7, 15, 0.84) 100%),
+        linear-gradient(180deg, rgba(5, 7, 15, 0.45) 0%, rgba(5, 7, 15, 0.08) 28%, rgba(5, 7, 15, 0.42) 100%);
+    }
+    body.minesweeper-cosmic > *:not(.ms-sheet) { position: relative; z-index: 1; }
+    body.minesweeper-cosmic > .ms-sheet {
+      position: fixed;
+      inset: 0;
+      z-index: 420;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      background: rgba(2, 4, 14, 0.72);
+      overflow: hidden;
+      overscroll-behavior: none;
+    }
+    body.minesweeper-cosmic > .ms-sheet[hidden] { display: none !important; }
 
-    #msGrid { display:grid; border:2px solid rgba(0,212,255,0.4); border-radius:8px; overflow:hidden; max-width:min(600px,100%); touch-action: manipulation; }
-    .ms-cell { width:100%; aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:clamp(0.65rem,2.5vw,0.95rem); font-weight:800; cursor:pointer; border:1px solid rgba(0,212,255,0.18); background:linear-gradient(180deg, rgba(0,212,255,0.07), var(--bg-card)); transition:background 0.12s, transform .12s; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; position:relative; touch-action: manipulation; }
-    .ms-cell:hover:not(.revealed):not(.flagged) { background:var(--bg-raised); }
-    .ms-cell.revealed { background:var(--bg-void); cursor:default; }
-    .ms-cell.flagged  { background:rgba(255,179,0,0.08); }
-    .ms-cell.exploded { background:rgba(255,71,87,0.25) !important; }
-    .ms-cell.mine-reveal { background:rgba(255,71,87,0.1); }
-    .n1{color:#00d4ff;} .n2{color:#00e676;} .n3{color:#ff4757;} .n4{color:#9c88ff;}
-    .n5{color:#ff6b81;} .n6{color:#00cec9;} .n7{color:#fd79a8;} .n8{color:#b2bec3;}
+    body.page-game.minesweeper-cosmic .nav {
+      background: rgba(5, 7, 15, 0.78);
+      border-bottom-color: rgba(255, 214, 140, 0.2);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+    body.page-game.minesweeper-cosmic .nav__inner { height: 52px; }
+    body.page-game.minesweeper-cosmic .nav__logo,
+    body.page-game.minesweeper-cosmic .nav__links a,
+    body.page-game.minesweeper-cosmic .nav__links a.nav__primary,
+    body.page-game.minesweeper-cosmic .nav__links a.nav__primary:hover,
+    body.page-game.minesweeper-cosmic .nav__links a.nav__secondary,
+    body.page-game.minesweeper-cosmic .nav__search-btn {
+      color: #f4f6ff;
+    }
+    body.page-game.minesweeper-cosmic .nav__links a:hover,
+    body.page-game.minesweeper-cosmic .nav__links a.active {
+      color: #ffe08a;
+      background: rgba(255, 208, 112, 0.1);
+    }
+    body.page-game.minesweeper-cosmic .nav__search-btn {
+      background: rgba(255, 255, 255, 0.06);
+      color: #f4f6ff;
+    }
+    body.page-game.minesweeper-cosmic .nav__hamburger span,
+    body.page-game.minesweeper-cosmic .nav__hamburger[aria-expanded="true"] span { background: #f4f6ff; }
+    body.page-game.minesweeper-cosmic .nav__logo-icon { background: #1a1408; }
+    body.page-game.minesweeper-cosmic .nav__logo-icon::after { border-color: #ffe08a; }
+    body.page-game.minesweeper-cosmic .nav__links.open {
+      background: rgba(8, 10, 22, 0.96);
+      border-bottom-color: rgba(255, 214, 140, 0.2);
+    }
+    body.page-game.minesweeper-cosmic .container { padding-left: 12px; padding-right: 12px; }
+    body.page-game.minesweeper-cosmic .footer {
+      background: rgba(5, 7, 15, 0.88);
+      border-top: 1px solid rgba(255, 214, 140, 0.16);
+      color: #c5c9dc;
+    }
+    body.page-game.minesweeper-cosmic .footer h4,
+    body.page-game.minesweeper-cosmic .footer .nav__logo,
+    body.page-game.minesweeper-cosmic .footer a,
+    body.page-game.minesweeper-cosmic .footer__legal { color: #d5d8ea; }
 
-    .diff-row { display:flex; gap:0.5rem; margin-bottom:1rem; flex-wrap:wrap; justify-content:center; }
-    .difficulty-btn { min-height:44px; padding:0.55rem 0.95rem; font-size:0.85rem; font-weight:700; background:var(--bg-card); border:1px solid var(--border); color:var(--text-mid); border-radius:var(--radius-sm); cursor:pointer; font-family:inherit; }
-    .difficulty-btn.active { border-color:var(--accent); color:var(--accent); background:var(--accent-dim); }
-    .ms-face { min-width:44px; min-height:44px; }
-    .ms-result { display:none; background:var(--bg-card); border:1px solid var(--border-mid); border-radius:var(--radius); padding:1.5rem 2rem; text-align:center; margin-top:1rem; max-width:min(400px, calc(100vw - 24px)); }
-    .ms-result.show { display:block; }
-    .ms-best { font-size:0.8rem; color:var(--text-lo); margin-bottom:0.75rem; }
-    .ms-best span { color:var(--accent); font-weight:700; }
-    .btn-share { background:transparent; border:1px solid rgba(255,255,255,0.15); color:var(--text-mid); border-radius:var(--radius-sm); padding:0.55rem 1rem; font-size:0.82rem; cursor:pointer; font-family:inherit; transition:all 0.15s; margin-left:0.5rem; min-height:44px; }
-    .btn-share:hover { border-color:var(--accent); color:var(--accent); }
-    @media (max-width: 480px) {
-      .container { padding-left: 6px; padding-right: 6px; }
-      .ms-wrap { padding: 0.5rem 0 2rem; }
-      .ms-header { padding: 0.5rem 0.75rem; max-width: 100%; }
-      .ms-intro { padding: 0.5rem 0 0.35rem !important; }
-      .ms-intro h1 { font-size: 1.2rem; }
-      .ms-intro p { font-size: 0.78rem !important; }
+    .ms-sr {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    .ms-intro { padding: 8px 0 4px; text-align: center; }
+    .ms-intro .section__eyebrow { margin: 0 0 2px; color: #f2d48a; }
+    .ms-intro h1 {
+      margin: 0;
+      font-size: 1.35rem;
+      line-height: 1.15;
+      color: #f7f8ff;
+      font-weight: 700;
+    }
+    .ms-intro p {
+      margin: 2px auto 0;
+      max-width: 46rem;
+      color: #d5d8ea;
+      font-size: 0.82rem;
+      line-height: 1.3;
+      white-space: nowrap;
+    }
+
+    .ms-wrap { width: min(1100px, 100%); margin: 0 auto; padding: 4px 0 8px; }
+    .ms-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      margin-bottom: 6px;
+    }
+    .ms-diffs { display: flex; gap: 4px; flex: 1 1 auto; min-width: 0; }
+    .ms-diff, .ms-mute, .ms-mode__btn, .ms-sheet button, .ms-result button {
+      font-family: inherit;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    .ms-diff {
+      flex: 1 1 0;
+      min-width: 0;
+      min-height: 36px;
+      padding: 0 6px;
+      border-radius: 9px;
+      border: 1px solid rgba(255, 214, 140, 0.22);
+      background: rgba(6, 10, 28, 0.72);
+      color: #d9dced;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+    }
+    .ms-diff.is-on {
+      border-color: #ffe08a;
+      color: #ffe08a;
+      background: rgba(255, 208, 112, 0.14);
+    }
+    .ms-hud {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 0 0 auto;
+      background: rgba(6, 10, 28, 0.72);
+      border: 1px solid rgba(255, 214, 140, 0.22);
+      border-radius: 12px;
+      padding: 3px 8px 3px 10px;
+    }
+    .ms-stat { display: flex; flex-direction: column; align-items: center; min-width: 46px; line-height: 1; }
+    .ms-stat b {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #ffe08a;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum" 1;
+    }
+    .ms-stat span, .ms-bestline {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #c5c9dc;
+    }
+    .ms-bestline {
+      background: none;
+      border: 0;
+      padding: 0;
+      cursor: pointer;
+      font-family: inherit;
+      text-transform: none;
+      letter-spacing: 0;
+      color: #f2d48a;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum" 1;
+      white-space: nowrap;
+    }
+    .ms-face {
+      width: 56px;
+      height: 56px;
+      min-width: 56px;
+      border-radius: 50%;
+      border: 2px solid var(--ring, #f0c14a);
+      background: radial-gradient(circle at 40% 35%, rgba(255, 255, 255, 0.22), rgba(6, 10, 22, 0.15) 42%, rgba(6, 10, 22, 0.88));
+      box-shadow: 0 0 0 3px rgba(6, 10, 22, 0.45), 0 0 16px rgba(255, 214, 140, 0.28);
+      padding: 0;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+    }
+    .ms-face svg { width: 48px; height: 48px; display: block; }
+    .ms-face .orb-ring { fill: none; stroke: var(--ring, #f0c14a); stroke-width: 2.6; }
+    .ms-face .orb-core { fill: var(--orb, #7ee0ff); }
+    .ms-face .expr { display: none; }
+    .ms-face.is-idle .expr-idle,
+    .ms-face.is-down .expr-down,
+    .ms-face.is-win .expr-win,
+    .ms-face.is-lose .expr-lose { display: block; }
+    .ms-face.is-idle { --orb: #7ee0ff; --ring: #f0c14a; }
+    .ms-face.is-down { --orb: #fff6d0; --ring: #ffffff; box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.35), 0 0 18px rgba(255, 246, 208, 0.7); }
+    .ms-face.is-win { --orb: #ffe08a; --ring: #ffe08a; box-shadow: 0 0 0 3px rgba(255, 224, 138, 0.45), 0 0 18px rgba(255, 208, 80, 0.75); }
+    .ms-face.is-lose { --orb: #ff5d6e; --ring: #ff8b98; box-shadow: 0 0 0 3px rgba(255, 80, 100, 0.4), 0 0 16px rgba(255, 70, 90, 0.65); }
+    .ms-face.is-idle .orb-ring { animation: msOrb 3.2s ease-in-out infinite; }
+    @keyframes msOrb { 50% { stroke-width: 2.6; } }
+    .ms-mute {
+      width: 40px;
+      height: 40px;
+      min-width: 40px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 214, 140, 0.22);
+      background: rgba(6, 10, 28, 0.72);
+      color: #ffe08a;
+      display: grid;
+      place-items: center;
+      padding: 0;
+    }
+    .ms-mute[aria-pressed="true"] { color: #9aa0b8; }
+    .ms-mute svg { width: 20px; height: 20px; display: block; }
+
+    .ms-frame {
+      position: relative;
+      display: inline-block;
+      max-width: 100%;
+      padding: 6px;
+      border-radius: 16px;
+      background:
+        radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.14) 1px, transparent 1.4px),
+        rgba(8, 12, 28, 0.62);
+      background-size: 18px 18px, auto;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow:
+        0 0 0 1px rgba(255, 214, 140, 0.72),
+        0 0 0 5px rgba(6, 8, 18, 0.28),
+        0 18px 48px rgba(0, 0, 0, 0.38),
+        inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    }
+    .ms-frame.is-flagmode {
+      box-shadow:
+        0 0 0 2px rgba(255, 176, 48, 0.96),
+        0 0 0 6px rgba(70, 42, 6, 0.35),
+        0 0 28px rgba(255, 170, 40, 0.38),
+        inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    }
+    .ms-stage { display: flex; justify-content: center; width: 100%; }
+    #msGrid {
+      display: grid;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+    .ms-cell {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+      border-radius: 3px;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+      background-color: #31445c;
+      background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.08) 42%, rgba(0, 0, 0, 0.22) 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.62),
+        inset 0 -2px 0 rgba(0, 0, 0, 0.38),
+        inset 0 0 0 1px rgba(190, 214, 240, 0.2);
+      color: transparent;
+    }
+    .ms-cell.is-pressed { filter: brightness(0.86); }
+    .ms-cell.is-open {
+      background-color: #12151e;
+      background-image: none;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.72), inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+      color: #f4f7ff;
+    }
+    .ms-cell.is-preview {
+      background-color: #4a3810;
+      box-shadow: inset 0 0 0 2px rgba(255, 214, 120, 0.95), 0 0 10px rgba(255, 196, 80, 0.45);
+    }
+    .ms-cell.is-flag { background-color: #3a3424; }
+    .ms-cell.is-hit {
+      background-color: #3a1020;
+      box-shadow: inset 0 0 0 2px #ff3355, 0 0 12px rgba(255, 51, 85, 0.65);
+    }
+    .ms-cell.is-badflag .ms-x { position: absolute; }
+    .ms-cell { position: relative; }
+    .ms-cell:focus { outline: none; }
+    .ms-cell:focus-visible {
+      outline: 2px solid #ffe08a;
+      outline-offset: -2px;
+      z-index: 2;
+    }
+    .ms-ico { width: 72%; height: 72%; display: block; pointer-events: none; }
+    .ms-x { width: 78%; height: 78%; position: absolute; inset: 11%; pointer-events: none; }
+    .ms-cell.n1 { color: #6CB6FF; }
+    .ms-cell.n2 { color: #3DDC97; }
+    .ms-cell.n3 { color: #F5C451; }
+    .ms-cell.n4 { color: #C4B5FD; }
+    .ms-cell.n5 { color: #FF8AD4; }
+    .ms-cell.n6 { color: #2EE6D6; }
+    .ms-cell.n7 { color: #F4F7FF; }
+    .ms-cell.n8 { color: #E7D2B4; }
+
+    .ms-hold {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      margin-left: -15px;
+      margin-top: -15px;
+      z-index: 5;
+      pointer-events: none;
+    }
+    .ms-hold[hidden] { display: none !important; }
+    .ms-hold circle { fill: none; stroke-width: 3; }
+    .ms-hold .track { stroke: rgba(255, 255, 255, 0.28); }
+    .ms-hold .arc {
+      stroke: #ffe08a;
+      stroke-linecap: round;
+      stroke-dasharray: 75.4;
+      stroke-dashoffset: 75.4;
+      transform: rotate(-90deg);
+      transform-origin: 16px 16px;
+    }
+    .ms-hold.is-on .arc { animation: msHold 380ms linear forwards; }
+    @keyframes msHold { to { stroke-dashoffset: 0; } }
+
+    .ms-fx, .ms-scan { position: absolute; inset: 0; pointer-events: none; border-radius: inherit; }
+    .ms-fx { z-index: 6; width: 100%; height: 100%; }
+    .ms-scan {
+      z-index: 5;
+      overflow: hidden;
+    }
+    .ms-frame.is-win {
+      box-shadow:
+        0 0 0 3px #ffe08a,
+        0 0 0 7px rgba(90, 62, 8, 0.45),
+        0 0 36px 8px rgba(255, 210, 80, 0.92),
+        inset 0 0 28px rgba(255, 220, 120, 0.42);
+    }
+    .ms-frame.is-win .ms-cell.is-flag {
+      background-color: #a07a28;
+      box-shadow:
+        inset 0 0 0 2px #fff6cc,
+        0 0 14px rgba(255, 220, 90, 0.98);
+    }
+    .ms-frame.is-win .ms-flag .pennant {
+      fill: #fff6c8;
+      filter: drop-shadow(0 0 3px #fff3c0) drop-shadow(0 0 6px #ffe08a);
+    }
+    .ms-frame.is-win .ms-scan::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 34%;
+      height: 46%;
+      opacity: 0;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 252, 240, 0.98) 0%, rgba(255, 214, 80, 0.82) 38%, rgba(255, 186, 40, 0) 72%);
+      transform: translate(-50%, -50%) scale(0.15);
+      animation: msStarburst 980ms ease-out forwards;
+    }
+    .ms-frame.is-win .ms-scan::after {
+      content: "";
+      position: absolute;
+      top: -6%;
+      bottom: -6%;
+      width: 24%;
+      background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(255, 210, 90, 0.2) 18%,
+        rgba(255, 252, 235, 1) 48%,
+        rgba(255, 196, 50, 0.98) 62%,
+        transparent 100%);
+      box-shadow: 0 0 28px 10px rgba(255, 214, 80, 0.9);
+      transform: translateX(-180%);
+      animation: msScan 1200ms cubic-bezier(.15, .6, .2, 1) forwards;
+    }
+    @keyframes msScan { to { transform: translateX(520%); } }
+    @keyframes msStarburst {
+      0% { opacity: 1; transform: translate(-50%, -50%) scale(0.2); }
+      35% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+      100% { opacity: 0; transform: translate(-50%, -50%) scale(2.5); }
+    }
+    .ms-frame.is-shake { animation: msDetonate 200ms linear; }
+    @keyframes msDetonate {
+      0%, 100% { transform: translate(0, 0); }
+      15% { transform: translate(-6px, 1px); }
+      30% { transform: translate(6px, -1px); }
+      45% { transform: translate(-5px, 2px); }
+      60% { transform: translate(5px, -2px); }
+      75% { transform: translate(-3px, 1px); }
+    }
+    .ms-cell.is-rip { animation: msRip 200ms ease both; animation-delay: calc(var(--d, 0) * 12ms); }
+    @keyframes msRip {
+      from { transform: scale(0.86); filter: brightness(1.55); }
+      to { transform: none; filter: none; }
+    }
+    .ms-cell.is-plant .ms-flag { animation: msPlant 240ms cubic-bezier(.2, 1.5, .32, 1) both; }
+    @keyframes msPlant {
+      0% { transform: translateY(-35%) scale(0.45); }
+      70% { transform: translateY(3%) scale(1.06); }
+      100% { transform: none; }
+    }
+    .ms-cell.is-chain .ms-ico { animation: msChain 240ms ease both; animation-delay: calc(var(--d, 0) * 25ms); }
+    @keyframes msChain {
+      from { opacity: 0; transform: scale(1.35); }
+      to { opacity: 1; transform: none; }
+    }
+    .ms-cell.is-shake { animation: msCellShake 220ms ease; }
+    @keyframes msCellShake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-3px); }
+      75% { transform: translateX(3px); }
+    }
+    .ms-flag .pennant { transform-origin: 12px 12px; animation: msPennant 1.8s ease-in-out infinite; }
+    @keyframes msPennant { 50% { transform: scaleX(1.06); } }
+
+    .ms-result {
+      position: absolute;
+      inset: 0;
+      z-index: 8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px;
+      background: rgba(5, 7, 15, 0.62);
+      border-radius: inherit;
+    }
+    .ms-result[hidden] { display: none !important; }
+    .ms-card {
+      width: min(100%, 340px);
+      max-height: 100%;
+      overflow: auto;
+      background: #12182c;
+      border: 1px solid rgba(255, 214, 140, 0.45);
+      border-radius: 14px;
+      padding: 0.85rem 0.9rem 0.95rem;
+      text-align: center;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+    }
+    .ms-card h2 { margin: 0 0 0.25rem; color: #ffe08a; font-size: 1.25rem; }
+    .ms-card p { margin: 0 0 0.35rem; color: #d5d8ea; font-size: 0.88rem; }
+    .ms-card .ms-actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 0.65rem; }
+    .ms-card .ms-actions button, .ms-sheet .ms-actions button {
+      min-height: 44px;
+      padding: 0.4rem 0.85rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 214, 140, 0.35);
+      background: rgba(6, 10, 28, 0.4);
+      color: #f4f6ff;
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+    .ms-card .ms-actions .is-primary, .ms-sheet .is-primary {
+      background: #ffe08a;
+      color: #1b1406;
+      border-color: #ffe08a;
+    }
+    .ms-mode {
+      display: flex;
+      gap: 6px;
+      width: min(100%, 520px);
+      margin: 8px auto 0;
+    }
+    .ms-mode__btn {
+      flex: 1;
+      min-height: 44px;
+      min-width: 44px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 214, 140, 0.28);
+      background: rgba(6, 10, 28, 0.82);
+      color: #f4f6ff;
+      font-weight: 800;
+      font-size: 0.95rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+    }
+    .ms-mode__btn svg { width: 18px; height: 18px; }
+    .ms-mode__btn.is-on {
+      background: #ffe08a;
+      color: #1b1406;
+      border-color: #ffe08a;
+    }
+
+    .ms-sheet {
+      position: fixed;
+      inset: 0;
+      z-index: 420;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      background: rgba(2, 4, 14, 0.72);
+      overflow: hidden;
+    }
+    .ms-sheet[hidden] { display: none !important; }
+    .ms-sheet .ms-card {
+      width: min(520px, 100%);
+      max-height: calc(100vh - 24px);
+      max-height: calc(100dvh - 24px);
+      overflow: auto;
+      overscroll-behavior: contain;
+      text-align: left;
+      box-sizing: border-box;
+    }
+    .ms-sheet h2 { text-align: left; }
+    .ms-stats-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; color: #d9dced; font-variant-numeric: tabular-nums; }
+    .ms-stats-table th { text-align: left; color: #f2d48a; font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; padding: 0.35rem 0.3rem; }
+    .ms-stats-table td { padding: 0.28rem 0.3rem; border-top: 1px solid rgba(255, 214, 140, 0.14); }
+    .ms-top { margin: 0.45rem 0 0; padding: 0; list-style: none; color: #d9dced; font-size: 0.82rem; }
+    .ms-top li { display: flex; justify-content: space-between; gap: 0.5rem; padding: 0.12rem 0; }
+
+    @media (min-width: 541px) {
+      .ms-hud {
+        width: 284px;
+        flex: 0 0 284px;
+        box-sizing: border-box;
+        justify-content: space-between;
+      }
+      .ms-stat { flex: 1 1 0; min-width: 0; }
+      .ms-bestline { width: 100%; overflow: hidden; text-overflow: ellipsis; text-align: center; }
+    }
+    @media (min-width: 801px) {
+      .ms-sheet .ms-card { border-radius: 16px; }
+      .ms-wrap { padding-bottom: 0; }
+      .ms-mode { margin-bottom: 16px; }
+    }
+    @media (max-width: 540px) {
+      body.page-game.minesweeper-cosmic .nav__inner { height: 40px; }
+      body.page-game.minesweeper-cosmic .container { padding-left: 4px; padding-right: 4px; }
+      body.page-game.minesweeper-cosmic .nav__logo { font-size: 0.92rem; }
+      .ms-intro { padding: 2px 2px 0; }
+      .ms-intro h1 { font-size: 0.95rem; }
+      .ms-intro p, .ms-intro .section__eyebrow { display: none; }
+      .ms-toolbar { gap: 4px; margin-bottom: 4px; }
+      .ms-diff { min-height: 34px; font-size: 0.72rem; padding: 0 2px; }
+      .ms-hud { gap: 4px; padding: 2px 4px 2px 6px; }
+      .ms-stat { min-width: 36px; }
+      .ms-stat b { font-size: 0.95rem; }
+      .ms-bestline { display: none; }
+      .ms-face { width: 44px; height: 44px; min-width: 44px; }
+      .ms-face svg { width: 38px; height: 38px; }
+      .ms-stats-table { font-size: 0.64rem; }
+      .ms-stats-table th, .ms-stats-table td { padding: 0.26rem 0.1rem; }
+      .ms-mute { width: 34px; height: 34px; min-width: 34px; }
+      .ms-frame { padding: 3px; border-radius: 12px; }
+      .ms-mode {
+        position: sticky;
+        bottom: 0;
+        z-index: 5;
+        width: 100%;
+        margin: 6px 0 0;
+        padding: 6px 2px calc(6px + env(safe-area-inset-bottom, 0px));
+        background: rgba(5, 7, 15, 0.94);
+        border-top: 1px solid rgba(255, 214, 140, 0.28);
+        border-radius: 12px 12px 0 0;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html:has(body.minesweeper-cosmic) *,
+      html:has(body.minesweeper-cosmic) *::before,
+      html:has(body.minesweeper-cosmic) *::after {
+        animation: none !important;
+        transition: none !important;
+      }
+      .ms-frame.is-win .ms-scan::before,
+      .ms-frame.is-win .ms-scan::after { content: none !important; }
+    }
+
+    .rg-section { padding: 2rem 0 2.5rem; border-top: 1px solid rgba(255, 214, 140, 0.16); margin-top: 1.5rem; }
+    .rg-heading { font-size: 0.75rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #f2d48a; margin: 0 0 1rem; }
+    .rg-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+    .rg-card { display: flex; gap: 0.75rem; background: rgba(6, 10, 28, 0.82); border: 1px solid rgba(255, 214, 140, 0.18); border-radius: 10px; padding: 0.75rem; text-decoration: none; color: inherit; }
+    .rg-card:hover { border-color: #ffe08a; }
+    .rg-card img { width: 100px; height: 43px; object-fit: cover; border-radius: 6px; flex-shrink: 0; }
+    .rg-info { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+    .rg-tags { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+    .rg-tag { font-size: 0.65rem; font-weight: 700; color: #ffe08a; background: rgba(255, 208, 112, 0.12); border-radius: 4px; padding: 0.1rem 0.35rem; letter-spacing: 0.04em; }
+    .rg-name { font-size: 0.88rem; font-weight: 700; color: #f7f8ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rg-desc { font-size: 0.75rem; color: #c5c9dc; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    @media (max-width: 640px) {
+      .rg-grid { grid-template-columns: 1fr; }
+      .rg-card img { width: 80px; height: 35px; }
     }
   </style>
   <meta property="og:image" content="https://www.cosmicgameshub.com/images/game-minesweeper-v2.jpg">
-  <meta property="og:image:width" content="600">
-  <meta property="og:image:height" content="260">
+  <meta property="og:image:width" content="1280">
+  <meta property="og:image:height" content="720">
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -91,7 +661,7 @@
   <meta property="og:site_name" content="CosmicGamesHub">
   <meta property="og:url" content="https://www.cosmicgameshub.com/games/minesweeper">
 </head>
-<body class="page-game">
+<body class="page-game minesweeper-cosmic">
 <nav class="nav" role="navigation" aria-label="Main navigation">
   <div class="container">
     <div class="nav__inner">
@@ -116,41 +686,121 @@
 
 <main>
   <div class="container">
-    <div class="ms-intro" style="padding:1.5rem 0 1rem;text-align:center;">
+    <header class="ms-intro">
       <span class="section__eyebrow">Puzzle Game</span>
-      <h1 style="margin-top:0.4rem;margin-bottom:0.25rem;">☄️ Cosmic Minesweeper</h1>
-      <p style="color:var(--text-mid);font-size:0.9rem;">Tap to reveal · long-press (or right-click) to flag. Clear the field without hitting a meteor.</p>
-    </div>
+      <h1>Cosmic Minesweeper</h1>
+      <p>Dig or flag. Chord a number. Arrows, Enter, F, D, N.</p>
+    </header>
 
     <div class="ms-wrap">
-      <div class="diff-row">
-        <button class="difficulty-btn active" data-d="easy">Easy (9×9)</button>
-        <button class="difficulty-btn" data-d="medium">Medium (16×16)</button>
-        <button class="difficulty-btn" data-d="hard">Hard (16×30)</button>
-      </div>
-
-      <div class="ms-header">
-        <div class="ms-stat"><div class="ms-stat__val" id="mineCount">10</div><div class="ms-stat__label">☄️ Meteors</div></div>
-        <button class="ms-face" id="faceBtn" onclick="initGame()" title="New game">🙂</button>
-        <div class="ms-stat"><div class="ms-stat__val" id="timerDisp">0</div><div class="ms-stat__label">⏱ Seconds</div></div>
-      </div>
-
-      <div id="msGrid"></div>
-
-      <div class="ms-result" id="msResult">
-        <div id="resIcon" style="font-size:2.5rem;margin-bottom:0.5rem;"></div>
-        <h2 id="resTitle" style="margin-bottom:0.5rem;"></h2>
-        <p id="resMsg" style="color:var(--text-mid);font-size:0.9rem;margin-bottom:0.5rem;"></p>
-        <p class="ms-best" id="resBest" style="display:none;"></p>
-        <div style="margin-top:1rem;">
-          <button class="btn btn--primary" onclick="initGame()">Play Again</button>
-          <button class="btn-share" id="shareBtn" onclick="shareResult()">📋 Share</button>
+      <div class="ms-toolbar">
+        <div class="ms-diffs" role="group" aria-label="Difficulty">
+          <button type="button" class="ms-diff is-on" data-diff="easy">Easy</button>
+          <button type="button" class="ms-diff" data-diff="medium">Medium</button>
+          <button type="button" class="ms-diff" data-diff="hard">Hard</button>
         </div>
+        <div class="ms-hud">
+          <div class="ms-stat"><b id="mineCount">10</b><span>Meteors</span></div>
+          <button type="button" class="ms-face is-idle" id="faceBtn" aria-label="New game">
+            <svg viewBox="0 0 48 48" aria-hidden="true">
+              <circle class="orb-ring" cx="24" cy="24" r="20"/>
+              <circle class="orb-core" cx="24" cy="24" r="13.5"/>
+              <g class="expr expr-idle">
+                <circle cx="18" cy="22" r="1.9" fill="#061018"/>
+                <circle cx="30" cy="22" r="1.9" fill="#061018"/>
+                <path d="M17 28.5c2.4 2.8 11.6 2.8 14 0" fill="none" stroke="#061018" stroke-width="1.9" stroke-linecap="round"/>
+              </g>
+              <g class="expr expr-down">
+                <ellipse cx="18" cy="20.5" rx="2.3" ry="2.9" fill="#061018"/>
+                <ellipse cx="30" cy="20.5" rx="2.3" ry="2.9" fill="#061018"/>
+                <ellipse cx="24" cy="30.5" rx="3.5" ry="4.1" fill="#061018"/>
+              </g>
+              <g class="expr expr-win">
+                <path d="M15.2 22c1.3-2.6 3.8-2.6 5.1 0" fill="none" stroke="#3a2804" stroke-width="2" stroke-linecap="round"/>
+                <path d="M27.7 22c1.3-2.6 3.8-2.6 5.1 0" fill="none" stroke="#3a2804" stroke-width="2" stroke-linecap="round"/>
+                <path d="M16 27.5c2.8 4.4 13.2 4.4 16 0" fill="none" stroke="#3a2804" stroke-width="2.1" stroke-linecap="round"/>
+              </g>
+              <g class="expr expr-lose">
+                <path d="M15 17.5l6 6M21 17.5l-6 6" stroke="#2a060c" stroke-width="2" stroke-linecap="round"/>
+                <path d="M27 17.5l6 6M33 17.5l-6 6" stroke="#2a060c" stroke-width="2" stroke-linecap="round"/>
+                <path d="M17 32c2.5-3 11.5-3 14 0" fill="none" stroke="#2a060c" stroke-width="2" stroke-linecap="round"/>
+                <path d="M13 13l6 7-2 2 7 8" fill="none" stroke="#2a060c" stroke-width="1.6" stroke-linecap="round"/>
+              </g>
+            </svg>
+          </button>
+          <div class="ms-stat">
+            <b id="timerDisp">0.0</b>
+            <button type="button" class="ms-bestline" id="bestBtn">Best —</button>
+          </div>
+        </div>
+        <button type="button" class="ms-mute" id="muteBtn" aria-pressed="false" aria-label="Mute sound">
+          <svg viewBox="0 0 24 24" aria-hidden="true" id="muteIcon"></svg>
+        </button>
+      </div>
+
+      <div class="ms-stage">
+        <div class="ms-frame" id="msFrame">
+          <div id="msGrid" role="grid" aria-label="Cosmic Minesweeper board"></div>
+          <div id="holdRing" class="ms-hold" hidden>
+            <svg viewBox="0 0 32 32" aria-hidden="true">
+              <circle class="track" cx="16" cy="16" r="12"/>
+              <circle class="arc" cx="16" cy="16" r="12"/>
+            </svg>
+          </div>
+          <canvas id="msFx" class="ms-fx" aria-hidden="true"></canvas>
+          <div class="ms-scan" aria-hidden="true"></div>
+          <div id="msResult" class="ms-result" hidden>
+            <div class="ms-card">
+              <h2 id="resTitle"></h2>
+              <p id="resMsg"></p>
+              <p id="resBest"></p>
+              <p id="resBv"></p>
+              <div class="ms-actions">
+                <button type="button" class="is-primary" id="againBtn">Play again</button>
+                <button type="button" id="statsBtn">Stats</button>
+                <button type="button" id="shareBtn">Share</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ms-mode" id="modeBar" role="group" aria-label="Tool">
+        <button type="button" class="ms-mode__btn is-on" id="modeDig" aria-pressed="true">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l7-2 9-11-3-3L8 15z" fill="currentColor"/><path d="M14 6l3 3" stroke="currentColor" stroke-width="1.6"/></svg>
+          Dig
+        </button>
+        <button type="button" class="ms-mode__btn" id="modeFlag" aria-pressed="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 21V4" stroke="currentColor" stroke-width="2" fill="none"/><path d="M8 5h10l-3 4 3 4H8z" fill="currentColor"/></svg>
+          Flag
+        </button>
       </div>
     </div>
   </div>
 </main>
 
+<div id="msLive" class="ms-sr" aria-live="assertive"></div>
+
+<div id="msConfirm" class="ms-sheet" hidden role="dialog" aria-modal="true" aria-labelledby="confirmTitle" tabindex="-1">
+  <div class="ms-card">
+    <h2 id="confirmTitle">Abandon this field?</h2>
+    <p>This game is still in progress. Starting over clears the board.</p>
+    <div class="ms-actions">
+      <button type="button" class="is-primary" id="confirmGo">Abandon</button>
+      <button type="button" id="confirmStay">Keep playing</button>
+    </div>
+  </div>
+</div>
+
+<div id="msStats" class="ms-sheet" hidden role="dialog" aria-modal="true" aria-labelledby="statsTitle" tabindex="-1">
+  <div class="ms-card">
+    <h2 id="statsTitle">Stats</h2>
+    <div id="statsBody"></div>
+    <div class="ms-actions">
+      <button type="button" class="is-primary" id="statsClose">Close</button>
+    </div>
+  </div>
+</div>
 
 <section class="rg-section">
   <div class="container">
@@ -183,228 +833,1350 @@
     </div>
   </div>
 </section>
-<style>
-.rg-section { padding: 2.5rem 0 3rem; border-top: 1px solid var(--border, rgba(255,255,255,0.08)); margin-top: 2rem; }
-.rg-heading { font-size: 0.75rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-lo, #666); margin: 0 0 1.25rem; }
-.rg-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-.rg-card { display: flex; gap: 0.75rem; background: var(--bg-card, #111); border: 1px solid var(--border, rgba(255,255,255,0.08)); border-radius: 10px; padding: 0.75rem; text-decoration: none; color: inherit; transition: border-color 0.15s, transform 0.15s; }
-.rg-card:hover { border-color: var(--accent, #22d3ee); transform: translateY(-2px); }
-.rg-card img { width: 100px; height: 43px; object-fit: cover; border-radius: 6px; flex-shrink: 0; }
-.rg-info { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
-.rg-tags { display: flex; gap: 0.3rem; flex-wrap: wrap; }
-.rg-tag { font-size: 0.65rem; font-weight: 700; color: var(--accent, #22d3ee); background: rgba(34,211,238,0.1); border-radius: 4px; padding: 0.1rem 0.35rem; letter-spacing: 0.04em; }
-.rg-name { font-size: 0.88rem; font-weight: 700; color: var(--text-hi, #fff); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rg-desc { font-size: 0.75rem; color: var(--text-lo, #888); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-@media (max-width: 640px) {
-  .rg-grid { grid-template-columns: 1fr; }
-  .rg-card img { width: 80px; height: 35px; }
-}
-</style>
 <footer class="footer"><div class="container"><div class="footer__bottom">
   <p class="footer__legal">© 2026 CosmicGamesHub.</p>
 </div></div>
 </footer>
 
 <script>
-const CONFIGS = {
-  easy:   { rows:9,  cols:9,  mines:10 },
-  medium: { rows:16, cols:16, mines:40 },
-  hard:   { rows:16, cols:30, mines:99 },
-};
+(function () {
+  'use strict';
 
-let cfg, grid, revealed, flagged, minesLeft, timerSec, timerInt, firstClick, gameOver;
-let diff = 'easy';
+  var CONFIGS = {
+    easy: { rows: 9, cols: 9, mines: 10 },
+    medium: { rows: 16, cols: 16, mines: 40 },
+    hard: { rows: 16, cols: 30, mines: 99 }
+  };
+  var LONG_MS = 380;
+  var SLOP = 10;
+  var FLAG_SVG = '<svg class="ms-ico ms-flag" viewBox="0 0 32 32" aria-hidden="true"><path d="M11 28V5" stroke="#f4f7ff" stroke-width="2" stroke-linecap="round"/><path class="pennant" d="M12 6h13l-4.2 5.2L25 16H12z" fill="#f0c14a"/><circle cx="11" cy="28" r="1.5" fill="#d7deee"/></svg>';
+  var METEOR_SVG = '<svg class="ms-ico" viewBox="0 0 32 32" aria-hidden="true"><path d="M3 7c6 1.5 9 5 10 9" stroke="#ffb088" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M5 11c4 1 6 3.5 7 6" stroke="#ffe1c4" stroke-width="1.2" fill="none" stroke-linecap="round"/><circle cx="20" cy="20" r="7.2" fill="#8d97a8"/><circle cx="20" cy="20" r="7.2" fill="none" stroke="#ff7a3c" stroke-width="1.7"/><circle cx="17.4" cy="18" r="1.5" fill="#5c6774"/><circle cx="22.2" cy="22.2" r="1.05" fill="#4e5866"/><circle cx="21.2" cy="16.6" r="0.75" fill="#e7eef6"/></svg>';
+  var X_SVG = '<svg class="ms-x" viewBox="0 0 32 32" aria-hidden="true"><path d="M8 8l16 16M24 8L8 24" stroke="#fff4f6" stroke-width="2.6" stroke-linecap="round"/></svg>';
 
-function initGame(d) {
-  if(d) diff=d;
-  cfg = CONFIGS[diff];
-  grid     = Array.from({length:cfg.rows},()=>Array(cfg.cols).fill(0));
-  revealed = Array.from({length:cfg.rows},()=>Array(cfg.cols).fill(false));
-  flagged  = Array.from({length:cfg.rows},()=>Array(cfg.cols).fill(false));
-  minesLeft = cfg.mines; firstClick=true; gameOver=false;
-  clearInterval(timerInt); timerSec=0;
-  document.getElementById('timerDisp').textContent='0';
-  document.getElementById('mineCount').textContent=cfg.mines;
-  document.getElementById('faceBtn').textContent='🙂';
-  document.getElementById('msResult').classList.remove('show');
-  renderGrid();
-}
+  var diff = 'easy';
+  var cfg = CONFIGS.easy;
+  var grid = [];
+  var revealed = [];
+  var flagged = [];
+  var cells = [];
+  var minesReady = false;
+  var started = false;
+  var gameOver = false;
+  var won = false;
+  var lost = false;
+  var hit = null;
+  var recorded = false;
+  var flagMode = false;
+  var focusR = 0;
+  var focusC = 0;
+  var cellSize = 32;
+  var cellGap = 1;
+  var elapsedMs = 0;
+  var startTs = 0;
+  var timerHandle = 0;
+  var press = null;
+  var lastTouchAt = 0;
+  var mouseMuteUntil = 0;
+  var focusReturn = null;
+  var faceDown = false;
+  var preview = [];
+  var shakes = 0;
+  var pendingDiff = null;
+  var audioCtx = null;
+  var audioUnlocked = false;
+  var muted = false;
+  var particles = [];
+  var fxRunning = false;
+  var lastBv = 0;
 
-function placeMines(safeR, safeC) {
-  let placed=0;
-  while(placed<cfg.mines){
-    const r=Math.floor(Math.random()*cfg.rows), c=Math.floor(Math.random()*cfg.cols);
-    if(grid[r][c]===-1) continue;
-    if(Math.abs(r-safeR)<=1&&Math.abs(c-safeC)<=1) continue;
-    grid[r][c]=-1; placed++;
+  var gridEl = document.getElementById('msGrid');
+  var frameEl = document.getElementById('msFrame');
+  var mineEl = document.getElementById('mineCount');
+  var timerEl = document.getElementById('timerDisp');
+  var faceEl = document.getElementById('faceBtn');
+  var resultEl = document.getElementById('msResult');
+  var liveEl = document.getElementById('msLive');
+  var holdEl = document.getElementById('holdRing');
+  var fxEl = document.getElementById('msFx');
+
+  function storageGet(key) {
+    try { return localStorage.getItem(key); } catch (err) { return null; }
   }
-  for(let r=0;r<cfg.rows;r++) for(let c=0;c<cfg.cols;c++) {
-    if(grid[r][c]===-1) continue;
-    let count=0;
-    for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++){
-      const nr=r+dr,nc=c+dc;
-      if(nr>=0&&nr<cfg.rows&&nc>=0&&nc<cfg.cols&&grid[nr][nc]===-1) count++;
+  function storageSet(key, value) {
+    try { localStorage.setItem(key, value); } catch (err) {}
+  }
+  function motionOk() {
+    try { return !window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (err) { return true; }
+  }
+  function isPortraitPhone() {
+    try { return window.matchMedia('(max-width: 540px) and (orientation: portrait)').matches; }
+    catch (err) { return window.innerWidth <= 540 && window.innerHeight > window.innerWidth; }
+  }
+  function geometry(name) {
+    var base = CONFIGS[name] || CONFIGS.easy;
+    if (name === 'hard' && isPortraitPhone()) return { rows: 30, cols: 16, mines: 99 };
+    return { rows: base.rows, cols: base.cols, mines: base.mines };
+  }
+  function inb(r, c) { return r >= 0 && c >= 0 && r < cfg.rows && c < cfg.cols; }
+  function flagCount() {
+    var n = 0;
+    for (var r = 0; r < cfg.rows; r++) for (var c = 0; c < cfg.cols; c++) if (flagged[r][c]) n++;
+    return n;
+  }
+  function inProgress() { return !gameOver && (started || flagCount() > 0); }
+  function formatSec(seconds) {
+    if (seconds == null || !isFinite(seconds)) return '—';
+    return Number(seconds).toFixed(1) + 's';
+  }
+  function elapsedSeconds() {
+    var ms = elapsedMs;
+    if (timerHandle && startTs) ms = performance.now() - startTs;
+    return Math.round(ms / 100) / 10;
+  }
+  function emptyStats() {
+    return { played: 0, won: 0, streak: 0, bestStreak: 0, best: null, times: [] };
+  }
+  function loadStats() {
+    var base = { easy: emptyStats(), medium: emptyStats(), hard: emptyStats() };
+    var raw = storageGet('ms_stats_v1');
+    if (!raw) return base;
+    try {
+      var parsed = JSON.parse(raw);
+      ['easy', 'medium', 'hard'].forEach(function (name) {
+        var row = parsed && parsed[name];
+        if (!row || typeof row !== 'object') return;
+        base[name].played = Number(row.played) || 0;
+        base[name].won = Number(row.won) || 0;
+        base[name].streak = Number(row.streak) || 0;
+        base[name].bestStreak = Number(row.bestStreak) || 0;
+        base[name].best = row.best == null || row.best === '' || !isFinite(Number(row.best)) ? null : Number(row.best);
+        base[name].times = Array.isArray(row.times) ? row.times.map(Number).filter(isFinite).slice(0, 5) : [];
+      });
+    } catch (err) {}
+    return base;
+  }
+  function saveStats(stats) { storageSet('ms_stats_v1', JSON.stringify(stats)); }
+  function readBest(name) {
+    var stats = loadStats();
+    if (stats[name] && stats[name].best != null) return stats[name].best;
+    var raw = storageGet('ms_best_' + name);
+    if (raw == null || raw === '') return null;
+    var n = Number(raw);
+    return isFinite(n) ? n : null;
+  }
+
+  function paintMute() {
+    var btn = document.getElementById('muteBtn');
+    btn.setAttribute('aria-pressed', muted ? 'true' : 'false');
+    btn.setAttribute('aria-label', muted ? 'Unmute sound' : 'Mute sound');
+    document.getElementById('muteIcon').innerHTML = muted
+      ? '<path d="M4 10h3l4-3v10l-4-3H4z" fill="currentColor"/><path d="M16 10l5 5M21 10l-5 5" stroke="currentColor" stroke-width="1.8" fill="none"/>'
+      : '<path d="M4 10h3l4-3v10l-4-3H4z" fill="currentColor"/><path d="M16 9a4 4 0 0 1 0 6M18.5 7a7 7 0 0 1 0 10" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/>';
+  }
+  function paintFace() {
+    faceEl.classList.remove('is-idle', 'is-down', 'is-win', 'is-lose');
+    if (won) faceEl.classList.add('is-win');
+    else if (lost) faceEl.classList.add('is-lose');
+    else if (faceDown) faceEl.classList.add('is-down');
+    else faceEl.classList.add('is-idle');
+  }
+  function paintBest() {
+    var best = readBest(diff);
+    document.getElementById('bestBtn').textContent = best == null ? 'Best —' : ('Best ' + formatSec(best));
+  }
+  function paintMineCount() {
+    mineEl.textContent = String(cfg.mines - flagCount());
+  }
+  function renderTimer() {
+    var shown = timerHandle ? (performance.now() - startTs) / 1000 : elapsedMs / 1000;
+    timerEl.textContent = (Math.round(shown * 10) / 10).toFixed(1);
+  }
+  function buzz(pattern) {
+    try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (err) {}
+  }
+
+  function ensureAudio() {
+    if (!audioUnlocked || muted) return null;
+    var Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    if (!audioCtx) {
+      try { audioCtx = new Ctx(); } catch (err) { return null; }
     }
-    grid[r][c]=count;
+    if (audioCtx.state === 'suspended') {
+      try { audioCtx.resume(); } catch (err) {}
+    }
+    return audioCtx;
   }
-}
+  function tone(freq, dur, type, gain, delay) {
+    var ctx = ensureAudio();
+    if (!ctx) return;
+    var t = ctx.currentTime + (delay || 0);
+    var osc = ctx.createOscillator();
+    var amp = ctx.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.setValueAtTime(freq, t);
+    amp.gain.setValueAtTime(0.0001, t);
+    amp.gain.exponentialRampToValueAtTime(Math.max(0.0002, gain), t + 0.012);
+    amp.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    osc.connect(amp);
+    amp.connect(ctx.destination);
+    osc.start(t);
+    osc.stop(t + dur + 0.02);
+  }
+  function sfxReveal(n) { tone(300 + (n || 0) * 52, 0.07, 'triangle', 0.045); }
+  function sfxFlood(n, dist) {
+    sfxReveal(n);
+    var steps = Math.min(dist, 6);
+    for (var i = 1; i <= steps; i++) tone(320 + i * 42, 0.05, 'sine', 0.028, i * 0.04);
+  }
+  function sfxFlag() {
+    tone(150, 0.07, 'square', 0.03);
+    tone(92, 0.1, 'triangle', 0.04);
+  }
+  function sfxNope() { tone(180, 0.08, 'square', 0.02); }
+  function sfxBoom() {
+    var ctx = ensureAudio();
+    if (!ctx) return;
+    tone(64, 0.42, 'sine', 0.22);
+    try {
+      var dur = 0.4;
+      var frames = Math.floor(ctx.sampleRate * dur);
+      var buf = ctx.createBuffer(1, frames, ctx.sampleRate);
+      var data = buf.getChannelData(0);
+      for (var i = 0; i < frames; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / frames, 2);
+      var src = ctx.createBufferSource();
+      src.buffer = buf;
+      var filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 220;
+      var amp = ctx.createGain();
+      amp.gain.setValueAtTime(0.28, ctx.currentTime);
+      amp.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+      src.connect(filter);
+      filter.connect(amp);
+      amp.connect(ctx.destination);
+      src.start();
+    } catch (err) {}
+  }
+  function sfxWin() {
+    [523.25, 659.25, 783.99, 1046.5].forEach(function (freq, i) {
+      tone(freq, 0.22, 'sine', 0.05, i * 0.09);
+    });
+  }
+  function unlockAudio() {
+    audioUnlocked = true;
+    if (!muted) ensureAudio();
+  }
 
-function renderGrid() {
-  const el=document.getElementById('msGrid');
-  const avail = Math.min(window.innerWidth - (window.innerWidth <= 480 ? 16 : 48), 600);
-  const maxCell = cfg.cols <= 9 ? 44 : (cfg.cols <= 16 ? 32 : 20);
-  const cellSize = Math.max(10, Math.min(maxCell, Math.floor(avail / cfg.cols)));
-  el.style.gridTemplateColumns=`repeat(${cfg.cols},${cellSize}px)`;
-  el.innerHTML='';
-  for(let r=0;r<cfg.rows;r++) for(let c=0;c<cfg.cols;c++){
-    const cell=document.createElement('div');
-    cell.className='ms-cell';
-    cell.style.width=cell.style.height=cellSize+'px';
-    cell.style.fontSize=Math.max(10,cellSize*0.5)+'px';
-    if(revealed[r][c]){
-      cell.classList.add('revealed');
-      if(grid[r][c]===-1){ cell.classList.add('mine-reveal'); cell.textContent='☄️'; }
-      else if(grid[r][c]>0){ cell.textContent=grid[r][c]; cell.classList.add('n'+grid[r][c]); }
-    } else if(flagged[r][c]){
-      cell.classList.add('flagged'); cell.textContent='🚩';
+  function sizeCanvas() {
+    var rect = frameEl.getBoundingClientRect();
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    fxEl.width = Math.max(1, Math.round(rect.width * dpr));
+    fxEl.height = Math.max(1, Math.round(rect.height * dpr));
+    fxEl.style.width = rect.width + 'px';
+    fxEl.style.height = rect.height + 'px';
+  }
+  function burst(px, py, color, count, kind) {
+    if (!motionOk()) return;
+    sizeCanvas();
+    var rect = frameEl.getBoundingClientRect();
+    var dpr = fxEl.width / Math.max(1, rect.width);
+    var star = kind === 'star';
+    var n = count;
+    for (var i = 0; i < n; i++) {
+      var ang = star ? (Math.PI * 2 * i) / n : Math.random() * Math.PI * 2;
+      var spd = star ? (3.4 + (i % 6) * 0.75) : (0.8 + Math.random() * 2.6);
+      particles.push({
+        x: px * dpr,
+        y: py * dpr,
+        vx: Math.cos(ang) * spd * dpr,
+        vy: Math.sin(ang) * spd * dpr,
+        life: 1,
+        decay: star ? 0.972 : 0.94,
+        color: star && (i % 3 === 0) ? '#fffef8' : color,
+        r: (star ? (3.1 + (i % 4) * 1.15) : (1.4 + Math.random() * 2)) * dpr,
+        star: star,
+        rot: ang
+      });
+    }
+    if (star) {
+      particles.push({
+        x: px * dpr,
+        y: py * dpr,
+        vx: 0,
+        vy: 0,
+        life: 1,
+        decay: 0.962,
+        color: '#fff8dc',
+        r: 20 * dpr,
+        flash: true
+      });
+    }
+    if (!fxRunning) {
+      fxRunning = true;
+      requestAnimationFrame(drawFx);
+    }
+  }
+  function drawStar(ctx, p) {
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.rot || 0);
+    ctx.globalAlpha = Math.min(1, p.life);
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    var r = p.r;
+    ctx.moveTo(0, -r);
+    ctx.lineTo(r * 0.28, -r * 0.28);
+    ctx.lineTo(r, 0);
+    ctx.lineTo(r * 0.28, r * 0.28);
+    ctx.lineTo(0, r);
+    ctx.lineTo(-r * 0.28, r * 0.28);
+    ctx.lineTo(-r, 0);
+    ctx.lineTo(-r * 0.28, -r * 0.28);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+  function drawFx() {
+    var ctx = fxEl.getContext('2d');
+    ctx.clearRect(0, 0, fxEl.width, fxEl.height);
+    particles = particles.filter(function (p) { return p.life > 0.02; });
+    particles.forEach(function (p) {
+      if (!p.flash) return;
+      p.life *= p.decay || 0.96;
+      var rad = p.r * (1 + (1 - p.life) * 9);
+      var g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, Math.max(1, rad));
+      g.addColorStop(0, 'rgba(255, 253, 245, ' + Math.min(1, p.life) + ')');
+      g.addColorStop(0.28, 'rgba(255, 236, 170, ' + (p.life * 0.95) + ')');
+      g.addColorStop(0.55, 'rgba(255, 196, 60, ' + (p.life * 0.55) + ')');
+      g.addColorStop(1, 'rgba(255, 180, 40, 0)');
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, rad, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    particles.forEach(function (p) {
+      if (p.flash) return;
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += p.star ? 0.004 : 0.02;
+      p.rot = (p.rot || 0) + 0.08;
+      p.life *= p.decay || 0.94;
+      if (p.star) drawStar(ctx, p);
+      else {
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    });
+    ctx.globalAlpha = 1;
+    if (particles.length) requestAnimationFrame(drawFx);
+    else fxRunning = false;
+  }
+
+  function cellLabel(r, c) {
+    var where = 'Row ' + (r + 1) + ' column ' + (c + 1) + ', ';
+    var mine = grid[r][c] === -1;
+    if (lost && flagged[r][c] && mine) return where + 'flagged meteor';
+    if (lost && flagged[r][c] && !mine) return where + 'wrong flag';
+    if (revealed[r][c] && mine) return where + (hit && hit.r === r && hit.c === c ? 'meteor hit' : 'meteor');
+    if (revealed[r][c]) {
+      var n = grid[r][c];
+      if (n > 0) return where + n + (n === 1 ? ' meteor nearby' : ' meteors nearby');
+      return where + 'clear';
+    }
+    if (flagged[r][c]) return where + 'flagged';
+    return where + 'hidden';
+  }
+  function cellHTML(r, c) {
+    var mine = grid[r][c] === -1;
+    if (lost && flagged[r][c] && !mine) return FLAG_SVG + X_SVG;
+    if ((lost && flagged[r][c] && mine) || (!revealed[r][c] && flagged[r][c])) return FLAG_SVG;
+    if (revealed[r][c] && mine) return METEOR_SVG;
+    if (revealed[r][c] && grid[r][c] > 0) return String(grid[r][c]);
+    return '';
+  }
+  function renderCell(r, c) {
+    var el = cells[r][c];
+    if (!el) return;
+    var html = cellHTML(r, c);
+    var mine = grid[r][c] === -1;
+    var cls = 'ms-cell';
+    if (lost && flagged[r][c] && mine) cls += ' is-flag is-correct';
+    else if (lost && flagged[r][c] && !mine) cls += ' is-flag is-badflag';
+    else if (revealed[r][c] && mine) cls += ' is-open is-mine';
+    else if (revealed[r][c]) {
+      cls += ' is-open';
+      if (grid[r][c] > 0) cls += ' n' + grid[r][c];
+    } else if (flagged[r][c]) cls += ' is-flag';
+    else cls += ' is-hidden';
+    if (hit && hit.r === r && hit.c === c) cls += ' is-hit';
+    if (el.dataset.content !== html) {
+      el.dataset.content = html;
+      el.innerHTML = html;
+    }
+    el.className = cls;
+    el.setAttribute('aria-label', cellLabel(r, c));
+    el.tabIndex = (r === focusR && c === focusC) ? 0 : -1;
+  }
+  function renderAll() {
+    for (var r = 0; r < cfg.rows; r++) for (var c = 0; c < cfg.cols; c++) renderCell(r, c);
+  }
+  function focusCell(r, c, moveDom) {
+    if (!inb(r, c)) return;
+    focusR = r;
+    focusC = c;
+    for (var i = 0; i < cfg.rows; i++) for (var j = 0; j < cfg.cols; j++) {
+      if (cells[i] && cells[i][j]) cells[i][j].tabIndex = (i === r && j === c) ? 0 : -1;
+    }
+    if (moveDom && cells[r] && cells[r][c]) cells[r][c].focus({ preventScroll: true });
+  }
+
+  function modeReserve() {
+    var bar = document.getElementById('modeBar');
+    if (!bar) return 68;
+    var styles = getComputedStyle(bar);
+    var h = bar.getBoundingClientRect().height || 48;
+    var marginTop = parseFloat(styles.marginTop) || 0;
+    var marginBottom = parseFloat(styles.marginBottom) || 0;
+    if (styles.position === 'fixed') return h + 4;
+    if (styles.position === 'sticky') return h + marginTop + marginBottom + 4;
+    var wrap = document.querySelector('.ms-wrap');
+    var wrapPad = wrap ? (parseFloat(getComputedStyle(wrap).paddingBottom) || 0) : 0;
+    return h + marginTop + marginBottom + wrapPad + 2;
+  }
+  function chooseCell(availW, availH) {
+    var hardDesktop = diff === 'hard' && cfg.cols >= 30;
+    var hardPhone = diff === 'hard' && cfg.rows >= 30 && cfg.cols <= 16;
+    var floor = hardDesktop ? 32 : (hardPhone ? 22 : 8);
+    var best = null;
+    [2, 1, 0].forEach(function (gap) {
+      var cellW = Math.floor((availW - gap * (cfg.cols - 1)) / cfg.cols);
+      var cellH = Math.floor((availH - gap * (cfg.rows - 1)) / cfg.rows);
+      var cell = Math.min(cellW, cellH, 56);
+      if (cell < 8) return;
+      if (!best || cell > best.cell || (cell === best.cell && gap > best.gap)) best = { cell: cell, gap: gap };
+    });
+    if (!best) best = { cell: Math.max(floor, 8), gap: 0 };
+    if ((hardDesktop || hardPhone) && best.cell < floor) {
+      var gap0w = Math.floor(availW / cfg.cols);
+      if (gap0w >= floor) return { cell: floor, gap: 0, overflow: true };
+      return { cell: floor, gap: 0, overflow: true };
+    }
+    return best;
+  }
+  function applySize() {
+    var w = cfg.cols * cellSize + (cfg.cols - 1) * cellGap;
+    var h = cfg.rows * cellSize + (cfg.rows - 1) * cellGap;
+    gridEl.style.width = w + 'px';
+    gridEl.style.height = h + 'px';
+    gridEl.style.gap = cellGap + 'px';
+    gridEl.style.gridTemplateColumns = 'repeat(' + cfg.cols + ',' + cellSize + 'px)';
+    gridEl.style.gridTemplateRows = 'repeat(' + cfg.rows + ',' + cellSize + 'px)';
+    var font = Math.max(11, Math.round(cellSize * 0.52)) + 'px';
+    for (var r = 0; r < cells.length; r++) for (var c = 0; c < cells[r].length; c++) cells[r][c].style.fontSize = font;
+  }
+  function fitBoard() {
+    var play = document.querySelector('.ms-wrap');
+    if (!play || !cfg.cols) return;
+    var frameStyle = getComputedStyle(frameEl);
+    var padX = (parseFloat(frameStyle.paddingLeft) || 0) + (parseFloat(frameStyle.paddingRight) || 0);
+    var padY = (parseFloat(frameStyle.paddingTop) || 0) + (parseFloat(frameStyle.paddingBottom) || 0);
+    var availW = Math.max(80, play.clientWidth - padX);
+    var frameTop = frameEl.getBoundingClientRect().top + window.scrollY;
+    var availH = window.innerHeight - frameTop - padY - modeReserve();
+    var picked = chooseCell(availW, Math.max(40, availH));
+    cellSize = picked.cell;
+    cellGap = picked.gap;
+    applySize();
+    var hardDesktop = diff === 'hard' && cfg.cols >= 30;
+    var hardPhone = diff === 'hard' && cfg.rows >= 30 && cfg.cols <= 16;
+    var floor = hardDesktop ? 32 : (hardPhone ? 22 : 8);
+    var limit = window.innerHeight - modeReserve();
+    var guard = 0;
+    while (frameEl.getBoundingClientRect().bottom > limit + 0.5 && cellSize > floor && guard < 48) {
+      if (cellGap > 0) cellGap = 0;
+      else cellSize -= 1;
+      applySize();
+      guard++;
+    }
+  }
+
+  function buildCells() {
+    gridEl.innerHTML = '';
+    cells = [];
+    var frag = document.createDocumentFragment();
+    for (var r = 0; r < cfg.rows; r++) {
+      cells[r] = [];
+      for (var c = 0; c < cfg.cols; c++) {
+        var el = document.createElement('div');
+        el.className = 'ms-cell is-hidden';
+        el.setAttribute('role', 'gridcell');
+        el.setAttribute('aria-rowindex', String(r + 1));
+        el.setAttribute('aria-colindex', String(c + 1));
+        el.dataset.r = String(r);
+        el.dataset.c = String(c);
+        el.tabIndex = (r === 0 && c === 0) ? 0 : -1;
+        cells[r][c] = el;
+        frag.appendChild(el);
+      }
+    }
+    gridEl.appendChild(frag);
+    gridEl.setAttribute('aria-rowcount', String(cfg.rows));
+    gridEl.setAttribute('aria-colcount', String(cfg.cols));
+    focusR = 0;
+    focusC = 0;
+    renderAll();
+    fitBoard();
+  }
+
+  function resetBoard(next) {
+    if (next) diff = next;
+    cfg = geometry(diff);
+    grid = Array.from({ length: cfg.rows }, function () { return Array(cfg.cols).fill(0); });
+    revealed = Array.from({ length: cfg.rows }, function () { return Array(cfg.cols).fill(false); });
+    flagged = Array.from({ length: cfg.rows }, function () { return Array(cfg.cols).fill(false); });
+    minesReady = false;
+    started = false;
+    gameOver = false;
+    won = false;
+    lost = false;
+    hit = null;
+    recorded = false;
+    elapsedMs = 0;
+    startTs = 0;
+    clearInterval(timerHandle);
+    timerHandle = 0;
+    clearGesture();
+    if (CONFIGS[diff]) storageSet('ms_diff', diff);
+    resultEl.hidden = true;
+    frameEl.classList.remove('is-win', 'is-shake');
+    particles = [];
+    document.querySelectorAll('.ms-diff').forEach(function (btn) {
+      btn.classList.toggle('is-on', btn.getAttribute('data-diff') === diff);
+    });
+    paintMineCount();
+    renderTimer();
+    paintBest();
+    paintFace();
+    buildCells();
+    liveEl.textContent = '';
+  }
+
+  function placeMines(safeR, safeC) {
+    var placed = 0;
+    var guard = 0;
+    while (placed < cfg.mines && guard < 20000) {
+      guard++;
+      var r = Math.floor(Math.random() * cfg.rows);
+      var c = Math.floor(Math.random() * cfg.cols);
+      if (grid[r][c] === -1) continue;
+      if (Math.abs(r - safeR) <= 1 && Math.abs(c - safeC) <= 1) continue;
+      grid[r][c] = -1;
+      placed++;
+    }
+    writeNumbers();
+  }
+  function writeNumbers() {
+    for (var r = 0; r < cfg.rows; r++) for (var c = 0; c < cfg.cols; c++) {
+      if (grid[r][c] === -1) continue;
+      var count = 0;
+      for (var dr = -1; dr <= 1; dr++) for (var dc = -1; dc <= 1; dc++) {
+        var nr = r + dr, nc = c + dc;
+        if (inb(nr, nc) && grid[nr][nc] === -1) count++;
+      }
+      grid[r][c] = count;
+    }
+  }
+  function setMineList(pairs) {
+    for (var r = 0; r < cfg.rows; r++) for (var c = 0; c < cfg.cols; c++) grid[r][c] = 0;
+    var n = 0;
+    (pairs || []).forEach(function (pair) {
+      var r = pair[0], c = pair[1];
+      if (!inb(r, c) || grid[r][c] === -1) return;
+      grid[r][c] = -1;
+      n++;
+    });
+    cfg.mines = n;
+    writeNumbers();
+    minesReady = true;
+    revealed = Array.from({ length: cfg.rows }, function () { return Array(cfg.cols).fill(false); });
+    flagged = Array.from({ length: cfg.rows }, function () { return Array(cfg.cols).fill(false); });
+    started = false;
+    gameOver = false;
+    won = false;
+    lost = false;
+    hit = null;
+    recorded = false;
+    paintMineCount();
+    renderAll();
+  }
+
+  function armTimer() {
+    if (timerHandle) return;
+    startTs = performance.now() - elapsedMs;
+    timerHandle = setInterval(function () { renderTimer(); }, 100);
+  }
+  function stopTimer() {
+    if (timerHandle) {
+      elapsedMs = performance.now() - startTs;
+      clearInterval(timerHandle);
+      timerHandle = 0;
+    }
+    renderTimer();
+  }
+  function ensureStarted() {
+    if (!started) {
+      started = true;
+      armTimer();
+    }
+  }
+
+  function markRipple(r, c, originR, originC) {
+    if (!motionOk()) return;
+    var el = cells[r][c];
+    el.style.setProperty('--d', String(Math.max(Math.abs(r - originR), Math.abs(c - originC))));
+    el.classList.add('is-rip');
+  }
+  function openAt(r, c, deferWin) {
+    if (gameOver || !inb(r, c) || revealed[r][c] || flagged[r][c]) return false;
+    if (!minesReady) {
+      placeMines(r, c);
+      minesReady = true;
+    }
+    ensureStarted();
+    if (grid[r][c] === -1) {
+      lose(r, c);
+      return true;
+    }
+    var batch = [];
+    var stack = [[r, c]];
+    revealed[r][c] = true;
+    batch.push([r, c]);
+    if (grid[r][c] === 0) {
+      while (stack.length) {
+        var cur = stack.pop();
+        for (var dr = -1; dr <= 1; dr++) for (var dc = -1; dc <= 1; dc++) {
+          if (!dr && !dc) continue;
+          var nr = cur[0] + dr, nc = cur[1] + dc;
+          if (!inb(nr, nc) || revealed[nr][nc] || flagged[nr][nc] || grid[nr][nc] === -1) continue;
+          revealed[nr][nc] = true;
+          batch.push([nr, nc]);
+          if (grid[nr][nc] === 0) stack.push([nr, nc]);
+        }
+      }
+    }
+    var maxD = 0;
+    batch.forEach(function (pair) {
+      renderCell(pair[0], pair[1]);
+      markRipple(pair[0], pair[1], r, c);
+      maxD = Math.max(maxD, Math.max(Math.abs(pair[0] - r), Math.abs(pair[1] - c)));
+    });
+    sfxFlood(grid[r][c], maxD);
+    if (!deferWin) checkWin();
+    return false;
+  }
+  function flagAt(r, c) {
+    if (gameOver || !inb(r, c) || revealed[r][c]) return;
+    flagged[r][c] = !flagged[r][c];
+    paintMineCount();
+    renderCell(r, c);
+    if (flagged[r][c] && motionOk()) cells[r][c].classList.add('is-plant');
+    sfxFlag();
+    buzz(14);
+  }
+  function neighborFlags(r, c) {
+    var n = 0;
+    for (var dr = -1; dr <= 1; dr++) for (var dc = -1; dc <= 1; dc++) {
+      if (!dr && !dc) continue;
+      var nr = r + dr, nc = c + dc;
+      if (inb(nr, nc) && flagged[nr][nc]) n++;
+    }
+    return n;
+  }
+  function shakeCell(r, c) {
+    shakes++;
+    var el = cells[r][c];
+    if (!el) return;
+    el.dataset.shakes = String(shakes);
+    if (!motionOk()) return;
+    el.classList.remove('is-shake');
+    void el.offsetWidth;
+    el.classList.add('is-shake');
+    setTimeout(function () { el.classList.remove('is-shake'); }, 800);
+  }
+  function chordAt(r, c) {
+    if (gameOver || !inb(r, c) || !revealed[r][c] || grid[r][c] <= 0) return;
+    if (neighborFlags(r, c) !== grid[r][c]) {
+      shakeCell(r, c);
+      sfxNope();
+      return;
+    }
+    var openList = [];
+    var mineHit = null;
+    for (var dr = -1; dr <= 1; dr++) for (var dc = -1; dc <= 1; dc++) {
+      if (!dr && !dc) continue;
+      var nr = r + dr, nc = c + dc;
+      if (!inb(nr, nc) || flagged[nr][nc] || revealed[nr][nc]) continue;
+      if (grid[nr][nc] === -1) mineHit = [nr, nc];
+      else openList.push([nr, nc]);
+    }
+    if (mineHit) {
+      openList.forEach(function (pair) { openAt(pair[0], pair[1], true); });
+      lose(mineHit[0], mineHit[1]);
+      return;
+    }
+    openList.forEach(function (pair) { openAt(pair[0], pair[1], false); });
+  }
+  function digAt(r, c) {
+    if (!inb(r, c) || gameOver) return;
+    if (revealed[r][c]) {
+      if (grid[r][c] > 0) chordAt(r, c);
+      return;
+    }
+    if (flagged[r][c]) return;
+    openAt(r, c, false);
+  }
+  function modeAction(r, c) {
+    if (revealed[r][c] && grid[r][c] > 0) {
+      chordAt(r, c);
+      return;
+    }
+    if (flagMode) flagAt(r, c);
+    else digAt(r, c);
+  }
+  function oppositeAction(r, c) {
+    if (revealed[r][c] && grid[r][c] > 0) {
+      chordAt(r, c);
+      return;
+    }
+    if (flagMode) digAt(r, c);
+    else flagAt(r, c);
+  }
+
+  function compute3BV() {
+    var seen = Array.from({ length: cfg.rows }, function () { return Array(cfg.cols).fill(false); });
+    var openings = 0;
+    for (var r = 0; r < cfg.rows; r++) for (var c = 0; c < cfg.cols; c++) {
+      if (grid[r][c] !== 0 || seen[r][c]) continue;
+      openings++;
+      var stack = [[r, c]];
+      seen[r][c] = true;
+      while (stack.length) {
+        var cur = stack.pop();
+        for (var dr = -1; dr <= 1; dr++) for (var dc = -1; dc <= 1; dc++) {
+          var nr = cur[0] + dr, nc = cur[1] + dc;
+          if (!inb(nr, nc) || seen[nr][nc] || grid[nr][nc] === -1) continue;
+          seen[nr][nc] = true;
+          if (grid[nr][nc] === 0) stack.push([nr, nc]);
+        }
+      }
+    }
+    var isolated = 0;
+    for (var i = 0; i < cfg.rows; i++) for (var j = 0; j < cfg.cols; j++) {
+      if (grid[i][j] > 0 && !seen[i][j]) isolated++;
+    }
+    return openings + isolated;
+  }
+
+  function recordResult(didWin) {
+    if (recorded) return false;
+    recorded = true;
+    var seconds = elapsedSeconds();
+    var stats = loadStats();
+    var row = stats[diff] || emptyStats();
+    var prev = row.best;
+    if (prev == null) {
+      var prevRaw = storageGet('ms_best_' + diff);
+      if (prevRaw != null && prevRaw !== '' && isFinite(Number(prevRaw))) prev = Number(prevRaw);
+    }
+    var isNew = false;
+    row.played += 1;
+    if (didWin) {
+      row.won += 1;
+      row.streak += 1;
+      row.bestStreak = Math.max(row.bestStreak, row.streak);
+      isNew = prev == null || seconds < prev;
+      if (isNew) {
+        row.best = seconds;
+        storageSet('ms_best_' + diff, String(seconds));
+      } else if (row.best == null && prev != null) row.best = prev;
+      row.times.push(seconds);
+      row.times.sort(function (a, b) { return a - b; });
+      row.times = row.times.slice(0, 5);
     } else {
-      cell.style.background='';
+      row.streak = 0;
     }
-    cell.addEventListener('click',()=>handleClick(r,c));
-    cell.addEventListener('contextmenu',e=>{e.preventDefault();handleRightClick(r,c);});
-    cell.addEventListener('touchstart',handleTouchStart,{passive:true});
-    cell.addEventListener('touchmove',handleTouchMove,{passive:true});
-    cell.addEventListener('touchend',handleTouchEnd,{passive:false});
-    cell._r=r; cell._c=c;
-    el.appendChild(cell);
+    stats[diff] = row;
+    saveStats(stats);
+    paintBest();
+    return isNew;
   }
-}
-
-function handleClick(r,c){
-  if(suppressClick){ suppressClick=false; return; }
-  if(gameOver||flagged[r][c]||revealed[r][c]) return;
-  if(firstClick){ firstClick=false; placeMines(r,c); timerInt=setInterval(()=>{timerSec++;document.getElementById('timerDisp').textContent=timerSec;},1000); }
-  if(grid[r][c]===-1){ explode(r,c); return; }
-  flood(r,c); renderGrid(); checkWin();
-  try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) {}
-}
-
-function flood(r,c){
-  if(r<0||r>=cfg.rows||c<0||c>=cfg.cols||revealed[r][c]||flagged[r][c]) return;
-  revealed[r][c]=true;
-  if(grid[r][c]===0) for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++) flood(r+dr,c+dc);
-}
-
-function handleRightClick(r,c){
-  if(gameOver||revealed[r][c]) return;
-  flagged[r][c]=!flagged[r][c];
-  minesLeft+=flagged[r][c]?-1:1;
-  document.getElementById('mineCount').textContent=minesLeft;
-  renderGrid();
-}
-
-let touchTimer=null, longPressFired=false, suppressClick=false;
-function handleTouchStart(){
-  longPressFired=false;
-  const r=this._r, c=this._c;
-  touchTimer=setTimeout(()=>{
-    touchTimer=null;
-    longPressFired=true;
-    suppressClick=true;
-    handleRightClick(r,c);
-    try { if (navigator.vibrate) navigator.vibrate(14); } catch(_) {}
-  }, 420);
-}
-function handleTouchMove(){
-  if(touchTimer){ clearTimeout(touchTimer); touchTimer=null; }
-}
-function handleTouchEnd(e){
-  if(touchTimer){ clearTimeout(touchTimer); touchTimer=null; }
-  if(longPressFired) e.preventDefault();
-}
-
-function explode(r,c){
-  gameOver=true; clearInterval(timerInt);
-  revealed[r][c]=true;
-  for(let i=0;i<cfg.rows;i++) for(let j=0;j<cfg.cols;j++) if(grid[i][j]===-1) revealed[i][j]=true;
-  document.getElementById('faceBtn').textContent='😵';
-  renderGrid();
-  const explCell=document.querySelectorAll('.ms-cell')[r*cfg.cols+c];
-  if(explCell) explCell.classList.add('exploded');
-  showResult(false);
-}
-
-function checkWin(){
-  for(let r=0;r<cfg.rows;r++) for(let c=0;c<cfg.cols;c++) if(grid[r][c]!==-1&&!revealed[r][c]) return;
-  gameOver=true; clearInterval(timerInt);
-  document.getElementById('faceBtn').textContent='😎';
-  showResult(true);
-}
-
-function showResult(win){
-  const panel=document.getElementById('msResult');
-  document.getElementById('resIcon').textContent  = win?'🏆':'☄️';
-  document.getElementById('resTitle').textContent = win?'Field Cleared!':'Meteor Strike!';
-  document.getElementById('resMsg').textContent   = win
-    ? `Cleared in ${timerSec}s on ${diff}.`
-    : `You hit a meteor on ${diff}. Try again!`;
-
-  const bestEl=document.getElementById('resBest');
-  if(win){
-    const key=`ms_best_${diff}`;
-    let prev=0;
-    try { prev=parseInt(localStorage.getItem(key)||'0',10); } catch(_) {}
-    if(!Number.isFinite(prev)) prev=0;
-    if(!prev||timerSec<prev){
-      try { localStorage.setItem(key,timerSec); } catch(_) {}
-      bestEl.innerHTML=`🥇 New best for ${diff}: <span>${timerSec}s</span>`;
+  function showResult(didWin, isNew) {
+    var seconds = elapsedSeconds();
+    var best = readBest(diff);
+    document.getElementById('resTitle').textContent = didWin ? 'Field cleared' : 'Meteor strike';
+    document.getElementById('resMsg').textContent = didWin
+      ? ('Cleared in ' + formatSec(seconds) + ' on ' + diff + '.')
+      : ('You hit a meteor on ' + diff + '.');
+    var bestEl = document.getElementById('resBest');
+    if (didWin) {
+      bestEl.textContent = isNew ? ('New best for ' + diff + ': ' + formatSec(seconds)) : ('Best for ' + diff + ': ' + formatSec(best == null ? seconds : best));
+    } else if (best != null) {
+      bestEl.textContent = 'Best for ' + diff + ': ' + formatSec(best);
+    } else bestEl.textContent = '';
+    var bvEl = document.getElementById('resBv');
+    if (didWin) {
+      lastBv = compute3BV();
+      var rawSec = elapsedMs / 1000;
+      var rateSec = rawSec > 0.05 ? rawSec : 0.1;
+      bvEl.textContent = '3BV ' + lastBv + ' · ' + (lastBv / rateSec).toFixed(2) + '/s';
     } else {
-      bestEl.innerHTML=`Best for ${diff}: <span>${prev}s</span>`;
+      bvEl.textContent = '';
+      lastBv = 0;
     }
-    bestEl.style.display='block';
-  } else {
-    const prev=parseInt(localStorage.getItem(`ms_best_${diff}`)||'0',10);
-    if(prev){ bestEl.innerHTML=`Your best for ${diff}: <span>${prev}s</span>`; bestEl.style.display='block'; }
-    else bestEl.style.display='none';
+    resultEl.hidden = false;
+    liveEl.textContent = didWin
+      ? ('Field cleared in ' + formatSec(seconds) + ' on ' + diff + '.')
+      : ('Meteor strike. You lost on ' + diff + '.');
   }
-  panel.classList.add('show');
-}
+  function finishWin() {
+    if (gameOver) return;
+    gameOver = true;
+    won = true;
+    lost = false;
+    stopTimer();
+    for (var r = 0; r < cfg.rows; r++) for (var c = 0; c < cfg.cols; c++) {
+      if (grid[r][c] === -1) flagged[r][c] = true;
+    }
+    paintMineCount();
+    renderAll();
+    frameEl.classList.add('is-win');
+    for (var i = 0; i < cfg.rows; i++) for (var j = 0; j < cfg.cols; j++) {
+      if (grid[i][j] === -1) cells[i][j].classList.add('is-plant');
+    }
+    if (motionOk()) {
+      var rect = frameEl.getBoundingClientRect();
+      burst(rect.width / 2, rect.height / 2, '#ffe08a', 76, 'star');
+    }
+    sfxWin();
+    var isNew = recordResult(true);
+    paintFace();
+    var payoffMs = motionOk() ? 720 : 0;
+    if (!payoffMs) showResult(true, isNew);
+    else {
+      setTimeout(function () {
+        if (!won || !resultEl.hidden) return;
+        showResult(true, isNew);
+      }, payoffMs);
+    }
+  }
+  function checkWin() {
+    if (gameOver) return;
+    for (var r = 0; r < cfg.rows; r++) for (var c = 0; c < cfg.cols; c++) {
+      if (grid[r][c] !== -1 && !revealed[r][c]) return;
+    }
+    finishWin();
+  }
+  function lose(r, c) {
+    if (gameOver) return;
+    gameOver = true;
+    lost = true;
+    won = false;
+    hit = { r: r, c: c };
+    revealed[r][c] = true;
+    stopTimer();
+    for (var i = 0; i < cfg.rows; i++) for (var j = 0; j < cfg.cols; j++) {
+      if (grid[i][j] === -1 && !flagged[i][j]) revealed[i][j] = true;
+    }
+    renderAll();
+    if (motionOk()) {
+      frameEl.classList.add('is-shake');
+      setTimeout(function () { frameEl.classList.remove('is-shake'); }, 220);
+      for (var a = 0; a < cfg.rows; a++) for (var b = 0; b < cfg.cols; b++) {
+        if (grid[a][b] === -1 && revealed[a][b]) {
+          cells[a][b].style.setProperty('--d', String(Math.max(Math.abs(a - r), Math.abs(b - c))));
+          cells[a][b].classList.add('is-chain');
+        }
+      }
+      var cell = cells[r][c];
+      var cr = cell.getBoundingClientRect();
+      var fr = frameEl.getBoundingClientRect();
+      burst(cr.left - fr.left + cr.width / 2, cr.top - fr.top + cr.height / 2, '#ff7a3c', 22);
+    }
+    sfxBoom();
+    buzz([24, 36, 28]);
+    showResult(false, recordResult(false));
+    paintFace();
+  }
 
-function shareResult(){
-  const won=document.getElementById('resTitle').textContent==='Field Cleared!';
-  const text=won
-    ?`☄️ Cosmic Minesweeper — Cleared ${diff} in ${timerSec}s!\ncosmicgameshub.com/games/minesweeper`
-    :`☄️ Cosmic Minesweeper — Hit a meteor on ${diff}!\ncosmicgameshub.com/games/minesweeper`;
-  navigator.clipboard.writeText(text).then(()=>{
-    const btn=document.getElementById('shareBtn');
-    btn.textContent='✓ Copied!'; setTimeout(()=>btn.textContent='📋 Share',1800);
-  }).catch(()=>{ prompt('Copy this:',text); });
-}
+  function clearPreview() {
+    preview.forEach(function (pair) {
+      var el = cells[pair[0]] && cells[pair[0]][pair[1]];
+      if (el) el.classList.remove('is-preview');
+    });
+    preview = [];
+  }
+  function showPreview(r, c) {
+    clearPreview();
+    if (!inb(r, c) || !revealed[r][c] || grid[r][c] <= 0) return;
+    for (var dr = -1; dr <= 1; dr++) for (var dc = -1; dc <= 1; dc++) {
+      if (!dr && !dc) continue;
+      var nr = r + dr, nc = c + dc;
+      if (!inb(nr, nc) || revealed[nr][nc]) continue;
+      preview.push([nr, nc]);
+      cells[nr][nc].classList.add('is-preview');
+    }
+  }
+  function hideHold() {
+    holdEl.hidden = true;
+    holdEl.classList.remove('is-on');
+  }
+  function showHold(el) {
+    if (!motionOk()) {
+      holdEl.hidden = false;
+      holdEl.classList.remove('is-on');
+    }
+    var fr = frameEl.getBoundingClientRect();
+    var cr = el.getBoundingClientRect();
+    holdEl.style.left = (cr.left - fr.left + cr.width / 2) + 'px';
+    holdEl.style.top = (cr.top - fr.top + cr.height / 2) + 'px';
+    holdEl.hidden = false;
+    holdEl.classList.remove('is-on');
+    if (motionOk()) {
+      void holdEl.offsetWidth;
+      holdEl.classList.add('is-on');
+    }
+  }
+  function setFaceDown(on) {
+    faceDown = on && !gameOver;
+    paintFace();
+  }
 
-document.querySelectorAll('.difficulty-btn').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    document.querySelectorAll('.difficulty-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active'); initGame(btn.dataset.d);
+  function cellFromEvent(e) {
+    var node = e.target && e.target.closest ? e.target.closest('.ms-cell') : null;
+    if (!node) return null;
+    return { r: Number(node.dataset.r), c: Number(node.dataset.c), el: node };
+  }
+  function releaseCapture(id) {
+    if (id == null) return;
+    try {
+      if (gridEl.hasPointerCapture && gridEl.hasPointerCapture(id)) gridEl.releasePointerCapture(id);
+    } catch (err) {}
+  }
+  function noteTouch() {
+    var now = performance.now();
+    lastTouchAt = now;
+    mouseMuteUntil = now + 1100;
+  }
+  function clearGesture() {
+    var rec = press;
+    press = null;
+    if (rec) {
+      clearTimeout(rec.timer);
+      clearTimeout(rec.cleanup);
+      releaseCapture(rec.pointerId);
+    }
+    hideHold();
+    clearPreview();
+    setFaceDown(false);
+    var pressed = document.querySelectorAll('.ms-cell.is-pressed');
+    for (var i = 0; i < pressed.length; i++) pressed[i].classList.remove('is-pressed');
+  }
+  function endPress(act) {
+    if (!press) return;
+    var rec = press;
+    var actNow = !!(act && !rec.moved && !rec.longFired && !rec.done);
+    var chord = rec.chord;
+    var r = rec.r;
+    var c = rec.c;
+    clearGesture();
+    if (!actNow) return;
+    if (chord) chordAt(r, c);
+    else modeAction(r, c);
+    focusCell(r, c, false);
+  }
+  function onPointerUp(e) {
+    if (e.pointerType && e.pointerType !== 'mouse') noteTouch();
+    if (!press || e.pointerId !== press.pointerId) return;
+    if (e.pointerType && press.pointerType && e.pointerType !== press.pointerType) return;
+    if (press.pointerType === 'mouse' && press.chord && (e.buttons & 1) && e.button !== 0) return;
+    if (press.pointerType === 'mouse' && !press.chord && (e.buttons & 2)) {
+      press.chord = true;
+      return;
+    }
+    endPress(true);
+  }
+
+  gridEl.addEventListener('pointerdown', function (e) {
+    unlockAudio();
+    if (e.pointerType === 'mouse' && performance.now() < mouseMuteUntil) {
+      if (e.cancelable) e.preventDefault();
+      return;
+    }
+    if (press && (press.pointerId !== e.pointerId || press.longFired || press.done)) clearGesture();
+    var cell = cellFromEvent(e);
+    if (e.pointerType === 'mouse') {
+      if (e.button === 2) {
+        e.preventDefault();
+        if (press && press.pointerId === e.pointerId && (e.buttons & 1)) {
+          press.chord = true;
+          if (cell) showPreview(cell.r, cell.c);
+          return;
+        }
+        if (cell) flagAt(cell.r, cell.c);
+        return;
+      }
+      if (e.button === 1) {
+        e.preventDefault();
+        if (!cell) return;
+        if (press) clearGesture();
+        press = { pointerId: e.pointerId, pointerType: 'mouse', r: cell.r, c: cell.c, chord: true, longFired: false, done: false, moved: false, timer: 0, cleanup: 0 };
+        showPreview(cell.r, cell.c);
+        setFaceDown(true);
+        return;
+      }
+      if (e.button !== 0 || !cell) return;
+      if (press && press.pointerId === e.pointerId && !press.done && !press.longFired) return;
+      press = { pointerId: e.pointerId, pointerType: 'mouse', r: cell.r, c: cell.c, chord: false, longFired: false, done: false, moved: false, timer: 0, cleanup: 0 };
+      if (revealed[cell.r][cell.c] && grid[cell.r][cell.c] > 0) showPreview(cell.r, cell.c);
+      else cells[cell.r][cell.c].classList.add('is-pressed');
+      setFaceDown(true);
+      return;
+    }
+    if (!cell) return;
+    if (press && press.pointerId === e.pointerId && !press.done && !press.longFired) return;
+    if (press) clearGesture();
+    if (e.cancelable) e.preventDefault();
+    noteTouch();
+    var rec = {
+      pointerId: e.pointerId,
+      pointerType: e.pointerType || 'touch',
+      r: cell.r,
+      c: cell.c,
+      x: e.clientX,
+      y: e.clientY,
+      longFired: false,
+      done: false,
+      moved: false,
+      chord: false,
+      timer: 0,
+      cleanup: 0
+    };
+    press = rec;
+    try { gridEl.setPointerCapture(e.pointerId); } catch (err) {}
+    if (revealed[cell.r][cell.c] && grid[cell.r][cell.c] > 0) showPreview(cell.r, cell.c);
+    else showHold(cell.el);
+    rec.timer = setTimeout(function () {
+      if (press !== rec) return;
+      rec.longFired = true;
+      rec.done = true;
+      hideHold();
+      clearPreview();
+      oppositeAction(rec.r, rec.c);
+      focusCell(rec.r, rec.c, false);
+      releaseCapture(rec.pointerId);
+      setFaceDown(false);
+      var nodes = document.querySelectorAll('.ms-cell.is-pressed');
+      for (var n = 0; n < nodes.length; n++) nodes[n].classList.remove('is-pressed');
+      noteTouch();
+      clearTimeout(rec.cleanup);
+      rec.cleanup = setTimeout(function () {
+        if (press === rec) {
+          noteTouch();
+          clearGesture();
+        }
+      }, 48);
+    }, LONG_MS);
+    setFaceDown(true);
   });
-});
-(function(){
-  var h=document.getElementById('hamburger')||document.querySelector('.nav__hamburger');
-  var n=document.getElementById('navLinks');
-  if(!h||!n) return;
-  h.dataset.navInit='1';
-  h.addEventListener('click',function(){
-    var open=n.classList.toggle('open');
-    h.setAttribute('aria-expanded', String(open));
+  gridEl.addEventListener('pointermove', function (e) {
+    if (!press || e.pointerId !== press.pointerId || press.pointerType === 'mouse') return;
+    var dx = e.clientX - press.x;
+    var dy = e.clientY - press.y;
+    if (dx * dx + dy * dy > SLOP * SLOP) {
+      press.moved = true;
+      clearTimeout(press.timer);
+      press.timer = 0;
+      hideHold();
+      clearPreview();
+    }
   });
+  gridEl.addEventListener('pointerup', onPointerUp);
+  window.addEventListener('pointerup', onPointerUp);
+  gridEl.addEventListener('pointercancel', function (e) {
+    if (!press || e.pointerId !== press.pointerId) return;
+    if (press.pointerType !== 'mouse') noteTouch();
+    endPress(false);
+  });
+  window.addEventListener('pointercancel', function (e) {
+    if (!press || e.pointerId !== press.pointerId) return;
+    if (press.pointerType !== 'mouse') noteTouch();
+    endPress(false);
+  });
+  function eatPointerFollowup(e) {
+    if (e.cancelable) e.preventDefault();
+    e.stopPropagation();
+  }
+  gridEl.addEventListener('contextmenu', eatPointerFollowup);
+  gridEl.addEventListener('click', eatPointerFollowup);
+  gridEl.addEventListener('auxclick', eatPointerFollowup);
+
+  function rememberFocus() {
+    var active = document.activeElement;
+    if (active && active !== document.body && active !== document.documentElement) focusReturn = active;
+  }
+  function restoreFocus() {
+    var back = focusReturn;
+    focusReturn = null;
+    if (back && typeof back.focus === 'function' && document.contains(back)) {
+      try { back.focus({ preventScroll: true }); } catch (err) {}
+    }
+  }
+  function sheetOpen(el) { return !!(el && !el.hidden); }
+  function closeSheet(el) {
+    if (!sheetOpen(el)) return;
+    el.hidden = true;
+    restoreFocus();
+  }
+  function openConfirm() {
+    var sheet = document.getElementById('msConfirm');
+    rememberFocus();
+    sheet.hidden = false;
+    var stay = document.getElementById('confirmStay');
+    try { (stay || sheet).focus({ preventScroll: true }); } catch (err) {}
+  }
+  function requestNew(next) {
+    if (inProgress()) {
+      pendingDiff = next || diff;
+      openConfirm();
+      return;
+    }
+    resetBoard(next || diff);
+  }
+  document.querySelectorAll('.ms-diff').forEach(function (btn) {
+    btn.addEventListener('click', function () { requestNew(btn.getAttribute('data-diff')); });
+  });
+  faceEl.addEventListener('click', function () { requestNew(diff); });
+  document.getElementById('againBtn').addEventListener('click', function () { resetBoard(diff); });
+  document.getElementById('confirmGo').addEventListener('click', function () {
+    closeSheet(document.getElementById('msConfirm'));
+    resetBoard(pendingDiff || diff);
+    pendingDiff = null;
+  });
+  document.getElementById('confirmStay').addEventListener('click', function () {
+    closeSheet(document.getElementById('msConfirm'));
+    pendingDiff = null;
+  });
+
+  function setFlagMode(on) {
+    flagMode = !!on;
+    document.getElementById('modeDig').classList.toggle('is-on', !flagMode);
+    document.getElementById('modeDig').setAttribute('aria-pressed', flagMode ? 'false' : 'true');
+    document.getElementById('modeFlag').classList.toggle('is-on', flagMode);
+    document.getElementById('modeFlag').setAttribute('aria-pressed', flagMode ? 'true' : 'false');
+    frameEl.classList.toggle('is-flagmode', flagMode);
+  }
+  document.getElementById('modeDig').addEventListener('click', function () { setFlagMode(false); });
+  document.getElementById('modeFlag').addEventListener('click', function () { setFlagMode(true); });
+
+  function openStats() {
+    var stats = loadStats();
+    var names = ['easy', 'medium', 'hard'];
+    var html = '<table class="ms-stats-table"><thead><tr><th></th><th>Played</th><th>Won</th><th>Win%</th><th>Streak</th><th>Best streak</th><th>Best</th></tr></thead><tbody>';
+    names.forEach(function (name) {
+      var row = stats[name];
+      var pct = row.played ? Math.round((row.won / row.played) * 1000) / 10 : 0;
+      html += '<tr><td>' + name + '</td><td>' + row.played + '</td><td>' + row.won + '</td><td>' + pct + '%</td><td>' + row.streak + '</td><td>' + row.bestStreak + '</td><td>' + formatSec(row.best) + '</td></tr>';
+    });
+    html += '</tbody></table>';
+    names.forEach(function (name) {
+      var times = stats[name].times || [];
+      html += '<h3 style="margin:0.8rem 0 0.2rem;color:#f2d48a;font-size:0.78rem;letter-spacing:0.08em;text-transform:uppercase;">' + name + ' top times</h3>';
+      if (!times.length) html += '<p>No finishes yet.</p>';
+      else {
+        html += '<ol class="ms-top">';
+        times.forEach(function (t, i) { html += '<li><span>' + (i + 1) + '</span><span>' + formatSec(t) + '</span></li>'; });
+        html += '</ol>';
+      }
+    });
+    document.getElementById('statsBody').innerHTML = html;
+    var sheet = document.getElementById('msStats');
+    rememberFocus();
+    sheet.hidden = false;
+    var closeBtn = document.getElementById('statsClose');
+    try { (closeBtn || sheet).focus({ preventScroll: true }); } catch (err) {}
+  }
+  document.getElementById('statsBtn').addEventListener('click', openStats);
+  document.getElementById('bestBtn').addEventListener('click', openStats);
+  document.getElementById('statsClose').addEventListener('click', function () {
+    closeSheet(document.getElementById('msStats'));
+  });
+  document.getElementById('msStats').addEventListener('click', function (e) {
+    if (e.target === e.currentTarget) closeSheet(e.currentTarget);
+  });
+  document.getElementById('msStats').addEventListener('touchmove', function (e) {
+    var card = e.currentTarget.querySelector('.ms-card');
+    if (card && card.contains(e.target)) return;
+    if (e.cancelable) e.preventDefault();
+  }, { passive: false });
+
+  document.getElementById('shareBtn').addEventListener('click', function () {
+    var didWin = won;
+    var text = didWin
+      ? ('Cosmic Minesweeper — Cleared ' + diff + ' in ' + formatSec(elapsedSeconds()) + (lastBv ? (' (3BV ' + lastBv + ')') : '') + '\nhttps://www.cosmicgameshub.com/games/minesweeper')
+      : ('Cosmic Minesweeper — Hit a meteor on ' + diff + '.\nhttps://www.cosmicgameshub.com/games/minesweeper');
+    var btn = document.getElementById('shareBtn');
+    function copied() {
+      btn.textContent = 'Copied';
+      setTimeout(function () { btn.textContent = 'Share'; }, 1600);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(copied).catch(function () { copied(); });
+    } else copied();
+  });
+
+  muted = storageGet('ms_muted') === '1';
+  paintMute();
+  document.getElementById('muteBtn').addEventListener('click', function () {
+    unlockAudio();
+    muted = !muted;
+    storageSet('ms_muted', muted ? '1' : '0');
+    paintMute();
+  });
+
+  document.addEventListener('keydown', function (e) {
+    var key = e.key;
+    var statsSheet = document.getElementById('msStats');
+    var confirmSheet = document.getElementById('msConfirm');
+    if (key === 'Escape') {
+      e.preventDefault();
+      if (sheetOpen(statsSheet)) closeSheet(statsSheet);
+      else if (sheetOpen(confirmSheet)) {
+        closeSheet(confirmSheet);
+        pendingDiff = null;
+      }
+      return;
+    }
+    if (sheetOpen(statsSheet) || sheetOpen(confirmSheet)) return;
+    if (e.target && e.target.closest && e.target.closest('input, textarea')) return;
+    if (key === 'n' || key === 'N') {
+      if (e.target && e.target.closest && e.target.closest('a')) return;
+      e.preventDefault();
+      requestNew(diff);
+      return;
+    }
+    var onButton = e.target && e.target.closest && e.target.closest('button, a');
+    var inGrid = e.target && e.target.closest && e.target.closest('#msGrid');
+    if (onButton && !inGrid) return;
+    if (key === 'ArrowUp' || key === 'ArrowDown' || key === 'ArrowLeft' || key === 'ArrowRight') {
+      e.preventDefault();
+      var nr = focusR;
+      var nc = focusC;
+      if (key === 'ArrowUp') nr = Math.max(0, focusR - 1);
+      if (key === 'ArrowDown') nr = Math.min(cfg.rows - 1, focusR + 1);
+      if (key === 'ArrowLeft') nc = Math.max(0, focusC - 1);
+      if (key === 'ArrowRight') nc = Math.min(cfg.cols - 1, focusC + 1);
+      focusCell(nr, nc, true);
+      return;
+    }
+    if (key === 'Enter') {
+      e.preventDefault();
+      if (gameOver) requestNew(diff);
+      else digAt(focusR, focusC);
+      return;
+    }
+    if (key === ' ') {
+      e.preventDefault();
+      if (!gameOver) digAt(focusR, focusC);
+      return;
+    }
+    if (key === 'f' || key === 'F') {
+      e.preventDefault();
+      if (!gameOver) flagAt(focusR, focusC);
+      return;
+    }
+    if (key === 'd' || key === 'D') {
+      e.preventDefault();
+      if (!gameOver) chordAt(focusR, focusC);
+    }
+  });
+
+  window.addEventListener('load', function () { fitBoard(); });
+  window.addEventListener('resize', function () {
+    var next = geometry(diff);
+    if (!started && flagCount() === 0 && !gameOver && (next.rows !== cfg.rows || next.cols !== cfg.cols)) {
+      resetBoard(diff);
+      return;
+    }
+    fitBoard();
+  });
+
+  (function () {
+    var hamburger = document.getElementById('hamburger');
+    var links = document.getElementById('navLinks');
+    if (!hamburger || !links) return;
+    hamburger.dataset.navInit = '1';
+    hamburger.addEventListener('click', function () {
+      var open = links.classList.toggle('open');
+      hamburger.setAttribute('aria-expanded', open ? 'true' : 'false');
+      hamburger.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    });
+  })();
+
+  function snapshot() {
+    return {
+      diff: diff,
+      rows: cfg.rows,
+      cols: cfg.cols,
+      mines: cfg.mines,
+      grid: grid.map(function (row) { return row.slice(); }),
+      revealed: revealed.map(function (row) { return row.slice(); }),
+      flagged: flagged.map(function (row) { return row.slice(); }),
+      minesLeft: cfg.mines - flagCount(),
+      gameOver: gameOver,
+      won: won,
+      lost: lost,
+      started: started,
+      flagMode: flagMode,
+      cellSize: cellSize,
+      gap: cellGap,
+      elapsed: elapsedSeconds(),
+      hit: hit ? { r: hit.r, c: hit.c } : null,
+      shakes: shakes,
+      reduced: !motionOk(),
+      bv: lastBv
+    };
+  }
+
+  try {
+    var host = String(location.hostname || '');
+    var prod = /(^|\.)cosmicgameshub\.com$/i.test(host);
+    if (!prod) {
+      window.__ms = {
+        snapshot: snapshot,
+        setMines: function (pairs) { setMineList(pairs || []); return snapshot(); },
+        freezeTime: function (seconds) {
+          clearInterval(timerHandle);
+          timerHandle = 0;
+          elapsedMs = Math.round(Number(seconds) * 1000);
+          startTs = 0;
+          renderTimer();
+        },
+        cellSize: function () { return cellSize; },
+        config: function () { return { diff: diff, rows: cfg.rows, cols: cfg.cols, mines: cfg.mines, cellSize: cellSize }; }
+      };
+    }
+  } catch (err) {}
+
+  var initialDiff = storageGet('ms_diff');
+  if (!CONFIGS[initialDiff]) initialDiff = 'easy';
+  resetBoard(initialDiff);
 })();
-window.addEventListener('resize',()=>{ renderGrid(); });
-
-initGame();
-document.addEventListener('keydown', function(e){
-  if(e.key==='Enter' && gameOver) initGame();
-});
 </script>
 <script src="/global.js" defer></script>
-
 </body>
 </html>
