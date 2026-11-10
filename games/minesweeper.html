@@ -52,7 +52,20 @@
         radial-gradient(ellipse at 50% 42%, rgba(5, 7, 15, 0.18) 0%, rgba(5, 7, 15, 0.52) 58%, rgba(5, 7, 15, 0.84) 100%),
         linear-gradient(180deg, rgba(5, 7, 15, 0.45) 0%, rgba(5, 7, 15, 0.08) 28%, rgba(5, 7, 15, 0.42) 100%);
     }
-    body.minesweeper-cosmic > * { position: relative; z-index: 1; }
+    body.minesweeper-cosmic > *:not(.ms-sheet) { position: relative; z-index: 1; }
+    body.minesweeper-cosmic > .ms-sheet {
+      position: fixed;
+      inset: 0;
+      z-index: 420;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      background: rgba(2, 4, 14, 0.72);
+      overflow: hidden;
+      overscroll-behavior: none;
+    }
+    body.minesweeper-cosmic > .ms-sheet[hidden] { display: none !important; }
 
     body.page-game.minesweeper-cosmic .nav {
       background: rgba(5, 7, 15, 0.78);
@@ -117,7 +130,14 @@
       color: #f7f8ff;
       font-weight: 700;
     }
-    .ms-intro p { margin: 2px auto 0; max-width: 40rem; color: #d5d8ea; font-size: 0.82rem; }
+    .ms-intro p {
+      margin: 2px auto 0;
+      max-width: 46rem;
+      color: #d5d8ea;
+      font-size: 0.82rem;
+      line-height: 1.3;
+      white-space: nowrap;
+    }
 
     .ms-wrap { width: min(1100px, 100%); margin: 0 auto; padding: 4px 0 8px; }
     .ms-toolbar {
@@ -167,6 +187,7 @@
       font-weight: 800;
       color: #ffe08a;
       font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum" 1;
     }
     .ms-stat span, .ms-bestline {
       font-size: 0.62rem;
@@ -184,29 +205,35 @@
       text-transform: none;
       letter-spacing: 0;
       color: #f2d48a;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum" 1;
+      white-space: nowrap;
     }
     .ms-face {
-      width: 44px;
-      height: 44px;
-      min-width: 44px;
+      width: 56px;
+      height: 56px;
+      min-width: 56px;
       border-radius: 50%;
-      border: 1px solid rgba(255, 214, 140, 0.45);
-      background: radial-gradient(circle at 40% 35%, rgba(255, 255, 255, 0.16), rgba(6, 10, 22, 0.2) 42%, rgba(6, 10, 22, 0.85));
+      border: 2px solid var(--ring, #f0c14a);
+      background: radial-gradient(circle at 40% 35%, rgba(255, 255, 255, 0.22), rgba(6, 10, 22, 0.15) 42%, rgba(6, 10, 22, 0.88));
+      box-shadow: 0 0 0 3px rgba(6, 10, 22, 0.45), 0 0 16px rgba(255, 214, 140, 0.28);
       padding: 0;
       display: grid;
       place-items: center;
       cursor: pointer;
     }
-    .ms-face svg { width: 36px; height: 36px; display: block; }
-    .ms-face .orb-ring { fill: none; stroke: var(--ring, #f0c14a); stroke-width: 2; }
+    .ms-face svg { width: 48px; height: 48px; display: block; }
+    .ms-face .orb-ring { fill: none; stroke: var(--ring, #f0c14a); stroke-width: 2.6; }
     .ms-face .orb-core { fill: var(--orb, #7ee0ff); }
-    .ms-face .orb-visor { fill: none; stroke: #041018; stroke-width: 1.6; stroke-linecap: round; }
-    .ms-face .crack { display: none; stroke: #2a060c; stroke-width: 1.5; fill: none; stroke-linecap: round; }
+    .ms-face .expr { display: none; }
+    .ms-face.is-idle .expr-idle,
+    .ms-face.is-down .expr-down,
+    .ms-face.is-win .expr-win,
+    .ms-face.is-lose .expr-lose { display: block; }
     .ms-face.is-idle { --orb: #7ee0ff; --ring: #f0c14a; }
-    .ms-face.is-down { --orb: #fff6d0; --ring: #ffffff; }
-    .ms-face.is-win { --orb: #ffe08a; --ring: #ffe08a; }
-    .ms-face.is-lose { --orb: #ff5d6e; --ring: #ff8b98; }
-    .ms-face.is-lose .crack { display: block; }
+    .ms-face.is-down { --orb: #fff6d0; --ring: #ffffff; box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.35), 0 0 18px rgba(255, 246, 208, 0.7); }
+    .ms-face.is-win { --orb: #ffe08a; --ring: #ffe08a; box-shadow: 0 0 0 3px rgba(255, 224, 138, 0.45), 0 0 18px rgba(255, 208, 80, 0.75); }
+    .ms-face.is-lose { --orb: #ff5d6e; --ring: #ff8b98; box-shadow: 0 0 0 3px rgba(255, 80, 100, 0.4), 0 0 16px rgba(255, 70, 90, 0.65); }
     .ms-face.is-idle .orb-ring { animation: msOrb 3.2s ease-in-out infinite; }
     @keyframes msOrb { 50% { stroke-width: 2.6; } }
     .ms-mute {
@@ -335,22 +362,63 @@
     @keyframes msHold { to { stroke-dashoffset: 0; } }
 
     .ms-fx, .ms-scan { position: absolute; inset: 0; pointer-events: none; border-radius: inherit; }
-    .ms-fx { z-index: 4; width: 100%; height: 100%; }
+    .ms-fx { z-index: 6; width: 100%; height: 100%; }
     .ms-scan {
-      z-index: 3;
+      z-index: 5;
       overflow: hidden;
+    }
+    .ms-frame.is-win {
+      box-shadow:
+        0 0 0 3px #ffe08a,
+        0 0 0 7px rgba(90, 62, 8, 0.45),
+        0 0 36px 8px rgba(255, 210, 80, 0.92),
+        inset 0 0 28px rgba(255, 220, 120, 0.42);
+    }
+    .ms-frame.is-win .ms-cell.is-flag {
+      background-color: #a07a28;
+      box-shadow:
+        inset 0 0 0 2px #fff6cc,
+        0 0 14px rgba(255, 220, 90, 0.98);
+    }
+    .ms-frame.is-win .ms-flag .pennant {
+      fill: #fff6c8;
+      filter: drop-shadow(0 0 3px #fff3c0) drop-shadow(0 0 6px #ffe08a);
+    }
+    .ms-frame.is-win .ms-scan::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 34%;
+      height: 46%;
+      opacity: 0;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 252, 240, 0.98) 0%, rgba(255, 214, 80, 0.82) 38%, rgba(255, 186, 40, 0) 72%);
+      transform: translate(-50%, -50%) scale(0.15);
+      animation: msStarburst 980ms ease-out forwards;
     }
     .ms-frame.is-win .ms-scan::after {
       content: "";
       position: absolute;
-      top: 0;
-      bottom: 0;
-      width: 38%;
-      background: linear-gradient(90deg, transparent, rgba(255, 224, 150, 0.55), transparent);
-      transform: translateX(-160%);
-      animation: msScan 720ms ease forwards;
+      top: -6%;
+      bottom: -6%;
+      width: 24%;
+      background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(255, 210, 90, 0.2) 18%,
+        rgba(255, 252, 235, 1) 48%,
+        rgba(255, 196, 50, 0.98) 62%,
+        transparent 100%);
+      box-shadow: 0 0 28px 10px rgba(255, 214, 80, 0.9);
+      transform: translateX(-180%);
+      animation: msScan 1200ms cubic-bezier(.15, .6, .2, 1) forwards;
     }
-    @keyframes msScan { to { transform: translateX(420%); } }
+    @keyframes msScan { to { transform: translateX(520%); } }
+    @keyframes msStarburst {
+      0% { opacity: 1; transform: translate(-50%, -50%) scale(0.2); }
+      35% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+      100% { opacity: 0; transform: translate(-50%, -50%) scale(2.5); }
+    }
     .ms-frame.is-shake { animation: msDetonate 200ms linear; }
     @keyframes msDetonate {
       0%, 100% { transform: translate(0, 0); }
@@ -388,7 +456,7 @@
     .ms-result {
       position: absolute;
       inset: 0;
-      z-index: 6;
+      z-index: 8;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -459,13 +527,22 @@
       inset: 0;
       z-index: 420;
       display: flex;
-      align-items: flex-end;
+      align-items: center;
       justify-content: center;
       padding: 12px;
-      background: rgba(2, 4, 14, 0.62);
+      background: rgba(2, 4, 14, 0.72);
+      overflow: hidden;
     }
     .ms-sheet[hidden] { display: none !important; }
-    .ms-sheet .ms-card { width: min(440px, 100%); max-height: min(80vh, 560px); text-align: left; }
+    .ms-sheet .ms-card {
+      width: min(520px, 100%);
+      max-height: calc(100vh - 24px);
+      max-height: calc(100dvh - 24px);
+      overflow: auto;
+      overscroll-behavior: contain;
+      text-align: left;
+      box-sizing: border-box;
+    }
     .ms-sheet h2 { text-align: left; }
     .ms-stats-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; color: #d9dced; font-variant-numeric: tabular-nums; }
     .ms-stats-table th { text-align: left; color: #f2d48a; font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; padding: 0.35rem 0.3rem; }
@@ -473,9 +550,20 @@
     .ms-top { margin: 0.45rem 0 0; padding: 0; list-style: none; color: #d9dced; font-size: 0.82rem; }
     .ms-top li { display: flex; justify-content: space-between; gap: 0.5rem; padding: 0.12rem 0; }
 
+    @media (min-width: 541px) {
+      .ms-hud {
+        width: 284px;
+        flex: 0 0 284px;
+        box-sizing: border-box;
+        justify-content: space-between;
+      }
+      .ms-stat { flex: 1 1 0; min-width: 0; }
+      .ms-bestline { width: 100%; overflow: hidden; text-overflow: ellipsis; text-align: center; }
+    }
     @media (min-width: 801px) {
-      .ms-sheet { align-items: center; }
       .ms-sheet .ms-card { border-radius: 16px; }
+      .ms-wrap { padding-bottom: 0; }
+      .ms-mode { margin-bottom: 16px; }
     }
     @media (max-width: 540px) {
       body.page-game.minesweeper-cosmic .nav__inner { height: 40px; }
@@ -490,8 +578,10 @@
       .ms-stat { min-width: 36px; }
       .ms-stat b { font-size: 0.95rem; }
       .ms-bestline { display: none; }
-      .ms-face { width: 36px; height: 36px; min-width: 36px; }
-      .ms-face svg { width: 30px; height: 30px; }
+      .ms-face { width: 44px; height: 44px; min-width: 44px; }
+      .ms-face svg { width: 38px; height: 38px; }
+      .ms-stats-table { font-size: 0.64rem; }
+      .ms-stats-table th, .ms-stats-table td { padding: 0.26rem 0.1rem; }
       .ms-mute { width: 34px; height: 34px; min-width: 34px; }
       .ms-frame { padding: 3px; border-radius: 12px; }
       .ms-mode {
@@ -514,6 +604,8 @@
         animation: none !important;
         transition: none !important;
       }
+      .ms-frame.is-win .ms-scan::before,
+      .ms-frame.is-win .ms-scan::after { content: none !important; }
     }
 
     .rg-section { padding: 2rem 0 2.5rem; border-top: 1px solid rgba(255, 214, 140, 0.16); margin-top: 1.5rem; }
@@ -597,7 +689,7 @@
     <header class="ms-intro">
       <span class="section__eyebrow">Puzzle Game</span>
       <h1>Cosmic Minesweeper</h1>
-      <p>Dig a cell, or flag a meteor. Tap a satisfied number to open its neighbours. Arrows move, Enter digs, F flags, D chords, N starts a new field.</p>
+      <p>Dig or flag. Chord a number. Arrows, Enter, F, D, N.</p>
     </header>
 
     <div class="ms-wrap">
@@ -611,11 +703,29 @@
           <div class="ms-stat"><b id="mineCount">10</b><span>Meteors</span></div>
           <button type="button" class="ms-face is-idle" id="faceBtn" aria-label="New game">
             <svg viewBox="0 0 48 48" aria-hidden="true">
-              <circle class="orb-ring" cx="24" cy="24" r="18"/>
-              <circle class="orb-core" cx="24" cy="24" r="11"/>
-              <path class="orb-visor" d="M16 24h16"/>
-              <path class="orb-visor" d="M18 20h4M26 20h4"/>
-              <path class="crack" d="M14 16l8 7 4-3 8 10"/>
+              <circle class="orb-ring" cx="24" cy="24" r="20"/>
+              <circle class="orb-core" cx="24" cy="24" r="13.5"/>
+              <g class="expr expr-idle">
+                <circle cx="18" cy="22" r="1.9" fill="#061018"/>
+                <circle cx="30" cy="22" r="1.9" fill="#061018"/>
+                <path d="M17 28.5c2.4 2.8 11.6 2.8 14 0" fill="none" stroke="#061018" stroke-width="1.9" stroke-linecap="round"/>
+              </g>
+              <g class="expr expr-down">
+                <ellipse cx="18" cy="20.5" rx="2.3" ry="2.9" fill="#061018"/>
+                <ellipse cx="30" cy="20.5" rx="2.3" ry="2.9" fill="#061018"/>
+                <ellipse cx="24" cy="30.5" rx="3.5" ry="4.1" fill="#061018"/>
+              </g>
+              <g class="expr expr-win">
+                <path d="M15.2 22c1.3-2.6 3.8-2.6 5.1 0" fill="none" stroke="#3a2804" stroke-width="2" stroke-linecap="round"/>
+                <path d="M27.7 22c1.3-2.6 3.8-2.6 5.1 0" fill="none" stroke="#3a2804" stroke-width="2" stroke-linecap="round"/>
+                <path d="M16 27.5c2.8 4.4 13.2 4.4 16 0" fill="none" stroke="#3a2804" stroke-width="2.1" stroke-linecap="round"/>
+              </g>
+              <g class="expr expr-lose">
+                <path d="M15 17.5l6 6M21 17.5l-6 6" stroke="#2a060c" stroke-width="2" stroke-linecap="round"/>
+                <path d="M27 17.5l6 6M33 17.5l-6 6" stroke="#2a060c" stroke-width="2" stroke-linecap="round"/>
+                <path d="M17 32c2.5-3 11.5-3 14 0" fill="none" stroke="#2a060c" stroke-width="2" stroke-linecap="round"/>
+                <path d="M13 13l6 7-2 2 7 8" fill="none" stroke="#2a060c" stroke-width="1.6" stroke-linecap="round"/>
+              </g>
             </svg>
           </button>
           <div class="ms-stat">
@@ -671,7 +781,7 @@
 
 <div id="msLive" class="ms-sr" aria-live="assertive"></div>
 
-<div id="msConfirm" class="ms-sheet" hidden role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+<div id="msConfirm" class="ms-sheet" hidden role="dialog" aria-modal="true" aria-labelledby="confirmTitle" tabindex="-1">
   <div class="ms-card">
     <h2 id="confirmTitle">Abandon this field?</h2>
     <p>This game is still in progress. Starting over clears the board.</p>
@@ -682,7 +792,7 @@
   </div>
 </div>
 
-<div id="msStats" class="ms-sheet" hidden role="dialog" aria-modal="true" aria-labelledby="statsTitle">
+<div id="msStats" class="ms-sheet" hidden role="dialog" aria-modal="true" aria-labelledby="statsTitle" tabindex="-1">
   <div class="ms-card">
     <h2 id="statsTitle">Stats</h2>
     <div id="statsBody"></div>
@@ -766,6 +876,8 @@
   var timerHandle = 0;
   var press = null;
   var lastTouchAt = 0;
+  var mouseMuteUntil = 0;
+  var focusReturn = null;
   var faceDown = false;
   var preview = [];
   var shakes = 0;
@@ -964,22 +1076,40 @@
     fxEl.style.width = rect.width + 'px';
     fxEl.style.height = rect.height + 'px';
   }
-  function burst(px, py, color, count) {
+  function burst(px, py, color, count, kind) {
     if (!motionOk()) return;
     sizeCanvas();
     var rect = frameEl.getBoundingClientRect();
     var dpr = fxEl.width / Math.max(1, rect.width);
-    for (var i = 0; i < count; i++) {
-      var ang = Math.random() * Math.PI * 2;
-      var spd = 0.6 + Math.random() * 2.4;
+    var star = kind === 'star';
+    var n = count;
+    for (var i = 0; i < n; i++) {
+      var ang = star ? (Math.PI * 2 * i) / n : Math.random() * Math.PI * 2;
+      var spd = star ? (3.4 + (i % 6) * 0.75) : (0.8 + Math.random() * 2.6);
       particles.push({
         x: px * dpr,
         y: py * dpr,
         vx: Math.cos(ang) * spd * dpr,
         vy: Math.sin(ang) * spd * dpr,
         life: 1,
-        color: color,
-        r: (1.2 + Math.random() * 1.8) * dpr
+        decay: star ? 0.972 : 0.94,
+        color: star && (i % 3 === 0) ? '#fffef8' : color,
+        r: (star ? (3.1 + (i % 4) * 1.15) : (1.4 + Math.random() * 2)) * dpr,
+        star: star,
+        rot: ang
+      });
+    }
+    if (star) {
+      particles.push({
+        x: px * dpr,
+        y: py * dpr,
+        vx: 0,
+        vy: 0,
+        life: 1,
+        decay: 0.962,
+        color: '#fff8dc',
+        r: 20 * dpr,
+        flash: true
       });
     }
     if (!fxRunning) {
@@ -987,20 +1117,60 @@
       requestAnimationFrame(drawFx);
     }
   }
+  function drawStar(ctx, p) {
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.rot || 0);
+    ctx.globalAlpha = Math.min(1, p.life);
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    var r = p.r;
+    ctx.moveTo(0, -r);
+    ctx.lineTo(r * 0.28, -r * 0.28);
+    ctx.lineTo(r, 0);
+    ctx.lineTo(r * 0.28, r * 0.28);
+    ctx.lineTo(0, r);
+    ctx.lineTo(-r * 0.28, r * 0.28);
+    ctx.lineTo(-r, 0);
+    ctx.lineTo(-r * 0.28, -r * 0.28);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
   function drawFx() {
     var ctx = fxEl.getContext('2d');
     ctx.clearRect(0, 0, fxEl.width, fxEl.height);
     particles = particles.filter(function (p) { return p.life > 0.02; });
     particles.forEach(function (p) {
+      if (!p.flash) return;
+      p.life *= p.decay || 0.96;
+      var rad = p.r * (1 + (1 - p.life) * 9);
+      var g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, Math.max(1, rad));
+      g.addColorStop(0, 'rgba(255, 253, 245, ' + Math.min(1, p.life) + ')');
+      g.addColorStop(0.28, 'rgba(255, 236, 170, ' + (p.life * 0.95) + ')');
+      g.addColorStop(0.55, 'rgba(255, 196, 60, ' + (p.life * 0.55) + ')');
+      g.addColorStop(1, 'rgba(255, 180, 40, 0)');
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, rad, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    particles.forEach(function (p) {
+      if (p.flash) return;
       p.x += p.vx;
       p.y += p.vy;
-      p.vy += 0.02;
-      p.life *= 0.94;
-      ctx.globalAlpha = p.life;
-      ctx.fillStyle = p.color;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fill();
+      p.vy += p.star ? 0.004 : 0.02;
+      p.rot = (p.rot || 0) + 0.08;
+      p.life *= p.decay || 0.94;
+      if (p.star) drawStar(ctx, p);
+      else {
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
     });
     ctx.globalAlpha = 1;
     if (particles.length) requestAnimationFrame(drawFx);
@@ -1067,12 +1237,16 @@
 
   function modeReserve() {
     var bar = document.getElementById('modeBar');
-    if (!bar) return 52;
+    if (!bar) return 68;
     var styles = getComputedStyle(bar);
     var h = bar.getBoundingClientRect().height || 48;
-    var margin = parseFloat(styles.marginTop) || 0;
+    var marginTop = parseFloat(styles.marginTop) || 0;
+    var marginBottom = parseFloat(styles.marginBottom) || 0;
     if (styles.position === 'fixed') return h + 4;
-    return h + margin + 4;
+    if (styles.position === 'sticky') return h + marginTop + marginBottom + 4;
+    var wrap = document.querySelector('.ms-wrap');
+    var wrapPad = wrap ? (parseFloat(getComputedStyle(wrap).paddingBottom) || 0) : 0;
+    return h + marginTop + marginBottom + wrapPad + 2;
   }
   function chooseCell(availW, availH) {
     var hardDesktop = diff === 'hard' && cfg.cols >= 30;
@@ -1176,9 +1350,8 @@
     startTs = 0;
     clearInterval(timerHandle);
     timerHandle = 0;
-    clearPreview();
-    hideHold();
-    press = null;
+    clearGesture();
+    if (CONFIGS[diff]) storageSet('ms_diff', diff);
     resultEl.hidden = true;
     frameEl.classList.remove('is-win', 'is-shake');
     particles = [];
@@ -1460,7 +1633,7 @@
       lastBv = compute3BV();
       var rawSec = elapsedMs / 1000;
       var rateSec = rawSec > 0.05 ? rawSec : 0.1;
-      bvEl.textContent = '3BV ' + lastBv + ' · ' + (lastBv / rateSec).toFixed(1) + '/s';
+      bvEl.textContent = '3BV ' + lastBv + ' · ' + (lastBv / rateSec).toFixed(2) + '/s';
     } else {
       bvEl.textContent = '';
       lastBv = 0;
@@ -1481,17 +1654,25 @@
     }
     paintMineCount();
     renderAll();
+    frameEl.classList.add('is-win');
+    for (var i = 0; i < cfg.rows; i++) for (var j = 0; j < cfg.cols; j++) {
+      if (grid[i][j] === -1) cells[i][j].classList.add('is-plant');
+    }
     if (motionOk()) {
-      frameEl.classList.add('is-win');
-      for (var i = 0; i < cfg.rows; i++) for (var j = 0; j < cfg.cols; j++) {
-        if (grid[i][j] === -1) cells[i][j].classList.add('is-plant');
-      }
       var rect = frameEl.getBoundingClientRect();
-      burst(rect.width / 2, rect.height / 2, '#ffe08a', 28);
+      burst(rect.width / 2, rect.height / 2, '#ffe08a', 76, 'star');
     }
     sfxWin();
-    showResult(true, recordResult(true));
+    var isNew = recordResult(true);
     paintFace();
+    var payoffMs = motionOk() ? 720 : 0;
+    if (!payoffMs) showResult(true, isNew);
+    else {
+      setTimeout(function () {
+        if (!won || !resultEl.hidden) return;
+        showResult(true, isNew);
+      }, payoffMs);
+    }
   }
   function checkWin() {
     if (gameOver) return;
@@ -1580,26 +1761,63 @@
     if (!node) return null;
     return { r: Number(node.dataset.r), c: Number(node.dataset.c), el: node };
   }
-  function endPress(act) {
-    if (!press) return;
-    clearTimeout(press.timer);
+  function releaseCapture(id) {
+    if (id == null) return;
+    try {
+      if (gridEl.hasPointerCapture && gridEl.hasPointerCapture(id)) gridEl.releasePointerCapture(id);
+    } catch (err) {}
+  }
+  function noteTouch() {
+    var now = performance.now();
+    lastTouchAt = now;
+    mouseMuteUntil = now + 1100;
+  }
+  function clearGesture() {
     var rec = press;
     press = null;
+    if (rec) {
+      clearTimeout(rec.timer);
+      clearTimeout(rec.cleanup);
+      releaseCapture(rec.pointerId);
+    }
     hideHold();
     clearPreview();
     setFaceDown(false);
-    if (!act || rec.moved || rec.longFired) return;
-    if (rec.chord) chordAt(rec.r, rec.c);
-    else modeAction(rec.r, rec.c);
-    focusCell(rec.r, rec.c, false);
+    var pressed = document.querySelectorAll('.ms-cell.is-pressed');
+    for (var i = 0; i < pressed.length; i++) pressed[i].classList.remove('is-pressed');
+  }
+  function endPress(act) {
+    if (!press) return;
+    var rec = press;
+    var actNow = !!(act && !rec.moved && !rec.longFired && !rec.done);
+    var chord = rec.chord;
+    var r = rec.r;
+    var c = rec.c;
+    clearGesture();
+    if (!actNow) return;
+    if (chord) chordAt(r, c);
+    else modeAction(r, c);
+    focusCell(r, c, false);
+  }
+  function onPointerUp(e) {
+    if (e.pointerType && e.pointerType !== 'mouse') noteTouch();
+    if (!press || e.pointerId !== press.pointerId) return;
+    if (e.pointerType && press.pointerType && e.pointerType !== press.pointerType) return;
+    if (press.pointerType === 'mouse' && press.chord && (e.buttons & 1) && e.button !== 0) return;
+    if (press.pointerType === 'mouse' && !press.chord && (e.buttons & 2)) {
+      press.chord = true;
+      return;
+    }
+    endPress(true);
   }
 
   gridEl.addEventListener('pointerdown', function (e) {
     unlockAudio();
-    if (e.pointerType === 'mouse' && lastTouchAt && performance.now() - lastTouchAt < 700) {
-      e.preventDefault();
+    if (e.pointerType === 'mouse' && performance.now() < mouseMuteUntil) {
+      if (e.cancelable) e.preventDefault();
       return;
     }
+    if (press && (press.pointerId !== e.pointerId || press.longFired || press.done)) clearGesture();
     var cell = cellFromEvent(e);
     if (e.pointerType === 'mouse') {
       if (e.button === 2) {
@@ -1615,32 +1833,38 @@
       if (e.button === 1) {
         e.preventDefault();
         if (!cell) return;
-        press = { pointerId: e.pointerId, pointerType: 'mouse', r: cell.r, c: cell.c, chord: true, longFired: false, moved: false, timer: 0 };
+        if (press) clearGesture();
+        press = { pointerId: e.pointerId, pointerType: 'mouse', r: cell.r, c: cell.c, chord: true, longFired: false, done: false, moved: false, timer: 0, cleanup: 0 };
         showPreview(cell.r, cell.c);
         setFaceDown(true);
         return;
       }
       if (e.button !== 0 || !cell) return;
-      press = { pointerId: e.pointerId, pointerType: 'mouse', r: cell.r, c: cell.c, chord: false, longFired: false, moved: false, timer: 0 };
+      if (press && press.pointerId === e.pointerId && !press.done && !press.longFired) return;
+      press = { pointerId: e.pointerId, pointerType: 'mouse', r: cell.r, c: cell.c, chord: false, longFired: false, done: false, moved: false, timer: 0, cleanup: 0 };
       if (revealed[cell.r][cell.c] && grid[cell.r][cell.c] > 0) showPreview(cell.r, cell.c);
       else cells[cell.r][cell.c].classList.add('is-pressed');
       setFaceDown(true);
       return;
     }
-    if (!cell || press) return;
+    if (!cell) return;
+    if (press && press.pointerId === e.pointerId && !press.done && !press.longFired) return;
+    if (press) clearGesture();
     if (e.cancelable) e.preventDefault();
-    lastTouchAt = performance.now();
+    noteTouch();
     var rec = {
       pointerId: e.pointerId,
-      pointerType: e.pointerType,
+      pointerType: e.pointerType || 'touch',
       r: cell.r,
       c: cell.c,
       x: e.clientX,
       y: e.clientY,
       longFired: false,
+      done: false,
       moved: false,
       chord: false,
-      timer: 0
+      timer: 0,
+      cleanup: 0
     };
     press = rec;
     try { gridEl.setPointerCapture(e.pointerId); } catch (err) {}
@@ -1649,10 +1873,23 @@
     rec.timer = setTimeout(function () {
       if (press !== rec) return;
       rec.longFired = true;
+      rec.done = true;
       hideHold();
       clearPreview();
       oppositeAction(rec.r, rec.c);
       focusCell(rec.r, rec.c, false);
+      releaseCapture(rec.pointerId);
+      setFaceDown(false);
+      var nodes = document.querySelectorAll('.ms-cell.is-pressed');
+      for (var n = 0; n < nodes.length; n++) nodes[n].classList.remove('is-pressed');
+      noteTouch();
+      clearTimeout(rec.cleanup);
+      rec.cleanup = setTimeout(function () {
+        if (press === rec) {
+          noteTouch();
+          clearGesture();
+        }
+      }, 48);
     }, LONG_MS);
     setFaceDown(true);
   });
@@ -1668,33 +1905,54 @@
       clearPreview();
     }
   });
-  gridEl.addEventListener('pointerup', function (e) {
-    if (!press || e.pointerId !== press.pointerId) return;
-    if (press.pointerType !== 'mouse') lastTouchAt = performance.now();
-    if (press.pointerType === 'mouse' && press.chord && (e.buttons & 1) && e.button !== 0) return;
-    if (press.pointerType === 'mouse' && !press.chord && (e.buttons & 2)) {
-      press.chord = true;
-      return;
-    }
-    document.querySelectorAll('.ms-cell.is-pressed').forEach(function (el) { el.classList.remove('is-pressed'); });
-    endPress(true);
-  });
+  gridEl.addEventListener('pointerup', onPointerUp);
+  window.addEventListener('pointerup', onPointerUp);
   gridEl.addEventListener('pointercancel', function (e) {
     if (!press || e.pointerId !== press.pointerId) return;
-    document.querySelectorAll('.ms-cell.is-pressed').forEach(function (el) { el.classList.remove('is-pressed'); });
+    if (press.pointerType !== 'mouse') noteTouch();
     endPress(false);
   });
-  gridEl.addEventListener('contextmenu', function (e) {
-    e.preventDefault();
+  window.addEventListener('pointercancel', function (e) {
+    if (!press || e.pointerId !== press.pointerId) return;
+    if (press.pointerType !== 'mouse') noteTouch();
+    endPress(false);
   });
-  gridEl.addEventListener('click', function (e) {
-    e.preventDefault();
-  });
+  function eatPointerFollowup(e) {
+    if (e.cancelable) e.preventDefault();
+    e.stopPropagation();
+  }
+  gridEl.addEventListener('contextmenu', eatPointerFollowup);
+  gridEl.addEventListener('click', eatPointerFollowup);
+  gridEl.addEventListener('auxclick', eatPointerFollowup);
 
+  function rememberFocus() {
+    var active = document.activeElement;
+    if (active && active !== document.body && active !== document.documentElement) focusReturn = active;
+  }
+  function restoreFocus() {
+    var back = focusReturn;
+    focusReturn = null;
+    if (back && typeof back.focus === 'function' && document.contains(back)) {
+      try { back.focus({ preventScroll: true }); } catch (err) {}
+    }
+  }
+  function sheetOpen(el) { return !!(el && !el.hidden); }
+  function closeSheet(el) {
+    if (!sheetOpen(el)) return;
+    el.hidden = true;
+    restoreFocus();
+  }
+  function openConfirm() {
+    var sheet = document.getElementById('msConfirm');
+    rememberFocus();
+    sheet.hidden = false;
+    var stay = document.getElementById('confirmStay');
+    try { (stay || sheet).focus({ preventScroll: true }); } catch (err) {}
+  }
   function requestNew(next) {
     if (inProgress()) {
       pendingDiff = next || diff;
-      document.getElementById('msConfirm').hidden = false;
+      openConfirm();
       return;
     }
     resetBoard(next || diff);
@@ -1705,12 +1963,12 @@
   faceEl.addEventListener('click', function () { requestNew(diff); });
   document.getElementById('againBtn').addEventListener('click', function () { resetBoard(diff); });
   document.getElementById('confirmGo').addEventListener('click', function () {
-    document.getElementById('msConfirm').hidden = true;
+    closeSheet(document.getElementById('msConfirm'));
     resetBoard(pendingDiff || diff);
     pendingDiff = null;
   });
   document.getElementById('confirmStay').addEventListener('click', function () {
-    document.getElementById('msConfirm').hidden = true;
+    closeSheet(document.getElementById('msConfirm'));
     pendingDiff = null;
   });
 
@@ -1746,13 +2004,25 @@
       }
     });
     document.getElementById('statsBody').innerHTML = html;
-    document.getElementById('msStats').hidden = false;
+    var sheet = document.getElementById('msStats');
+    rememberFocus();
+    sheet.hidden = false;
+    var closeBtn = document.getElementById('statsClose');
+    try { (closeBtn || sheet).focus({ preventScroll: true }); } catch (err) {}
   }
   document.getElementById('statsBtn').addEventListener('click', openStats);
   document.getElementById('bestBtn').addEventListener('click', openStats);
   document.getElementById('statsClose').addEventListener('click', function () {
-    document.getElementById('msStats').hidden = true;
+    closeSheet(document.getElementById('msStats'));
   });
+  document.getElementById('msStats').addEventListener('click', function (e) {
+    if (e.target === e.currentTarget) closeSheet(e.currentTarget);
+  });
+  document.getElementById('msStats').addEventListener('touchmove', function (e) {
+    var card = e.currentTarget.querySelector('.ms-card');
+    if (card && card.contains(e.target)) return;
+    if (e.cancelable) e.preventDefault();
+  }, { passive: false });
 
   document.getElementById('shareBtn').addEventListener('click', function () {
     var didWin = won;
@@ -1780,11 +2050,18 @@
 
   document.addEventListener('keydown', function (e) {
     var key = e.key;
+    var statsSheet = document.getElementById('msStats');
+    var confirmSheet = document.getElementById('msConfirm');
     if (key === 'Escape') {
-      document.getElementById('msConfirm').hidden = true;
-      document.getElementById('msStats').hidden = true;
+      e.preventDefault();
+      if (sheetOpen(statsSheet)) closeSheet(statsSheet);
+      else if (sheetOpen(confirmSheet)) {
+        closeSheet(confirmSheet);
+        pendingDiff = null;
+      }
       return;
     }
+    if (sheetOpen(statsSheet) || sheetOpen(confirmSheet)) return;
     if (e.target && e.target.closest && e.target.closest('input, textarea')) return;
     if (key === 'n' || key === 'N') {
       if (e.target && e.target.closest && e.target.closest('a')) return;
@@ -1895,7 +2172,9 @@
     }
   } catch (err) {}
 
-  resetBoard('easy');
+  var initialDiff = storageGet('ms_diff');
+  if (!CONFIGS[initialDiff]) initialDiff = 'easy';
+  resetBoard(initialDiff);
 })();
 </script>
 <script src="/global.js" defer></script>
