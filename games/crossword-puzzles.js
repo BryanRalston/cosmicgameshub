@@ -1,784 +1,1941 @@
+window.CROSSWORD_EPOCH = '2026-11-11';
 window.CROSSWORD_PUZZLES = [
   {
-    rows: ['BLADE', 'LOGAN', 'AGENT', 'DANCE', 'ENTER'],
+    rows: ['#THEN', 'PHONE', 'LORDS', 'ASSET', 'NEED#'],
     across: [
-      {num:1,clue:"Katana, energy sword, or Cloud's"},
-      {num:6,clue:"Wolverine's civilian name"},
-      {num:7,clue:"Tactical FPS class, or 007"},
-      {num:8,clue:"Emote after a kill"},
-      {num:9,clue:"The key that submits the guess"}
+      {num:1,row:0,col:1,len:4,clue:'After that, next in sequence'},
+      {num:5,row:1,col:0,len:5,clue:'Handset a streamer answers off camera'},
+      {num:6,row:2,col:0,len:5,clue:'Noble rulers of a fantasy realm'},
+      {num:7,row:3,col:0,len:5,clue:'Valuable item in an inventory'},
+      {num:8,row:4,col:0,len:4,clue:'What a quest marks as required'}
     ],
     down: [
-      {num:1,col:0,clue:"Katana, energy sword, or Cloud's"},
-      {num:2,col:1,clue:"Wolverine's civilian name"},
-      {num:3,col:2,clue:"Tactical FPS class, or 007"},
-      {num:4,col:3,clue:"Emote after a kill"},
-      {num:5,col:4,clue:"The key that submits the guess"}
+      {num:1,row:0,col:1,len:5,clue:'The ones over there'},
+      {num:2,row:0,col:2,len:5,clue:'Mount you keep in a stable'},
+      {num:3,row:0,col:3,len:5,clue:'Came to a close after the credits'},
+      {num:4,row:0,col:4,len:4,clue:'Home a bird builds'},
+      {num:5,row:1,col:0,len:4,clue:'Strategy before a raid night'}
     ]
   },
   {
-    rows: ['BLAST', 'LATER', 'ATARI', 'SERVE', 'TRIED'],
+    rows: ['CREW#', 'ROLES', 'AUDIO', 'STERN', 'HERD#'],
     across: [
-      {num:1,clue:"Explosion cone or a shotgun"},
-      {num:6,clue:"Gamer goodbye"},
-      {num:7,clue:"Wood-grain console era"},
-      {num:8,clue:"Tennis-game verb, or a nasty lineup"},
-      {num:9,clue:"The skip, failed"}
+      {num:1,row:0,col:0,len:4,clue:'Team that runs a heist'},
+      {num:5,row:1,col:0,len:5,clue:'Jobs on a raid team'},
+      {num:7,row:2,col:0,len:5,clue:'Sound settings in the menu'},
+      {num:8,row:3,col:0,len:5,clue:'Strict, or the rear of a ship'},
+      {num:9,row:4,col:0,len:4,clue:'Group of animals kept together'}
     ],
     down: [
-      {num:1,col:0,clue:"Explosion cone or a shotgun"},
-      {num:2,col:1,clue:"Gamer goodbye"},
-      {num:3,col:2,clue:"Wood-grain console era"},
-      {num:4,col:3,clue:"Tennis-game verb, or a nasty lineup"},
-      {num:5,col:4,clue:"The skip, failed"}
+      {num:1,row:0,col:0,len:5,clue:'What the client does on a bad bug'},
+      {num:2,row:0,col:1,len:5,clue:'Path the speedrun follows'},
+      {num:3,row:0,col:2,len:5,clue:'Older member of a village'},
+      {num:4,row:0,col:3,len:5,clue:'Strange, in an uncanny way'},
+      {num:6,row:1,col:4,len:3,clue:'A male child'}
     ]
   },
   {
-    rows: ['CLASH', 'LANCE', 'ANNEX', 'SCENE', 'HEXES'],
+    rows: ['#SPIT', 'SHARE', 'CANON', 'AMEND', 'RELY#'],
     across: [
-      {num:1,clue:"Teamfight, or a weekend cup"},
-      {num:6,clue:"Jousting polearm"},
-      {num:7,clue:"Map expansion wing"},
-      {num:8,clue:"The bit you mash to skip"},
-      {num:9,clue:"Witch doctor dots"}
+      {num:1,row:0,col:1,len:4,clue:'Expel from the mouth'},
+      {num:5,row:1,col:0,len:5,clue:'Send the lobby code around'},
+      {num:6,row:2,col:0,len:5,clue:'Official story the sequel respects'},
+      {num:7,row:3,col:0,len:5,clue:'Revise a guild rule'},
+      {num:8,row:4,col:0,len:4,clue:'Count on a teammate callout'}
     ],
     down: [
-      {num:1,col:0,clue:"Teamfight, or a weekend cup"},
-      {num:2,col:1,clue:"Jousting polearm"},
-      {num:3,col:2,clue:"Map expansion wing"},
-      {num:4,col:3,clue:"The bit you mash to skip"},
-      {num:5,col:4,clue:"Witch doctor dots"}
+      {num:1,row:0,col:1,len:5,clue:'Feeling after a throwaway round'},
+      {num:2,row:0,col:2,len:5,clue:'Section of a settings menu'},
+      {num:3,row:0,col:3,len:5,clue:'When the pacifist path ends in a duel'},
+      {num:4,row:0,col:4,len:4,clue:'Look after a downed teammate'},
+      {num:5,row:1,col:0,len:4,clue:'Mark left by an old wound'}
     ]
   },
   {
-    rows: ['DEATH', 'EXTRA', 'ATLAS', 'TRACT', 'HASTE'],
+    rows: ['LAST#', 'INTRO', 'AGAIN', 'REGAL', '#RELY'],
     across: [
-      {num:1,clue:"The other half of the K/D"},
-      {num:6,clue:"Bonus life"},
-      {num:7,clue:"Map book, or a titan"},
-      {num:8,clue:"Manual nobody kept"},
-      {num:9,clue:"The haste on your character sheet"}
+      {num:1,row:0,col:0,len:4,clue:'Final circle in a battle royale'},
+      {num:5,row:1,col:0,len:5,clue:'Opening cinematic before the menu'},
+      {num:7,row:2,col:0,len:5,clue:'One more time, as a rematch'},
+      {num:8,row:3,col:0,len:5,clue:'Fit for a monarch'},
+      {num:9,row:4,col:1,len:4,clue:'Trust the support to peel'}
     ],
     down: [
-      {num:1,col:0,clue:"The other half of the K/D"},
-      {num:2,col:1,clue:"Bonus life"},
-      {num:3,col:2,clue:"Map book, or a titan"},
-      {num:4,col:3,clue:"Manual nobody kept"},
-      {num:5,col:4,clue:"The haste on your character sheet"}
+      {num:1,row:0,col:0,len:4,clue:'Someone who fakes a surrender'},
+      {num:2,row:0,col:1,len:5,clue:'Rage after a stolen objective'},
+      {num:3,row:0,col:2,len:5,clue:'Platform a concert or a boss uses'},
+      {num:4,row:0,col:3,len:5,clue:'A test of skill, or a court case'},
+      {num:6,row:1,col:4,len:4,clue:'And nothing more'}
     ]
   },
   {
-    rows: ['DODGE', 'OCEAN', 'DEBUT', 'GAUGE', 'ENTER'],
+    rows: ['#AGED', 'CRUDE', 'OMEGA', 'LOSER', 'ARTS#'],
     across: [
-      {num:1,clue:"Sidestep a telegraph, or a dodged queue"},
-      {num:6,clue:"LoL dragon, or a biome"},
-      {num:7,clue:"Launch week"},
-      {num:8,clue:"Limit-break meter"},
-      {num:9,clue:"The key that submits the guess"}
+      {num:1,row:0,col:1,len:4,clue:'Got older between seasons'},
+      {num:5,row:1,col:0,len:5,clue:'Rough and unpolished, as a first build'},
+      {num:6,row:2,col:0,len:5,clue:'Last Greek letter, or an endgame title'},
+      {num:7,row:3,col:0,len:5,clue:'One who drops the match'},
+      {num:8,row:4,col:0,len:4,clue:'Painting, music, and drama studies'}
     ],
     down: [
-      {num:1,col:0,clue:"Sidestep a telegraph, or a dodged queue"},
-      {num:2,col:1,clue:"LoL dragon, or a biome"},
-      {num:3,col:2,clue:"Launch week"},
-      {num:4,col:3,clue:"Limit-break meter"},
-      {num:5,col:4,clue:"The key that submits the guess"}
+      {num:1,row:0,col:1,len:5,clue:'Protective gear in an equipment slot'},
+      {num:2,row:0,col:2,len:5,clue:'Visitor in a co-op session'},
+      {num:3,row:0,col:3,len:5,clue:'Borders of a platform'},
+      {num:4,row:0,col:4,len:4,clue:'Precious, or a letter greeting'},
+      {num:5,row:1,col:0,len:4,clue:'Fizzy drink beside the keyboard'}
     ]
   },
   {
-    rows: ['DROPS', 'RELIC', 'OLDER', 'PIECE', 'SCREW'],
+    rows: ['PASTE', 'ALLOY', 'STONE', 'TAPED', '#RED#'],
     across: [
-      {num:1,clue:"What the boss table rolls"},
-      {num:6,clue:"God-tier drop"},
-      {num:7,clue:"The patch you want back"},
-      {num:8,clue:"Tetris, or a chess take"},
-      {num:9,clue:"Jump, platformer slang"}
+      {num:1,row:0,col:0,len:5,clue:'Thick mixture you spread'},
+      {num:6,row:1,col:0,len:5,clue:'Mixed metal a crafter smelts'},
+      {num:7,row:2,col:0,len:5,clue:'Rock you mine in a crafting node'},
+      {num:8,row:3,col:0,len:5,clue:'Fastened with sticky strips'},
+      {num:9,row:4,col:1,len:3,clue:'Color of a critical health bar'}
     ],
     down: [
-      {num:1,col:0,clue:"What the boss table rolls"},
-      {num:2,col:1,clue:"God-tier drop"},
-      {num:3,col:2,clue:"The patch you want back"},
-      {num:4,col:3,clue:"Tetris, or a chess take"},
-      {num:5,col:4,clue:"Jump, platformer slang"}
+      {num:1,row:0,col:0,len:4,clue:'Time already played through'},
+      {num:2,row:0,col:1,len:5,clue:'Shrine where you respec a build'},
+      {num:3,row:0,col:2,len:5,clue:'Incline a racer drifts down'},
+      {num:4,row:0,col:3,len:5,clue:'Firmed, or slightly color-adjusted'},
+      {num:5,row:0,col:4,len:4,clue:'Watched with suspicion'}
     ]
   },
   {
-    rows: ['FLAME', 'LOGAN', 'AGENT', 'MANOR', 'ENTRY'],
+    rows: ['#SAVE', 'PEDAL', 'IDOLS', 'CARVE', 'KNEE#'],
     across: [
-      {num:1,clue:"Ranked all-chat, in a word"},
-      {num:6,clue:"Wolverine's civilian name"},
-      {num:7,clue:"Tactical FPS class, or 007"},
-      {num:8,clue:"Resident Evil mansion cousin"},
-      {num:9,clue:"First through the site"}
+      {num:1,row:0,col:1,len:4,clue:'Write progress so you can reload'},
+      {num:5,row:1,col:0,len:5,clue:'Foot lever on a bike or car'},
+      {num:6,row:2,col:0,len:5,clue:'Figures fans worship'},
+      {num:7,row:3,col:0,len:5,clue:'Cut a shape into wood or stone'},
+      {num:8,row:4,col:0,len:4,clue:'Leg joint you crouch on'}
     ],
     down: [
-      {num:1,col:0,clue:"Ranked all-chat, in a word"},
-      {num:2,col:1,clue:"Wolverine's civilian name"},
-      {num:3,col:2,clue:"Tactical FPS class, or 007"},
-      {num:4,col:3,clue:"Resident Evil mansion cousin"},
-      {num:5,col:4,clue:"First through the site"}
+      {num:1,row:0,col:1,len:5,clue:'A common four-door car'},
+      {num:2,row:0,col:2,len:5,clue:'Love a main more than sleep'},
+      {num:3,row:0,col:3,len:5,clue:'A device that controls flow'},
+      {num:4,row:0,col:4,len:4,clue:'Other than the current pick'},
+      {num:5,row:1,col:0,len:4,clue:'Selection in a draft'}
     ]
   },
   {
-    rows: ['FLARE', 'LOGAN', 'AGENT', 'RANGE', 'ENTER'],
+    rows: ['GLAD#', 'REBEL', 'EMOTE', 'WOVEN', '#NERD'],
     across: [
-      {num:1,clue:"Airstrike paint, or a signal"},
-      {num:6,clue:"Wolverine's civilian name"},
-      {num:7,clue:"Tactical FPS class, or 007"},
-      {num:8,clue:"Sniper reach"},
-      {num:9,clue:"The key that submits the guess"}
+      {num:1,row:0,col:0,len:4,clue:'Happy about a win'},
+      {num:5,row:1,col:0,len:5,clue:'Fighter against the ruling side'},
+      {num:7,row:2,col:0,len:5,clue:'Animation you trigger to celebrate'},
+      {num:8,row:3,col:0,len:5,clue:'Laced together as cloth'},
+      {num:9,row:4,col:1,len:4,clue:'Enthusiast deep into the lore'}
     ],
     down: [
-      {num:1,col:0,clue:"Airstrike paint, or a signal"},
-      {num:2,col:1,clue:"Wolverine's civilian name"},
-      {num:3,col:2,clue:"Tactical FPS class, or 007"},
-      {num:4,col:3,clue:"Sniper reach"},
-      {num:5,col:4,clue:"The key that submits the guess"}
+      {num:1,row:0,col:0,len:4,clue:'Got larger, as a skill tree'},
+      {num:2,row:0,col:1,len:5,clue:'Sour yellow fruit'},
+      {num:3,row:0,col:2,len:5,clue:'Higher than you on the scoreboard'},
+      {num:4,row:0,col:3,len:5,clue:'Discourage an enemy from pushing'},
+      {num:6,row:1,col:4,len:4,clue:'Let a friend borrow a spare controller'}
     ]
   },
   {
-    rows: ['FROST', 'ROUTE', 'OUTER', 'STEAM', 'TERMS'],
+    rows: ['#CLUB', 'SLOPE', 'HOOPS', 'ONSET', 'PEER#'],
     across: [
-      {num:1,clue:"Wizard school, the cold one"},
-      {num:6,clue:"Speedrun path"},
-      {num:7,clue:"Breath of the ___"},
-      {num:8,clue:"Valve storefront"},
-      {num:9,clue:"EULA you skipped"}
+      {num:1,row:0,col:1,len:4,clue:'Team you join, or a heavy stick'},
+      {num:5,row:1,col:0,len:5,clue:'Tilt of a ski hill'},
+      {num:6,row:2,col:0,len:5,clue:'Basketball rims'},
+      {num:7,row:3,col:0,len:5,clue:'The beginning of a storm'},
+      {num:8,row:4,col:0,len:4,clue:'Fellow player at your rank'}
     ],
     down: [
-      {num:1,col:0,clue:"Wizard school, the cold one"},
-      {num:2,col:1,clue:"Speedrun path"},
-      {num:3,col:2,clue:"Breath of the ___"},
-      {num:4,col:3,clue:"Valve storefront"},
-      {num:5,col:4,clue:"EULA you skipped"}
+      {num:1,row:0,col:1,len:5,clue:'Exact copy of a character'},
+      {num:2,row:0,col:2,len:5,clue:'Not tight, as a wobbly binding'},
+      {num:3,row:0,col:3,len:5,clue:'Higher of two levels'},
+      {num:4,row:0,col:4,len:4,clue:'Top of the scoreboard'},
+      {num:5,row:1,col:0,len:4,clue:'Store where you spend currency'}
     ]
   },
   {
-    rows: ['GRAVE', 'RULED', 'ALONG', 'VENUE', 'EDGES'],
+    rows: ['SEAT#', 'MANIC', 'AGGRO', 'SLEEP', 'HELD#'],
     across: [
-      {num:1,clue:"Souls you sprint back for"},
-      {num:6,clue:"Banned by the TO"},
-      {num:7,clue:"Smash team mode"},
-      {num:8,clue:"Fight locale"},
-      {num:9,clue:"Smash edges, or a map rim"}
+      {num:1,row:0,col:0,len:4,clue:'Chair you lock in before queue'},
+      {num:5,row:1,col:0,len:5,clue:'Wildly frantic energy'},
+      {num:7,row:2,col:0,len:5,clue:'Threat a tank builds on purpose'},
+      {num:8,row:3,col:0,len:5,clue:'What a long idle timer assumes'},
+      {num:9,row:4,col:0,len:4,clue:'Kept a point until help arrived'}
     ],
     down: [
-      {num:1,col:0,clue:"Souls you sprint back for"},
-      {num:2,col:1,clue:"Banned by the TO"},
-      {num:3,col:2,clue:"Smash team mode"},
-      {num:4,col:3,clue:"Fight locale"},
-      {num:5,col:4,clue:"Smash edges, or a map rim"}
+      {num:1,row:0,col:0,len:5,clue:'Hit with a heavy breaking blow'},
+      {num:2,row:0,col:1,len:5,clue:'Bird on a golf scorecard'},
+      {num:3,row:0,col:2,len:5,clue:'Winged helper in a fantasy party'},
+      {num:4,row:0,col:3,len:5,clue:'Worn out after a long session'},
+      {num:6,row:1,col:4,len:3,clue:'Police officer on a city beat'}
     ]
   },
   {
-    rows: ['HADES', 'AGENT', 'DELTA', 'ENTER', 'STARS'],
+    rows: ['#EVIL', 'SLIDE', 'TILES', 'ATLAS', 'REAL#'],
     across: [
-      {num:1,clue:"Zagreus, or a Hades clear"},
-      {num:6,clue:"Tactical FPS class, or 007"},
-      {num:7,clue:"What changed in the patch"},
-      {num:8,clue:"The key that submits the guess"},
-      {num:9,clue:"Review score out of five"}
+      {num:1,row:0,col:1,len:4,clue:'Wicked, as a dark campaign path'},
+      {num:5,row:1,col:0,len:5,clue:'Move smoothly down a ramp'},
+      {num:6,row:2,col:0,len:5,clue:'Squares on a matching board'},
+      {num:7,row:3,col:0,len:5,clue:'Book of maps in a library'},
+      {num:8,row:4,col:0,len:4,clue:'Actual, not a practice bot'}
     ],
     down: [
-      {num:1,col:0,clue:"Zagreus, or a Hades clear"},
-      {num:2,col:1,clue:"Tactical FPS class, or 007"},
-      {num:3,col:2,clue:"What changed in the patch"},
-      {num:4,col:3,clue:"The key that submits the guess"},
-      {num:5,col:4,clue:"Review score out of five"}
+      {num:1,row:0,col:1,len:5,clue:'Top tier of ranked players'},
+      {num:2,row:0,col:2,len:5,clue:'A comfortable country house'},
+      {num:3,row:0,col:3,len:5,clue:'Perfect, like a zero-death run'},
+      {num:4,row:0,col:4,len:4,clue:'A smaller amount of gold'},
+      {num:5,row:1,col:0,len:4,clue:'A night-sky point, or a top player'}
     ]
   },
   {
-    rows: ['MARCH', 'ATARI', 'RADAR', 'CRATE', 'HIRED'],
+    rows: ['SEAT#', 'ARROW', 'FAITH', 'ESSAY', 'REEL#'],
     across: [
-      {num:1,clue:"Move the army in formation"},
-      {num:6,clue:"Wood-grain console era"},
-      {num:7,clue:"Dots on the radar"},
-      {num:8,clue:"Breakable, usually"},
-      {num:9,clue:"The mercenary in slot two"}
+      {num:1,row:0,col:0,len:4,clue:'Spot on the bench'},
+      {num:5,row:1,col:0,len:5,clue:'Pointed shaft from a bow'},
+      {num:7,row:2,col:0,len:5,clue:'Trust a teammate will revive you'},
+      {num:8,row:3,col:0,len:5,clue:'Short piece of writing for class'},
+      {num:9,row:4,col:0,len:4,clue:'Spool on a fishing rod'}
     ],
     down: [
-      {num:1,col:0,clue:"Move the army in formation"},
-      {num:2,col:1,clue:"Wood-grain console era"},
-      {num:3,col:2,clue:"Dots on the radar"},
-      {num:4,col:3,clue:"Breakable, usually"},
-      {num:5,col:4,clue:"The mercenary in slot two"}
+      {num:1,row:0,col:0,len:5,clue:'More protected than before'},
+      {num:2,row:0,col:1,len:5,clue:'Wipe a sketch in a drawing round'},
+      {num:3,row:0,col:2,len:5,clue:'Get up after a knockdown'},
+      {num:4,row:0,col:3,len:5,clue:'The full amount'},
+      {num:6,row:1,col:4,len:3,clue:'For what reason'}
     ]
   },
   {
-    rows: ['MARCH', 'AWARE', 'RADAR', 'CRAFT', 'HERTZ'],
+    rows: ['CAST#', 'ALLOW', 'STAKE', 'EATEN', '#RENT'],
     across: [
-      {num:1,clue:"Move the army in formation"},
-      {num:6,clue:"Not caught off guard"},
-      {num:7,clue:"Dots on the radar"},
-      {num:8,clue:"Minecraft verb at a table"},
-      {num:9,clue:"Hz on a 240 panel"}
+      {num:1,row:0,col:0,len:4,clue:'Throw a spell, or the actors in a scene'},
+      {num:5,row:1,col:0,len:5,clue:'Permit a friend to join'},
+      {num:7,row:2,col:0,len:5,clue:'Wooden post, or a bet you put up'},
+      {num:8,row:3,col:0,len:5,clue:'Consumed, as a pickup by the hero'},
+      {num:9,row:4,col:1,len:4,clue:'Fee for a player-housing plot'}
     ],
     down: [
-      {num:1,col:0,clue:"Move the army in formation"},
-      {num:2,col:1,clue:"Not caught off guard"},
-      {num:3,col:2,clue:"Dots on the radar"},
-      {num:4,col:3,clue:"Minecraft verb at a table"},
-      {num:5,col:4,clue:"Hz on a 240 panel"}
+      {num:1,row:0,col:0,len:4,clue:'Box that holds a desktop PC'},
+      {num:2,row:0,col:1,len:5,clue:'Raised table for an in-game rite'},
+      {num:3,row:0,col:2,len:5,clue:'Flat gray rock, or a list of candidates'},
+      {num:4,row:0,col:3,len:5,clue:'Small piece that stands for a point'},
+      {num:6,row:1,col:4,len:4,clue:'Left the lobby for the night'}
     ]
   },
   {
-    rows: ['MATCH', 'ATARI', 'TAKEN', 'CREST', 'HINTS'],
+    rows: ['CRIED', 'AISLE', 'ROSES', 'STUCK', '#SET#'],
     across: [
-      {num:1,clue:"The game you just queued"},
-      {num:6,clue:"Wood-grain console era"},
-      {num:7,clue:"Destiny smoke faction"},
-      {num:8,clue:"Shield sigil"},
-      {num:9,clue:"Toggle after three deaths"}
+      {num:1,row:0,col:0,len:5,clue:'Wept during the ending'},
+      {num:6,row:1,col:0,len:5,clue:'Passage between shop shelves'},
+      {num:7,row:2,col:0,len:5,clue:'Flowers with thorns'},
+      {num:8,row:3,col:0,len:5,clue:'Unable to move, as in geometry'},
+      {num:9,row:4,col:1,len:3,clue:'A matching collection of gear'}
     ],
     down: [
-      {num:1,col:0,clue:"The game you just queued"},
-      {num:2,col:1,clue:"Wood-grain console era"},
-      {num:3,col:2,clue:"Destiny smoke faction"},
-      {num:4,col:3,clue:"Shield sigil"},
-      {num:5,col:4,clue:"Toggle after three deaths"}
+      {num:1,row:0,col:0,len:4,clue:'Vehicles lined up on a racing grid'},
+      {num:2,row:0,col:1,len:5,clue:'Violent crowd outbursts'},
+      {num:3,row:0,col:2,len:5,clue:'Bug the patch notes admit'},
+      {num:4,row:0,col:3,len:5,clue:'Vote in a guild leader'},
+      {num:5,row:0,col:4,len:4,clue:'Table where the keyboard sits'}
     ]
   },
   {
-    rows: ['PAUSE', 'ALPHA', 'UPPER', 'SHELL', 'EARLY'],
+    rows: ['#CALF', 'ARBOR', 'REUSE', 'CASES', '#MESH'],
     across: [
-      {num:1,clue:"Start button, single-player"},
-      {num:6,clue:"Test branch, or the pack lead"},
-      {num:7,clue:"___cut, or the top of a 60%"},
-      {num:8,clue:"Mario's, or a shotgun round"},
-      {num:9,clue:"___ access, bugs included"}
+      {num:1,row:0,col:1,len:4,clue:'Young cow on a ranch'},
+      {num:5,row:1,col:0,len:5,clue:'Shady garden shelter'},
+      {num:6,row:2,col:0,len:5,clue:'Equip the same loadout again'},
+      {num:7,row:3,col:0,len:5,clue:'Instances of a bug, or PC shells'},
+      {num:8,row:4,col:1,len:4,clue:'Surface of a 3D model'}
     ],
     down: [
-      {num:1,col:0,clue:"Start button, single-player"},
-      {num:2,col:1,clue:"Test branch, or the pack lead"},
-      {num:3,col:2,clue:"___cut, or the top of a 60%"},
-      {num:4,col:3,clue:"Mario's, or a shotgun round"},
-      {num:5,col:4,clue:"___ access, bugs included"}
+      {num:1,row:0,col:1,len:5,clue:'Top of the crop, or a dairy topping'},
+      {num:2,row:0,col:2,len:5,clue:'Exploit a glitch on purpose'},
+      {num:3,row:0,col:3,len:5,clue:'Fails to win, as the tilted side does'},
+      {num:4,row:0,col:4,len:5,clue:'New, as a season just started'},
+      {num:5,row:1,col:0,len:3,clue:'Curved path of a grenade toss'}
     ]
   },
   {
-    rows: ['PEACH', 'EXTRA', 'ATLAS', 'CRAFT', 'HASTE'],
+    rows: ['#RAM#', 'BELOW', 'ABOVE', 'GENIE', 'SLEEK'],
     across: [
-      {num:1,clue:"Peach, if you are using her full name"},
-      {num:6,clue:"Bonus life"},
-      {num:7,clue:"Map book, or a titan"},
-      {num:8,clue:"Minecraft verb at a table"},
-      {num:9,clue:"The haste on your character sheet"}
+      {num:1,row:0,col:1,len:3,clue:'Memory in a PC, or a male sheep'},
+      {num:4,row:1,col:0,len:5,clue:'Under the crosshair, in a callout'},
+      {num:6,row:2,col:0,len:5,clue:'Over your head on a jump map'},
+      {num:7,row:3,col:0,len:5,clue:'Wish-granter from a lamp'},
+      {num:8,row:4,col:0,len:5,clue:'Smooth and stylish'}
     ],
     down: [
-      {num:1,col:0,clue:"Peach, if you are using her full name"},
-      {num:2,col:1,clue:"Bonus life"},
-      {num:3,col:2,clue:"Map book, or a titan"},
-      {num:4,col:3,clue:"Minecraft verb at a table"},
-      {num:5,col:4,clue:"The haste on your character sheet"}
+      {num:1,row:0,col:1,len:5,clue:'Someone who defies the rulers'},
+      {num:2,row:0,col:2,len:5,clue:'State of a solo-queue main'},
+      {num:3,row:0,col:3,len:5,clue:'Film a cutscene resembles'},
+      {num:4,row:1,col:0,len:4,clue:'Sacks for carrying loot'},
+      {num:5,row:1,col:4,len:4,clue:'Seven days of a battle pass'}
     ]
   },
   {
-    rows: ['PLANT', 'LATER', 'ATARI', 'NERVE', 'TRIED'],
+    rows: ['#WHAT', 'CHOSE', 'LOOSE', 'ASPEN', 'NEST#'],
     across: [
-      {num:1,clue:"Fortnite wall, or a planted spike"},
-      {num:6,clue:"Gamer goodbye"},
-      {num:7,clue:"Wood-grain console era"},
-      {num:8,clue:"What a 1-hp clutch tests"},
-      {num:9,clue:"The skip, failed"}
+      {num:1,row:0,col:1,len:4,clue:'Which thing, as a question'},
+      {num:5,row:1,col:0,len:5,clue:'Picked one option from the menu'},
+      {num:6,row:2,col:0,len:5,clue:'Not firmly fastened'},
+      {num:7,row:3,col:0,len:5,clue:'Slender tree with trembling leaves'},
+      {num:8,row:4,col:0,len:4,clue:'Tucked spot a critter sleeps in'}
     ],
     down: [
-      {num:1,col:0,clue:"Fortnite wall, or a planted spike"},
-      {num:2,col:1,clue:"Gamer goodbye"},
-      {num:3,col:2,clue:"Wood-grain console era"},
-      {num:4,col:3,clue:"What a 1-hp clutch tests"},
-      {num:5,col:4,clue:"The skip, failed"}
+      {num:1,row:0,col:1,len:5,clue:'Belonging to which person'},
+      {num:2,row:0,col:2,len:5,clue:'Rings a ball is shot through'},
+      {num:3,row:0,col:3,len:5,clue:'Something useful the team owns'},
+      {num:4,row:0,col:4,len:4,clue:'A person in adolescent years'},
+      {num:5,row:1,col:0,len:4,clue:'Group of players under one tag'}
     ]
   },
   {
-    rows: ['RELIC', 'EVADE', 'LABEL', 'IDEAL', 'CELLS'],
+    rows: ['SONS#', 'CREWS', 'AGREE', 'NAVAL', '#NERF'],
     across: [
-      {num:1,clue:"God-tier drop"},
-      {num:6,clue:"Souls dodge with invuln frames"},
-      {num:7,clue:"ESRB stamp"},
-      {num:8,clue:"Wiki build"},
-      {num:9,clue:"Inventory slots"}
+      {num:1,row:0,col:0,len:4,clue:'Male children'},
+      {num:5,row:1,col:0,len:5,clue:'Teams that staff a ship'},
+      {num:7,row:2,col:0,len:5,clue:'Say yes to the ready check'},
+      {num:8,row:3,col:0,len:5,clue:'Related to a navy'},
+      {num:9,row:4,col:1,len:4,clue:'Weaken a weapon in a balance patch'}
     ],
     down: [
-      {num:1,col:0,clue:"God-tier drop"},
-      {num:2,col:1,clue:"Souls dodge with invuln frames"},
-      {num:3,col:2,clue:"ESRB stamp"},
-      {num:4,col:3,clue:"Wiki build"},
-      {num:5,col:4,clue:"Inventory slots"}
+      {num:1,row:0,col:0,len:4,clue:'Sweep the map for enemies'},
+      {num:2,row:0,col:1,len:5,clue:'Pipe instrument in a chapel'},
+      {num:3,row:0,col:2,len:5,clue:'Boldness to take the first fight'},
+      {num:4,row:0,col:3,len:5,clue:'Promise strongly, or curse'},
+      {num:6,row:1,col:4,len:4,clue:'Your own character, not a friend'}
     ]
   },
   {
-    rows: ['SAMUS', 'AGENT', 'MEDIA', 'UNION', 'STAND'],
+    rows: ['#CAT#', 'BONES', 'ORGAN', 'SALSA', 'SLEEP'],
     across: [
-      {num:1,clue:"Power-suit bounty hunter"},
-      {num:6,clue:"Tactical FPS class, or 007"},
-      {num:7,clue:"Snake, this is a ___ call"},
-      {num:8,clue:"Your guild, unionized"},
-      {num:9,clue:"Last player standing"}
+      {num:1,row:0,col:1,len:3,clue:'Pet that purrs in a life sim'},
+      {num:4,row:1,col:0,len:5,clue:'Skeleton pieces a medic mends'},
+      {num:6,row:2,col:0,len:5,clue:'Body part a medic screen labels'},
+      {num:7,row:3,col:0,len:5,clue:'Spicy sauce, or a dance'},
+      {num:8,row:4,col:0,len:5,clue:'Rest that skips the night'}
     ],
     down: [
-      {num:1,col:0,clue:"Power-suit bounty hunter"},
-      {num:2,col:1,clue:"Tactical FPS class, or 007"},
-      {num:3,col:2,clue:"Snake, this is a ___ call"},
-      {num:4,col:3,clue:"Your guild, unionized"},
-      {num:5,col:4,clue:"Last player standing"}
+      {num:1,row:0,col:1,len:5,clue:'Reef material under a diving stage'},
+      {num:2,row:0,col:2,len:5,clue:'Camera tilt in a highlight reel'},
+      {num:3,row:0,col:3,len:5,clue:'Kid a friend in a light way'},
+      {num:4,row:1,col:0,len:4,clue:'Enemy waiting at the end of a level'},
+      {num:5,row:1,col:4,len:4,clue:'A quick photo, or a sudden break'}
     ]
   },
   {
-    rows: ['SHARD', 'HONOR', 'ANGLE', 'ROLES', 'DRESS'],
+    rows: ['#BASS', 'PENCE', 'LINEN', 'AGENT', 'NEXT#'],
     across: [
-      {num:1,clue:"Elden Ring collectible, in pieces"},
-      {num:6,clue:"PvP currency cousin"},
-      {num:7,clue:"Hold one and wait"},
-      {num:8,clue:"The holy trinity plus"},
-      {num:9,clue:"Transmog gown"}
+      {num:1,row:0,col:1,len:4,clue:'Low musical line in a soundtrack'},
+      {num:5,row:1,col:0,len:5,clue:'British penny coins'},
+      {num:6,row:2,col:0,len:5,clue:'Cloth made from flax'},
+      {num:7,row:3,col:0,len:5,clue:'Operative you lock before a tac round'},
+      {num:8,row:4,col:0,len:4,clue:'The one coming after this'}
     ],
     down: [
-      {num:1,col:0,clue:"Elden Ring collectible, in pieces"},
-      {num:2,col:1,clue:"PvP currency cousin"},
-      {num:3,col:2,clue:"Hold one and wait"},
-      {num:4,col:3,clue:"The holy trinity plus"},
-      {num:5,col:4,clue:"Transmog gown"}
+      {num:1,row:0,col:1,len:5,clue:'Pale tan color of a plain wall'},
+      {num:2,row:0,col:2,len:5,clue:'Wing added onto a base'},
+      {num:3,row:0,col:3,len:5,clue:'Smell a tracker follows'},
+      {num:4,row:0,col:4,len:4,clue:'Dispatched a message'},
+      {num:5,row:1,col:0,len:4,clue:'Outline of the route'}
     ]
   },
   {
-    rows: ['SMASH', 'MEDIA', 'ADDED', 'SIEGE', 'HADES'],
+    rows: ['#WAR#', 'GASES', 'AGILE', 'MEDIA', 'ERECT'],
     across: [
-      {num:1,clue:"Bros., or an f-smash"},
-      {num:6,clue:"Snake, this is a ___ call"},
-      {num:7,clue:"In this patch, they ___"},
-      {num:8,clue:"R6, or a castle"},
-      {num:9,clue:"Zagreus, or a Hades clear"}
+      {num:1,row:0,col:1,len:3,clue:'A large armed conflict'},
+      {num:4,row:1,col:0,len:5,clue:'Airy substances in a lab'},
+      {num:6,row:2,col:0,len:5,clue:'Nimble, like a high-mobility flanker'},
+      {num:7,row:3,col:0,len:5,clue:'Clips, shots, and streams'},
+      {num:8,row:4,col:0,len:5,clue:'Set upright, as a banner pole'}
     ],
     down: [
-      {num:1,col:0,clue:"Bros., or an f-smash"},
-      {num:2,col:1,clue:"Snake, this is a ___ call"},
-      {num:3,col:2,clue:"In this patch, they ___"},
-      {num:4,col:3,clue:"R6, or a castle"},
-      {num:5,col:4,clue:"Zagreus, or a Hades clear"}
+      {num:1,row:0,col:1,len:5,clue:'A bet you place'},
+      {num:2,row:0,col:2,len:5,clue:'Off to the side of the lane'},
+      {num:3,row:0,col:3,len:5,clue:'Ancient item in a dungeon chest'},
+      {num:4,row:1,col:0,len:4,clue:'A match you boot from the library'},
+      {num:5,row:1,col:4,len:4,clue:'Where a pilot sits'}
     ]
   },
   {
-    rows: ['SNARE', 'NAVAL', 'AVOID', 'RAISE', 'ELDER'],
+    rows: ['BASED', 'ULTRA', 'SPEAR', 'THESE', '#ARE#'],
     across: [
-      {num:1,clue:"Immobilize, from the dirt"},
-      {num:6,clue:"Sea-power RTS branch"},
-      {num:7,clue:"Don't stand in the fire"},
-      {num:8,clue:"Poker-game verb, or a dead ally"},
-      {num:9,clue:"The big dragon after four souls"}
+      {num:1,row:0,col:0,len:5,clue:'Set up on a particular idea'},
+      {num:6,row:1,col:0,len:5,clue:'Beyond the usual settings preset'},
+      {num:7,row:2,col:0,len:5,clue:'Long pointed throwing weapon'},
+      {num:8,row:3,col:0,len:5,clue:'The ones right here'},
+      {num:9,row:4,col:1,len:3,clue:'Plural of is, in the present'}
     ],
     down: [
-      {num:1,col:0,clue:"Immobilize, from the dirt"},
-      {num:2,col:1,clue:"Sea-power RTS branch"},
-      {num:3,col:2,clue:"Don't stand in the fire"},
-      {num:4,col:3,clue:"Poker-game verb, or a dead ally"},
-      {num:5,col:4,clue:"The big dragon after four souls"}
+      {num:1,row:0,col:0,len:4,clue:'Break a statue, or a police raid'},
+      {num:2,row:0,col:1,len:5,clue:'Early test build before beta'},
+      {num:3,row:0,col:2,len:5,clue:'Guide a vehicle left or right'},
+      {num:4,row:0,col:3,len:5,clue:'Remove pencil marks from a map'},
+      {num:5,row:0,col:4,len:4,clue:'Challenge someone to a risky try'}
     ]
   },
   {
-    rows: ['SPAWN', 'PATIO', 'ATARI', 'WIRES', 'NOISE'],
+    rows: ['PIGS#', 'ADEPT', 'SONAR', 'SLICE', '#SEEK'],
     across: [
-      {num:1,clue:"Where you appear after a death"},
-      {num:6,clue:"Where the LAN leaks outside"},
-      {num:7,clue:"Wood-grain console era"},
-      {num:8,clue:"Among Us, or cable crime"},
-      {num:9,clue:"What a loud keyboard adds"}
+      {num:1,row:0,col:0,len:4,clue:'Farm animals that oink'},
+      {num:5,row:1,col:0,len:5,clue:'Highly skilled with a weapon'},
+      {num:7,row:2,col:0,len:5,clue:'Sound system that finds underwater objects'},
+      {num:8,row:3,col:0,len:5,clue:'A thin piece cut off'},
+      {num:9,row:4,col:1,len:4,clue:'Search for a hidden item'}
     ],
     down: [
-      {num:1,col:0,clue:"Where you appear after a death"},
-      {num:2,col:1,clue:"Where the LAN leaks outside"},
-      {num:3,col:2,clue:"Wood-grain console era"},
-      {num:4,col:3,clue:"Among Us, or cable crime"},
-      {num:5,col:4,clue:"What a loud keyboard adds"}
+      {num:1,row:0,col:0,len:4,clue:'Throw to a teammate, or a permit'},
+      {num:2,row:0,col:1,len:5,clue:'Images adored as sacred'},
+      {num:3,row:0,col:2,len:5,clue:'A spirit that grants wishes'},
+      {num:4,row:0,col:3,len:5,clue:'Room in a bag, or the void above'},
+      {num:6,row:1,col:4,len:4,clue:'A long hard walk'}
     ]
   },
   {
-    rows: ['SPLIT', 'PLANE', 'LAMPS', 'INPUT', 'TESTS'],
+    rows: ['#PAIN', 'SHINE', 'HOSTS', 'INLET', 'PEER#'],
     across: [
-      {num:1,clue:"Push two sites, or a map"},
-      {num:6,clue:"Portal surface, or a war thunder map"},
-      {num:7,clue:"Minecraft lighting, day one"},
-      {num:8,clue:"Lag between click and peek"},
-      {num:9,clue:"PTR, or a hardware review"}
+      {num:1,row:0,col:1,len:4,clue:'What a heavy hit makes you feel'},
+      {num:5,row:1,col:0,len:5,clue:'Give off light, or polish'},
+      {num:6,row:2,col:0,len:5,clue:'People who run a lobby'},
+      {num:7,row:3,col:0,len:5,clue:'Narrow arm of the sea'},
+      {num:8,row:4,col:0,len:4,clue:'Look closely at a tiny icon'}
     ],
     down: [
-      {num:1,col:0,clue:"Push two sites, or a map"},
-      {num:2,col:1,clue:"Portal surface, or a war thunder map"},
-      {num:3,col:2,clue:"Minecraft lighting, day one"},
-      {num:4,col:3,clue:"Lag between click and peek"},
-      {num:5,col:4,clue:"PTR, or a hardware review"}
+      {num:1,row:0,col:1,len:5,clue:'Device you tap to join a call'},
+      {num:2,row:0,col:2,len:5,clue:'Walkway between rows of seats'},
+      {num:3,row:0,col:3,len:5,clue:'Lay to rest in a cemetery'},
+      {num:4,row:0,col:4,len:4,clue:'Cozy pile of twigs in a tree'},
+      {num:5,row:1,col:0,len:4,clue:'Large boat, or to release a build'}
     ]
   },
   {
-    rows: ['STAFF', 'TIGER', 'AGREE', 'FEEDS', 'FRESH'],
+    rows: ['#ROW#', 'DECOR', 'OPERA', 'GLASS', 'SYNTH'],
     across: [
-      {num:1,clue:"Mage stick, or a raid officer"},
-      {num:6,clue:"Dhalsim is this, on the roster"},
-      {num:7,clue:"Ready-check yes"},
-      {num:8,clue:"What an inter does"},
-      {num:9,clue:"Account, or a smurf's excuse"}
+      {num:1,row:0,col:1,len:3,clue:'A line of slots, or a quarrel'},
+      {num:4,row:1,col:0,len:5,clue:'Furnishings that dress a player house'},
+      {num:6,row:2,col:0,len:5,clue:'A play set to music'},
+      {num:7,row:3,col:0,len:5,clue:'What a window pane is made of'},
+      {num:8,row:4,col:0,len:5,clue:'Electronic keyboard sound'}
     ],
     down: [
-      {num:1,col:0,clue:"Mage stick, or a raid officer"},
-      {num:2,col:1,clue:"Dhalsim is this, on the roster"},
-      {num:3,col:2,clue:"Ready-check yes"},
-      {num:4,col:3,clue:"What an inter does"},
-      {num:5,col:4,clue:"Account, or a smurf's excuse"}
+      {num:1,row:0,col:1,len:5,clue:'Answer a chat message'},
+      {num:2,row:0,col:2,len:5,clue:'Biome where sea monsters spawn'},
+      {num:3,row:0,col:3,len:5,clue:'The most bad outcome'},
+      {num:4,row:1,col:0,len:4,clue:'Barking pets in a village'},
+      {num:5,row:1,col:4,len:4,clue:'Hasty, or a skin irritation'}
     ]
   },
   {
-    rows: ['SWEAT', 'WRATH', 'EAGLE', 'ATLAS', 'THESE'],
+    rows: ['#STAB', 'SCUBA', 'LOTUS', 'AROSE', 'MERE#'],
     across: [
-      {num:1,clue:"Tryhard, as a noun"},
-      {num:6,clue:"Lich King's expansion, or a paladin bar"},
-      {num:7,clue:"ACE cousin in golf games; also a CS buy"},
-      {num:8,clue:"Map book, or a titan"},
-      {num:9,clue:"___ loot tables"}
+      {num:1,row:0,col:1,len:4,clue:'Thrust with a short blade'},
+      {num:5,row:1,col:0,len:5,clue:'Underwater breathing gear'},
+      {num:6,row:2,col:0,len:5,clue:'Water flower a monk might sit on'},
+      {num:7,row:3,col:0,len:5,clue:'Came up, as a dispute in the party'},
+      {num:8,row:4,col:0,len:4,clue:'Nothing more than a short clip'}
     ],
     down: [
-      {num:1,col:0,clue:"Tryhard, as a noun"},
-      {num:2,col:1,clue:"Lich King's expansion, or a paladin bar"},
-      {num:3,col:2,clue:"ACE cousin in golf games; also a CS buy"},
-      {num:4,col:3,clue:"Map book, or a titan"},
-      {num:5,col:4,clue:"___ loot tables"}
+      {num:1,row:0,col:1,len:5,clue:'Points shown on the board'},
+      {num:2,row:0,col:2,len:5,clue:'A teacher for one student'},
+      {num:3,row:0,col:3,len:5,clue:'Mistreat someone in chat'},
+      {num:4,row:0,col:4,len:4,clue:'Home you defend in a match'},
+      {num:5,row:1,col:0,len:4,clue:'Dunk in a basketball match'}
     ]
   },
   {
-    rows: ['TILTS', 'IDEAL', 'LEASE', 'TASTE', 'SLEEP'],
+    rows: ['SCAN#', 'HOLES', 'OLIVE', 'WOKEN', '#NERD'],
     across: [
-      {num:1,clue:"What a throw does to the team"},
-      {num:6,clue:"Wiki build"},
-      {num:7,clue:"Player housing, monthly"},
-      {num:8,clue:"What a bad ending leaves"},
-      {num:9,clue:"Status you don't walk into"}
+      {num:1,row:0,col:0,len:4,clue:'Look over a radar ping'},
+      {num:5,row:1,col:0,len:5,clue:'Gaps a platformer can fall through'},
+      {num:7,row:2,col:0,len:5,clue:'Drab green of a camo pattern'},
+      {num:8,row:3,col:0,len:5,clue:'Stirred from sleep'},
+      {num:9,row:4,col:1,len:4,clue:'A devoted fan of brainy hobbies'}
     ],
     down: [
-      {num:1,col:0,clue:"What a throw does to the team"},
-      {num:2,col:1,clue:"Wiki build"},
-      {num:3,col:2,clue:"Player housing, monthly"},
-      {num:4,col:3,clue:"What a bad ending leaves"},
-      {num:5,col:4,clue:"Status you don't walk into"}
+      {num:1,row:0,col:0,len:4,clue:'Present something for others to view'},
+      {num:2,row:0,col:1,len:5,clue:'Punctuation of two dots'},
+      {num:3,row:0,col:2,len:5,clue:'Similar, as two matching skins'},
+      {num:4,row:0,col:3,len:5,clue:'Not at any time'},
+      {num:6,row:1,col:4,len:4,clue:'Transmit a message or an item'}
     ]
   },
   {
-    rows: ['TRAPS', 'RELIC', 'ALTER', 'PIECE', 'SCREW'],
+    rows: ['#STAR', 'THESE', 'HORSE', 'ARMED', 'TEST#'],
     across: [
-      {num:1,clue:"Set and wait"},
-      {num:6,clue:"God-tier drop"},
-      {num:7,clue:"___ the deal, or a talent"},
-      {num:8,clue:"Tetris, or a chess take"},
-      {num:9,clue:"Jump, platformer slang"}
+      {num:1,row:0,col:1,len:4,clue:'Shape of a saved favorite'},
+      {num:5,row:1,col:0,len:5,clue:'This nearby group of items'},
+      {num:6,row:2,col:0,len:5,clue:'Stable animal in a ranch sim'},
+      {num:7,row:3,col:0,len:5,clue:'Given a weapon before the drop'},
+      {num:8,row:4,col:0,len:4,clue:'Try a build in the practice range'}
     ],
     down: [
-      {num:1,col:0,clue:"Set and wait"},
-      {num:2,col:1,clue:"God-tier drop"},
-      {num:3,col:2,clue:"___ the deal, or a talent"},
-      {num:4,col:3,clue:"Tetris, or a chess take"},
-      {num:5,col:4,clue:"Jump, platformer slang"}
+      {num:1,row:0,col:1,len:5,clue:'Land along the water'},
+      {num:2,row:0,col:2,len:5,clue:'Conditions you accept, or set words'},
+      {num:3,row:0,col:3,len:5,clue:'A plus on the balance sheet'},
+      {num:4,row:0,col:4,len:4,clue:'Marsh plant by a fishing spot'},
+      {num:5,row:1,col:0,len:4,clue:'The one indicated'}
     ]
   },
   {
-    rows: ['WARDS', 'ALARM', 'RATIO', 'DRINK', 'SMOKE'],
+    rows: ['#SNAP', 'AWARE', 'RESET', 'MEANT', '#PLAY'],
     across: [
-      {num:1,clue:"Vision in a bush"},
-      {num:6,clue:"Trap that pings"},
-      {num:7,clue:"K/D, posted unprompted"},
-      {num:8,clue:"Estus cousin, bottled"},
-      {num:9,clue:"Utility that eats a sightline"}
+      {num:1,row:0,col:1,len:4,clue:'Break with a sharp sound'},
+      {num:5,row:1,col:0,len:5,clue:'Noticing the flank before it hits'},
+      {num:6,row:2,col:0,len:5,clue:'Return a cooldown or a rank season'},
+      {num:7,row:3,col:0,len:5,clue:'Intended, as a friendly remark'},
+      {num:8,row:4,col:1,len:4,clue:'Take a turn on the board'}
     ],
     down: [
-      {num:1,col:0,clue:"Vision in a bush"},
-      {num:2,col:1,clue:"Trap that pings"},
-      {num:3,col:2,clue:"K/D, posted unprompted"},
-      {num:4,col:3,clue:"Estus cousin, bottled"},
-      {num:5,col:4,clue:"Utility that eats a sightline"}
+      {num:1,row:0,col:1,len:5,clue:'Clear every opponent in a series'},
+      {num:2,row:0,col:2,len:5,clue:'Related to the nose'},
+      {num:3,row:0,col:3,len:5,clue:'Stadium where a duel happens'},
+      {num:4,row:0,col:4,len:5,clue:'Small-minded, as a grudge'},
+      {num:5,row:1,col:0,len:3,clue:'Limb you swing a sword with'}
     ]
   },
   {
-    rows: ['WARDS', 'ALIEN', 'RIFLE', 'DELTA', 'SNEAK'],
+    rows: ['#DEBT', 'BELLE', 'ALIEN', 'RATED', 'EYED#'],
     across: [
-      {num:1,clue:"Vision in a bush"},
-      {num:6,clue:"The other team, xenomorph"},
-      {num:7,clue:"The gun that is not an SMG"},
-      {num:8,clue:"What changed in the patch"},
-      {num:9,clue:"Past the cone"}
+      {num:1,row:0,col:1,len:4,clue:'Money owed to an in-game lender'},
+      {num:5,row:1,col:0,len:5,clue:'Celebrated beauty of the ball'},
+      {num:6,row:2,col:0,len:5,clue:'Being from another world'},
+      {num:7,row:3,col:0,len:5,clue:'Given a score by reviewers'},
+      {num:8,row:4,col:0,len:4,clue:'Looked over a suspicious crate'}
     ],
     down: [
-      {num:1,col:0,clue:"Vision in a bush"},
-      {num:2,col:1,clue:"The other team, xenomorph"},
-      {num:3,col:2,clue:"The gun that is not an SMG"},
-      {num:4,col:3,clue:"What changed in the patch"},
-      {num:5,col:4,clue:"Past the cone"}
+      {num:1,row:0,col:1,len:5,clue:'Wait before you peek again'},
+      {num:2,row:0,col:2,len:5,clue:'Chosen as the very best'},
+      {num:3,row:0,col:3,len:5,clue:'Lose health a little at a time'},
+      {num:4,row:0,col:4,len:4,clue:'Be inclined to queue again'},
+      {num:5,row:1,col:0,len:4,clue:'Unarmored, with no chest piece'}
     ]
   },
   {
-    rows: ['WARDS', 'APART', 'RADAR', 'DRAMA', 'STRAP'],
+    rows: ['POSED', 'APPLE', 'STOVE', 'TIRED', 'ACTS#'],
     across: [
-      {num:1,clue:"Vision in a bush"},
-      {num:6,clue:"Torn ___ by a wipe"},
-      {num:7,clue:"Dots on the radar"},
-      {num:8,clue:"What the lobby provides for free"},
-      {num:9,clue:"Headset band"}
+      {num:1,row:0,col:0,len:5,clue:'Held a stance for a screenshot'},
+      {num:6,row:1,col:0,len:5,clue:'Red fruit in a farm plot'},
+      {num:7,row:2,col:0,len:5,clue:'Cooker in a kitchen sim'},
+      {num:8,row:3,col:0,len:5,clue:'Sleepy from long effort'},
+      {num:9,row:4,col:0,len:4,clue:'Sections of a staged story'}
     ],
     down: [
-      {num:1,col:0,clue:"Vision in a bush"},
-      {num:2,col:1,clue:"Torn ___ by a wipe"},
-      {num:3,col:2,clue:"Dots on the radar"},
-      {num:4,col:3,clue:"What the lobby provides for free"},
-      {num:5,col:4,clue:"Headset band"}
+      {num:1,row:0,col:0,len:5,clue:'Noodle dish from a cooking sim'},
+      {num:2,row:0,col:1,len:5,clue:'Related to the eye or a sight'},
+      {num:3,row:0,col:2,len:5,clue:'Athletic contest, such as a rink mode'},
+      {num:4,row:0,col:3,len:5,clue:'Pointy-eared folk in a fantasy realm'},
+      {num:5,row:0,col:4,len:4,clue:'Bold feat a bard retells'}
     ]
   },
   {
-    rows: ['WRATH', 'RETRO', 'ATLAS', 'TRACT', 'HOSTS'],
+    rows: ['#SITS', 'SUSHI', 'UPSET', 'REUSE', 'FREE#'],
     across: [
-      {num:1,clue:"Lich King's expansion, or a paladin bar"},
-      {num:6,clue:"Pixel era, on purpose"},
-      {num:7,clue:"Map book, or a titan"},
-      {num:8,clue:"Manual nobody kept"},
-      {num:9,clue:"Lobby leader"}
+      {num:1,row:0,col:1,len:4,clue:'Takes a chair'},
+      {num:5,row:1,col:0,len:5,clue:'Rice dish with fish'},
+      {num:6,row:2,col:0,len:5,clue:'An unexpected win by the underdog'},
+      {num:7,row:3,col:0,len:5,clue:'Run the same strat twice'},
+      {num:8,row:4,col:0,len:4,clue:'Costing nothing, like this puzzle'}
     ],
     down: [
-      {num:1,col:0,clue:"Lich King's expansion, or a paladin bar"},
-      {num:2,col:1,clue:"Pixel era, on purpose"},
-      {num:3,col:2,clue:"Map book, or a titan"},
-      {num:4,col:3,clue:"Manual nobody kept"},
-      {num:5,col:4,clue:"Lobby leader"}
+      {num:1,row:0,col:1,len:5,clue:'Excellent, or above the usual'},
+      {num:2,row:0,col:2,len:5,clue:'Problem ticket after a crash'},
+      {num:3,row:0,col:3,len:5,clue:'Not those, the closer ones'},
+      {num:4,row:0,col:4,len:4,clue:'Place you defend or attack'},
+      {num:5,row:1,col:0,len:4,clue:'Ride waves on a board'}
     ]
   },
   {
-    rows: ['YOSHI', 'OFTEN', 'STAND', 'HENCE', 'INDEX'],
+    rows: ['#HATE', 'RULED', 'AMONG', 'CAUSE', 'ENDED'],
     across: [
-      {num:1,clue:"Dinosaur who eats enemies"},
-      {num:6,clue:"How often you wipe on this boss"},
-      {num:7,clue:"Last player standing"},
-      {num:8,clue:"Thus, in a lore dump"},
-      {num:9,clue:"Bestiary page"}
+      {num:1,row:0,col:1,len:4,clue:'Strongly dislike a patch'},
+      {num:5,row:1,col:0,len:5,clue:'Governed a kingdom'},
+      {num:6,row:2,col:0,len:5,clue:'In the mix of the teamfight'},
+      {num:7,row:3,col:0,len:5,clue:'Reason a fight broke out'},
+      {num:8,row:4,col:0,len:5,clue:'Finished, like a speedrun'}
     ],
     down: [
-      {num:1,col:0,clue:"Dinosaur who eats enemies"},
-      {num:2,col:1,clue:"How often you wipe on this boss"},
-      {num:3,col:2,clue:"Last player standing"},
-      {num:4,col:3,clue:"Thus, in a lore dump"},
-      {num:5,col:4,clue:"Bestiary page"}
+      {num:1,row:0,col:1,len:5,clue:'Person, not an NPC monster'},
+      {num:2,row:0,col:2,len:5,clue:'Using a voice, not silently'},
+      {num:3,row:0,col:3,len:5,clue:'Tight, like a match point'},
+      {num:4,row:0,col:4,len:5,clue:'Inched ahead on the scoreboard'},
+      {num:5,row:1,col:0,len:4,clue:'Sprint to the finish line'}
     ]
   },
   {
-    rows: ['BADGE', 'AHEAD', 'DEBUG', 'GAUGE', 'EDGES'],
+    rows: ['#PROM', 'SLOPE', 'LATER', 'OZONE', 'WARS#'],
     across: [
-      {num:1,clue:"Achievement pin"},
-      {num:6,clue:"The zone is right ___"},
-      {num:7,clue:"The menu you were not supposed to see"},
-      {num:8,clue:"Limit-break meter"},
-      {num:9,clue:"Smash edges, or a map rim"}
+      {num:1,row:0,col:1,len:4,clue:'Formal school dance'},
+      {num:5,row:1,col:0,len:5,clue:'Angle of a ramp'},
+      {num:6,row:2,col:0,len:5,clue:'Not now, after this match'},
+      {num:7,row:3,col:0,len:5,clue:'Layer high above a sky'},
+      {num:8,row:4,col:0,len:4,clue:'Large armed conflicts'}
     ],
     down: [
-      {num:1,col:0,clue:"Achievement pin"},
-      {num:2,col:1,clue:"The zone is right ___"},
-      {num:3,col:2,clue:"The menu you were not supposed to see"},
-      {num:4,col:3,clue:"Limit-break meter"},
-      {num:5,col:4,clue:"Smash edges, or a map rim"}
+      {num:1,row:0,col:1,len:5,clue:'Open public square in a city'},
+      {num:2,row:0,col:2,len:5,clue:'Spinning part of a helicopter'},
+      {num:3,row:0,col:3,len:5,clue:'Starts access, as a door does'},
+      {num:4,row:0,col:4,len:4,clue:'Only a slim lead'},
+      {num:5,row:1,col:0,len:4,clue:'Not fast, as a heavy weapon'}
     ]
   },
   {
-    rows: ['BEAST', 'EARTH', 'ARBOR', 'STONE', 'THREE'],
+    rows: ['#CALF', 'MOVIE', 'ABOVE', 'DRIED', '#ADDS'],
     across: [
-      {num:1,clue:"Raid, or a dark souls drop"},
-      {num:6,clue:"Minecraft overworld"},
-      {num:7,clue:"Forest biome, fancy"},
-      {num:8,clue:"Minecraft's first pick"},
-      {num:9,clue:"Trio queue"}
+      {num:1,row:0,col:1,len:4,clue:'The back of the lower leg'},
+      {num:5,row:1,col:0,len:5,clue:'A film shown on a screen'},
+      {num:6,row:2,col:0,len:5,clue:'Upstairs from the lobby'},
+      {num:7,row:3,col:0,len:5,clue:'Patted off after a water level'},
+      {num:8,row:4,col:1,len:4,clue:'Tacks on extra damage'}
     ],
     down: [
-      {num:1,col:0,clue:"Raid, or a dark souls drop"},
-      {num:2,col:1,clue:"Minecraft overworld"},
-      {num:3,col:2,clue:"Forest biome, fancy"},
-      {num:4,col:3,clue:"Minecraft's first pick"},
-      {num:5,col:4,clue:"Trio queue"}
+      {num:1,row:0,col:1,len:5,clue:'Hooded snake, or a helicopter'},
+      {num:2,row:0,col:2,len:5,clue:'Sidestep a telegraphed attack'},
+      {num:3,row:0,col:3,len:5,clue:'Had a life inside the story'},
+      {num:4,row:0,col:4,len:5,clue:'Gives rations to a stable mount'},
+      {num:5,row:1,col:0,len:3,clue:'Angry after a stolen round'}
     ]
   },
   {
-    rows: ['CABLE', 'AHEAD', 'BEING', 'LANCE', 'EDGES'],
+    rows: ['#DEAF', 'GRADE', 'LOGOS', 'OVERT', 'WERE#'],
     across: [
-      {num:1,clue:"DisplayPort, not HDMI, they said"},
-      {num:6,clue:"The zone is right ___"},
-      {num:7,clue:"Hit while ___ stunned"},
-      {num:8,clue:"Jousting polearm"},
-      {num:9,clue:"Smash edges, or a map rim"}
+      {num:1,row:0,col:1,len:4,clue:'Unable to hear the voice chat'},
+      {num:5,row:1,col:0,len:5,clue:'Score a teacher writes on a paper'},
+      {num:6,row:2,col:0,len:5,clue:'Brand marks on a splash screen'},
+      {num:7,row:3,col:0,len:5,clue:'Done in plain sight'},
+      {num:8,row:4,col:0,len:4,clue:'Past of are'}
     ],
     down: [
-      {num:1,col:0,clue:"DisplayPort, not HDMI, they said"},
-      {num:2,col:1,clue:"The zone is right ___"},
-      {num:3,col:2,clue:"Hit while ___ stunned"},
-      {num:4,col:3,clue:"Jousting polearm"},
-      {num:5,col:4,clue:"Smash edges, or a map rim"}
+      {num:1,row:0,col:1,len:5,clue:'Steered a car through a race'},
+      {num:2,row:0,col:2,len:5,clue:'Keen to queue again right away'},
+      {num:3,row:0,col:3,len:5,clue:'Think the world of a soundtrack'},
+      {num:4,row:0,col:4,len:4,clue:'A fair with booths and music, briefly'},
+      {num:5,row:1,col:0,len:4,clue:'Soft light from a power-up'}
     ]
   },
   {
-    rows: ['CLIFF', 'LUNAR', 'INDIE', 'FAILS', 'FRESH'],
+    rows: ['#PLAN', 'FLORA', 'RAVEN', 'OCEAN', 'MESSY'],
     across: [
-      {num:1,clue:"What you walked off, again"},
-      {num:6,clue:"Moon event, or a Destiny energy"},
-      {num:7,clue:"Darling, usually"},
-      {num:8,clue:"The jump, again"},
-      {num:9,clue:"Account, or a smurf's excuse"}
+      {num:1,row:0,col:1,len:4,clue:'What you sketch before you queue'},
+      {num:5,row:1,col:0,len:5,clue:'Plant life on a biome chart'},
+      {num:6,row:2,col:0,len:5,clue:'Black bird on a gothic map'},
+      {num:7,row:3,col:0,len:5,clue:'Vast water on a world map'},
+      {num:8,row:4,col:0,len:5,clue:'Untidy, as a cluttered room'}
     ],
     down: [
-      {num:1,col:0,clue:"What you walked off, again"},
-      {num:2,col:1,clue:"Moon event, or a Destiny energy"},
-      {num:3,col:2,clue:"Darling, usually"},
-      {num:4,col:3,clue:"The jump, again"},
-      {num:5,col:4,clue:"Account, or a smurf's excuse"}
+      {num:1,row:0,col:1,len:5,clue:'Spot you mark on the map'},
+      {num:2,row:0,col:2,len:5,clue:'Feels deep fondness, as a fan does'},
+      {num:3,row:0,col:3,len:5,clue:'Zones marked on a map'},
+      {num:4,row:0,col:4,len:5,clue:'Person hired to watch children'},
+      {num:5,row:1,col:0,len:4,clue:'Starting at, in a patch note'}
     ]
   },
   {
-    rows: ['DRAWN', 'RATIO', 'ATARI', 'WIRES', 'NOISE'],
+    rows: ['#LEAD', 'BELLE', 'RAVEN', 'EVERY', 'WEST#'],
     across: [
-      {num:1,clue:"The fight, out"},
-      {num:6,clue:"K/D, posted unprompted"},
-      {num:7,clue:"Wood-grain console era"},
-      {num:8,clue:"Among Us, or cable crime"},
-      {num:9,clue:"What a loud keyboard adds"}
+      {num:1,row:0,col:1,len:4,clue:'Guide the party, or a dense gray metal'},
+      {num:5,row:1,col:0,len:5,clue:'Lovely lead of a fairy-tale scene'},
+      {num:6,row:2,col:0,len:5,clue:'Dark bird perched on a tower'},
+      {num:7,row:3,col:0,len:5,clue:'Each one of the party'},
+      {num:8,row:4,col:0,len:4,clue:'Left side of many world maps'}
     ],
     down: [
-      {num:1,col:0,clue:"The fight, out"},
-      {num:2,col:1,clue:"K/D, posted unprompted"},
-      {num:3,col:2,clue:"Wood-grain console era"},
-      {num:4,col:3,clue:"Among Us, or cable crime"},
-      {num:5,col:4,clue:"What a loud keyboard adds"}
+      {num:1,row:0,col:1,len:5,clue:'Exit the lobby'},
+      {num:2,row:0,col:2,len:5,clue:'Mythic forest folk with pointed ears'},
+      {num:3,row:0,col:3,len:5,clue:'Ping that an enemy is near'},
+      {num:4,row:0,col:4,len:4,clue:'Refuse a friend request'},
+      {num:5,row:1,col:0,len:4,clue:'Steep a potion or a tea'}
     ]
   },
   {
-    rows: ['DRESS', 'RELIC', 'ELDER', 'SIEGE', 'SCREW'],
+    rows: ['#WAS#', 'DARTS', 'ISSUE', 'STONE', 'CENTS'],
     across: [
-      {num:1,clue:"Transmog gown"},
-      {num:6,clue:"God-tier drop"},
-      {num:7,clue:"The big dragon after four souls"},
-      {num:8,clue:"R6, or a castle"},
-      {num:9,clue:"Jump, platformer slang"}
+      {num:1,row:0,col:1,len:3,clue:'Used to be, for one thing'},
+      {num:4,row:1,col:0,len:5,clue:'Pointed tosses at a pub board'},
+      {num:6,row:2,col:0,len:5,clue:'Copy of a magazine'},
+      {num:7,row:3,col:0,len:5,clue:'What a petrify spell makes of you'},
+      {num:8,row:4,col:0,len:5,clue:'Small coins that make a dollar'}
     ],
     down: [
-      {num:1,col:0,clue:"Transmog gown"},
-      {num:2,col:1,clue:"God-tier drop"},
-      {num:3,col:2,clue:"The big dragon after four souls"},
-      {num:4,col:3,clue:"R6, or a castle"},
-      {num:5,col:4,clue:"Jump, platformer slang"}
+      {num:1,row:0,col:1,len:5,clue:'Squander a cooldown'},
+      {num:2,row:0,col:2,len:5,clue:'Crime of setting a fire on purpose'},
+      {num:3,row:0,col:3,len:5,clue:'Risky trick for a highlight'},
+      {num:4,row:1,col:0,len:4,clue:'Round media an old console reads'},
+      {num:5,row:1,col:4,len:4,clue:'Spots with the eyes'}
     ]
   },
   {
-    rows: ['FLUID', 'LANCE', 'UNION', 'ICONS', 'DENSE'],
+    rows: ['#PLUS', 'GRAPH', 'RINSE', 'ADDED', 'BEST#'],
     across: [
-      {num:1,clue:"The movement, after a patch"},
-      {num:6,clue:"Jousting polearm"},
-      {num:7,clue:"Your guild, unionized"},
-      {num:8,clue:"Ability buttons on the HUD"},
-      {num:9,clue:"Packed spawn, or a lore dump"}
+      {num:1,row:0,col:1,len:4,clue:'In addition, as a bonus'},
+      {num:5,row:1,col:0,len:5,clue:'Chart of your rank over time'},
+      {num:6,row:2,col:0,len:5,clue:'Wash off after a messy cook'},
+      {num:7,row:3,col:0,len:5,clue:'Put in as an extra mod'},
+      {num:8,row:4,col:0,len:4,clue:'The pick a guide calls optimal'}
     ],
     down: [
-      {num:1,col:0,clue:"The movement, after a patch"},
-      {num:2,col:1,clue:"Jousting polearm"},
-      {num:3,col:2,clue:"Your guild, unionized"},
-      {num:4,col:3,clue:"Ability buttons on the HUD"},
-      {num:5,col:4,clue:"Packed spawn, or a lore dump"}
+      {num:1,row:0,col:1,len:5,clue:'Satisfaction in a clean win'},
+      {num:2,row:0,col:2,len:5,clue:'Realms on a world map'},
+      {num:3,row:0,col:3,len:5,clue:'Feeling disturbed'},
+      {num:4,row:0,col:4,len:4,clue:'Small outbuilding on a farm'},
+      {num:5,row:1,col:0,len:4,clue:'Snatch the objective and run'}
     ]
   },
   {
-    rows: ['GIANT', 'INTER', 'ATARI', 'NERVE', 'TRIED'],
+    rows: ['POOL#', 'ATLAS', 'SHINE', 'SEVEN', '#REST'],
     across: [
-      {num:1,clue:"Skyward Sword race"},
-      {num:6,clue:"The verb that gets you reported"},
-      {num:7,clue:"Wood-grain console era"},
-      {num:8,clue:"What a 1-hp clutch tests"},
-      {num:9,clue:"The skip, failed"}
+      {num:1,row:0,col:0,len:4,clue:'Water you swim in, or a billiards game'},
+      {num:5,row:1,col:0,len:5,clue:'Collection of world charts'},
+      {num:7,row:2,col:0,len:5,clue:'Beam with bright light'},
+      {num:8,row:3,col:0,len:5,clue:'Days in a weekly reset'},
+      {num:9,row:4,col:1,len:4,clue:'Break at a campfire save'}
     ],
     down: [
-      {num:1,col:0,clue:"Skyward Sword race"},
-      {num:2,col:1,clue:"The verb that gets you reported"},
-      {num:3,col:2,clue:"Wood-grain console era"},
-      {num:4,col:3,clue:"What a 1-hp clutch tests"},
-      {num:5,col:4,clue:"The skip, failed"}
+      {num:1,row:0,col:0,len:4,clue:'A permit to go through'},
+      {num:2,row:0,col:1,len:5,clue:'The remaining option in a duel'},
+      {num:3,row:0,col:2,len:5,clue:'Small bitter fruit'},
+      {num:4,row:0,col:3,len:5,clue:'Parallel paths on a moba map'},
+      {num:6,row:1,col:4,len:4,clue:'Caused something to go'}
     ]
   },
   {
-    rows: ['GREAT', 'RIDGE', 'EDGES', 'AGENT', 'TESTS'],
+    rows: ['#MESH', 'PIANO', 'ANGEL', 'RELAY', 'TREK#'],
     across: [
-      {num:1,clue:"Sword, or a review"},
-      {num:6,clue:"Sniper's favorite furniture"},
-      {num:7,clue:"Smash edges, or a map rim"},
-      {num:8,clue:"Tactical FPS class, or 007"},
-      {num:9,clue:"PTR, or a hardware review"}
+      {num:1,row:0,col:1,len:4,clue:'Net of interlinked wire'},
+      {num:5,row:1,col:0,len:5,clue:'Keyboard instrument in a music room'},
+      {num:6,row:2,col:0,len:5,clue:'Haloed figure on a shrine mural'},
+      {num:7,row:3,col:0,len:5,clue:'Pass the baton in a team race'},
+      {num:8,row:4,col:0,len:4,clue:'Hike a long distance'}
     ],
     down: [
-      {num:1,col:0,clue:"Sword, or a review"},
-      {num:2,col:1,clue:"Sniper's favorite furniture"},
-      {num:3,col:2,clue:"Smash edges, or a map rim"},
-      {num:4,col:3,clue:"Tactical FPS class, or 007"},
-      {num:5,col:4,clue:"PTR, or a hardware review"}
+      {num:1,row:0,col:1,len:5,clue:'Worker who digs ore'},
+      {num:2,row:0,col:2,len:5,clue:'Sharp-eyed bird with a hooked beak'},
+      {num:3,row:0,col:3,len:5,clue:'Move quietly past a guard'},
+      {num:4,row:0,col:4,len:4,clue:'Sacred, as a blessed weapon'},
+      {num:5,row:1,col:0,len:4,clue:'A piece of a larger quest'}
     ]
   },
   {
-    rows: ['MANGA', 'AREAS', 'NEXUS', 'GAUGE', 'ASSET'],
+    rows: ['FACT#', 'ABOUT', 'TURBO', 'ASPEN', 'LESS#'],
     across: [
-      {num:1,clue:"The source of the JRPG"},
-      {num:6,clue:"Regions on the overworld"},
-      {num:7,clue:"Destroy this last"},
-      {num:8,clue:"Limit-break meter"},
-      {num:9,clue:"Store bundle piece"}
+      {num:1,row:0,col:0,len:4,clue:'A true detail, not a rumor'},
+      {num:5,row:1,col:0,len:5,clue:'On the subject of'},
+      {num:7,row:2,col:0,len:5,clue:'A boost that spins extra power'},
+      {num:8,row:3,col:0,len:5,clue:'A poplar with pale bark'},
+      {num:9,row:4,col:0,len:4,clue:'Not as much after a nerf'}
     ],
     down: [
-      {num:1,col:0,clue:"The source of the JRPG"},
-      {num:2,col:1,clue:"Regions on the overworld"},
-      {num:3,col:2,clue:"Destroy this last"},
-      {num:4,col:3,clue:"Limit-break meter"},
-      {num:5,col:4,clue:"Store bundle piece"}
+      {num:1,row:0,col:0,len:5,clue:'Deadly, as one mistake in a no-hit run'},
+      {num:2,row:0,col:1,len:5,clue:'Overuse a broken combo'},
+      {num:3,row:0,col:2,len:5,clue:'Military unit, or a dance company'},
+      {num:4,row:0,col:3,len:5,clue:'Cylinders, or online videos casually'},
+      {num:6,row:1,col:4,len:3,clue:'A very heavy weight'}
     ]
   },
   {
-    rows: ['MEDIA', 'EVENT', 'DELTA', 'INTER', 'ATARI'],
+    rows: ['#MUST', 'LANCE', 'INDEX', 'AGENT', 'RARE#'],
     across: [
-      {num:1,clue:"Snake, this is a ___ call"},
-      {num:6,clue:"Limited-time live-ops drop"},
-      {num:7,clue:"What changed in the patch"},
-      {num:8,clue:"The verb that gets you reported"},
-      {num:9,clue:"Wood-grain console era"}
+      {num:1,row:0,col:1,len:4,clue:'Required, like a daily quest'},
+      {num:5,row:1,col:0,len:5,clue:'Jousting pole a knight levels'},
+      {num:6,row:2,col:0,len:5,clue:'List that points to other pages'},
+      {num:7,row:3,col:0,len:5,clue:'Spy with a gadget kit'},
+      {num:8,row:4,col:0,len:4,clue:'Uncommon, as a drop'}
     ],
     down: [
-      {num:1,col:0,clue:"Snake, this is a ___ call"},
-      {num:2,col:1,clue:"Limited-time live-ops drop"},
-      {num:3,col:2,clue:"What changed in the patch"},
-      {num:4,col:3,clue:"The verb that gets you reported"},
-      {num:5,col:4,clue:"Wood-grain console era"}
+      {num:1,row:0,col:1,len:5,clue:'Japanese comics many adaptations use'},
+      {num:2,row:0,col:2,len:5,clue:'Beneath the bridge'},
+      {num:3,row:0,col:3,len:5,clue:'A shot you can skip'},
+      {num:4,row:0,col:4,len:4,clue:'Words on the screen, or a message'},
+      {num:5,row:1,col:0,len:4,clue:'A person who tells falsehoods'}
     ]
   },
   {
-    rows: ['SHADE', 'HUMAN', 'AMEND', 'DANCE', 'ENDED'],
+    rows: ['#LAW#', 'PILOT', 'ANIME', 'SEVEN', 'TREND'],
     across: [
-      {num:1,clue:"Sit in it vs a sniper"},
-      {num:6,clue:"The other faction"},
-      {num:7,clue:"Hotfix the notes"},
-      {num:8,clue:"Emote after a kill"},
-      {num:9,clue:"The match, finally"}
+      {num:1,row:0,col:1,len:3,clue:'Rule the city guard enforces'},
+      {num:4,row:1,col:0,len:5,clue:'Person who flies a craft'},
+      {num:6,row:2,col:0,len:5,clue:'Japanese animation style of many games'},
+      {num:7,row:3,col:0,len:5,clue:'A count between six and eight'},
+      {num:8,row:4,col:0,len:5,clue:'A fashion or meta that is rising'}
     ],
     down: [
-      {num:1,col:0,clue:"Sit in it vs a sniper"},
-      {num:2,col:1,clue:"The other faction"},
-      {num:3,col:2,clue:"Hotfix the notes"},
-      {num:4,col:3,clue:"Emote after a kill"},
-      {num:5,col:4,clue:"The match, finally"}
+      {num:1,row:0,col:1,len:5,clue:'Inner layer of a coat'},
+      {num:2,row:0,col:2,len:5,clue:'Still in the round, not spectating'},
+      {num:3,row:0,col:3,len:5,clue:'Adult female people'},
+      {num:4,row:1,col:0,len:4,clue:'Gone by in time'},
+      {num:5,row:1,col:4,len:4,clue:'Care for a farm plot'}
     ]
   },
   {
-    rows: ['SLOTS', 'LIMIT', 'OMEGA', 'TIGER', 'STARS'],
+    rows: ['CARE#', 'ALARM', 'METRO', 'PRIOR', '#TORE'],
     across: [
-      {num:1,clue:"Loadout ___, or a gacha cousin"},
-      {num:6,clue:"FF break gauge"},
-      {num:7,clue:"Last letter, raid suffix"},
-      {num:8,clue:"Dhalsim is this, on the roster"},
-      {num:9,clue:"Review score out of five"}
+      {num:1,row:0,col:0,len:4,clue:'Attention you give a wounded ally'},
+      {num:5,row:1,col:0,len:5,clue:'Siren when the base is attacked'},
+      {num:7,row:2,col:0,len:5,clue:'Subway in an urban map'},
+      {num:8,row:3,col:0,len:5,clue:'Earlier than this one'},
+      {num:9,row:4,col:1,len:4,clue:'Ripped apart'}
     ],
     down: [
-      {num:1,col:0,clue:"Loadout ___, or a gacha cousin"},
-      {num:2,col:1,clue:"FF break gauge"},
-      {num:3,col:2,clue:"Last letter, raid suffix"},
-      {num:4,col:3,clue:"Dhalsim is this, on the roster"},
-      {num:5,col:4,clue:"Review score out of five"}
+      {num:1,row:0,col:0,len:4,clue:'Stay in one spot and wait'},
+      {num:2,row:0,col:1,len:5,clue:'On guard after a radar blip'},
+      {num:3,row:0,col:2,len:5,clue:'Kills compared with deaths'},
+      {num:4,row:0,col:3,len:5,clue:'Message when the client crashes'},
+      {num:6,row:1,col:4,len:4,clue:'An additional amount'}
+    ]
+  },
+  {
+    rows: ['#RAP#', 'BELOW', 'ALIKE', 'RAVEN', 'EXERT'],
+    across: [
+      {num:1,row:0,col:1,len:3,clue:'Rhythmic spoken music'},
+      {num:4,row:1,col:0,len:5,clue:'Farther down the page'},
+      {num:6,row:2,col:0,len:5,clue:'Matching in looks'},
+      {num:7,row:3,col:0,len:5,clue:'Trickster bird of myth'},
+      {num:8,row:4,col:0,len:5,clue:'Put out a lot of effort'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'Unclench after a ranked set'},
+      {num:2,row:0,col:2,len:5,clue:'Not downed when the circle closes'},
+      {num:3,row:0,col:3,len:5,clue:'Card game with blinds and bets'},
+      {num:4,row:1,col:0,len:4,clue:'Empty, as a picked-clean chest'},
+      {num:5,row:1,col:4,len:4,clue:'Traveled, as the party did'}
+    ]
+  },
+  {
+    rows: ['FLAW#', 'AIDED', 'UNDER', 'NEEDY', 'ADDS#'],
+    across: [
+      {num:1,row:0,col:0,len:4,clue:'Weak spot in a plan'},
+      {num:5,row:1,col:0,len:5,clue:'Helped a teammate who was downed'},
+      {num:7,row:2,col:0,len:5,clue:'Below and covered by'},
+      {num:8,row:3,col:0,len:5,clue:'Demanding a lot of help'},
+      {num:9,row:4,col:0,len:4,clue:'Puts another item in the cart'}
+    ],
+    down: [
+      {num:1,row:0,col:0,len:5,clue:'Animal life of a biome'},
+      {num:2,row:0,col:1,len:5,clue:'Given an inner layer, as a cloak'},
+      {num:3,row:0,col:2,len:5,clue:'Tacked on after the first draft'},
+      {num:4,row:0,col:3,len:5,clue:'Unwanted plants in a plot'},
+      {num:6,row:1,col:4,len:3,clue:'Not wet, after leaving the water'}
+    ]
+  },
+  {
+    rows: ['#SPAM', 'SHALE', 'PAPAL', 'OVERT', 'TERM#'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'Unwanted repeated messages'},
+      {num:5,row:1,col:0,len:5,clue:'Layered rock a miner chips'},
+      {num:6,row:2,col:0,len:5,clue:'Related to the pope'},
+      {num:7,row:3,col:0,len:5,clue:'Open, not a hidden mechanic'},
+      {num:8,row:4,col:0,len:4,clue:'A word with a set meaning, or a semester'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'Trim closely with a blade'},
+      {num:2,row:0,col:2,len:5,clue:'What a quest note is printed on'},
+      {num:3,row:0,col:3,len:5,clue:'Clock that ends an all-nighter'},
+      {num:4,row:0,col:4,len:4,clue:'Turn to liquid in a furnace'},
+      {num:5,row:1,col:0,len:4,clue:'A particular place you mark'}
+    ]
+  },
+  {
+    rows: ['#PART', 'HONOR', 'ARGUE', 'DELTA', '#SEED'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'A section of the whole'},
+      {num:5,row:1,col:0,len:5,clue:'Respect a fair duel is played with'},
+      {num:6,row:2,col:0,len:5,clue:'Debate a balance change in chat'},
+      {num:7,row:3,col:0,len:5,clue:'Difference between two patch values'},
+      {num:8,row:4,col:1,len:4,clue:'What you plant in a farm plot'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'Tiny openings in skin'},
+      {num:2,row:0,col:2,len:5,clue:'Corner you hold on a site'},
+      {num:3,row:0,col:3,len:5,clue:'The course you travel'},
+      {num:4,row:0,col:4,len:5,clue:'Step, or the patterned sole'},
+      {num:5,row:1,col:0,len:3,clue:'Possessed earlier'}
+    ]
+  },
+  {
+    rows: ['#TECH', 'SHARE', 'LEGAL', 'AMEND', 'MERE#'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'Gadgets and software, briefly'},
+      {num:5,row:1,col:0,len:5,clue:'Post the clip for the squad'},
+      {num:6,row:2,col:0,len:5,clue:'Allowed by the rules'},
+      {num:7,row:3,col:0,len:5,clue:'Correct a written agreement'},
+      {num:8,row:4,col:0,len:4,clue:'Slight, as a one-point gap'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'The central idea, or a UI skin'},
+      {num:2,row:0,col:2,len:5,clue:'Impatient to begin'},
+      {num:3,row:0,col:3,len:5,clue:'Tall machine that lifts cargo'},
+      {num:4,row:0,col:4,len:4,clue:'Gripped the controller through overtime'},
+      {num:5,row:1,col:0,len:4,clue:'Shut hard in frustration'}
+    ]
+  },
+  {
+    rows: ['CRUSH', 'RUSTY', 'ALARM', 'BEGIN', '#REP#'],
+    across: [
+      {num:1,row:0,col:0,len:5,clue:'Defeat badly, or a crowded arena'},
+      {num:6,row:1,col:0,len:5,clue:'Covered in reddish corrosion'},
+      {num:7,row:2,col:0,len:5,clue:'Warning before a disconnect'},
+      {num:8,row:3,col:0,len:5,clue:'Start the tutorial'},
+      {num:9,row:4,col:1,len:3,clue:'Standing with a faction, briefly'}
+    ],
+    down: [
+      {num:1,row:0,col:0,len:4,clue:'Sideways sea creature on a beach'},
+      {num:2,row:0,col:1,len:5,clue:'Leader, or a straight measuring stick'},
+      {num:3,row:0,col:2,len:5,clue:'How much of a resource you consume'},
+      {num:4,row:0,col:3,len:5,clue:'A long narrow piece'},
+      {num:5,row:0,col:4,len:4,clue:'Song of praise in a chapel'}
+    ]
+  },
+  {
+    rows: ['#SEA#', 'WINGS', 'EXTRA', 'STEEL', 'THREE'],
+    across: [
+      {num:1,row:0,col:1,len:3,clue:'Large body of salt water'},
+      {num:4,row:1,col:0,len:5,clue:'Limbs a flyer uses'},
+      {num:6,row:2,col:0,len:5,clue:'Bonus life, or a spare one'},
+      {num:7,row:3,col:0,len:5,clue:'Strong metal for blades and beams'},
+      {num:8,row:4,col:0,len:5,clue:'A trio of party members'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'The one after fifth'},
+      {num:2,row:0,col:2,len:5,clue:'Key that submits a guess'},
+      {num:3,row:0,col:3,len:5,clue:'Match the squad on a call'},
+      {num:4,row:1,col:0,len:4,clue:'Direction of the sunset'},
+      {num:5,row:1,col:4,len:4,clue:'Discount event in a shop'}
+    ]
+  },
+  {
+    rows: ['#HASH', 'FORCE', 'ANGEL', 'SOUND', 'TREE#'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'Chopped dish, or a scrambled code'},
+      {num:5,row:1,col:0,len:5,clue:'Power you use to push an object'},
+      {num:6,row:2,col:0,len:5,clue:'Gentle flyer in a storybook scene'},
+      {num:7,row:3,col:0,len:5,clue:'Audio you hear in a headset'},
+      {num:8,row:4,col:0,len:4,clue:'Oak or pine on a forest map'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'Mode where fighters bow first'},
+      {num:2,row:0,col:2,len:5,clue:'Fight with words, not weapons'},
+      {num:3,row:0,col:3,len:5,clue:'One beat of a story sequence'},
+      {num:4,row:0,col:4,len:4,clue:'Did not drop, as a grudge'},
+      {num:5,row:1,col:0,len:4,clue:'Quick, as a high speed stat'}
+    ]
+  },
+  {
+    rows: ['#BUD#', 'RENEW', 'AGILE', 'MATTE', 'SNEAK'],
+    across: [
+      {num:1,row:0,col:1,len:3,clue:'A flower not yet open'},
+      {num:4,row:1,col:0,len:5,clue:'Extend a subscription another month'},
+      {num:6,row:2,col:0,len:5,clue:'Quick on the feet, as a rogue'},
+      {num:7,row:3,col:0,len:5,clue:'Flat finish, not shiny'},
+      {num:8,row:4,col:0,len:5,clue:'Creep past without notice'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'Started the round'},
+      {num:2,row:0,col:2,len:5,clue:'Bring the squad onto one call'},
+      {num:3,row:0,col:3,len:5,clue:'Land where a river spreads out'},
+      {num:4,row:1,col:0,len:4,clue:'Male sheep'},
+      {num:5,row:1,col:4,len:4,clue:'Monday through Sunday'}
+    ]
+  },
+  {
+    rows: ['ALSO#', 'LANDS', 'TRADE', 'AGILE', 'RELY#'],
+    across: [
+      {num:1,row:0,col:0,len:4,clue:'In addition to the main prize'},
+      {num:5,row:1,col:0,len:5,clue:'Touches down after a jump'},
+      {num:7,row:2,col:0,len:5,clue:'Swap items with another player'},
+      {num:8,row:3,col:0,len:5,clue:'Able to turn on a dime'},
+      {num:9,row:4,col:0,len:4,clue:'Depend on a pocket healer'}
+    ],
+    down: [
+      {num:1,row:0,col:0,len:5,clue:'Place a cleric leaves an offering'},
+      {num:2,row:0,col:1,len:5,clue:'Big, as a full-size map'},
+      {num:3,row:0,col:2,len:5,clue:'Slow creature with a shell'},
+      {num:4,row:0,col:3,len:5,clue:'In a strange way'},
+      {num:6,row:1,col:4,len:3,clue:'Spot with your eyes'}
+    ]
+  },
+  {
+    rows: ['PORT#', 'AWARE', 'INTEL', 'REINS', '#RODE'],
+    across: [
+      {num:1,row:0,col:0,len:4,clue:'Harbor, or a connection socket'},
+      {num:5,row:1,col:0,len:5,clue:'Clued in, as a good shot-caller'},
+      {num:7,row:2,col:0,len:5,clue:'Scout report on the enemy'},
+      {num:8,row:3,col:0,len:5,clue:'Straps that steer a mount'},
+      {num:9,row:4,col:1,len:4,clue:'Traveled on a mount, in the past'}
+    ],
+    down: [
+      {num:1,row:0,col:0,len:4,clue:'Two matching items'},
+      {num:2,row:0,col:1,len:5,clue:'Person a pet or base belongs to'},
+      {num:3,row:0,col:2,len:5,clue:'Relation of two stats'},
+      {num:4,row:0,col:3,len:5,clue:'The way tastes are moving'},
+      {num:6,row:1,col:4,len:4,clue:'If not this loadout, what remains'}
+    ]
+  },
+  {
+    rows: ['CHIC#', 'HYDRA', 'IDEAS', 'PRANK', 'SOLE#'],
+    across: [
+      {num:1,row:0,col:0,len:4,clue:'Stylish, as a rare cosmetic'},
+      {num:5,row:1,col:0,len:5,clue:'Many-headed serpent of myth'},
+      {num:7,row:2,col:0,len:5,clue:'Notions for a new build'},
+      {num:8,row:3,col:0,len:5,clue:'Joke you pull on a friend'},
+      {num:9,row:4,col:0,len:4,clue:'Only one, or the bottom of a shoe'}
+    ],
+    down: [
+      {num:1,row:0,col:0,len:5,clue:'Crispy snacks, or poker tokens'},
+      {num:2,row:0,col:1,len:5,clue:'Prefix meaning water'},
+      {num:3,row:0,col:2,len:5,clue:'The build a tier list crowns'},
+      {num:4,row:0,col:3,len:5,clue:'A wading bird with a long neck'},
+      {num:6,row:1,col:4,len:3,clue:'Put a question to the guide'}
+    ]
+  },
+  {
+    rows: ['LAPSE', 'ALLOY', 'SPARE', 'THIRD', '#ANY#'],
+    across: [
+      {num:1,row:0,col:0,len:5,clue:'A brief slip of attention'},
+      {num:6,row:1,col:0,len:5,clue:'A blend of two metals'},
+      {num:7,row:2,col:0,len:5,clue:'Extra one you keep in reserve'},
+      {num:8,row:3,col:0,len:5,clue:'The one after second'},
+      {num:9,row:4,col:1,len:3,clue:'Whichever one you want'}
+    ],
+    down: [
+      {num:1,row:0,col:0,len:4,clue:'The one who survives the round'},
+      {num:2,row:0,col:1,len:5,clue:'First Greek letter, or a pack leader'},
+      {num:3,row:0,col:2,len:5,clue:'Simple, with no pattern'},
+      {num:4,row:0,col:3,len:5,clue:'Regretful about a team kill'},
+      {num:5,row:0,col:4,len:4,clue:'Gave a long stare across the lobby'}
+    ]
+  },
+  {
+    rows: ['#MOB#', 'DARED', 'INDIE', 'SIEGE', 'CARED'],
+    across: [
+      {num:1,row:0,col:1,len:3,clue:'Hostile crowd on a street'},
+      {num:4,row:1,col:0,len:5,clue:'Had the nerve to attempt the boss'},
+      {num:6,row:2,col:0,len:5,clue:'Made by a small studio'},
+      {num:7,row:3,col:0,len:5,clue:'Prolonged attack on a fort'},
+      {num:8,row:4,col:0,len:5,clue:'Looked after a hurt party member'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'Fandom turned up too loud'},
+      {num:2,row:0,col:2,len:5,clue:'Sequence you pick heroes in'},
+      {num:3,row:0,col:3,len:5,clue:'A sandy pale color'},
+      {num:4,row:1,col:0,len:4,clue:'A flat round plate of media'},
+      {num:5,row:1,col:4,len:4,clue:'Title paper for a housing plot'}
+    ]
+  },
+  {
+    rows: ['MOST#', 'ETHOS', 'SHALL', 'HELLO', '#REST'],
+    across: [
+      {num:1,row:0,col:0,len:4,clue:'The greatest amount'},
+      {num:5,row:1,col:0,len:5,clue:'The spirit of a faction'},
+      {num:7,row:2,col:0,len:5,clue:'Formal word for will'},
+      {num:8,row:3,col:0,len:5,clue:'Greeting when you join voice'},
+      {num:9,row:4,col:1,len:4,clue:'Leftover health after a trade'}
+    ],
+    down: [
+      {num:1,row:0,col:0,len:4,clue:'Fabric of a chain fence'},
+      {num:2,row:0,col:1,len:5,clue:'Not this one, the alternate skin'},
+      {num:3,row:0,col:2,len:5,clue:'Flaky stone in a geology node'},
+      {num:4,row:0,col:3,len:5,clue:'Fees charged to cross a bridge'},
+      {num:6,row:1,col:4,len:4,clue:'Empty place in a loadout'}
+    ]
+  },
+  {
+    rows: ['#WEAR', 'BORNE', 'OMEGA', 'RACED', 'ENTRY'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'Have clothing on'},
+      {num:5,row:1,col:0,len:5,clue:'Carried, as a heavy burden'},
+      {num:6,row:2,col:0,len:5,clue:'Final letter of the Greek set'},
+      {num:7,row:3,col:0,len:5,clue:'Sprinted toward the objective'},
+      {num:8,row:4,col:0,len:5,clue:'A way in, or one item on a list'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'An adult female person'},
+      {num:2,row:0,col:2,len:5,clue:'Build so it stands straight'},
+      {num:3,row:0,col:3,len:5,clue:'Hot displeasure'},
+      {num:4,row:0,col:4,len:5,clue:'All set for the match check'},
+      {num:5,row:1,col:0,len:4,clue:'Tire someone with a long story'}
+    ]
+  },
+  {
+    rows: ['#RAM#', 'MURAL', 'OMEGA', 'SONIC', 'TRACK'],
+    across: [
+      {num:1,row:0,col:1,len:3,clue:'Slam into headfirst'},
+      {num:4,row:1,col:0,len:5,clue:'Painting on a wall'},
+      {num:6,row:2,col:0,len:5,clue:'The closing rank in a Greek sequence'},
+      {num:7,row:3,col:0,len:5,clue:'Related to sound waves, or a blue mascot'},
+      {num:8,row:4,col:0,len:5,clue:'Course you race on, or to follow'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'Unconfirmed talk in town'},
+      {num:2,row:0,col:2,len:5,clue:'A bowl where crowds watch a fight'},
+      {num:3,row:0,col:3,len:5,clue:'Power behind a spell cast'},
+      {num:4,row:1,col:0,len:4,clue:'The majority of a group'},
+      {num:5,row:1,col:4,len:4,clue:'Shortage of a crafting material'}
+    ]
+  },
+  {
+    rows: ['#WARD', 'THREE', 'RESIN', 'IRONY', 'PENS#'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'A protective spell or hospital section'},
+      {num:5,row:1,col:0,len:5,clue:'Count between two and four'},
+      {num:6,row:2,col:0,len:5,clue:'Sticky stuff a crafter collects'},
+      {num:7,row:3,col:0,len:5,clue:'Humor of the opposite outcome'},
+      {num:8,row:4,col:0,len:4,clue:'Ink tools, or livestock enclosures'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'At what place'},
+      {num:2,row:0,col:2,len:5,clue:'Illegal burning of property'},
+      {num:3,row:0,col:3,len:5,clue:'Straps used to guide a mount'},
+      {num:4,row:0,col:4,len:4,clue:'Reject a claim as untrue'},
+      {num:5,row:1,col:0,len:4,clue:'A journey, or to stumble'}
+    ]
+  },
+  {
+    rows: ['GRAFT', 'RULER', 'ALONE', 'PENCE', 'EDGE#'],
+    across: [
+      {num:1,row:0,col:0,len:5,clue:'Join a branch onto a tree'},
+      {num:6,row:1,col:0,len:5,clue:'A strip marked for measuring'},
+      {num:7,row:2,col:0,len:5,clue:'Without a duo in the lobby'},
+      {num:8,row:3,col:0,len:5,clue:'Pennies, in British money'},
+      {num:9,row:4,col:0,len:4,clue:'Brink of the map before a fall'}
+    ],
+    down: [
+      {num:1,row:0,col:0,len:5,clue:'Fruit that becomes wine'},
+      {num:2,row:0,col:1,len:5,clue:'Acted as sovereign'},
+      {num:3,row:0,col:2,len:5,clue:'Moving with the convoy'},
+      {num:4,row:0,col:3,len:5,clue:'Barrier around a yard'},
+      {num:5,row:0,col:4,len:4,clue:'Diagram of branching skills'}
+    ]
+  },
+  {
+    rows: ['#RICH', 'GENRE', 'OTTER', 'DRESS', 'SORT#'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'Wealthy, with gold to spare'},
+      {num:5,row:1,col:0,len:5,clue:'Category such as RPG or shooter'},
+      {num:6,row:2,col:0,len:5,clue:'Playful river mammal'},
+      {num:7,row:3,col:0,len:5,clue:'Outfit hanging in a character closet'},
+      {num:8,row:4,col:0,len:4,clue:'Arrange items by type'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'Styled like an older console era'},
+      {num:2,row:0,col:2,len:5,clue:'Bury a fallen villager'},
+      {num:3,row:0,col:3,len:5,clue:'Emblem on a guild shield'},
+      {num:4,row:0,col:4,len:4,clue:'Belonging to that woman'},
+      {num:5,row:1,col:0,len:4,clue:'Deities a shrine is built for'}
+    ]
+  },
+  {
+    rows: ['CAST#', 'ACTED', 'STONE', 'HORSE', '#REED'],
+    across: [
+      {num:1,row:0,col:0,len:4,clue:'Assign performers to parts'},
+      {num:5,row:1,col:0,len:5,clue:'Performed a role in a story scene'},
+      {num:7,row:2,col:0,len:5,clue:'A go piece, or a skipping rock'},
+      {num:8,row:3,col:0,len:5,clue:'Four-legged mount a knight rides'},
+      {num:9,row:4,col:1,len:4,clue:'Tall grass at the water edge'}
+    ],
+    down: [
+      {num:1,row:0,col:0,len:4,clue:'Money you spend in a shop'},
+      {num:2,row:0,col:1,len:5,clue:'Person who plays a story character'},
+      {num:3,row:0,col:2,len:5,clue:'Shop, or to put away for later'},
+      {num:4,row:0,col:3,len:5,clue:'Pulled tight'},
+      {num:6,row:1,col:4,len:4,clue:'Heroic act worth a toast'}
+    ]
+  },
+  {
+    rows: ['#EVIL', 'PROMO', 'ORGAN', 'ROUGE', 'TREE#'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'Deeply wicked'},
+      {num:5,row:1,col:0,len:5,clue:'Short ad for an upcoming release'},
+      {num:6,row:2,col:0,len:5,clue:'Keyboard instrument with tall pipes'},
+      {num:7,row:3,col:0,len:5,clue:'Red cosmetic for cheeks'},
+      {num:8,row:4,col:0,len:4,clue:'What you climb in a canopy stage'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'Mistake a replay makes obvious'},
+      {num:2,row:0,col:2,len:5,clue:'The current fashion'},
+      {num:3,row:0,col:3,len:5,clue:'Picture on a loading screen'},
+      {num:4,row:0,col:4,len:4,clue:'Single, with no partner'},
+      {num:5,row:1,col:0,len:4,clue:'A sweet fortified wine'}
+    ]
+  },
+  {
+    rows: ['#SINS', 'TONIC', 'ALTER', 'PIECE', '#DREW'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'Wrongful acts a confession might list'},
+      {num:5,row:1,col:0,len:5,clue:'A refreshing medicinal drink'},
+      {num:6,row:2,col:0,len:5,clue:'Change a character preset'},
+      {num:7,row:3,col:0,len:5,clue:'One part of a puzzle'},
+      {num:8,row:4,col:1,len:4,clue:'Sketched a plan for the squad'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'Firm and reliable'},
+      {num:2,row:0,col:2,len:5,clue:'Place in a grave'},
+      {num:3,row:0,col:3,len:5,clue:'A sibling daughter'},
+      {num:4,row:0,col:4,len:5,clue:'Threaded fastener in a PC build'},
+      {num:5,row:1,col:0,len:3,clue:'Touch lightly'}
+    ]
+  },
+  {
+    rows: ['#GEAR', 'BLAZE', 'LOTUS', 'OVERT', 'WERE#'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'Equipment you bring into a raid'},
+      {num:5,row:1,col:0,len:5,clue:'Bright fire on a torch'},
+      {num:6,row:2,col:0,len:5,clue:'A sacred bloom of a pond'},
+      {num:7,row:3,col:0,len:5,clue:'Unconcealed, unlike a stealth takedown'},
+      {num:8,row:4,col:0,len:4,clue:'Past of are, for a group'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'Hand cover a keeper wears'},
+      {num:2,row:0,col:2,len:5,clue:'One who clears the snack table'},
+      {num:3,row:0,col:3,len:5,clue:'Bright blue, like a clear skybox'},
+      {num:4,row:0,col:4,len:4,clue:'Pause between ranked sets'},
+      {num:5,row:1,col:0,len:4,clue:'A hard hit, or to exhale'}
+    ]
+  },
+  {
+    rows: ['SANG#', 'CLAIM', 'ALIVE', 'NOVEL', '#WENT'],
+    across: [
+      {num:1,row:0,col:0,len:4,clue:'Performed a vocal in a rhythm stage'},
+      {num:5,row:1,col:0,len:5,clue:'Call dibs on a loot drop'},
+      {num:7,row:2,col:0,len:5,clue:'Breathing after the last fight'},
+      {num:8,row:3,col:0,len:5,clue:'Long book, or new and original'},
+      {num:9,row:4,col:1,len:4,clue:'Departed after the final horn'}
+    ],
+    down: [
+      {num:1,row:0,col:0,len:4,clue:'Read a code on a box'},
+      {num:2,row:0,col:1,len:5,clue:'Give permission for'},
+      {num:3,row:0,col:2,len:5,clue:'Too trusting of a stranger trade'},
+      {num:4,row:0,col:3,len:5,clue:'Handed over as a reward'},
+      {num:6,row:1,col:4,len:4,clue:'Become liquid from heat'}
+    ]
+  },
+  {
+    rows: ['#MUCH', 'CANOE', 'ANIME', 'MOTEL', 'PRESS'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'A great amount'},
+      {num:5,row:1,col:0,len:5,clue:'Narrow boat you paddle'},
+      {num:6,row:2,col:0,len:5,clue:'Drawn series popular in Japan'},
+      {num:7,row:3,col:0,len:5,clue:'Roadside inn on a highway map'},
+      {num:8,row:4,col:0,len:5,clue:'Push a button firmly'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'Grand house on an estate map'},
+      {num:2,row:0,col:2,len:5,clue:'Join forces for the objective'},
+      {num:3,row:0,col:3,len:5,clue:'Arrives, as backup does'},
+      {num:4,row:0,col:4,len:5,clue:'Back parts of the feet'},
+      {num:5,row:1,col:0,len:4,clue:'Sleep outdoors overnight'}
+    ]
+  },
+  {
+    rows: ['#HARE', 'SOLID', 'AMONG', 'DENSE', '#REED'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'Fast rabbit on a meadow'},
+      {num:5,row:1,col:0,len:5,clue:'Firm all the way through'},
+      {num:6,row:2,col:0,len:5,clue:'Surrounded by the squad'},
+      {num:7,row:3,col:0,len:5,clue:'Thick, as fog on a map'},
+      {num:8,row:4,col:1,len:4,clue:'Strip that vibrates in a clarinet'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'Poet of the Odyssey'},
+      {num:2,row:0,col:2,len:5,clue:'By yourself on a single-player run'},
+      {num:3,row:0,col:3,len:5,clue:'Quick wash of dirty gear'},
+      {num:4,row:0,col:4,len:5,clue:'Moved past by a slim margin'},
+      {num:5,row:1,col:0,len:3,clue:'Unhappy about a loss'}
+    ]
+  },
+  {
+    rows: ['#SPUN', 'SPARE', 'LARGE', 'ACTED', 'MESSY'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'Rotated quickly'},
+      {num:5,row:1,col:0,len:5,clue:'An extra kept in reserve'},
+      {num:6,row:2,col:0,len:5,clue:'Bigger than the usual size'},
+      {num:7,row:3,col:0,len:5,clue:'Took a part in a cutscene'},
+      {num:8,row:4,col:0,len:5,clue:'Strewn all over'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'The void beyond the sky'},
+      {num:2,row:0,col:2,len:5,clue:'Components in a PC build'},
+      {num:3,row:0,col:3,len:5,clue:'Strong impulses'},
+      {num:4,row:0,col:4,len:5,clue:'Requiring lots of care'},
+      {num:5,row:1,col:0,len:4,clue:'Body check into the boards'}
+    ]
+  },
+  {
+    rows: ['#BIAS', 'BENCH', 'ULTRA', 'SLEEP', '#ELSE'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'A lean toward one side'},
+      {num:5,row:1,col:0,len:5,clue:'Seat where subs wait'},
+      {num:6,row:2,col:0,len:5,clue:'Extreme, as a prefix'},
+      {num:7,row:3,col:0,len:5,clue:'Log off and actually rest'},
+      {num:8,row:4,col:1,len:4,clue:'Alternatively, in a build guide'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'The admired guest at a dance'},
+      {num:2,row:0,col:2,len:5,clue:'Secret info before a heist'},
+      {num:3,row:0,col:3,len:5,clue:'Land units a farm sim might count'},
+      {num:4,row:0,col:4,len:5,clue:'Outline of a hitbox'},
+      {num:5,row:1,col:0,len:3,clue:'Long city vehicle on a street map'}
+    ]
+  },
+  {
+    rows: ['#DUAL', 'PANDA', 'ONION', 'SCOPE', 'TENT#'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'Two of them, as a wield style'},
+      {num:5,row:1,col:0,len:5,clue:'Black-and-white bear'},
+      {num:6,row:2,col:0,len:5,clue:'Layered vegetable that makes you tear up'},
+      {num:7,row:3,col:0,len:5,clue:'Sight mounted on a rifle'},
+      {num:8,row:4,col:0,len:4,clue:'Canvas shelter on a camp night'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'Emote that moves to the music'},
+      {num:2,row:0,col:2,len:5,clue:'An alliance of groups'},
+      {num:3,row:0,col:3,len:5,clue:'Take in a pet from a shelter sim'},
+      {num:4,row:0,col:4,len:4,clue:'Your assigned path in a moba'},
+      {num:5,row:1,col:0,len:4,clue:'Upload a clip, or a wooden pole'}
+    ]
+  },
+  {
+    rows: ['#ROLE', 'RELAX', 'ASIDE', 'NEVER', '#TENT'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'Job you fill on a team'},
+      {num:5,row:1,col:0,len:5,clue:'Take it easy in a cozy sim'},
+      {num:6,row:2,col:0,len:5,clue:'A whispered line in a story scene'},
+      {num:7,row:3,col:0,len:5,clue:'On no occasion'},
+      {num:8,row:4,col:1,len:4,clue:'What you pitch before sleeping rough'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'Put a counter back to zero'},
+      {num:2,row:0,col:2,len:5,clue:'Branch a peace gesture might hold'},
+      {num:3,row:0,col:3,len:5,clue:'Heavily loaded with loot'},
+      {num:4,row:0,col:4,len:5,clue:'Spend energy on a task'},
+      {num:5,row:1,col:0,len:3,clue:'Moved fast on foot, in the past'}
+    ]
+  },
+  {
+    rows: ['#MAPS', 'MAFIA', 'INTEL', 'NIECE', 'DARE#'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'Diagrams of a zone'},
+      {num:5,row:1,col:0,len:5,clue:'Crime family in a mob story'},
+      {num:6,row:2,col:0,len:5,clue:'Processor brand in a parts list'},
+      {num:7,row:3,col:0,len:5,clue:'Daughter of a sibling'},
+      {num:8,row:4,col:0,len:4,clue:'A bold challenge'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'Craze around a new release'},
+      {num:2,row:0,col:2,len:5,clue:'Later than the opening cinematic'},
+      {num:3,row:0,col:3,len:5,clue:'A bit broken from a whole'},
+      {num:4,row:0,col:4,len:4,clue:'The act of selling goods'},
+      {num:5,row:1,col:0,len:4,clue:'What you use to plan a route'}
+    ]
+  },
+  {
+    rows: ['HARSH', 'OZONE', 'SUGAR', 'TRUCE', 'SEEK#'],
+    across: [
+      {num:1,row:0,col:0,len:5,clue:'Severe, as a steep penalty'},
+      {num:6,row:1,col:0,len:5,clue:'Sharp-smelling gas overhead'},
+      {num:7,row:2,col:0,len:5,clue:'Sweet crystals in a recipe'},
+      {num:8,row:3,col:0,len:5,clue:'Agreed pause in a fight'},
+      {num:9,row:4,col:0,len:4,clue:'Look for on purpose'}
+    ],
+    down: [
+      {num:1,row:0,col:0,len:5,clue:'People who welcome guests'},
+      {num:2,row:0,col:1,len:5,clue:'A sky-blue shade'},
+      {num:3,row:0,col:2,len:5,clue:'Sneaky class that prefers the shadows'},
+      {num:4,row:0,col:3,len:5,clue:'Small bite during a queue'},
+      {num:5,row:0,col:4,len:4,clue:'At this spot on the map'}
+    ]
+  },
+  {
+    rows: ['#MET#', 'PIXEL', 'INTRO', 'NORMS', 'GRASS'],
+    across: [
+      {num:1,row:0,col:1,len:3,clue:'Came across someone before'},
+      {num:4,row:1,col:0,len:5,clue:'Single dot on a screen'},
+      {num:6,row:2,col:0,len:5,clue:'First seconds of a trailer'},
+      {num:7,row:3,col:0,len:5,clue:'Usual standards of lobby conduct'},
+      {num:8,row:4,col:0,len:5,clue:'Lawn you mow in a life sim'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'Small, as a side quest'},
+      {num:2,row:0,col:2,len:5,clue:'One more than the usual'},
+      {num:3,row:0,col:3,len:5,clue:'Words of an agreement'},
+      {num:4,row:1,col:0,len:4,clue:'Network delay, or a map marker'},
+      {num:5,row:1,col:4,len:4,clue:'A defeat on the season record'}
+    ]
+  },
+  {
+    rows: ['#STAR', 'WHILE', 'EATEN', 'SMART', 'TENT#'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'Celebrity on the poster'},
+      {num:5,row:1,col:0,len:5,clue:'During the time that'},
+      {num:6,row:2,col:0,len:5,clue:'Devoured by a mimic'},
+      {num:7,row:3,col:0,len:5,clue:'Clever, as a sharp call'},
+      {num:8,row:4,col:0,len:4,clue:'Festival canopy over a booth'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'A painful feeling of guilt'},
+      {num:2,row:0,col:2,len:5,clue:'Giant of myth, or a huge foe'},
+      {num:3,row:0,col:3,len:5,clue:'Warning pop-up in the client'},
+      {num:4,row:0,col:4,len:4,clue:'What you pay between sessions'},
+      {num:5,row:1,col:0,len:4,clue:'Compass point opposite east'}
+    ]
+  },
+  {
+    rows: ['VISIT', 'INTRO', 'SCOOP', 'TURNS', 'ARMY#'],
+    across: [
+      {num:1,row:0,col:0,len:5,clue:'Stop by a friend island'},
+      {num:6,row:1,col:0,len:5,clue:'Short opening of a podcast'},
+      {num:7,row:2,col:0,len:5,clue:'Exclusive news, or a rounded spoon'},
+      {num:8,row:3,col:0,len:5,clue:'Chances to move in a tactics match'},
+      {num:9,row:4,col:0,len:4,clue:'Large fighting force on a war map'}
+    ],
+    down: [
+      {num:1,row:0,col:0,len:5,clue:'A wide view from a ridge'},
+      {num:2,row:0,col:1,len:5,clue:'Bring a penalty on yourself'},
+      {num:3,row:0,col:2,len:5,clue:'Violent weather on a skybox'},
+      {num:4,row:0,col:3,len:5,clue:'A twist that contradicts the plan'},
+      {num:5,row:0,col:4,len:4,clue:'Upper garments, or highest scores'}
+    ]
+  },
+  {
+    rows: ['#STUD', 'WHERE', 'HINGE', 'ORDER', 'MESS#'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'A post in a wall frame'},
+      {num:5,row:1,col:0,len:5,clue:'The question after you get lost'},
+      {num:6,row:2,col:0,len:5,clue:'Joint a door swings on'},
+      {num:7,row:3,col:0,len:5,clue:'A direction to be followed'},
+      {num:8,row:4,col:0,len:4,clue:'Untidy state of a shared base'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'Peaceful county in a fantasy map'},
+      {num:2,row:0,col:2,len:5,clue:'Looks after, as a healer does'},
+      {num:3,row:0,col:3,len:5,clue:'Presses someone to act'},
+      {num:4,row:0,col:4,len:4,clue:'Antlered animal in a hunting sim'},
+      {num:5,row:1,col:0,len:4,clue:'What person, as the object'}
+    ]
+  },
+  {
+    rows: ['#CASE', 'LOVED', 'ALONG', 'NOISE', 'ENDED'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'A matter under review'},
+      {num:5,row:1,col:0,len:5,clue:'Felt deep fondness for a main'},
+      {num:6,row:2,col:0,len:5,clue:'Beside the path, not off it'},
+      {num:7,row:3,col:0,len:5,clue:'Loud sound from a voice channel'},
+      {num:8,row:4,col:0,len:5,clue:'Stopped when the match timer hit zero'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'Two dots, one above the other'},
+      {num:2,row:0,col:2,len:5,clue:'Stay clear of a hazard'},
+      {num:3,row:0,col:3,len:5,clue:'A feeling, or a meaning'},
+      {num:4,row:0,col:4,len:5,clue:'Trimmed with a border'},
+      {num:5,row:1,col:0,len:4,clue:'A narrow country road'}
+    ]
+  },
+  {
+    rows: ['#THEM', 'BRAVO', 'EATER', 'SCENE', 'TEST#'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'Those people'},
+      {num:5,row:1,col:0,len:5,clue:'Cheer shouted after a clutch'},
+      {num:6,row:2,col:0,len:5,clue:'Creature that feeds on crops'},
+      {num:7,row:3,col:0,len:5,clue:'The place a fight is staged'},
+      {num:8,row:4,col:0,len:4,clue:'A trial before the full launch'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'Follow a faint trail'},
+      {num:2,row:0,col:2,len:5,clue:'Strongly dislikes, as a critic does'},
+      {num:3,row:0,col:3,len:5,clue:'Limited-time mode on the calendar'},
+      {num:4,row:0,col:4,len:4,clue:'A further amount'},
+      {num:5,row:1,col:0,len:4,clue:'Finest mark on the board'}
+    ]
+  },
+  {
+    rows: ['DROP#', 'RAZOR', 'ADORE', 'FINED', 'TOES#'],
+    across: [
+      {num:1,row:0,col:0,len:4,clue:'Leave loot for a teammate'},
+      {num:5,row:1,col:0,len:5,clue:'Sharp blade for a close shave'},
+      {num:7,row:2,col:0,len:5,clue:'Worship a favorite boss theme'},
+      {num:8,row:3,col:0,len:5,clue:'Charged a penalty in a sports sim'},
+      {num:9,row:4,col:0,len:4,clue:'Digits at the end of a foot'}
+    ],
+    down: [
+      {num:1,row:0,col:0,len:5,clue:'Pick order before a match'},
+      {num:2,row:0,col:1,len:5,clue:'Device for voice across a distance'},
+      {num:3,row:0,col:2,len:5,clue:'What a thin atmosphere tracks'},
+      {num:4,row:0,col:3,len:5,clue:'Minute openings in the skin'},
+      {num:6,row:1,col:4,len:3,clue:'Hue of a stop sign'}
+    ]
+  },
+  {
+    rows: ['#RIDE', 'BORED', 'AMONG', 'SENSE', 'HOSE#'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'Trip on a mount or a vehicle'},
+      {num:5,row:1,col:0,len:5,clue:'Uninterested during a long grind'},
+      {num:6,row:2,col:0,len:5,clue:'One of the group, not apart'},
+      {num:7,row:3,col:0,len:5,clue:'Practical judgment'},
+      {num:8,row:4,col:0,len:4,clue:'Flexible tube for water'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'Star-crossed lead of a balcony scene'},
+      {num:2,row:0,col:2,len:5,clue:'Golf clubs, or metal restraints'},
+      {num:3,row:0,col:3,len:5,clue:'Packed tightly together'},
+      {num:4,row:0,col:4,len:4,clue:'Slight advantage in a duel'},
+      {num:5,row:1,col:0,len:4,clue:'Hit hard with a heavy attack'}
+    ]
+  },
+  {
+    rows: ['SCRUB', 'AROSE', 'LIMIT', 'TEENS', '#DOG#'],
+    across: [
+      {num:1,row:0,col:0,len:5,clue:'Clean by rubbing, or a novice'},
+      {num:6,row:1,col:0,len:5,clue:'Sprang up suddenly'},
+      {num:7,row:2,col:0,len:5,clue:'Cap on how far a stat can go'},
+      {num:8,row:3,col:0,len:5,clue:'People in their adolescent years'},
+      {num:9,row:4,col:1,len:3,clue:'Barking companion on a trail'}
+    ],
+    down: [
+      {num:1,row:0,col:0,len:4,clue:'Seasoning on a cooking bench'},
+      {num:2,row:0,col:1,len:5,clue:'Called out while weeping'},
+      {num:3,row:0,col:2,len:5,clue:'Half of a famous tragic pair'},
+      {num:4,row:0,col:3,len:5,clue:'Making use of, right now'},
+      {num:5,row:0,col:4,len:4,clue:'Wagers placed before a match'}
+    ]
+  },
+  {
+    rows: ['#MUST', 'SINCE', 'UNION', 'METRO', '#DEER'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'Have to, before you queue'},
+      {num:5,row:1,col:0,len:5,clue:'From the time that'},
+      {num:6,row:2,col:0,len:5,clue:'Joined workers in a sim'},
+      {num:7,row:3,col:0,len:5,clue:'City rail between districts'},
+      {num:8,row:4,col:1,len:4,clue:'Woodland animal that spooks easily'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'Dug ore out of a node'},
+      {num:2,row:0,col:2,len:5,clue:'Come together as a party'},
+      {num:3,row:0,col:3,len:5,clue:'Notation a musician reads'},
+      {num:4,row:0,col:4,len:5,clue:'A high male singing voice'},
+      {num:5,row:1,col:0,len:3,clue:'Total of the numbers'}
+    ]
+  },
+  {
+    rows: ['COAST', 'ACUTE', 'SEDAN', 'HAIRS', '#NOT#'],
+    across: [
+      {num:1,row:0,col:0,len:5,clue:'Shoreline on a world map'},
+      {num:6,row:1,col:0,len:5,clue:'Sharp, as a sudden difficulty spike'},
+      {num:7,row:2,col:0,len:5,clue:'A car with a separate trunk'},
+      {num:8,row:3,col:0,len:5,clue:'Strands on a head model'},
+      {num:9,row:4,col:1,len:3,clue:'Word that flips a statement'}
+    ],
+    down: [
+      {num:1,row:0,col:0,len:4,clue:'Bills and coins on hand'},
+      {num:2,row:0,col:1,len:5,clue:'The big blue on a sailing route'},
+      {num:3,row:0,col:2,len:5,clue:'What headphones deliver'},
+      {num:4,row:0,col:3,len:5,clue:'Begin the match'},
+      {num:5,row:0,col:4,len:4,clue:'Pairs of fives'}
+    ]
+  },
+  {
+    rows: ['#RIP#', 'BONUS', 'AMPLE', 'REUSE', 'NOTES'],
+    across: [
+      {num:1,row:0,col:1,len:3,clue:'Tear apart'},
+      {num:4,row:1,col:0,len:5,clue:'Extra reward after a clear'},
+      {num:6,row:2,col:0,len:5,clue:'More than enough inventory space'},
+      {num:7,row:3,col:0,len:5,clue:'Play an old clip in a new edit'},
+      {num:8,row:4,col:0,len:5,clue:'Short written hints'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'Radio code word for the letter R'},
+      {num:2,row:0,col:2,len:5,clue:'Button press the game reads'},
+      {num:3,row:0,col:3,len:5,clue:'Heartbeat a health monitor shows'},
+      {num:4,row:1,col:0,len:4,clue:'Farm building where mounts sleep'},
+      {num:5,row:1,col:4,len:4,clue:'Notices with the eyes'}
+    ]
+  },
+  {
+    rows: ['#LADS', 'ROBOT', 'ASIDE', 'WEDGE', '#REEL'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'Young fellows in the party'},
+      {num:5,row:1,col:0,len:5,clue:'Machine that moves on its own'},
+      {num:6,row:2,col:0,len:5,clue:'Out of the main fight'},
+      {num:7,row:3,col:0,len:5,clue:'A tapered piece that splits'},
+      {num:8,row:4,col:1,len:4,clue:'A lively spinning folk dance'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'The side left with fewer points'},
+      {num:2,row:0,col:2,len:5,clue:'Tolerate a long queue without quitting'},
+      {num:3,row:0,col:3,len:5,clue:'Sidestep a telegraphed swing'},
+      {num:4,row:0,col:4,len:5,clue:'Brace yourself for a hard hit'},
+      {num:5,row:1,col:0,len:3,clue:'Uncooked, as fresh ingredients'}
+    ]
+  },
+  {
+    rows: ['#HARD', 'TENOR', 'ANGLE', 'SCREW', 'KEYS#'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'Difficult, as the top difficulty'},
+      {num:5,row:1,col:0,len:5,clue:'The general drift of a remark'},
+      {num:6,row:2,col:0,len:5,clue:'Slant of a skate ramp'},
+      {num:7,row:3,col:0,len:5,clue:'A pin with a spiral thread'},
+      {num:8,row:4,col:0,len:4,clue:'Ivories on a piano, or door openers'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'For this reason'},
+      {num:2,row:0,col:2,len:5,clue:'Mad after a cheap elimination'},
+      {num:3,row:0,col:3,len:5,clue:'Parts assigned in a story'},
+      {num:4,row:0,col:4,len:4,clue:'Pulled a card from the deck'},
+      {num:5,row:1,col:0,len:4,clue:'A job on the quest list'}
+    ]
+  },
+  {
+    rows: ['#SLIM', 'STATE', 'HENCE', 'YACHT', '#KEYS'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'Thin, as a narrow lead'},
+      {num:5,row:1,col:0,len:5,clue:'A condition, or a region of a country'},
+      {num:6,row:2,col:0,len:5,clue:'As a result of this'},
+      {num:7,row:3,col:0,len:5,clue:'A fancy pleasure boat'},
+      {num:8,row:4,col:1,len:4,clue:'Buttons that type letters'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'A cut of beef on a grill'},
+      {num:2,row:0,col:2,len:5,clue:'Long spear in a cavalry charge'},
+      {num:3,row:0,col:3,len:5,clue:'Wanting to scratch'},
+      {num:4,row:0,col:4,len:5,clue:'Gets together with, as a squad does'},
+      {num:5,row:1,col:0,len:3,clue:'Bashful around new people'}
+    ]
+  },
+  {
+    rows: ['NADE#', 'ALIAS', 'MOTTO', 'ENTER', '#GONE'],
+    across: [
+      {num:1,row:0,col:0,len:4,clue:'Thrown explosive, in shooter slang'},
+      {num:5,row:1,col:0,len:5,clue:'False name on a stealth profile'},
+      {num:7,row:2,col:0,len:5,clue:'Short phrase a guild lives by'},
+      {num:8,row:3,col:0,len:5,clue:'Come into the dungeon'},
+      {num:9,row:4,col:1,len:4,clue:'No longer there, as a despawned item'}
+    ],
+    down: [
+      {num:1,row:0,col:0,len:4,clue:'What you type on a character screen'},
+      {num:2,row:0,col:1,len:5,clue:'In company with the party'},
+      {num:3,row:0,col:2,len:5,clue:'The same thing again'},
+      {num:4,row:0,col:3,len:5,clue:'Swallowed by a boss attack'},
+      {num:6,row:1,col:4,len:4,clue:'Aching after a long session'}
+    ]
+  },
+  {
+    rows: ['#DREW', 'BRAVE', 'RATED', 'OWING', '#NOTE'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'Attracted a crowd to the stream'},
+      {num:5,row:1,col:0,len:5,clue:'Willing to pull a hard encounter'},
+      {num:6,row:2,col:0,len:5,clue:'Marked with an age label'},
+      {num:7,row:3,col:0,len:5,clue:'Still in debt for'},
+      {num:8,row:4,col:1,len:4,clue:'Short written hint'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'Sketched out on a map'},
+      {num:2,row:0,col:2,len:5,clue:'How one number stands to another'},
+      {num:3,row:0,col:3,len:5,clue:'Something scheduled to happen'},
+      {num:4,row:0,col:4,len:5,clue:'Jam tightly into a crack'},
+      {num:5,row:1,col:0,len:3,clue:'Casual word for a buddy'}
+    ]
+  },
+  {
+    rows: ['#SWAN', 'SHALE', 'TASTE', 'OPTED', 'PEER#'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'Graceful long-necked bird'},
+      {num:5,row:1,col:0,len:5,clue:'Soft rock that splits in sheets'},
+      {num:6,row:2,col:0,len:5,clue:'Try a flavor, or aesthetic sense'},
+      {num:7,row:3,col:0,len:5,clue:'Chose one route over another'},
+      {num:8,row:4,col:0,len:4,clue:'An equal in the lobby'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'The outer form of a thing'},
+      {num:2,row:0,col:2,len:5,clue:'Leftover rubbish'},
+      {num:3,row:0,col:3,len:5,clue:'Modify a loadout slightly'},
+      {num:4,row:0,col:4,len:4,clue:'Something required'},
+      {num:5,row:1,col:0,len:4,clue:'Come to a halt'}
+    ]
+  },
+  {
+    rows: ['MADAM', 'OPERA', 'SPLIT', 'SLASH', '#EYE#'],
+    across: [
+      {num:1,row:0,col:0,len:5,clue:'Polite word for a woman'},
+      {num:6,row:1,col:0,len:5,clue:'Drama in which the lines are sung'},
+      {num:7,row:2,col:0,len:5,clue:'Divide the party or the loot'},
+      {num:8,row:3,col:0,len:5,clue:'Cut with a sweeping blade'},
+      {num:9,row:4,col:1,len:3,clue:'What you use to line up a shot'}
+    ],
+    down: [
+      {num:1,row:0,col:0,len:4,clue:'Soft green growth on a stone'},
+      {num:2,row:0,col:1,len:5,clue:'Fruit on a teacher desk'},
+      {num:3,row:0,col:2,len:5,clue:'Postpone to a later time'},
+      {num:4,row:0,col:3,len:5,clue:'Come up, as a new bug report'},
+      {num:5,row:0,col:4,len:4,clue:'Numbers class, or damage calculation'}
+    ]
+  },
+  {
+    rows: ['#WHEN', 'PHONE', 'RELAX', 'ERECT', 'PEST#'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'At what time'},
+      {num:5,row:1,col:0,len:5,clue:'Pocket computer beside the PC'},
+      {num:6,row:2,col:0,len:5,clue:'Loosen up between matches'},
+      {num:7,row:3,col:0,len:5,clue:'Raise a tent frame'},
+      {num:8,row:4,col:0,len:4,clue:'Annoying creature in a garden'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'Word a quest marker answers'},
+      {num:2,row:0,col:2,len:5,clue:'Openings dug in the ground'},
+      {num:3,row:0,col:3,len:5,clue:'Put a rule into effect'},
+      {num:4,row:0,col:4,len:4,clue:'The following one'},
+      {num:5,row:1,col:0,len:4,clue:'Get ready before the lobby locks'}
+    ]
+  },
+  {
+    rows: ['LOSS#', 'ETHIC', 'SHARE', 'SEVEN', '#RENT'],
+    across: [
+      {num:1,row:0,col:0,len:4,clue:'Something no longer had'},
+      {num:5,row:1,col:0,len:5,clue:'A moral rule you play by'},
+      {num:7,row:2,col:0,len:5,clue:'Let a friend use a spare pad'},
+      {num:8,row:3,col:0,len:5,clue:'Colors people name in a rainbow'},
+      {num:9,row:4,col:1,len:4,clue:'Cost to borrow a mount'}
+    ],
+    down: [
+      {num:1,row:0,col:0,len:4,clue:'Fewer points than before'},
+      {num:2,row:0,col:1,len:5,clue:'The second of two loadouts'},
+      {num:3,row:0,col:2,len:5,clue:'Cut whiskers very close'},
+      {num:4,row:0,col:3,len:5,clue:'Loud warning on an emergency vehicle'},
+      {num:6,row:1,col:4,len:4,clue:'One hundredth of a dollar'}
+    ]
+  },
+  {
+    rows: ['#MALE', 'SALAD', 'ICING', 'GRACE', 'NOSE#'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'One side of a character toggle'},
+      {num:5,row:1,col:0,len:5,clue:'Cold dish of mixed greens'},
+      {num:6,row:2,col:0,len:5,clue:'Sweet topping on a cake'},
+      {num:7,row:3,col:0,len:5,clue:'Extra moments after a timer'},
+      {num:8,row:4,col:0,len:4,clue:'Scent organ on a face'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'One key that fires several actions'},
+      {num:2,row:0,col:2,len:5,clue:'A cover name in a spy file'},
+      {num:3,row:0,col:3,len:5,clue:'Weapon couched in a tournament'},
+      {num:4,row:0,col:4,len:4,clue:'Rim of a platform'},
+      {num:5,row:1,col:0,len:4,clue:'Board with directions, or to autograph'}
+    ]
+  },
+  {
+    rows: ['#FARE', 'ALIEN', 'DODGE', 'DREAM', 'SADLY'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'Price of a ride across the map'},
+      {num:5,row:1,col:0,len:5,clue:'A visitor from off the planet'},
+      {num:6,row:2,col:0,len:5,clue:'Duck out of the way'},
+      {num:7,row:3,col:0,len:5,clue:'Hope for a perfect run'},
+      {num:8,row:4,col:0,len:5,clue:'In an unhappy way'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'Flowers and trees of a zone'},
+      {num:2,row:0,col:2,len:5,clue:'Gave support during a tough fight'},
+      {num:3,row:0,col:3,len:5,clue:'Royal in style'},
+      {num:4,row:0,col:4,len:5,clue:'The other side of a firefight'},
+      {num:5,row:1,col:0,len:4,clue:'Includes one more mod'}
+    ]
+  },
+  {
+    rows: ['#HAND', 'MEDIA', 'ELECT', 'ALPHA', 'NOTE#'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'Cards you hold, or a helping one'},
+      {num:5,row:1,col:0,len:5,clue:'Press outlets that cover a launch'},
+      {num:6,row:2,col:0,len:5,clue:'Choose by a club ballot'},
+      {num:7,row:3,col:0,len:5,clue:'Top dog in a wolf pack'},
+      {num:8,row:4,col:0,len:4,clue:'A single musical tone'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'A greeting said on arrival'},
+      {num:2,row:0,col:2,len:5,clue:'Well practiced at a combo'},
+      {num:3,row:0,col:3,len:5,clue:'Small specialized corner of a hobby'},
+      {num:4,row:0,col:4,len:4,clue:'Numbers a stats screen stores'},
+      {num:5,row:1,col:0,len:4,clue:'Cruel, or to signify'}
+    ]
+  },
+  {
+    rows: ['SEED#', 'HARRY', 'AGREE', 'FLOAT', 'TERM#'],
+    across: [
+      {num:1,row:0,col:0,len:4,clue:'Starting rank in a bracket'},
+      {num:5,row:1,col:0,len:5,clue:'Harass again and again'},
+      {num:7,row:2,col:0,len:5,clue:'Share a take on a balance patch'},
+      {num:8,row:3,col:0,len:5,clue:'Drift on the water'},
+      {num:9,row:4,col:0,len:4,clue:'Time spent in an office'}
+    ],
+    down: [
+      {num:1,row:0,col:0,len:5,clue:'Long handle, or a vertical mine tunnel'},
+      {num:2,row:0,col:1,len:5,clue:'Two under par on a hole'},
+      {num:3,row:0,col:2,len:5,clue:'Red text after a failed install'},
+      {num:4,row:0,col:3,len:5,clue:'Pictures that come during sleep'},
+      {num:6,row:1,col:4,len:3,clue:'Still, or up to now'}
+    ]
+  },
+  {
+    rows: ['#WARP', 'TOWER', 'ERASE', 'STRIP', 'THEN#'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'Bend through a shortcut in space'},
+      {num:5,row:1,col:0,len:5,clue:'Tall structure you climb or defend'},
+      {num:6,row:2,col:0,len:5,clue:'Clear the whiteboard play'},
+      {num:7,row:3,col:0,len:5,clue:'Remove an outer layer'},
+      {num:8,row:4,col:0,len:4,clue:'At that earlier moment'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'Value of an item in gold'},
+      {num:2,row:0,col:2,len:5,clue:'Conscious of the cooldown'},
+      {num:3,row:0,col:3,len:5,clue:'Sap used in a recipe'},
+      {num:4,row:0,col:4,len:4,clue:'Warm-up before a match'},
+      {num:5,row:1,col:0,len:4,clue:'What quality checks do before release'}
+    ]
+  },
+  {
+    rows: ['#HERE', 'PIXEL', 'ARISE', 'RELIC', '#DENT'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'Right at this location'},
+      {num:5,row:1,col:0,len:5,clue:'One dot in a digital image'},
+      {num:6,row:2,col:0,len:5,clue:'Stand when the countdown ends'},
+      {num:7,row:3,col:0,len:5,clue:'A surviving trace of the past'},
+      {num:8,row:4,col:1,len:4,clue:'Small bend in a vehicle panel'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'Brought on, as a mercenary'},
+      {num:2,row:0,col:2,len:5,clue:'Banish from the kingdom'},
+      {num:3,row:0,col:3,len:5,clue:'Goo from a tapped tree'},
+      {num:4,row:0,col:4,len:5,clue:'Pick with a player vote'},
+      {num:5,row:1,col:0,len:3,clue:'Expected score on a golf hole'}
+    ]
+  },
+  {
+    rows: ['#PULP', 'MANIA', 'USING', 'STOKE', 'TENS#'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'Soft inside of a fruit'},
+      {num:5,row:1,col:0,len:5,clue:'Wild excitement at a launch'},
+      {num:6,row:2,col:0,len:5,clue:'Employing at this moment'},
+      {num:7,row:3,col:0,len:5,clue:'Feed a fire so it burns hotter'},
+      {num:8,row:4,col:0,len:4,clue:'Bills marked with a one and a zero'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'A gluey spread'},
+      {num:2,row:0,col:2,len:5,clue:'The coming together of two sides'},
+      {num:3,row:0,col:3,len:5,clue:'Connections in a quest chain'},
+      {num:4,row:0,col:4,len:4,clue:'One sheet of a quest journal'},
+      {num:5,row:1,col:0,len:4,clue:'Non-negotiable for the clear'}
+    ]
+  },
+  {
+    rows: ['#PLAY', 'PROVE', 'ROYAL', 'EMAIL', 'POLLS'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'Take part in a match'},
+      {num:5,row:1,col:0,len:5,clue:'Show a claim is true'},
+      {num:6,row:2,col:0,len:5,clue:'Related to a king or queen'},
+      {num:7,row:3,col:0,len:5,clue:'Message you send from a menu inbox'},
+      {num:8,row:4,col:0,len:5,clue:'Votes collected from an audience'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'A short publicity spot'},
+      {num:2,row:0,col:2,len:5,clue:'Sticking with the same squad'},
+      {num:3,row:0,col:3,len:5,clue:'Be of use to the party'},
+      {num:4,row:0,col:4,len:5,clue:'Shouts in a loud voice'},
+      {num:5,row:1,col:0,len:4,clue:'Homework before raid night'}
+    ]
+  },
+  {
+    rows: ['LIFT#', 'ATLAS', 'SCOPE', 'THREE', '#YARN'],
+    across: [
+      {num:1,row:0,col:0,len:4,clue:'Raise a platform, or a ride up'},
+      {num:5,row:1,col:0,len:5,clue:'Volume of maps a traveler keeps'},
+      {num:7,row:2,col:0,len:5,clue:'How far a plan reaches'},
+      {num:8,row:3,col:0,len:5,clue:'Lives in a classic arcade cabinet'},
+      {num:9,row:4,col:1,len:4,clue:'Spun thread, or a long tale'}
+    ],
+    down: [
+      {num:1,row:0,col:0,len:4,clue:'Opposite of the opening pick'},
+      {num:2,row:0,col:1,len:5,clue:'Prickly so you want to scratch'},
+      {num:3,row:0,col:2,len:5,clue:'Vegetation a nature guide lists'},
+      {num:4,row:0,col:3,len:5,clue:'Grow narrower toward one end'},
+      {num:6,row:1,col:4,len:4,clue:'Spotted already on the minimap'}
+    ]
+  },
+  {
+    rows: ['#GUTS', 'METRO', 'UNTIL', 'CREED', 'HERD#'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'Courage to attempt a no-hit run'},
+      {num:5,row:1,col:0,len:5,clue:'Underground train in a stage'},
+      {num:6,row:2,col:0,len:5,clue:'Up to the time of'},
+      {num:7,row:3,col:0,len:5,clue:'Set of beliefs a faction follows'},
+      {num:8,row:4,col:0,len:4,clue:'Cattle kept as a group'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'A style group, such as horror'},
+      {num:2,row:0,col:2,len:5,clue:'Speak, or complete'},
+      {num:3,row:0,col:3,len:5,clue:'Attempted the boss once more'},
+      {num:4,row:0,col:4,len:4,clue:'Traded away for gold'},
+      {num:5,row:1,col:0,len:4,clue:'A large quantity'}
+    ]
+  },
+  {
+    rows: ['BASED', 'APPLE', 'TRIBE', 'HONOR', '#NEW#'],
+    across: [
+      {num:1,row:0,col:0,len:5,clue:'Derived from a source'},
+      {num:6,row:1,col:0,len:5,clue:'Crunchy snack from an orchard'},
+      {num:7,row:2,col:0,len:5,clue:'A community sharing a culture'},
+      {num:8,row:3,col:0,len:5,clue:'Glory a knight tries to keep'},
+      {num:9,row:4,col:1,len:3,clue:'Just released this season'}
+    ],
+    down: [
+      {num:1,row:0,col:0,len:4,clue:'Soak in a cozy life sim'},
+      {num:2,row:0,col:1,len:5,clue:'Cloth a cooking-sim chef wears'},
+      {num:3,row:0,col:2,len:5,clue:'Backbone, or the edge of a book'},
+      {num:4,row:0,col:3,len:5,clue:'Arm joint you lean on a desk'},
+      {num:5,row:0,col:4,len:4,clue:'Forest creature with a white tail'}
+    ]
+  },
+  {
+    rows: ['#GIFT', 'VIDEO', 'EVERY', 'TEARS', 'ONLY#'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'Present left in a friend mailbox'},
+      {num:5,row:1,col:0,len:5,clue:'Moving picture on a capture'},
+      {num:6,row:2,col:0,len:5,clue:'Each one, with none left out'},
+      {num:7,row:3,col:0,len:5,clue:'Salty drops after a sad scene'},
+      {num:8,row:4,col:0,len:4,clue:'With no others included'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'Bestowed as a gift'},
+      {num:2,row:0,col:2,len:5,clue:'Best-case ping and frame rate'},
+      {num:3,row:0,col:3,len:5,clue:'Boat that carries you across water'},
+      {num:4,row:0,col:4,len:4,clue:'Playthings in a nursery'},
+      {num:5,row:1,col:0,len:4,clue:'A vote that blocks a choice'}
+    ]
+  },
+  {
+    rows: ['#BARE', 'MEDIA', 'AGENT', 'LAPSE', 'ENTER'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'Without a cosmetic equipped'},
+      {num:5,row:1,col:0,len:5,clue:'Files on a capture card'},
+      {num:6,row:2,col:0,len:5,clue:'Field operative in a stealth mission'},
+      {num:7,row:3,col:0,len:5,clue:'A short gap in attention'},
+      {num:8,row:4,col:0,len:5,clue:'Join the match from the lobby'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'Took the first step'},
+      {num:2,row:0,col:2,len:5,clue:'Expert, short of pro'},
+      {num:3,row:0,col:3,len:5,clue:'Flush with water'},
+      {num:4,row:0,col:4,len:5,clue:'Diner who finishes the plate'},
+      {num:5,row:1,col:0,len:4,clue:'Not the other preset in the creator'}
+    ]
+  },
+  {
+    rows: ['#SPAM', 'SCUBA', 'CAROL', 'ARGUE', 'MEET#'],
+    across: [
+      {num:1,row:0,col:1,len:4,clue:'Canned spiced ham'},
+      {num:5,row:1,col:0,len:5,clue:'Tanks and a mask for diving'},
+      {num:6,row:2,col:0,len:5,clue:'Holiday song a tavern might play'},
+      {num:7,row:3,col:0,len:5,clue:'Disagree on the voice channel'},
+      {num:8,row:4,col:0,len:4,clue:'Get together with the squad'}
+    ],
+    down: [
+      {num:1,row:0,col:1,len:5,clue:'Frighten with a sudden noise'},
+      {num:2,row:0,col:2,len:5,clue:'Clear out unwanted files or foes'},
+      {num:3,row:0,col:3,len:5,clue:'Roughly, as an estimate'},
+      {num:4,row:0,col:4,len:4,clue:'A him, on a cast list'},
+      {num:5,row:1,col:0,len:4,clue:'Dishonest scheme in a trade chat'}
     ]
   }
 ];
