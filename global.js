@@ -66,6 +66,8 @@
     var path = pagePath();
     if (path.indexOf('/games/') !== 0) return;
     var dock = pageOverflowLocked() || !!document.getElementById('lab-nav');
+    // Pages that already render the static "More Games" card grid don't need the pill rail too.
+    if (!dock && document.querySelector('.rg-section')) return;
     var nav = document.createElement('nav');
     nav.className = dock ? 'more-games more-games--dock' : 'more-games';
     nav.setAttribute('data-more-games', '1');
