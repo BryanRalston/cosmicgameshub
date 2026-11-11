@@ -2,6 +2,7 @@
 'use strict';
 var fs = require('fs');
 var path = require('path');
+var vm = require('vm');
 var root = __dirname;
 var fails = [];
 
@@ -40,9 +41,8 @@ function read(rel) {
 })();
 
 (function mini() {
-  var t = read('crossword-puzzles.js');
-  var blocks = t.split('rows:').slice(1);
-  if (blocks.length < 45) fail('Mini count ' + blocks.length + ' < 45');
+  var miniFile = process.env.MINI_FILE || path.join(root, 'crossword-puzzles.js');
+  var t = fs.readFileSync(miniFile, 'utf8');
   var geo = ['OMAHA', 'ESSEX', 'HELEN', 'KENYA', 'GHANA', 'IDAHO', 'YUKON', 'SPAIN', 'TAMPA', 'PARIS', 'SAMOA', 'INDIA', 'MALTA'];
   geo.forEach(function (g) {
     if (t.indexOf("'" + g + "'") >= 0) fail('Mini geo filler ' + g);
@@ -50,20 +50,216 @@ function read(rel) {
   if (/gaming term for/i.test(t)) fail('Mini slop clue');
   var oneWord = (t.match(/clue:'[A-Za-z]{2,12}'/g) || []).concat(t.match(/clue:"[A-Za-z]{2,12}"/g) || []);
   if (oneWord.length) fail('Mini one-word clues ' + oneWord.slice(0, 8).join(', '));
-  var bad = 0;
-  blocks.forEach(function (b, i) {
-    var rows = (b.match(/'([A-Z]{5})'/g) || []).slice(0, 5).map(function (s) { return s.slice(1, -1); });
-    if (rows.length !== 5) { bad++; return; }
-    for (var c = 0; c < 5; c++) {
-      var down = rows.map(function (r) { return r[c]; }).join('');
-      if (down.length !== 5) bad++;
+
+  var sandbox = { window: {} };
+  var puzzles;
+  try {
+    vm.runInNewContext(t, sandbox, { timeout: 2000, filename: path.basename(miniFile) });
+    puzzles = sandbox.window.CROSSWORD_PUZZLES;
+  } catch (err) {
+    fail('Mini parse ' + err.message);
+    return;
+  }
+  if (!Array.isArray(puzzles)) return fail('Mini puzzles missing');
+  console.log('Mini file puzzles ' + puzzles.length + ' (' + path.basename(miniFile) + ')');
+  if (puzzles.length < 90) fail('Mini count ' + puzzles.length + ' < 90');
+
+  var wordSquares = 0;
+  var collisions = 0;
+  var dupAnswers = 0, sharedStems = 0;
+  var dupClues = 0;
+  var clueHasAnswer = 0;
+  var unchecked = 0;
+  var shortRuns = 0;
+  var mismatches = 0;
+  var clueCount = 0;
+
+  function spell(grid, entry, dir) {
+    var len = entry.len | 0;
+    var row = entry.row | 0;
+    var col = entry.col | 0;
+    var s = '';
+    for (var k = 0; k < len; k++) {
+      var r = dir === 'across' ? row : row + k;
+      var c = dir === 'across' ? col + k : col;
+      if (r < 0 || c < 0 || r > 4 || c > 4) return '';
+      s += grid[r][c];
     }
-    var across = (b.match(/num:\d,clue:/g) || []).length;
-    var downClues = (b.match(/col:\d,clue:/g) || []).length;
-    if (across < 5 || downClues < 5) bad++;
+    return s;
+  }
+
+  puzzles.forEach(function (p, i) {
+    var grid = (p && p.rows ? p.rows : []).map(function (row) { return String(row); });
+    if (grid.length !== 5 || grid.some(function (row) { return !/^[A-Z#]{5}$/.test(row); })) {
+      mismatches++;
+      fail('Mini ' + i + ' grid');
+      return;
+    }
+    var across = (p.across || []).slice();
+    var down = (p.down || []).slice();
+    var legacy = across.length && across[0].row == null && across[0].len == null;
+    if (legacy) {
+      across = across.map(function (entry, ri) {
+        return { num: entry.num, row: ri, col: 0, len: 5, clue: entry.clue || '', answer: grid[ri] };
+      });
+      var srcDown = p.down || [];
+      down = [];
+      for (var c = 0; c < 5; c++) {
+        var ans = '';
+        for (var r = 0; r < 5; r++) ans += grid[r][c];
+        var src = srcDown[c] || {};
+        down.push({ num: src.num, row: 0, col: c, len: 5, clue: src.clue || '', answer: ans });
+      }
+    }
+
+    var aAns = [];
+    var dAns = [];
+    var clues = [];
+    var puzzleBad = false;
+
+    function take(entry, dir, bucket) {
+      if (!entry || typeof entry.clue !== 'string' || !entry.clue.length) {
+        mismatches++;
+        puzzleBad = true;
+        return;
+      }
+      clueCount++;
+      clues.push(entry.clue);
+      var word = spell(grid, entry, dir);
+      if (!word || !/^[A-Z]{3,5}$/.test(word)) {
+        mismatches++;
+        puzzleBad = true;
+        return;
+      }
+      if (entry.answer && String(entry.answer) !== word) {
+        mismatches++;
+        puzzleBad = true;
+      }
+      var beforeBlack = dir === 'across'
+        ? (entry.col === 0 || grid[entry.row][entry.col - 1] === '#')
+        : (entry.row === 0 || grid[entry.row - 1][entry.col] === '#');
+      var afterR = dir === 'across' ? entry.row : entry.row + entry.len;
+      var afterC = dir === 'across' ? entry.col + entry.len : entry.col;
+      var afterBlack = dir === 'across'
+        ? (afterC >= 5 || grid[entry.row][afterC] === '#')
+        : (afterR >= 5 || grid[afterR][entry.col] === '#');
+      if (!beforeBlack || !afterBlack) {
+        mismatches++;
+        puzzleBad = true;
+      }
+      if (entry.clue.toUpperCase().indexOf(word) >= 0) {
+        clueHasAnswer++;
+        puzzleBad = true;
+      }
+      bucket.push(word);
+    }
+    across.forEach(function (entry) { take(entry, 'across', aAns); });
+    down.forEach(function (entry) { take(entry, 'down', dAns); });
+
+    var aligned = aAns.length > 0 && aAns.length === dAns.length && aAns.every(function (word, idx) { return word === dAns[idx]; });
+    if (aligned) wordSquares++;
+    else {
+      var aSet = Object.create(null);
+      aAns.forEach(function (word) { aSet[word] = 1; });
+      if (dAns.some(function (word) { return aSet[word]; })) collisions++;
+    }
+
+    var seenWord = Object.create(null);
+    var dup = false;
+    aAns.concat(dAns).forEach(function (word) {
+      if (seenWord[word]) dup = true;
+      seenWord[word] = 1;
+    });
+    if (dup) dupAnswers++;
+
+    // Same root twice in one grid (ADDS/ADDED, RULER/RULED): strip one
+    // inflection and compare. Plain shared prefixes are not flagged
+    // (PAST/PASTE, SHALL/SHALE are different words).
+    var seenStem = Object.create(null);
+    var stemHit = false;
+    aAns.concat(dAns).forEach(function (word) {
+      var st = word;
+      var sufs = ['ING', 'IES', 'ED', 'ES', 'ER', 'S', 'D', 'Y'];
+      for (var si = 0; si < sufs.length; si++) {
+        var sf = sufs[si];
+        if (word.length - sf.length >= 3 && word.slice(-sf.length) === sf) { st = word.slice(0, -sf.length); break; }
+      }
+      if (seenStem[st]) stemHit = true;
+      seenStem[st] = 1;
+    });
+    if (stemHit) sharedStems++;
+
+    var seenClue = Object.create(null);
+    var repeated = false;
+    clues.forEach(function (clue) {
+      if (seenClue[clue]) repeated = true;
+      seenClue[clue] = 1;
+    });
+    if (repeated) dupClues++;
+
+    var covA = Object.create(null);
+    var covD = Object.create(null);
+    function cover(entry, dir, map) {
+      if (!entry || !entry.len) return;
+      for (var k = 0; k < entry.len; k++) {
+        var r = dir === 'across' ? entry.row : entry.row + k;
+        var c = dir === 'across' ? entry.col + k : entry.col;
+        map[r + ',' + c] = 1;
+      }
+    }
+    across.forEach(function (entry) { cover(entry, 'across', covA); });
+    down.forEach(function (entry) { cover(entry, 'down', covD); });
+
+    var runsA = 0;
+    var runsD = 0;
+    for (var r = 0; r < 5; r++) {
+      var run = 0;
+      for (var c = 0; c <= 5; c++) {
+        var white = c < 5 && grid[r][c] !== '#';
+        if (white) {
+          run++;
+          if (!covA[r + ',' + c] || !covD[r + ',' + c]) unchecked++;
+        } else if (run) {
+          runsA++;
+          if (run < 3) shortRuns++;
+          run = 0;
+        }
+      }
+    }
+    for (var c2 = 0; c2 < 5; c2++) {
+      var run2 = 0;
+      for (var r2 = 0; r2 <= 5; r2++) {
+        var white2 = r2 < 5 && grid[r2][c2] !== '#';
+        if (white2) run2++;
+        else if (run2) {
+          runsD++;
+          if (run2 < 3) shortRuns++;
+          run2 = 0;
+        }
+      }
+    }
+    if (!puzzleBad && (across.length !== runsA || down.length !== runsD)) mismatches++;
+    if (puzzleBad) { /* counted above */ }
   });
-  if (bad) fail('Mini unchecked grids ' + bad);
-  else ok('Mini ' + blocks.length + ' fully checked 5x5');
+
+  console.log('Mini counts puzzles=' + puzzles.length + ' clues=' + clueCount +
+    ' wordSquares=' + wordSquares + ' collisions=' + collisions +
+    ' dupAnswers=' + dupAnswers + ' sharedStems=' + sharedStems + ' dupClues=' + dupClues +
+    ' clueHasAnswer=' + clueHasAnswer + ' unchecked=' + unchecked +
+    ' shortRuns=' + shortRuns + ' mismatches=' + mismatches);
+
+  if (wordSquares) fail('Mini word squares ' + wordSquares);
+  if (collisions) fail('Mini across/down collisions ' + collisions);
+  if (dupAnswers) fail('Mini duplicate answers ' + dupAnswers);
+  if (sharedStems) fail('Mini shared word stems ' + sharedStems);
+  if (dupClues) fail('Mini repeated clues ' + dupClues);
+  if (clueHasAnswer) fail('Mini clue contains answer ' + clueHasAnswer);
+  if (unchecked) fail('Mini unchecked cells ' + unchecked);
+  if (shortRuns) fail('Mini short runs ' + shortRuns);
+  if (mismatches) fail('Mini grid mismatches ' + mismatches);
+  if (!wordSquares && !collisions && !dupAnswers && !sharedStems && !dupClues && !clueHasAnswer && !unchecked && !shortRuns && !mismatches && puzzles.length >= 90) {
+    ok('Mini ' + puzzles.length + ' checked minis, ' + clueCount + ' clues');
+  }
 })();
 
 (function link() {

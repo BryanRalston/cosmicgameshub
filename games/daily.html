@@ -254,8 +254,14 @@
         return { played: played, streak: safeInt('sdk_streak') };
       },
       crossword() {
-        const last = safeInt('cw_last_day', -1);
-        return { played: last === dayOfYear, streak: safeInt('cw_streak') };
+        // The crossword day rolls over at midnight America/New_York; its engine writes cw_last_date (ET YYYY-MM-DD).
+        let etKey = '';
+        try {
+          const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
+          const get = (t) => (parts.find((x) => x.type === t) || {}).value || '';
+          etKey = get('year') + '-' + get('month') + '-' + get('day');
+        } catch (_) {}
+        return { played: !!etKey && localStorage.getItem('cw_last_date') === etKey, streak: safeInt('cw_streak') };
       },
       'price-guesser'() {
         const last = safeInt('pg_last_day', -1);
