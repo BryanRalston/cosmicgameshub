@@ -634,7 +634,17 @@
       .ms-intro p, .ms-intro .section__eyebrow { display: none; }
       .ms-toolbar { gap: 3px; margin-bottom: 4px; }
       .ms-diffs { gap: 2px; }
-      .ms-diff { min-height: 34px; font-size: 0.64rem; padding: 0 1px; letter-spacing: 0; }
+      .ms-diff {
+        flex: 1 1 0;
+        min-width: 34px;
+        min-height: 34px;
+        font-size: 0.64rem;
+        padding: 0 1px;
+        letter-spacing: 0;
+        overflow: hidden;
+        text-overflow: clip;
+      }
+      .ms-diff[data-diff="medium"] { min-width: 48px; }
       .ms-noguess { min-height: 34px; padding: 0 5px; font-size: 0.62rem; }
       .ms-ng-long { display: none; }
       .ms-ng-short { display: inline; }
@@ -1649,6 +1659,13 @@
     var d = dt.getUTCDate();
     return y + '-' + (m < 10 ? '0' : '') + m + '-' + (d < 10 ? '0' : '') + d;
   }
+  function displayStreak(stats, todayKey) {
+    var row = stats && stats.daily;
+    if (!row) return 0;
+    var key = todayKey || '';
+    if (row.lastWin === key || row.lastWin === prevDateKey(key)) return Number(row.streak) || 0;
+    return 0;
+  }
   function msUntilNextDaily(date) {
     var p = nyParts(date);
     var passed = ((Number(p.hour) * 60 + Number(p.minute)) * 60 + Number(p.second)) * 1000;
@@ -1970,7 +1987,7 @@
     var row = stats.daily && stats.daily.done ? stats.daily.done[dateKey] : null;
     var best = row && row.won && isFinite(Number(row.time)) ? Number(row.time) : null;
     document.getElementById('dailyBest').textContent = best == null ? 'Best —' : ('Best ' + formatClock(best));
-    document.getElementById('dailyStreak').textContent = 'Streak ' + (stats.daily && stats.daily.streak ? stats.daily.streak : 0);
+    document.getElementById('dailyStreak').textContent = 'Streak ' + displayStreak(stats, nyDateKey(new Date()));
     paintCountdown();
   }
   function applyMinePairs(pairs, mineCount) {
@@ -2294,6 +2311,7 @@
       if (row.best == null || seconds < row.best) row.best = seconds;
       row.times = (row.times || []).concat([seconds]).sort(function (a, b) { return a - b; }).slice(0, 5);
     } else {
+      row.streak = 0;
       row.done[dateKey] = { won: false, scored: true, time: seconds };
     }
     stats.daily = row;
@@ -2364,9 +2382,9 @@
     var bestEl = document.getElementById('resBest');
     if (diff === 'daily') {
       var stats = loadStats();
-      var streak = stats.daily && stats.daily.streak ? stats.daily.streak : 0;
+      var streak = displayStreak(stats, nyDateKey(new Date()));
       if (didWin && !practice) bestEl.textContent = (isNew ? 'New daily best. ' : '') + 'Streak ' + streak + '.';
-      else if (practice) bestEl.textContent = 'Practice run. Not scored.';
+      else if (practice) bestEl.textContent = 'Practice run. Not scored. Streak ' + streak + '.';
       else bestEl.textContent = 'Streak ' + streak + '.';
     } else if (didWin) {
       bestEl.textContent = isNew ? ('New best for ' + diff + ': ' + formatSec(seconds)) : ('Best for ' + diff + ': ' + formatSec(best == null ? seconds : best));
