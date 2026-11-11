@@ -38,8 +38,6 @@
     .cw-clue-list li { font-size: .82rem; line-height: 1.45; padding: .25rem .4rem; border-radius: 4px; cursor: pointer; color: #ccc; touch-action: manipulation; }
     .cw-clue-list li:hover { background: #1a2a3a; }
     .cw-clue-list li.active { background: #0e3a5c; color: #fff; }
-    .cw-clue-list li.filled { color: #8d8d9a; }
-    .cw-clue-list li.filled .cw-clue-num { color: #8d8d9a; }
     .cw-clue-list li.done { color: #2ecc71; }
     .cw-clue-list li.done .cw-clue-num { color: #2ecc71; }
     .cw-clue-list li.active, .cw-clue-list li.active.filled, .cw-clue-list li.active.done { color: #fff; }
@@ -56,6 +54,11 @@
     .cw-controls button#btn-check:hover { opacity: .85; }
     .cw-result { display: none; margin-top: 1.5rem; background: var(--bg-card, #1a1a2e); border-radius: 12px; padding: 1.5rem; text-align: center; }
     .cw-result.show { display: block; }
+    .cw-wrap.is-solved .cw-controls { display: none; }
+    .cw-layout.is-done .cw-clues { display: none; }
+    .cw-layout > .cw-result { margin-top: 0; flex: 1; min-width: 0; max-width: 460px; width: 100%; box-sizing: border-box; }
+    .cw-result .gear-hop__name { color: #fff !important; font-family: inherit !important; }
+    .cw-result .gear-hop__blurb { color: #b8b8c8; }
     .cw-result h2 { margin: 0 0 .5rem; font-size: 1.4rem; }
     .cw-result p { color: #aaa; margin: .3rem 0; font-size: .9rem; }
     .cw-emoji { font-size: 1.5rem; letter-spacing: 2px; line-height: 1.2; margin: .8rem 0; white-space: pre-line; }
@@ -109,6 +112,7 @@
       .cw-clue-scroll { display: flex; gap: 1.25rem; align-items: flex-start; }
       .cw-across-block, .cw-down-block { flex: 1; min-width: 0; }
       .cw-clue-list { margin-bottom: 0; }
+      .cw-layout > .cw-result { max-width: none; }
     }
     @media (max-width: 700px) {
       .cw-clue-tabs { display: flex; width: 100%; gap: .4rem; margin-bottom: .45rem; }
@@ -133,7 +137,7 @@
       .cw-reveal-pop > button { width: 100%; }
       .cw-reveal-menu { position: static; transform: none; width: 100%; left: auto; margin-bottom: .35rem; }
       .cw-emoji { font-size: 1.35rem; }
-      .cw-clue-scroll { max-height: 6.5rem; min-height: 0; padding-bottom: 12px; }
+      .cw-clue-scroll { max-height: 13rem; min-height: 0; padding-bottom: 12px; }
       .cw-controls {
         position: sticky; bottom: 0; z-index: 6; width: 100%;
         align-items: flex-end;
@@ -235,7 +239,7 @@
         <span class="cw-streak" id="cw-streak"></span>
       </div>
 
-      <div class="cw-active-clue" id="cw-active-clue"><em style="color:#666">Click a cell to start</em></div>
+      <div class="cw-active-clue" id="cw-active-clue" aria-live="polite"><em style="color:#666">Click a cell to start</em></div>
 
       <div class="cw-layout">
         <div class="cw-grid" id="cw-grid" role="grid" aria-label="Crossword"></div>
@@ -274,7 +278,7 @@
         <aside class="gear-hop" aria-label="Recommended gear">
           <div class="gear-hop__eyebrow">Upgrade Your Mouse</div>
           <div class="gear-hop__name">Logitech G Pro X Superlight 2 DEX</div>
-          <p class="gear-hop__blurb">Grid solved. One hop to the mice guide, or the Superlight listing we already use.</p>
+          <p class="gear-hop__blurb" id="cw-gear-blurb">Grid solved. One hop to the mice guide, or the Superlight listing we already use.</p>
           <div class="gear-hop__actions">
             <a href="/guides/gaming-mouse-buying-guide" class="btn btn--outline">Mouse buying guide →</a>
             <a href="https://www.amazon.com/dp/B0DG2XJPTC?tag=cosmicgameshu-20" class="btn btn--amazon-sm" target="_blank" rel="nofollow sponsored noopener">Check price on Amazon</a>
@@ -546,6 +550,8 @@
   var resumeOnVisible = false;
   var saveTimer = null;
   var pointerStamp = 0;
+  var pointerPending = false;
+  var userSel = false;
   var pendingConfirm = null;
   var suppressInput = false;
 
@@ -683,9 +689,9 @@
     stats.maxStreak = Math.max(stats.maxStreak || 0, streak);
     stats.lastSolvedDay = dayIndex;
     if (stats.revealBreak === dayIndex) stats.revealBreak = -1;
-    var clean = revealCount === 0;
+    var clean = revealCount === 0 && checkCount === 0;
     if (clean) stats.clean = (stats.clean || 0) + 1;
-    if (clean) {
+    if (revealCount === 0) {
       var sec = Math.floor(currentElapsed() / 1000);
       if (stats.bestSec == null || sec < stats.bestSec) stats.bestSec = sec;
       stats.totalSec = (stats.totalSec || 0) + sec;
@@ -773,7 +779,7 @@
     checkCount = parseInt(data.checks, 10);
     revealCount = parseInt(data.reveals, 10);
     if (!isFinite(checkCount) || checkCount < 0) checkCount = 0;
-    if (!isFinite(revealCount) || revealCount < 0) revealCount = 0;
+    revealCount = countRevealed();
     dir = data.dir;
     var rr0 = parseInt(data.r, 10);
     var cc0 = parseInt(data.c, 10);
@@ -825,8 +831,18 @@
     checkCount = parseInt(data.checks, 10);
     revealCount = parseInt(data.reveals, 10);
     if (!isFinite(checkCount) || checkCount < 0) checkCount = 0;
-    if (!isFinite(revealCount) || revealCount < 0) revealCount = 0;
+    revealCount = countRevealed();
     return true;
+  }
+  function countRevealed() {
+    var k = 0;
+    for (var rr = 0; rr < 5; rr++) for (var cc = 0; cc < 5; cc++) if (!isBlack(rr, cc) && cellState[rr][cc] === 'revealed') k += 1;
+    return k;
+  }
+  function whiteCount() {
+    var k = 0;
+    for (var rr = 0; rr < 5; rr++) for (var cc = 0; cc < 5; cc++) if (!isBlack(rr, cc)) k += 1;
+    return k;
   }
   function revealedList() {
     var out = [];
@@ -850,6 +866,7 @@
     }));
     lsDel(sk('cw_resume_v1'));
     lsSet(sk('cw_last_date'), todayKey);
+    try { if (window.CGDaily && typeof window.CGDaily.mountAll === 'function') window.CGDaily.mountAll(); } catch (e) {}
   }
 
   document.getElementById('cw-date').textContent = dateLabel;
@@ -896,13 +913,16 @@
           node.addEventListener('pointerdown', function (ev) {
             if (ev.button && ev.button !== 0) return;
             pointerStamp = Date.now();
+            pointerPending = true;
             if (solved || isBlack(rr, cc)) return;
-            var same = rr === selRow && cc === selCol;
+            var same = userSel && rr === selRow && cc === selCol;
             selectCell(rr, cc, same ? (dir === 'across' ? 'down' : 'across') : dir);
+            userSel = true;
             focusHidden();
           });
+          // A click that follows a pointerdown (however long the press) was already handled.
           node.addEventListener('click', function () {
-            if (Date.now() - pointerStamp < 800) return;
+            if (pointerPending) { pointerPending = false; return; }
             onCellClick(rr, cc);
           });
         })(r, c, el);
@@ -971,6 +991,7 @@
     for (var i = 0; i < list.length; i++) if (list[i].num === num) found = list[i];
     if (!found) return;
     selectCell(found.row, found.col, which);
+    userSel = true;
     focusHidden();
   }
   function renderClues() {
@@ -1002,10 +1023,11 @@
       li.addEventListener('pointerdown', function (ev) {
         if (ev.button && ev.button !== 0) return;
         pointerStamp = Date.now();
+        pointerPending = true;
         chooseClue(li);
       });
       li.addEventListener('click', function () {
-        if (Date.now() - pointerStamp < 800) return;
+        if (pointerPending) { pointerPending = false; return; }
         chooseClue(li);
       });
     });
@@ -1070,8 +1092,9 @@
   function onCellClick(rr, cc) {
     if (solved || isBlack(rr, cc)) return;
     var nextDir = dir;
-    if (rr === selRow && cc === selCol) nextDir = dir === 'across' ? 'down' : 'across';
+    if (userSel && rr === selRow && cc === selCol) nextDir = dir === 'across' ? 'down' : 'across';
     selectCell(rr, cc, nextDir);
+    userSel = true;
     focusHidden();
   }
   function cycleClue(back) {
@@ -1084,12 +1107,33 @@
     var j = back ? (idx - 1 + list.length) % list.length : (idx + 1) % list.length;
     selectCell(list[j].w.row, list[j].w.col, list[j].dir);
   }
+  function entryCell(d, w, i) {
+    return d === 'across' ? [w.row, w.col + i] : [w.row + i, w.col];
+  }
+  function firstEmptyIn(d, w, from) {
+    for (var i = from; i < w.len; i++) {
+      var p = entryCell(d, w, i);
+      if (!userGrid[p[0]][p[1]]) return p;
+    }
+    return null;
+  }
+  // After a letter: next empty square in this word, else (word full) the next
+  // square in the word, else the first empty square of a later clue. Never wraps
+  // from the last Down to 1-Across and never lands on a filled square of a new clue.
   function advanceCursor() {
     var w = wordCovering(selRow, selCol, dir);
     if (!w) return;
-    if (dir === 'across' && selCol + 1 < w.col + w.len) selectCell(selRow, selCol + 1, 'across');
-    else if (dir === 'down' && selRow + 1 < w.row + w.len) selectCell(selRow + 1, selCol, 'down');
-    else cycleClue(false);
+    var pos = dir === 'across' ? selCol - w.col : selRow - w.row;
+    var p = firstEmptyIn(dir, w, pos + 1) || firstEmptyIn(dir, w, 0);
+    if (p) { selectCell(p[0], p[1], dir); return; }
+    if (pos + 1 < w.len) { p = entryCell(dir, w, pos + 1); selectCell(p[0], p[1], dir); return; }
+    var list = allEntries();
+    var idx = 0;
+    for (var i = 0; i < list.length; i++) if (list[i].dir === dir && list[i].w === w) idx = i;
+    for (var j = idx + 1; j < list.length; j++) {
+      var q = firstEmptyIn(list[j].dir, list[j].w, 0);
+      if (q) { selectCell(q[0], q[1], list[j].dir); return; }
+    }
   }
   function retreatCursor() {
     var w = wordCovering(selRow, selCol, dir);
@@ -1113,7 +1157,7 @@
       rr += dr;
       cc += dc;
       if (rr < 0 || cc < 0 || rr > 4 || cc > 4) return;
-      if (!isBlack(rr, cc)) { selectCell(rr, cc, nd); return; }
+      if (!isBlack(rr, cc)) { selectCell(rr, cc, nd); userSel = true; return; }
     }
   }
   function checkAutoSolve() {
@@ -1124,7 +1168,14 @@
         if (userGrid[rr][cc] !== puzzle.rows[rr][cc]) return;
       }
     }
-    markSolved();
+    completeGrid();
+  }
+  // Every square revealed (one word at a time or all at once) is played, not solved.
+  function completeGrid() {
+    if (solved) return;
+    revealCount = countRevealed();
+    if (revealCount >= whiteCount()) finishPuzzleReveal();
+    else markSolved();
   }
   function checkPuzzle() {
     if (solved) return;
@@ -1145,7 +1196,7 @@
     updateClueHighlight();
     document.getElementById('btn-check').textContent = '✓ Check (' + checkCount + ')';
     scheduleSave();
-    if (allCorrect) markSolved();
+    if (allCorrect) completeGrid();
   }
   function revealCells(list) {
     var n = 0;
@@ -1155,10 +1206,10 @@
       if (isBlack(rr, cc) || cellState[rr][cc] === 'revealed') continue;
       userGrid[rr][cc] = puzzle.rows[rr][cc];
       cellState[rr][cc] = 'revealed';
-      revealCount += 1;
       n += 1;
       paintCell(rr, cc);
     }
+    revealCount = countRevealed();
     return n;
   }
   function closeRevealMenu() {
@@ -1235,6 +1286,7 @@
         paintCell(rr, cc);
       }
     }
+    revealCount = 0;
     renderClues();
     renderHighlights();
     updateClueHighlight();
@@ -1245,7 +1297,7 @@
     closeRevealMenu();
     askConfirm(
       'Clear the grid?',
-      'This clears every letter, including revealed squares and check marks. The timer and your check and reveal counts stay.',
+      'This clears every letter, including revealed squares and check marks. The timer and your check count stay; cleared squares no longer count as revealed.',
       'Clear all',
       clearAll
     );
@@ -1303,18 +1355,44 @@
       if (revealCount > 0) msg += ' ' + squaresPhrase(revealCount);
       if (checksEl) checksEl.textContent = msg;
       var bestLine = '';
-      if (bestInfo && bestInfo.isBest && bestInfo.prev !== 999) bestLine = '🏆 New personal best!';
+      if (revealCount > 0) bestLine = 'Reveals used, so no badge or personal best.';
+      else if (bestInfo && bestInfo.isBest && bestInfo.prev !== 999) bestLine = '🏆 New personal best!';
       else if (bestInfo && !bestInfo.isBest && bestInfo.prev !== 999) bestLine = 'Best: ' + bestInfo.prev + ' checks';
       else if (!bestInfo) {
         var prev = parseInt(lsGet(sk('cw_best')) || '999', 10);
         if (isFinite(prev) && prev !== 999) bestLine = 'Best: ' + prev + ' checks';
       }
       if (bestEl) bestEl.textContent = bestLine;
-      if (badge) badge.textContent = grade(checkCount) + ' — ' + (checkCount === 0 ? 'Wordsmith' : checkCount === 1 ? 'Sharp' : checkCount <= 3 ? 'Solid' : 'Persistent');
+      if (badge) badge.textContent = revealCount > 0 ? 'Assisted — ' + revealCount + ' revealed' : grade(checkCount) + ' — ' + (checkCount === 0 ? 'Wordsmith' : checkCount === 1 ? 'Sharp' : checkCount <= 3 ? 'Solid' : 'Persistent');
       activeClueEl.innerHTML = '<strong style="color:#2ecc71">✓ Puzzle complete!</strong>';
     }
+    var blurb = document.getElementById('cw-gear-blurb');
+    if (blurb) blurb.textContent = (puzzleRevealed ? 'That\'s today\'s grid done.' : 'Grid solved.') + ' One hop to the mice guide, or the Superlight listing we already use.';
+    placeResult();
     resultEl.classList.add('show');
     paintTimer();
+  }
+  // The card goes beside the grid (in place of the clue lists) so Share is above the fold.
+  function placeResult() {
+    var layout = document.querySelector('.cw-layout');
+    var wrap = document.querySelector('.cw-wrap');
+    if (wrap) wrap.classList.add('is-solved');
+    if (layout && resultEl.parentNode !== layout) layout.appendChild(resultEl);
+    if (layout) layout.classList.add('is-done');
+  }
+  // Phone: bring Share into view, but never scroll the grid's top row out of view.
+  function revealResultCard() {
+    if (window.innerWidth >= 900) return;
+    var btn = document.getElementById('btn-share');
+    if (!btn) return;
+    var need = btn.getBoundingClientRect().bottom + 12 - window.innerHeight;
+    if (need <= 0) return;
+    var navH = 0;
+    var nav = document.querySelector('.nav');
+    if (nav && getComputedStyle(nav).position !== 'static') navH = Math.max(0, nav.getBoundingClientRect().bottom);
+    var room = gridEl.getBoundingClientRect().top - navH - 8;
+    var by = Math.min(need, Math.max(0, room));
+    if (by > 0) window.scrollBy({ top: by, behavior: 'auto' });
   }
   function lockInput() {
     var input = document.getElementById('cw-hidden-input');
@@ -1335,11 +1413,12 @@
     paintAll();
     renderHighlights();
     renderClues();
-    var bestInfo = updateCheckBest();
+    var bestInfo = revealCount === 0 ? updateCheckBest() : null;
     recordSolve();
     saveSolvedRecord();
     fillResultCard(bestInfo);
     lockInput();
+    revealResultCard();
   }
   function finishPuzzleReveal() {
     if (solved) return;
@@ -1355,6 +1434,7 @@
     renderClues();
     fillResultCard(null);
     lockInput();
+    revealResultCard();
   }
   function sharePayload() {
     var sec = Math.floor(currentElapsed() / 1000);
@@ -1370,7 +1450,7 @@
       title: 'Gaming Crossword',
       subtitle: prettyDate + '  ·  ' + (puzzleRevealed ? 'Puzzle revealed' : clock(sec)),
       grid: grid,
-      lines: puzzleRevealed ? ['Puzzle revealed'] : [checksPhrase(), clock(sec)],
+      lines: puzzleRevealed ? ['Puzzle revealed', revealCount + ' revealed'] : (revealCount > 0 ? [checksPhrase(), clock(sec), revealCount + ' revealed'] : [checksPhrase(), clock(sec)]),
       url: 'https://www.cosmicgameshub.com/games/crossword',
       filename: 'crossword-' + todayKey,
       text: text
@@ -1391,7 +1471,7 @@
     var cells = [
       ['Played', String(stats.played || 0)],
       ['Solve rate', rate],
-      ['Clean solves', String(stats.clean || 0)],
+      ['Clean solves (no checks or reveals)', String(stats.clean || 0)],
       ['Current streak', String(currentStreak())],
       ['Max streak', String(stats.maxStreak || 0)],
       ['Best time', stats.bestSec == null ? '—' : clock(stats.bestSec)],
@@ -1493,6 +1573,7 @@
     closeRevealMenu();
     armTimer();
     notePlayed();
+    userSel = true;
     if (cellState[rr][cc] === 'revealed') { advanceCursor(); return; }
     userGrid[rr][cc] = key.toUpperCase();
     cellState[rr][cc] = '';
@@ -1542,6 +1623,7 @@
     if (key === 'ArrowUp') { e.preventDefault(); moveArrow(-1, 0); return; }
     if (key === 'Backspace' || key === 'Delete') {
       e.preventDefault();
+      armTimer();
       if (cellState[selRow][selCol] !== 'revealed' && userGrid[selRow][selCol]) {
         userGrid[selRow][selCol] = '';
         cellState[selRow][selCol] = '';
