@@ -121,8 +121,15 @@
       white-space: nowrap;
       border: 0;
     }
-    .ms-intro { padding: 8px 0 4px; text-align: center; }
+    .ms-intro { position: relative; padding: 8px 0 4px; text-align: center; }
     .ms-intro .section__eyebrow { margin: 0 0 2px; color: #f2d48a; }
+    .ms-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-width: 0;
+    }
     .ms-intro h1 {
       margin: 0;
       font-size: 1.35rem;
@@ -213,11 +220,13 @@
     .ms-diff { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .ms-toolbar { max-width: 100%; }
     .ms-daily[hidden] { display: none !important; }
+    .ms-daily.is-replay { flex-wrap: wrap; row-gap: 2px; overflow: visible; white-space: normal; }
+    #dailyState { flex: 1 0 100%; text-align: center; white-space: nowrap; }
+    #dailyState[hidden] { display: none !important; }
     .ms-badge {
-      position: absolute;
-      z-index: 7;
-      top: 4px;
-      right: 8px;
+      position: relative;
+      z-index: 6;
+      flex: 0 0 auto;
       pointer-events: none;
       padding: 2px 6px;
       border-radius: 999px;
@@ -231,6 +240,29 @@
       box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
     }
     .ms-badge[hidden] { display: none !important; }
+    .ms-note {
+      position: absolute;
+      z-index: 4;
+      left: 0;
+      right: 0;
+      top: 0;
+      margin: 0;
+      padding: 1px 8px;
+      border-radius: 999px;
+      background: rgba(8, 10, 22, 0.94);
+      color: #ffe08a;
+      font-size: 0.62rem;
+      font-weight: 800;
+      line-height: 1.35;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      pointer-events: none;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+    }
+    .ms-note[hidden] { display: none !important; }
+    .ms-intro:has(#msBadge:not([hidden])) .ms-note { left: 8px; right: 78px; }
     .ms-hud {
       display: flex;
       align-items: center;
@@ -581,6 +613,7 @@
       color: #1b1406;
       border-color: #ffe08a;
     }
+    #modeDig, #modeFlag { touch-action: manipulation; }
 
     .ms-sheet {
       position: fixed;
@@ -649,6 +682,7 @@
       .ms-ng-long { display: none; }
       .ms-ng-short { display: inline; }
       .ms-daily { gap: 6px; margin: 0 0 2px; font-size: 0.62rem; }
+      .ms-note { font-size: 0.58rem; padding: 1px 4px; }
       .ms-hud { gap: 4px; padding: 2px 4px 2px 6px; }
       .ms-stat { min-width: 36px; }
       .ms-stat b { font-size: 0.95rem; }
@@ -763,8 +797,12 @@
   <div class="container">
     <header class="ms-intro">
       <span class="section__eyebrow">Puzzle Game</span>
-      <h1>Cosmic Minesweeper</h1>
+      <div class="ms-title-row">
+        <h1>Cosmic Minesweeper</h1>
+        <div id="msBadge" class="ms-badge" hidden>No-guess</div>
+      </div>
       <p>Dig or flag. Chord a number. Arrows, Enter, F, D, N.</p>
+      <div id="msNote" class="ms-note" hidden></div>
     </header>
 
     <div class="ms-wrap">
@@ -775,7 +813,7 @@
           <button type="button" class="ms-diff" data-diff="hard">Hard</button>
           <button type="button" class="ms-diff" data-diff="daily" id="dailyBtn">Daily</button>
         </div>
-        <button type="button" class="ms-noguess is-on" id="noGuessBtn" aria-pressed="true" aria-label="No-guess">
+        <button type="button" class="ms-noguess is-on" id="noGuessBtn" aria-pressed="true" title="No-guess: every board is solvable by logic" aria-label="No-guess: every board is solvable by logic">
           <span class="ms-ng-long">No-guess</span><span class="ms-ng-short">NG</span>
         </button>
         <div class="ms-hud">
@@ -821,11 +859,11 @@
         <span id="dailyBest">Best —</span>
         <span id="dailyStreak">Streak 0</span>
         <span id="dailyNext">Next —</span>
+        <span id="dailyState" hidden></span>
       </div>
 
       <div class="ms-stage">
         <div class="ms-frame" id="msFrame">
-          <div id="msBadge" class="ms-badge" hidden>No-guess</div>
           <div id="msGrid" role="grid" aria-label="Cosmic Minesweeper board"></div>
           <div id="holdRing" class="ms-hold" hidden>
             <svg viewBox="0 0 32 32" aria-hidden="true">
@@ -983,7 +1021,19 @@
   var genToken = 0;
   var genTimer = 0;
   var hiddenPause = false;
+  var touchDown = 0;
   var RESUME_KEY = 'ms_resume_v1';
+  var NG_HINT_KEY = 'ms_ng_hint_v1';
+  var CHARTING = 'Charting a no-guess field…';
+  var HONEST = 'Couldn\'t chart a no-guess field this time — this board may need a guess.';
+  var NG_HINT = 'No-guess is on: every board is solvable by logic, no 50/50s.';
+  var genLimits = {
+    firstAttempts: 200,
+    firstMs: 150,
+    maxAttempts: 5000,
+    maxMs: 3000,
+    forceUnsolved: false
+  };
 
   var gridEl = document.getElementById('msGrid');
   var frameEl = document.getElementById('msFrame');
@@ -1116,11 +1166,11 @@
       var stats = loadStats();
       var row = stats.daily && stats.daily.done ? stats.daily.done[dateKey] : null;
       var best = row && row.won && isFinite(Number(row.time)) ? Number(row.time) : null;
-      document.getElementById('bestBtn').textContent = best == null ? 'Best —' : ('Best ' + formatClock(best));
+      document.getElementById('bestBtn').textContent = best == null ? 'Best —' : ('Best ' + formatBest(best));
       return;
     }
     var classic = readBest(diff);
-    document.getElementById('bestBtn').textContent = classic == null ? 'Best —' : ('Best ' + formatSec(classic));
+    document.getElementById('bestBtn').textContent = classic == null ? 'Best —' : ('Best ' + formatBest(classic));
   }
   function paintMineCount() {
     mineEl.textContent = String(cfg.mines - flagCount());
@@ -1493,7 +1543,7 @@
     practice = false;
     dateKey = null;
     seedValue = null;
-    noGuess = !!prefNoGuess;
+    noGuess = false;
     storageSet('ms_diff', diff);
     paintDiffs();
     paintMineCount();
@@ -1502,29 +1552,30 @@
     paintFace();
     paintBadge();
     paintDailyBar();
+    clearStatusNote(false);
     buildCells();
     liveEl.textContent = '';
   }
   function layDaily() {
     diff = 'daily';
     var key = nyDateKey(new Date());
-    var seed = hashString(key);
-    var spec = buildDailySpec(seed);
-    cfg = { rows: spec.rows, cols: spec.cols, mines: spec.mines };
+    var spec = specForDate(key);
+    cfg = { rows: spec.rows, cols: spec.cols, mines: spec.mineCount };
     freshArrays(spec.rows, spec.cols);
-    cfg.mines = spec.mines;
+    cfg.mines = spec.mineCount;
     blankMatch();
     dateKey = key;
     seedValue = spec.seed;
-    noGuess = true;
+    noGuess = !!spec.solved;
     var stats = loadStats();
     var done = stats.daily && stats.daily.done ? stats.daily.done[key] : null;
     practice = !!(done && (done.won || done.scored));
     storageSet('ms_diff', diff);
-    applyMinePairs(spec.gen.mines, spec.mines);
+    applyMinePairs(spec.mines, spec.mineCount);
     paintDiffs();
     paintBadge();
     paintDailyBar();
+    clearStatusNote(false);
     buildCells();
     openReveal(spec.r, spec.c, true, true);
     started = false;
@@ -1536,7 +1587,16 @@
     paintBest();
     paintFace();
     writeResume();
-    liveEl.textContent = 'Daily minefield ' + key + '. No-guess.';
+    var replay = dailyStatusText();
+    if (practice && replay) {
+      liveEl.textContent = 'Practice. ' + replay;
+      paintPracticeOverlay(replay);
+    } else if (noGuess) {
+      liveEl.textContent = 'Daily minefield ' + key + '. No-guess.';
+    } else {
+      liveEl.textContent = HONEST;
+      showStatusNote(HONEST, 'honest');
+    }
   }
   function restoreResume(data) {
     genToken++;
@@ -1565,7 +1625,7 @@
     practice = !!data.practice;
     dateKey = data.daily ? (data.dateKey || nyDateKey(new Date())) : (data.dateKey || null);
     seedValue = data.seed == null ? null : (data.seed >>> 0);
-    noGuess = data.diff === 'daily' ? true : !!data.noGuess;
+    noGuess = !!data.noGuess;
     elapsedMs = Number(data.elapsedMs);
     if (!isFinite(elapsedMs) || elapsedMs < 0) elapsedMs = 0;
     started = false;
@@ -1680,6 +1740,10 @@
     var m = Math.floor(s / 60);
     var r = s % 60;
     return m + ':' + (r < 10 ? '0' : '') + r;
+  }
+  function formatBest(seconds) {
+    if (seconds == null || seconds === '' || !isFinite(Number(seconds))) return '—';
+    return formatClock(seconds);
   }
   function pad2(n) { return (n < 10 ? '0' : '') + n; }
 
@@ -1875,6 +1939,26 @@
     var gen = runGenerator(rows, cols, 40, r, c, rng, false, 200);
     return { rows: rows, cols: cols, mines: 40, r: r, c: c, gen: gen, seed: seed >>> 0 };
   }
+  function specForDate(dateKey) {
+    var key = String(dateKey || '');
+    var reseeds = 0;
+    var spec = buildDailySpec(hashString(key));
+    while (!spec.gen.solved && reseeds < 10000) {
+      reseeds += 1;
+      spec = buildDailySpec(hashString(key + '#' + reseeds));
+    }
+    return {
+      rows: spec.rows,
+      cols: spec.cols,
+      mineCount: spec.mines,
+      r: spec.r,
+      c: spec.c,
+      mines: spec.gen.mines,
+      solved: !!spec.gen.solved,
+      reseeds: reseeds,
+      seed: spec.seed
+    };
+  }
 
   function currentElapsedMs() {
     if (timerHandle && startTs) return performance.now() - startTs;
@@ -1958,7 +2042,7 @@
     } catch (err) { return null; }
   }
   function paintBadge() {
-    var show = diff === 'daily' ? true : !!noGuess;
+    var show = !!noGuess && !!minesReady;
     var badge = document.getElementById('msBadge');
     if (badge) badge.hidden = !show;
     var btn = document.getElementById('noGuessBtn');
@@ -1967,6 +2051,46 @@
     btn.classList.toggle('is-on', on);
     btn.setAttribute('aria-pressed', on ? 'true' : 'false');
     btn.disabled = diff === 'daily';
+  }
+  function noteEl() { return document.getElementById('msNote'); }
+  function showStatusNote(text, kind) {
+    var note = noteEl();
+    if (!note) return;
+    note.hidden = !text;
+    note.textContent = text || '';
+    note.dataset.kind = text ? (kind || '') : '';
+  }
+  function clearStatusNote(keepHint) {
+    var note = noteEl();
+    if (!note) return;
+    if (keepHint && note.dataset.kind === 'hint') return;
+    if (note.dataset.kind === 'hint') return;
+    showStatusNote('', '');
+  }
+  function maybeShowNgHint() {
+    if (!prefNoGuess) return;
+    if (storageGet(NG_HINT_KEY) === '1') return;
+    storageSet(NG_HINT_KEY, '1');
+    showStatusNote(NG_HINT, 'hint');
+  }
+  function dailyDoneRow() {
+    if (diff !== 'daily' || !dateKey) return null;
+    var stats = loadStats();
+    var row = stats.daily && stats.daily.done ? stats.daily.done[dateKey] : null;
+    if (!row || !row.scored) return null;
+    return row;
+  }
+  function dailyStatusText() {
+    var row = dailyDoneRow();
+    if (!row) return '';
+    if (row.won && isFinite(Number(row.time))) return 'Solved today in ' + formatBest(row.time);
+    return 'Played today, not solved';
+  }
+  function paintPracticeOverlay(line) {
+    document.getElementById('resTitle').textContent = 'Practice';
+    document.getElementById('resMsg').textContent = line || 'Practice';
+    document.getElementById('resBest').textContent = 'Practice. Not scored.';
+    document.getElementById('resBv').textContent = '';
   }
   function paintCountdown() {
     var el = document.getElementById('dailyNext');
@@ -1986,8 +2110,20 @@
     var stats = loadStats();
     var row = stats.daily && stats.daily.done ? stats.daily.done[dateKey] : null;
     var best = row && row.won && isFinite(Number(row.time)) ? Number(row.time) : null;
-    document.getElementById('dailyBest').textContent = best == null ? 'Best —' : ('Best ' + formatClock(best));
+    document.getElementById('dailyBest').textContent = best == null ? 'Best —' : ('Best ' + formatBest(best));
     document.getElementById('dailyStreak').textContent = 'Streak ' + displayStreak(stats, nyDateKey(new Date()));
+    var state = document.getElementById('dailyState');
+    var replay = practice ? dailyStatusText() : '';
+    if (state) {
+      if (replay) {
+        state.hidden = false;
+        state.textContent = 'Practice · ' + replay;
+      } else {
+        state.hidden = true;
+        state.textContent = '';
+      }
+    }
+    bar.classList.toggle('is-replay', !!replay);
     paintCountdown();
   }
   function applyMinePairs(pairs, mineCount) {
@@ -2128,7 +2264,8 @@
     if (generating) return;
     var token = ++genToken;
     generating = true;
-    liveEl.textContent = 'Charting a no-guess field.';
+    liveEl.textContent = CHARTING;
+    showStatusNote(CHARTING, 'chart');
     var rows = cfg.rows;
     var cols = cfg.cols;
     var mineCount = cfg.mines;
@@ -2137,32 +2274,46 @@
     var best = null;
     var bestScore = -1;
     var chosen = null;
+    var solved = false;
     var t0 = performance.now();
-    function finish(list) {
+    var capAttempts = genLimits.maxAttempts > 0 ? genLimits.maxAttempts : 5000;
+    var capMs = isFinite(genLimits.maxMs) ? genLimits.maxMs : 3000;
+    function finish(list, didSolve) {
       if (token !== genToken) return;
       generating = false;
       seedValue = null;
-      noGuess = true;
+      noGuess = !!didSolve;
       applyMinePairs(idsToPairs(list || [], cols), mineCount);
       paintBadge();
       openReveal(sr, sc, deferWin, false);
-      if (liveEl.textContent === 'Charting a no-guess field.') liveEl.textContent = '';
+      if (didSolve) {
+        if (liveEl.textContent === CHARTING) liveEl.textContent = '';
+        if (noteEl() && noteEl().dataset.kind === 'chart') clearStatusNote(false);
+      } else {
+        noGuess = false;
+        paintBadge();
+        liveEl.textContent = HONEST;
+        showStatusNote(HONEST, 'honest');
+      }
     }
     function pump() {
       if (token !== genToken) return;
       var slice = performance.now() + 12;
-      while (attempts < 200 && (performance.now() - t0) < 150) {
+      while (attempts < capAttempts && (performance.now() - t0) < capMs) {
         attempts++;
         var list = placeMineIds(rows, cols, mineCount, sr, sc, rng);
         var res = solveLayout(rows, cols, list, sr, sc);
+        if (genLimits.forceUnsolved) res = { solved: false, revealed: res.revealed };
         if (res.revealed > bestScore) { bestScore = res.revealed; best = list; }
-        if (res.solved) { chosen = list; break; }
-        if (performance.now() > slice && attempts < 200 && (performance.now() - t0) < 150) {
+        if (res.solved) { solved = true; chosen = list; break; }
+        if (performance.now() > slice) {
+          if (liveEl.textContent !== CHARTING) liveEl.textContent = CHARTING;
+          if (!noteEl() || noteEl().dataset.kind !== 'chart') showStatusNote(CHARTING, 'chart');
           genTimer = setTimeout(pump, 0);
           return;
         }
       }
-      finish(chosen || best || []);
+      finish(solved ? chosen : (best || []), solved);
     }
     pump();
   }
@@ -2177,11 +2328,12 @@
       minesReady = true;
       seedValue = null;
       noGuess = false;
+      paintBadge();
     }
     return openReveal(r, c, deferWin, false);
   }
   function flagAt(r, c) {
-    if (gameOver || generating || !inb(r, c)) return;
+    if (gameOver || !inb(r, c)) return;
     if (minesReady) ensureStarted();
     if (revealed[r][c]) return;
     flagged[r][c] = !flagged[r][c];
@@ -2246,20 +2398,22 @@
     if (flagged[r][c]) return;
     openAt(r, c, false);
   }
-  function modeAction(r, c) {
+  function modeAction(r, c, useFlag) {
     if (revealed[r][c] && grid[r][c] > 0) {
       chordAt(r, c);
       return;
     }
-    if (flagMode) flagAt(r, c);
+    var flag = useFlag == null ? flagMode : !!useFlag;
+    if (flag) flagAt(r, c);
     else digAt(r, c);
   }
-  function oppositeAction(r, c) {
+  function oppositeAction(r, c, useFlag) {
     if (revealed[r][c] && grid[r][c] > 0) {
       chordAt(r, c);
       return;
     }
-    if (flagMode) digAt(r, c);
+    var flag = useFlag == null ? flagMode : !!useFlag;
+    if (flag) digAt(r, c);
     else flagAt(r, c);
   }
 
@@ -2364,7 +2518,7 @@
     if (diff === 'daily') {
       var clock = formatClock(elapsedSeconds());
       var mark = won ? '🟩 solved' : '🟥 unsolved';
-      return 'Cosmic Minefield ' + (dateKey || nyDateKey(new Date())) + ' · ' + clock + ' · ' + mark + ' · cosmicgameshub.com/games/minesweeper';
+      return 'Cosmic Minesweeper Daily ' + (dateKey || nyDateKey(new Date())) + ' · ' + clock + ' · ' + mark + ' · cosmicgameshub.com/games/minesweeper';
     }
     return won
       ? ('Cosmic Minesweeper — Cleared ' + diff + ' in ' + formatSec(elapsedSeconds()) + (lastBv ? (' (3BV ' + lastBv + ')') : '') + '\nhttps://www.cosmicgameshub.com/games/minesweeper')
@@ -2374,7 +2528,8 @@
     var seconds = elapsedSeconds();
     var best = diff === 'daily' ? null : readBest(diff);
     var label = diff === 'daily' ? 'daily' : diff;
-    document.getElementById('resTitle').textContent = didWin ? 'Field cleared' : 'Meteor strike';
+    var replayLine = diff === 'daily' ? dailyStatusText() : '';
+    document.getElementById('resTitle').textContent = (diff === 'daily' && practice) ? 'Practice' : (didWin ? 'Field cleared' : 'Meteor strike');
     var practiceNote = diff === 'daily' && practice ? 'Practice. ' : '';
     document.getElementById('resMsg').textContent = didWin
       ? (practiceNote + 'Cleared in ' + (diff === 'daily' ? formatClock(seconds) : formatSec(seconds)) + ' on ' + label + '.')
@@ -2383,13 +2538,15 @@
     if (diff === 'daily') {
       var stats = loadStats();
       var streak = displayStreak(stats, nyDateKey(new Date()));
-      if (didWin && !practice) bestEl.textContent = (isNew ? 'New daily best. ' : '') + 'Streak ' + streak + '.';
-      else if (practice) bestEl.textContent = 'Practice run. Not scored. Streak ' + streak + '.';
+      if (practice) {
+        document.getElementById('resMsg').textContent = replayLine || 'Practice';
+        bestEl.textContent = 'Practice run. Not scored. Streak ' + streak + '.';
+      } else if (didWin) bestEl.textContent = (isNew ? 'New daily best. ' : '') + 'Streak ' + streak + '.';
       else bestEl.textContent = 'Streak ' + streak + '.';
     } else if (didWin) {
-      bestEl.textContent = isNew ? ('New best for ' + diff + ': ' + formatSec(seconds)) : ('Best for ' + diff + ': ' + formatSec(best == null ? seconds : best));
+      bestEl.textContent = isNew ? ('New best for ' + diff + ': ' + formatBest(seconds)) : ('Best for ' + diff + ': ' + formatBest(best == null ? seconds : best));
     } else if (best != null) {
-      bestEl.textContent = 'Best for ' + diff + ': ' + formatSec(best);
+      bestEl.textContent = 'Best for ' + diff + ': ' + formatBest(best);
     } else bestEl.textContent = '';
     var bvEl = document.getElementById('resBv');
     if (didWin) {
@@ -2551,21 +2708,42 @@
     var pressed = document.querySelectorAll('.ms-cell.is-pressed');
     for (var i = 0; i < pressed.length; i++) pressed[i].classList.remove('is-pressed');
   }
+  function fireLong(rec) {
+    if (!rec || press !== rec || rec.moved || rec.longFired || rec.done) return;
+    rec.longFired = true;
+    rec.done = true;
+    var r = rec.r;
+    var c = rec.c;
+    var useFlag = rec.useFlag;
+    clearGesture();
+    if (revealed[r][c] && grid[r][c] > 0) chordAt(r, c);
+    else oppositeAction(r, c, useFlag);
+    focusCell(r, c, false);
+    noteTouch();
+  }
   function endPress(act) {
     if (!press) return;
     var rec = press;
+    if (act && rec.pointerType !== 'mouse' && !rec.moved && !rec.longFired && !rec.done && rec.downAt && (performance.now() - rec.downAt) >= LONG_MS) {
+      fireLong(rec);
+      return;
+    }
     var actNow = !!(act && !rec.moved && !rec.longFired && !rec.done);
     var chord = rec.chord;
     var r = rec.r;
     var c = rec.c;
+    var useFlag = rec.useFlag;
     clearGesture();
     if (!actNow) return;
     if (chord) chordAt(r, c);
-    else modeAction(r, c);
+    else modeAction(r, c, useFlag);
     focusCell(r, c, false);
   }
   function onPointerUp(e) {
-    if (e.pointerType && e.pointerType !== 'mouse') noteTouch();
+    if (e.pointerType && e.pointerType !== 'mouse') {
+      noteTouch();
+      touchDown = 0;
+    }
     if (!press || e.pointerId !== press.pointerId) return;
     if (e.pointerType && press.pointerType && e.pointerType !== press.pointerType) return;
     if (press.pointerType === 'mouse' && press.chord && (e.buttons & 1) && e.button !== 0) return;
@@ -2577,11 +2755,11 @@
   }
 
   gridEl.addEventListener('pointerdown', function (e) {
-    unlockAudio();
     if (e.pointerType === 'mouse' && performance.now() < mouseMuteUntil) {
       if (e.cancelable) e.preventDefault();
       return;
     }
+    if (!e.pointerType || e.pointerType === 'mouse') unlockAudio();
     if (press && (press.pointerId !== e.pointerId || press.longFired || press.done)) clearGesture();
     var cell = cellFromEvent(e);
     if (e.pointerType === 'mouse') {
@@ -2599,14 +2777,14 @@
         e.preventDefault();
         if (!cell) return;
         if (press) clearGesture();
-        press = { pointerId: e.pointerId, pointerType: 'mouse', r: cell.r, c: cell.c, chord: true, longFired: false, done: false, moved: false, timer: 0, cleanup: 0 };
+        press = { pointerId: e.pointerId, pointerType: 'mouse', r: cell.r, c: cell.c, chord: true, longFired: false, done: false, moved: false, timer: 0, cleanup: 0, useFlag: !!flagMode, downAt: performance.now() };
         showPreview(cell.r, cell.c);
         setFaceDown(true);
         return;
       }
       if (e.button !== 0 || !cell) return;
       if (press && press.pointerId === e.pointerId && !press.done && !press.longFired) return;
-      press = { pointerId: e.pointerId, pointerType: 'mouse', r: cell.r, c: cell.c, chord: false, longFired: false, done: false, moved: false, timer: 0, cleanup: 0 };
+      press = { pointerId: e.pointerId, pointerType: 'mouse', r: cell.r, c: cell.c, chord: false, longFired: false, done: false, moved: false, timer: 0, cleanup: 0, useFlag: !!flagMode, downAt: performance.now() };
       if (revealed[cell.r][cell.c] && grid[cell.r][cell.c] > 0) showPreview(cell.r, cell.c);
       else cells[cell.r][cell.c].classList.add('is-pressed');
       setFaceDown(true);
@@ -2616,6 +2794,7 @@
     if (press && press.pointerId === e.pointerId && !press.done && !press.longFired) return;
     if (press) clearGesture();
     if (e.cancelable) e.preventDefault();
+    touchDown = Math.max(touchDown, 1);
     noteTouch();
     var rec = {
       pointerId: e.pointerId,
@@ -2629,34 +2808,17 @@
       moved: false,
       chord: false,
       timer: 0,
-      cleanup: 0
+      cleanup: 0,
+      downAt: performance.now(),
+      useFlag: !!flagMode
     };
     press = rec;
+    rec.timer = setTimeout(function () { fireLong(rec); }, LONG_MS);
     try { gridEl.setPointerCapture(e.pointerId); } catch (err) {}
     if (revealed[cell.r][cell.c] && grid[cell.r][cell.c] > 0) showPreview(cell.r, cell.c);
     else showHold(cell.el);
-    rec.timer = setTimeout(function () {
-      if (press !== rec) return;
-      rec.longFired = true;
-      rec.done = true;
-      hideHold();
-      clearPreview();
-      oppositeAction(rec.r, rec.c);
-      focusCell(rec.r, rec.c, false);
-      releaseCapture(rec.pointerId);
-      setFaceDown(false);
-      var nodes = document.querySelectorAll('.ms-cell.is-pressed');
-      for (var n = 0; n < nodes.length; n++) nodes[n].classList.remove('is-pressed');
-      noteTouch();
-      clearTimeout(rec.cleanup);
-      rec.cleanup = setTimeout(function () {
-        if (press === rec) {
-          noteTouch();
-          clearGesture();
-        }
-      }, 48);
-    }, LONG_MS);
     setFaceDown(true);
+    unlockAudio();
   });
   gridEl.addEventListener('pointermove', function (e) {
     if (!press || e.pointerId !== press.pointerId || press.pointerType === 'mouse') return;
@@ -2672,16 +2834,31 @@
   });
   gridEl.addEventListener('pointerup', onPointerUp);
   window.addEventListener('pointerup', onPointerUp);
-  gridEl.addEventListener('pointercancel', function (e) {
+  function onPointerCancel(e) {
     if (!press || e.pointerId !== press.pointerId) return;
+    if (press.pointerType !== 'mouse' && touchDown > 0) return;
     if (press.pointerType !== 'mouse') noteTouch();
     endPress(false);
-  });
-  window.addEventListener('pointercancel', function (e) {
-    if (!press || e.pointerId !== press.pointerId) return;
-    if (press.pointerType !== 'mouse') noteTouch();
-    endPress(false);
-  });
+  }
+  gridEl.addEventListener('pointercancel', onPointerCancel);
+  window.addEventListener('pointercancel', onPointerCancel);
+  gridEl.addEventListener('touchstart', function (e) {
+    touchDown = e.touches ? e.touches.length : 1;
+    if (e.cancelable) e.preventDefault();
+  }, { passive: false });
+  gridEl.addEventListener('touchend', function (e) {
+    touchDown = e.touches ? e.touches.length : 0;
+    if (touchDown > 0) return;
+    if (!press || press.pointerType === 'mouse' || press.longFired || press.done) return;
+    endPress(true);
+  }, { passive: false });
+  gridEl.addEventListener('touchcancel', function (e) {
+    touchDown = e.touches ? e.touches.length : 0;
+    if (touchDown > 0) return;
+    if (!press || press.pointerType === 'mouse') return;
+    if (!press.moved && !press.longFired && !press.done && press.downAt && (performance.now() - press.downAt) >= LONG_MS) fireLong(press);
+    else endPress(false);
+  }, { passive: false });
   function eatPointerFollowup(e) {
     if (e.cancelable) e.preventDefault();
     e.stopPropagation();
@@ -2694,12 +2871,29 @@
     var active = document.activeElement;
     if (active && active !== document.body && active !== document.documentElement) focusReturn = active;
   }
+  function focusNoScroll(el) {
+    if (!el || typeof el.focus !== 'function') return;
+    var x = window.scrollX;
+    var y = window.scrollY;
+    try { el.focus({ preventScroll: true }); }
+    catch (err) {
+      try { el.focus(); } catch (err2) {}
+    }
+    if (window.scrollX !== x || window.scrollY !== y) window.scrollTo(x, y);
+  }
+  function pinScroll(x, y) {
+    function restore() {
+      if (window.scrollX !== x || window.scrollY !== y) window.scrollTo(x, y);
+    }
+    restore();
+    requestAnimationFrame(restore);
+    setTimeout(restore, 0);
+    setTimeout(restore, 60);
+  }
   function restoreFocus() {
     var back = focusReturn;
     focusReturn = null;
-    if (back && typeof back.focus === 'function' && document.contains(back)) {
-      try { back.focus({ preventScroll: true }); } catch (err) {}
-    }
+    if (back && typeof back.focus === 'function' && document.contains(back)) focusNoScroll(back);
   }
   function sheetOpen(el) { return !!(el && !el.hidden); }
   function closeSheet(el) {
@@ -2708,11 +2902,15 @@
     restoreFocus();
   }
   function openConfirm() {
+    var x = window.scrollX;
+    var y = window.scrollY;
     var sheet = document.getElementById('msConfirm');
     rememberFocus();
     sheet.hidden = false;
+    void sheet.offsetWidth;
     var stay = document.getElementById('confirmStay');
-    try { (stay || sheet).focus({ preventScroll: true }); } catch (err) {}
+    focusNoScroll(stay || sheet);
+    pinScroll(x, y);
   }
   function requestNew(next) {
     if (inProgress()) {
@@ -2745,14 +2943,23 @@
     document.getElementById('modeFlag').setAttribute('aria-pressed', flagMode ? 'true' : 'false');
     frameEl.classList.toggle('is-flagmode', flagMode);
   }
-  document.getElementById('modeDig').addEventListener('click', function () { setFlagMode(false); });
-  document.getElementById('modeFlag').addEventListener('click', function () { setFlagMode(true); });
+  function bindMode(id, on) {
+    var el = document.getElementById(id);
+    el.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      setFlagMode(on);
+    });
+    el.addEventListener('click', function () { setFlagMode(on); });
+  }
+  bindMode('modeDig', false);
+  bindMode('modeFlag', true);
   document.getElementById('noGuessBtn').addEventListener('click', function () {
     if (diff === 'daily') return;
     prefNoGuess = !prefNoGuess;
     storageSet('ms_noguess', prefNoGuess ? '1' : '0');
-    if (!minesReady && !gameOver) noGuess = prefNoGuess;
+    if (!minesReady && !gameOver) noGuess = false;
     paintBadge();
+    if (prefNoGuess) maybeShowNgHint();
   });
 
   function openStats() {
@@ -2762,7 +2969,7 @@
     names.forEach(function (name) {
       var row = stats[name];
       var pct = row.played ? Math.round((row.won / row.played) * 1000) / 10 : 0;
-      html += '<tr><td>' + name + '</td><td>' + row.played + '</td><td>' + row.won + '</td><td>' + pct + '%</td><td>' + row.streak + '</td><td>' + row.bestStreak + '</td><td>' + formatSec(row.best) + '</td></tr>';
+      html += '<tr><td>' + name + '</td><td>' + row.played + '</td><td>' + row.won + '</td><td>' + pct + '%</td><td>' + row.streak + '</td><td>' + row.bestStreak + '</td><td>' + formatBest(row.best) + '</td></tr>';
     });
     html += '</tbody></table>';
     html += '<p class="ms-split">No-guess ';
@@ -2784,16 +2991,20 @@
       if (!times.length) html += '<p>No finishes yet.</p>';
       else {
         html += '<ol class="ms-top">';
-        times.forEach(function (t, i) { html += '<li><span>' + (i + 1) + '</span><span>' + formatSec(t) + '</span></li>'; });
+        times.forEach(function (t, i) { html += '<li><span>' + (i + 1) + '</span><span>' + formatBest(t) + '</span></li>'; });
         html += '</ol>';
       }
     });
     document.getElementById('statsBody').innerHTML = html;
+    var x = window.scrollX;
+    var y = window.scrollY;
     var sheet = document.getElementById('msStats');
     rememberFocus();
     sheet.hidden = false;
+    void sheet.offsetWidth;
     var closeBtn = document.getElementById('statsClose');
-    try { (closeBtn || sheet).focus({ preventScroll: true }); } catch (err) {}
+    focusNoScroll(closeBtn || sheet);
+    pinScroll(x, y);
   }
   document.getElementById('statsBtn').addEventListener('click', openStats);
   document.getElementById('bestBtn').addEventListener('click', openStats);
@@ -3001,14 +3212,34 @@
             ids.push((pair[0] | 0) * cols + (pair[1] | 0));
           });
           return solveLayout(rows | 0, cols | 0, ids, r | 0, c | 0).solved;
+        },
+        setGenLimits: function (opts) {
+          opts = opts || {};
+          if (opts.firstAttempts != null) genLimits.firstAttempts = Math.max(1, opts.firstAttempts | 0);
+          if (opts.firstMs != null) genLimits.firstMs = Math.max(0, Number(opts.firstMs) || 0);
+          if (opts.maxAttempts != null) genLimits.maxAttempts = Math.max(1, opts.maxAttempts | 0);
+          if (opts.maxMs != null) genLimits.maxMs = Math.max(0, Number(opts.maxMs) || 0);
+          if (opts.forceUnsolved != null) genLimits.forceUnsolved = !!opts.forceUnsolved;
+          return {
+            firstAttempts: genLimits.firstAttempts,
+            firstMs: genLimits.firstMs,
+            maxAttempts: genLimits.maxAttempts,
+            maxMs: genLimits.maxMs,
+            forceUnsolved: genLimits.forceUnsolved
+          };
+        },
+        dailySpec: function (dateKey) {
+          var spec = specForDate(String(dateKey));
+          return { r: spec.r, c: spec.c, mines: spec.mines, solved: !!spec.solved, reseeds: spec.reseeds };
         }
       };
     }
   } catch (err) {}
 
   prefNoGuess = storageGet('ms_noguess') !== '0';
-  noGuess = prefNoGuess;
+  noGuess = false;
   paintBadge();
+  maybeShowNgHint();
   var resumed = null;
   try { resumed = loadResume(); } catch (err) { resumed = null; }
   if (resumed) {
