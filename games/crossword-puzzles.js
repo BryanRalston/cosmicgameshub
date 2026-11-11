@@ -227,7 +227,7 @@ window.CROSSWORD_PUZZLES = [
       {num:1,row:0,col:0,len:5,clue:'Wept during the ending'},
       {num:6,row:1,col:0,len:5,clue:'Passage between shop shelves'},
       {num:7,row:2,col:0,len:5,clue:'Flowers with thorns'},
-      {num:8,row:3,col:0,len:5,clue:'Unable to move, as in geometry'},
+      {num:8,row:3,col:0,len:5,clue:'Unable to move, as when clipped into a wall'},
       {num:9,row:4,col:1,len:3,clue:'A matching collection of gear'}
     ],
     down: [
@@ -412,7 +412,7 @@ window.CROSSWORD_PUZZLES = [
     rows: ['#ROW#', 'DECOR', 'OPERA', 'GLASS', 'SYNTH'],
     across: [
       {num:1,row:0,col:1,len:3,clue:'A line of slots, or a quarrel'},
-      {num:4,row:1,col:0,len:5,clue:'Furnishings that dress a player house'},
+      {num:4,row:1,col:0,len:5,clue:"Furnishings that dress a player's house"},
       {num:6,row:2,col:0,len:5,clue:'A play set to music'},
       {num:7,row:3,col:0,len:5,clue:'What a window pane is made of'},
       {num:8,row:4,col:0,len:5,clue:'Electronic keyboard sound'}
@@ -567,7 +567,7 @@ window.CROSSWORD_PUZZLES = [
       {num:1,row:0,col:1,len:4,clue:'Formal school dance'},
       {num:5,row:1,col:0,len:5,clue:'Angle of a ramp'},
       {num:6,row:2,col:0,len:5,clue:'Not now, after this match'},
-      {num:7,row:3,col:0,len:5,clue:'Layer high above a sky'},
+      {num:7,row:3,col:0,len:5,clue:'Protective gas layer high in the sky'},
       {num:8,row:4,col:0,len:4,clue:'Large armed conflicts'}
     ],
     down: [
@@ -584,7 +584,7 @@ window.CROSSWORD_PUZZLES = [
       {num:1,row:0,col:1,len:4,clue:'The back of the lower leg'},
       {num:5,row:1,col:0,len:5,clue:'A film shown on a screen'},
       {num:6,row:2,col:0,len:5,clue:'Upstairs from the lobby'},
-      {num:7,row:3,col:0,len:5,clue:'Patted off after a water level'},
+      {num:7,row:3,col:0,len:5,clue:'Toweled off after a water level'},
       {num:8,row:4,col:1,len:4,clue:'Tacks on extra damage'}
     ],
     down: [
@@ -649,7 +649,7 @@ window.CROSSWORD_PUZZLES = [
   {
     rows: ['#WAS#', 'DARTS', 'ISSUE', 'STONE', 'CENTS'],
     across: [
-      {num:1,row:0,col:1,len:3,clue:'Used to be, for one thing'},
+      {num:1,row:0,col:1,len:3,clue:'Used to be, before the patch'},
       {num:4,row:1,col:0,len:5,clue:'Pointed tosses at a pub board'},
       {num:6,row:2,col:0,len:5,clue:'Copy of a magazine'},
       {num:7,row:3,col:0,len:5,clue:'What a petrify spell makes of you'},
@@ -800,20 +800,20 @@ window.CROSSWORD_PUZZLES = [
     ]
   },
   {
-    rows: ['FLAW#', 'AIDED', 'UNDER', 'NEEDY', 'ADDS#'],
+    rows: ['SPUN#', 'ALLOY', 'LATTE', 'ACRES', 'DEAD#'],
     across: [
-      {num:1,row:0,col:0,len:4,clue:'Weak spot in a plan'},
-      {num:5,row:1,col:0,len:5,clue:'Helped a teammate who was downed'},
-      {num:7,row:2,col:0,len:5,clue:'Below and covered by'},
-      {num:8,row:3,col:0,len:5,clue:'Demanding a lot of help'},
-      {num:9,row:4,col:0,len:4,clue:'Puts another item in the cart'}
+      {num:1,row:0,col:0,len:4,clue:'Twirled around after a drift went wrong'},
+      {num:5,row:1,col:0,len:5,clue:'Bronze, for one, in a smithing menu'},
+      {num:7,row:2,col:0,len:5,clue:'Coffee order for a long night of grinding'},
+      {num:8,row:3,col:0,len:5,clue:'Farmland measures in a harvest sim'},
+      {num:9,row:4,col:0,len:4,clue:'Out of the round until a respawn'}
     ],
     down: [
-      {num:1,row:0,col:0,len:5,clue:'Animal life of a biome'},
-      {num:2,row:0,col:1,len:5,clue:'Given an inner layer, as a cloak'},
-      {num:3,row:0,col:2,len:5,clue:'Tacked on after the first draft'},
-      {num:4,row:0,col:3,len:5,clue:'Unwanted plants in a plot'},
-      {num:6,row:1,col:4,len:3,clue:'Not wet, after leaving the water'}
+      {num:1,row:0,col:0,len:5,clue:'Bowl of greens from a cooking sim'},
+      {num:2,row:0,col:1,len:5,clue:'Finish on the podium, or a location'},
+      {num:3,row:0,col:2,len:5,clue:'Top graphics preset on a strong rig'},
+      {num:4,row:0,col:3,len:5,clue:'Written down, as a boss pattern'},
+      {num:6,row:1,col:4,len:3,clue:'Answer to a ready check'}
     ]
   },
   {
@@ -911,7 +911,7 @@ window.CROSSWORD_PUZZLES = [
       {num:8,row:4,col:0,len:4,clue:'Oak or pine on a forest map'}
     ],
     down: [
-      {num:1,row:0,col:1,len:5,clue:'Mode where fighters bow first'},
+      {num:1,row:0,col:1,len:5,clue:'Integrity you show by not abusing a bug'},
       {num:2,row:0,col:2,len:5,clue:'Fight with words, not weapons'},
       {num:3,row:0,col:3,len:5,clue:'One beat of a story sequence'},
       {num:4,row:0,col:4,len:4,clue:'Did not drop, as a grudge'},
@@ -970,20 +970,20 @@ window.CROSSWORD_PUZZLES = [
     ]
   },
   {
-    rows: ['CHIC#', 'HYDRA', 'IDEAS', 'PRANK', 'SOLE#'],
+    rows: ['WATT#', 'RURAL', 'ADOBE', 'PILOT', 'SOLO#'],
     across: [
-      {num:1,row:0,col:0,len:4,clue:'Stylish, as a rare cosmetic'},
-      {num:5,row:1,col:0,len:5,clue:'Many-headed serpent of myth'},
-      {num:7,row:2,col:0,len:5,clue:'Notions for a new build'},
-      {num:8,row:3,col:0,len:5,clue:'Joke you pull on a friend'},
-      {num:9,row:4,col:0,len:4,clue:'Only one, or the bottom of a shoe'}
+      {num:1,row:0,col:0,len:4,clue:'Unit on a PC power supply rating'},
+      {num:5,row:1,col:0,len:5,clue:'Countryside, like a farming map'},
+      {num:7,row:2,col:0,len:5,clue:'Sun-dried brick in a desert town'},
+      {num:8,row:3,col:0,len:5,clue:'One at the controls of a mech or jet'},
+      {num:9,row:4,col:0,len:4,clue:'Queue type with no squad'}
     ],
     down: [
-      {num:1,row:0,col:0,len:5,clue:'Crispy snacks, or poker tokens'},
-      {num:2,row:0,col:1,len:5,clue:'Prefix meaning water'},
-      {num:3,row:0,col:2,len:5,clue:'The build a tier list crowns'},
-      {num:4,row:0,col:3,len:5,clue:'A wading bird with a long neck'},
-      {num:6,row:1,col:4,len:3,clue:'Put a question to the guide'}
+      {num:1,row:0,col:0,len:5,clue:'Finishes a shoot, or tortilla rolls'},
+      {num:2,row:0,col:1,len:5,clue:'Sound mix and voice volume settings'},
+      {num:3,row:0,col:2,len:5,clue:'Bridge monster, or a griefer in chat'},
+      {num:4,row:0,col:3,len:5,clue:'Off-limits, as a topic in a family lobby'},
+      {num:6,row:1,col:4,len:3,clue:'Allow, as a host does a late joiner'}
     ]
   },
   {
@@ -1089,20 +1089,20 @@ window.CROSSWORD_PUZZLES = [
     ]
   },
   {
-    rows: ['GRAFT', 'RULER', 'ALONE', 'PENCE', 'EDGE#'],
+    rows: ['STRIP', 'AROSE', 'VAULT', 'EDGES', 'SEES#'],
     across: [
-      {num:1,row:0,col:0,len:5,clue:'Join a branch onto a tree'},
-      {num:6,row:1,col:0,len:5,clue:'A strip marked for measuring'},
-      {num:7,row:2,col:0,len:5,clue:'Without a duo in the lobby'},
-      {num:8,row:3,col:0,len:5,clue:'Pennies, in British money'},
-      {num:9,row:4,col:0,len:4,clue:'Brink of the map before a fall'}
+      {num:1,row:0,col:0,len:5,clue:'Pull the parts off a wrecked car'},
+      {num:6,row:1,col:0,len:5,clue:'Got up from a camp bed at dawn'},
+      {num:7,row:2,col:0,len:5,clue:'Leap a wall, or the bank room in a heist'},
+      {num:8,row:3,col:0,len:5,clue:'Sides of a puzzle piece, sorted first'},
+      {num:9,row:4,col:0,len:4,clue:'Spots a camper through the scope'}
     ],
     down: [
-      {num:1,row:0,col:0,len:5,clue:'Fruit that becomes wine'},
-      {num:2,row:0,col:1,len:5,clue:'Acted as sovereign'},
-      {num:3,row:0,col:2,len:5,clue:'Moving with the convoy'},
-      {num:4,row:0,col:3,len:5,clue:'Barrier around a yard'},
-      {num:5,row:0,col:4,len:4,clue:'Diagram of branching skills'}
+      {num:1,row:0,col:0,len:5,clue:'Slots on the load screen'},
+      {num:2,row:0,col:1,len:5,clue:'Deal that sends a player to a rival club'},
+      {num:3,row:0,col:2,len:5,clue:"Blush in a character creator's makeup tab"},
+      {num:4,row:0,col:3,len:5,clue:'Small islands on an ocean map'},
+      {num:5,row:0,col:4,len:4,clue:'Companions that follow you around a hub'}
     ]
   },
   {
@@ -1168,7 +1168,7 @@ window.CROSSWORD_PUZZLES = [
     down: [
       {num:1,row:0,col:1,len:5,clue:'Firm and reliable'},
       {num:2,row:0,col:2,len:5,clue:'Place in a grave'},
-      {num:3,row:0,col:3,len:5,clue:'A sibling daughter'},
+      {num:3,row:0,col:3,len:5,clue:"A sibling's daughter"},
       {num:4,row:0,col:4,len:5,clue:'Threaded fastener in a PC build'},
       {num:5,row:1,col:0,len:3,clue:'Touch lightly'}
     ]
@@ -1380,7 +1380,7 @@ window.CROSSWORD_PUZZLES = [
   {
     rows: ['VISIT', 'INTRO', 'SCOOP', 'TURNS', 'ARMY#'],
     across: [
-      {num:1,row:0,col:0,len:5,clue:'Stop by a friend island'},
+      {num:1,row:0,col:0,len:5,clue:"Stop by a friend's island"},
       {num:6,row:1,col:0,len:5,clue:'Short opening of a podcast'},
       {num:7,row:2,col:0,len:5,clue:'Exclusive news, or a rounded spoon'},
       {num:8,row:3,col:0,len:5,clue:'Chances to move in a tactics match'},
@@ -1457,7 +1457,7 @@ window.CROSSWORD_PUZZLES = [
     down: [
       {num:1,row:0,col:0,len:5,clue:'Pick order before a match'},
       {num:2,row:0,col:1,len:5,clue:'Device for voice across a distance'},
-      {num:3,row:0,col:2,len:5,clue:'What a thin atmosphere tracks'},
+      {num:3,row:0,col:2,len:5,clue:'Gas layer that blocks UV light'},
       {num:4,row:0,col:3,len:5,clue:'Minute openings in the skin'},
       {num:6,row:1,col:4,len:3,clue:'Hue of a stop sign'}
     ]
@@ -1660,7 +1660,7 @@ window.CROSSWORD_PUZZLES = [
     ],
     down: [
       {num:1,row:0,col:0,len:4,clue:'Soft green growth on a stone'},
-      {num:2,row:0,col:1,len:5,clue:'Fruit on a teacher desk'},
+      {num:2,row:0,col:1,len:5,clue:"Fruit on a teacher's desk"},
       {num:3,row:0,col:2,len:5,clue:'Postpone to a later time'},
       {num:4,row:0,col:3,len:5,clue:'Come up, as a new bug report'},
       {num:5,row:0,col:4,len:4,clue:'Numbers class, or damage calculation'}
@@ -1890,8 +1890,8 @@ window.CROSSWORD_PUZZLES = [
   {
     rows: ['#GIFT', 'VIDEO', 'EVERY', 'TEARS', 'ONLY#'],
     across: [
-      {num:1,row:0,col:1,len:4,clue:'Present left in a friend mailbox'},
-      {num:5,row:1,col:0,len:5,clue:'Moving picture on a capture'},
+      {num:1,row:0,col:1,len:4,clue:"Present left in a friend's mailbox"},
+      {num:5,row:1,col:0,len:5,clue:'Clip you record with a capture card'},
       {num:6,row:2,col:0,len:5,clue:'Each one, with none left out'},
       {num:7,row:3,col:0,len:5,clue:'Salty drops after a sad scene'},
       {num:8,row:4,col:0,len:4,clue:'With no others included'}
@@ -1918,7 +1918,7 @@ window.CROSSWORD_PUZZLES = [
       {num:2,row:0,col:2,len:5,clue:'Expert, short of pro'},
       {num:3,row:0,col:3,len:5,clue:'Flush with water'},
       {num:4,row:0,col:4,len:5,clue:'Diner who finishes the plate'},
-      {num:5,row:1,col:0,len:4,clue:'Not the other preset in the creator'}
+      {num:5,row:1,col:0,len:4,clue:'One of two body presets in a creator'}
     ]
   },
   {
@@ -1934,7 +1934,7 @@ window.CROSSWORD_PUZZLES = [
       {num:1,row:0,col:1,len:5,clue:'Frighten with a sudden noise'},
       {num:2,row:0,col:2,len:5,clue:'Clear out unwanted files or foes'},
       {num:3,row:0,col:3,len:5,clue:'Roughly, as an estimate'},
-      {num:4,row:0,col:4,len:4,clue:'A him, on a cast list'},
+      {num:4,row:0,col:4,len:4,clue:'Like every tenor and baritone'},
       {num:5,row:1,col:0,len:4,clue:'Dishonest scheme in a trade chat'}
     ]
   }

@@ -66,7 +66,7 @@ function read(rel) {
 
   var wordSquares = 0;
   var collisions = 0;
-  var dupAnswers = 0;
+  var dupAnswers = 0, sharedStems = 0;
   var dupClues = 0;
   var clueHasAnswer = 0;
   var unchecked = 0;
@@ -172,6 +172,23 @@ function read(rel) {
     });
     if (dup) dupAnswers++;
 
+    // Same root twice in one grid (ADDS/ADDED, RULER/RULED): strip one
+    // inflection and compare. Plain shared prefixes are not flagged
+    // (PAST/PASTE, SHALL/SHALE are different words).
+    var seenStem = Object.create(null);
+    var stemHit = false;
+    aAns.concat(dAns).forEach(function (word) {
+      var st = word;
+      var sufs = ['ING', 'IES', 'ED', 'ES', 'ER', 'S', 'D', 'Y'];
+      for (var si = 0; si < sufs.length; si++) {
+        var sf = sufs[si];
+        if (word.length - sf.length >= 3 && word.slice(-sf.length) === sf) { st = word.slice(0, -sf.length); break; }
+      }
+      if (seenStem[st]) stemHit = true;
+      seenStem[st] = 1;
+    });
+    if (stemHit) sharedStems++;
+
     var seenClue = Object.create(null);
     var repeated = false;
     clues.forEach(function (clue) {
@@ -227,19 +244,20 @@ function read(rel) {
 
   console.log('Mini counts puzzles=' + puzzles.length + ' clues=' + clueCount +
     ' wordSquares=' + wordSquares + ' collisions=' + collisions +
-    ' dupAnswers=' + dupAnswers + ' dupClues=' + dupClues +
+    ' dupAnswers=' + dupAnswers + ' sharedStems=' + sharedStems + ' dupClues=' + dupClues +
     ' clueHasAnswer=' + clueHasAnswer + ' unchecked=' + unchecked +
     ' shortRuns=' + shortRuns + ' mismatches=' + mismatches);
 
   if (wordSquares) fail('Mini word squares ' + wordSquares);
   if (collisions) fail('Mini across/down collisions ' + collisions);
   if (dupAnswers) fail('Mini duplicate answers ' + dupAnswers);
+  if (sharedStems) fail('Mini shared word stems ' + sharedStems);
   if (dupClues) fail('Mini repeated clues ' + dupClues);
   if (clueHasAnswer) fail('Mini clue contains answer ' + clueHasAnswer);
   if (unchecked) fail('Mini unchecked cells ' + unchecked);
   if (shortRuns) fail('Mini short runs ' + shortRuns);
   if (mismatches) fail('Mini grid mismatches ' + mismatches);
-  if (!wordSquares && !collisions && !dupAnswers && !dupClues && !clueHasAnswer && !unchecked && !shortRuns && !mismatches && puzzles.length >= 90) {
+  if (!wordSquares && !collisions && !dupAnswers && !sharedStems && !dupClues && !clueHasAnswer && !unchecked && !shortRuns && !mismatches && puzzles.length >= 90) {
     ok('Mini ' + puzzles.length + ' checked minis, ' + clueCount + ' clues');
   }
 })();
