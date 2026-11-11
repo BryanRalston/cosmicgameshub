@@ -3,6 +3,7 @@ window.dataLayer = window.dataLayer || [];
 window.gtag = function () { window.dataLayer.push(arguments); };
 window.addEventListener('load', function () {
   var loadGa = function () {
+    try{var q=location.search;if(/[?&]notrack=1/.test(q))localStorage.setItem('cgh_notrack','1');if(/[?&]notrack=0/.test(q))localStorage.removeItem('cgh_notrack');if(navigator.webdriver||/HeadlessChrome|Lighthouse/.test(navigator.userAgent)||localStorage.getItem('cgh_notrack')==='1')window['ga-disable-G-D272MF8NQP']=true;}catch(e){}
     var s = document.createElement('script');
     s.async = true;
     s.src = 'https://www.googletagmanager.com/gtag/js?id=G-D272MF8NQP';
