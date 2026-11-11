@@ -540,6 +540,9 @@
   var clueTab = 'across';
   var checkCount = 0;
   var revealCount = 0;
+  // Sticky for the day: any reveal blocks Clean, the S badge and personal bests,
+  // even after Clear All empties the revealed squares (survives reloads too).
+  var usedReveal = false;
   var puzzleRevealed = false;
   var solved = false;
   var ready = false;
@@ -689,11 +692,11 @@
     stats.maxStreak = Math.max(stats.maxStreak || 0, streak);
     stats.lastSolvedDay = dayIndex;
     if (stats.revealBreak === dayIndex) stats.revealBreak = -1;
-    var clean = revealCount === 0 && checkCount === 0;
+    var clean = !usedReveal && checkCount === 0;
     if (clean) stats.clean = (stats.clean || 0) + 1;
     if (revealCount === 0) {
       var sec = Math.floor(currentElapsed() / 1000);
-      if (stats.bestSec == null || sec < stats.bestSec) stats.bestSec = sec;
+      if (!usedReveal && (stats.bestSec == null || sec < stats.bestSec)) stats.bestSec = sec;
       stats.totalSec = (stats.totalSec || 0) + sec;
       stats.timed = (stats.timed || 0) + 1;
       if (!stats.hist || stats.hist.length !== 5) stats.hist = [0, 0, 0, 0, 0];
@@ -724,7 +727,8 @@
       elapsedMs: Math.round(currentElapsed()),
       started: everStarted,
       checks: checkCount,
-      reveals: revealCount
+      reveals: revealCount,
+      usedReveal: !!usedReveal
     }));
   }
   function scheduleSave() {
@@ -780,6 +784,7 @@
     revealCount = parseInt(data.reveals, 10);
     if (!isFinite(checkCount) || checkCount < 0) checkCount = 0;
     revealCount = countRevealed();
+    usedReveal = !!data.usedReveal || revealCount > 0;
     dir = data.dir;
     var rr0 = parseInt(data.r, 10);
     var cc0 = parseInt(data.c, 10);
@@ -832,6 +837,7 @@
     revealCount = parseInt(data.reveals, 10);
     if (!isFinite(checkCount) || checkCount < 0) checkCount = 0;
     revealCount = countRevealed();
+    usedReveal = !!data.usedReveal || revealCount > 0;
     return true;
   }
   function countRevealed() {
@@ -862,6 +868,7 @@
       checks: checkCount,
       reveals: revealCount,
       revealedCells: revealedList(),
+      usedReveal: !!usedReveal,
       puzzleRevealed: !!puzzleRevealed
     }));
     lsDel(sk('cw_resume_v1'));
@@ -1126,7 +1133,8 @@
     var pos = dir === 'across' ? selCol - w.col : selRow - w.row;
     var p = firstEmptyIn(dir, w, pos + 1) || firstEmptyIn(dir, w, 0);
     if (p) { selectCell(p[0], p[1], dir); return; }
-    if (pos + 1 < w.len) { p = entryCell(dir, w, pos + 1); selectCell(p[0], p[1], dir); return; }
+    // Word is full (crossings may have filled it early): go to the first empty
+    // square of a later clue rather than walking onto this word's filled squares.
     var list = allEntries();
     var idx = 0;
     for (var i = 0; i < list.length; i++) if (list[i].dir === dir && list[i].w === w) idx = i;
@@ -1134,6 +1142,9 @@
       var q = firstEmptyIn(list[j].dir, list[j].w, 0);
       if (q) { selectCell(q[0], q[1], list[j].dir); return; }
     }
+    // Nothing empty later (no wrap to 1-Across): step within the word so a
+    // finished grid can still be edited; at the word's end the cursor stays put.
+    if (pos + 1 < w.len) { p = entryCell(dir, w, pos + 1); selectCell(p[0], p[1], dir); }
   }
   function retreatCursor() {
     var w = wordCovering(selRow, selCol, dir);
@@ -1210,6 +1221,7 @@
       paintCell(rr, cc);
     }
     revealCount = countRevealed();
+    if (n > 0) usedReveal = true;
     return n;
   }
   function closeRevealMenu() {
@@ -1355,7 +1367,7 @@
       if (revealCount > 0) msg += ' ' + squaresPhrase(revealCount);
       if (checksEl) checksEl.textContent = msg;
       var bestLine = '';
-      if (revealCount > 0) bestLine = 'Reveals used, so no badge or personal best.';
+      if (usedReveal) bestLine = 'Reveals used, so no badge or personal best.';
       else if (bestInfo && bestInfo.isBest && bestInfo.prev !== 999) bestLine = '🏆 New personal best!';
       else if (bestInfo && !bestInfo.isBest && bestInfo.prev !== 999) bestLine = 'Best: ' + bestInfo.prev + ' checks';
       else if (!bestInfo) {
@@ -1363,7 +1375,7 @@
         if (isFinite(prev) && prev !== 999) bestLine = 'Best: ' + prev + ' checks';
       }
       if (bestEl) bestEl.textContent = bestLine;
-      if (badge) badge.textContent = revealCount > 0 ? 'Assisted — ' + revealCount + ' revealed' : grade(checkCount) + ' — ' + (checkCount === 0 ? 'Wordsmith' : checkCount === 1 ? 'Sharp' : checkCount <= 3 ? 'Solid' : 'Persistent');
+      if (badge) badge.textContent = revealCount > 0 ? 'Assisted — ' + revealCount + ' revealed' : usedReveal ? 'Assisted — reveals used' : grade(checkCount) + ' — ' + (checkCount === 0 ? 'Wordsmith' : checkCount === 1 ? 'Sharp' : checkCount <= 3 ? 'Solid' : 'Persistent');
       activeClueEl.innerHTML = '<strong style="color:#2ecc71">✓ Puzzle complete!</strong>';
     }
     var blurb = document.getElementById('cw-gear-blurb');
@@ -1413,7 +1425,7 @@
     paintAll();
     renderHighlights();
     renderClues();
-    var bestInfo = revealCount === 0 ? updateCheckBest() : null;
+    var bestInfo = usedReveal ? null : updateCheckBest();
     recordSolve();
     saveSolvedRecord();
     fillResultCard(bestInfo);
