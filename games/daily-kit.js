@@ -67,7 +67,18 @@
       var loose = n.getFullYear() + '-' + mm + '-' + dd;
       return localStorage.getItem('sdk_solved_' + padded) === '1' || localStorage.getItem('sdk_solved_' + loose) === '1';
     })();
-    map.crossword = safeInt('cw_last_day', -1) === dayOfYear();
+    map.crossword = (function () {
+      try {
+        var parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
+        var y = '', m = '', d = '';
+        for (var i = 0; i < parts.length; i++) {
+          if (parts[i].type === 'year') y = parts[i].value;
+          else if (parts[i].type === 'month') m = parts[i].value;
+          else if (parts[i].type === 'day') d = parts[i].value;
+        }
+        return localStorage.getItem('cw_last_date') === y + '-' + m + '-' + d;
+      } catch (e) { return false; }
+    })();
     map['price-guesser'] = safeInt('pg_last_day', -1) === dayOfYear();
     try {
       var ls = safeJSON('link-state-v1') || {};
