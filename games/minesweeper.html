@@ -121,8 +121,15 @@
       white-space: nowrap;
       border: 0;
     }
-    .ms-intro { padding: 8px 0 4px; text-align: center; }
+    .ms-intro { position: relative; padding: 8px 0 4px; text-align: center; }
     .ms-intro .section__eyebrow { margin: 0 0 2px; color: #f2d48a; }
+    .ms-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-width: 0;
+    }
     .ms-intro h1 {
       margin: 0;
       font-size: 1.35rem;
@@ -171,6 +178,91 @@
       color: #ffe08a;
       background: rgba(255, 208, 112, 0.14);
     }
+    .ms-noguess {
+      flex: 0 0 auto;
+      min-height: 36px;
+      padding: 0 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 214, 140, 0.28);
+      background: rgba(6, 10, 28, 0.72);
+      color: #d9dced;
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    .ms-noguess.is-on {
+      background: #ffe08a;
+      color: #1b1406;
+      border-color: #ffe08a;
+    }
+    .ms-noguess:disabled { opacity: 0.72; cursor: default; }
+    .ms-ng-short { display: none; }
+    .ms-daily {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin: -2px 0 4px;
+      max-width: 100%;
+      overflow: hidden;
+      min-height: 16px;
+      color: #f2d48a;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum" 1;
+      white-space: nowrap;
+    }
+    .ms-diff { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ms-toolbar { max-width: 100%; }
+    .ms-daily[hidden] { display: none !important; }
+    .ms-daily.is-replay { flex-wrap: wrap; row-gap: 2px; overflow: visible; white-space: normal; }
+    #dailyState { flex: 1 0 100%; text-align: center; white-space: nowrap; }
+    #dailyState[hidden] { display: none !important; }
+    .ms-badge {
+      position: relative;
+      z-index: 6;
+      flex: 0 0 auto;
+      pointer-events: none;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: #ffe08a;
+      color: #1b1406;
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      line-height: 1.2;
+      text-transform: uppercase;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+    }
+    .ms-badge[hidden] { display: none !important; }
+    .ms-note {
+      position: absolute;
+      z-index: 4;
+      left: 0;
+      right: 0;
+      top: 0;
+      margin: 0;
+      padding: 1px 8px;
+      border-radius: 999px;
+      background: rgba(8, 10, 22, 0.94);
+      color: #ffe08a;
+      font-size: 0.62rem;
+      font-weight: 800;
+      line-height: 1.35;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      pointer-events: none;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+    }
+    .ms-note[hidden] { display: none !important; }
+    .ms-intro:has(#msBadge:not([hidden])) .ms-note { left: 8px; right: 78px; }
     .ms-hud {
       display: flex;
       align-items: center;
@@ -521,6 +613,7 @@
       color: #1b1406;
       border-color: #ffe08a;
     }
+    #modeDig, #modeFlag { touch-action: manipulation; }
 
     .ms-sheet {
       position: fixed;
@@ -572,8 +665,24 @@
       .ms-intro { padding: 2px 2px 0; }
       .ms-intro h1 { font-size: 0.95rem; }
       .ms-intro p, .ms-intro .section__eyebrow { display: none; }
-      .ms-toolbar { gap: 4px; margin-bottom: 4px; }
-      .ms-diff { min-height: 34px; font-size: 0.72rem; padding: 0 2px; }
+      .ms-toolbar { gap: 3px; margin-bottom: 4px; }
+      .ms-diffs { gap: 2px; }
+      .ms-diff {
+        flex: 1 1 0;
+        min-width: 34px;
+        min-height: 34px;
+        font-size: 0.64rem;
+        padding: 0 1px;
+        letter-spacing: 0;
+        overflow: hidden;
+        text-overflow: clip;
+      }
+      .ms-diff[data-diff="medium"] { min-width: 48px; }
+      .ms-noguess { min-height: 34px; padding: 0 5px; font-size: 0.62rem; }
+      .ms-ng-long { display: none; }
+      .ms-ng-short { display: inline; }
+      .ms-daily { gap: 6px; margin: 0 0 2px; font-size: 0.62rem; }
+      .ms-note { font-size: 0.58rem; padding: 1px 4px; }
       .ms-hud { gap: 4px; padding: 2px 4px 2px 6px; }
       .ms-stat { min-width: 36px; }
       .ms-stat b { font-size: 0.95rem; }
@@ -688,8 +797,12 @@
   <div class="container">
     <header class="ms-intro">
       <span class="section__eyebrow">Puzzle Game</span>
-      <h1>Cosmic Minesweeper</h1>
+      <div class="ms-title-row">
+        <h1>Cosmic Minesweeper</h1>
+        <div id="msBadge" class="ms-badge" hidden>No-guess</div>
+      </div>
       <p>Dig or flag. Chord a number. Arrows, Enter, F, D, N.</p>
+      <div id="msNote" class="ms-note" hidden></div>
     </header>
 
     <div class="ms-wrap">
@@ -698,7 +811,11 @@
           <button type="button" class="ms-diff is-on" data-diff="easy">Easy</button>
           <button type="button" class="ms-diff" data-diff="medium">Medium</button>
           <button type="button" class="ms-diff" data-diff="hard">Hard</button>
+          <button type="button" class="ms-diff" data-diff="daily" id="dailyBtn">Daily</button>
         </div>
+        <button type="button" class="ms-noguess is-on" id="noGuessBtn" aria-pressed="true" title="No-guess: every board is solvable by logic" aria-label="No-guess: every board is solvable by logic">
+          <span class="ms-ng-long">No-guess</span><span class="ms-ng-short">NG</span>
+        </button>
         <div class="ms-hud">
           <div class="ms-stat"><b id="mineCount">10</b><span>Meteors</span></div>
           <button type="button" class="ms-face is-idle" id="faceBtn" aria-label="New game">
@@ -736,6 +853,13 @@
         <button type="button" class="ms-mute" id="muteBtn" aria-pressed="false" aria-label="Mute sound">
           <svg viewBox="0 0 24 24" aria-hidden="true" id="muteIcon"></svg>
         </button>
+      </div>
+      <div id="dailyBar" class="ms-daily" hidden>
+        <span id="dailyDate"></span>
+        <span id="dailyBest">Best —</span>
+        <span id="dailyStreak">Streak 0</span>
+        <span id="dailyNext">Next —</span>
+        <span id="dailyState" hidden></span>
       </div>
 
       <div class="ms-stage">
@@ -888,6 +1012,28 @@
   var particles = [];
   var fxRunning = false;
   var lastBv = 0;
+  var prefNoGuess = true;
+  var noGuess = true;
+  var practice = false;
+  var dateKey = null;
+  var seedValue = null;
+  var generating = false;
+  var genToken = 0;
+  var genTimer = 0;
+  var hiddenPause = false;
+  var touchDown = 0;
+  var RESUME_KEY = 'ms_resume_v1';
+  var NG_HINT_KEY = 'ms_ng_hint_v1';
+  var CHARTING = 'Charting a no-guess field…';
+  var HONEST = 'Couldn\'t chart a no-guess field this time — this board may need a guess.';
+  var NG_HINT = 'No-guess is on: every board is solvable by logic, no 50/50s.';
+  var genLimits = {
+    firstAttempts: 200,
+    firstMs: 150,
+    maxAttempts: 5000,
+    maxMs: 3000,
+    forceUnsolved: false
+  };
 
   var gridEl = document.getElementById('msGrid');
   var frameEl = document.getElementById('msFrame');
@@ -923,7 +1069,7 @@
     for (var r = 0; r < cfg.rows; r++) for (var c = 0; c < cfg.cols; c++) if (flagged[r][c]) n++;
     return n;
   }
-  function inProgress() { return !gameOver && (started || flagCount() > 0); }
+  function inProgress() { return !gameOver && (started || minesReady || flagCount() > 0); }
   function formatSec(seconds) {
     if (seconds == null || !isFinite(seconds)) return '—';
     return Number(seconds).toFixed(1) + 's';
@@ -933,11 +1079,22 @@
     if (timerHandle && startTs) ms = performance.now() - startTs;
     return Math.round(ms / 100) / 10;
   }
+  function emptySplit() { return { played: 0, won: 0 }; }
   function emptyStats() {
-    return { played: 0, won: 0, streak: 0, bestStreak: 0, best: null, times: [] };
+    return { played: 0, won: 0, streak: 0, bestStreak: 0, best: null, times: [], noguess: emptySplit(), classic: emptySplit() };
+  }
+  function emptyDaily() {
+    return { played: 0, won: 0, streak: 0, bestStreak: 0, best: null, times: [], lastWin: null, done: {} };
+  }
+  function readSplit(raw) {
+    var split = emptySplit();
+    if (!raw || typeof raw !== 'object') return split;
+    split.played = Number(raw.played) || 0;
+    split.won = Number(raw.won) || 0;
+    return split;
   }
   function loadStats() {
-    var base = { easy: emptyStats(), medium: emptyStats(), hard: emptyStats() };
+    var base = { easy: emptyStats(), medium: emptyStats(), hard: emptyStats(), daily: emptyDaily() };
     var raw = storageGet('ms_stats_v1');
     if (!raw) return base;
     try {
@@ -951,11 +1108,35 @@
         base[name].bestStreak = Number(row.bestStreak) || 0;
         base[name].best = row.best == null || row.best === '' || !isFinite(Number(row.best)) ? null : Number(row.best);
         base[name].times = Array.isArray(row.times) ? row.times.map(Number).filter(isFinite).slice(0, 5) : [];
+        base[name].noguess = readSplit(row.noguess);
+        base[name].classic = readSplit(row.classic);
       });
+      var daily = parsed && parsed.daily;
+      if (daily && typeof daily === 'object') {
+        base.daily.played = Number(daily.played) || 0;
+        base.daily.won = Number(daily.won) || 0;
+        base.daily.streak = Number(daily.streak) || 0;
+        base.daily.bestStreak = Number(daily.bestStreak) || 0;
+        base.daily.best = daily.best == null || daily.best === '' || !isFinite(Number(daily.best)) ? null : Number(daily.best);
+        base.daily.times = Array.isArray(daily.times) ? daily.times.map(Number).filter(isFinite).slice(0, 5) : [];
+        base.daily.lastWin = typeof daily.lastWin === 'string' ? daily.lastWin : null;
+        if (daily.done && typeof daily.done === 'object') base.daily.done = daily.done;
+      }
     } catch (err) {}
     return base;
   }
-  function saveStats(stats) { storageSet('ms_stats_v1', JSON.stringify(stats)); }
+  function saveStats(stats) {
+    var parsed = {};
+    var raw = storageGet('ms_stats_v1');
+    if (raw) {
+      try { parsed = JSON.parse(raw) || {}; } catch (err) { parsed = {}; }
+    }
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) parsed = {};
+    ['easy', 'medium', 'hard', 'daily'].forEach(function (name) {
+      parsed[name] = Object.assign({}, parsed[name] || {}, stats[name]);
+    });
+    storageSet('ms_stats_v1', JSON.stringify(parsed));
+  }
   function readBest(name) {
     var stats = loadStats();
     if (stats[name] && stats[name].best != null) return stats[name].best;
@@ -981,8 +1162,15 @@
     else faceEl.classList.add('is-idle');
   }
   function paintBest() {
-    var best = readBest(diff);
-    document.getElementById('bestBtn').textContent = best == null ? 'Best —' : ('Best ' + formatSec(best));
+    if (diff === 'daily') {
+      var stats = loadStats();
+      var row = stats.daily && stats.daily.done ? stats.daily.done[dateKey] : null;
+      var best = row && row.won && isFinite(Number(row.time)) ? Number(row.time) : null;
+      document.getElementById('bestBtn').textContent = best == null ? 'Best —' : ('Best ' + formatBest(best));
+      return;
+    }
+    var classic = readBest(diff);
+    document.getElementById('bestBtn').textContent = classic == null ? 'Best —' : ('Best ' + formatBest(classic));
   }
   function paintMineCount() {
     mineEl.textContent = String(cfg.mines - flagCount());
@@ -1334,34 +1522,122 @@
   }
 
   function resetBoard(next) {
+    clearResume();
+    genToken++;
+    clearTimeout(genTimer);
+    generating = false;
     if (next) diff = next;
-    cfg = geometry(diff);
-    grid = Array.from({ length: cfg.rows }, function () { return Array(cfg.cols).fill(0); });
-    revealed = Array.from({ length: cfg.rows }, function () { return Array(cfg.cols).fill(false); });
-    flagged = Array.from({ length: cfg.rows }, function () { return Array(cfg.cols).fill(false); });
-    minesReady = false;
-    started = false;
-    gameOver = false;
-    won = false;
-    lost = false;
-    hit = null;
-    recorded = false;
-    elapsedMs = 0;
-    startTs = 0;
-    clearInterval(timerHandle);
-    timerHandle = 0;
-    clearGesture();
-    if (CONFIGS[diff]) storageSet('ms_diff', diff);
-    resultEl.hidden = true;
-    frameEl.classList.remove('is-win', 'is-shake');
-    particles = [];
-    document.querySelectorAll('.ms-diff').forEach(function (btn) {
-      btn.classList.toggle('is-on', btn.getAttribute('data-diff') === diff);
-    });
+    if (diff === 'daily') {
+      layDaily();
+      return;
+    }
+    layFresh(diff);
+  }
+  function layFresh(name) {
+    diff = CONFIGS[name] ? name : 'easy';
+    var geo = geometry(diff);
+    cfg = { rows: geo.rows, cols: geo.cols, mines: geo.mines };
+    freshArrays(cfg.rows, cfg.cols);
+    cfg.mines = geo.mines;
+    blankMatch();
+    practice = false;
+    dateKey = null;
+    seedValue = null;
+    noGuess = false;
+    storageSet('ms_diff', diff);
+    paintDiffs();
     paintMineCount();
     renderTimer();
     paintBest();
     paintFace();
+    paintBadge();
+    paintDailyBar();
+    clearStatusNote(false);
+    buildCells();
+    liveEl.textContent = '';
+  }
+  function layDaily() {
+    diff = 'daily';
+    var key = nyDateKey(new Date());
+    var spec = specForDate(key);
+    cfg = { rows: spec.rows, cols: spec.cols, mines: spec.mineCount };
+    freshArrays(spec.rows, spec.cols);
+    cfg.mines = spec.mineCount;
+    blankMatch();
+    dateKey = key;
+    seedValue = spec.seed;
+    noGuess = !!spec.solved;
+    var stats = loadStats();
+    var done = stats.daily && stats.daily.done ? stats.daily.done[key] : null;
+    practice = !!(done && (done.won || done.scored));
+    storageSet('ms_diff', diff);
+    applyMinePairs(spec.mines, spec.mineCount);
+    paintDiffs();
+    paintBadge();
+    paintDailyBar();
+    clearStatusNote(false);
+    buildCells();
+    openReveal(spec.r, spec.c, true, true);
+    started = false;
+    clearInterval(timerHandle);
+    timerHandle = 0;
+    elapsedMs = 0;
+    startTs = 0;
+    renderTimer();
+    paintBest();
+    paintFace();
+    writeResume();
+    var replay = dailyStatusText();
+    if (practice && replay) {
+      liveEl.textContent = 'Practice. ' + replay;
+      paintPracticeOverlay(replay);
+    } else if (noGuess) {
+      liveEl.textContent = 'Daily minefield ' + key + '. No-guess.';
+    } else {
+      liveEl.textContent = HONEST;
+      showStatusNote(HONEST, 'honest');
+    }
+  }
+  function restoreResume(data) {
+    genToken++;
+    clearTimeout(genTimer);
+    generating = false;
+    diff = data.diff;
+    var rows = data.rows | 0;
+    var cols = data.cols | 0;
+    var mineCount = data.mineCount | 0;
+    if (!mineCount && Array.isArray(data.mines)) mineCount = data.mines.length;
+    cfg = { rows: rows, cols: cols, mines: mineCount };
+    freshArrays(rows, cols);
+    cfg.mines = mineCount;
+    blankMatch();
+    var r, c;
+    for (r = 0; r < rows; r++) for (c = 0; c < cols; c++) {
+      revealed[r][c] = !!data.revealed[r][c];
+      flagged[r][c] = !!data.flagged[r][c];
+    }
+    if (data.minesReady) applyMinePairs(data.mines, mineCount);
+    else minesReady = false;
+    for (r = 0; r < rows; r++) for (c = 0; c < cols; c++) {
+      revealed[r][c] = !!data.revealed[r][c];
+      flagged[r][c] = !!data.flagged[r][c];
+    }
+    practice = !!data.practice;
+    dateKey = data.daily ? (data.dateKey || nyDateKey(new Date())) : (data.dateKey || null);
+    seedValue = data.seed == null ? null : (data.seed >>> 0);
+    noGuess = !!data.noGuess;
+    elapsedMs = Number(data.elapsedMs);
+    if (!isFinite(elapsedMs) || elapsedMs < 0) elapsedMs = 0;
+    started = false;
+    timerHandle = 0;
+    setFlagMode(!!data.flagMode);
+    paintDiffs();
+    paintMineCount();
+    renderTimer();
+    paintBest();
+    paintFace();
+    paintBadge();
+    paintDailyBar();
     buildCells();
     liveEl.textContent = '';
   }
@@ -1391,6 +1667,512 @@
       grid[r][c] = count;
     }
   }
+
+  function hashString(str) {
+    var h = 2166136261 >>> 0;
+    var s = String(str);
+    for (var i = 0; i < s.length; i++) {
+      h ^= s.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return h >>> 0;
+  }
+  function mulberry32(seed) {
+    var a = seed >>> 0;
+    return function () {
+      a = a + 0x6D2B79F5 | 0;
+      var t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  function nyParts(date) {
+    var fmt = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/New_York',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hourCycle: 'h23'
+    });
+    var out = { year: '1970', month: '01', day: '01', hour: '0', minute: '0', second: '0' };
+    fmt.formatToParts(date).forEach(function (part) {
+      if (Object.prototype.hasOwnProperty.call(out, part.type)) out[part.type] = part.value;
+    });
+    if (out.hour === '24') out.hour = '0';
+    return out;
+  }
+  function nyDateKey(date) {
+    var p = nyParts(date);
+    return p.year + '-' + p.month + '-' + p.day;
+  }
+  function prevDateKey(key) {
+    var bits = String(key || '').split('-');
+    if (bits.length !== 3) return '';
+    var dt = new Date(Date.UTC(Number(bits[0]), Number(bits[1]) - 1, Number(bits[2])));
+    if (!isFinite(dt.getTime())) return '';
+    dt.setUTCDate(dt.getUTCDate() - 1);
+    var y = dt.getUTCFullYear();
+    var m = dt.getUTCMonth() + 1;
+    var d = dt.getUTCDate();
+    return y + '-' + (m < 10 ? '0' : '') + m + '-' + (d < 10 ? '0' : '') + d;
+  }
+  function displayStreak(stats, todayKey) {
+    var row = stats && stats.daily;
+    if (!row) return 0;
+    var key = todayKey || '';
+    if (row.lastWin === key || row.lastWin === prevDateKey(key)) return Number(row.streak) || 0;
+    return 0;
+  }
+  function msUntilNextDaily(date) {
+    var p = nyParts(date);
+    var passed = ((Number(p.hour) * 60 + Number(p.minute)) * 60 + Number(p.second)) * 1000;
+    var left = 86400000 - passed;
+    if (!isFinite(left) || left < 0) left = 0;
+    if (left === 0) left = 86400000;
+    return left;
+  }
+  function formatClock(seconds) {
+    var s = Math.round(Number(seconds));
+    if (!isFinite(s) || s < 0) s = 0;
+    var m = Math.floor(s / 60);
+    var r = s % 60;
+    return m + ':' + (r < 10 ? '0' : '') + r;
+  }
+  function formatBest(seconds) {
+    if (seconds == null || seconds === '' || !isFinite(Number(seconds))) return '—';
+    return formatClock(seconds);
+  }
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+
+  function placeMineIds(rows, cols, mineCount, sr, sc, rng) {
+    var cells = [];
+    var r, c, i, j, tmp, k;
+    for (r = 0; r < rows; r++) for (c = 0; c < cols; c++) {
+      if (Math.abs(r - sr) <= 1 && Math.abs(c - sc) <= 1) continue;
+      cells.push(r * cols + c);
+    }
+    for (i = cells.length - 1; i > 0; i--) {
+      j = Math.floor(rng() * (i + 1));
+      tmp = cells[i];
+      cells[i] = cells[j];
+      cells[j] = tmp;
+    }
+    var n = mineCount;
+    if (n > cells.length) n = cells.length;
+    var mines = new Array(n);
+    for (k = 0; k < n; k++) mines[k] = cells[k];
+    return mines;
+  }
+  function idsToPairs(ids, cols) {
+    var out = new Array(ids.length);
+    for (var i = 0; i < ids.length; i++) out[i] = [(ids[i] / cols) | 0, ids[i] % cols];
+    out.sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; });
+    return out;
+  }
+  function solveLayout(rows, cols, mineIds, sr, sc) {
+    var n = rows * cols;
+    var mine = new Uint8Array(n);
+    var i;
+    for (i = 0; i < mineIds.length; i++) {
+      var mid = mineIds[i];
+      if (mid >= 0 && mid < n) mine[mid] = 1;
+    }
+    var start = sr * cols + sc;
+    if (sr < 0 || sc < 0 || sr >= rows || sc >= cols || mine[start]) return { solved: false, revealed: 0 };
+    var num = new Int8Array(n);
+    var r, c, dr, dc, nr, nc, id, count;
+    for (r = 0; r < rows; r++) for (c = 0; c < cols; c++) {
+      id = r * cols + c;
+      if (mine[id]) { num[id] = -1; continue; }
+      count = 0;
+      for (dr = -1; dr <= 1; dr++) for (dc = -1; dc <= 1; dc++) {
+        if (!dr && !dc) continue;
+        nr = r + dr;
+        nc = c + dc;
+        if (nr >= 0 && nc >= 0 && nr < rows && nc < cols && mine[nr * cols + nc]) count++;
+      }
+      num[id] = count;
+    }
+    var revealed = new Uint8Array(n);
+    var flagged = new Uint8Array(n);
+    var safeTotal = 0;
+    for (i = 0; i < n; i++) if (!mine[i]) safeTotal++;
+    var openCount = 0;
+    function revealId(rid) {
+      var stack = [rid];
+      while (stack.length) {
+        var cur = stack.pop();
+        if (revealed[cur] || flagged[cur] || mine[cur]) continue;
+        revealed[cur] = 1;
+        openCount++;
+        if (num[cur] !== 0) continue;
+        var rr = (cur / cols) | 0;
+        var cc = cur - rr * cols;
+        for (var y = -1; y <= 1; y++) for (var x = -1; x <= 1; x++) {
+          if (!y && !x) continue;
+          var zy = rr + y, zx = cc + x;
+          if (zy < 0 || zx < 0 || zy >= rows || zx >= cols) continue;
+          var nid = zy * cols + zx;
+          if (!revealed[nid] && !flagged[nid] && !mine[nid]) stack.push(nid);
+        }
+      }
+    }
+    function subset(a, b) {
+      if (a.length > b.length) return false;
+      for (var ai = 0; ai < a.length; ai++) {
+        var v = a[ai];
+        var found = false;
+        for (var bi = 0; bi < b.length; bi++) if (b[bi] === v) { found = true; break; }
+        if (!found) return false;
+      }
+      return true;
+    }
+    revealId(start);
+    var guard = 0;
+    while (guard++ < n + 8) {
+      if (openCount >= safeTotal) return { solved: true, revealed: openCount };
+      var changed = false;
+      var constraints = [];
+      for (r = 0; r < rows; r++) for (c = 0; c < cols; c++) {
+        id = r * cols + c;
+        if (!revealed[id] || num[id] <= 0) continue;
+        var unknown = [];
+        var flags = 0;
+        for (dr = -1; dr <= 1; dr++) for (dc = -1; dc <= 1; dc++) {
+          if (!dr && !dc) continue;
+          nr = r + dr;
+          nc = c + dc;
+          if (nr < 0 || nc < 0 || nr >= rows || nc >= cols) continue;
+          var nid = nr * cols + nc;
+          if (flagged[nid]) flags++;
+          else if (!revealed[nid]) unknown.push(nid);
+        }
+        var need = num[id] - flags;
+        if (need < 0 || need > unknown.length) return { solved: false, revealed: openCount };
+        if (!unknown.length) continue;
+        if (need === 0) {
+          for (var u = 0; u < unknown.length; u++) {
+            if (mine[unknown[u]]) return { solved: false, revealed: openCount };
+            if (!revealed[unknown[u]]) { revealId(unknown[u]); changed = true; }
+          }
+        } else if (need === unknown.length) {
+          for (var u2 = 0; u2 < unknown.length; u2++) {
+            if (!mine[unknown[u2]]) return { solved: false, revealed: openCount };
+            if (!flagged[unknown[u2]]) { flagged[unknown[u2]] = 1; changed = true; }
+          }
+        } else constraints.push(unknown, need);
+      }
+      if (!changed) {
+        var clen = constraints.length / 2;
+        for (var ci = 0; ci < clen && !changed; ci++) {
+          var ac = constraints[ci * 2];
+          var an = constraints[ci * 2 + 1];
+          for (var cj = 0; cj < clen; cj++) {
+            if (ci === cj) continue;
+            var bc = constraints[cj * 2];
+            var bn = constraints[cj * 2 + 1];
+            if (ac.length >= bc.length) continue;
+            if (!subset(ac, bc)) continue;
+            var diffNeed = bn - an;
+            var diff = [];
+            for (var k = 0; k < bc.length; k++) {
+              var cell = bc[k];
+              var hit = false;
+              for (var t = 0; t < ac.length; t++) if (ac[t] === cell) { hit = true; break; }
+              if (!hit) diff.push(cell);
+            }
+            if (diffNeed === 0) {
+              for (var d = 0; d < diff.length; d++) {
+                if (mine[diff[d]]) return { solved: false, revealed: openCount };
+                if (!revealed[diff[d]] && !flagged[diff[d]]) { revealId(diff[d]); changed = true; }
+              }
+            } else if (diffNeed === diff.length) {
+              for (var d2 = 0; d2 < diff.length; d2++) {
+                if (!mine[diff[d2]]) return { solved: false, revealed: openCount };
+                if (!flagged[diff[d2]] && !revealed[diff[d2]]) { flagged[diff[d2]] = 1; changed = true; }
+              }
+            }
+            if (changed) break;
+          }
+        }
+      }
+      if (!changed) break;
+    }
+    return { solved: openCount >= safeTotal, revealed: openCount };
+  }
+  function runGenerator(rows, cols, mineCount, sr, sc, rng, timed, maxAttempts) {
+    var t0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    var attempts = 0;
+    var best = null;
+    var bestScore = -1;
+    var chosen = null;
+    var solved = false;
+    var cap = maxAttempts || 200;
+    while (attempts < cap) {
+      if (timed && attempts > 0) {
+        var now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+        if (now - t0 >= 150) break;
+      }
+      attempts++;
+      var list = placeMineIds(rows, cols, mineCount, sr, sc, rng);
+      var res = solveLayout(rows, cols, list, sr, sc);
+      if (res.revealed > bestScore) { bestScore = res.revealed; best = list; }
+      if (res.solved) { solved = true; chosen = list; break; }
+    }
+    var mines = chosen || best || [];
+    var t1 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    return { ids: mines, mines: idsToPairs(mines, cols), solved: solved, attempts: attempts, ms: t1 - t0 };
+  }
+  function sizeFor(name) {
+    if (name === 'daily') return { rows: 16, cols: 16, mines: 40 };
+    return geometry(name === 'hard' || name === 'medium' || name === 'easy' ? name : 'easy');
+  }
+  function buildDailySpec(seed) {
+    var rows = 16;
+    var cols = 16;
+    var rng = mulberry32(seed >>> 0);
+    var r = Math.floor(rng() * rows);
+    var c = Math.floor(rng() * cols);
+    var gen = runGenerator(rows, cols, 40, r, c, rng, false, 200);
+    return { rows: rows, cols: cols, mines: 40, r: r, c: c, gen: gen, seed: seed >>> 0 };
+  }
+  function specForDate(dateKey) {
+    var key = String(dateKey || '');
+    var reseeds = 0;
+    var spec = buildDailySpec(hashString(key));
+    while (!spec.gen.solved && reseeds < 10000) {
+      reseeds += 1;
+      spec = buildDailySpec(hashString(key + '#' + reseeds));
+    }
+    return {
+      rows: spec.rows,
+      cols: spec.cols,
+      mineCount: spec.mines,
+      r: spec.r,
+      c: spec.c,
+      mines: spec.gen.mines,
+      solved: !!spec.gen.solved,
+      reseeds: reseeds,
+      seed: spec.seed
+    };
+  }
+
+  function currentElapsedMs() {
+    if (timerHandle && startTs) return performance.now() - startTs;
+    return elapsedMs;
+  }
+  function clearResume() {
+    try { localStorage.removeItem(RESUME_KEY); } catch (err) {}
+  }
+  function writeResume() {
+    if (gameOver || generating) return;
+    var any = minesReady;
+    var r, c;
+    if (!any) {
+      for (r = 0; r < cfg.rows; r++) for (c = 0; c < cfg.cols; c++) {
+        if (flagged[r][c] || revealed[r][c]) any = true;
+      }
+    }
+    if (!any) { clearResume(); return; }
+    var mines = [];
+    if (minesReady) {
+      for (r = 0; r < cfg.rows; r++) for (c = 0; c < cfg.cols; c++) if (grid[r][c] === -1) mines.push([r, c]);
+    }
+    var rev = [];
+    var flg = [];
+    for (r = 0; r < cfg.rows; r++) {
+      rev[r] = [];
+      flg[r] = [];
+      for (c = 0; c < cfg.cols; c++) {
+        rev[r][c] = revealed[r][c] ? 1 : 0;
+        flg[r][c] = flagged[r][c] ? 1 : 0;
+      }
+    }
+    storageSet(RESUME_KEY, JSON.stringify({
+      v: 1,
+      diff: diff,
+      rows: cfg.rows,
+      cols: cfg.cols,
+      mineCount: cfg.mines,
+      mines: mines,
+      minesReady: !!minesReady,
+      revealed: rev,
+      flagged: flg,
+      elapsedMs: currentElapsedMs(),
+      daily: diff === 'daily',
+      dateKey: dateKey,
+      practice: !!practice,
+      noGuess: !!noGuess,
+      seed: seedValue == null ? null : seedValue,
+      flagMode: !!flagMode,
+      started: !!started
+    }));
+  }
+  function loadResume() {
+    var raw = storageGet(RESUME_KEY);
+    if (!raw) return null;
+    try {
+      var data = JSON.parse(raw);
+      if (!data || data.v !== 1) return null;
+      var rows = data.rows | 0;
+      var cols = data.cols | 0;
+      if (rows < 5 || cols < 5 || rows > 40 || cols > 40) return null;
+      if (data.diff !== 'easy' && data.diff !== 'medium' && data.diff !== 'hard' && data.diff !== 'daily') return null;
+      if (!Array.isArray(data.revealed) || data.revealed.length !== rows) return null;
+      if (!Array.isArray(data.flagged) || data.flagged.length !== rows) return null;
+      var r, c;
+      for (r = 0; r < rows; r++) {
+        if (!Array.isArray(data.revealed[r]) || data.revealed[r].length !== cols) return null;
+        if (!Array.isArray(data.flagged[r]) || data.flagged[r].length !== cols) return null;
+      }
+      var mines = Array.isArray(data.mines) ? data.mines : [];
+      if (data.minesReady) {
+        if (!mines.length) return null;
+        for (var i = 0; i < mines.length; i++) {
+          if (!Array.isArray(mines[i]) || mines[i].length < 2) return null;
+          var mr = mines[i][0] | 0;
+          var mc = mines[i][1] | 0;
+          if (mr < 0 || mc < 0 || mr >= rows || mc >= cols) return null;
+        }
+      }
+      return data;
+    } catch (err) { return null; }
+  }
+  function paintBadge() {
+    var show = !!noGuess && !!minesReady;
+    var badge = document.getElementById('msBadge');
+    if (badge) badge.hidden = !show;
+    var btn = document.getElementById('noGuessBtn');
+    if (!btn) return;
+    var on = !!prefNoGuess;
+    btn.classList.toggle('is-on', on);
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    btn.disabled = diff === 'daily';
+  }
+  function noteEl() { return document.getElementById('msNote'); }
+  function showStatusNote(text, kind) {
+    var note = noteEl();
+    if (!note) return;
+    note.hidden = !text;
+    note.textContent = text || '';
+    note.dataset.kind = text ? (kind || '') : '';
+  }
+  function clearStatusNote(keepHint) {
+    var note = noteEl();
+    if (!note) return;
+    if (keepHint && note.dataset.kind === 'hint') return;
+    if (note.dataset.kind === 'hint') return;
+    showStatusNote('', '');
+  }
+  function maybeShowNgHint() {
+    if (!prefNoGuess) return;
+    if (storageGet(NG_HINT_KEY) === '1') return;
+    storageSet(NG_HINT_KEY, '1');
+    showStatusNote(NG_HINT, 'hint');
+  }
+  function dailyDoneRow() {
+    if (diff !== 'daily' || !dateKey) return null;
+    var stats = loadStats();
+    var row = stats.daily && stats.daily.done ? stats.daily.done[dateKey] : null;
+    if (!row || !row.scored) return null;
+    return row;
+  }
+  function dailyStatusText() {
+    var row = dailyDoneRow();
+    if (!row) return '';
+    if (row.won && isFinite(Number(row.time))) return 'Solved today in ' + formatBest(row.time);
+    return 'Played today, not solved';
+  }
+  function paintPracticeOverlay(line) {
+    document.getElementById('resTitle').textContent = 'Practice';
+    document.getElementById('resMsg').textContent = line || 'Practice';
+    document.getElementById('resBest').textContent = 'Practice. Not scored.';
+    document.getElementById('resBv').textContent = '';
+  }
+  function paintCountdown() {
+    var el = document.getElementById('dailyNext');
+    if (!el || diff !== 'daily') return;
+    var sec = Math.max(0, Math.ceil(msUntilNextDaily(new Date()) / 1000));
+    var h = Math.floor(sec / 3600);
+    var m = Math.floor((sec % 3600) / 60);
+    var s = sec % 60;
+    el.textContent = 'Next ' + h + ':' + pad2(m) + ':' + pad2(s);
+  }
+  function paintDailyBar() {
+    var bar = document.getElementById('dailyBar');
+    if (!bar) return;
+    if (diff !== 'daily') { bar.hidden = true; return; }
+    bar.hidden = false;
+    document.getElementById('dailyDate').textContent = dateKey || nyDateKey(new Date());
+    var stats = loadStats();
+    var row = stats.daily && stats.daily.done ? stats.daily.done[dateKey] : null;
+    var best = row && row.won && isFinite(Number(row.time)) ? Number(row.time) : null;
+    document.getElementById('dailyBest').textContent = best == null ? 'Best —' : ('Best ' + formatBest(best));
+    document.getElementById('dailyStreak').textContent = 'Streak ' + displayStreak(stats, nyDateKey(new Date()));
+    var state = document.getElementById('dailyState');
+    var replay = practice ? dailyStatusText() : '';
+    if (state) {
+      if (replay) {
+        state.hidden = false;
+        state.textContent = 'Practice · ' + replay;
+      } else {
+        state.hidden = true;
+        state.textContent = '';
+      }
+    }
+    bar.classList.toggle('is-replay', !!replay);
+    paintCountdown();
+  }
+  function applyMinePairs(pairs, mineCount) {
+    var r, c;
+    for (r = 0; r < cfg.rows; r++) for (c = 0; c < cfg.cols; c++) grid[r][c] = 0;
+    var n = 0;
+    (pairs || []).forEach(function (pair) {
+      var rr = pair[0], cc = pair[1];
+      if (!inb(rr, cc) || grid[rr][cc] === -1) return;
+      grid[rr][cc] = -1;
+      n++;
+    });
+    cfg.mines = mineCount || n;
+    writeNumbers();
+    minesReady = true;
+    paintMineCount();
+  }
+  function freshArrays(rows, cols) {
+    cfg = { rows: rows, cols: cols, mines: cfg.mines };
+    grid = Array.from({ length: rows }, function () { return Array(cols).fill(0); });
+    revealed = Array.from({ length: rows }, function () { return Array(cols).fill(false); });
+    flagged = Array.from({ length: rows }, function () { return Array(cols).fill(false); });
+  }
+  function blankMatch() {
+    minesReady = false;
+    started = false;
+    gameOver = false;
+    won = false;
+    lost = false;
+    hit = null;
+    recorded = false;
+    elapsedMs = 0;
+    startTs = 0;
+    clearInterval(timerHandle);
+    timerHandle = 0;
+    hiddenPause = false;
+    clearGesture();
+    resultEl.hidden = true;
+    frameEl.classList.remove('is-win', 'is-shake');
+    particles = [];
+  }
+  function paintDiffs() {
+    document.querySelectorAll('.ms-diff').forEach(function (btn) {
+      var name = btn.getAttribute('data-diff');
+      if (!name) return;
+      btn.classList.toggle('is-on', name === diff);
+    });
+  }
+
   function setMineList(pairs) {
     for (var r = 0; r < cfg.rows; r++) for (var c = 0; c < cfg.cols; c++) grid[r][c] = 0;
     var n = 0;
@@ -1429,7 +2211,9 @@
     renderTimer();
   }
   function ensureStarted() {
-    if (!started) {
+    if (gameOver || generating) return;
+    if (!minesReady) return;
+    if (!timerHandle) {
       started = true;
       armTimer();
     }
@@ -1441,13 +2225,9 @@
     el.style.setProperty('--d', String(Math.max(Math.abs(r - originR), Math.abs(c - originC))));
     el.classList.add('is-rip');
   }
-  function openAt(r, c, deferWin) {
+  function openReveal(r, c, deferWin, skipStart) {
     if (gameOver || !inb(r, c) || revealed[r][c] || flagged[r][c]) return false;
-    if (!minesReady) {
-      placeMines(r, c);
-      minesReady = true;
-    }
-    ensureStarted();
+    if (!skipStart) ensureStarted();
     if (grid[r][c] === -1) {
       lose(r, c);
       return true;
@@ -1475,18 +2255,94 @@
       markRipple(pair[0], pair[1], r, c);
       maxD = Math.max(maxD, Math.max(Math.abs(pair[0] - r), Math.abs(pair[1] - c)));
     });
-    sfxFlood(grid[r][c], maxD);
+    if (!skipStart) sfxFlood(grid[r][c], maxD);
     if (!deferWin) checkWin();
+    if (!gameOver && minesReady) writeResume();
     return false;
   }
+  function beginNoGuess(sr, sc, deferWin) {
+    if (generating) return;
+    var token = ++genToken;
+    generating = true;
+    liveEl.textContent = CHARTING;
+    showStatusNote(CHARTING, 'chart');
+    var rows = cfg.rows;
+    var cols = cfg.cols;
+    var mineCount = cfg.mines;
+    var rng = Math.random;
+    var attempts = 0;
+    var best = null;
+    var bestScore = -1;
+    var chosen = null;
+    var solved = false;
+    var t0 = performance.now();
+    var capAttempts = genLimits.maxAttempts > 0 ? genLimits.maxAttempts : 5000;
+    var capMs = isFinite(genLimits.maxMs) ? genLimits.maxMs : 3000;
+    function finish(list, didSolve) {
+      if (token !== genToken) return;
+      generating = false;
+      seedValue = null;
+      noGuess = !!didSolve;
+      applyMinePairs(idsToPairs(list || [], cols), mineCount);
+      paintBadge();
+      openReveal(sr, sc, deferWin, false);
+      if (didSolve) {
+        if (liveEl.textContent === CHARTING) liveEl.textContent = '';
+        if (noteEl() && noteEl().dataset.kind === 'chart') clearStatusNote(false);
+      } else {
+        noGuess = false;
+        paintBadge();
+        liveEl.textContent = HONEST;
+        showStatusNote(HONEST, 'honest');
+      }
+    }
+    function pump() {
+      if (token !== genToken) return;
+      var slice = performance.now() + 12;
+      while (attempts < capAttempts && (performance.now() - t0) < capMs) {
+        attempts++;
+        var list = placeMineIds(rows, cols, mineCount, sr, sc, rng);
+        var res = solveLayout(rows, cols, list, sr, sc);
+        if (genLimits.forceUnsolved) res = { solved: false, revealed: res.revealed };
+        if (res.revealed > bestScore) { bestScore = res.revealed; best = list; }
+        if (res.solved) { solved = true; chosen = list; break; }
+        if (performance.now() > slice) {
+          if (liveEl.textContent !== CHARTING) liveEl.textContent = CHARTING;
+          if (!noteEl() || noteEl().dataset.kind !== 'chart') showStatusNote(CHARTING, 'chart');
+          genTimer = setTimeout(pump, 0);
+          return;
+        }
+      }
+      finish(solved ? chosen : (best || []), solved);
+    }
+    pump();
+  }
+  function openAt(r, c, deferWin) {
+    if (gameOver || generating || !inb(r, c) || revealed[r][c] || flagged[r][c]) return false;
+    if (!minesReady) {
+      if (prefNoGuess || diff === 'daily') {
+        beginNoGuess(r, c, deferWin);
+        return true;
+      }
+      placeMines(r, c);
+      minesReady = true;
+      seedValue = null;
+      noGuess = false;
+      paintBadge();
+    }
+    return openReveal(r, c, deferWin, false);
+  }
   function flagAt(r, c) {
-    if (gameOver || !inb(r, c) || revealed[r][c]) return;
+    if (gameOver || !inb(r, c)) return;
+    if (minesReady) ensureStarted();
+    if (revealed[r][c]) return;
     flagged[r][c] = !flagged[r][c];
     paintMineCount();
     renderCell(r, c);
     if (flagged[r][c] && motionOk()) cells[r][c].classList.add('is-plant');
     sfxFlag();
     buzz(14);
+    if (!gameOver) writeResume();
   }
   function neighborFlags(r, c) {
     var n = 0;
@@ -1509,7 +2365,8 @@
     setTimeout(function () { el.classList.remove('is-shake'); }, 800);
   }
   function chordAt(r, c) {
-    if (gameOver || !inb(r, c) || !revealed[r][c] || grid[r][c] <= 0) return;
+    if (gameOver || generating || !inb(r, c) || !revealed[r][c] || grid[r][c] <= 0) return;
+    if (minesReady) ensureStarted();
     if (neighborFlags(r, c) !== grid[r][c]) {
       shakeCell(r, c);
       sfxNope();
@@ -1532,7 +2389,8 @@
     openList.forEach(function (pair) { openAt(pair[0], pair[1], false); });
   }
   function digAt(r, c) {
-    if (!inb(r, c) || gameOver) return;
+    if (!inb(r, c) || gameOver || generating) return;
+    if (minesReady) ensureStarted();
     if (revealed[r][c]) {
       if (grid[r][c] > 0) chordAt(r, c);
       return;
@@ -1540,20 +2398,22 @@
     if (flagged[r][c]) return;
     openAt(r, c, false);
   }
-  function modeAction(r, c) {
+  function modeAction(r, c, useFlag) {
     if (revealed[r][c] && grid[r][c] > 0) {
       chordAt(r, c);
       return;
     }
-    if (flagMode) flagAt(r, c);
+    var flag = useFlag == null ? flagMode : !!useFlag;
+    if (flag) flagAt(r, c);
     else digAt(r, c);
   }
-  function oppositeAction(r, c) {
+  function oppositeAction(r, c, useFlag) {
     if (revealed[r][c] && grid[r][c] > 0) {
       chordAt(r, c);
       return;
     }
-    if (flagMode) digAt(r, c);
+    var flag = useFlag == null ? flagMode : !!useFlag;
+    if (flag) digAt(r, c);
     else flagAt(r, c);
   }
 
@@ -1582,12 +2442,51 @@
     return openings + isolated;
   }
 
+  function recordDaily(didWin, seconds) {
+    if (practice) return false;
+    var stats = loadStats();
+    var row = stats.daily || emptyDaily();
+    if (!row.done || typeof row.done !== 'object') row.done = {};
+    if (row.done[dateKey] && row.done[dateKey].scored) {
+      practice = true;
+      return false;
+    }
+    var isNew = false;
+    row.played += 1;
+    if (didWin) {
+      row.won += 1;
+      var prevKey = prevDateKey(dateKey);
+      row.streak = row.lastWin === prevKey ? (row.streak + 1) : 1;
+      row.bestStreak = Math.max(row.bestStreak || 0, row.streak);
+      row.lastWin = dateKey;
+      var prevBest = row.done[dateKey] && row.done[dateKey].won ? Number(row.done[dateKey].time) : null;
+      isNew = prevBest == null || seconds < prevBest;
+      row.done[dateKey] = { won: true, scored: true, time: seconds };
+      if (row.best == null || seconds < row.best) row.best = seconds;
+      row.times = (row.times || []).concat([seconds]).sort(function (a, b) { return a - b; }).slice(0, 5);
+    } else {
+      row.streak = 0;
+      row.done[dateKey] = { won: false, scored: true, time: seconds };
+    }
+    stats.daily = row;
+    saveStats(stats);
+    paintBest();
+    paintDailyBar();
+    return isNew;
+  }
   function recordResult(didWin) {
     if (recorded) return false;
     recorded = true;
+    clearResume();
     var seconds = elapsedSeconds();
+    if (diff === 'daily') return recordDaily(didWin, seconds);
     var stats = loadStats();
     var row = stats[diff] || emptyStats();
+    if (!row.noguess) row.noguess = emptySplit();
+    if (!row.classic) row.classic = emptySplit();
+    var bucket = noGuess ? row.noguess : row.classic;
+    bucket.played += 1;
+    if (didWin) bucket.won += 1;
     var prev = row.best;
     if (prev == null) {
       var prevRaw = storageGet('ms_best_' + diff);
@@ -1615,18 +2514,39 @@
     paintBest();
     return isNew;
   }
+  function sharePayload() {
+    if (diff === 'daily') {
+      var clock = formatClock(elapsedSeconds());
+      var mark = won ? '🟩 solved' : '🟥 unsolved';
+      return 'Cosmic Minesweeper Daily ' + (dateKey || nyDateKey(new Date())) + ' · ' + clock + ' · ' + mark + ' · cosmicgameshub.com/games/minesweeper';
+    }
+    return won
+      ? ('Cosmic Minesweeper — Cleared ' + diff + ' in ' + formatSec(elapsedSeconds()) + (lastBv ? (' (3BV ' + lastBv + ')') : '') + '\nhttps://www.cosmicgameshub.com/games/minesweeper')
+      : ('Cosmic Minesweeper — Hit a meteor on ' + diff + '.\nhttps://www.cosmicgameshub.com/games/minesweeper');
+  }
   function showResult(didWin, isNew) {
     var seconds = elapsedSeconds();
-    var best = readBest(diff);
-    document.getElementById('resTitle').textContent = didWin ? 'Field cleared' : 'Meteor strike';
+    var best = diff === 'daily' ? null : readBest(diff);
+    var label = diff === 'daily' ? 'daily' : diff;
+    var replayLine = diff === 'daily' ? dailyStatusText() : '';
+    document.getElementById('resTitle').textContent = (diff === 'daily' && practice) ? 'Practice' : (didWin ? 'Field cleared' : 'Meteor strike');
+    var practiceNote = diff === 'daily' && practice ? 'Practice. ' : '';
     document.getElementById('resMsg').textContent = didWin
-      ? ('Cleared in ' + formatSec(seconds) + ' on ' + diff + '.')
-      : ('You hit a meteor on ' + diff + '.');
+      ? (practiceNote + 'Cleared in ' + (diff === 'daily' ? formatClock(seconds) : formatSec(seconds)) + ' on ' + label + '.')
+      : (practiceNote + 'You hit a meteor on ' + label + '.');
     var bestEl = document.getElementById('resBest');
-    if (didWin) {
-      bestEl.textContent = isNew ? ('New best for ' + diff + ': ' + formatSec(seconds)) : ('Best for ' + diff + ': ' + formatSec(best == null ? seconds : best));
+    if (diff === 'daily') {
+      var stats = loadStats();
+      var streak = displayStreak(stats, nyDateKey(new Date()));
+      if (practice) {
+        document.getElementById('resMsg').textContent = replayLine || 'Practice';
+        bestEl.textContent = 'Practice run. Not scored. Streak ' + streak + '.';
+      } else if (didWin) bestEl.textContent = (isNew ? 'New daily best. ' : '') + 'Streak ' + streak + '.';
+      else bestEl.textContent = 'Streak ' + streak + '.';
+    } else if (didWin) {
+      bestEl.textContent = isNew ? ('New best for ' + diff + ': ' + formatBest(seconds)) : ('Best for ' + diff + ': ' + formatBest(best == null ? seconds : best));
     } else if (best != null) {
-      bestEl.textContent = 'Best for ' + diff + ': ' + formatSec(best);
+      bestEl.textContent = 'Best for ' + diff + ': ' + formatBest(best);
     } else bestEl.textContent = '';
     var bvEl = document.getElementById('resBv');
     if (didWin) {
@@ -1649,6 +2569,7 @@
     won = true;
     lost = false;
     stopTimer();
+    clearResume();
     for (var r = 0; r < cfg.rows; r++) for (var c = 0; c < cfg.cols; c++) {
       if (grid[r][c] === -1) flagged[r][c] = true;
     }
@@ -1689,6 +2610,7 @@
     hit = { r: r, c: c };
     revealed[r][c] = true;
     stopTimer();
+    clearResume();
     for (var i = 0; i < cfg.rows; i++) for (var j = 0; j < cfg.cols; j++) {
       if (grid[i][j] === -1 && !flagged[i][j]) revealed[i][j] = true;
     }
@@ -1786,21 +2708,42 @@
     var pressed = document.querySelectorAll('.ms-cell.is-pressed');
     for (var i = 0; i < pressed.length; i++) pressed[i].classList.remove('is-pressed');
   }
+  function fireLong(rec) {
+    if (!rec || press !== rec || rec.moved || rec.longFired || rec.done) return;
+    rec.longFired = true;
+    rec.done = true;
+    var r = rec.r;
+    var c = rec.c;
+    var useFlag = rec.useFlag;
+    clearGesture();
+    if (revealed[r][c] && grid[r][c] > 0) chordAt(r, c);
+    else oppositeAction(r, c, useFlag);
+    focusCell(r, c, false);
+    noteTouch();
+  }
   function endPress(act) {
     if (!press) return;
     var rec = press;
+    if (act && rec.pointerType !== 'mouse' && !rec.moved && !rec.longFired && !rec.done && rec.downAt && (performance.now() - rec.downAt) >= LONG_MS) {
+      fireLong(rec);
+      return;
+    }
     var actNow = !!(act && !rec.moved && !rec.longFired && !rec.done);
     var chord = rec.chord;
     var r = rec.r;
     var c = rec.c;
+    var useFlag = rec.useFlag;
     clearGesture();
     if (!actNow) return;
     if (chord) chordAt(r, c);
-    else modeAction(r, c);
+    else modeAction(r, c, useFlag);
     focusCell(r, c, false);
   }
   function onPointerUp(e) {
-    if (e.pointerType && e.pointerType !== 'mouse') noteTouch();
+    if (e.pointerType && e.pointerType !== 'mouse') {
+      noteTouch();
+      touchDown = 0;
+    }
     if (!press || e.pointerId !== press.pointerId) return;
     if (e.pointerType && press.pointerType && e.pointerType !== press.pointerType) return;
     if (press.pointerType === 'mouse' && press.chord && (e.buttons & 1) && e.button !== 0) return;
@@ -1812,11 +2755,11 @@
   }
 
   gridEl.addEventListener('pointerdown', function (e) {
-    unlockAudio();
     if (e.pointerType === 'mouse' && performance.now() < mouseMuteUntil) {
       if (e.cancelable) e.preventDefault();
       return;
     }
+    if (!e.pointerType || e.pointerType === 'mouse') unlockAudio();
     if (press && (press.pointerId !== e.pointerId || press.longFired || press.done)) clearGesture();
     var cell = cellFromEvent(e);
     if (e.pointerType === 'mouse') {
@@ -1834,14 +2777,14 @@
         e.preventDefault();
         if (!cell) return;
         if (press) clearGesture();
-        press = { pointerId: e.pointerId, pointerType: 'mouse', r: cell.r, c: cell.c, chord: true, longFired: false, done: false, moved: false, timer: 0, cleanup: 0 };
+        press = { pointerId: e.pointerId, pointerType: 'mouse', r: cell.r, c: cell.c, chord: true, longFired: false, done: false, moved: false, timer: 0, cleanup: 0, useFlag: !!flagMode, downAt: performance.now() };
         showPreview(cell.r, cell.c);
         setFaceDown(true);
         return;
       }
       if (e.button !== 0 || !cell) return;
       if (press && press.pointerId === e.pointerId && !press.done && !press.longFired) return;
-      press = { pointerId: e.pointerId, pointerType: 'mouse', r: cell.r, c: cell.c, chord: false, longFired: false, done: false, moved: false, timer: 0, cleanup: 0 };
+      press = { pointerId: e.pointerId, pointerType: 'mouse', r: cell.r, c: cell.c, chord: false, longFired: false, done: false, moved: false, timer: 0, cleanup: 0, useFlag: !!flagMode, downAt: performance.now() };
       if (revealed[cell.r][cell.c] && grid[cell.r][cell.c] > 0) showPreview(cell.r, cell.c);
       else cells[cell.r][cell.c].classList.add('is-pressed');
       setFaceDown(true);
@@ -1851,6 +2794,7 @@
     if (press && press.pointerId === e.pointerId && !press.done && !press.longFired) return;
     if (press) clearGesture();
     if (e.cancelable) e.preventDefault();
+    touchDown = Math.max(touchDown, 1);
     noteTouch();
     var rec = {
       pointerId: e.pointerId,
@@ -1864,34 +2808,17 @@
       moved: false,
       chord: false,
       timer: 0,
-      cleanup: 0
+      cleanup: 0,
+      downAt: performance.now(),
+      useFlag: !!flagMode
     };
     press = rec;
+    rec.timer = setTimeout(function () { fireLong(rec); }, LONG_MS);
     try { gridEl.setPointerCapture(e.pointerId); } catch (err) {}
     if (revealed[cell.r][cell.c] && grid[cell.r][cell.c] > 0) showPreview(cell.r, cell.c);
     else showHold(cell.el);
-    rec.timer = setTimeout(function () {
-      if (press !== rec) return;
-      rec.longFired = true;
-      rec.done = true;
-      hideHold();
-      clearPreview();
-      oppositeAction(rec.r, rec.c);
-      focusCell(rec.r, rec.c, false);
-      releaseCapture(rec.pointerId);
-      setFaceDown(false);
-      var nodes = document.querySelectorAll('.ms-cell.is-pressed');
-      for (var n = 0; n < nodes.length; n++) nodes[n].classList.remove('is-pressed');
-      noteTouch();
-      clearTimeout(rec.cleanup);
-      rec.cleanup = setTimeout(function () {
-        if (press === rec) {
-          noteTouch();
-          clearGesture();
-        }
-      }, 48);
-    }, LONG_MS);
     setFaceDown(true);
+    unlockAudio();
   });
   gridEl.addEventListener('pointermove', function (e) {
     if (!press || e.pointerId !== press.pointerId || press.pointerType === 'mouse') return;
@@ -1907,16 +2834,31 @@
   });
   gridEl.addEventListener('pointerup', onPointerUp);
   window.addEventListener('pointerup', onPointerUp);
-  gridEl.addEventListener('pointercancel', function (e) {
+  function onPointerCancel(e) {
     if (!press || e.pointerId !== press.pointerId) return;
+    if (press.pointerType !== 'mouse' && touchDown > 0) return;
     if (press.pointerType !== 'mouse') noteTouch();
     endPress(false);
-  });
-  window.addEventListener('pointercancel', function (e) {
-    if (!press || e.pointerId !== press.pointerId) return;
-    if (press.pointerType !== 'mouse') noteTouch();
-    endPress(false);
-  });
+  }
+  gridEl.addEventListener('pointercancel', onPointerCancel);
+  window.addEventListener('pointercancel', onPointerCancel);
+  gridEl.addEventListener('touchstart', function (e) {
+    touchDown = e.touches ? e.touches.length : 1;
+    if (e.cancelable) e.preventDefault();
+  }, { passive: false });
+  gridEl.addEventListener('touchend', function (e) {
+    touchDown = e.touches ? e.touches.length : 0;
+    if (touchDown > 0) return;
+    if (!press || press.pointerType === 'mouse' || press.longFired || press.done) return;
+    endPress(true);
+  }, { passive: false });
+  gridEl.addEventListener('touchcancel', function (e) {
+    touchDown = e.touches ? e.touches.length : 0;
+    if (touchDown > 0) return;
+    if (!press || press.pointerType === 'mouse') return;
+    if (!press.moved && !press.longFired && !press.done && press.downAt && (performance.now() - press.downAt) >= LONG_MS) fireLong(press);
+    else endPress(false);
+  }, { passive: false });
   function eatPointerFollowup(e) {
     if (e.cancelable) e.preventDefault();
     e.stopPropagation();
@@ -1929,12 +2871,29 @@
     var active = document.activeElement;
     if (active && active !== document.body && active !== document.documentElement) focusReturn = active;
   }
+  function focusNoScroll(el) {
+    if (!el || typeof el.focus !== 'function') return;
+    var x = window.scrollX;
+    var y = window.scrollY;
+    try { el.focus({ preventScroll: true }); }
+    catch (err) {
+      try { el.focus(); } catch (err2) {}
+    }
+    if (window.scrollX !== x || window.scrollY !== y) window.scrollTo(x, y);
+  }
+  function pinScroll(x, y) {
+    function restore() {
+      if (window.scrollX !== x || window.scrollY !== y) window.scrollTo(x, y);
+    }
+    restore();
+    requestAnimationFrame(restore);
+    setTimeout(restore, 0);
+    setTimeout(restore, 60);
+  }
   function restoreFocus() {
     var back = focusReturn;
     focusReturn = null;
-    if (back && typeof back.focus === 'function' && document.contains(back)) {
-      try { back.focus({ preventScroll: true }); } catch (err) {}
-    }
+    if (back && typeof back.focus === 'function' && document.contains(back)) focusNoScroll(back);
   }
   function sheetOpen(el) { return !!(el && !el.hidden); }
   function closeSheet(el) {
@@ -1943,11 +2902,15 @@
     restoreFocus();
   }
   function openConfirm() {
+    var x = window.scrollX;
+    var y = window.scrollY;
     var sheet = document.getElementById('msConfirm');
     rememberFocus();
     sheet.hidden = false;
+    void sheet.offsetWidth;
     var stay = document.getElementById('confirmStay');
-    try { (stay || sheet).focus({ preventScroll: true }); } catch (err) {}
+    focusNoScroll(stay || sheet);
+    pinScroll(x, y);
   }
   function requestNew(next) {
     if (inProgress()) {
@@ -1980,8 +2943,24 @@
     document.getElementById('modeFlag').setAttribute('aria-pressed', flagMode ? 'true' : 'false');
     frameEl.classList.toggle('is-flagmode', flagMode);
   }
-  document.getElementById('modeDig').addEventListener('click', function () { setFlagMode(false); });
-  document.getElementById('modeFlag').addEventListener('click', function () { setFlagMode(true); });
+  function bindMode(id, on) {
+    var el = document.getElementById(id);
+    el.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      setFlagMode(on);
+    });
+    el.addEventListener('click', function () { setFlagMode(on); });
+  }
+  bindMode('modeDig', false);
+  bindMode('modeFlag', true);
+  document.getElementById('noGuessBtn').addEventListener('click', function () {
+    if (diff === 'daily') return;
+    prefNoGuess = !prefNoGuess;
+    storageSet('ms_noguess', prefNoGuess ? '1' : '0');
+    if (!minesReady && !gameOver) noGuess = false;
+    paintBadge();
+    if (prefNoGuess) maybeShowNgHint();
+  });
 
   function openStats() {
     var stats = loadStats();
@@ -1990,25 +2969,42 @@
     names.forEach(function (name) {
       var row = stats[name];
       var pct = row.played ? Math.round((row.won / row.played) * 1000) / 10 : 0;
-      html += '<tr><td>' + name + '</td><td>' + row.played + '</td><td>' + row.won + '</td><td>' + pct + '%</td><td>' + row.streak + '</td><td>' + row.bestStreak + '</td><td>' + formatSec(row.best) + '</td></tr>';
+      html += '<tr><td>' + name + '</td><td>' + row.played + '</td><td>' + row.won + '</td><td>' + pct + '%</td><td>' + row.streak + '</td><td>' + row.bestStreak + '</td><td>' + formatBest(row.best) + '</td></tr>';
     });
     html += '</tbody></table>';
+    html += '<p class="ms-split">No-guess ';
+    names.forEach(function (name, idx) {
+      var ng = stats[name].noguess || emptySplit();
+      html += (idx ? ' · ' : '') + name[0].toUpperCase() + ' ' + ng.won + '/' + ng.played;
+    });
+    html += '<br>Classic ';
+    names.forEach(function (name, idx) {
+      var cl = stats[name].classic || emptySplit();
+      html += (idx ? ' · ' : '') + name[0].toUpperCase() + ' ' + cl.won + '/' + cl.played;
+    });
+    var dailyRow = stats.daily || emptyDaily();
+    html += '<br>Daily streak ' + (dailyRow.streak || 0) + ' · won ' + (dailyRow.won || 0) + '/' + (dailyRow.played || 0);
+    html += '</p>';
     names.forEach(function (name) {
       var times = stats[name].times || [];
       html += '<h3 style="margin:0.8rem 0 0.2rem;color:#f2d48a;font-size:0.78rem;letter-spacing:0.08em;text-transform:uppercase;">' + name + ' top times</h3>';
       if (!times.length) html += '<p>No finishes yet.</p>';
       else {
         html += '<ol class="ms-top">';
-        times.forEach(function (t, i) { html += '<li><span>' + (i + 1) + '</span><span>' + formatSec(t) + '</span></li>'; });
+        times.forEach(function (t, i) { html += '<li><span>' + (i + 1) + '</span><span>' + formatBest(t) + '</span></li>'; });
         html += '</ol>';
       }
     });
     document.getElementById('statsBody').innerHTML = html;
+    var x = window.scrollX;
+    var y = window.scrollY;
     var sheet = document.getElementById('msStats');
     rememberFocus();
     sheet.hidden = false;
+    void sheet.offsetWidth;
     var closeBtn = document.getElementById('statsClose');
-    try { (closeBtn || sheet).focus({ preventScroll: true }); } catch (err) {}
+    focusNoScroll(closeBtn || sheet);
+    pinScroll(x, y);
   }
   document.getElementById('statsBtn').addEventListener('click', openStats);
   document.getElementById('bestBtn').addEventListener('click', openStats);
@@ -2025,14 +3021,21 @@
   }, { passive: false });
 
   document.getElementById('shareBtn').addEventListener('click', function () {
-    var didWin = won;
-    var text = didWin
-      ? ('Cosmic Minesweeper — Cleared ' + diff + ' in ' + formatSec(elapsedSeconds()) + (lastBv ? (' (3BV ' + lastBv + ')') : '') + '\nhttps://www.cosmicgameshub.com/games/minesweeper')
-      : ('Cosmic Minesweeper — Hit a meteor on ' + diff + '.\nhttps://www.cosmicgameshub.com/games/minesweeper');
+    var text = sharePayload();
     var btn = document.getElementById('shareBtn');
+    btn.dataset.share = text;
     function copied() {
       btn.textContent = 'Copied';
       setTimeout(function () { btn.textContent = 'Share'; }, 1600);
+    }
+    var narrow = false;
+    try { narrow = window.matchMedia('(max-width: 540px)').matches; } catch (err) {}
+    if (narrow && navigator.share) {
+      navigator.share({ text: text }).then(function () { btn.textContent = 'Shared'; setTimeout(function () { btn.textContent = 'Share'; }, 1600); }).catch(function () {
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(copied).catch(copied);
+        else copied();
+      });
+      return;
     }
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text).then(copied).catch(function () { copied(); });
@@ -2107,13 +3110,30 @@
 
   window.addEventListener('load', function () { fitBoard(); });
   window.addEventListener('resize', function () {
-    var next = geometry(diff);
-    if (!started && flagCount() === 0 && !gameOver && (next.rows !== cfg.rows || next.cols !== cfg.cols)) {
-      resetBoard(diff);
-      return;
+    if (diff !== 'daily' && !minesReady && flagCount() === 0 && !gameOver && !generating) {
+      var next = geometry(diff);
+      if (next.rows !== cfg.rows || next.cols !== cfg.cols) {
+        resetBoard(diff);
+        return;
+      }
     }
     fitBoard();
   });
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) {
+      if (timerHandle) {
+        stopTimer();
+        hiddenPause = true;
+      }
+      if (!gameOver && !generating) writeResume();
+      return;
+    }
+    if (hiddenPause) {
+      hiddenPause = false;
+      if (!gameOver && started && minesReady) armTimer();
+    }
+  });
+  setInterval(paintCountdown, 1000);
 
   (function () {
     var hamburger = document.getElementById('hamburger');
@@ -2148,7 +3168,12 @@
       hit: hit ? { r: hit.r, c: hit.c } : null,
       shakes: shakes,
       reduced: !motionOk(),
-      bv: lastBv
+      bv: lastBv,
+      daily: diff === 'daily',
+      noGuess: !!noGuess,
+      practice: !!practice,
+      dateKey: dateKey,
+      seed: seedValue == null ? null : seedValue
     };
   }
 
@@ -2164,17 +3189,73 @@
           timerHandle = 0;
           elapsedMs = Math.round(Number(seconds) * 1000);
           startTs = 0;
+          hiddenPause = false;
           renderTimer();
+          if (!gameOver && (minesReady || flagCount() > 0)) writeResume();
         },
         cellSize: function () { return cellSize; },
-        config: function () { return { diff: diff, rows: cfg.rows, cols: cfg.cols, mines: cfg.mines, cellSize: cellSize }; }
+        config: function () { return { diff: diff, rows: cfg.rows, cols: cfg.cols, mines: cfg.mines, cellSize: cellSize }; },
+        generate: function (name, r, c, seed) {
+          var spec = sizeFor(name);
+          var sr = r | 0;
+          var sc = c | 0;
+          var useSeed = seed == null || seed === '' ? null : (typeof seed === 'number' ? (seed >>> 0) : hashString(String(seed)));
+          var rng = useSeed == null ? Math.random : mulberry32(useSeed);
+          var timed = useSeed == null;
+          var gen = runGenerator(spec.rows, spec.cols, spec.mines, sr, sc, rng, timed, 200);
+          return { mines: gen.mines, solved: !!gen.solved, attempts: gen.attempts, ms: gen.ms };
+        },
+        solve: function (rows, cols, mines, r, c) {
+          var ids = [];
+          (mines || []).forEach(function (pair) {
+            if (!pair) return;
+            ids.push((pair[0] | 0) * cols + (pair[1] | 0));
+          });
+          return solveLayout(rows | 0, cols | 0, ids, r | 0, c | 0).solved;
+        },
+        setGenLimits: function (opts) {
+          opts = opts || {};
+          if (opts.firstAttempts != null) genLimits.firstAttempts = Math.max(1, opts.firstAttempts | 0);
+          if (opts.firstMs != null) genLimits.firstMs = Math.max(0, Number(opts.firstMs) || 0);
+          if (opts.maxAttempts != null) genLimits.maxAttempts = Math.max(1, opts.maxAttempts | 0);
+          if (opts.maxMs != null) genLimits.maxMs = Math.max(0, Number(opts.maxMs) || 0);
+          if (opts.forceUnsolved != null) genLimits.forceUnsolved = !!opts.forceUnsolved;
+          return {
+            firstAttempts: genLimits.firstAttempts,
+            firstMs: genLimits.firstMs,
+            maxAttempts: genLimits.maxAttempts,
+            maxMs: genLimits.maxMs,
+            forceUnsolved: genLimits.forceUnsolved
+          };
+        },
+        dailySpec: function (dateKey) {
+          var spec = specForDate(String(dateKey));
+          return { r: spec.r, c: spec.c, mines: spec.mines, solved: !!spec.solved, reseeds: spec.reseeds };
+        }
       };
     }
   } catch (err) {}
 
-  var initialDiff = storageGet('ms_diff');
-  if (!CONFIGS[initialDiff]) initialDiff = 'easy';
-  resetBoard(initialDiff);
+  prefNoGuess = storageGet('ms_noguess') !== '0';
+  noGuess = false;
+  paintBadge();
+  maybeShowNgHint();
+  var resumed = null;
+  try { resumed = loadResume(); } catch (err) { resumed = null; }
+  if (resumed) {
+    try { restoreResume(resumed); }
+    catch (err) {
+      clearResume();
+      var fallback = storageGet('ms_diff');
+      if (!CONFIGS[fallback] && fallback !== 'daily') fallback = 'easy';
+      resetBoard(fallback || 'easy');
+    }
+  } else {
+    if (storageGet(RESUME_KEY)) clearResume();
+    var initialDiff = storageGet('ms_diff');
+    if (!CONFIGS[initialDiff] && initialDiff !== 'daily') initialDiff = 'easy';
+    resetBoard(initialDiff || 'easy');
+  }
 })();
 </script>
 <script src="/global.js" defer></script>
