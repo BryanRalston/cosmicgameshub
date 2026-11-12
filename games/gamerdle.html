@@ -485,8 +485,13 @@ const GAMES = [
 // DAILY PUZZLE SELECTION
 // ═══════════════════════════════════════════════════════════════════════════
 const today = new Date();
-const todayKey = `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
 const dayNum = Math.floor((Date.now() - Date.UTC(2026, 0, 1)) / 86400000);
+// Save key follows the puzzle (UTC day), not the local calendar date, so the
+// 7 PM ET rollover can't load yesterday's board onto today's puzzle.
+const todayKey = 'd' + dayNum;
+const yesterdayKey = 'd' + (dayNum - 1);
+// Pre-fix saves used local-date keys; only used to carry a streak across the switch.
+const localKey = d => `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
 /* Constructed queue, not a CSV shuffle.
    Repeating week: Nintendo / Souls-hard / FPS / RPG / live-service / indie / new-or-multiplayer.
    No two FromSoft, no two Nintendo, no two tactical-FPS adjacent. */
@@ -745,8 +750,10 @@ function submitGuess() {
     if (won) {
       // Update stats
       const yesterday = new Date(today); yesterday.setDate(yesterday.getDate()-1);
-      const yKey = `${yesterday.getFullYear()}-${yesterday.getMonth()+1}-${yesterday.getDate()}`;
-      stats.streak = stats.history[yKey]?.done ? stats.streak + 1 : 1;
+      const y = stats.history[yesterdayKey];
+      const wonYesterday = y ? !!y.won
+        : !!(stats.history[localKey(today)]?.won || stats.history[localKey(yesterday)]?.won);
+      stats.streak = wonYesterday ? stats.streak + 1 : 1;
       stats.solved++;
       document.getElementById('streakDisp').textContent = stats.streak;
       document.getElementById('solvedDisp').textContent = stats.solved;
