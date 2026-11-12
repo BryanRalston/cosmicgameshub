@@ -38,7 +38,7 @@
     .lk-group__t { font-size:0.78rem; font-weight:800; letter-spacing:0.08em; }
     .lk-group__w { font-size:0.78rem; margin-top:0.15rem; font-weight:600; }
     .lk-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
-    .lk-tile { position:relative; min-width:0; min-height:64px; border:none; border-radius:10px; background:#2a2a38; color:#fff; font:700 0.78rem/1.2 inherit; padding:0.4rem 0.3rem; cursor:pointer; text-transform:uppercase; letter-spacing:0.02em; }
+    .lk-tile { position:relative; min-width:0; min-height:64px; border:none; border-radius:10px; background:#2a2a38; color:#fff; font-weight:700; font-size:0.78rem; line-height:1.2; font-family:inherit; padding:0.4rem 0.3rem; cursor:pointer; text-transform:uppercase; letter-spacing:0.02em; }
     .lk-tile__l { display:block; width:100%; overflow-wrap:normal; word-break:normal; hyphens:manual; text-wrap:balance; }
     .lk-tile.sel { background:#6e6e80; outline:2px solid #fff; outline-offset:-2px; }
     .lk-tile.wrong { background:#5c1d2b; outline:2px dashed #ff8a8a; outline-offset:-2px; animation:lk-shake 0.32s ease-in-out 2; }
@@ -49,10 +49,10 @@
     .lk-outcome { margin:-0.2rem 0 0.4rem; font-size:0.85rem; color:var(--text-mid); }
     .lk-tile:disabled { cursor:default; opacity:0.45; }
     .lk-actions { display:flex; gap:0.45rem; margin-top:0.9rem; justify-content:center; flex-wrap:wrap; }
-    .lk-btn { min-height:44px; padding:0.5rem 1rem; border-radius:999px; border:1px solid var(--border); background:transparent; color:var(--text-hi); font:700 0.85rem inherit; cursor:pointer; }
+    .lk-btn { min-height:44px; padding:0.5rem 1rem; border-radius:999px; border:1px solid var(--border); background:transparent; color:var(--text-hi); font-weight:700; font-size:0.85rem; font-family:inherit; cursor:pointer; }
     .lk-btn.primary { background:var(--accent,#00d4ff); color:#06060a; border-color:transparent; }
     .lk-btn:disabled { opacity:0.4; cursor:default; }
-    .lk-toast { position:fixed; top:80px; left:50%; transform:translateX(-50%); background:#eee; color:#111; font-weight:800; font-size:0.8rem; padding:0.45rem 1rem; border-radius:8px; z-index:50; opacity:0; pointer-events:none; }
+    .lk-toast { position:fixed; top:80px; left:50%; transform:translateX(-50%); background:#eee; color:#111; font-weight:800; font-size:0.8rem; padding:0.45rem 1rem; border-radius:8px; z-index:210; opacity:0; pointer-events:none; }
     .lk-toast.show { opacity:1; }
     .lk-modal-bg { position:fixed; inset:0; background:rgba(0,0,0,0.75); display:flex; align-items:center; justify-content:center; z-index:200; opacity:0; pointer-events:none; }
     .lk-modal-bg.open { opacity:1; pointer-events:auto; }
@@ -268,7 +268,7 @@
   // natural seam ('|' = hyphen, '^' = silent break); anything else falls back
   // to per-letter soft hyphens rather than clipping.
   var SEAMS = {
-    TRUEACHIEVEMENTS: 'TRUE|ACHIEVE|MENTS', INTERPOLATION: 'INTER|POLA|TION', BATTLEGROUNDS: 'BATTLE|GROUNDS',
+    TRUEACHIEVEMENTS: ['TRUE|ACHIEVEMENTS', 'TRUE|ACHIEVE|MENTS'], INTERPOLATION: 'INTER|POLA|TION', BATTLEGROUNDS: 'BATTLE|GROUNDS',
     ROLLERCOASTER: 'ROLLER|COASTER', CONSTELLATION: 'CONSTEL|LATION', WAKEBOARDING: 'WAKE|BOARDING',
     VERIFICATION: 'VERIFI|CATION', BEYERDYNAMIC: 'BEYER|DYNAMIC', NEIGHBORHOOD: 'NEIGHBOR|HOOD',
     ACHIEVEMENTS: 'ACHIEVE|MENTS', 'SPEEDRUN.COM': 'SPEEDRUN^.COM', THUNDERSTORM: 'THUNDER|STORM',
@@ -278,19 +278,53 @@
     INVESTIGATE: 'INVESTI|GATE', SUPPLEMENTS: 'SUPPLE|MENTS', ASSASSINATE: 'ASSASSI|NATE', FIRECRACKER: 'FIRE|CRACKER',
     BYRGENWERTH: 'BYRGEN|WERTH', QUICKSILVER: 'QUICK|SILVER', MECHWARRIOR: 'MECH|WARRIOR', SATELLAVIEW: 'SATELLA|VIEW',
     CASTLEVANIA: 'CASTLE|VANIA', MUPEN64PLUS: 'MUPEN64|PLUS', PSNPROFILES: 'PSN|PROFILES', BLASPHEMOUS: 'BLASPHE|MOUS',
-    MULTIVERSUS: 'MULTI|VERSUS', HEARTHSTONE: 'HEARTH|STONE', INTERCHANGE: 'INTER|CHANGE'
+    MULTIVERSUS: 'MULTI|VERSUS', HEARTHSTONE: 'HEARTH|STONE', INTERCHANGE: 'INTER|CHANGE',
+    CHARMANDER: 'CHAR|MANDER', GREATSWORD: 'GREAT|SWORD', BLOODHOUND: 'BLOOD|HOUND', OTHERWORLD: 'OTHER|WORLD',
+    THUNDERJAW: 'THUNDER|JAW', CAMOUFLAGE: 'CAMOU|FLAGE', MOTORSPORT: 'MOTOR|SPORT', EARTHBOUND: 'EARTH|BOUND',
+    CHROMECAST: 'CHROME|CAST', GAMERSCORE: 'GAMER|SCORE', TOURNAMENT: 'TOURNA|MENT', COMMENTARY: 'COMMEN|TARY',
+    WONDERWING: 'WONDER|WING', BLOODBORNE: 'BLOOD|BORNE', JIGGLYPUFF: 'JIGGLY|PUFF', ZWEIHANDER: 'ZWEI|HANDER',
+    DISHONORED: 'DIS|HONORED', SUBNAUTICA: 'SUB|NAUTICA', REPUTATION: 'REPU|TATION', PROJECTILE: 'PROJEC|TILE',
+    ROUNDTABLE: 'ROUND|TABLE', LIGHTSPEED: 'LIGHT|SPEED', HYPERSPEED: 'HYPER|SPEED', INSURGENCY: 'INSUR|GENCY',
+    STRAWBERRY: 'STRAW|BERRY', PREDICTION: 'PREDIC|TION', PATHFINDER: 'PATH|FINDER', SMASHVILLE: 'SMASH|VILLE',
+    DOMINATION: 'DOMI|NATION', BOTTOMLESS: 'BOTTOM|LESS', TWINSANITY: 'TWIN|SANITY', INCINERATE: 'INCIN|ERATE',
+    HAMMERFELL: 'HAMMER|FELL', SHEOGORATH: 'SHEO|GORATH', KUSARIGAMA: 'KUSARI|GAMA', KIRKHAMMER: 'KIRK|HAMMER',
+    DARKWRAITH: 'DARK|WRAITH', DEFILEMENT: 'DEFILE|MENT', CONTROLLER: 'CONTROL|LER', SHINESPARK: 'SHINE|SPARK',
+    MOTIONPLUS: 'MOTION|PLUS', DODONPACHI: 'DODON|PACHI', ADRENALINE: 'ADREN|ALINE', SPEEDSOUVS: 'SPEED|SOUVS',
+    SUGGESTIVE: 'SUGGES|TIVE', ACTIVISION: 'ACTIVI|SION', UNDERLORDS: 'UNDER|LORDS', GRIFTLANDS: 'GRIFT|LANDS',
+    FLASHLIGHT: 'FLASH|LIGHT', TYPEWRITER: 'TYPE|WRITER', SUSPICIOUS: 'SUSPI|CIOUS', FRIENDSHIP: 'FRIEND|SHIP',
+    SPELLFORCE: 'SPELL|FORCE', VISUALIZER: 'VISUAL|IZER', COMBUSTION: 'COMBUS|TION', DEPARTMENT: 'DEPART|MENT',
+    GLITCHLESS: 'GLITCH|LESS', INVINCIBLE: 'INVIN|CIBLE', LANDMASTER: 'LAND|MASTER', MILLENNIUM: 'MILLEN|NIUM',
+    REEFSLIDER: 'REEF|SLIDER'
   };
-  function seamed(w, every) {
+  // Only words too wide for the tile on their own get break points, so short
+  // words always wrap whole. level 0: coarsest seam; 1: finest seam, or
+  // per-letter for an unseamed word; 2: per-letter (last resort, cannot overflow).
+  var measureCtx = null;
+  function wordFits(wd, lab) {
+    if (!measureCtx) measureCtx = document.createElement('canvas').getContext('2d');
+    var cs = getComputedStyle(lab);
+    measureCtx.font = cs.fontWeight + ' ' + cs.fontSize + ' ' + cs.fontFamily;
+    var w = measureCtx.measureText(wd.toUpperCase()).width + (parseFloat(cs.letterSpacing) || 0) * wd.length;
+    return w <= lab.clientWidth - 1;
+  }
+  function seamed(w, level, lab) {
     return w.split(' ').map(function (wd) {
-      if (SEAMS[wd]) return SEAMS[wd].replace(/\|/g, '\u00AD').replace(/\^/g, '\u200B');
-      return every && wd.length > 9 ? wd.split('').join('\u00AD') : wd;
+      if (wordFits(wd, lab)) return wd;
+      var v = SEAMS[wd];
+      if (v && level < 2) {
+        if (typeof v !== 'string') v = level === 0 ? v[0] : v[v.length - 1];
+        return v.replace(/\|/g, '\u00AD').replace(/\^/g, '\u200B');
+      }
+      return level > 0 ? wd.split('').join('\u00AD') : wd;
     }).join(' ');
   }
+  // Never sets a size below FIT_FLOOR (the last step clamps to the floor).
+  var FIT_FLOOR = 10.5;
   function shrink(lab, px) {
-    var floor = 9.5, size = px;
+    var size = px;
     lab.style.fontSize = '';
-    while (lab.scrollWidth > lab.clientWidth + 0.5 && size > floor) {
-      size -= 0.5;
+    while (lab.scrollWidth > lab.clientWidth + 0.5 && size > FIT_FLOOR) {
+      size = Math.max(FIT_FLOOR, size - 0.5);
       lab.style.fontSize = size + 'px';
     }
     return lab.scrollWidth <= lab.clientWidth + 0.5;
@@ -299,10 +333,10 @@
     var lab = b.firstChild;
     var px = parseFloat(getComputedStyle(b).fontSize) || 12;
     if (shrink(lab, px)) return;
-    lab.textContent = seamed(t.w, false);
-    if (shrink(lab, px)) return;
-    lab.textContent = seamed(t.w, true);
-    shrink(lab, px);
+    for (var lv = 0; lv < 3; lv++) {
+      lab.textContent = seamed(t.w, lv, lab);
+      if (shrink(lab, px)) return;
+    }
   }
   function fitAll() {
     var tiles = grid.querySelectorAll('.lk-tile');
@@ -468,7 +502,13 @@
   document.getElementById('lkShareBtn').addEventListener('click', function () {
     if (state.status === 'playing') return;
     var text = shareText();
-    var go = function () { toast('Copied + card'); };
+    // daily-kit's wrapper resolves {via:'native'|'cancel'|'copy', copied, card}.
+    var done = function (r) {
+      if (r && r.via === 'native') toast('Shared');
+      else if (r && r.via === 'cancel') return;
+      else if (r && r.via === 'copy') toast(r.copied ? (r.card ? 'Copied + card' : 'Copied') : (r.card ? 'Card saved · copy failed' : 'Share failed'));
+      else if (r && r.url) toast('Card saved');
+    };
     if (window.CGSfx && window.CGSfx.shareNow) {
       window.CGSfx.shareNow({
         title: 'Link',
@@ -478,8 +518,8 @@
         url: 'cosmicgameshub.com/games/link',
         filename: 'link-' + DAY,
         text: text
-      }).then(go).catch(go);
-    } else if (navigator.clipboard) navigator.clipboard.writeText(text).then(go);
+      }).then(done).catch(function () { toast('Share failed'); });
+    } else if (navigator.clipboard) navigator.clipboard.writeText(text).then(function () { toast('Copied'); }, function () { toast('Copy failed'); });
   });
   document.getElementById('lkCb').addEventListener('change', function () {
     var on = document.getElementById('lkCb').checked;
