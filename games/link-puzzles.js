@@ -811,7 +811,7 @@ window.LINK_PUZZLES = [
   ]},
   { groups: [
     { level: 0, title: 'SOULS-LIKE INDIES', words: ['BLASPHEMOUS', 'SALT AND SANCTUARY', 'ANOTHER CRAB\'S TREASURE', 'NINE SOLS'] },
-    { level: 1, title: 'METROIDVANIA INDIES', words: ['ORI', 'A HAT IN TIME', 'ANIMAL WELL', 'SUPER MEAT BOY'] },
+    { level: 1, title: 'METROIDVANIA INDIES', words: ['ORI', 'AXIOM VERGE', 'ANIMAL WELL', 'GUACAMELEE'] },
     { level: 2, title: 'CHARM / RELIC SLOTS', words: ['CHARM', 'NOTCH', 'RELIC', 'MUTATION'] },
     { level: 3, title: 'WORDS AFTER ANIMAL', words: ['CROSSING', 'WELL', 'FARM', 'HOUSE'] }
   ]},
