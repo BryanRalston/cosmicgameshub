@@ -46,7 +46,8 @@
     var map = {};
     try {
       var gs = safeJSON('gamerdle-stats') || {};
-      map.gamerdle = !!(gs.history && gs.history[ymd]);
+      var gd = gs.history && gs.history['d' + dayIndex2026()];
+      map.gamerdle = !!(gd && gd.done);
     } catch (e) { map.gamerdle = false; }
     try {
       var ts = safeJSON('trivia-stats') || {};

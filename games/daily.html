@@ -214,7 +214,8 @@
     return {
       gamerdle() {
         const s = safeJSON('gamerdle-stats') || { streak: 0, history: {} };
-        return { played: !!(s.history && s.history[yyyymmdd]), streak: s.streak || 0 };
+        const g = s.history && s.history['d' + dayIndex2026];
+        return { played: !!(g && g.done), streak: s.streak || 0 };
       },
       'gaming-trivia'() {
         const s = safeJSON('trivia-stats') || { streak: 0, history: {} };
