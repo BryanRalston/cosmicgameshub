@@ -38,8 +38,15 @@
     .lk-group__t { font-size:0.78rem; font-weight:800; letter-spacing:0.08em; }
     .lk-group__w { font-size:0.78rem; margin-top:0.15rem; font-weight:600; }
     .lk-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
-    .lk-tile { min-height:64px; border:none; border-radius:10px; background:#2a2a38; color:#fff; font:700 0.78rem/1.2 inherit; padding:0.4rem; cursor:pointer; text-transform:uppercase; letter-spacing:0.02em; }
-    .lk-tile.sel { background:#6e6e80; outline:2px solid #fff; }
+    .lk-tile { position:relative; min-width:0; min-height:64px; border:none; border-radius:10px; background:#2a2a38; color:#fff; font:700 0.78rem/1.2 inherit; padding:0.4rem 0.3rem; cursor:pointer; text-transform:uppercase; letter-spacing:0.02em; }
+    .lk-tile__l { display:block; width:100%; overflow-wrap:normal; word-break:normal; hyphens:manual; text-wrap:balance; }
+    .lk-tile.sel { background:#6e6e80; outline:2px solid #fff; outline-offset:-2px; }
+    .lk-tile.wrong { background:#5c1d2b; outline:2px dashed #ff8a8a; outline-offset:-2px; animation:lk-shake 0.32s ease-in-out 2; }
+    .lk-tile.wrong::after { content:'✕'; position:absolute; top:3px; right:5px; font-size:0.7rem; line-height:1; color:#ffb3b3; }
+    @keyframes lk-shake { 0%,100% { transform:translateX(0); } 25% { transform:translateX(-4px); } 75% { transform:translateX(4px); } }
+    .lk-next { margin:0.2rem 0 0.9rem; font-size:0.85rem; color:var(--text-mid); }
+    .lk-next strong { color:var(--text-hi); font-variant-numeric:tabular-nums; }
+    .lk-outcome { margin:-0.2rem 0 0.4rem; font-size:0.85rem; color:var(--text-mid); }
     .lk-tile:disabled { cursor:default; opacity:0.45; }
     .lk-actions { display:flex; gap:0.45rem; margin-top:0.9rem; justify-content:center; flex-wrap:wrap; }
     .lk-btn { min-height:44px; padding:0.5rem 1rem; border-radius:999px; border:1px solid var(--border); background:transparent; color:var(--text-hi); font:700 0.85rem inherit; cursor:pointer; }
@@ -49,9 +56,9 @@
     .lk-toast.show { opacity:1; }
     .lk-modal-bg { position:fixed; inset:0; background:rgba(0,0,0,0.75); display:flex; align-items:center; justify-content:center; z-index:200; opacity:0; pointer-events:none; }
     .lk-modal-bg.open { opacity:1; pointer-events:auto; }
-    .lk-modal { background:var(--bg-card,#12121c); border:1px solid var(--border); border-radius:16px; padding:1.4rem; width:min(360px,92vw); max-height:92vh; overflow-y:auto; text-align:center; }
+    .lk-modal { background:#12121c; border:1px solid var(--border); border-radius:16px; padding:1.4rem; width:min(360px,92vw); max-height:92vh; overflow-y:auto; text-align:center; }
     .lk-modal h2 { margin:0 0 0.5rem; }
-    .lk-share { font-size:1.2rem; line-height:1.35; margin:0.8rem 0; }
+    .lk-share { font-size:1.2rem; line-height:1.35; margin:0.8rem 0; white-space:pre-line; }
     .lk-statrow { display:flex; justify-content:center; gap:1.4rem; margin:0.8rem 0; }
     .lk-statrow b { display:block; font-size:1.4rem; color:var(--accent); }
     .lk-statrow span { font-size:0.65rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-lo); }
@@ -62,7 +69,13 @@
       .lk-header h1 { font-size:1.15rem; }
       .lk-icon { width:44px; height:44px; }
     }
-    body.lk-cb .lk-group.y::before, body.lk-cb .lk-tile.sel::after { }
+    body.lk-cb .lk-tile.sel { background-image:repeating-linear-gradient(45deg, rgba(255,255,255,0.22) 0 5px, transparent 5px 11px); }
+    body.lk-cb .lk-tile.sel::after { content:'●'; position:absolute; top:3px; right:5px; font-size:0.6rem; line-height:1; color:#fff; }
+    body.lk-cb .lk-tile.wrong { background-image:repeating-linear-gradient(45deg, rgba(255,255,255,0.16) 0 2px, transparent 2px 7px), repeating-linear-gradient(-45deg, rgba(255,255,255,0.16) 0 2px, transparent 2px 7px); }
+    @media (prefers-reduced-motion: reduce) {
+      .lk-tile.wrong { animation:none; }
+      .lk-toast, .lk-modal-bg, .lk-tile { transition:none !important; animation:none !important; }
+    }
     body.lk-cb .lk-group.y { box-shadow: inset 0 0 0 3px #111; }
     body.lk-cb .lk-group.g { box-shadow: inset 4px 0 0 #111; }
     body.lk-cb .lk-group.b { box-shadow: inset 0 4px 0 #111; }
@@ -127,7 +140,7 @@
     <p class="how-p">Find four groups of four. Categories are gaming — some obvious, one that will start an argument.</p>
     <p class="how-p">Select four tiles and submit. Four mistakes and the board locks.</p>
     <p class="how-p"><strong>Yellow</strong> easiest · <strong>Green</strong> · <strong>Blue</strong> · <strong>Purple</strong> hardest.</p>
-    <p class="how-p">Same puzzle for everyone this UTC day. Colorblind marks live on solved groups.</p>
+    <p class="how-p">Same puzzle for everyone this UTC day. Colorblind patterns mark solved groups, selected tiles and wrong guesses.</p>
     <label class="how-p" style="display:flex;gap:0.5rem;align-items:center;margin-top:0.8rem;">
       <input type="checkbox" id="lkCb" /> Colorblind patterns
     </label>
@@ -140,7 +153,9 @@
 <div class="lk-modal-bg" id="lkResult">
   <div class="lk-modal">
     <h2 id="lkResTitle">Solved</h2>
+    <p class="lk-outcome" id="lkOutcome"></p>
     <div class="lk-share" id="lkShareGrid"></div>
+    <p class="lk-next" id="lkNext">Next Link in <strong data-cd id="lkCd">--:--:--</strong> · midnight UTC</p>
     <div class="lk-statrow">
       <div><b id="lkSPlayed">0</b><span>Played</span></div>
       <div><b id="lkSWin">0%</b><span>Win%</span></div>
@@ -247,17 +262,76 @@
     });
   }
 
+  var wrongFlash = [];
+  // Shrink a tile's label until its longest word fits on one line (no mid-word
+  // breaks). Bank words too long even at the floor size get a soft hyphen at a
+  // natural seam ('|' = hyphen, '^' = silent break); anything else falls back
+  // to per-letter soft hyphens rather than clipping.
+  var SEAMS = {
+    TRUEACHIEVEMENTS: 'TRUE|ACHIEVE|MENTS', INTERPOLATION: 'INTER|POLA|TION', BATTLEGROUNDS: 'BATTLE|GROUNDS',
+    ROLLERCOASTER: 'ROLLER|COASTER', CONSTELLATION: 'CONSTEL|LATION', WAKEBOARDING: 'WAKE|BOARDING',
+    VERIFICATION: 'VERIFI|CATION', BEYERDYNAMIC: 'BEYER|DYNAMIC', NEIGHBORHOOD: 'NEIGHBOR|HOOD',
+    ACHIEVEMENTS: 'ACHIEVE|MENTS', 'SPEEDRUN.COM': 'SPEEDRUN^.COM', THUNDERSTORM: 'THUNDER|STORM',
+    STEELSERIES: 'STEEL|SERIES', LEATHERETTE: 'LEATHER|ETTE', INSCRYPTION: 'IN|SCRYPTION', ACHIEVEMENT: 'ACHIEVE|MENT',
+    NECROMANCER: 'NECRO|MANCER', NECRODANCER: 'NECRO|DANCER', BATTLEFIELD: 'BATTLE|FIELD', DESTINATION: 'DESTI|NATION',
+    DISPLAYPORT: 'DISPLAY|PORT', SHEEPINATOR: 'SHEEP|INATOR', TELEKINESIS: 'TELE|KINESIS', DESTRUCTION: 'DE|STRUCTION',
+    INVESTIGATE: 'INVESTI|GATE', SUPPLEMENTS: 'SUPPLE|MENTS', ASSASSINATE: 'ASSASSI|NATE', FIRECRACKER: 'FIRE|CRACKER',
+    BYRGENWERTH: 'BYRGEN|WERTH', QUICKSILVER: 'QUICK|SILVER', MECHWARRIOR: 'MECH|WARRIOR', SATELLAVIEW: 'SATELLA|VIEW',
+    CASTLEVANIA: 'CASTLE|VANIA', MUPEN64PLUS: 'MUPEN64|PLUS', PSNPROFILES: 'PSN|PROFILES', BLASPHEMOUS: 'BLASPHE|MOUS',
+    MULTIVERSUS: 'MULTI|VERSUS', HEARTHSTONE: 'HEARTH|STONE', INTERCHANGE: 'INTER|CHANGE'
+  };
+  function seamed(w, every) {
+    return w.split(' ').map(function (wd) {
+      if (SEAMS[wd]) return SEAMS[wd].replace(/\|/g, '\u00AD').replace(/\^/g, '\u200B');
+      return every && wd.length > 9 ? wd.split('').join('\u00AD') : wd;
+    }).join(' ');
+  }
+  function shrink(lab, px) {
+    var floor = 9.5, size = px;
+    lab.style.fontSize = '';
+    while (lab.scrollWidth > lab.clientWidth + 0.5 && size > floor) {
+      size -= 0.5;
+      lab.style.fontSize = size + 'px';
+    }
+    return lab.scrollWidth <= lab.clientWidth + 0.5;
+  }
+  function fitTile(b, t) {
+    var lab = b.firstChild;
+    var px = parseFloat(getComputedStyle(b).fontSize) || 12;
+    if (shrink(lab, px)) return;
+    lab.textContent = seamed(t.w, false);
+    if (shrink(lab, px)) return;
+    lab.textContent = seamed(t.w, true);
+    shrink(lab, px);
+  }
+  function fitAll() {
+    var tiles = grid.querySelectorAll('.lk-tile');
+    var rest = remainingTiles();
+    for (var i = 0; i < tiles.length; i++) fitTile(tiles[i], rest[i]);
+  }
+  var fitTimer = null;
+  window.addEventListener('resize', function () { clearTimeout(fitTimer); fitTimer = setTimeout(renderGrid, 120); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { renderGrid(); });
   function renderGrid() {
     grid.innerHTML = '';
     remainingTiles().forEach(function (t, i) {
       var b = document.createElement('button');
       b.type = 'button';
-      b.className = 'lk-tile' + (state.sel.indexOf(t.w) >= 0 ? ' sel' : '');
-      b.textContent = t.w;
+      var isSel = state.sel.indexOf(t.w) >= 0;
+      var isWrong = wrongFlash.indexOf(t.w) >= 0;
+      b.className = 'lk-tile' + (isSel ? ' sel' : '') + (isWrong ? ' wrong' : '');
+      b.setAttribute('aria-label', t.w + (isSel ? ', selected' : '') + (isWrong ? ', wrong guess' : ''));
+      b.setAttribute('aria-pressed', isSel ? 'true' : 'false');
+      var lab = document.createElement('span');
+      lab.className = 'lk-tile__l';
+      lab.setAttribute('aria-hidden', 'true');
+      lab.textContent = t.w;
+      b.appendChild(lab);
       b.disabled = state.status !== 'playing';
       b.addEventListener('click', function () { toggle(t.w); });
       grid.appendChild(b);
     });
+    fitAll();
     for (var m = 0; m < 4; m++) {
       document.getElementById('d' + m).className = 'lk-dot' + (m < (4 - state.mistakes) ? ' on' : '');
     }
@@ -267,11 +341,13 @@
   function toggle(w) {
     if (state.status !== 'playing') return;
     var i = state.sel.indexOf(w);
+    if (wrongFlash.length) { wrongFlash = []; clearTimeout(wrongTimer); }
     if (i >= 0) state.sel.splice(i, 1);
     else if (state.sel.length < 4) state.sel.push(w);
     save(); renderGrid();
   }
 
+  var wrongTimer = null;
   function submit() {
     if (state.sel.length !== 4 || state.status !== 'playing') return;
     var picked = state.sel.slice();
@@ -293,6 +369,10 @@
       var oneAway = counts.some(function (c) { return c === 3; });
       state.mistakes += 1;
       state.sel = [];
+      // Brief, visible wrong-guess state on the four picked tiles, then clear.
+      wrongFlash = picked;
+      clearTimeout(wrongTimer);
+      wrongTimer = setTimeout(function () { wrongFlash = []; renderGrid(); }, 900);
       if (window.CGSfx) window.CGSfx.play('miss');
       if (state.mistakes >= 4) lose();
       else toast(oneAway ? 'One away' : 'Not a group');
@@ -316,6 +396,7 @@
   }
   function lose() {
     state.status = 'lost';
+    state.found = state.solved.length;
     puzzle.groups.forEach(function (g) {
       if (state.solved.indexOf(g.level) === -1) {
         state.solved.push(g.level);
@@ -326,12 +407,38 @@
     setTimeout(function () { showResult(false); }, 400);
   }
 
+  // On a fail, groups the board revealed (not found by the player) share as ⬛ rows.
   function shareLines() {
-    return state.order.map(function (lv) { return EMOJI[lv] + EMOJI[lv] + EMOJI[lv] + EMOJI[lv]; }).join('\n');
+    var found = state.status === 'lost' && typeof state.found === 'number' ? state.found : 4;
+    return state.order.map(function (lv, i) {
+      var e = i < found ? EMOJI[lv] : '⬛';
+      return e + e + e + e;
+    }).join('\n');
   }
+  function mistakesPhrase() {
+    return state.mistakes + ' mistake' + (state.mistakes === 1 ? '' : 's');
+  }
+  function outcomeLine() {
+    if (state.status === 'won') return (state.mistakes === 0 ? 'Perfect' : 'Solved') + ' · ' + mistakesPhrase();
+    return 'Failed · ' + mistakesPhrase();
+  }
+  function shareText() {
+    return 'Link #' + DAY + '\n' + outcomeLine() + '\n\n' + shareLines() + '\n\ncosmicgameshub.com/games/link';
+  }
+  function paintCd() {
+    var el = document.getElementById('lkCd');
+    if (el && window.CGDaily && window.CGDaily.fmtCd && window.CGDaily.msToUtcMidnight) el.textContent = window.CGDaily.fmtCd(window.CGDaily.msToUtcMidnight());
+  }
+  // won: true/false for an end state; null = Stats opened mid-game.
   function showResult(won) {
-    document.getElementById('lkResTitle').textContent = won ? (state.mistakes === 0 ? 'Perfect' : 'Solved') : 'Next UTC day';
-    document.getElementById('lkShareGrid').textContent = shareLines();
+    var ended = won !== null;
+    document.getElementById('lkResTitle').textContent = !ended ? 'Statistics' : won ? (state.mistakes === 0 ? 'Perfect' : 'Solved') : 'Board locked';
+    document.getElementById('lkOutcome').textContent = ended ? outcomeLine() : 'Today\'s board is still in play.';
+    document.getElementById('lkShareGrid').textContent = ended ? shareLines() : '';
+    document.getElementById('lkShareGrid').style.display = ended ? '' : 'none';
+    document.getElementById('lkShareBtn').style.display = ended ? '' : 'none';
+    document.getElementById('lkNext').style.display = ended ? '' : 'none';
+    paintCd();
     document.getElementById('lkSPlayed').textContent = stats.played;
     document.getElementById('lkSWin').textContent = stats.played ? Math.round(stats.wins / stats.played * 100) + '%' : '0%';
     document.getElementById('lkSStreak').textContent = stats.streak;
@@ -356,17 +463,18 @@
   document.getElementById('lkSubmit').addEventListener('click', submit);
   document.getElementById('lkHelpBtn').addEventListener('click', function () { document.getElementById('lkHelp').classList.add('open'); });
   document.getElementById('lkHelpClose').addEventListener('click', function () { document.getElementById('lkHelp').classList.remove('open'); });
-  document.getElementById('lkStatsBtn').addEventListener('click', function () { showResult(state.status === 'won'); });
+  document.getElementById('lkStatsBtn').addEventListener('click', function () { showResult(state.status === 'playing' ? null : state.status === 'won'); });
   document.getElementById('lkResClose').addEventListener('click', function () { document.getElementById('lkResult').classList.remove('open'); });
   document.getElementById('lkShareBtn').addEventListener('click', function () {
-    var text = 'Link #' + DAY + '\n' + (state.status === 'won' ? '' : 'X — ') + shareLines() + '\n\ncosmicgameshub.com/games/link';
+    if (state.status === 'playing') return;
+    var text = shareText();
     var go = function () { toast('Copied + card'); };
     if (window.CGSfx && window.CGSfx.shareNow) {
       window.CGSfx.shareNow({
         title: 'Link',
         subtitle: '#' + DAY,
         grid: shareLines(),
-        lines: [state.status === 'won' ? (4 - state.mistakes) + ' remaining' : 'Lost'],
+        lines: [outcomeLine()],
         url: 'cosmicgameshub.com/games/link',
         filename: 'link-' + DAY,
         text: text
