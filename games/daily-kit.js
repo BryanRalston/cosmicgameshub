@@ -134,6 +134,17 @@
     return 'https://' + String(url).replace(/^\/\//, '');
   }
 
+  // Native share payload: phone sheets join text + url, so never send url when
+  // text already carries the site link (or can carry it); keeps one URL.
+  function nativePayload(title, text, url) {
+    var p = { title: title || 'CosmicGamesHub' };
+    if (!text) { p.url = url; return p; }
+    p.text = text.indexOf('cosmicgameshub.com') === -1
+      ? text.replace(/\s+$/, '') + '\n' + url.replace(/^https?:\/\//, '')
+      : text;
+    return p;
+  }
+
   function shareResult(opts) {
     opts = typeof opts === 'string' ? { text: opts } : (opts || {});
     var text = opts.text || '';
@@ -148,11 +159,7 @@
       return copyText(text);
     }
     if (navigator.share) {
-      return navigator.share({
-        title: opts.title || 'CosmicGamesHub',
-        text: text,
-        url: url
-      }).catch(function (err) {
+      return navigator.share(nativePayload(opts.title, text, url)).catch(function (err) {
         if (err && err.name === 'AbortError') return null;
         return fallback();
       });
@@ -176,17 +183,24 @@
       opts = opts || {};
       var text = opts.text || '';
       var url = absUrl(opts.url);
+      // Resolves {via:'native'} on a native share, {via:'cancel'} when the user
+      // dismisses the sheet, or {via:'copy', copied, card} on the copy+card path.
+      function viaCopy() {
+        var copied = (text && navigator.clipboard && navigator.clipboard.writeText)
+          ? navigator.clipboard.writeText(text).then(function () { return true; }, function () { return false; })
+          : Promise.resolve(false);
+        var card = Promise.resolve().then(function () { return orig(opts); }).catch(function () { return null; });
+        return Promise.all([copied, card]).then(function (r) { return { via: 'copy', copied: r[0], card: r[1] }; });
+      }
       if (navigator.share) {
-        return navigator.share({
-          title: opts.title || 'CosmicGamesHub',
-          text: text,
-          url: url
-        }).catch(function (err) {
-          if (err && err.name === 'AbortError') return null;
-          return orig(opts);
+        return navigator.share(nativePayload(opts.title, text, url)).then(function () {
+          return { via: 'native' };
+        }, function (err) {
+          if (err && err.name === 'AbortError') return { via: 'cancel' };
+          return viaCopy();
         });
       }
-      return orig(opts);
+      return viaCopy();
     };
     w.CGSfx.__phoneShare = true;
   }
