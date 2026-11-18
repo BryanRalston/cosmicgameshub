@@ -1983,6 +1983,7 @@
     btnPause.hidden = true;
     show(resultOverlay);
     resultOverlay.classList.add('show');
+    resultOverlay.scrollTop = 0;
     if (clicks.length) {
       resHeat.hidden = false;
       requestAnimationFrame(function () { drawHeat(resHeat, clicks); });
