@@ -209,6 +209,52 @@ body.page-games::before { display: none; }
   .hub-foot { margin-top: 72px; }
   .hub-foot .hub-wrap { flex-direction: column; justify-content: center; gap: 8px; height: auto; padding-top: 20px; padding-bottom: 20px; }
 }
+/* Today's puzzles: tap-to-play dailies beside (desktop) / under (phone) the hero. Filled by daily-kit.js. */
+.hub-stage { display: grid; grid-template-columns: minmax(0, 1fr) 392px; gap: 24px; margin-top: 32px; align-items: stretch; }
+.hub-stage .hub-hero { margin: 0; display: flex; }
+.hub-stage .hub-hero__in { flex: 1; aspect-ratio: auto; min-height: 420px; }
+.hub-stage .hub-hero__copy { padding: 28px 32px 32px; height: auto; min-height: 45%; }
+.hub-today {
+  min-width: 0; padding: 16px; border-radius: 28px; background: #fff; border: 1px solid var(--hub-line);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 18px 44px -24px rgba(0,0,0,.28); display: flex; flex-direction: column; gap: 10px;
+}
+.hub-today__head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.hub-today__head h2 { margin: 0; font-size: 22px; letter-spacing: -0.02em; font-weight: 700; color: var(--hub-ink); line-height: 1.15; }
+.hub-today__stats { display: flex; gap: 10px; font-size: 14px; font-weight: 700; color: var(--hub-sub); }
+.hub-today__streak { color: #c2410c; }
+.hub-today__cta {
+  display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 12px 18px; border-radius: 99px;
+  background: var(--hub-ink); color: #fff; font-weight: 600; font-size: 16px; text-align: center; text-decoration: none; line-height: 1.2;
+}
+.hub-today__cta:hover { text-decoration: none; background: #000; }
+.hub-today__alldone { text-align: center; font-weight: 600; font-size: 14px; line-height: 1.25; color: var(--hub-ink); }
+.hub-today__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.hub-today__tile {
+  display: flex; align-items: center; gap: 9px; min-height: 48px; padding: 6px 10px; border-radius: 16px; min-width: 0;
+  background: #f5f5f7; color: var(--hub-ink); text-decoration: none; border: 1px solid transparent;
+}
+.hub-today__tile:hover { text-decoration: none; background: #ececf0; }
+.hub-today__tile.is-done { background: #f1faf4; border-color: rgba(52,199,89,.28); }
+.hub-today__ico { flex: 0 0 auto; font-size: 20px; line-height: 1; width: 24px; text-align: center; }
+.hub-today__name { flex: 1 1 auto; min-width: 0; font-size: 14px; font-weight: 700; line-height: 1.15; letter-spacing: -0.01em; overflow-wrap: break-word; }
+.hub-today__name small { display: block; margin-top: 2px; font-size: 12px; font-weight: 500; color: var(--hub-sub); }
+.hub-today__chk {
+  flex: 0 0 auto; width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid rgba(0,0,0,.2); box-sizing: border-box;
+  display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: #fff;
+}
+.hub-today__tile.is-done .hub-today__chk { background: #34c759; border-color: #34c759; }
+.hub-today a:focus-visible { outline: 2px solid #0071e3; outline-offset: 2px; }
+@media (max-width: 1100px) { .hub-stage { grid-template-columns: minmax(0, 1fr) 340px; } }
+@media (max-width: 860px) { .hub-stage { grid-template-columns: minmax(0, 1fr); } .hub-stage .hub-hero__in { min-height: 0; } }
+@media (max-width: 760px) {
+  .hub-stage { gap: 16px; margin-top: 22px; }
+  .hub-stage .hub-hero__in { aspect-ratio: 4 / 5; }
+  .hub-stage .hub-hero__copy { padding: 24px; min-height: 52%; }
+  .hub-today { padding: 12px; border-radius: 24px; }
+  .hub-today__tile { position: relative; gap: 8px; padding: 8px; }
+  .hub-today__name { font-size: 13.5px; padding-right: 10px; }
+  .hub-today__chk { position: absolute; top: 6px; right: 6px; width: 16px; height: 16px; font-size: 10px; }
+}
 @media (prefers-reduced-motion: reduce) {
   .hub-card, .hub-thumb img, .hub-play, .page-games .gh-card, .page-games .gh-card__img { transition: none; }
   .hub-hero:hover .hub-play, .hub-card:hover, .hub-card:hover .hub-thumb img, .page-games .gh-card:hover, .page-games .gh-card:hover .gh-card__img { transform: none; }
