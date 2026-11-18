@@ -246,6 +246,7 @@
   <header class="hub-head"><div class="hub-wrap">
     <p class="hub-eyebrow">Free to play in your browser. No downloads.</p>
     <h1>Games worth your time.</h1>
+    <div class="hub-stage">
     <a class="hub-hero" id="gotw" href="/games/sudoku">
       <div class="hub-hero__in">
         <picture>
@@ -263,6 +264,11 @@
         </div>
       </div>
     </a>
+    <section class="hub-today" id="hubToday" data-cg-today aria-label="Today's puzzles">
+      <div class="hub-today__head"><h2>Today's puzzles</h2></div>
+      <a class="hub-today__cta" href="/games/daily">Play today's puzzles <span aria-hidden="true">→</span></a>
+    </section>
+    </div>
   </div></header>
     <section class="hub-row" aria-label="Originals">
       <div class="hub-wrap">
@@ -567,7 +573,7 @@
 </main>
 <footer class="hub-foot" role="contentinfo"><div class="hub-wrap">
   <span>© 2026 Cosmic Games Hub</span>
-  <nav aria-label="Footer"><a href="/guides">Guides</a><a href="/about">About</a><a href="/privacy">Privacy</a><a href="mailto:hello@cosmicgameshub.com">Contact</a></nav>
+  <nav aria-label="Footer"><a href="/guides">Guides</a><a href="/submit-game">Submit your game</a><a href="/about">About</a><a href="/privacy">Privacy</a><a href="mailto:hello@cosmicgameshub.com">Contact</a></nav>
 </div></footer>
 <script>
 (function () {
@@ -582,6 +588,7 @@
   if (el) el.textContent = 'Game of the Week \u00b7 ' + start + '\u2013' + end;
 })();
 </script>
+<script src="/games/daily-kit.js" defer></script>
 <script src="/global.js" defer></script>
 </body>
 </html>

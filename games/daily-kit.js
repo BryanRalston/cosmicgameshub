@@ -3,18 +3,18 @@
   'use strict';
 
   var ORDER = [
-    { id: 'gamerdle', name: 'Gamerdle', href: '/games/gamerdle' },
-    { id: 'pixle', name: 'Pixle', href: '/games/pixle' },
-    { id: 'rift', name: 'RIFT', href: '/games/rift' },
-    { id: 'hardware-timeline', name: 'Hardware Timeline', href: '/games/hardware-timeline' },
-    { id: 'spec-match', name: 'Spec Match', href: '/games/spec-match' },
-    { id: 'gear-quiz', name: 'Gear Quiz', href: '/games/gear-quiz' },
-    { id: 'gaming-trivia', name: 'Gaming Trivia', href: '/games/gaming-trivia' },
-    { id: 'link', name: 'Link', href: '/games/link' },
-    { id: 'crossword', name: 'Crossword', href: '/games/crossword' },
-    { id: 'sudoku', name: 'Sudoku', href: '/games/sudoku' },
-    { id: 'price-guesser', name: 'Price Guesser', href: '/games/price-guesser' },
-    { id: 'daily-challenge', name: 'Pro Kit Daily', href: '/games/daily-challenge' }
+    { id: 'gamerdle', name: 'Gamerdle', href: '/games/gamerdle', icon: '🎮', mins: 2 },
+    { id: 'pixle', name: 'Pixle', href: '/games/pixle', icon: '🟩', mins: 2 },
+    { id: 'rift', name: 'RIFT', href: '/games/rift', icon: '🌀', mins: 3 },
+    { id: 'hardware-timeline', name: 'Hardware Timeline', href: '/games/hardware-timeline', icon: '📅', mins: 2 },
+    { id: 'spec-match', name: 'Spec Match', href: '/games/spec-match', icon: '🔍', mins: 2 },
+    { id: 'gear-quiz', name: 'Gear Quiz', href: '/games/gear-quiz', icon: '🎧', mins: 3 },
+    { id: 'gaming-trivia', name: 'Gaming Trivia', href: '/games/gaming-trivia', icon: '🧠', mins: 3 },
+    { id: 'link', name: 'Link', href: '/games/link', icon: '🟨', mins: 3 },
+    { id: 'crossword', name: 'Crossword', href: '/games/crossword', icon: '✏️', mins: 3 },
+    { id: 'sudoku', name: 'Sudoku', href: '/games/sudoku', icon: '🔢', mins: 5 },
+    { id: 'price-guesser', name: 'Price Guesser', href: '/games/price-guesser', icon: '💰', mins: 2 },
+    { id: 'daily-challenge', name: 'Pro Kit Daily', href: '/games/daily-challenge', icon: '⭐', mins: 2 }
   ];
 
   function now() { return new Date(); }
@@ -268,13 +268,139 @@
     return ORDER.length - leftover().length;
   }
 
+
+  // ---- "Up next" (end-of-game CTA + homepage "Today's puzzles") -------------
+  var ARCADE = [
+    { name: 'Aim Trainer', href: '/games/aim-trainer' },
+    { name: 'Minesweeper', href: '/games/minesweeper' },
+    { name: 'Memory Match', href: '/games/memory-match' },
+    { name: 'Reaction Time', href: '/games/reaction-trainer' },
+    { name: 'Word Scramble', href: '/games/word-scramble' },
+    { name: 'Color Memory', href: '/games/color-memory' }
+  ];
+
+  function esc(t) {
+    return String(t).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  // Overall daily streak (any daily counts). CGPlayer is loaded lazily, so 0 can mean "not ready".
+  function dailyStreak() {
+    try { return (w.CGPlayer && w.CGPlayer.snapshot) ? (+w.CGPlayer.snapshot().streak || 0) : 0; } catch (e) { return 0; }
+  }
+
+  // Rollover is UTC midnight: 7 PM EST / 8 PM EDT. Say the real ET hour.
+  function resetLabel() {
+    try {
+      var n = now();
+      var t = new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate() + 1));
+      return new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', hour12: true })
+        .format(t).replace(/[\u202f\u00a0]/g, ' ') + ' ET';
+    } catch (e) { return 'midnight UTC'; }
+  }
+
+  function arcadePick() { return ARCADE[dayIndex2026() % ARCADE.length]; }
+
+  function gameById(id) {
+    for (var i = 0; i < ORDER.length; i++) if (ORDER[i].id === id) return ORDER[i];
+    return null;
+  }
+
+  function fmtMins(g) { return (g && g.mins ? g.mins : 2) + ' min'; }
+
+  function trackNext(where, to) {
+    try { if (typeof w.gtag === 'function') w.gtag('event', 'up_next_click', { where: where, to: to }); } catch (e) {}
+  }
+
+  function bindTrack(root, where) {
+    var a = root.querySelectorAll('[data-up-next]');
+    for (var i = 0; i < a.length; i++) {
+      a[i].addEventListener('click', function () { trackNext(where, this.getAttribute('data-up-next')); });
+    }
+  }
+
+  // One model for both surfaces. exclude = the game just finished (skipped as a target).
+  function upNextModel(exclude) {
+    var m = playedMap();
+    var left = ORDER.filter(function (g) { return !m[g.id] && g.id !== exclude; });
+    var done = ORDER.filter(function (g) { return m[g.id]; }).length;
+    return { map: m, next: left[0] || null, left: left.length, done: done, total: ORDER.length, streak: dailyStreak() };
+  }
+
+  function streakChip(n) {
+    return n > 0 ? '🔥 Streak ' + n + (n === 1 ? ' day' : ' days') : '';
+  }
+
+  function dockCardHtml(slug) {
+    var u = upNextModel(slug);
+    if (!u.map[slug]) return null; // current game not finished: keep the small dock
+    var sc = streakChip(u.streak);
+    if (u.next) {
+      return '<div class="cg-next" role="region" aria-label="Up next">' +
+        '<div class="cg-next__eyebrow">Up next · ' + u.done + ' of ' + u.total + ' done today</div>' +
+        '<a class="cg-dock__next cg-next__cta" data-up-next="' + u.next.id + '" href="' + u.next.href + '">Next: Today\'s ' + esc(u.next.name) + ' <span class="cg-next__m">· ' + fmtMins(u.next) + ' →</span></a>' +
+        '<div class="cg-next__sub">' + (sc ? sc + ' · ' : '') + u.left + ' still open</div>' +
+        '</div>';
+    }
+    var ar = arcadePick();
+    return '<div class="cg-next cg-next--done" role="region" aria-label="Up next">' +
+      '<div class="cg-next__title">All done today!' + (u.streak > 0 ? ' Streak ' + u.streak + ' 🔥' : '') + '</div>' +
+      '<div class="cg-next__sub">Back tomorrow at ' + resetLabel() + ' · <span data-cd></span></div>' +
+      '<a class="cg-dock__next cg-next__cta" data-up-next="arcade:' + ar.href.split('/').pop() + '" href="' + ar.href + '">Play ' + esc(ar.name) + ' while you wait →</a>' +
+      '</div>';
+  }
+
+  function mountToday(el) {
+    if (!el) return;
+    var u = upNextModel('');
+    var sc = streakChip(u.streak);
+    var html = '<div class="hub-today__head"><h2>Today\'s puzzles</h2>' +
+      '<div class="hub-today__stats"><span>' + u.done + '/' + u.total + '</span>' +
+      (u.streak > 0 ? '<span class="hub-today__streak" title="' + esc(sc) + '" aria-label="' + esc(sc.replace('🔥 ', '')) + '">🔥 ' + u.streak + '</span>' : '') + '</div></div>';
+    if (u.next) {
+      html += '<a class="hub-today__cta" data-up-next="' + u.next.id + '" href="' + u.next.href + '">' +
+        (u.done ? 'Next: ' : 'Play ') + esc(u.next.name) + ' · ' + fmtMins(u.next) + ' <span aria-hidden="true">→</span></a>';
+    } else {
+      var ar = arcadePick();
+      html += '<div class="hub-today__alldone">All done today! Back tomorrow at ' + resetLabel() + '</div>' +
+        '<a class="hub-today__cta" data-up-next="arcade:' + ar.href.split('/').pop() + '" href="' + ar.href + '">Play ' + esc(ar.name) + ' <span aria-hidden="true">→</span></a>';
+    }
+    html += '<div class="hub-today__grid">';
+    ORDER.forEach(function (g) {
+      var p = !!u.map[g.id];
+      html += '<a class="hub-today__tile' + (p ? ' is-done' : '') + '" href="' + g.href + '" data-up-next="' + g.id + '">' +
+        '<span class="hub-today__ico" aria-hidden="true">' + g.icon + '</span>' +
+        '<span class="hub-today__name">' + esc(g.name) + '<small>' + (p ? 'Played today' : fmtMins(g)) + '</small></span>' +
+        '<span class="hub-today__chk" role="img" aria-label="' + (p ? 'Played' : 'Not played yet') + '">' + (p ? '✓' : '') + '</span></a>';
+    });
+    html += '</div>';
+    el.innerHTML = html;
+    bindTrack(el, 'home');
+  }
+
+  // Re-render the CTA surfaces whenever a game flips to finished (or the streak changes).
+  var lastSig = '';
+  function refreshNext(force) {
+    var sig;
+    try { sig = JSON.stringify(playedMap()) + '|' + dailyStreak(); } catch (e) { return; }
+    if (!force && sig === lastSig) return;
+    lastSig = sig;
+    document.querySelectorAll('.cg-daily-dock').forEach(mountDock);
+    document.querySelectorAll('[data-cg-today]').forEach(mountToday);
+    tickCountdowns();
+  }
+
   function mountDock(el) {
     if (!el) return;
     var slug = el.getAttribute('data-slug') || '';
     var next = nextUnplayed(slug);
     var left = leftover().length;
+    var card = dockCardHtml(slug);
     var html = '<div class="cg-dock">';
-    if (next) {
+    if (card) {
+      html += card;
+    } else if (next) {
       html += '<a class="cg-dock__next" href="' + next.href + '">Play next daily — ' + next.name + ' →</a>';
       html += '<div class="cg-dock__left">' + left + ' of 12 still open today</div>';
     } else {
@@ -284,6 +410,7 @@
     html += '<button type="button" class="cg-dock__mute" data-cg-mute></button>';
     html += '</div>';
     el.innerHTML = html;
+    bindTrack(el, 'dock');
     var mb = el.querySelector('[data-cg-mute]');
     function sudokuSoundOn() {
       try {
@@ -335,6 +462,12 @@
       '.cg-dock__done{text-align:center;color:var(--text-mid,#aaa);font-size:.9rem;}',
       '.cg-dock__left{text-align:center;font-size:.8rem;color:var(--text-mid,#aaa);}',
       '.cg-dock__mute{margin:0 auto;min-height:44px;padding:.35rem .8rem;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:transparent;color:var(--text-mid,#aaa);font:inherit;cursor:pointer;}',
+      '.cg-next{display:flex;flex-direction:column;gap:.45rem;padding:.8rem .85rem;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);box-sizing:border-box;min-width:0;}',
+      '.cg-next__eyebrow{font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--accent,#00d4ff);text-align:center;}',
+      '.cg-next__title{font-size:1.1rem;font-weight:800;text-align:center;color:var(--text-hi,#fff);}',
+      '.cg-next__sub{font-size:.82rem;text-align:center;color:var(--text-mid,#aaa);overflow-wrap:anywhere;}',
+      '.cg-next__cta{white-space:normal;overflow-wrap:anywhere;}',
+      '.cg-next__m{white-space:nowrap;margin-left:.3em;}',
       'html{overflow-x:clip;}',
       '@media (max-width:480px){',
       'body{padding-bottom:max(0.5rem,env(safe-area-inset-bottom,0px));}',
@@ -383,6 +516,7 @@
     document.querySelectorAll('.cg-daily-dock').forEach(mountDock);
     mountStreakHints();
     ensurePlayer();
+    refreshNext(true);
   }
 
   function tickCountdowns() {
@@ -403,7 +537,9 @@
     mountAll: mountAll,
     mountStreakHints: mountStreakHints,
     isoToday: isoToday,
-    syncPlayer: syncPlayer
+    syncPlayer: syncPlayer,
+    upNextModel: upNextModel,
+    mountToday: mountToday
   };
 
   if (document.readyState === 'loading') {
@@ -416,5 +552,6 @@
     mountStreakHints();
     if (w.CGPlayer) syncPlayer();
     patchShareNow();
+    refreshNext(false);
   }, 1000);
 })(window);
