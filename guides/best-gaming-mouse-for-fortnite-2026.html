@@ -65,7 +65,7 @@
     .vg-section:last-of-type { border-bottom: 0; }
     .vg-section h2 { font-size: 1.45rem; color: #fff; margin: 0 0 .65rem; font-family: 'Outfit', sans-serif; font-weight: 800; letter-spacing: -.02em; }
     .vg-section p { color: var(--text-mid, #b8b8c8); line-height: 1.65; margin: .4rem 0; }
-    .vg-pick { display: grid; grid-template-columns: auto 1fr; gap: 1rem 1.25rem; padding: 1.6rem; margin: 1.4rem 0; background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; }
+    .vg-pick { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 1rem 1.25rem; padding: 1.6rem; margin: 1.4rem 0; background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; }
     .vg-pick.featured { border-color: rgba(155,93,229,0.35); background: linear-gradient(135deg, rgba(155,93,229,0.04), rgba(255,255,255,0.02)); }
     .vg-rank { font-family: 'Outfit', sans-serif; font-weight: 900; font-size: 2.4rem; color: #9b5de5; line-height: 1; min-width: 44px; }
     .vg-pick-head { grid-column: 2; }
@@ -106,7 +106,7 @@
     .vg-related a { color: var(--text-hi, #eef); text-decoration: none; font-size: .92rem; }
     .vg-related a:hover { color: #9b5de5; }
     .vg-disclosure { font-size: .78rem; color: var(--text-lo, #888); padding: 1rem 1.25rem; background: rgba(255,255,255,0.02); border-radius: 10px; margin: 1.5rem 0; line-height: 1.6; }
-    @media (max-width: 600px) { .vg-pros-cons { grid-template-columns: 1fr; } .vg-pick { grid-template-columns: 1fr; padding: 1.25rem; } .vg-rank { font-size: 2rem; } }
+    @media (max-width: 600px) { .vg-pros-cons { grid-template-columns: 1fr; } .vg-pick { grid-template-columns: minmax(0, 1fr); padding: 1.25rem; } .vg-pick-head { grid-column: 1; } .vg-rank { font-size: 2rem; } }
   </style>
 </head>
 <body>

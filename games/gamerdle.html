@@ -853,8 +853,8 @@ function copyShare() {
     window.CGSfx.shareNow(shareOpts).then(function (r) {
       if (r && r.via === 'native') say('✅ Shared');
       else if (r && r.via === 'cancel') return;
-      else if (r && r.via === 'copy') say(r.copied ? (r.card ? '✅ Copied + card' : '✅ Copied') : (r.card ? '✅ Card saved' : idle));
-      else if (r) say('✅ Card saved');
+      else if (r && r.via === 'copy') say(r.copied ? (r.card ? '✅ Copied + card' : '✅ Copied') : (r.card ? '🖼️ Card saved' : idle));
+      else if (r) say('🖼️ Card saved');
     }).catch(function () {});
   } else if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(function () { say('✅ Copied'); }, function () {});
