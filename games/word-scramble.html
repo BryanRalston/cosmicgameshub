@@ -337,6 +337,11 @@
   max-width: 400px;
   width: 100%;
   text-align: center;
+  /* Never taller than the screen: the card scrolls inside itself and Close stays pinned. */
+  max-height: calc(100vh - 2rem);
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   transform: scale(0.92) translateY(12px);
   transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1), opacity 0.25s;
   opacity: 0;
@@ -443,6 +448,19 @@
   transition: border-color 0.15s, color 0.15s;
 }
 .sc-modal-close:hover { border-color: rgba(255,255,255,0.25); color: var(--text-mid); }
+/* Result card: Close sticks to the bottom of the scrolling card so it is always reachable. */
+#result-modal .sc-modal-close {
+  position: sticky; bottom: -1px; z-index: 2;
+  background: var(--bg-raised);
+  box-shadow: 0 -10px 12px -2px var(--bg-raised);
+}
+/* Short screens (laptops): tighten the result card so most of it fits without scrolling. */
+@media (max-height: 860px) {
+  #result-modal .sc-modal { padding: 1.1rem 1.5rem 1rem; }
+  #result-modal .sc-stars { font-size: 1.4rem; margin-bottom: 0.2rem; }
+  #result-modal .sc-next-timer { margin-top: 0.4rem; }
+  #result-modal .sc-modal > div[style*="border-top"] { margin-top: 0.7rem !important; padding-top: 0.7rem !important; }
+}
 
 /* How to play */
 .how-row {
@@ -1432,6 +1450,7 @@ document.getElementById('help-modal').addEventListener('click', function(e) {
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
     document.getElementById('help-modal').classList.remove('open');
+    document.getElementById('result-modal').classList.remove('open');
   }
 });
 </script>

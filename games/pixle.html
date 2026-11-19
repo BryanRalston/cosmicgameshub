@@ -1049,25 +1049,40 @@ function showResultModal(won) {
     }).join('');
   })();
 
-  document.getElementById('share-btn').onclick = () => {
+  const shareBtn = document.getElementById('share-btn');
+  let shareLabelTimer = null;
+  const sayShare = label => {
+    shareBtn.textContent = label;
+    clearTimeout(shareLabelTimer);
+    shareLabelTimer = setTimeout(() => { shareBtn.textContent = 'Share'; }, 2000);
+  };
+  shareBtn.textContent = 'Share';
+  shareBtn.onclick = () => {
+    // The text already carries the link once; the native payload is title + text only.
     const text = `Pixle #${DAY_INDEX} ${guessLine}\nThe Wordle for gamers\n\n${grid}\n\ncosmicgameshub.com/games/pixle`;
-    if (window.CGSfx && window.CGSfx.shareNow) {
-      window.CGSfx.shareNow({
-        title: 'Pixle',
-        subtitle: '#' + DAY_INDEX + '  ·  ' + guessLine,
-        grid: grid,
-        lines: [won ? 'Solved' : 'X — ' + ANSWER, 'The Wordle for gamers'],
-        url: 'cosmicgameshub.com/games/pixle',
-        filename: 'pixle-' + DAY_INDEX,
-        text: text
-      });
-    } else if (window.CGSfx) {
-      window.CGSfx.play('share');
-    }
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(text).then(() => showToast('Copied + card saved'));
-    } else {
-      showToast('Copy manually above');
+    const opts = {
+      title: 'Pixle',
+      subtitle: '#' + DAY_INDEX + '  ·  ' + guessLine,
+      grid: grid,
+      lines: [won ? 'Solved' : 'X — ' + ANSWER, 'The Wordle for gamers'],
+      url: 'cosmicgameshub.com/games/pixle',
+      filename: 'pixle-' + DAY_INDEX,
+      text: text
+    };
+    if (window.CGSfx && typeof window.CGSfx.shareNow === 'function') {
+      // daily-kit wraps shareNow to resolve {via:'native'|'cancel'|'copy', copied, card}.
+      // It saves the result card image too, as Pixle always has. Cancel says nothing.
+      Promise.resolve(window.CGSfx.shareNow(opts)).then(r => {
+        if (!r) return;
+        if (r.via === 'native') sayShare('Shared');
+        else if (r.via === 'cancel') return;
+        else if (r.via === 'copy') {
+          if (r.copied) sayShare(r.card ? 'Copied + card' : 'Copied');
+          else if (r.card) sayShare('Card saved');
+        } else sayShare('Card saved');
+      }).catch(() => {});
+    } else if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => sayShare('Copied'), () => {});
     }
   };
 

@@ -81,6 +81,15 @@ body {
 body:not(.page-game) {
   position: relative;
   z-index: 0;
+  /* The 140vw glow below is wider than a phone; clip it so pages do not pan sideways.
+     clip (not hidden) keeps position:sticky working. */
+  overflow-x: clip;
+}
+/* A body-only overflow rule gets handed to the viewport, and phone Chrome still widens the page
+   to fit the glow (433px at 360, 469px at 390). Putting it on <html> too keeps the body clipping
+   itself, so the page stays exactly one screen wide. Game pages are left alone. */
+html:has(body:not(.page-game)) {
+  overflow-x: clip;
 }
 body:not(.page-game)::before {
   content: "";
