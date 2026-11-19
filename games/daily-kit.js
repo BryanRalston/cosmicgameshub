@@ -153,15 +153,23 @@
     if (text && text.indexOf('cosmicgameshub.com') === -1) {
       text = text.replace(/\s+$/, '') + '\n' + url.replace(/^https?:\/\//, '');
     }
+    // Optional opts.onResult(kind): 'shared' (native sheet), 'cancelled', 'copied' (clipboard write
+    // succeeded) or 'saved' (image card only). Callers that ignore it behave exactly as before.
+    function told(kind) { try { if (typeof opts.onResult === 'function') opts.onResult(kind); } catch (e) {} }
     function fallback() {
       if (w.CGSfx && w.CGSfx.shareNow && !w.CGSfx.__phoneShare) {
-        return w.CGSfx.shareNow(Object.assign({}, opts, { text: text, url: url }));
+        var wrote = copyText(text).then(function () { return true; }, function () { return false; });
+        var card = w.CGSfx.shareNow(Object.assign({}, opts, { text: text, url: url }));
+        return Promise.all([wrote, card]).then(function (r) { told(r[0] ? 'copied' : 'saved'); return r[1]; });
       }
-      return copyText(text);
+      return copyText(text).then(function (r) { told('copied'); return r; });
     }
     if (navigator.share) {
-      return navigator.share(nativePayload(opts.title, text, url)).catch(function (err) {
-        if (err && err.name === 'AbortError') return null;
+      return navigator.share(nativePayload(opts.title, text, url)).then(function (r) {
+        told('shared');
+        return r;
+      }, function (err) {
+        if (err && err.name === 'AbortError') { told('cancelled'); return null; }
         return fallback();
       });
     }
@@ -335,6 +343,8 @@
   function dockCardHtml(slug) {
     var u = upNextModel(slug);
     if (!u.map[slug]) return null; // current game not finished: keep the small dock
+    // Gamerdle shows its own streak (matches the streak line above); other games keep the overall daily streak.
+    if (slug === 'gamerdle') u.streak = readGameStreak('gamerdle');
     var sc = streakChip(u.streak);
     if (u.next) {
       return '<div class="cg-next" role="region" aria-label="Up next">' +
@@ -383,7 +393,7 @@
   var lastSig = '';
   function refreshNext(force) {
     var sig;
-    try { sig = JSON.stringify(playedMap()) + '|' + dailyStreak(); } catch (e) { return; }
+    try { sig = JSON.stringify(playedMap()) + '|' + dailyStreak() + '|' + hostSig(); } catch (e) { return; }
     if (!force && sig === lastSig) return;
     lastSig = sig;
     document.querySelectorAll('.cg-daily-dock').forEach(mountDock);
@@ -391,15 +401,33 @@
     tickCountdowns();
   }
 
+  // Some pages have two docks for one game (one by the share button, one at the page bottom).
+  // The Up next card goes in only one: the first dock that is on screen, else the first dock.
+  function dockHost(slug) {
+    var all = document.querySelectorAll('.cg-daily-dock[data-slug="' + slug + '"]');
+    for (var i = 0; i < all.length; i++) if (all[i].getClientRects().length) return all[i];
+    return all[0] || null;
+  }
+
+  function hostSig() {
+    var all = document.querySelectorAll('.cg-daily-dock'), out = '';
+    for (var i = 0; i < all.length; i++) out += all[i].getClientRects().length ? '1' : '0';
+    return out;
+  }
+
   function mountDock(el) {
     if (!el) return;
     var slug = el.getAttribute('data-slug') || '';
     var next = nextUnplayed(slug);
     var left = leftover().length;
-    var card = dockCardHtml(slug);
+    var isHost = dockHost(slug) === el;
+    var card = isHost ? dockCardHtml(slug) : null;
+    var played = !!playedMap()[slug];
     var html = '<div class="cg-dock">';
     if (card) {
       html += card;
+    } else if (played && !isHost) {
+      // Finished game, card lives in the other dock: no second CTA here.
     } else if (next) {
       html += '<a class="cg-dock__next" href="' + next.href + '">Play next daily — ' + next.name + ' →</a>';
       html += '<div class="cg-dock__left">' + left + ' of 12 still open today</div>';

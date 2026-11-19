@@ -216,6 +216,20 @@
       margin-top: 0.85rem;
       padding: 0.15rem 0 0.1rem;
     }
+    /* Results: keep Play Again / Share in view while the stats scroll underneath. */
+    #resultOverlay .at-actions {
+      position: sticky;
+      bottom: 0;
+      z-index: 3;
+      margin: 0.85rem -0.5rem 0;
+      padding: 1.1rem 0.5rem calc(0.6rem + env(safe-area-inset-bottom, 0px));
+      background: linear-gradient(to bottom, rgba(10,12,18,0) 0, rgba(10,12,18,0.94) 0.9rem);
+    }
+    #resultOverlay .at-actions .at-share-msg { flex: 0 0 100%; margin: 0; }
+    @media (max-width: 520px) {
+      #resultOverlay .at-actions #btnPlayAgain { flex: 1 1 100%; }
+      #resultOverlay .at-actions .at-btn-sec { flex: 1 1 0; padding-left: 0.3rem; padding-right: 0.3rem; font-size: 0.85rem; white-space: nowrap; }
+    }
     .at-settings { margin-top: 0.8rem; text-align: left; }
     .at-settings summary {
       display: flex;
@@ -514,9 +528,9 @@
               <button type="button" class="at-btn-sec" id="btnRetry">Same targets</button>
               <button type="button" class="at-btn-sec" id="btnShare">Share</button>
               <button type="button" class="at-btn-sec" id="btnCard">Save card</button>
+              <p class="at-share-msg" id="atShareMsg" hidden aria-live="polite"></p>
             </div>
             <input class="at-share-link" id="atShareLink" readonly aria-label="Challenge link" />
-            <p class="at-share-msg" id="atShareMsg" hidden aria-live="polite"></p>
             <aside class="gear-hop gear-hop--compact" id="resGear" aria-label="Recommended gear">
               <button type="button" class="gear-hop__dismiss" aria-label="Dismiss gear suggestion" onclick="var h=this.closest('.gear-hop'); h.hidden=true; h.style.display='none';">&times;</button>
               <div class="gear-hop__eyebrow">Upgrade Your Mouse</div>
