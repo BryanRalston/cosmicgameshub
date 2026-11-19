@@ -1165,20 +1165,6 @@
     // finished grid can still be edited; at the word's end the cursor stays put.
     if (pos + 1 < w.len) { p = entryCell(dir, w, pos + 1); selectCell(p[0], p[1], dir); }
   }
-  function retreatCursor() {
-    var w = wordCovering(selRow, selCol, dir);
-    if (!w) return;
-    if (dir === 'across' && selCol > w.col) { selectCell(selRow, selCol - 1, 'across'); return; }
-    if (dir === 'down' && selRow > w.row) { selectCell(selRow - 1, selCol, 'down'); return; }
-    var list = allEntries();
-    var idx = 0;
-    for (var i = 0; i < list.length; i++) if (list[i].dir === dir && list[i].w === w) idx = i;
-    var j = (idx - 1 + list.length) % list.length;
-    var item = list[j];
-    var lr = item.dir === 'across' ? item.w.row : item.w.row + item.w.len - 1;
-    var lc = item.dir === 'across' ? item.w.col + item.w.len - 1 : item.w.col;
-    selectCell(lr, lc, item.dir);
-  }
   function moveArrow(dr, dc) {
     var rr = selRow;
     var cc = selCol;
@@ -1623,6 +1609,45 @@
     });
   }
 
+  // Backspace stays inside the current word: it clears the current square, or (square empty) steps
+  // back one square in this word and clears that one. At the first square of a word it never
+  // jumps to another clue or erases another word's letter.
+  var lastBackspaceAt = 0;
+  function clearCellAt(rr, cc) {
+    if (cellState[rr][cc] === 'revealed') return;
+    userGrid[rr][cc] = '';
+    cellState[rr][cc] = '';
+    paintCell(rr, cc);
+    renderClues();
+    renderHighlights();
+    scheduleSave();
+  }
+  function doBackspace() {
+    if (solved || modalOpen() || isBlack(selRow, selCol)) return;
+    armTimer();
+    if (cellState[selRow][selCol] !== 'revealed' && userGrid[selRow][selCol]) {
+      clearCellAt(selRow, selCol);
+      return;
+    }
+    var w = wordCovering(selRow, selCol, dir);
+    if (!w) return;
+    var pos = dir === 'across' ? selCol - w.col : selRow - w.row;
+    if (pos <= 0) return;
+    var p = entryCell(dir, w, pos - 1);
+    selectCell(p[0], p[1], dir);
+    clearCellAt(p[0], p[1]);
+  }
+  if (hiddenInput) {
+    // Android soft keyboards often send no Backspace keydown (key "Unidentified") and the input is
+    // always empty, so catch the deleteContentBackward beforeinput and run the same logic.
+    hiddenInput.addEventListener('beforeinput', function (e) {
+      if (e.inputType !== 'deleteContentBackward') return;
+      e.preventDefault();
+      if (Date.now() - lastBackspaceAt < 60) return; // keydown already handled this press
+      doBackspace();
+    });
+  }
+
   function playingFocus() {
     var t = document.activeElement;
     if (!t || t === document.body || t === document.documentElement) return true;
@@ -1663,25 +1688,8 @@
     if (key === 'ArrowUp') { e.preventDefault(); moveArrow(-1, 0); return; }
     if (key === 'Backspace' || key === 'Delete') {
       e.preventDefault();
-      armTimer();
-      if (cellState[selRow][selCol] !== 'revealed' && userGrid[selRow][selCol]) {
-        userGrid[selRow][selCol] = '';
-        cellState[selRow][selCol] = '';
-        paintCell(selRow, selCol);
-        renderClues();
-        renderHighlights();
-        scheduleSave();
-        return;
-      }
-      retreatCursor();
-      if (cellState[selRow][selCol] !== 'revealed') {
-        userGrid[selRow][selCol] = '';
-        cellState[selRow][selCol] = '';
-        paintCell(selRow, selCol);
-        renderClues();
-        renderHighlights();
-        scheduleSave();
-      }
+      lastBackspaceAt = Date.now();
+      doBackspace();
       return;
     }
     if (/^[a-zA-Z]$/.test(key)) {

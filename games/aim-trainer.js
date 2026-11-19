@@ -2015,13 +2015,15 @@
 
   function onShare() {
     sfx('share');
-    var payload = { title: 'Aim Trainer', text: shareText, url: shareUrl };
+    // Link goes inside the text (same as the clipboard copy); no separate url field, so apps that
+    // read both fields can't show the link twice or drop it.
+    var payload = { title: 'Aim Trainer', text: shareText + '\n' + shareUrl };
     var file = null;
     if (cardBlob) {
       try { file = new File([cardBlob], 'aim-trainer.png', { type: 'image/png' }); } catch (err) {}
     }
     if (file && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-      navigator.share({ title: payload.title, text: payload.text, url: payload.url, files: [file] }).then(function () {
+      navigator.share({ title: payload.title, text: payload.text, files: [file] }).then(function () {
         setShareMsg('Shared.');
       }).catch(function (err) {
         if (err && err.name === 'AbortError') setShareMsg('Share canceled.');
