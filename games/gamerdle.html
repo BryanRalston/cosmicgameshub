@@ -828,22 +828,36 @@ function copyShare() {
   const text = document.getElementById('shareBox').textContent;
   const won = guesses.some(g => g.name.toLowerCase() === TARGET.name.toLowerCase());
   const line = won ? guesses.length + '/6' : 'X/6';
-  const go = function () {
-    const btn = document.querySelector('[onclick="copyShare()"]');
-    if (btn) { btn.textContent = '✅ Copied + card'; setTimeout(()=>btn.textContent='📋 Copy & Share', 2000); }
+  const btn = document.querySelector('[onclick="copyShare()"]');
+  const idle = '📋 Copy & Share';
+  let labelTimer = null;
+  // Say what really happened: Copied only after a clipboard write, Shared after a native share,
+  // nothing at all when the share sheet was cancelled.
+  const say = function (label) {
+    if (!btn) return;
+    btn.textContent = label;
+    if (labelTimer) clearTimeout(labelTimer);
+    labelTimer = setTimeout(() => btn.textContent = idle, 2000);
+  };
+  const shareOpts = {
+    title: 'Gamerdle',
+    subtitle: '#' + dayNum + '  ·  ' + line,
+    grid: (document.getElementById('emojiGrid') || {}).textContent || '',
+    lines: [won ? 'Solved — ' + TARGET.name : 'X — ' + TARGET.name],
+    url: 'cosmicgameshub.com/games/gamerdle',
+    filename: 'gamerdle-' + dayNum,
+    text: text
   };
   if (window.CGSfx && window.CGSfx.shareNow) {
-    window.CGSfx.shareNow({
-      title: 'Gamerdle',
-      subtitle: '#' + dayNum + '  ·  ' + line,
-      grid: (document.getElementById('emojiGrid') || {}).textContent || '',
-      lines: [won ? 'Solved — ' + TARGET.name : 'X — ' + TARGET.name],
-      url: 'cosmicgameshub.com/games/gamerdle',
-      filename: 'gamerdle-' + dayNum,
-      text: text
-    }).then(go).catch(go);
-  } else if (navigator.clipboard) {
-    navigator.clipboard.writeText(text).then(go);
+    // daily-kit wraps shareNow to resolve {via:'native'|'cancel'|'copy', copied, card}.
+    window.CGSfx.shareNow(shareOpts).then(function (r) {
+      if (r && r.via === 'native') say('✅ Shared');
+      else if (r && r.via === 'cancel') return;
+      else if (r && r.via === 'copy') say(r.copied ? (r.card ? '✅ Copied + card' : '✅ Copied') : (r.card ? '✅ Card saved' : idle));
+      else if (r) say('✅ Card saved');
+    }).catch(function () {});
+  } else if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function () { say('✅ Copied'); }, function () {});
   }
 }
 

@@ -405,13 +405,24 @@
   // The Up next card goes in only one: the first dock that is on screen, else the first dock.
   function dockHost(slug) {
     var all = document.querySelectorAll('.cg-daily-dock[data-slug="' + slug + '"]');
-    for (var i = 0; i < all.length; i++) if (all[i].getClientRects().length) return all[i];
+    for (var i = 0; i < all.length; i++) if (dockShown(all[i])) return all[i];
     return all[0] || null;
+  }
+
+  // On screen: has a box, and no ancestor is invisible (Word Scramble's result modal is faded out with
+  // opacity 0 while closed, which still leaves it with a layout box).
+  function dockShown(el) {
+    if (!el.getClientRects().length) return false;
+    for (var n = el; n && n.nodeType === 1; n = n.parentElement) {
+      var cs = w.getComputedStyle(n);
+      if (cs.visibility === 'hidden' || cs.opacity === '0') return false;
+    }
+    return true;
   }
 
   function hostSig() {
     var all = document.querySelectorAll('.cg-daily-dock'), out = '';
-    for (var i = 0; i < all.length; i++) out += all[i].getClientRects().length ? '1' : '0';
+    for (var i = 0; i < all.length; i++) out += dockShown(all[i]) ? '1' : '0';
     return out;
   }
 
@@ -423,11 +434,14 @@
     var isHost = dockHost(slug) === el;
     var card = isHost ? dockCardHtml(slug) : null;
     var played = !!playedMap()[slug];
+    // A game that is not one of the 12 dailies (e.g. Word Scramble) never "finishes" a daily, so it
+    // has no Up next card. Its prompt shows once, in the host dock only.
+    var isDaily = ORDER.some(function (g) { return g.id === slug; });
     var html = '<div class="cg-dock">';
     if (card) {
       html += card;
-    } else if (played && !isHost) {
-      // Finished game, card lives in the other dock: no second CTA here.
+    } else if ((played || !isDaily) && !isHost) {
+      // Finished game (card lives in the other dock) or a non-daily game (prompt lives in the host dock): no second CTA here.
     } else if (next) {
       html += '<a class="cg-dock__next" href="' + next.href + '">Play next daily — ' + next.name + ' →</a>';
       html += '<div class="cg-dock__left">' + left + ' of 12 still open today</div>';
