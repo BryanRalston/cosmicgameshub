@@ -259,3 +259,10 @@ body.page-games::before { display: none; }
   .hub-card, .hub-thumb img, .hub-play, .page-games .gh-card, .page-games .gh-card__img { transition: none; }
   .hub-hero:hover .hub-play, .hub-card:hover, .hub-card:hover .hub-thumb img, .page-games .gh-card:hover, .page-games .gh-card:hover .gh-card__img { transform: none; }
 }
+
+/* Very small phones (360px): logo + Games + Daily + search overflowed the bar by ~10px. */
+@media (max-width: 400px) {
+  .page-home .nav__inner, .page-games .nav__inner { gap: 12px; }
+  .page-home .nav__logo, .page-games .nav__logo { font-size: 17px; }
+  .page-home .nav__links, .page-games .nav__links { gap: 14px !important; }
+}

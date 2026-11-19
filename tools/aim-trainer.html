@@ -28,11 +28,12 @@
     }
     .stats-bar {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 0.75rem;
       margin-bottom: 1rem;
       max-width: 800px;
     }
+    @media (max-width: 420px) { .stats-bar { gap: 0.5rem; } .stat-box { padding: 0.75rem 0.4rem; } }
     .stat-box {
       background: var(--bg-card);
       border: 1px solid var(--border);

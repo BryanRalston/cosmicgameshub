@@ -1078,8 +1078,8 @@ function showResultModal(won) {
         else if (r.via === 'cancel') return;
         else if (r.via === 'copy') {
           if (r.copied) sayShare(r.card ? 'Copied + card' : 'Copied');
-          else if (r.card) sayShare('Card saved');
-        } else sayShare('Card saved');
+          else if (r.card) sayShare('🖼️ Card saved');
+        } else sayShare('🖼️ Card saved');
       }).catch(() => {});
     } else if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text).then(() => sayShare('Copied'), () => {});
