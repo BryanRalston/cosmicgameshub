@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-D272MF8NQP"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}try{var q=location.search;if(/[?&]notrack=1/.test(q))localStorage.setItem('cgh_notrack','1');if(/[?&]notrack=0/.test(q))localStorage.removeItem('cgh_notrack');if(navigator.webdriver||/HeadlessChrome|Lighthouse/.test(navigator.userAgent)||localStorage.getItem('cgh_notrack')==='1')window['ga-disable-G-D272MF8NQP']=true;}catch(e){}
+    gtag('js', new Date());
+    gtag('config', 'G-D272MF8NQP');
+  </script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Orbit — Daily Word Ring Puzzle | CosmicGamesHub</title>
+<meta name="description" content="Orbit is a free daily word puzzle. Turn the letter rings around the core until every spoke spells a word. One new orbit a day, par to beat, share your stars." />
+<link rel="canonical" href="https://www.cosmicgameshub.com/games/orbit" />
+<meta name="theme-color" content="#05060c" />
+<link rel="stylesheet" href="../styles.css" />
+<link rel="stylesheet" href="/games/orbit.css" />
+<meta property="og:title" content="Orbit — Daily Word Ring Puzzle">
+<meta property="og:description" content="Turn the letter rings until every spoke spells a word. A new orbit every day.">
+<meta property="og:image" content="https://www.cosmicgameshub.com/images/thumbs/orbit-hero.webp">
+<meta property="og:image:width" content="1600">
+<meta property="og:image:height" content="900">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="CosmicGamesHub">
+<meta property="og:url" content="https://www.cosmicgameshub.com/games/orbit">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@CosmicGamesHub">
+<meta name="twitter:title" content="Orbit — Daily Word Ring Puzzle | CosmicGamesHub">
+<meta name="twitter:description" content="Turn the letter rings until every spoke spells a word. A new orbit every day.">
+<meta name="twitter:image" content="https://www.cosmicgameshub.com/images/thumbs/orbit-hero.webp">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "Orbit",
+  "description": "A daily word puzzle: rotate concentric letter rings until every spoke, read from the core outward, spells a word.",
+  "url": "https://www.cosmicgameshub.com/games/orbit",
+  "image": "https://www.cosmicgameshub.com/images/thumbs/orbit.webp",
+  "genre": ["Word Game", "Puzzle"],
+  "gamePlatform": "Web Browser",
+  "applicationCategory": "Game",
+  "operatingSystem": "Any",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD", "availability": "https://schema.org/InStock" },
+  "author": { "@type": "Organization", "name": "CosmicGamesHub", "url": "https://www.cosmicgameshub.com" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.cosmicgameshub.com/"},
+    {"@type": "ListItem", "position": 2, "name": "Games", "item": "https://www.cosmicgameshub.com/games"},
+    {"@type": "ListItem", "position": 3, "name": "Orbit", "item": "https://www.cosmicgameshub.com/games/orbit"}
+  ]
+}
+</script>
+</head>
+<body class="page-game ob-page">
+
+<!-- ─── Nav ─────────────────────────────────────── -->
+<nav class="nav" role="navigation" aria-label="Main navigation">
+  <div class="container">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo" aria-label="CosmicGamesHub home">
+        <span class="nav__logo-icon">🎮</span>
+        <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
+      </a>
+      <ul class="nav__links" id="navLinks">
+        <li><a href="/pros">Pros</a></li>
+        <li><a href="/guides">Guides</a></li>
+        <li><a href="/games/daily">Daily</a></li>
+        <li><a href="/versus">Comparisons</a></li>
+        <li><a href="/games" class="active">Games</a></li>
+        <li><a href="/tools/gaming-fps-calculator" class="nav__cta btn">Free Tools</a></li>
+      </ul>
+      <button class="nav__hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<main class="ob-wrap" id="orbitApp">
+  <header class="ob-head">
+    <div class="ob-title">
+      <h1>ORBIT</h1>
+      <div class="ob-sub" id="obSub">Daily word rings</div>
+    </div>
+    <div class="ob-head__btns">
+      <button type="button" class="ob-icon-btn" id="obHelpBtn" aria-label="How to play">?</button>
+    </div>
+  </header>
+
+  <div class="ob-hud" aria-label="Score">
+    <div class="ob-hud__item"><span class="ob-hud__num" id="obMoves">0</span><span class="ob-hud__lab">Moves</span></div>
+    <div class="ob-hud__item"><span class="ob-hud__num" id="obPar">0</span><span class="ob-hud__lab">Par</span></div>
+    <div class="ob-hud__item"><span class="ob-hud__num" id="obTime">0:00</span><span class="ob-hud__lab">Time</span></div>
+    <div class="ob-hud__item"><span class="ob-hud__num" id="obLit">0/8</span><span class="ob-hud__lab">Lit</span></div>
+  </div>
+
+  <div class="ob-stage">
+    <div class="ob-board" id="obBoard" tabindex="0" role="application" aria-roledescription="word ring puzzle"
+         aria-label="Orbit board. Up and down arrows pick a ring, left and right arrows turn it." aria-describedby="obTray">
+      <svg class="ob-svg" viewBox="-500 -500 1000 1000" aria-hidden="true" focusable="false">
+        <defs>
+          <radialGradient id="obCoreG" cx="50%" cy="50%" r="50%">
+            <stop offset="0" stop-color="#ffffff"/>
+            <stop offset=".28" stop-color="#9ff3ff"/>
+            <stop offset=".62" stop-color="#3a8bff" stop-opacity=".55"/>
+            <stop offset="1" stop-color="#7c3aed" stop-opacity="0"/>
+          </radialGradient>
+          <linearGradient id="obBeamG" x1="0" y1="0" x2="0" y2="-1" gradientUnits="objectBoundingBox">
+            <stop offset="0" stop-color="#fff3c4"/>
+            <stop offset="1" stop-color="#ffb547" stop-opacity=".15"/>
+          </linearGradient>
+        </defs>
+        <g id="obTracks"></g>
+        <g id="obSpokes"></g>
+        <g id="obBeams"></g>
+        <circle class="ob-core-halo" r="150" fill="url(#obCoreG)"/>
+      </svg>
+      <div class="ob-rings" id="obRings"></div>
+      <div class="ob-core" id="obCore" aria-hidden="true"><span></span></div>
+      <div class="ob-fx" id="obFx" aria-hidden="true"></div>
+    </div>
+  </div>
+
+  <div class="ob-controls" role="group" aria-label="Ring controls">
+    <button type="button" class="ob-rot" id="obCcw" aria-label="Turn selected ring counterclockwise">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M3.8 3.6v4.6h4.6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="ob-pick" id="obPick"></div>
+    <button type="button" class="ob-rot" id="obCw" aria-label="Turn selected ring clockwise">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M20.2 3.6v4.6h-4.6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+
+  <ol class="ob-tray" id="obTray" aria-label="Spokes, read from the core outward"></ol>
+
+  <div class="ob-actions">
+    <button type="button" class="ob-btn ob-btn--ghost" id="obHint">💡 Hint</button>
+    <button type="button" class="ob-btn ob-btn--ghost" id="obResultBtn" hidden>See result</button>
+    <a class="ob-btn ob-btn--ghost" id="obPracticeLink" href="/games/orbit?practice=1">Practice orbit</a>
+  </div>
+
+  <div class="ob-live visually-hidden" id="obLive" aria-live="polite"></div>
+
+  <section class="ob-about" aria-labelledby="obAboutH">
+    <h2 id="obAboutH">How Orbit works</h2>
+    <p>Orbit is a free daily word puzzle from CosmicGamesHub. Eight spokes run out from a glowing core through four rings of letters. Read each spoke from the core outward: when all eight spell common English words, the orbit locks and you win.</p>
+    <p>The inner ring is fixed. Turn the other three rings by dragging them, with the turn buttons, or with your arrow keys. A spoke glows gold the moment it spells a word. Each puzzle has exactly one solution, checked against every possible ring position. Par is the fewest turns that solve it; stay within two and a half times par for three stars.</p>
+  </section>
+</main>
+
+<!-- ─── Result Modal ─────────────────────────────── -->
+<div class="ob-modal-bg" id="obResult" role="dialog" aria-modal="true" aria-labelledby="obResTitle" hidden>
+  <div class="ob-modal">
+    <button type="button" class="ob-modal__x" data-close aria-label="Close">×</button>
+    <div class="ob-res__eyebrow" id="obResNum">Orbit #1</div>
+    <h2 id="obResTitle">Orbit locked!</h2>
+    <div class="ob-res__stars" id="obResStars" aria-label="3 of 3 stars"></div>
+    <div class="ob-res__words" id="obResWords"></div>
+    <div class="ob-res__stats">
+      <div><b id="obResMoves">0</b><span>Moves</span></div>
+      <div><b id="obResPar">0</b><span>Par</span></div>
+      <div><b id="obResTime">0:00</b><span>Time</span></div>
+      <div><b id="obResStreak">0</b><span>Streak</span></div>
+    </div>
+    <p class="ob-res__note" id="obResNote"></p>
+    <button type="button" class="ob-btn ob-btn--primary" id="obShare">Share</button>
+    <a class="ob-btn ob-btn--ghost" id="obNewPractice" href="/games/orbit?practice=1" hidden>New practice orbit</a>
+    <div class="ob-res__next" id="obResNext">Next Orbit (UTC) in <span data-cd>00:00:00</span></div>
+    <div class="cg-daily-dock" data-slug="orbit"></div>
+    <a class="ob-btn ob-btn--ghost" href="/games/orbit?practice=1" id="obResPractice">Play a practice orbit</a>
+    <button type="button" class="ob-btn ob-btn--ghost" data-close>Close</button>
+  </div>
+</div>
+
+<!-- ─── How to play ───────────────────────────────── -->
+<div class="ob-modal-bg" id="obHelp" role="dialog" aria-modal="true" aria-labelledby="obHelpTitle" hidden>
+  <div class="ob-modal ob-modal--help">
+    <button type="button" class="ob-modal__x" data-close aria-label="Close">×</button>
+    <h2 id="obHelpTitle">How to play</h2>
+    <ul class="ob-how">
+      <li><span aria-hidden="true">🪐</span><div>Turn the rings until <strong>every spoke</strong>, read from the core outward, spells a <strong>4-letter word</strong>.</div></li>
+      <li><span aria-hidden="true">👆</span><div><strong>Drag a ring</strong>, or pick a ring and tap the turn buttons. Keys: <kbd>↑</kbd><kbd>↓</kbd> pick, <kbd>←</kbd><kbd>→</kbd> turn.</div></li>
+      <li><span aria-hidden="true">✨</span><div>A spoke glows <strong>gold</strong> when it is a word. Light all eight to lock the orbit. The inner ring never moves.</div></li>
+      <li><span aria-hidden="true">⭐</span><div>Par is the fewest turns. Stay within 2.5× par for 3 stars. Many spokes spell a word that isn't the answer, so check the others. One hint a day locks a ring (max 2 stars).</div></li>
+    </ul>
+    <button type="button" class="ob-btn ob-btn--primary" data-close>Got it</button>
+  </div>
+</div>
+
+<!-- ─── Footer ─────────────────────────────────── -->
+<section class="rg-section">
+  <div class="container">
+    <h3 class="rg-heading">More Games</h3>
+    <div class="rg-grid">
+      <a href="/games/pixle" class="rg-card">
+        <img src="/images/game-pixle.jpg" alt="Pixle" loading="lazy" width="200" height="86">
+        <div class="rg-info">
+          <div class="rg-tags"><span class="rg-tag">Daily</span><span class="rg-tag">Word</span></div>
+          <div class="rg-name">Pixle</div>
+          <div class="rg-desc">5-letter gaming Wordle</div>
+        </div>
+      </a>
+      <a href="/games/link" class="rg-card">
+        <img src="/images/game-link.jpg" alt="Link" loading="lazy" width="200" height="86">
+        <div class="rg-info">
+          <div class="rg-tags"><span class="rg-tag">Daily</span><span class="rg-tag">Word</span></div>
+          <div class="rg-name">Link</div>
+          <div class="rg-desc">Find four groups of four</div>
+        </div>
+      </a>
+      <a href="/games/rift" class="rg-card">
+        <img src="/images/game-rift-v2.jpg" alt="RIFT" loading="lazy" width="200" height="86">
+        <div class="rg-info">
+          <div class="rg-tags"><span class="rg-tag">Daily</span><span class="rg-tag">Word</span></div>
+          <div class="rg-name">RIFT</div>
+          <div class="rg-desc">Three daily word zones</div>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+<footer class="footer" role="contentinfo">
+  <div class="container">
+    <div class="footer__grid">
+      <div class="footer__brand">
+        <a href="/" class="nav__logo" style="justify-content:flex-start;">
+          <span class="nav__logo-icon" aria-hidden="true">🎮</span>
+          <span class="nav__logo-text">Cosmic<span>Games</span>Hub</span>
+        </a>
+        <p>Expert gaming gear guides, original free games, and tools for every type of gamer.</p>
+      </div>
+      <div class="footer__col">
+        <h4>Games</h4>
+        <ul>
+          <li><a href="/games/rift">RIFT</a></li>
+          <li><a href="/games/gamerdle">Gamerdle</a></li>
+          <li><a href="/games/pixle">Pixle</a></li>
+          <li><a href="/games/word-scramble">Scramble</a></li>
+          <li><a href="/games/sudoku">Sudoku</a></li>
+        </ul>
+      </div>
+      <div class="footer__col">
+        <h4>Guides</h4>
+        <ul>
+          <li><a href="/guides/best-gaming-headsets-2026">Best Gaming Headsets</a></li>
+          <li><a href="/guides/best-gaming-mice-2026">Best Gaming Mice</a></li>
+          <li><a href="/guides/best-gaming-keyboards-2026">Best Keyboards</a></li>
+          <li><a href="/guides/best-gaming-monitors-2026">Best Monitors</a></li>
+        </ul>
+      </div>
+      <div class="footer__col">
+        <h4>Tools</h4>
+        <ul>
+          <li><a href="/tools/aim-trainer">Aim Trainer</a></li>
+          <li><a href="/tools/reaction-time-test">Reaction Test</a></li>
+          <li><a href="/tools/gaming-fps-calculator">FPS Calculator</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <p class="footer__legal">© 2026 CosmicGamesHub. All rights reserved. · <a href="/about" style="color:var(--text-mid);">About</a></p>
+    </div>
+  </div>
+</footer>
+
+<script src="/games/orbit-puzzles.js"></script>
+<script src="/games/cg-sfx.js"></script>
+<script src="/games/orbit.js"></script>
+<script src="/games/daily-kit.js" defer></script>
+<script src="/global.js" defer></script>
+</body>
+</html>
