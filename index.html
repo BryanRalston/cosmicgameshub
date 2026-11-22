@@ -19,12 +19,12 @@
   <meta property="og:description" content="Free browser games, no downloads. Play Sudoku, Holiday Rush, BRIX 3D, RIFT, Gamerdle, Rootweave, and Pixle right in the browser." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://www.cosmicgameshub.com/" />
-  <meta property="og:image" content="https://www.cosmicgameshub.com/images/thumbs/sudoku-hero.webp" />
+  <meta property="og:image" content="https://www.cosmicgameshub.com/images/thumbs/minesweeper-hero.webp" />
   <link rel="canonical" href="https://www.cosmicgameshub.com/" />
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="/hub.css" />
-  <link rel="preload" as="image" href="/images/thumbs/sudoku-hero-phone.webp" type="image/webp" media="(max-width: 760px)" fetchpriority="high" />
-  <link rel="preload" as="image" href="/images/thumbs/sudoku-hero.webp" type="image/webp" media="(min-width: 761px)" fetchpriority="high" />
+  <link rel="preload" as="image" href="/images/thumbs/minesweeper-hero-phone.webp" type="image/webp" media="(max-width: 760px)" fetchpriority="high" />
+  <link rel="preload" as="image" href="/images/thumbs/minesweeper-hero.webp" type="image/webp" media="(min-width: 761px)" fetchpriority="high" />
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -247,18 +247,18 @@
     <p class="hub-eyebrow">Free to play in your browser. No downloads.</p>
     <h1>Games worth your time.</h1>
     <div class="hub-stage">
-    <a class="hub-hero" id="gotw" href="/games/sudoku">
+    <a class="hub-hero" id="gotw" href="/games/minesweeper">
       <div class="hub-hero__in">
         <picture>
-          <source media="(max-width: 760px)" srcset="/images/thumbs/sudoku-hero-phone.webp" />
-          <source id="gotwAvif" type="image/avif" srcset="/images/thumbs/sudoku-hero.avif" />
-          <img id="gotwImg" src="/images/thumbs/sudoku-hero.webp" alt="Sudoku in progress: a partly filled board, selected cell, and number pad" width="1600" height="900" fetchpriority="high" decoding="async" />
+          <source id="gotwPhone" media="(max-width: 760px)" srcset="/images/thumbs/minesweeper-hero-phone.webp" />
+          <source id="gotwAvif" type="image/avif" srcset="/images/thumbs/minesweeper-hero.avif" />
+          <img id="gotwImg" src="/images/thumbs/minesweeper-hero.webp" alt="Minesweeper mid-game: a half-cleared board with numbers and flagged mines" width="1600" height="900" fetchpriority="high" decoding="async" />
         </picture>
         <div class="hub-hero__copy">
           <div>
-            <div class="hub-badge"><i></i><span id="gotwWeek">Game of the Week · Nov 2–8</span></div>
-            <h2 id="gotwTitle">Sudoku</h2>
-            <p id="gotwBlurb">Pick up a half-solved grid and fill every row, column, and box.</p>
+            <div class="hub-badge"><i></i><span id="gotwWeek">Game of the Week</span></div>
+            <h2 id="gotwTitle">Minesweeper</h2>
+            <p id="gotwBlurb">Read the numbers, flag every mine, and clear the field without a single boom.</p>
           </div>
           <span class="hub-play" id="gotwPlay">Play now <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4v16l13-8z"/></svg></span>
         </div>
@@ -575,19 +575,6 @@
   <span>© 2026 Cosmic Games Hub</span>
   <nav aria-label="Footer"><a href="/guides">Guides</a><a href="/submit-game">Submit your game</a><a href="/about">About</a><a href="/privacy">Privacy</a><a href="mailto:hello@cosmicgameshub.com">Contact</a></nav>
 </div></footer>
-<script>
-(function () {
-  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  var now = new Date();
-  var day = now.getDay();
-  var monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (day === 0 ? 6 : day - 1));
-  var sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
-  var start = months[monday.getMonth()] + ' ' + monday.getDate();
-  var end = monday.getMonth() === sunday.getMonth() ? String(sunday.getDate()) : months[sunday.getMonth()] + ' ' + sunday.getDate();
-  var el = document.getElementById('gotwWeek');
-  if (el) el.textContent = 'Game of the Week \u00b7 ' + start + '\u2013' + end;
-})();
-</script>
 <script src="/games/daily-kit.js" defer></script>
 <script src="/global.js" defer></script>
 </body>
