@@ -76,7 +76,7 @@ body.ob-page.ob-has-backdrop::before {
   margin: 0; font-size: 1.7rem; font-weight: 900; letter-spacing: .22em; line-height: 1.05;
   color: #fff; text-shadow: 0 0 18px rgba(94, 231, 255, .45), 0 0 2px rgba(255, 255, 255, .6);
 }
-.ob-sub { font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--ob-lo); margin-top: .2rem; }
+.ob-sub { font-size: .78rem; letter-spacing: .12em; text-transform: uppercase; color: var(--ob-mid); margin-top: .2rem; }
 .ob-sub b { color: var(--ob-cyan); font-weight: 800; }
 .ob-icon-btn {
   width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(255,255,255,.16);
@@ -93,7 +93,7 @@ body.ob-page.ob-has-backdrop::before {
 }
 .ob-hud__item { display: flex; flex-direction: column; align-items: center; min-width: 0; }
 .ob-hud__num { font-size: 1.15rem; font-weight: 800; color: var(--ob-ink); font-variant-numeric: tabular-nums; line-height: 1.1; }
-.ob-hud__lab { font-size: .62rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ob-lo); }
+.ob-hud__lab { font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ob-mid); }
 .ob-hud__item.is-over .ob-hud__num { color: #ffb4a8; }
 #obLit { color: var(--ob-gold); }
 
@@ -231,6 +231,14 @@ body.ob-page.ob-has-backdrop::before {
 .ob-btn--primary:hover { opacity: .92; }
 
 .ob-page .cg-dock { border-top-color: rgba(255,255,255,.08); }
+/* daily-kit's Sound toggle, restyled to match the ghost buttons beside it */
+.ob-page .cg-dock__mute {
+  min-height: 44px; padding: .55rem 1.1rem; border-radius: 12px; box-sizing: border-box;
+  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.14); color: var(--ob-ink);
+  font: 700 .9rem/1.1 var(--font); cursor: pointer; transition: border-color .15s;
+}
+.ob-page .cg-dock__mute:hover { border-color: var(--ob-cyan); }
+.ob-page .cg-dock__mute:focus-visible { outline: 2px solid var(--ob-cyan); outline-offset: 2px; }
 .ob-about { margin: 1.4rem 0 .5rem; padding: 1rem 1.1rem; border-radius: 14px; background: rgba(255,255,255,.03); border: 1px solid var(--ob-line); }
 .ob-about h2 { font-size: 1rem; color: var(--ob-ink); margin: 0 0 .4rem; }
 .ob-about p { font-size: .86rem; line-height: 1.55; color: var(--ob-mid); margin: 0 0 .5rem; }
@@ -320,4 +328,11 @@ body.ob-page.ob-has-backdrop::before {
   /* eight chips in one row on desktop so the tray stays above the fold at 1280x800 */
   .ob-tray { grid-template-columns: repeat(8, 1fr); gap: .3rem; }
   .ob-chip { font-size: .9rem; letter-spacing: .04em; }
+  /* size the board to the viewport height so the hint/undo/practice row fits at 1280x800
+     and phone landscape shows the whole board (the page scrolls for the rest) */
+  .ob-board { width: min(100%, 460px, max(280px, calc(100vh - 380px))); width: min(100%, 460px, max(280px, calc(100svh - 380px))); }
+  .ob-head { padding: .45rem 0 .2rem; }
+  .ob-stage { padding: .3rem 0 .1rem; }
+  .ob-controls { margin: .35rem 0 .3rem; }
+  .ob-actions { margin: .45rem 0 .2rem; }
 }

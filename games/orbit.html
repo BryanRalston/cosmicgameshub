@@ -141,6 +141,7 @@
   <ol class="ob-tray" id="obTray" aria-label="Spokes, read from the core outward"></ol>
 
   <div class="ob-actions">
+    <button type="button" class="ob-btn ob-btn--ghost" id="obUndo" aria-label="Undo last turn" title="Undo last turn (Z)" disabled>↶ Undo</button>
     <button type="button" class="ob-btn ob-btn--ghost" id="obHint">💡 Hint</button>
     <button type="button" class="ob-btn ob-btn--ghost" id="obResultBtn" hidden>See result</button>
     <a class="ob-btn ob-btn--ghost" id="obPracticeLink" href="/games/orbit?practice=1">Practice orbit</a>
@@ -172,7 +173,7 @@
     <p class="ob-res__note" id="obResNote"></p>
     <button type="button" class="ob-btn ob-btn--primary" id="obShare">Share</button>
     <a class="ob-btn ob-btn--ghost" id="obNewPractice" href="/games/orbit?practice=1" hidden>New practice orbit</a>
-    <div class="ob-res__next" id="obResNext">Next Orbit (UTC) in <span data-cd>00:00:00</span></div>
+    <div class="ob-res__next" id="obResNext">Next puzzle in <span data-cd>00:00:00</span></div>
     <div class="cg-daily-dock" data-slug="orbit"></div>
     <a class="ob-btn ob-btn--ghost" href="/games/orbit?practice=1" id="obResPractice">Play a practice orbit</a>
     <button type="button" class="ob-btn ob-btn--ghost" data-close>Close</button>
@@ -186,9 +187,9 @@
     <h2 id="obHelpTitle">How to play</h2>
     <ul class="ob-how">
       <li><span aria-hidden="true">🪐</span><div>Turn the rings until <strong>every spoke</strong>, read from the core outward, spells a <strong>4-letter word</strong>.</div></li>
-      <li><span aria-hidden="true">👆</span><div><strong>Drag a ring</strong>, or pick a ring and tap the turn buttons. Keys: <kbd>↑</kbd><kbd>↓</kbd> pick, <kbd>←</kbd><kbd>→</kbd> turn.</div></li>
+      <li><span aria-hidden="true">👆</span><div><strong>Drag a ring</strong>, or pick a ring and tap the turn buttons. Keys: <kbd>↑</kbd><kbd>↓</kbd> pick, <kbd>←</kbd><kbd>→</kbd> turn, <kbd>Z</kbd> undo.</div></li>
       <li><span aria-hidden="true">✨</span><div>A spoke glows <strong>gold</strong> when it is a word. Light all eight to lock the orbit. The inner ring never moves.</div></li>
-      <li><span aria-hidden="true">⭐</span><div>Par is the fewest turns. Stay within 2.5× par for 3 stars. Many spokes spell a word that isn't the answer, so check the others. One hint a day locks a ring (max 2 stars).</div></li>
+      <li><span aria-hidden="true">⭐</span><div>Every 45° step a ring passes is one move, including drags and undo. Par is the fewest moves; stay within 2.5× par for 3 stars. Many spokes spell a word that isn't the answer, so check the others. One hint a day locks a ring (max 2 stars).</div></li>
     </ul>
     <button type="button" class="ob-btn ob-btn--primary" data-close>Got it</button>
   </div>
@@ -271,6 +272,7 @@
 </footer>
 
 <script src="/games/orbit-puzzles.js"></script>
+<script src="/games/orbit-practice.js"></script>
 <script src="/games/cg-sfx.js"></script>
 <script src="/games/orbit.js"></script>
 <script src="/games/daily-kit.js" defer></script>

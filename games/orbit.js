@@ -35,18 +35,21 @@
   var qs = new URLSearchParams(location.search);
   var PRACTICE = qs.has('practice');
   var todayNum = Math.max(1, dayIdx() - EPOCH + 1);
-  var num, pIndex;
-  if (PRACTICE) {
+  // Practice draws from its own pool (orbit-practice.js), generated so that no practice
+  // puzzle uses the same eight words as any daily: practice can never preview a future day.
+  var PRAC = (window.ORBIT_PRACTICE && window.ORBIT_PRACTICE.puzzles) || [];
+  var num, pIndex, P;
+  if (PRACTICE && PRAC.length) {
     var want = parseInt(qs.get('n'), 10);
-    var todayIdx = (todayNum - 1) % D.puzzles.length;
-    if (want >= 1 && want <= D.puzzles.length) pIndex = want - 1;
-    else { do { pIndex = Math.floor(Math.random() * D.puzzles.length); } while (pIndex === todayIdx && D.puzzles.length > 1); }
+    pIndex = want >= 1 && want <= PRAC.length ? want - 1 : Math.floor(Math.random() * PRAC.length);
     num = pIndex + 1;
+    P = PRAC[pIndex];
   } else {
+    PRACTICE = false;
     num = todayNum;
     pIndex = (num - 1) % D.puzzles.length;
+    P = D.puzzles[pIndex];
   }
-  var P = D.puzzles[pIndex];
   var WORDS = P[0].split(' ');
   var SCR = String(P[1]).split('').map(Number);
   var RINGS = [];
@@ -54,10 +57,10 @@
   var START = [0].concat(SCR);
   var PAR = START.reduce(function (s, o) { return s + Math.min(o, N - o); }, 0);
   var THREE_STAR = Math.ceil(PAR * 2.5), TWO_STAR = PAR * 5;
-  var LITROW = new Array(N + 1).join('🟨');
 
   // ---- state --------------------------------------------------------------
-  var st = { p: num, offs: START.slice(), moves: 0, elapsed: 0, hint: -1, done: false, stars: 0 };
+  // turns = moves spent on each ring (shown, spoiler-free, on the share card).
+  var st = { p: num, offs: START.slice(), moves: 0, elapsed: 0, hint: -1, done: false, stars: 0, turns: [0, 0, 0, 0] };
   if (!PRACTICE) {
     var saved = jget(STATE_KEY);
     if (saved && saved.p === num && Array.isArray(saved.offs) && saved.offs.length === R) {
@@ -66,6 +69,7 @@
       st.moves = saved.moves | 0; st.elapsed = +saved.elapsed || 0;
       st.hint = typeof saved.hint === 'number' ? saved.hint : -1;
       st.done = !!saved.done; st.stars = saved.stars | 0;
+      if (Array.isArray(saved.turns) && saved.turns.length === R) st.turns = saved.turns.map(function (t) { return t | 0; });
     }
   }
   function save() { if (!PRACTICE) jset(STATE_KEY, st); }
@@ -258,24 +262,56 @@
     board.classList.remove('is-nudge'); void board.offsetWidth; board.classList.add('is-nudge');
     if (!muted()) sfx().play('miss');
   }
-  function commit(r, newOff, steps) {
-    var d = cdist(st.offs[r], newOff);
+  // Every 45-degree step a ring passes costs one move, however it was turned (button, key,
+  // drag, undo). A drag pays as it goes, so a full spin costs 8 even if it ends where it began.
+  function spend(r, n) {
+    if (n <= 0) return;
+    st.moves += n; st.turns[r] += n;
+    startClock();
+    hud();
+  }
+  function commit(r, newOff) {
     st.offs[r] = newOff;
-    if (d > 0) {
-      st.moves += d;
-      startClock();
-      if (!muted()) sfx().play('tick');
-    }
     var c = evaluate(st.offs);
-    hud(); save();
+    hud(); save(); syncUndo();
     if (c === N) solve();
+  }
+  // Undo history: one entry per button/key step, one per drag gesture (its net turn).
+  var undoStack = [];
+  function pushUndo(r, net) {
+    if (mod(net, N) === 0) return;
+    undoStack.push({ r: r, net: net });
+    if (undoStack.length > 200) undoStack.shift();
   }
   function rotate(r, dir) {
     if (!movable(r)) { nudge(); return; }
     tgt[r] += dir * STEP;
     kick();
-    commit(r, mod(st.offs[r] + dir, N), dir);
+    spend(r, 1);
+    if (!muted()) sfx().play('tick');
+    pushUndo(r, dir);
+    commit(r, mod(st.offs[r] + dir, N));
   }
+  function undo() {
+    if (st.done || dragging) return;
+    var u;
+    while ((u = undoStack.pop()) && !movable(u.r)) {}
+    if (!u) { syncUndo(); return; }
+    var back = mod(-u.net, N); if (back > N / 2) back -= N;
+    tgt[u.r] += back * STEP;
+    kick();
+    spend(u.r, Math.abs(back));
+    if (!muted()) sfx().play('tick');
+    select(u.r);
+    live.textContent = 'Undo: ring ' + (u.r + 1) + ' turned back.';
+    commit(u.r, mod(st.offs[u.r] + back, N));
+  }
+  var undoBtn = $('obUndo');
+  function syncUndo() {
+    if (!undoBtn) return;
+    undoBtn.disabled = st.done || !undoStack.some(function (u) { return movable(u.r); });
+  }
+  if (undoBtn) undoBtn.addEventListener('click', undo);
 
   // ---- drag -----------------------------------------------------------------
   function polar(e) {
@@ -295,7 +331,8 @@
     if (!movable(r)) { nudge(); return; }
     e.preventDefault();
     select(r);
-    dragging = { r: r, id: e.pointerId, lastA: p.a, total: 0, from: st.offs[r], live: st.offs[r] };
+    var s0 = Math.round(ang[r] / STEP);
+    dragging = { r: r, id: e.pointerId, lastA: p.a, total: 0, s0: s0, step: s0 };
     tgt[r] = ang[r];
     try { board.setPointerCapture(e.pointerId); } catch (x) {}
     board.classList.add('is-dragging');
@@ -308,10 +345,11 @@
     dragging.lastA = p.a;
     dragging.total += Math.abs(da);
     ang[dragging.r] += da; tgt[dragging.r] = ang[dragging.r];
-    var liveOff = mod(Math.round(ang[dragging.r] / STEP), N);
-    if (liveOff !== dragging.live) {
-      dragging.live = liveOff;
-      var o = st.offs.slice(); o[dragging.r] = liveOff;
+    var step = Math.round(ang[dragging.r] / STEP);
+    if (step !== dragging.step) {
+      spend(dragging.r, Math.abs(step - dragging.step));
+      dragging.step = step;
+      var o = st.offs.slice(); o[dragging.r] = mod(step, N);
       evaluate(o, true);
       if (!muted()) sfx().play('tick');
     }
@@ -319,13 +357,13 @@
   });
   function endDrag(e) {
     if (!dragging || (e && e.pointerId !== dragging.id)) return;
-    var r = dragging.r;
-    var steps = Math.round(ang[r] / STEP);
+    var r = dragging.r, steps = dragging.step;
     tgt[r] = steps * STEP;
+    pushUndo(r, steps - dragging.s0);
     dragging = null;
     board.classList.remove('is-dragging');
     kick();
-    commit(r, mod(steps, N), 0);
+    commit(r, mod(steps, N));
   }
   board.addEventListener('pointerup', endDrag);
   board.addEventListener('pointercancel', endDrag);
@@ -348,6 +386,7 @@
     else if (k === 'ArrowUp' || k === 'w' || k === 'W') stepSel(1);
     else if (k === 'ArrowDown' || k === 's' || k === 'S') stepSel(-1);
     else if (k >= '2' && k <= String(R)) select(+k - 1);
+    else if (k === 'z' || k === 'Z' || k === 'u' || k === 'U' || k === 'Backspace') undo();
     else used = false;
     if (used) e.preventDefault();
   });
@@ -373,7 +412,7 @@
     st.offs[best] = 0;
     st.hint = best;
     if (sel === best) stepSel(1);
-    syncHint(); kick(); startClock();
+    syncHint(); syncUndo(); kick(); startClock();
     var c = evaluate(st.offs);
     hud(); save();
     live.textContent = 'Hint: ring ' + (best + 1) + ' is locked in place.';
@@ -427,7 +466,7 @@
   function lockBoard() {
     board.classList.add('is-solved');
     for (var i = 0; i < R; i++) { tracks[i].classList.remove('is-sel'); ringEls[i].classList.remove('is-sel'); }
-    syncHint();
+    syncHint(); syncUndo();
     $('obResultBtn').hidden = false;
   }
   function solve() {
@@ -470,6 +509,18 @@
   $('obResultBtn').addEventListener('click', openResult);
 
   function starStr(n) { var s = ''; for (var i = 0; i < 3; i++) s += i < n ? '⭐' : '☆'; return s; }
+  // Spoiler-free share: an efficiency bar (par / moves, 10 cells, coloured by stars) and the
+  // moves spent on each ring. Neither reveals a word, a direction or a ring's scramble.
+  var CIRC = ['①', '②', '③', '④'];
+  function shareBits() {
+    var cell = st.stars === 3 ? '🟩' : st.stars === 2 ? '🟨' : '🟧';
+    var fill = Math.max(1, Math.min(10, Math.round(10 * PAR / Math.max(st.moves, 1))));
+    var bar = new Array(fill + 1).join(cell) + new Array(11 - fill).join('⬛');
+    var eff = Math.min(100, Math.round(100 * PAR / Math.max(st.moves, 1)));
+    var turns = [];
+    for (var r = 1; r < R; r++) turns.push(CIRC[r] + ' ' + (r === st.hint ? '💡' : st.turns[r]));
+    return { bar: bar, eff: eff, turns: 'Ring turns ' + turns.join(' · ') };
+  }
   function openResult() {
     var s = jget(STATS_KEY) || {};
     $('obResNum').textContent = PRACTICE ? 'Practice orbit #' + num : 'Orbit #' + num;
@@ -497,13 +548,14 @@
   var shareBtn = $('obShare'), shareTimer = 0;
   function sayShare(t) { shareBtn.textContent = t; clearTimeout(shareTimer); shareTimer = setTimeout(function () { shareBtn.textContent = 'Share'; }, 2000); }
   shareBtn.addEventListener('click', function () {
-    var line = st.moves + ' moves (par ' + PAR + ') · ' + fmtT(st.elapsed) + (st.hint >= 0 ? ' · 💡' : '');
-    var text = '🪐 Orbit #' + num + ' ' + starStr(st.stars) + '\n' + line + '\n' + LITROW + '\n\ncosmicgameshub.com/games/orbit';
+    var b = shareBits();
+    var line = st.moves + ' moves (par ' + PAR + ') · ' + fmtT(st.elapsed);
+    var text = '🪐 Orbit #' + num + ' ' + starStr(st.stars) + '\n' + line + '\n' + b.bar + ' ' + b.eff + '%\n' + b.turns + '\n\ncosmicgameshub.com/games/orbit';
     var opts = {
       title: 'Orbit',
       subtitle: '#' + num + '  ·  ' + st.stars + '/3 stars',
-      grid: starStr(st.stars) + '\n' + LITROW,
-      lines: [st.moves + ' moves · par ' + PAR, 'Solved in ' + fmtT(st.elapsed) + (st.hint >= 0 ? ' · 1 hint' : '')],
+      grid: starStr(st.stars) + '\n' + b.bar,
+      lines: [st.moves + ' moves · par ' + PAR + ' · ' + b.eff + '% efficient', b.turns, 'Solved in ' + fmtT(st.elapsed) + (st.hint >= 0 ? ' · 1 hint' : '')],
       url: 'cosmicgameshub.com/games/orbit',
       filename: 'orbit-' + num,
       text: text
@@ -552,7 +604,7 @@
   else window.addEventListener('resize', layout);
   evaluate(st.offs, true);
   select(st.hint === 1 ? 2 : 1);
-  syncHint(); hud();
+  syncHint(); syncUndo(); hud();
   if (st.done) lockBoard();
   if (!st.done && !localStorage.getItem(HELP_KEY)) {
     try { localStorage.setItem(HELP_KEY, '1'); } catch (e) {}
@@ -560,6 +612,7 @@
   }
   // Read-only hook for QA scripts.
   window.OrbitGame = {
-    info: function () { return { num: num, practice: PRACTICE, index: pIndex, par: PAR, offs: st.offs.slice(), moves: st.moves, done: st.done, stars: st.stars, lit: lit.filter(Boolean).length, sel: sel, hint: st.hint }; }
+    info: function () { return { num: num, practice: PRACTICE, index: pIndex, par: PAR, offs: st.offs.slice(), moves: st.moves, done: st.done, stars: st.stars, lit: lit.filter(Boolean).length, sel: sel, hint: st.hint, turns: st.turns.slice(), undo: undoStack.length }; },
+    shareText: function () { var b = shareBits(); return b.bar + ' ' + b.eff + '%\n' + b.turns; }
   };
 })();

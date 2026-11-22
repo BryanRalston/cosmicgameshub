@@ -4,13 +4,21 @@ Rules: 4 letter rings x 8 spokes around a core. Each spoke, read from the core o
 4-letter word. Ring 1 (inner) is fixed; rings 2-4 turn in 45-degree steps (8^3 = 512 board states).
 A spoke lights when it spells a word in the light dictionary; all eight lit = solved.
 
-Scoring: a move is one 45-degree step (a drag counts its net steps). Par = fewest steps from the
+Scoring: a move is one 45-degree step a ring passes, however it was turned. A drag pays for every
+step it crosses (two full spins = 16 moves even if the ring ends where it started), so drag-scanning
+is not free. Undo (button, Z, U or Backspace) turns back the last button step or the last whole drag
+gesture; it is a real turn, so it costs its steps too. Par = fewest steps from the
 scramble (9-12). 3 stars within 2.5x par, 2 stars within 5x par, else 1. One hint a day locks the
 ring that is furthest off into place and caps the result at 2 stars.
 
 Daily pick: UTC day (same day boundary and countdown as Pixle/Link). Puzzle #1 = `EPOCH` in
-gen_orbit.py; the bank wraps after 366 days. `?practice=1` plays a random bank puzzle (no stats);
-`?practice=1&n=17` plays puzzle 17.
+gen_orbit.py; the bank wraps after 366 days. Practice uses its own 200-puzzle pool
+(games/orbit-practice.js, same rules, separate seed, no puzzle with the same eight words as any day),
+so practice can never preview a daily. `?practice=1` plays a random practice puzzle (no stats);
+`?practice=1&n=17` plays practice puzzle 17.
+
+Share card (spoiler-free): stars, moves vs par and time, a 10-cell efficiency bar (par / moves,
+coloured by stars) and the moves spent on each ring. No words, directions or scramble distances.
 
 ## Puzzle rules enforced by the generator
 - Exactly one solved state among all 512 rotations (brute force; `verify_bank.js` re-proves it
@@ -49,9 +57,14 @@ near-miss filter is a guard, not the main lever. The real levers are 8 letters p
 ## Files
 - answers.txt: curated answer words (common, family-friendly, no names / plural-s / past tense).
 - light.txt: words that light a spoke (wordfreq zipf >= 3.0 AND in games/rift-words.json, minus deny.txt).
-- deny.txt: never light, never shown on a scrambled spoke (offensive words, names, abbreviations).
-- gen_orbit.py: builds games/orbit-puzzles.js.
-- verify_bank.js: `node scripts/orbit/verify_bank.js games/orbit-puzzles.js`.
+- extra.txt: hand-picked glow words wordfreq missed (MEME, NOOB, NERF, FIZZ, ONYX, OKRA, OBOE...).
+- deny.txt: never light, never shown on a scrambled spoke (offensive words, names, abbreviations,
+  and odd glow words such as ARYA, BREE, DOTH, CHIT, EROS).
+- gen_orbit.py: builds games/orbit-puzzles.js (daily bank + glow list) and games/orbit-practice.js.
+  A plain run keeps every existing daily that still passes all rules against the current glow list
+  (a word-list edit never reshuffles days); failing days are replaced; `--fresh` rebuilds all.
+- verify_bank.js: `node scripts/orbit/verify_bank.js games/orbit-puzzles.js games/orbit-practice.js`
+  (re-proves both files and checks practice/daily overlap is 0).
 - difficulty.py: `python3 scripts/orbit/difficulty.py [bank.js] [--sample 60] [--runs 30]`.
 
 Rebuild: `python3 scripts/orbit/gen_orbit.py` (add `--rebuild-light` to refresh light.txt; needs wordfreq).
