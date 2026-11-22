@@ -15,7 +15,9 @@ each usable once a day:
 - 🔍 Check rings: shows which moving rings are in place right now (✓ / ✗ on the Ring buttons, a green
   glow on rings in place, a toast and a screen-reader line). Nothing moves. A ring's mark holds while
   the ring stays where it was checked. 3 stars stay possible, but need 2x par instead of 2.5x par.
-- 🔒 Lock a ring: snaps the ring furthest off into place and locks it. Max 2 stars.
+- 🔒 Lock a ring: snaps the ring furthest off into place and locks it. The snap costs the steps it
+  skipped (the shortest way round), so a locked solve never shows fewer moves than par. Max 2 stars.
+  (Saves from before this change keep their old move count.)
 Using both caps at 2 stars. Saved in `orbit-state-v2` as `check` (move count when used, -1 = unused)
 and `checkOffs` (ring offsets at that moment); older saves without these fields load as "unused".
 

@@ -419,3 +419,27 @@ body.ob-page.ob-has-backdrop::before {
 .ob-solved__row .ob-btn--primary { flex-basis: 100%; }
 @media (min-width: 641px) { .ob-solved__row .ob-btn--primary { flex-basis: auto; } }
 @media (prefers-reduced-motion: reduce) { .ob-solved { animation: none; } }
+
+/* ---- phone contrast: bigger, brighter HUD and subtitle ---- */
+.ob-sub { font-size: .86rem; font-weight: 700; letter-spacing: .1em; line-height: 1.25; color: #d6dbf5; }
+.ob-sub b { color: #7cf0ff; }
+.ob-hud__num { font-size: 1.26rem; font-weight: 800; color: #fff; }
+.ob-hud__lab { font-size: .8rem; font-weight: 700; letter-spacing: .08em; line-height: 1.15; color: #c6cbe6; }
+@media (max-width: 420px) {
+  .ob-sub { font-size: .82rem; letter-spacing: .08em; }
+  .ob-hud__num { font-size: 1.22rem; }
+  .ob-hud__lab { font-size: .76rem; letter-spacing: .06em; }
+}
+
+/* ---- result modal: Sound toggle = the full-width secondary buttons around it ---- */
+.ob-page .ob-modal .cg-dock__mute { display: flex; align-items: center; justify-content: center; width: 100%; margin: 0; }
+
+/* ---- result modal: the Up next pill stays on one line on phones ---- */
+@media (max-width: 420px) {
+  .ob-page .ob-modal .cg-next__cta {
+    display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    padding: 0 .7rem; line-height: 44px; font-size: .95rem;
+  }
+  .ob-page .ob-modal .cg-next__cta .cg-next__m { display: none; }   /* "· 2 min" drops; the arrow stays */
+  .ob-page .ob-modal .cg-next__cta::after { content: " →"; }
+}

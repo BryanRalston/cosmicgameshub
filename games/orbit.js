@@ -3,7 +3,8 @@
    read from the core outward, is a word. A move = one 45deg step (a drag counts its net steps).
    Stars: 3 within 2.5x par (2x par after a ring check), 2 within 5x par, else 1; locking a ring
    caps it at 2. Hints (once each a day): ring check = which moving rings are in place right now;
-   ring lock = snap the ring furthest off into place. Puzzles ramp up Mon -> Sat (generator). */
+   ring lock = snap the ring furthest off into place, charged as the shortest turn it skips (so a
+   score can never beat par). Puzzles ramp up Mon -> Sat (generator). */
 (function () {
   'use strict';
   var D = window.ORBIT_DATA;
@@ -420,7 +421,8 @@
   // The Hint button opens a small menu (a bottom sheet on phones) with two once-a-day hints:
   //  🔍 Check rings: shows which moving rings are already in place and moves nothing. 3 stars
   //     stay possible but need 2x par instead of 2.5x par.
-  //  🔒 Lock a ring: snaps the ring furthest off into place and locks it; max 2 stars.
+  //  🔒 Lock a ring: snaps the ring furthest off into place and locks it; the steps it skips (the
+  //     shortest way round) count as moves, so a locked solve never shows fewer moves than par; max 2 stars.
   var hintBtn = $('obHint'), menu = $('obHintMenu'), sheetBg = $('obSheetBg');
   var checkBtn = $('obCheckBtn'), lockBtn = $('obLockBtn');
   function threeStar() { return st.check >= 0 ? THREE_STAR_CHECKED : THREE_STAR; }
@@ -437,7 +439,7 @@
       : 'See which rings are already in place · 3★ still possible (' + THREE_STAR_CHECKED + ' moves or fewer)';
     $('obLockSub').textContent = st.hint >= 0
       ? 'Used · ring ' + (st.hint + 1) + ' is locked · max 2★'
-      : 'Snaps the ring furthest off into place · max 2★';
+      : 'Snaps the furthest ring into place · counts its turns · max 2★';
     for (var r = 1; r < R; r++) {
       ringEls[r].classList.toggle('is-locked', r === st.hint);
       if (pickBtns[r]) pickBtns[r].disabled = r === st.hint || st.done;
@@ -544,12 +546,14 @@
     tgt[best] += (o <= N / 2 ? -o : N - o) * STEP;
     st.offs[best] = 0;
     st.hint = best;
+    // The snap is not free: it costs the turns it skipped, the shortest way round (bd steps).
+    spend(best, bd);
     if (sel === best) stepSel(1);
     syncHint(); syncUndo(); kick(); startClock();
     var c = evaluate(st.offs);
     hud(); save();
-    showToast('🔒 Ring ' + (best + 1) + ' locked in place', 3000);
-    live.textContent = 'Hint: ring ' + (best + 1) + ' is locked in place.';
+    showToast('🔒 Ring ' + (best + 1) + ' locked in place · +' + bd + (bd === 1 ? ' move' : ' moves'), 3000);
+    live.textContent = 'Hint: ring ' + (best + 1) + ' is locked in place. That counts ' + bd + (bd === 1 ? ' move.' : ' moves.');
     if (c === N) solve();
   }
 
