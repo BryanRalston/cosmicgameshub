@@ -1,7 +1,9 @@
 /* Orbit — daily word rings. Data: /games/orbit-puzzles.js (generated, every puzzle proven unique).
    Rules: 4 rings x 8 spokes. Inner ring fixed. Turn rings 2-4 in 45deg steps until every spoke,
    read from the core outward, is a word. A move = one 45deg step (a drag counts its net steps).
-   Stars: 3 within 2.5x par, 2 within 5x par, else 1; the daily hint caps it at 2. */
+   Stars: 3 within 2.5x par (2x par after a ring check), 2 within 5x par, else 1; locking a ring
+   caps it at 2. Hints (once each a day): ring check = which moving rings are in place right now;
+   ring lock = snap the ring furthest off into place. Puzzles ramp up Mon -> Sat (generator). */
 (function () {
   'use strict';
   var D = window.ORBIT_DATA;
@@ -56,11 +58,14 @@
   for (var r0 = 0; r0 < R; r0++) RINGS.push(WORDS.map(function (w) { return w[r0]; }).join(''));
   var START = [0].concat(SCR);
   var PAR = START.reduce(function (s, o) { return s + Math.min(o, N - o); }, 0);
-  var THREE_STAR = Math.ceil(PAR * 2.5), TWO_STAR = PAR * 5;
+  var THREE_STAR = Math.ceil(PAR * 2.5), TWO_STAR = PAR * 5, THREE_STAR_CHECKED = PAR * 2;
+  var WEEKDAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date(Date.UTC(2026, 0, 1) + (EPOCH + todayNum - 1) * 86400000).getUTCDay()];
 
   // ---- state --------------------------------------------------------------
   // turns = moves spent on each ring (shown, spoiler-free, on the share card).
-  var st = { p: num, offs: START.slice(), moves: 0, elapsed: 0, hint: -1, done: false, stars: 0, turns: [0, 0, 0, 0] };
+  // hint = locked ring (-1 = unused). check = move count when the ring check was used (-1 = unused);
+  // checkOffs = ring offsets at that moment (a ring's mark holds while it stays where it was checked).
+  var st = { p: num, offs: START.slice(), moves: 0, elapsed: 0, hint: -1, check: -1, checkOffs: null, done: false, stars: 0, turns: [0, 0, 0, 0] };
   if (!PRACTICE) {
     var saved = jget(STATE_KEY);
     if (saved && saved.p === num && Array.isArray(saved.offs) && saved.offs.length === R) {
@@ -70,6 +75,11 @@
       st.hint = typeof saved.hint === 'number' ? saved.hint : -1;
       st.done = !!saved.done; st.stars = saved.stars | 0;
       if (Array.isArray(saved.turns) && saved.turns.length === R) st.turns = saved.turns.map(function (t) { return t | 0; });
+      // Saves from before the ring check have no check fields: treat as unused.
+      if (typeof saved.check === 'number' && saved.check >= 0) {
+        st.check = saved.check | 0;
+        st.checkOffs = Array.isArray(saved.checkOffs) && saved.checkOffs.length === R ? saved.checkOffs.map(function (o) { return mod(o | 0, N); }) : null;
+      }
     }
   }
   function save() { if (!PRACTICE) jset(STATE_KEY, st); }
@@ -133,7 +143,7 @@
     for (var r3 = 1; r3 < R; r3++) {
       var bt = document.createElement('button');
       bt.type = 'button';
-      bt.innerHTML = '<i style="transform:scale(' + (0.55 + r3 * 0.2).toFixed(2) + ')"></i>Ring ' + (r3 + 1);
+      bt.innerHTML = '<i style="transform:scale(' + (0.55 + r3 * 0.2).toFixed(2) + ')"></i>Ring ' + (r3 + 1) + '<b class="ob-mark" aria-hidden="true"></b>';
       bt.setAttribute('aria-label', 'Select ring ' + (r3 + 1) + (r3 === R - 1 ? ' (outer)' : ''));
       (function (rr) { bt.addEventListener('click', function () { select(rr); board.focus({ preventScroll: true }); }); })(r3);
       pick.appendChild(bt);
@@ -273,7 +283,7 @@
   function commit(r, newOff) {
     st.offs[r] = newOff;
     var c = evaluate(st.offs);
-    hud(); save(); syncUndo();
+    hud(); save(); syncUndo(); renderMarks();
     if (c === N) solve();
   }
   // Undo history: one entry per button/key step, one per drag gesture (its net turn).
@@ -373,8 +383,9 @@
   $('obCcw').addEventListener('click', function () { rotate(sel, -1); });
 
   // ---- keyboard -------------------------------------------------------------
-  function modalOpen() { return !$('obResult').hidden || !$('obHelp').hidden; }
+  function modalOpen() { return !$('obResult').hidden || !$('obHelp').hidden || menuOpen(); }
   document.addEventListener('keydown', function (e) {
+    if (menuOpen() && menuKey(e)) return;
     if (e.key === 'Escape') { closeModal($('obResult')); closeModal($('obHelp')); return; }
     if (modalOpen() || e.ctrlKey || e.metaKey || e.altKey) return;
     var t = e.target, tag = t && t.tagName;
@@ -391,18 +402,126 @@
     if (used) e.preventDefault();
   });
 
-  // ---- hint -----------------------------------------------------------------
-  var hintBtn = $('obHint');
+  // ---- hints ----------------------------------------------------------------
+  // The Hint button opens a small menu (a bottom sheet on phones) with two once-a-day hints:
+  //  🔍 Check rings: shows which moving rings are already in place and moves nothing. 3 stars
+  //     stay possible but need 2x par instead of 2.5x par.
+  //  🔒 Lock a ring: snaps the ring furthest off into place and locks it; max 2 stars.
+  var hintBtn = $('obHint'), menu = $('obHintMenu'), sheetBg = $('obSheetBg');
+  var checkBtn = $('obCheckBtn'), lockBtn = $('obLockBtn');
+  function threeStar() { return st.check >= 0 ? THREE_STAR_CHECKED : THREE_STAR; }
   function syncHint() {
+    var allUsed = st.hint >= 0 && st.check >= 0;
     hintBtn.hidden = st.done;
-    hintBtn.disabled = st.hint >= 0;
-    hintBtn.textContent = st.hint >= 0 ? '💡 Ring ' + (st.hint + 1) + ' locked' : '💡 Hint · lock a ring';
+    hintBtn.disabled = allUsed;
+    hintBtn.textContent = allUsed ? '💡 Hints used' : '💡 Hint';
+    if (allUsed || st.done) closeMenu(false);
+    checkBtn.disabled = st.check >= 0;
+    lockBtn.disabled = st.hint >= 0;
+    $('obCheckSub').textContent = st.check >= 0
+      ? 'Used · 3★ now needs ' + THREE_STAR_CHECKED + ' moves or fewer'
+      : 'See which rings are already in place · 3★ still possible (' + THREE_STAR_CHECKED + ' moves or fewer)';
+    $('obLockSub').textContent = st.hint >= 0
+      ? 'Used · ring ' + (st.hint + 1) + ' is locked · max 2★'
+      : 'Snaps the ring furthest off into place · max 2★';
     for (var r = 1; r < R; r++) {
       ringEls[r].classList.toggle('is-locked', r === st.hint);
       if (pickBtns[r]) pickBtns[r].disabled = r === st.hint || st.done;
     }
+    renderMarks();
   }
-  hintBtn.addEventListener('click', function () {
+  function menuOpen() { return !menu.hidden; }
+  function menuItems() { return [checkBtn, lockBtn].filter(function (b) { return !b.disabled; }); }
+  function openMenu() {
+    if (st.done || hintBtn.disabled) return;
+    syncHint();
+    menu.hidden = false; sheetBg.hidden = false;
+    hintBtn.setAttribute('aria-expanded', 'true');
+    requestAnimationFrame(function () { menu.classList.add('is-open'); sheetBg.classList.add('is-open'); });
+    var f = menuItems()[0];
+    if (f) setTimeout(function () { try { f.focus({ preventScroll: true }); } catch (e) {} }, 30);
+  }
+  function closeMenu(focusBack) {
+    if (menu.hidden) return;
+    menu.classList.remove('is-open'); sheetBg.classList.remove('is-open');
+    menu.hidden = true; sheetBg.hidden = true;
+    hintBtn.setAttribute('aria-expanded', 'false');
+    if (focusBack && !hintBtn.hidden && !hintBtn.disabled) try { hintBtn.focus({ preventScroll: true }); } catch (e) {}
+  }
+  function menuKey(e) {
+    if (e.key === 'Escape') { e.preventDefault(); closeMenu(true); return true; }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      var items = menuItems(), i = items.indexOf(document.activeElement);
+      if (items.length) items[mod(i + (e.key === 'ArrowDown' ? 1 : -1), items.length)].focus();
+      return true;
+    }
+    if (e.key === 'Tab') { setTimeout(function () { if (!menu.contains(document.activeElement)) closeMenu(false); }, 0); return true; }
+    return true;   // nothing else reaches the board while the menu is open
+  }
+  hintBtn.addEventListener('click', function () { if (menuOpen()) closeMenu(true); else openMenu(); });
+  sheetBg.addEventListener('click', function () { closeMenu(true); });
+  document.addEventListener('pointerdown', function (e) {
+    if (menuOpen() && !menu.contains(e.target) && !hintBtn.contains(e.target) && e.target !== sheetBg) closeMenu(false);
+  });
+  checkBtn.addEventListener('click', function () { closeMenu(true); ringCheck(); });
+  lockBtn.addEventListener('click', function () { closeMenu(true); lockRing(); });
+
+  // Ring check: one look at which moving rings sit in their solved position right now. A ring's
+  // mark stays while the ring is where it was checked (the mark describes that position only).
+  function checkMark(r) {
+    if (!st.checkOffs || st.done || r === st.hint) return '';
+    if (st.offs[r] !== st.checkOffs[r]) return '';
+    return st.checkOffs[r] === 0 ? 'ok' : 'no';
+  }
+  function renderMarks() {
+    for (var r = 1; r < R; r++) {
+      var m = checkMark(r), b = pickBtns[r];
+      if (!b) continue;
+      b.classList.toggle('is-ok', m === 'ok');
+      b.classList.toggle('is-no', m === 'no');
+      b.querySelector('.ob-mark').textContent = m === 'ok' ? '✓' : m === 'no' ? '✗' : '';
+      b.setAttribute('aria-label', 'Select ring ' + (r + 1) + (r === R - 1 ? ' (outer)' : '') +
+        (m === 'ok' ? ', in place at ring check' : m === 'no' ? ', not in place at ring check' : ''));
+    }
+  }
+  function checkSummary() {
+    var ok = [], no = [];
+    for (var r = 1; r < R; r++) { if (r === st.hint) continue; (st.checkOffs[r] === 0 ? ok : no).push(r + 1); }
+    var list = function (a) { return a.length > 1 ? 'rings ' + a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1] : 'ring ' + a[0]; };
+    var spoken = !ok.length ? 'No rings are in place yet.' :
+      list(ok).replace(/^r/, 'R') + (ok.length > 1 ? ' are' : ' is') + ' in place' +
+      (no.length ? '; ' + list(no) + (no.length > 1 ? ' are' : ' is') + ' not.' : '.');
+    var shown = !ok.length ? 'No rings in place yet' :
+      ok.length + ' of ' + (ok.length + no.length) + ' in place: ' + ok.map(function (n) { return 'ring ' + n + ' ✓'; }).join(', ');
+    return { spoken: spoken, shown: shown, ok: ok };
+  }
+  var toast = $('obToast'), toastTimer = 0;
+  function showToast(t, ms) {
+    toast.textContent = t; toast.hidden = false;
+    requestAnimationFrame(function () { toast.classList.add('is-on'); });
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () {
+      toast.classList.remove('is-on');
+      setTimeout(function () { if (!toast.classList.contains('is-on')) toast.hidden = true; }, 300);
+    }, ms || 4200);
+  }
+  function ringCheck() {
+    if (st.done || st.check >= 0) return;
+    st.check = st.moves;
+    st.checkOffs = st.offs.slice();
+    save(); syncHint(); startClock();
+    var sm = checkSummary();
+    sm.ok.forEach(function (n) {
+      var t = tracks[n - 1];
+      t.classList.remove('is-check'); void t.getBoundingClientRect(); t.classList.add('is-check');
+      setTimeout(function () { t.classList.remove('is-check'); }, 1800);
+    });
+    showToast('🔍 ' + sm.shown);
+    live.textContent = 'Ring check: ' + sm.spoken;
+    if (!muted()) sfx().play(sm.ok.length ? 'correct' : 'tick');
+  }
+  function lockRing() {
     if (st.done || st.hint >= 0) return;
     var best = -1, bd = -1;
     for (var r = R - 1; r >= 1; r--) { var d = cdist(st.offs[r], 0); if (d > bd) { bd = d; best = r; } }
@@ -415,13 +534,14 @@
     syncHint(); syncUndo(); kick(); startClock();
     var c = evaluate(st.offs);
     hud(); save();
+    showToast('🔒 Ring ' + (best + 1) + ' locked in place', 3000);
     live.textContent = 'Hint: ring ' + (best + 1) + ' is locked in place.';
     if (c === N) solve();
-  });
+  }
 
   // ---- solve ----------------------------------------------------------------
   function starsFor() {
-    var s = st.moves <= THREE_STAR ? 3 : st.moves <= TWO_STAR ? 2 : 1;
+    var s = st.moves <= threeStar() ? 3 : st.moves <= TWO_STAR ? 2 : 1;
     if (st.hint >= 0) s = Math.min(s, 2);
     return s;
   }
@@ -461,7 +581,7 @@
     s.stars[st.stars - 1]++;
     jset(STATS_KEY, s);
     try { if (window.CGPlayer && window.CGPlayer.record) window.CGPlayer.record('orbit', { daily: true }); } catch (e) {}
-    try { if (typeof window.gtag === 'function') window.gtag('event', 'orbit_solve', { puzzle: num, moves: st.moves, par: PAR, stars: st.stars, hint: st.hint >= 0 ? 1 : 0 }); } catch (e) {}
+    try { if (typeof window.gtag === 'function') window.gtag('event', 'orbit_solve', { puzzle: num, moves: st.moves, par: PAR, stars: st.stars, hint: st.hint >= 0 ? 1 : 0, check: st.check >= 0 ? 1 : 0 }); } catch (e) {}
   }
   function lockBoard() {
     board.classList.add('is-solved');
@@ -534,11 +654,17 @@
     $('obResPar').textContent = PAR;
     $('obResTime').textContent = fmtT(st.elapsed);
     $('obResStreak').textContent = PRACTICE ? '–' : (s.streak || 0);
+    var lim = threeStar();
     var note = st.moves <= PAR ? 'Solved at par. Flawless.' :
-      st.stars === 3 ? 'Within ' + THREE_STAR + ' moves: 3 stars.' :
-      st.hint >= 0 ? 'Hint used, so 2 stars max.' :
-      'Finish within ' + THREE_STAR + ' moves for 3 stars.';
+      st.stars === 3 ? 'Within ' + lim + ' moves: 3 stars' + (st.check >= 0 ? ', even with a ring check.' : '.') :
+      st.hint >= 0 ? 'Ring locked, so 2 stars max.' :
+      st.check >= 0 ? 'After a ring check, 3 stars need ' + lim + ' moves or fewer.' :
+      'Finish within ' + lim + ' moves for 3 stars.';
     $('obResNote').textContent = note;
+    var hu = [];
+    if (st.check >= 0) hu.push('🔍 Ring check used');
+    if (st.hint >= 0) hu.push('💡 Ring ' + (st.hint + 1) + ' locked');
+    $('obResHints').textContent = hu.join(' · ');
     $('obShare').hidden = PRACTICE;
     $('obResNext').hidden = PRACTICE;
     $('obNewPractice').hidden = !PRACTICE;
@@ -547,19 +673,33 @@
 
   var shareBtn = $('obShare'), shareTimer = 0;
   function sayShare(t) { shareBtn.textContent = t; clearTimeout(shareTimer); shareTimer = setTimeout(function () { shareBtn.textContent = 'Share'; }, 2000); }
-  shareBtn.addEventListener('click', function () {
+  // Hints used, for the share card: 🔍 = ring check, 💡 = ring locked.
+  function hintMarks() { return (st.check >= 0 ? ' 🔍' : '') + (st.hint >= 0 ? ' 💡' : ''); }
+  function hintWords() {
+    var h = [];
+    if (st.check >= 0) h.push('🔍 ring check');
+    if (st.hint >= 0) h.push('💡 ring lock');
+    return h.length ? ' · ' + h.join(' · ') : '';
+  }
+  function shareFull() {
     var b = shareBits();
     var line = st.moves + ' moves (par ' + PAR + ') · ' + fmtT(st.elapsed);
-    var text = '🪐 Orbit #' + num + ' ' + starStr(st.stars) + '\n' + line + '\n' + b.bar + ' ' + b.eff + '%\n' + b.turns + '\n\ncosmicgameshub.com/games/orbit';
-    var opts = {
+    return '🪐 Orbit #' + num + ' ' + starStr(st.stars) + hintMarks() + '\n' + line + '\n' + b.bar + ' ' + b.eff + '%\n' + b.turns + '\n\ncosmicgameshub.com/games/orbit';
+  }
+  function shareOpts() {
+    var b = shareBits();
+    return {
       title: 'Orbit',
-      subtitle: '#' + num + '  ·  ' + st.stars + '/3 stars',
+      subtitle: '#' + num + '  ·  ' + st.stars + '/3 stars' + hintMarks(),
       grid: starStr(st.stars) + '\n' + b.bar,
-      lines: [st.moves + ' moves · par ' + PAR + ' · ' + b.eff + '% efficient', b.turns, 'Solved in ' + fmtT(st.elapsed) + (st.hint >= 0 ? ' · 1 hint' : '')],
+      lines: [st.moves + ' moves · par ' + PAR + ' · ' + b.eff + '% efficient', b.turns, 'Solved in ' + fmtT(st.elapsed) + hintWords()],
       url: 'cosmicgameshub.com/games/orbit',
       filename: 'orbit-' + num,
-      text: text
+      text: shareFull()
     };
+  }
+  shareBtn.addEventListener('click', function () {
+    var opts = shareOpts(), text = opts.text;
     if (sfx() && typeof sfx().shareNow === 'function') {
       Promise.resolve(sfx().shareNow(opts)).then(function (r) {
         if (!r) return;
@@ -587,7 +727,8 @@
     $('obSub').innerHTML = 'Practice · <b>#' + num + '</b>';
   } else {
     pl.href = practiceHref;
-    $('obSub').innerHTML = 'Daily word rings · <b>#' + num + '</b>';
+    $('obSub').innerHTML = 'Daily word rings · <b>#' + num + '</b> · ' + WEEKDAY;
+    $('obSub').title = 'Puzzles ramp up through the week: gentlest Monday, toughest Saturday';
   }
   if (st.done) { st.offs = START.map(function () { return 0; }); for (var r4 = 0; r4 < R; r4++) { ang[r4] = tgt[r4] = mod(ang[r4], 360); ang[r4] = tgt[r4] = Math.round(ang[r4] / 360) * 360; } }
   (function applyArt() {
@@ -612,7 +753,9 @@
   }
   // Read-only hook for QA scripts.
   window.OrbitGame = {
-    info: function () { return { num: num, practice: PRACTICE, index: pIndex, par: PAR, offs: st.offs.slice(), moves: st.moves, done: st.done, stars: st.stars, lit: lit.filter(Boolean).length, sel: sel, hint: st.hint, turns: st.turns.slice(), undo: undoStack.length }; },
-    shareText: function () { var b = shareBits(); return b.bar + ' ' + b.eff + '%\n' + b.turns; }
+    info: function () { return { num: num, practice: PRACTICE, index: pIndex, weekday: PRACTICE ? null : WEEKDAY, par: PAR, offs: st.offs.slice(), moves: st.moves, done: st.done, stars: st.stars, lit: lit.filter(Boolean).length, sel: sel, hint: st.hint, check: st.check, checkOffs: st.checkOffs && st.checkOffs.slice(), marks: [1, 2, 3].map(checkMark), threeStar: threeStar(), menu: menuOpen(), turns: st.turns.slice(), undo: undoStack.length }; },
+    shareText: function () { var b = shareBits(); return b.bar + ' ' + b.eff + '%\n' + b.turns; },
+    shareFull: shareFull,
+    shareOpts: shareOpts
   };
 })();
