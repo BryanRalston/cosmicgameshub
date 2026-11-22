@@ -1,0 +1,4 @@
+# Hand-picked glow words that wordfreq's cut missed: modern, playful and food/music words.
+# They light a spoke (and may appear as decoys) but are never chosen as answers.
+MEME NOOB NERF FIZZ ONYX OKRA OBOE DOJO EMUS BLOG VLOG WIFI APPS WIKI GIFS
+ZOOM TACO TUBA SODA KALE BOBA POKE
