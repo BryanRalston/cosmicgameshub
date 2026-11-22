@@ -2,6 +2,12 @@
 """Orbit difficulty metrics for a puzzle bank (games/orbit-puzzles.js or a JSON dump).
 
     python3 scripts/orbit/difficulty.py [games/orbit-puzzles.js] [--sample 120] [--runs 40]
+    python3 scripts/orbit/difficulty.py --weekdays [games/orbit-puzzles.js]   # curve report + band check
+
+`estimate()` is the weekday-curve metric used by gen_orbit.py: the word-finder player below,
+60 runs seeded from the puzzle itself (so it is a pure function of the puzzle), converted to
+minutes. --weekdays prints the per-weekday distribution and exits 1 if any day after
+FREEZE_THROUGH is outside its weekday band.
 
 Metrics per puzzle (averaged over a sample):
 - par: fewest 1-step turns from the scramble.
@@ -18,7 +24,7 @@ Metrics per puzzle (averaged over a sample):
 - greedy: hill-climber taking the 1-step turn that lights the most spokes (random among
   ties, random turn when nothing improves); mean moves, capped at 2000.
 """
-import json, os, random, re, sys
+import json, os, random, re, statistics, sys, zlib
 from itertools import product
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -49,10 +55,14 @@ class Board:
         self.rings = [''.join(w[r] for w in words) for r in range(R)]
         self.states = [(0,) + o for o in product(range(N), repeat=R - 1)]
         self.solved = tuple([0] * R)
+        self._sp = {s: self._spokes(s) for s in self.states}   # 512 states: cache every spoke list
 
-    def spokes(self, offs):
+    def _spokes(self, offs):
         N = self.N
         return [''.join(self.rings[r][(k - offs[r]) % N] for r in range(self.R)) for k in range(N)]
+
+    def spokes(self, offs):
+        return self._sp[tuple(offs)]
 
     def lit(self, offs):
         return sum(s in self.light for s in self.spokes(offs))
@@ -145,8 +155,62 @@ def report(path, sample=120, runs=40, seed=7):
     return out
 
 
+def estimate(words, start, light, common, runs=60, N=8, R=4):
+    """Simulated solve time in minutes for one puzzle (the weekday-curve metric).
+    start = (0, o2, o3, o4). Deterministic: the RNG is seeded from the puzzle."""
+    b = Board(words, N, R, light, common)
+    rng = random.Random(zlib.crc32((' '.join(words) + '|' + ''.join(map(str, start))).encode()))
+    wf = [wordfinder(b, tuple(start), rng) for _ in range(runs)]
+    w = sum(t for _, t in wf) / runs
+    m = sum(x for x, _ in wf) / runs
+    return {'est': (w * 8 + m * 0.6) / 60, 'wf_words': w, 'wf_moves': m}
+
+
+def _est_job(a):
+    words, start, light, common = a
+    return estimate(words, start, light, common)['est']
+
+
+def weekday_report(path):
+    """Per-weekday curve table for a bank; returns the list of out-of-band (non-frozen) days."""
+    from multiprocessing import Pool
+    sys.path.insert(0, HERE)
+    import gen_orbit as G
+    N, R, light, puzzles = load_bank(path)
+    epoch = re.search(r'epoch:\s*"([^"]+)"', open(path).read()).group(1)
+    common = set(words_in('answers.txt'))
+    zipf = G.load_zipf()
+    F = G.frozen_count(None, epoch)
+    with Pool(min(8, os.cpu_count() or 1)) as pool:
+        est = pool.map(_est_job, [(w, tuple(s), light, common) for w, s in puzzles], chunksize=4)
+    bad = []
+    rows = {d: [] for d in G.WEEKDAYS}
+    for i, (w, s) in enumerate(puzzles):
+        d = G.weekday(i, epoch)
+        rows[d].append((est[i], sum(min(o, N - o) for o in s), sum(zipf.get(x, 0) for x in w) / len(w), i < F))
+        lo, hi = G.CURVE[d][:2]
+        if i >= F and not lo <= est[i] < hi:
+            bad.append((i + 1, d, round(est[i], 2)))
+    q = lambda v, p: sorted(v)[int(p * (len(v) - 1))]
+    print('| day | days | band (model min) | median est (p10-p90) | min-max | mean par | answer zipf |')
+    print('|---|---|---|---|---|---|---|')
+    for d in G.WEEKDAYS:
+        v = [r[0] for r in rows[d]]
+        lo, hi = G.CURVE[d][:2]
+        print('| %s | %d | %.2f-%.2f | %.2f (%.2f-%.2f) | %.2f-%.2f | %.1f | %.2f |' % (
+            d, len(v), lo, hi, statistics.median(v), q(v, .1), q(v, .9), min(v), max(v),
+            statistics.mean(r[1] for r in rows[d]), statistics.mean(r[2] for r in rows[d])))
+    print('frozen days: #1-#%d (through %s, outside the curve by design): %s' % (
+        F, G.FREEZE_THROUGH, ', '.join('#%d %s %.2f' % (i + 1, G.weekday(i, epoch), est[i]) for i in range(F))))
+    print('out-of-band days after the freeze:', bad or 'none')
+    return bad
+
+
 if __name__ == '__main__':
     argv = sys.argv[1:]
+    if '--weekdays' in argv:
+        rest = [a for a in argv if not a.startswith('--')]
+        sys.exit(1 if weekday_report(rest[0] if rest else os.path.join(ROOT, 'games/orbit-puzzles.js')) else 0)
     args = [a for i, a in enumerate(argv) if not a.startswith('--') and not (i and argv[i - 1] in ('--sample', '--runs'))]
     path = args[0] if args else os.path.join(ROOT, 'games/orbit-puzzles.js')
     sample = int(sys.argv[sys.argv.index('--sample') + 1]) if '--sample' in sys.argv else 120

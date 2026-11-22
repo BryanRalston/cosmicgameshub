@@ -125,6 +125,16 @@
       <div class="ob-rings" id="obRings"></div>
       <div class="ob-core" id="obCore" aria-hidden="true"><span></span></div>
       <div class="ob-fx" id="obFx" aria-hidden="true"></div>
+      <div class="ob-toast" id="obToast" aria-hidden="true" hidden></div>
+    </div>
+  </div>
+
+  <div class="ob-solved" id="obSolved" role="region" aria-label="Solved" hidden>
+    <div class="ob-solved__head"><span class="ob-solved__tick" aria-hidden="true">✓</span><b>Solved</b><span class="ob-solved__stars" id="obSolvedStars"></span><span class="ob-solved__moves" id="obSolvedMoves"></span></div>
+    <div class="ob-solved__row">
+      <button type="button" class="ob-btn ob-btn--primary" id="obSolvedRes">See results</button>
+      <a class="ob-btn ob-btn--ghost" id="obSolvedNext" href="/games/daily">All dailies →</a>
+      <a class="ob-btn ob-btn--ghost" id="obSolvedPractice" href="/games/orbit?practice=1">Practice orbit</a>
     </div>
   </div>
 
@@ -142,17 +152,31 @@
 
   <div class="ob-actions">
     <button type="button" class="ob-btn ob-btn--ghost" id="obUndo" aria-label="Undo last turn" title="Undo last turn (Z)" disabled>↶ Undo</button>
-    <button type="button" class="ob-btn ob-btn--ghost" id="obHint">💡 Hint</button>
-    <button type="button" class="ob-btn ob-btn--ghost" id="obResultBtn" hidden>See result</button>
+    <span class="ob-hintwrap">
+      <button type="button" class="ob-btn ob-btn--ghost" id="obHint" aria-haspopup="menu" aria-expanded="false" aria-controls="obHintMenu">💡 Hint</button>
+      <div class="ob-hintmenu" id="obHintMenu" role="menu" aria-label="Hints, one of each a day" hidden>
+        <div class="ob-hintmenu__head" aria-hidden="true">Hints <span>one of each a day</span></div>
+        <button type="button" class="ob-hintmenu__item" id="obCheckBtn" role="menuitem">
+          <span class="ob-hintmenu__ic" aria-hidden="true">🔍</span>
+          <span class="ob-hintmenu__txt"><b>Check rings</b><small id="obCheckSub">See which rings are already in place</small></span>
+        </button>
+        <button type="button" class="ob-hintmenu__item" id="obLockBtn" role="menuitem">
+          <span class="ob-hintmenu__ic" aria-hidden="true">🔒</span>
+          <span class="ob-hintmenu__txt"><b>Lock a ring</b><small id="obLockSub">Snaps the furthest ring into place · counts its turns · max 2★</small></span>
+        </button>
+      </div>
+    </span>
     <a class="ob-btn ob-btn--ghost" id="obPracticeLink" href="/games/orbit?practice=1">Practice orbit</a>
   </div>
 
+  <div class="ob-sheet-bg" id="obSheetBg" hidden></div>
   <div class="ob-live visually-hidden" id="obLive" aria-live="polite"></div>
 
   <section class="ob-about" aria-labelledby="obAboutH">
     <h2 id="obAboutH">How Orbit works</h2>
     <p>Orbit is a free daily word puzzle from CosmicGamesHub. Eight spokes run out from a glowing core through four rings of letters. Read each spoke from the core outward: when all eight spell common English words, the orbit locks and you win.</p>
     <p>The inner ring is fixed. Turn the other three rings by dragging them, with the turn buttons, or with your arrow keys. A spoke glows gold the moment it spells a word. Each puzzle has exactly one solution, checked against every possible ring position. Par is the fewest turns that solve it; stay within two and a half times par for three stars.</p>
+    <p>Puzzles get harder through the week, from a gentle Monday to a tough Saturday. Stuck? A ring check shows which rings are already in place, and a ring lock snaps one into place.</p>
   </section>
 </main>
 
@@ -163,6 +187,7 @@
     <div class="ob-res__eyebrow" id="obResNum">Orbit #1</div>
     <h2 id="obResTitle">Orbit locked!</h2>
     <div class="ob-res__stars" id="obResStars" aria-label="3 of 3 stars"></div>
+    <p class="ob-res__hints" id="obResHints"></p>
     <div class="ob-res__words" id="obResWords"></div>
     <div class="ob-res__stats">
       <div><b id="obResMoves">0</b><span>Moves</span></div>
@@ -189,7 +214,9 @@
       <li><span aria-hidden="true">🪐</span><div>Turn the rings until <strong>every spoke</strong>, read from the core outward, spells a <strong>4-letter word</strong>.</div></li>
       <li><span aria-hidden="true">👆</span><div><strong>Drag a ring</strong>, or pick a ring and tap the turn buttons. Keys: <kbd>↑</kbd><kbd>↓</kbd> pick, <kbd>←</kbd><kbd>→</kbd> turn, <kbd>Z</kbd> undo.</div></li>
       <li><span aria-hidden="true">✨</span><div>A spoke glows <strong>gold</strong> when it is a word. Light all eight to lock the orbit. The inner ring never moves.</div></li>
-      <li><span aria-hidden="true">⭐</span><div>Every 45° step a ring passes is one move, including drags and undo. Par is the fewest moves; stay within 2.5× par for 3 stars. Many spokes spell a word that isn't the answer, so check the others. One hint a day locks a ring (max 2 stars).</div></li>
+      <li><span aria-hidden="true">⭐</span><div>Every 45° step a ring passes is one move, including drags and undo. Par is the fewest moves; stay within 2.5× par for 3 stars. Many spokes spell a word that isn't the answer, so check the others.</div></li>
+      <li><span aria-hidden="true">💡</span><div>Stuck? <strong>Hint</strong> offers a <strong>ring check</strong> (which rings are already in place; 3 stars still possible within 2× par) and a <strong>ring lock</strong> (snaps the furthest ring into place and counts its turns; max 2 stars), once each a day.</div></li>
+      <li><span aria-hidden="true">📅</span><div>Puzzles ramp up through the week: <strong>gentlest on Monday</strong>, toughest on Saturday.</div></li>
     </ul>
     <button type="button" class="ob-btn ob-btn--primary" data-close>Got it</button>
   </div>
