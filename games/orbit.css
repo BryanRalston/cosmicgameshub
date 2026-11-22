@@ -400,3 +400,22 @@ body.ob-page.ob-has-backdrop::before {
 @media (prefers-reduced-motion: reduce) { .ob-hintmenu, .ob-toast { transition: none; } }
 .ob-res__hints { margin: -.2rem 0 0; font-size: .78rem; font-weight: 700; color: var(--ob-cyan); }
 .ob-res__hints:empty { display: none; }
+
+/* ---- solved bar: replaces the turn controls once the orbit is locked ---- */
+.ob-is-solved .ob-controls { display: none; }
+.ob-solved {
+  margin: .45rem 0 .35rem; padding: .7rem .75rem .75rem; border-radius: 16px; box-sizing: border-box;
+  background: linear-gradient(180deg, rgba(255, 200, 87, .14), rgba(255, 200, 87, .05)); border: 1px solid rgba(255, 210, 120, .45);
+  box-shadow: 0 0 24px rgba(255, 200, 87, .12); animation: obSolvedIn .35s ease both;
+}
+@keyframes obSolvedIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.ob-solved__head { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: .25rem .55rem; margin-bottom: .55rem; color: var(--ob-ink); }
+.ob-solved__head b { font-size: 1.05rem; color: #fff; letter-spacing: .02em; }
+.ob-solved__tick { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-weight: 900; font-size: .8rem; background: var(--ob-gold); color: #2a1700; }
+.ob-solved__stars { color: var(--ob-gold); letter-spacing: .12em; text-shadow: 0 0 10px rgba(255,200,87,.6); }
+.ob-solved__moves { font-size: .8rem; color: var(--ob-mid); }
+.ob-solved__row { display: flex; flex-wrap: wrap; justify-content: center; gap: .45rem; }
+.ob-solved__row .ob-btn { flex: 1 1 auto; }
+.ob-solved__row .ob-btn--primary { flex-basis: 100%; }
+@media (min-width: 641px) { .ob-solved__row .ob-btn--primary { flex-basis: auto; } }
+@media (prefers-reduced-motion: reduce) { .ob-solved { animation: none; } }

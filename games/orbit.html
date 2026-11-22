@@ -129,6 +129,15 @@
     </div>
   </div>
 
+  <div class="ob-solved" id="obSolved" role="region" aria-label="Solved" hidden>
+    <div class="ob-solved__head"><span class="ob-solved__tick" aria-hidden="true">✓</span><b>Solved</b><span class="ob-solved__stars" id="obSolvedStars"></span><span class="ob-solved__moves" id="obSolvedMoves"></span></div>
+    <div class="ob-solved__row">
+      <button type="button" class="ob-btn ob-btn--primary" id="obSolvedRes">See results</button>
+      <a class="ob-btn ob-btn--ghost" id="obSolvedNext" href="/games/daily">All dailies →</a>
+      <a class="ob-btn ob-btn--ghost" id="obSolvedPractice" href="/games/orbit?practice=1">Practice orbit</a>
+    </div>
+  </div>
+
   <div class="ob-controls" role="group" aria-label="Ring controls">
     <button type="button" class="ob-rot" id="obCcw" aria-label="Turn selected ring counterclockwise">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M3.8 3.6v4.6h4.6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -157,7 +166,6 @@
         </button>
       </div>
     </span>
-    <button type="button" class="ob-btn ob-btn--ghost" id="obResultBtn" hidden>See result</button>
     <a class="ob-btn ob-btn--ghost" id="obPracticeLink" href="/games/orbit?practice=1">Practice orbit</a>
   </div>
 

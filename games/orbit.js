@@ -336,6 +336,9 @@
   }
   board.addEventListener('pointerdown', function (e) {
     if (st.done || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    // A second contact (thumb, palm, another finger) must never silently discard the turn in
+    // progress: settle the current drag first, exactly as if that finger had lifted.
+    if (dragging && e.pointerId !== dragging.id) { endDrag(); if (st.done) return; }
     var p = polar(e), r = ringAt(p.d);
     if (r < 0) return;
     if (!movable(r)) { nudge(); return; }
@@ -360,24 +363,35 @@
       spend(dragging.r, Math.abs(step - dragging.step));
       dragging.step = step;
       var o = st.offs.slice(); o[dragging.r] = mod(step, N);
-      evaluate(o, true);
+      var c = evaluate(o, true);
       if (!muted()) sfx().play('tick');
+      // All eight lit mid-drag: the orbit locks right here. The win must not wait for the lift
+      // (a lift the page never hears about used to leave a lit-but-unsolved board).
+      if (c === N) { endDrag(); return; }
     }
     kick();
   });
+  // Ends the drag: on its finger's lift/cancel (e given), or forced (no e) by a second contact,
+  // a mid-drag solve, the page hiding, or the window losing focus. Always commits the turn.
   function endDrag(e) {
     if (!dragging || (e && e.pointerId !== dragging.id)) return;
-    var r = dragging.r, steps = dragging.step;
+    var r = dragging.r, steps = dragging.step, id = dragging.id;
     tgt[r] = steps * STEP;
     pushUndo(r, steps - dragging.s0);
     dragging = null;
     board.classList.remove('is-dragging');
+    try { if (board.hasPointerCapture && board.hasPointerCapture(id)) board.releasePointerCapture(id); } catch (x) {}
     kick();
     commit(r, mod(steps, N));
   }
   board.addEventListener('pointerup', endDrag);
   board.addEventListener('pointercancel', endDrag);
   board.addEventListener('lostpointercapture', endDrag);
+  // Safety nets in case the board never hears the lift (capture refused, OS gesture, app switch).
+  window.addEventListener('pointerup', endDrag, true);
+  window.addEventListener('pointercancel', endDrag, true);
+  window.addEventListener('blur', function () { endDrag(); });
+  document.addEventListener('visibilitychange', function () { if (document.hidden) endDrag(); });
 
   $('obCw').addEventListener('click', function () { rotate(sel, 1); });
   $('obCcw').addEventListener('click', function () { rotate(sel, -1); });
@@ -587,28 +601,57 @@
     board.classList.add('is-solved');
     for (var i = 0; i < R; i++) { tracks[i].classList.remove('is-sel'); ringEls[i].classList.remove('is-sel'); }
     syncHint(); syncUndo();
-    $('obResultBtn').hidden = false;
   }
+  // Order matters: state + the way forward first, effects last, each effect fenced, so a failing
+  // sound/vibration/animation/stat call can never leave a solved board without its result.
+  function safely(f) { try { f(); } catch (e) { if (window.console) console.warn('orbit:', e); } }
   function solve() {
     if (st.done) return;
     stopClock();
     st.done = true;
     st.stars = starsFor();
     save();
-    recordStats();
-    hud();
-    lockBoard();
-    fx();
-    if (!muted()) sfx().softWin();
-    if (sfx()) sfx().haptic(30);
+    setTimeout(function () { safely(openResult); syncSolvedBar(); }, 1250);
+    safely(recordStats);
+    safely(hud);
+    safely(lockBoard);
+    safely(syncSolvedBar);
+    safely(fx);
+    safely(function () { if (!muted()) sfx().softWin(); });
+    safely(function () { if (sfx()) sfx().haptic(30); });
     live.textContent = 'Orbit locked! All ' + N + ' spokes are words.';
-    setTimeout(openResult, 1250);
+  }
+  // Inline "Solved" bar under the board (it replaces the turn controls): shown whenever the orbit is
+  // solved, so even with the result modal closed, tapped away or failed, a solved board is never a
+  // dead end.
+  var solvedBar = $('obSolved');
+  function syncSolvedBar() {
+    if (!solvedBar) return;
+    var show = st.done;
+    if (show) {
+      $('obSolvedStars').textContent = '★★★'.slice(0, st.stars) + '☆☆☆'.slice(0, 3 - st.stars);
+      $('obSolvedStars').setAttribute('aria-label', st.stars + ' of 3 stars');
+      $('obSolvedMoves').textContent = st.moves + ' moves · par ' + PAR;
+      var nx = $('obSolvedNext');
+      nx.hidden = PRACTICE;
+      $('obSolvedPractice').textContent = PRACTICE ? 'New practice orbit' : 'Practice orbit';
+      if (!PRACTICE) {
+        var g = null;
+        // same pick as the result card's "Up next" (daily-kit), so both point at the same game
+        try { g = window.CGDaily && window.CGDaily.upNextModel ? window.CGDaily.upNextModel('orbit').next : null; } catch (e) { g = null; }
+        nx.href = g ? g.href : '/games/daily';
+        nx.textContent = g ? 'Next daily: ' + g.name + ' →' : 'All dailies →';
+      }
+    }
+    solvedBar.hidden = !show;
+    document.body.classList.toggle('ob-is-solved', show);
   }
 
   // ---- modals ---------------------------------------------------------------
   var lastFocus = null;
   function openModal(m) {
     lastFocus = document.activeElement;
+    m.openedAt = Date.now();
     m.hidden = false;
     requestAnimationFrame(function () { m.classList.add('is-open'); });
     var f = m.querySelector('.ob-btn--primary') || m.querySelector('button');
@@ -619,14 +662,17 @@
     m.classList.remove('is-open');
     m.hidden = true;
     if (lastFocus && lastFocus.focus) try { lastFocus.focus({ preventScroll: true }); } catch (e) {}
+    if (m.id === 'obResult') syncSolvedBar();
   }
   [$('obResult'), $('obHelp')].forEach(function (m) {
     m.addEventListener('click', function (e) {
+      // A backdrop tap in the first 700 ms is a finger still finishing its turn, not a dismiss.
+      if (e.target === m && Date.now() - (m.openedAt || 0) < 700) return;
       if (e.target === m || (e.target.closest && e.target.closest('[data-close]'))) closeModal(m);
     });
   });
   $('obHelpBtn').addEventListener('click', function () { openModal($('obHelp')); });
-  $('obResultBtn').addEventListener('click', openResult);
+  $('obSolvedRes').addEventListener('click', openResult);
 
   function starStr(n) { var s = ''; for (var i = 0; i < 3; i++) s += i < n ? '⭐' : '☆'; return s; }
   // Spoiler-free share: an efficiency bar (par / moves, 10 cells, coloured by stars) and the
@@ -719,6 +765,7 @@
   var practiceHref = location.pathname + '?practice=1';
   $('obNewPractice').href = practiceHref;
   $('obResPractice').href = practiceHref;
+  $('obSolvedPractice').href = practiceHref;
   var pl = $('obPracticeLink');
   if (PRACTICE) {
     pl.textContent = "Today's orbit";
@@ -746,7 +793,8 @@
   evaluate(st.offs, true);
   select(st.hint === 1 ? 2 : 1);
   syncHint(); syncUndo(); hud();
-  if (st.done) lockBoard();
+  if (st.done) { lockBoard(); syncSolvedBar(); }
+  window.addEventListener('load', syncSolvedBar);   // daily-kit (deferred) is ready by now: fill in Next daily
   if (!st.done && !localStorage.getItem(HELP_KEY)) {
     try { localStorage.setItem(HELP_KEY, '1'); } catch (e) {}
     setTimeout(function () { openModal($('obHelp')); }, 350);
@@ -756,6 +804,7 @@
     info: function () { return { num: num, practice: PRACTICE, index: pIndex, weekday: PRACTICE ? null : WEEKDAY, par: PAR, offs: st.offs.slice(), moves: st.moves, done: st.done, stars: st.stars, lit: lit.filter(Boolean).length, sel: sel, hint: st.hint, check: st.check, checkOffs: st.checkOffs && st.checkOffs.slice(), marks: [1, 2, 3].map(checkMark), threeStar: threeStar(), menu: menuOpen(), turns: st.turns.slice(), undo: undoStack.length }; },
     shareText: function () { var b = shareBits(); return b.bar + ' ' + b.eff + '%\n' + b.turns; },
     shareFull: shareFull,
-    shareOpts: shareOpts
+    shareOpts: shareOpts,
+    dragging: function () { return !!dragging; }
   };
 })();
