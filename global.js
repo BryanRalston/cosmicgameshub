@@ -323,10 +323,11 @@
     });
   }
 
-  function featuredArt(slug, name, alt) {
+  function featuredArt(slug, name, alt, hasPhone) {
     return {
       name: name,
       img: '/images/thumbs/' + slug + '-hero.webp',
+      phone: hasPhone ? '/images/thumbs/' + slug + '-hero-phone.webp' : '',
       avif: '/images/thumbs/' + slug + '-hero.avif',
       w: 1600,
       h: 900,
@@ -338,30 +339,16 @@
     'holiday-rush': featuredArt('holiday-rush', 'Holiday Rush', 'Holiday Rush Mart floor, top-down'),
     rift: featuredArt('rift', 'RIFT', 'RIFT word game'),
     gamerdle: featuredArt('gamerdle', 'Gamerdle', 'Gamerdle guess the video game'),
-    brix3d: featuredArt('brix3d', 'BRIX 3D', 'BRIX 3D brick cottage on the build plate'),
+    brix3d: featuredArt('brix3d', 'BRIX 3D', 'BRIX 3D brick cottage on the build plate', true),
     rootweave: featuredArt('rootweave', 'Rootweave', 'Rootweave valley farm'),
     pixle: featuredArt('pixle', 'Pixle', 'Pixle five-letter gaming word'),
     'asteroid-dodge': featuredArt('asteroid-dodge', 'Asteroid Dodge', 'Asteroid Dodge'),
     'aim-trainer': featuredArt('aim-trainer', 'Aim Trainer', 'Aim Trainer'),
     crossword: featuredArt('crossword', 'Crossword', 'Crossword'),
     link: featuredArt('link', 'Link', 'Link'),
-    sudoku: featuredArt('sudoku', 'Sudoku', 'Sudoku'),
-    minesweeper: featuredArt('minesweeper', 'Minesweeper', 'Minesweeper')
+    sudoku: featuredArt('sudoku', 'Sudoku', 'Sudoku in progress: a partly filled board, selected cell, and number pad', true),
+    minesweeper: featuredArt('minesweeper', 'Minesweeper', 'Minesweeper mid-game: a half-cleared board with numbers and flagged mines', true)
   };
-
-  var WEEK_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-  function currentWeekBadge(date) {
-    var now = date || new Date();
-    var day = now.getDay();
-    var monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (day === 0 ? 6 : day - 1));
-    var sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
-    var start = WEEK_MONTHS[monday.getMonth()] + ' ' + monday.getDate();
-    var end = monday.getMonth() === sunday.getMonth()
-      ? String(sunday.getDate())
-      : WEEK_MONTHS[sunday.getMonth()] + ' ' + sunday.getDate();
-    return 'Game of the Week \u00b7 ' + start + '\u2013' + end;
-  }
 
   function titleFromSlug(slug) {
     return slug.split('-').map(function (word) {
@@ -386,7 +373,7 @@
       var media = document.getElementById('gotwMedia');
       if (title) title.textContent = name;
       if (blurbEl) blurbEl.textContent = blurb;
-      if (week) week.textContent = currentWeekBadge(new Date());
+      if (week) week.textContent = 'Game of the Week';
       if (img && media) {
         if (art) {
           img.hidden = false;
@@ -397,6 +384,8 @@
           }
           var avif = document.getElementById('gotwAvif');
           if (avif && art.avif) avif.srcset = art.avif;
+          var phone = document.getElementById('gotwPhone');
+          if (phone) phone.srcset = art.phone || art.img;
           img.alt = art.alt;
           media.classList.remove('is-plain');
         } else {
