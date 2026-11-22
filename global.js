@@ -16,6 +16,7 @@
     { href: '/games/brix3d', name: 'BRIX 3D' },
     { href: '/games/rootweave', name: 'Rootweave' },
     { href: '/games/pixle', name: 'Pixle' },
+    { href: '/games/orbit', name: 'Orbit' },
     { href: '/games', name: 'All games' }
   ];
 

@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Daily Puzzles — Today's Gaming Games | CosmicGamesHub</title>
-  <meta name="description" content="Play today's set of free daily gaming puzzles — Gamerdle, Pixle, Hardware Timeline, Gaming Trivia, Sudoku, Crossword, and more. Track your streak across every game.">
-  <meta name="keywords" content="daily gaming puzzles, daily browser games, gamerdle today, pixle today, gaming wordle">
+  <meta name="description" content="Play today's set of free daily gaming puzzles — Gamerdle, Pixle, Orbit, Hardware Timeline, Gaming Trivia, Sudoku, Crossword, and more. Track your streak across every game.">
+  <meta name="keywords" content="daily gaming puzzles, daily browser games, gamerdle today, pixle today, orbit today, gaming wordle">
   <meta property="og:title" content="Daily Puzzles — CosmicGamesHub">
   <meta property="og:description" content="Today's gaming puzzles in one place. Track your streak. New every day.">
   <meta property="og:type" content="website">
@@ -120,10 +120,10 @@
       <div class="dh-eyebrow" id="dhEyebrow">Today's Set</div>
       <h1 class="dh-h1">Today's desk</h1>
       <p class="dh-date" id="dhDate">—</p>
-      <p class="dh-sub">Twelve constructed dailies. Same board for every player this UTC day. Next in <strong data-cd>——:——:——</strong>.</p>
+      <p class="dh-sub">Thirteen constructed dailies. Same board for every player this UTC day. Next in <strong data-cd>——:——:——</strong>.</p>
 
       <div class="dh-strip">
-        <div class="dh-stat"><div class="dh-stat-val" id="dhPlayedCount">0/12</div><div class="dh-stat-lbl">Of today's dailies</div></div>
+        <div class="dh-stat"><div class="dh-stat-val" id="dhPlayedCount">0/13</div><div class="dh-stat-lbl">Of today's dailies</div></div>
         <div class="dh-stat"><div class="dh-stat-val" id="dhStreakSum">0</div><div class="dh-stat-lbl">Streak · this device</div></div>
         <div class="dh-stat"><div class="dh-stat-val" id="dhPercent">Lv 1</div><div class="dh-stat-lbl">Level / XP · this device</div></div>
       </div>
@@ -145,11 +145,12 @@
 
     <div class="dh-wrap">
 
-      <div class="dh-section-label" id="dhTodoLabel">Today's 12</div>
+      <div class="dh-section-label" id="dhTodoLabel">Today's 13</div>
       <div class="dh-grid" id="dhTodoGrid">
         <a class="dh-card" href="/games/gamerdle"><div class="dh-icon">🎮</div><div class="dh-meta"><div class="dh-name">Gamerdle</div><div class="dh-line"><span class="dh-status todo">Mystery video game</span></div></div><div class="dh-arrow">→</div></a>
         <a class="dh-card" href="/games/pixle"><div class="dh-icon">🟩</div><div class="dh-meta"><div class="dh-name">Pixle</div><div class="dh-line"><span class="dh-status todo">5-letter Wordle</span></div></div><div class="dh-arrow">→</div></a>
         <a class="dh-card" href="/games/rift"><div class="dh-icon">🌀</div><div class="dh-meta"><div class="dh-name">RIFT</div><div class="dh-line"><span class="dh-status todo">3 word zones</span></div></div><div class="dh-arrow">→</div></a>
+        <a class="dh-card" href="/games/orbit"><div class="dh-icon">🪐</div><div class="dh-meta"><div class="dh-name">Orbit</div><div class="dh-line"><span class="dh-status todo">Word rings · New</span></div></div><div class="dh-arrow">→</div></a>
         <a class="dh-card" href="/games/hardware-timeline"><div class="dh-icon">📅</div><div class="dh-meta"><div class="dh-name">Hardware Timeline</div><div class="dh-line"><span class="dh-status todo">Guess the year</span></div></div><div class="dh-arrow">→</div></a>
         <a class="dh-card" href="/games/spec-match"><div class="dh-icon">🔍</div><div class="dh-meta"><div class="dh-name">Spec Match</div><div class="dh-line"><span class="dh-status todo">Specs → product</span></div></div><div class="dh-arrow">→</div></a>
         <a class="dh-card" href="/games/gear-quiz"><div class="dh-icon">🎧</div><div class="dh-meta"><div class="dh-name">Gear Quiz</div><div class="dh-line"><span class="dh-status todo">10 gear questions</span></div></div><div class="dh-arrow">→</div></a>
@@ -184,7 +185,7 @@
     "@context": "https://schema.org",
     "@type": "CollectionPage",
     "name": "Daily Puzzles",
-    "description": "Today's set of free daily gaming puzzles — Gamerdle, Pixle, Hardware Timeline, Gaming Trivia, Sudoku, Crossword, and more.",
+    "description": "Today's set of free daily gaming puzzles — Gamerdle, Pixle, Orbit, Hardware Timeline, Gaming Trivia, Sudoku, Crossword, and more.",
     "url": "https://www.cosmicgameshub.com/games/daily"
   }
   </script>
@@ -247,6 +248,13 @@
         const finished = state.day === dayIndex2026 && (state.status === 'won' || state.status === 'lost');
         return { played: !!finished, streak: stats.streak || 0 };
       },
+      orbit() {
+        // Orbit day #1 = 2026-11-22 (UTC); state.p is the puzzle number, state.done once solved.
+        const state = safeJSON('orbit-state-v2') || {};
+        const stats = safeJSON('orbit-stats-v1') || {};
+        const orbitNum = dayIndex2026 - Math.floor((Date.UTC(2026, 10, 22) - epoch2026) / 86400000) + 1;
+        return { played: state.p === orbitNum && !!state.done, streak: stats.streak || 0 };
+      },
       sudoku() {
         const d = new Date();
         const mm = d.getMonth() + 1;
@@ -289,6 +297,7 @@
     { id: 'gamerdle',           name: 'Gamerdle',          icon: '🎮', tag: 'Mystery video game',    href: '/games/gamerdle', thumb: '/images/game-gamerdle-v2.jpg' },
     { id: 'pixle',              name: 'Pixle',             icon: '🟩', tag: '5-letter Wordle',      href: '/games/pixle', thumb: '/images/game-pixle-v2.jpg' },
     { id: 'rift',               name: 'Rift',              icon: '🌀', tag: '3 word zones',          href: '/games/rift', thumb: '/images/game-rift-v2.jpg' },
+    { id: 'orbit',              name: 'Orbit',             icon: '🪐', tag: 'Word rings · New',      href: '/games/orbit', thumb: '/images/thumbs/orbit-800.webp' },
     { id: 'hardware-timeline',  name: 'Hardware Timeline', icon: '📅', tag: 'Guess the year',        href: '/games/hardware-timeline', thumb: '/images/game-hardware-timeline-v2.jpg' },
     { id: 'spec-match',         name: 'Spec Match',        icon: '🔍', tag: 'Specs → product',       href: '/games/spec-match', thumb: '/images/game-spec-match-v2.jpg' },
     { id: 'gear-quiz',          name: 'Gear Quiz',         icon: '🎧', tag: '10 gear questions',     href: '/games/gear-quiz', thumb: '/images/game-gear-quiz-v2.jpg' },
@@ -363,7 +372,7 @@
       if (sub) sub.innerHTML = 'Set complete. Streak sits on this device. Next UTC day in <strong data-cd></strong>.';
     } else if (playedCount > 0) {
       dhTodoLabel.textContent = `You have ${left} left`;
-      if (sub) sub.innerHTML = `Welcome back. ${playedCount}/12 done today` + (deviceStreak ? `, streak ${deviceStreak} on this device` : '') + `. Next UTC day in <strong data-cd></strong>.`;
+      if (sub) sub.innerHTML = `Welcome back. ${playedCount}/${GAMES.length} done today` + (deviceStreak ? `, streak ${deviceStreak} on this device` : '') + `. Next UTC day in <strong data-cd></strong>.`;
     } else {
       dhTodoLabel.textContent = `To Play (${todoCards.length})`;
     }
@@ -488,11 +497,11 @@
     });
     ctx.fillStyle = '#ffffff';
     ctx.font = '800 42px Outfit, system-ui, sans-serif';
-    ctx.fillText(played + ' / 12 played', 72, 980);
+    ctx.fillText(played + ' / ' + GAMES.length + ' played', 72, 980);
     ctx.fillStyle = '#00d4ff';
     ctx.font = '700 28px Outfit, system-ui, sans-serif';
     ctx.fillText('Streak ' + streak + ' on this device  ·  cosmicgameshub.com/games/daily', 72, 1032);
-    var text = 'CosmicGamesHub Daily — ' + date + '\n' + played + '/12 played · streak ' + streak + ' on this device\ncosmicgameshub.com/games/daily';
+    var text = 'CosmicGamesHub Daily — ' + date + '\n' + played + '/' + GAMES.length + ' played · streak ' + streak + ' on this device\ncosmicgameshub.com/games/daily';
     return new Promise(function (resolve) {
       canvas.toBlob(function (blob) {
         if (lastShare.url) URL.revokeObjectURL(lastShare.url);
