@@ -6,6 +6,7 @@
     { id: 'gamerdle', name: 'Gamerdle', href: '/games/gamerdle', icon: '🎮', mins: 2 },
     { id: 'pixle', name: 'Pixle', href: '/games/pixle', icon: '🟩', mins: 2 },
     { id: 'rift', name: 'RIFT', href: '/games/rift', icon: '🌀', mins: 3 },
+    { id: 'orbit', name: 'Orbit', href: '/games/orbit', icon: '🪐', mins: 3 },
     { id: 'hardware-timeline', name: 'Hardware Timeline', href: '/games/hardware-timeline', icon: '📅', mins: 2 },
     { id: 'spec-match', name: 'Spec Match', href: '/games/spec-match', icon: '🔍', mins: 2 },
     { id: 'gear-quiz', name: 'Gear Quiz', href: '/games/gear-quiz', icon: '🎧', mins: 3 },
@@ -30,6 +31,7 @@
   function dayIndex2026() {
     return Math.floor((Date.now() - Date.UTC(2026, 0, 1)) / 86400000);
   }
+  var ORBIT_EPOCH_IDX = Math.floor((Date.UTC(2026, 10, 22) - Date.UTC(2026, 0, 1)) / 86400000);
   function unixDay() { return Math.floor(Date.now() / 86400000); }
   function safeJSON(key) {
     try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) { return null; }
@@ -60,6 +62,11 @@
       var ps = safeJSON('pixle-state-v1') || {};
       map.pixle = ps.dayIndex === dayIndex2026() && (ps.status === 'won' || ps.status === 'lost');
     } catch (e) { map.pixle = false; }
+    try {
+      // Orbit numbers its UTC days from its epoch (2026-11-22 = #1, see scripts/orbit/gen_orbit.py).
+      var os = safeJSON('orbit-state-v2') || {};
+      map.orbit = os.p === dayIndex2026() - ORBIT_EPOCH_IDX + 1 && !!os.done;
+    } catch (e) { map.orbit = false; }
     map.sudoku = (function () {
       var n = now();
       var mm = n.getMonth() + 1;
@@ -231,6 +238,10 @@
     if (source === 'pixle') {
       var ps = safeJSON('pixle-stats-v1') || {};
       return +ps.streak || 0;
+    }
+    if (source === 'orbit') {
+      var os2 = safeJSON('orbit-stats-v1') || {};
+      return +os2.streak || 0;
     }
     if (source === 'holiday-rush') {
       var hm = safeJSON('hr_meta_v1') || {};
@@ -434,7 +445,7 @@
     var isHost = dockHost(slug) === el;
     var card = isHost ? dockCardHtml(slug) : null;
     var played = !!playedMap()[slug];
-    // A game that is not one of the 12 dailies (e.g. Word Scramble) never "finishes" a daily, so it
+    // A game that is not one of the dailies in ORDER (e.g. Word Scramble) never "finishes" a daily, so it
     // has no Up next card. Its prompt shows once, in the host dock only.
     var isDaily = ORDER.some(function (g) { return g.id === slug; });
     var html = '<div class="cg-dock">';
@@ -444,11 +455,11 @@
       // Finished game (card lives in the other dock) or a non-daily game (prompt lives in the host dock): no second CTA here.
     } else if (next) {
       html += '<a class="cg-dock__next" href="' + next.href + '">Play next daily — ' + next.name + ' →</a>';
-      html += '<div class="cg-dock__left">' + left + ' of 12 still open today</div>';
+      html += '<div class="cg-dock__left">' + left + ' of ' + ORDER.length + ' still open today</div>';
     } else {
       html += '<div class="cg-dock__done">Set complete. Next UTC day in <span data-cd></span></div>';
     }
-    html += '<a class="cg-dock__all" href="/games/daily">Today\'s 12 →</a>';
+    html += '<a class="cg-dock__all" href="/games/daily">Today\'s ' + ORDER.length + ' →</a>';
     html += '<button type="button" class="cg-dock__mute" data-cg-mute></button>';
     html += '</div>';
     el.innerHTML = html;

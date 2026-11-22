@@ -149,6 +149,18 @@
     ]
   },
   {
+    "title": "Orbit",
+    "url": "/games/orbit",
+    "type": "game",
+    "tags": [
+      "daily",
+      "puzzle",
+      "word",
+      "rings",
+      "new"
+    ]
+  },
+  {
     "title": "Pixle",
     "url": "/games/pixle",
     "type": "game",
