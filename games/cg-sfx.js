@@ -91,6 +91,46 @@
     document.head.appendChild(s);
   }
 
+  // Opt-in layout (opts.layout === 'center'): the title, grid and lines are scaled up and centred
+  // as one block between the brand strip and the URL, so a short result fills the square.
+  // Every other caller keeps the original top-left layout.
+  function drawCentered(c, title, sub, grid, lines, url) {
+    var W = 1080, MAXW = 900, FONT = 'Outfit, system-ui, sans-serif';
+    function fit(font, size, text, min) {
+      c.font = font.replace('#', size);
+      var w = c.measureText(text).width;
+      if (w > MAXW) { size = Math.max(min, Math.floor(size * MAXW / w)); c.font = font.replace('#', size); }
+      return size;
+    }
+    var rows = grid ? grid.split('\n') : [];
+    var gridSize = 88;
+    rows.forEach(function (r) { gridSize = Math.min(gridSize, fit('#px ui-monospace, monospace', 88, r, 36)); });
+    var lineSize = 46;
+    lines.forEach(function (l) { lineSize = Math.min(lineSize, fit('600 #px ' + FONT, 46, l, 26)); });
+    var block = [];
+    block.push({ text: title, font: '900 112px ' + FONT, color: '#ffffff', h: 120 });
+    if (sub) block.push({ text: sub, font: '500 ' + fit('500 #px ' + FONT, 40, sub, 24) + 'px ' + FONT, color: '#a8a8c0', h: 58, gap: 6 });
+    rows.forEach(function (r, i) { block.push({ text: r, font: gridSize + 'px ui-monospace, monospace', color: '#ffffff', h: Math.round(gridSize * 1.22), gap: i === 0 ? 40 : 0 }); });
+    lines.forEach(function (l, i) { block.push({ text: l, font: '600 ' + lineSize + 'px ' + FONT, color: '#ffffff', h: Math.round(lineSize * 1.5), gap: i === 0 ? 34 : 0 }); });
+    var total = block.reduce(function (s, b) { return s + b.h + (b.gap || 0); }, 0);
+    var top = 150, bottom = 960;   // between the brand strip and the URL
+    var y = top + Math.max(0, (bottom - top - total) / 2);
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.font = '700 34px ' + FONT; c.fillStyle = '#00d4ff';
+    c.fillText('COSMICGAMESHUB', W / 2, 92);
+    block.forEach(function (b) {
+      y += b.gap || 0;
+      c.font = b.font; c.fillStyle = b.color;
+      c.fillText(b.text, W / 2, y + b.h / 2);
+      y += b.h;
+    });
+    c.font = '700 34px ' + FONT; c.fillStyle = '#00d4ff';
+    c.fillText(url, W / 2, 1010);
+    c.textAlign = 'start';
+    c.textBaseline = 'alphabetic';
+  }
+
   function shareCard(opts) {
     opts = opts || {};
     var title = opts.title || 'CosmicGamesHub';
@@ -111,6 +151,8 @@
     c.fillRect(0, 0, 1080, 1080);
     c.fillStyle = '#00d4ff';
     c.fillRect(0, 0, 1080, 10);
+    if (opts.layout === 'center') drawCentered(c, title, sub, grid, lines, url);
+    else {
     c.font = '700 28px Outfit, system-ui, sans-serif';
     c.fillStyle = '#00d4ff';
     c.fillText('COSMICGAMESHUB', 72, 96);
@@ -139,6 +181,7 @@
     c.fillStyle = '#00d4ff';
     c.font = '700 26px Outfit, system-ui, sans-serif';
     c.fillText(url, 72, 1032);
+    }
     return new Promise(function (resolve) {
       canvas.toBlob(function (blob) {
         resolve({

@@ -443,3 +443,20 @@ body.ob-page.ob-has-backdrop::before {
   .ob-page .ob-modal .cg-next__cta .cg-next__m { display: none; }   /* "· 2 min" drops; the arrow stays */
   .ob-page .ob-modal .cg-next__cta::after { content: " →"; }
 }
+
+/* ---- result modal: opaque, so the solved board and bar don't show through ---- */
+.ob-modal-bg { background: rgba(3, 4, 10, .9); }
+.ob-modal { background: linear-gradient(180deg, #1a1e3a, #0c0e1e); }
+
+/* ---- phones: the solved page keeps the word chips on screen (360x780 too) ---- */
+@media (max-width: 420px) {
+  .ob-solved { margin: .35rem 0 .3rem; padding: .55rem .6rem .6rem; }
+  .ob-solved__head { margin-bottom: .4rem; }
+  /* See results + Practice share a row; Next daily gets its own full-width row */
+  .ob-solved__row .ob-btn--primary { flex: 1 1 auto; flex-basis: auto; }
+  .ob-solved__row #obSolvedPractice { order: 1; flex: 0 1 auto; }
+  .ob-solved__row #obSolvedNext { order: 2; flex-basis: 100%; }
+  /* chips are labels, not buttons: once solved they can be shorter */
+  .ob-is-solved .ob-tray { margin-top: .25rem; }
+  .ob-is-solved .ob-chip { min-height: 34px; padding: .15rem .1rem; }
+}
