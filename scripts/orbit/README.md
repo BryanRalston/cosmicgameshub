@@ -28,9 +28,13 @@ The subtitle shows the weekday (e.g. "Daily word rings · #3 · Tue"). Practice 
 so practice can never preview a daily. `?practice=1` plays a random practice puzzle (no stats);
 `?practice=1&n=17` plays practice puzzle 17.
 
-Share card (spoiler-free): stars, moves vs par and time, a 10-cell efficiency bar (par / moves,
-coloured by stars) and the moves spent on each ring. No words, directions or scramble distances.
-Hints show as 🔍 (ring check) and 💡 (ring lock) after the stars and on the card.
+Share card (spoiler-free, Wordle-style): stars and hint markers (🔍 ring check, 💡 ring lock), moves
+vs par, % efficiency and a time bucket (⚡ under 1 min, 🚀 under 2, ⏱️ under 5, 🐢 longer) with the
+exact time; a 10-cell efficiency bar (par / moves, coloured by stars); then the route: the rings in
+the order they were worked on (②③④②…, first 8 switches). Two par solvers rarely match on route and
+time. Nothing per ring is shown (no turn counts), so the card never hints how far a ring is off,
+let alone a letter, a word or a direction. Saves from before the route (no `path` field) share
+without that line.
 
 ## Weekday difficulty curve
 Puzzles ramp up through the week. Every day after the freeze is generated to land in its weekday's

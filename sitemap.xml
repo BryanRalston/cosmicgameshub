@@ -389,7 +389,13 @@
   </url>
   <url>
     <loc>https://www.cosmicgameshub.com/about</loc>
-    <lastmod>2026-08-30</lastmod>
+    <lastmod>2026-11-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.cosmicgameshub.com/lab</loc>
+    <lastmod>2026-11-24</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -1010,7 +1016,7 @@
   </url>
   <url>
     <loc>https://www.cosmicgameshub.com/games/orbit</loc>
-    <lastmod>2026-11-22</lastmod>
+    <lastmod>2026-11-24</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.85</priority>
   </url>

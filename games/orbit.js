@@ -63,10 +63,11 @@
   var WEEKDAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date(Date.UTC(2026, 0, 1) + (EPOCH + todayNum - 1) * 86400000).getUTCDay()];
 
   // ---- state --------------------------------------------------------------
-  // turns = moves spent on each ring (shown, spoiler-free, on the share card).
+  // turns = moves spent on each ring (kept in the save; not shown on the share card).
+  // path = the rings in the order they were worked on, a digit per switch ("2342"), for the share card.
   // hint = locked ring (-1 = unused). check = move count when the ring check was used (-1 = unused);
   // checkOffs = ring offsets at that moment (a ring's mark holds while it stays where it was checked).
-  var st = { p: num, offs: START.slice(), moves: 0, elapsed: 0, hint: -1, check: -1, checkOffs: null, done: false, stars: 0, turns: [0, 0, 0, 0] };
+  var st = { p: num, offs: START.slice(), moves: 0, elapsed: 0, hint: -1, check: -1, checkOffs: null, done: false, stars: 0, turns: [0, 0, 0, 0], path: '' };
   if (!PRACTICE) {
     var saved = jget(STATE_KEY);
     if (saved && saved.p === num && Array.isArray(saved.offs) && saved.offs.length === R) {
@@ -76,6 +77,8 @@
       st.hint = typeof saved.hint === 'number' ? saved.hint : -1;
       st.done = !!saved.done; st.stars = saved.stars | 0;
       if (Array.isArray(saved.turns) && saved.turns.length === R) st.turns = saved.turns.map(function (t) { return t | 0; });
+      // Saves from before the route line have no path: the card just leaves that line out.
+      if (typeof saved.path === 'string' && /^[123]{0,40}$/.test(saved.path)) st.path = saved.path;
       // Saves from before the ring check have no check fields: treat as unused.
       if (typeof saved.check === 'number' && saved.check >= 0) {
         st.check = saved.check | 0;
@@ -278,6 +281,7 @@
   function spend(r, n) {
     if (n <= 0) return;
     st.moves += n; st.turns[r] += n;
+    if (st.path.slice(-1) !== String(r) && st.path.length < 40) st.path += r;
     startClock();
     hud();
   }
@@ -679,17 +683,22 @@
   $('obSolvedRes').addEventListener('click', openResult);
 
   function starStr(n) { var s = ''; for (var i = 0; i < 3; i++) s += i < n ? '⭐' : '☆'; return s; }
-  // Spoiler-free share: an efficiency bar (par / moves, 10 cells, coloured by stars) and the
-  // moves spent on each ring. Neither reveals a word, a direction or a ring's scramble.
+  // Spoiler-free share, Wordle-style: a 10-cell efficiency bar (par / moves, coloured by stars),
+  // then the route (the order the rings were worked on) and a time bucket. Two solvers rarely match
+  // on route and time. Nothing per ring is shown: no turn counts, letters, words or directions.
   var CIRC = ['①', '②', '③', '④'];
+  function timeBucket(sec) { return sec < 60 ? '⚡' : sec < 120 ? '🚀' : sec < 300 ? '⏱️' : '🐢'; }
+  function routeLine() {
+    if (!st.path) return '';
+    var steps = st.path.split('').map(function (d) { return CIRC[+d]; });
+    return 'Route ' + (steps.length > 8 ? steps.slice(0, 8).join('') + '…' : steps.join(''));
+  }
   function shareBits() {
     var cell = st.stars === 3 ? '🟩' : st.stars === 2 ? '🟨' : '🟧';
     var fill = Math.max(1, Math.min(10, Math.round(10 * PAR / Math.max(st.moves, 1))));
     var bar = new Array(fill + 1).join(cell) + new Array(11 - fill).join('⬛');
     var eff = Math.min(100, Math.round(100 * PAR / Math.max(st.moves, 1)));
-    var turns = [];
-    for (var r = 1; r < R; r++) turns.push(CIRC[r] + ' ' + (r === st.hint ? '💡' : st.turns[r]));
-    return { bar: bar, eff: eff, turns: 'Ring turns ' + turns.join(' · ') };
+    return { eff: eff, bar: bar, route: routeLine(), time: timeBucket(st.elapsed) + ' ' + fmtT(st.elapsed) };
   }
   function openResult() {
     var s = jget(STATS_KEY) || {};
@@ -733,8 +742,8 @@
   }
   function shareFull() {
     var b = shareBits();
-    var line = st.moves + ' moves (par ' + PAR + ') · ' + fmtT(st.elapsed);
-    return '🪐 Orbit #' + num + ' ' + starStr(st.stars) + hintMarks() + '\n' + line + '\n' + b.bar + ' ' + b.eff + '%\n' + b.turns + '\n\ncosmicgameshub.com/games/orbit';
+    var line = st.moves + ' moves (par ' + PAR + ') · ' + b.eff + '% · ' + b.time;
+    return '🪐 Orbit #' + num + ' ' + starStr(st.stars) + hintMarks() + '\n' + line + '\n' + b.bar + (b.route ? '\n' + b.route : '') + '\n\ncosmicgameshub.com/games/orbit';
   }
   function shareOpts() {
     var b = shareBits();
@@ -742,7 +751,7 @@
       title: 'Orbit',
       subtitle: '#' + num + '  ·  ' + st.stars + '/3 stars' + hintMarks(),
       grid: starStr(st.stars) + '\n' + b.bar,
-      lines: [st.moves + ' moves · par ' + PAR + ' · ' + b.eff + '% efficient', b.turns, 'Solved in ' + fmtT(st.elapsed) + hintWords()],
+      lines: [st.moves + ' moves · par ' + PAR + ' · ' + b.eff + '% efficient', b.route, 'Solved in ' + b.time + hintWords()].filter(Boolean),
       url: 'cosmicgameshub.com/games/orbit',
       filename: 'orbit-' + num,
       text: shareFull()
@@ -805,8 +814,8 @@
   }
   // Read-only hook for QA scripts.
   window.OrbitGame = {
-    info: function () { return { num: num, practice: PRACTICE, index: pIndex, weekday: PRACTICE ? null : WEEKDAY, par: PAR, offs: st.offs.slice(), moves: st.moves, done: st.done, stars: st.stars, lit: lit.filter(Boolean).length, sel: sel, hint: st.hint, check: st.check, checkOffs: st.checkOffs && st.checkOffs.slice(), marks: [1, 2, 3].map(checkMark), threeStar: threeStar(), menu: menuOpen(), turns: st.turns.slice(), undo: undoStack.length }; },
-    shareText: function () { var b = shareBits(); return b.bar + ' ' + b.eff + '%\n' + b.turns; },
+    info: function () { return { num: num, practice: PRACTICE, index: pIndex, weekday: PRACTICE ? null : WEEKDAY, par: PAR, offs: st.offs.slice(), moves: st.moves, done: st.done, stars: st.stars, lit: lit.filter(Boolean).length, sel: sel, hint: st.hint, check: st.check, checkOffs: st.checkOffs && st.checkOffs.slice(), marks: [1, 2, 3].map(checkMark), threeStar: threeStar(), menu: menuOpen(), turns: st.turns.slice(), path: st.path, undo: undoStack.length }; },
+    shareText: function () { var b = shareBits(); return b.bar + (b.route ? '\n' + b.route : ''); },
     shareFull: shareFull,
     shareOpts: shareOpts,
     dragging: function () { return !!dragging; }
