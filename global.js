@@ -262,9 +262,11 @@
         html += '<h3 class="site-search__group-label">' + group.label + '</h3>';
         rows.slice(0, 8).forEach(function (item) {
           var tags = (item.tags || []).slice(0, 3).join(' · ');
+          var ext = /^(https?:)?\/\//i.test(item.url || '');
           html +=
-            '<a class="site-search__hit" role="option" href="' + item.url + '">' +
-              '<span class="site-search__hit-title">' + (item.title || '') + '</span>' +
+            '<a class="site-search__hit" role="option" href="' + item.url + '"' +
+              (ext ? ' target="_blank" rel="noopener nofollow"' : '') + '>' +
+              '<span class="site-search__hit-title">' + (item.title || '') + (ext ? ' ↗' : '') + '</span>' +
               (tags ? '<span class="site-search__hit-meta">' + tags + '</span>' : '') +
             '</a>';
         });
@@ -276,7 +278,12 @@
     function goFirst() {
       var first = resultsEl.querySelector('.site-search__hit');
       if (first && first.getAttribute('href')) {
-        window.location.href = first.getAttribute('href');
+        var href = first.getAttribute('href');
+        if (first.getAttribute('target') === '_blank') {
+          window.open(href, '_blank', 'noopener,noreferrer');
+        } else {
+          window.location.href = href;
+        }
       }
     }
 

@@ -99,6 +99,7 @@ body.page-games::before { display: none; }
 .hub-row__head a:hover { text-decoration: underline; }
 .hub-row__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; }
 .hub-row__grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.hub-row__grid--5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 
 .hub-card { display: block; color: inherit; text-decoration: none; transition: transform .35s cubic-bezier(.2,.8,.2,1); }
 .hub-card:hover { text-decoration: none; transform: translateY(-6px); }
@@ -116,6 +117,14 @@ body.page-games::before { display: none; }
 }
 .hub-card:hover .hub-thumb::after { opacity: 1; }
 .hub-card:hover .hub-thumb img { transform: scale(1.04); }
+.hub-ext-icon {
+  position: absolute; top: 10px; right: 10px;
+  width: 28px; height: 28px; border-radius: 8px;
+  background: rgba(255,255,255,0.92); color: #1a1a1a;
+  font-size: 15px; font-weight: 700; line-height: 28px; text-align: center;
+  pointer-events: none;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+}
 .hub-meta { padding: 16px 4px 0; }
 .hub-tag, .page-games .gh-tag {
   font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #7d5cff;
@@ -161,6 +170,48 @@ body.page-games::before { display: none; }
 .page-games .gh-card:hover .gh-card__thumb::after { opacity: 1; }
 .page-games .gh-card:hover .gh-card__play-overlay { background: transparent; }
 .page-games .gh-card__play-overlay, .page-games .gh-card__play, .page-games .gh-card__badge, .page-games .gh-card__meta, .page-games .gh-card__device { display: none; }
+/* Partner card only: keep a visible outbound pill. Do not unhide badges/play on other cards. */
+.page-games .gh-card--external .gh-card__badge--partner {
+  display: inline-flex;
+  align-items: center;
+  z-index: 2;
+  top: 10px;
+  left: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.94);
+  color: #6d4aff;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 1px 3px rgba(0,0,0,.1);
+}
+.page-games .gh-card--external .gh-tag.gt-partner,
+.hub-pill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(109,74,255,.12) !important;
+  color: #6d4aff !important;
+  border: 0 !important;
+}
+.hub-pill--thumb {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  padding: 4px 9px;
+  background: rgba(255,255,255,.94);
+  box-shadow: 0 1px 3px rgba(0,0,0,.1);
+  pointer-events: none;
+}
 .page-games .gh-card__body { padding: 16px 4px 0; }
 .page-games .gh-card__tags { margin: 0 0 4px; }
 .page-games .gh-card__title { margin: 0 0 4px; font-size: 20px; letter-spacing: -0.015em; font-weight: 700; color: var(--hub-ink); }
@@ -175,6 +226,7 @@ body.page-games::before { display: none; }
 }
 @media (max-width: 860px) {
   .hub-row__grid, .hub-row__grid--3, .page-games .gh-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hub-row__grid--5 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (max-width: 760px) {
   .hub-wrap { padding: 0 20px; }

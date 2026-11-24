@@ -326,6 +326,26 @@
       background: #33ddff;
       box-shadow: 0 0 20px rgba(0,212,255,0.35);
     }
+    .gh-card__badge--partner { background: rgba(125,92,255,0.9); color: #fff; }
+    .gt-partner { background:rgba(125,92,255,0.12); color:#c4b5fd; border:1px solid rgba(125,92,255,0.2); }
+    .gh-card__credit {
+      font-size: 0.75rem; color: var(--text-lo, #888);
+      margin: 0 0 0.45rem;
+    }
+    .page-games .gh-card__credit {
+      margin: -2px 0 8px; font-size: 13px; color: var(--hub-sub, #6e6e73);
+    }
+    .gh-card__ext { font-weight: 700; margin-left: 0.15em; opacity: 0.65; }
+    .gh-card__ext-icon {
+      position: absolute; top: 10px; right: 10px;
+      width: 28px; height: 28px; border-radius: 8px;
+      background: rgba(255,255,255,0.92); color: #1a1a1a;
+      font-size: 0.95rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      pointer-events: none;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+    }
+    .gh-card__play--external { letter-spacing: 0.03em; }
     .gh-card[hidden] { display: none; }
     .gh-empty {
       grid-column: 1/-1;
@@ -360,12 +380,12 @@
   "@context": "https://schema.org",
   "@type": "CollectionPage",
   "name": "Free Browser Games — CosmicGamesHub",
-  "description": "26 free browser games — 13 daily puzzles, a holiday store sim, arcade, skill trainers, and a 3D brick builder.",
+  "description": "27 free browser games — 13 daily puzzles, a holiday store sim, arcade, skill trainers, a 3D brick builder, and one partner word game.",
   "url": "https://www.cosmicgameshub.com/games",
   "mainEntity": {
     "@type": "ItemList",
     "name": "Free Browser Games",
-    "numberOfItems": 26,
+    "numberOfItems": 27,
     "itemListElement": [
       {"@type":"ListItem","position":1,"url":"https://www.cosmicgameshub.com/games/holiday-rush","name":"Holiday Rush: Store Manager"},
       {"@type":"ListItem","position":2,"url":"https://www.cosmicgameshub.com/games/rift","name":"RIFT"},
@@ -392,7 +412,8 @@
       {"@type":"ListItem","position":23,"url":"https://www.cosmicgameshub.com/games/spec-match","name":"Spec Match"},
       {"@type":"ListItem","position":24,"url":"https://www.cosmicgameshub.com/games/hardware-timeline","name":"Hardware Timeline"},
       {"@type":"ListItem","position":25,"url":"https://www.cosmicgameshub.com/games/word-scramble","name":"Word Scramble"},
-      {"@type":"ListItem","position":26,"url":"https://www.cosmicgameshub.com/games/orbit","name":"Orbit"}
+      {"@type":"ListItem","position":26,"url":"https://www.cosmicgameshub.com/games/orbit","name":"Orbit"},
+      {"@type":"ListItem","position":27,"url":"https://wordjostle.app/?ref=cosmicgameshub","name":"Wordjostle"}
     ]
   },
   "author": {"@type":"Organization","name":"CosmicGamesHub","url":"https://www.cosmicgameshub.com"}
@@ -424,22 +445,22 @@
 <!-- ─── Hero ─────────────────────────────────── -->
 <div class="gh-hero">
   <div class="gh-hero__eyebrow">
-    <span class="live-dot"></span> Originals first · 25 games · this device
+    <span class="live-dot"></span> Originals first · 27 games · this device
   </div>
   <h1 class="gh-hero__title">Free Browser Games</h1>
   <p class="gh-hero__sub">Originals first — Holiday Rush, RIFT, Gamerdle, BRIX 3D, Rootweave, Pixle, and Orbit. Then today’s daily desk and the rest of the catalog. No download, no login. Streaks stay on this device.</p>
   <input type="search" id="ghSearch" class="gh-search" placeholder="Search games…" autocomplete="off" aria-label="Search games">
   <div class="gh-toolbar">
     <div class="gh-filters" id="ghFilters" role="tablist" aria-label="Filter games by category">
-      <button class="gh-filter active" data-filter="all" role="tab" aria-selected="true">All <span class="gh-filter-count">26</span></button>
+      <button class="gh-filter active" data-filter="all" role="tab" aria-selected="true">All <span class="gh-filter-count">27</span></button>
       <button class="gh-filter" data-filter="daily" role="tab" aria-selected="false">Daily <span class="gh-filter-count">13</span></button>
       <button class="gh-filter" data-filter="skill" role="tab" aria-selected="false">Skill <span class="gh-filter-count">5</span></button>
       <button class="gh-filter" data-filter="arcade" role="tab" aria-selected="false">Arcade <span class="gh-filter-count">4</span></button>
       <button class="gh-filter" data-filter="creative" role="tab" aria-selected="false">3D <span class="gh-filter-count">2</span></button>
       <button class="gh-filter" data-filter="classics" role="tab" aria-selected="false">Classics <span class="gh-filter-count">3</span></button>
-      <button class="gh-filter" data-filter="puzzle" role="tab" aria-selected="false">Puzzle <span class="gh-filter-count">8</span></button>
+      <button class="gh-filter" data-filter="puzzle" role="tab" aria-selected="false">Puzzle <span class="gh-filter-count">9</span></button>
       <button class="gh-filter" data-filter="aim" role="tab" aria-selected="false">Aim <span class="gh-filter-count">1</span></button>
-      <button class="gh-filter" data-filter="word" role="tab" aria-selected="false">Word <span class="gh-filter-count">6</span></button>
+      <button class="gh-filter" data-filter="word" role="tab" aria-selected="false">Word <span class="gh-filter-count">7</span></button>
       <button class="gh-filter" data-filter="new" role="tab" aria-selected="false">New <span class="gh-filter-count">5</span></button>
     </div>
     <div class="gh-sort" role="group" aria-label="Sort games">
@@ -901,11 +922,29 @@
       </div>
     </article>
 
+    <article class="gh-card gh-card--external" data-id="wordjostle" data-name="Wordjostle" data-category="puzzle word" data-search="wordjostle word daily puzzle tiles slide partner community" data-new="0" data-external="1">
+      <a class="gh-card__thumb" href="https://wordjostle.app/?ref=cosmicgameshub" target="_blank" rel="noopener nofollow">
+        <img src="/images/thumbs/wordjostle.webp" srcset="/images/thumbs/wordjostle-800.webp 800w, /images/thumbs/wordjostle.webp 1600w" sizes="(max-width: 760px) 78vw, 280px" alt="Wordjostle board mid-game, colored tiles in the gold guess row" class="gh-card__img" loading="lazy" />
+        <div class="gh-card__play-overlay"><div class="gh-card__play-btn">↗</div></div>
+        <span class="gh-card__badge gh-card__badge--partner">Partner game</span>
+        <span class="gh-card__ext-icon" aria-hidden="true">↗</span>
+      </a>
+      <div class="gh-card__body">
+        <div class="gh-card__tags"><span class="hub-pill">Partner game</span><span class="gh-tag gt-puzzle">Word</span></div>
+        <a class="gh-card__title" href="https://wordjostle.app/?ref=cosmicgameshub" target="_blank" rel="noopener nofollow">Wordjostle <span class="gh-card__ext" aria-hidden="true">↗</span></a>
+        <p class="gh-card__credit">by Wordjostle</p>
+        <div class="gh-card__meta"><span>2–5 min</span><span class="gh-diff gh-diff--medium">Medium</span></div>
+        <p class="gh-card__desc">Free daily word puzzle. Slide tiles to spell the 5-letter word in six tries.</p>
+        <div class="gh-card__device" hidden></div>
+        <a class="gh-card__play gh-card__play--external" href="https://wordjostle.app/?ref=cosmicgameshub" target="_blank" rel="noopener nofollow">PLAY ON SITE ↗</a>
+      </div>
+    </article>
+
     <p class="gh-empty" id="ghEmpty" hidden>No games match that filter.</p>
 
   </div>
 
-  <p class="gh-lab-note">Lab (not in the 25): <a href="/games/dream-machine">Dream Machine</a> — generative particle field, no score, no daily. Also on <a href="/lab">/lab</a>.</p>
+  <p class="gh-lab-note">Lab (not in the 27): <a href="/games/dream-machine">Dream Machine</a> — generative particle field, no score, no daily. Also on <a href="/lab">/lab</a>.</p>
   <p class="gh-lab-note">After a session: <a href="/guides/gaming-mouse-buying-guide">Mouse buying guide</a> — DPI, polling, sensors.</p>
 
 </main>
