@@ -303,6 +303,16 @@
   <!-- Sidebar toggle button -->
   <button id="sidebarToggle" title="Toggle Menu (Tab)">☰</button>
   
+  <style>
+    /* The first-run phone sheet's dim layer starts below the top bar, so More games stays tappable
+       while the sheet shows (opening the tray then closes the sheet, see brix-boot.js) */
+    @media (max-width: 768px) { .phone-tutorial { top: calc(56px + env(safe-area-inset-top, 0px)); } }
+    /* Open tray fits its pills two to a row instead of a 118px column (still clear of the quality bar) */
+    @media (max-width: 430px) {
+      .brix-more.is-open { max-width: calc(100vw - 12px); }
+      .brix-more.is-open .brix-more__list { max-width: 176px; }
+    }
+  </style>
   <nav class="brix-more" data-more-games="1" aria-label="More games">
     <button type="button" class="brix-more__toggle" aria-expanded="false">More games</button>
     <span class="brix-more__label">More games</span>

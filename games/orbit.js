@@ -754,6 +754,7 @@
       lines: [st.moves + ' moves · par ' + PAR + ' · ' + b.eff + '% efficient', b.route, 'Solved in ' + b.time + hintWords()].filter(Boolean),
       url: 'cosmicgameshub.com/games/orbit',
       filename: 'orbit-' + num,
+      layout: 'center',
       text: shareFull()
     };
   }

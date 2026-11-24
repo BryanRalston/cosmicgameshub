@@ -72,6 +72,10 @@ setTimeout(function () {
     if (!nav) return;
     var open = nav.classList.toggle('is-open');
     btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    // Opening the tray closes the first-run phone sheet (as Got it would), so it can't cover the pills.
+    var sheet = open && document.getElementById('phoneTutorial');
+    var ok = sheet && !sheet.hidden && document.getElementById('phoneTutorialOk');
+    if (ok) ok.click();
   });
   function track(name, params) {
     if (typeof window.gtag !== 'function') return;

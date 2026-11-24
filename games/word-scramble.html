@@ -651,7 +651,8 @@
         <a href="/games/pixle" style="display:block;padding:.65rem .75rem;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;text-decoration:none;"><div style="font-size:1.05rem;line-height:1;margin-bottom:.2rem;">🟩</div><div style="font-size:.8rem;font-weight:700;color:#fff;">Pixle</div><div style="font-size:.68rem;color:var(--text-lo);">5-letter gaming Wordle</div></a>
         <a href="/games/gamerdle" style="display:block;padding:.65rem .75rem;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;text-decoration:none;"><div style="font-size:1.05rem;line-height:1;margin-bottom:.2rem;">🎮</div><div style="font-size:.8rem;font-weight:700;color:#fff;">Gamerdle</div><div style="font-size:.68rem;color:var(--text-lo);">Mystery video game</div></a>
         <a href="/games/rift" style="display:block;padding:.65rem .75rem;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;text-decoration:none;"><div style="font-size:1.05rem;line-height:1;margin-bottom:.2rem;">🌀</div><div style="font-size:.8rem;font-weight:700;color:#fff;">Rift</div><div style="font-size:.68rem;color:var(--text-lo);">3 word zones</div></a>
-        <a href="/games/daily" style="display:block;padding:.65rem .75rem;background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.25);border-radius:10px;text-decoration:none;"><div style="font-size:1.05rem;line-height:1;margin-bottom:.2rem;">📋</div><div style="font-size:.8rem;font-weight:700;color:var(--accent);">All dailies</div><div style="font-size:.68rem;color:var(--text-lo);">See your streak</div></a>
+        <a href="/games/orbit" style="display:block;padding:.65rem .75rem;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;text-decoration:none;"><div style="font-size:1.05rem;line-height:1;margin-bottom:.2rem;">🪐</div><div style="font-size:.8rem;font-weight:700;color:#fff;">Orbit</div><div style="font-size:.68rem;color:var(--text-lo);">Spin rings into words</div></a>
+        <a href="/games/daily" style="grid-column:1/-1;display:block;padding:.65rem .75rem;background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.25);border-radius:10px;text-decoration:none;"><div style="font-size:1.05rem;line-height:1;margin-bottom:.2rem;">📋</div><div style="font-size:.8rem;font-weight:700;color:var(--accent);">All dailies</div><div style="font-size:.68rem;color:var(--text-lo);">See your streak</div></a>
       </div>
     </div>
 
@@ -697,6 +698,14 @@
   <div class="container">
     <h3 class="rg-heading">More Games</h3>
     <div class="rg-grid">
+      <a href="/games/orbit" class="rg-card">
+        <img src="/images/thumbs/orbit-800.webp" alt="Orbit" loading="lazy" width="200" height="86">
+        <div class="rg-info">
+          <div class="rg-tags"><span class="rg-tag">Daily</span><span class="rg-tag">Word</span><span class="rg-tag">New</span></div>
+          <div class="rg-name">Orbit</div>
+          <div class="rg-desc">Spin four letter rings until every spoke spells a word</div>
+        </div>
+      </a>
       <a href="/games/gamerdle" class="rg-card">
         <img src="/images/game-gamerdle.jpg" alt="Gamerdle" loading="lazy" width="200" height="86">
         <div class="rg-info">
@@ -727,7 +736,8 @@
 <style>
 .rg-section { padding: 2.5rem 0 3rem; border-top: 1px solid var(--border, rgba(255,255,255,0.08)); margin-top: 2rem; }
 .rg-heading { font-size: 0.75rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-lo, #666); margin: 0 0 1.25rem; }
-.rg-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+.rg-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+@media (max-width: 1000px) { .rg-grid { grid-template-columns: repeat(2, 1fr); } }
 .rg-card { display: flex; gap: 0.75rem; background: var(--bg-card, #111); border: 1px solid var(--border, rgba(255,255,255,0.08)); border-radius: 10px; padding: 0.75rem; text-decoration: none; color: inherit; transition: border-color 0.15s, transform 0.15s; }
 .rg-card:hover { border-color: var(--accent, #22d3ee); transform: translateY(-2px); }
 .rg-card img { width: 100px; height: 43px; object-fit: cover; border-radius: 6px; flex-shrink: 0; }
